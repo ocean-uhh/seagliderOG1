@@ -52,3 +52,30 @@ def plot_profile_depth(data):
 
     plt.show()
 
+
+def show_attributes(file):
+    from pandas import DataFrame
+    from netCDF4 import Dataset
+
+    print("information is based on file: {}".format(file))
+
+    rootgrp = Dataset(file, "r", format="NETCDF4")
+    info = {}
+
+    for i, key in enumerate(rootgrp.ncattrs()):
+        info[i] = {
+            "Attribute": key,
+            "Value": getattr(rootgrp, key)
+        }
+
+    attrs = DataFrame(info).T
+
+    attrs = (
+        attrs.sort_values(["Attribute"])
+        .reset_index(drop=True)
+        .loc[:, ["Attribute", "Value"]]
+        .set_index("Attribute")
+        .style
+    )
+
+    return attrs
