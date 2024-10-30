@@ -241,15 +241,16 @@ vars_as_is = [
     "security_level",
     "voltage",
     "distance_over_ground",
-    "ad2cp_beam1_cell_number1",
-    "ad2cp_beam2_cell_number1",
-    "ad2cp_beam3_cell_number1",
-    "ad2cp_beam4_cell_number1",
-    "vertical_distance_to_seafloor",
-    "profile_direction",
+#    "ad2cp_beam1_cell_number1",
+#    "ad2cp_beam2_cell_number1",
+#    "ad2cp_beam3_cell_number1",
+#    "ad2cp_beam4_cell_number1",
+#    "vertical_distance_to_seafloor",
+#    "profile_direction",
     "profile_num",
     "nav_state",
 ]
+
 
 def standardise_og10(ds):
     dsa = xr.Dataset()
@@ -276,6 +277,26 @@ def standardise_og10(ds):
     return dsa
 
 
+def modify_attributes(ds, attr_to_add, attr_as_is, attr_to_change, attr_to_remove):
+    # Retain specified attributes
+    new_attrs = {key: ds.attrs[key] for key in attr_as_is if key in ds.attrs}
+
+    # Change specified attributes
+    for key, value in attr_to_change.items():
+        new_attrs[key] = value
+
+    # Add new attributes
+    for key, value in attr_to_add.items():
+        new_attrs[key] = value
+
+    # Remove specified attributes
+    for key in attr_to_remove:
+        if key in new_attrs:
+            del new_attrs[key]
+
+    ds.attrs = new_attrs
+    return ds
+
 if __name__ == "__main__":
     dsn = xr.open_dataset(
         "/data/data_l0_pyglider/nrt/SEA76/M19/timeseries/mission_timeseries.nc",
@@ -283,3 +304,5 @@ if __name__ == "__main__":
     dsn = standardise_og10(dsn)
     dsn = convert_to_og1(dsn)
     dsn.to_netcdf("new.nc")
+
+
