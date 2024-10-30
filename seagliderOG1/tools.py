@@ -251,10 +251,6 @@ vars_as_is = [
     "nav_state",
 ]
 
-
-# + ['backscatter_raw', 'oxygen_phase', 'phycocyanin', 'phycocyanin_raw', 'down_irradiance_532', 'turbidity_raw', 'internal_temperature_PAR', 'methane_concentration', 'methane_raw_concentration', 'mets_raw_temperature', 'mets_temperature', 'nitrate_concentration', 'nitrate_molar_concentration', 'suna_internal_humidity', 'suna_internal_temperature'] # DELETE
-
-
 def standardise_og10(ds):
     dsa = xr.Dataset()
     dsa.attrs = ds.attrs
