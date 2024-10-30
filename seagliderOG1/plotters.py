@@ -70,12 +70,12 @@ def show_attributes(file):
 
     attrs = DataFrame(info).T
 
-    attrs = (
-        attrs.sort_values(["Attribute"])
-        .reset_index(drop=True)
-        .loc[:, ["Attribute", "Value"]]
-        .set_index("Attribute")
-        .style
-    )
+#    attrs = (
+#        attrs.sort_values(["Index"])
+#        .reset_index(drop=True)
+#        .loc[:, ["Attribute", "Value"]]
+#        .set_index("Attribute")
+#        .style
+#    )
 
     return attrs
