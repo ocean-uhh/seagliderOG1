@@ -18,3 +18,4 @@ sphinx
 sphinx-rtd-theme
 cartopy
 gsw
+glidertools
