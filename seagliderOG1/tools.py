@@ -14,6 +14,7 @@ import matplotlib.colors as mcolors
 #from votoutils.utilities.utilities import encode_times_og1, set_best_dtype
 #from votoutils.utilities import vocabularies
 import logging
+from datetime import datetime
 
 _log = logging.getLogger(__name__)
 
@@ -278,6 +279,18 @@ def standardise_og10(ds):
 
 
 def modify_attributes(ds, attr_to_add, attr_as_is, attr_to_change, attr_to_remove):
+
+    # Define the order of attributes
+    ordered_attributes = [
+        "title", "platform", "platform_vocabulary", "id", "naming_authority", 
+        "institution", "geospatial_lat_min", "geospatial_lat_max", 
+        "geospatial_lon_min", "geospatial_lon_max", "geospatial_vertical_min", 
+        "geospatial_vertical_max", "time_coverage_start", "time_coverage_end", 
+        "site", "project", "contributor_name", "contributor_email", 
+        "contributor_role", "contributor_role_vocabulary", "uri", "data_url", 
+        "doi", "rtqc_method", "rtqc_method_doi", "web_link", "comment", 
+        "start_date", "date_created", "featureType", "Conventions"
+    ]
     # Retain specified attributes
     new_attrs = {key: ds.attrs[key] for key in attr_as_is if key in ds.attrs}
 
@@ -295,6 +308,19 @@ def modify_attributes(ds, attr_to_add, attr_as_is, attr_to_change, attr_to_remov
             del new_attrs[key]
 
     ds.attrs = new_attrs
+
+    # Add the rest of the attributes that are present in the dataset but not in the ordered list
+    for attr in ds.attrs:
+        if attr not in ordered_attributes:
+            ordered_attributes.append(attr)
+
+    # Reorder the attributes in ds_new_att according to ordered_attributes
+    new_attrs = {attr: ds.attrs[attr] for attr in ordered_attributes if attr in ds.attrs}
+    for attr in ds.attrs:
+        if attr not in new_attrs:
+            new_attrs[attr] = ds.attrs[attr]
+
+    ds.attrs = new_attrs
     return ds
 
 if __name__ == "__main__":
@@ -306,3 +332,147 @@ if __name__ == "__main__":
     dsn.to_netcdf("new.nc")
 
 
+
+
+def generate_attributes(ds_all):
+    """
+    Generate a dictionary of attributes to add and change for a dataset.
+
+    Parameters:
+    ds_all (object): An object containing various metadata attributes of the dataset.
+
+    Returns:
+    tuple: A tuple containing two dictionaries:
+        - attr_to_add (dict): Attributes to add to the dataset.
+        - attr_to_change (dict): Attributes to change in the dataset.
+
+    The dictionaries contain the following keys:
+    attr_to_add:
+        - title: Title of the dataset.
+        - platform: Platform type.
+        - platform_vocabulary: URL to the platform vocabulary.
+        - id: Unique identifier for the dataset.
+        - contributor_email: Email of the contributor.
+        - contributor_role_vocabulary: URL to the contributor role vocabulary.
+        - uri: Unique resource identifier.
+        - uri_comment: Comment about the URI.
+        - web_link: Web link to the dataset.
+        - comment: History comment.
+        - start_date: Start date of the dataset.
+        - featureType: Feature type of the dataset.
+        - landstation_version: Version of the land station.
+        - glider_firmware_version: Version of the glider firmware.
+        - rtqc_method: Real-time quality control method.
+        - rtqc_method_doi: DOI for the RTQC method.
+        - doi: DOI of the dataset.
+        - data_url: URL to the data.
+
+    attr_to_change:
+        - time_coverage_start: Start time of the dataset coverage.
+        - time_coverage_end: End time of the dataset coverage.
+        - Conventions: Conventions followed by the dataset.
+        - date_created: Creation date of the dataset.
+        - date_modified: Modification date of the dataset.
+        - contributor_name: Name of the contributor.
+        - contributor_role: Role of the contributor.
+    """
+
+    title = "OceanGliders trajectory file"
+    platform = "sub-surface gliders"
+    platform_vocabulary = "https://vocab.nerc.ac.uk/collection/L06/current/27/"
+
+    time_str = ds_all.time_coverage_start.replace('_', '').replace(':', '').rstrip('Z')
+    id = ds_all.platform_id + '_' + time_str + '_delayed'
+    time_coverage_start = time_str
+    time_coverage_end = ds_all.time_coverage_end.replace('_', '').replace(':', '').rstrip('Z')
+    site = ds_all.summary
+    contributor_name = ds_all.creator_name + ', ' + ds_all.contributor_name
+    contributor_email = ds_all.creator_email
+    contributor_role = "PI, " + ds_all.contributor_role
+    contributor_role_vocabulary = "http://vocab.nerc.ac.uk/search_nvs/W08/"
+    uri = ds_all.uuid
+    uri_comment = "UUID"
+    web_link = "https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:0111844"
+    comment = "history: " + ds_all.history
+    start_date = time_coverage_start
+    date_created = ds_all.date_created.replace('_', '').replace(':', '').rstrip('Z')
+    date_modified = datetime.now().strftime('%Y%m%dT%H%M%S')
+    featureType = "trajectory"
+    Conventions = "CF-1.10,OG-1.0"
+    landstation_version = ds_all.base_station_version + ds_all.base_station_micro_version
+    glider_firmware_version = ds_all.seaglider_software_version
+    rtqc_method = "No QC applied"
+    rtqc_method_doi = "n/a"
+    doi = "none yet"
+    data_url = ""
+
+    attr_to_add = {
+        "title": title,
+        "platform": platform, 
+        "platform_vocabulary": platform_vocabulary,
+        "id": id,
+        "contributor_email": contributor_email,
+        "contributor_role_vocabulary": contributor_role_vocabulary,
+        "uri": uri,
+        "uri_comment": uri_comment,
+        "web_link": web_link,
+        "comment": comment,
+        "start_date": start_date,
+        "featureType": featureType,
+        "landstation_version": landstation_version,
+        "glider_firmware_version": glider_firmware_version,
+        "rtqc_method": rtqc_method,
+        "rtqc_method_doi": rtqc_method_doi,
+        "doi": doi,
+        "data_url": data_url,
+    }
+
+    attr_to_change = {
+        "time_coverage_start": time_coverage_start,
+        "time_coverage_end": time_coverage_end,
+        "Conventions": Conventions,
+        "date_created": date_created,
+        "date_modified": date_modified,
+        "contributor_name": contributor_name,
+        "contributor_role": contributor_role,
+    }
+
+    attr_as_is = [
+        "naming_authority",
+        "institution",
+        "project",
+        "geospatial_lat_min",
+        "geospatial_lat_max",
+        "geospatial_lon_min",
+        "geospatial_lon_max",
+        "geospatial_vertical_min",
+        "geospatial_vertical_max",
+        "license",
+        "keywords",
+        "keywords_vocabulary",
+        "file_version",
+        "acknowledgment",
+        "date_created",
+        "disclaimer",
+    ]
+
+
+    # After changing attributes
+    attr_to_remove = [
+        "summary",
+        "history",
+        "time_coverage_resolution",
+        "geospatial_lat_units",
+        "geospatial_lon units",
+        "geospatial_vertical_units",
+        "geospatial_vertical_positive",
+        "geospatial_vertical_resolution",
+        "geospatial_lat_resolution",
+        "geospatial_lon_resolution",
+        "creator_name",
+        "creator_email",
+        "Metadata_Conventions",
+    ]
+
+
+    return attr_to_add, attr_as_is, attr_to_change, attr_to_remove

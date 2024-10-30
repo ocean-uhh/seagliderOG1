@@ -52,6 +52,56 @@ def plot_profile_depth(data):
 
     plt.show()
 
+def show_variables(file):
+    """
+    Processes a list of files, extracts variable information from a selected file, 
+    and returns a styled DataFrame with details about the variables.
+    Parameters:
+    files (list): A list of file paths to be processed.
+    Returns:
+    pandas.io.formats.style.Styler: A styled DataFrame containing the following columns:
+        - dims: The dimension of the variable (or "string" if it is a string type).
+        - name: The name of the variable.
+        - units: The units of the variable (if available).
+        - comment: Any additional comments about the variable (if available).
+    Notes:
+    - The function selects the middle file from the processed list of files to extract variable information.
+    - The DataFrame is sorted by dimensions and variable names.
+    - The DataFrame is styled for better readability.
+    
+    This is based on glidertools (https://github.com/GliderToolsCommunity/), glidertools/load/seaglider.py
+    """
+    from pandas import DataFrame
+    from netCDF4 import Dataset
+
+    print("information is based on file: {}".format(file))
+
+    variables = Dataset(file).variables
+    info = {}
+    for i, key in enumerate(variables):
+        var = variables[key]
+        info[i] = {
+            "name": key,
+            "dims": var.dimensions[0] if len(var.dimensions) == 1 else "string",
+            "units": "" if not hasattr(var, "units") else var.units,
+            "comment": "" if not hasattr(var, "comment") else var.comment,
+        }
+
+    vars = DataFrame(info).T
+
+    dim = vars.dims
+    dim[dim.str.startswith("str")] = "string"
+    vars["dims"] = dim
+
+    vars = (
+        vars.sort_values(["dims", "name"])
+        .reset_index(drop=True)
+        .loc[:, ["dims", "name", "units", "comment"]]
+        .set_index("name")
+        .style
+    )
+
+    return vars
 
 def show_attributes(file):
     from pandas import DataFrame
