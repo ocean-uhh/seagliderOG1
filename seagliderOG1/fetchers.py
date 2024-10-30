@@ -5,6 +5,11 @@ from bs4 import BeautifulSoup
 import requests
 
 
+# Comment 2024 Oct 30: I needed an initial file list to create the registry
+# This is impractical for expansion, so may need to move away from pooch.
+# This was necessary to get an initial file list
+# mylist = fetchers.list_files_in_https_server(server)
+# fetchers.create_pooch_registry_from_directory("/Users/eddifying/Dropbox/data/sg015-ncei-download/")
 
 
 def load_sample_dataset(dataset_name="p0150500_20050213.nc"):
