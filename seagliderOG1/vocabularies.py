@@ -1,3 +1,32 @@
+dims_rename_dict = {'sg_data_point': 'N_MEASUREMENTS'}
+
+coords_rename_dict = {
+    'longitude': 'LONGITUDE',
+    'latitude': 'LATITUDE',
+    'ctd_time': 'TIME',
+    'ctd_depth': 'DEPTH'
+}
+
+vars_rename_dict = {
+    'conductivity': 'CNDC',
+    'temperature': 'TEMP',
+    'salinity': 'PSAL',  # after thermal lag correction
+    # 'conductivity_qc': 'CNDC_QC',
+    # 'salinity_qc': 'PSAL_QC',
+    # 'temperature_qc': 'TEMP_QC',
+    'vert_speed': 'VERT_GLIDER_SPEED',  # This is using the hdm
+    'horz_speed': 'HORZ_GLIDER_SPEED',  # This is using the hdm
+    'density': 'POTDENS0',
+    'pressure': 'PRES',
+    'eng_pitchAng': 'PITCH',
+    'eng_rollAng': 'ROLL',
+    'eng_head': 'HEADING',
+    'gps_lat': 'LATITUDE_GPS',
+    'gps_lon': 'LONGITUDE_GPS',
+    'gps_time': 'TIME_GPS',
+    'trajectory': 'dive_num'
+}
+
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
 standard_names = {
     "latitude": "LATITUDE",
