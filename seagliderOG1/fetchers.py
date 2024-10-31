@@ -3,7 +3,7 @@ import xarray as xr
 import os
 from bs4 import BeautifulSoup
 import requests
-
+import numpy as np
 
 # Comment 2024 Oct 30: I needed an initial file list to create the registry
 # This is impractical for expansion, so may need to move away from pooch.
@@ -47,6 +47,16 @@ def load_dataset(source, start_profile=None, end_profile=None):
     else:
         raise ValueError("Source must be a valid URL or directory path.")
 
+    def repeat_trajectory_vars(ds):
+
+        trajectory_var = ds['trajectory'].values
+        trajectory_comment = ds['trajectory'].attrs['comment']
+        ds['trajectory'] = (['sg_data_point'], np.full(ds.dims['sg_data_point'], np.nan))
+        ds['trajectory'][:] = trajectory_var
+
+        ds['trajectory'].attrs['comment'] = trajectory_comment
+        return ds
+
     filtered_files = []
     datasets = []
 
@@ -72,6 +82,8 @@ def load_dataset(source, start_profile=None, end_profile=None):
             ds = xr.open_dataset(os.path.join(source, file))
         
         # drop all dimensions other than sg_data_point
+        ds = repeat_trajectory_vars(ds)
+        ds = add_gps_coordinates(ds)
         ds_sg_data_point = ds.drop_dims(set(ds.dims).difference(["sg_data_point"])) 
         datasets.append(ds_sg_data_point)
 
@@ -80,123 +92,48 @@ def load_dataset(source, start_profile=None, end_profile=None):
 
     return ds_all
 
-# def load_dataset_from_directory(directory, start_profile=None, end_profile=None):
-#     """
-#     Load datasets from a specified directory, optionally filtering by profile range.
-#     This function scans a directory for NetCDF (.nc) files and loads them into xarray datasets.
-#     Optionally, it can filter files based on a specified start and/or end profile.
+def add_gps_coordinates(ds):
+    # Find the nearest index in sg_data_point corresponding to gps_time
+    def find_nearest_index(ds, gps_time):
+        time_diff = np.abs(ds['ctd_time'] - gps_time)
+        nearest_index = time_diff.argmin().item()
+        return nearest_index
 
-#     Parameters:
-#     directory (str): The path to the directory containing the NetCDF files.
-#     start_profile (int, optional): The starting profile number to filter files. Defaults to None.
-#     end_profile (int, optional): The ending profile number to filter files. Defaults to None.
-#     Returns:
-#     list: A list of xarray.Dataset objects loaded from the filtered NetCDF files.
-#     """
+    # Create new variables gps_lat and gps_lon with dimensions sg_data_point
+    ds['gps_lat'] = (['sg_data_point'], np.full(ds.dims['sg_data_point'], np.nan))
+    ds['gps_lon'] = (['sg_data_point'], np.full(ds.dims['sg_data_point'], np.nan))
+    ds['gps_time'] = (['sg_data_point'], np.full(ds.dims['sg_data_point'], np.nan))
+
+    # Fill gps_lat and gps_lon with values from log_gps_lat and log_gps_lon at the nearest index
+    for gps_time, gps_lat, gps_lon in zip(ds.log_gps_time.values, ds.log_gps_lat.values, ds.log_gps_lon.values):
+        nearest_index = find_nearest_index(ds, gps_time)
+        ds['gps_lat'][nearest_index] = gps_lat
+        ds['gps_lon'][nearest_index] = gps_lon
+        ds['gps_time'][nearest_index] = gps_time
+    return ds
+
+def extract_non_sg_data_point_vars(ds):
+    """
+    Extract variables from an xarray dataset that do not have the 'sg_data_point' dimension.
+    Parameters:
+    ds (xarray.Dataset): The input xarray dataset containing various variables.
+    Returns:
+    xarray.Dataset: A new xarray dataset containing only the variables that do not have the 'sg_data_point' dimension.
+    """
+    # Create a dictionary to hold the new variables
+    new_vars = {}
     
-#     files = os.listdir(directory)
-#     filtered_files = []
-#     datasets = []
-
-#     for file in files:
-#         if file.endswith(".nc"):
-#             profile_number = int(file.split("_")[0][4:])
-#             if start_profile is not None and end_profile is not None:
-#                 if start_profile <= profile_number <= end_profile:
-#                     filtered_files.append(file)
-#             elif start_profile is not None:
-#                 if profile_number >= start_profile:
-#                     filtered_files.append(file)
-#             elif end_profile is not None:
-#                 if profile_number <= end_profile:
-#                     filtered_files.append(file)
-#             else:
-#                 filtered_files.append(file)
-
-#     for file in filtered_files:
-#         # Load the dataset
-#         ds = xr.open_dataset(os.path.join(directory, file))
-#         # drop all dimensions other than sg_data_point
-#         ds_sg_data_point = ds.drop_dims(set(ds.dims).difference(["sg_data_point"])) 
-#         datasets.append(ds_sg_data_point)
-
-#     ds_all = xr.concat(datasets, dim="sg_data_point")
-#     ds_all = ds_all.sortby("ctd_time")
-
-#     return ds_all
-
-# def load_dataset_from_online(url_directory, start_profile=None, end_profile=None):
-#     """
-#     Download datasets from a specified URL directory, optionally filtering by profile range.
-#     This function lists files in a URL directory and downloads NetCDF (.nc) files that match the specified profile range.
-
-#     Parameters:
-#     url_directory (str): The URL to the directory containing the NetCDF files.
-#     start_profile (int, optional): The starting profile number to filter files. Defaults to None.
-#     end_profile (int, optional): The ending profile number to filter files. Defaults to None.
-#     Returns:
-#     list: A list of xarray.Dataset objects loaded from the filtered NetCDF files.
-#     """
+    # Iterate over the variables in the dataset
+    for var_name, var_data in ds.data_vars.items():
+        # Check if the variable has a different dimension from 'sg_data_point'
+        if 'sg_data_point' not in var_data.dims:
+            new_vars[var_name] = var_data
     
-#     # Create a Pooch object to manage the remote files
-#     data_source_online = pooch.create(
-#         path=pooch.os_cache("seagliderOG1_online"),
-#         base_url=url_directory,
-#         registry=None,
-#     )
-
-#     # List all files in the URL directory
-#     file_list = list_files_in_https_server(url_directory)
-
-#     filtered_files = []
-#     datasets = []
-
-#     for file in file_list:
-#         if file.endswith(".nc"):
-#             profile_number = int(file.split("_")[0][4:])
-#             if start_profile is not None and end_profile is not None:
-#                 if start_profile <= profile_number <= end_profile:
-#                     filtered_files.append(file)
-#             elif start_profile is not None:
-#                 if profile_number >= start_profile:
-#                     filtered_files.append(file)
-#             elif end_profile is not None:
-#                 if profile_number <= end_profile:
-#                     filtered_files.append(file)
-#             else:
-#                 filtered_files.append(file)
-
-#     for dataset_name in filtered_files:
-#         ds = load_sample_dataset(dataset_name)
-        
-#         # drop all dimensions other than sg_data_point
-#         ds_sg_data_point = ds.drop_dims(set(ds.dims).difference(["sg_data_point"])) 
-#         datasets.append(ds_sg_data_point)
-
-#     ds_all = xr.concat(datasets, dim="sg_data_point")
-#     ds_all = ds_all.sortby("ctd_time")
-
-#     return ds_all
+    # Create a new xarray dataset with the extracted variables
+    new_ds = xr.Dataset(new_vars)
     
-    
-#def load_dataset(source, start_profile=None, end_profile=None):
-#    """
-#    Load datasets from either an online source or a local directory, optionally filtering by profile #range.
+    return new_ds
 
-#    Parameters:
-#    source (str): The URL to the directory containing the NetCDF files or the path to the local #directory.
-#    start_profile (int, optional): The starting profile number to filter files. Defaults to None.
-#    end_profile (int, optional): The ending profile number to filter files. Defaults to None.#
-
-#    Returns:
-#    xarray.Dataset: A concatenated xarray.Dataset object loaded from the filtered NetCDF files.
-#    """
-#    if source.startswith("http://") or source.startswith("https://"):
-#        return load_dataset_from_online(source, start_profile, end_profile)
-#    elif os.path.isdir(source):
-#        return load_dataset_from_directory(source, start_profile, end_profile)
-#    else:
-#        raise ValueError("Source must be a valid URL or directory path.")
 
 def list_files_in_https_server(url):
     """
