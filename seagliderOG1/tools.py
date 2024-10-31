@@ -277,6 +277,17 @@ def standardise_og10(ds):
     dsa = set_best_dtype(dsa)
     return dsa
 
+def create_renamed_dataset(ds, dims_rename_dict, coords_rename_dict, vars_rename_dict):
+    # Apply renaming using the dictionaries
+    ds_renamed = ds.rename_dims(dims_rename_dict)
+    ds_renamed = ds_renamed.rename_vars(coords_rename_dict)
+    ds_renamed = ds_renamed.rename_vars(vars_rename_dict)
+    
+    # Remove variables not in vars_rename_dict().values
+    vars_to_keep = set(vars_rename_dict.values())
+    ds_renamed = ds_renamed[vars_to_keep]
+    return ds_renamed
+
 
 def modify_attributes(ds, attr_to_add, attr_as_is, attr_to_change, attr_to_remove):
 
@@ -381,10 +392,11 @@ def generate_attributes(ds_all):
     platform = "sub-surface gliders"
     platform_vocabulary = "https://vocab.nerc.ac.uk/collection/L06/current/27/"
 
-    time_str = ds_all.time_coverage_start.replace('_', '').replace(':', '').rstrip('Z')
+    time_str = ds_all.time_coverage_start.replace('_', '').replace(':', '').rstrip('Z').rstrip('Z').replace('-','')
     id = ds_all.platform_id + '_' + time_str + '_delayed'
     time_coverage_start = time_str
-    time_coverage_end = ds_all.time_coverage_end.replace('_', '').replace(':', '').rstrip('Z')
+    time_coverage_end = ds_all.time_coverage_end.replace('_', '').replace(':', '').rstrip('Z').replace('-','')
+
     site = ds_all.summary
     contributor_name = ds_all.creator_name + ', ' + ds_all.contributor_name
     contributor_email = ds_all.creator_email
@@ -395,7 +407,7 @@ def generate_attributes(ds_all):
     web_link = "https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:0111844"
     comment = "history: " + ds_all.history
     start_date = time_coverage_start
-    date_created = ds_all.date_created.replace('_', '').replace(':', '').rstrip('Z')
+    date_created = ds_all.date_created.replace('_', '').replace(':', '').rstrip('Z').rstrip('Z').replace('-','')
     date_modified = datetime.now().strftime('%Y%m%dT%H%M%S')
     featureType = "trajectory"
     Conventions = "CF-1.10,OG-1.0"
