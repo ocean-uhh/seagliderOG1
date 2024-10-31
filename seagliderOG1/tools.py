@@ -7,7 +7,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 import matplotlib.colors as mcolors
-
+from seagliderOG1 import vocabularies
 #import pandas as pd
 #import numpy as np
 #import xarray as xr
@@ -277,14 +277,16 @@ def standardise_og10(ds):
     dsa = set_best_dtype(dsa)
     return dsa
 
-def create_renamed_dataset(ds, dims_rename_dict, coords_rename_dict, vars_rename_dict):
+def create_renamed_dataset(ds):
+    from seagliderOG1 import vocabularies
+
     # Apply renaming using the dictionaries
-    ds_renamed = ds.rename_dims(dims_rename_dict)
-    ds_renamed = ds_renamed.rename_vars(coords_rename_dict)
-    ds_renamed = ds_renamed.rename_vars(vars_rename_dict)
+    ds_renamed = ds.rename_dims(vocabularies.dims_rename_dict)
+    ds_renamed = ds_renamed.rename_vars(vocabularies.coords_rename_dict)
+    ds_renamed = ds_renamed.rename_vars(vocabularies.vars_rename_dict)
     
     # Remove variables not in vars_rename_dict().values
-    vars_to_keep = set(vars_rename_dict.values())
+    vars_to_keep = set(vocabularies.vars_rename_dict.values())
     ds_renamed = ds_renamed[vars_to_keep]
     return ds_renamed
 
@@ -343,6 +345,39 @@ if __name__ == "__main__":
     dsn.to_netcdf("new.nc")
 
 
+def assign_profile_number(ds):
+    # Remove the variable dive_num_cast if it exists
+    if 'dive_num_cast' in ds.variables:
+        ds = ds.drop_vars('dive_num_cast')
+    # Initialize the new variable with the same dimensions as dive_num
+    ds['dive_num_cast'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
+
+    # Iterate over each unique dive_num
+    for dive in np.unique(ds['dive_num']):
+        # Get the indices for the current dive
+        dive_indices = np.where(ds['dive_num'] == dive)[0]
+        # Find the start and end index for the current dive
+        start_index = dive_indices[0]
+        end_index = dive_indices[-1]
+        
+        # Find the index of the maximum pressure between start_index and end_index
+        pmax = np.max(ds['PRES'][start_index:end_index + 1].values) 
+
+        # Find the index where PRES attains the value pmax between start_index and end_index
+        pmax_index = start_index + np.argmax(ds['PRES'][start_index:end_index + 1].values == pmax)
+        
+        # Assign dive_num to all values up to and including the point where pmax is reached
+        ds['dive_num_cast'][start_index:pmax_index + 1] = dive
+
+        # Assign dive_num + 0.5 to all values after pmax is reached
+        ds['dive_num_cast'][pmax_index + 1:end_index + 1] = dive + 0.5
+
+        # Remove the variable PROFILE_NUMBER if it exists
+        if 'PROFILE_NUMBER' in ds.variables:
+            ds = ds.drop_vars('PROFILE_NUMBER')
+        # Assign PROFILE_NUMBER as 2 * dive_num_cast - 1
+        ds['PROFILE_NUMBER'] = 2 * ds['dive_num_cast'] - 1
+    return ds
 
 
 def generate_attributes(ds_all):
@@ -365,10 +400,13 @@ def generate_attributes(ds_all):
         - id: Unique identifier for the dataset.
         - contributor_email: Email of the contributor.
         - contributor_role_vocabulary: URL to the contributor role vocabulary.
+        - contributing_institutions: Name of the contributing institutions.
+        - contributing_institutions_vocabulary: URL to the contributing institutions vocabulary.
+        - contributing_institutions_role: Role of the contributing institutions.
+        - contributing_institutions_role_vocabulary: URL to the contributing institutions role vocabulary.
         - uri: Unique resource identifier.
         - uri_comment: Comment about the URI.
         - web_link: Web link to the dataset.
-        - comment: History comment.
         - start_date: Start date of the dataset.
         - featureType: Feature type of the dataset.
         - landstation_version: Version of the land station.
@@ -377,6 +415,7 @@ def generate_attributes(ds_all):
         - rtqc_method_doi: DOI for the RTQC method.
         - doi: DOI of the dataset.
         - data_url: URL to the data.
+        - comment: History comment.
 
     attr_to_change:
         - time_coverage_start: Start time of the dataset coverage.
@@ -402,6 +441,10 @@ def generate_attributes(ds_all):
     contributor_email = ds_all.creator_email
     contributor_role = "PI, " + ds_all.contributor_role
     contributor_role_vocabulary = "http://vocab.nerc.ac.uk/search_nvs/W08/"
+    contributing_institutions = "University of Washington - School of Oceanography, University of Hamburg - Institute of Oceanography"
+    contributing_institutions_vocabulary = 'https://edmo.seadatanet.org/report/1434, https://edmo.seadatanet.org/report/1156'
+    contributing_institutions_role = "Operator, Data scientist"
+    contributing_institutions_role_vocabulary = "http://vocab.nerc.ac.uk/collection/W08/current/"
     uri = ds_all.uuid
     uri_comment = "UUID"
     web_link = "https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:0111844"
@@ -425,6 +468,10 @@ def generate_attributes(ds_all):
         "id": id,
         "contributor_email": contributor_email,
         "contributor_role_vocabulary": contributor_role_vocabulary,
+        "contributing_institutions": contributing_institutions,
+        "contributing_institutions_vocabulary": contributing_institutions_vocabulary,
+        "contributing_institutions_role": contributing_institutions_role,
+        "contributing_institutions_role_vocabulary": contributing_institutions_role_vocabulary,
         "uri": uri,
         "uri_comment": uri_comment,
         "web_link": web_link,

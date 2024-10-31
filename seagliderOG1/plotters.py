@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import xarray as xr
+from pandas import DataFrame
 
 import matplotlib.pyplot as plt
 
@@ -185,21 +186,43 @@ def show_attributes(data):
     return attrs
 
 
-def plot_depth_colored(data, color_by=None):
+def plot_depth_colored(data, color_by=None, start_dive=None, end_dive=None):
     """
-    Plots depth as a function of time, optionally colored by another variable.
+    Plots depth as a function of time, optionally colored by another variable, and filtered by dive number.
     
     Parameters:
     data (pd.DataFrame or xr.Dataset): The input data containing 'ctd_depth' and 'ctd_time'.
     color_by (str, optional): The variable to color the plot by. Default is None.
+    start_dive (int, optional): The starting dive number to filter the data. Default is None.
+    end_dive (int, optional): The ending dive number to filter the data. Default is None.
     """
+    # Filter data by dive number if specified
+    if start_dive is not None and end_dive is not None:
+        if isinstance(data, pd.DataFrame):
+            data = data[(data['dive_num'] >= start_dive) & (data['dive_num'] <= end_dive)]
+        elif isinstance(data, xr.Dataset):
+            data = data.where((data['dive_num'] >= start_dive) & (data['dive_num'] <= end_dive), drop=True)
+        else:
+            raise TypeError("Input data must be a pandas DataFrame or xarray Dataset")
+    
+    # Identify vectors to be plotted
+    if 'ctd_time' in data:
+        x_axis = data['ctd_time']
+    else:
+        x_axis = data['TIME']
+    
+    if 'ctd_depth' in data:
+        y_axis = data['ctd_depth']
+    else:
+        y_axis = data['DEPTH']
+
     if isinstance(data, pd.DataFrame):
-        ctd_time = data['ctd_time']
-        ctd_depth = data['ctd_depth']
+        ctd_time = x_axis
+        ctd_depth = y_axis
         color_data = data[color_by] if color_by else None
     elif isinstance(data, xr.Dataset):
-        ctd_time = data['ctd_time'].values
-        ctd_depth = data['ctd_depth'].values
+        ctd_time = x_axis.values
+        ctd_depth = y_axis.values
         color_data = data[color_by].values if color_by else None
     else:
         raise TypeError("Input data must be a pandas DataFrame or xarray Dataset")
@@ -233,3 +256,67 @@ def plot_depth_colored(data, color_by=None):
         plt.xlabel(f'Time ({start_year}-{end_year})')
     
     plt.show()
+
+
+def show_variables_by_dimension(data, dimension_name='trajectory'):
+    """
+    Processes an xarray Dataset or a netCDF file, extracts variable information,
+    and returns a styled DataFrame with details about the variables filtered by a specific dimension.
+    
+    Parameters:
+    data (str or xr.Dataset): The input data, either a file path to a netCDF file or an xarray Dataset.
+    dimension_name (str): The name of the dimension to filter variables by.
+    
+    Returns:
+    pandas.io.formats.style.Styler: A styled DataFrame containing the following columns:
+        - dims: The dimension of the variable (or "string" if it is a string type).
+        - name: The name of the variable.
+        - units: The units of the variable (if available).
+        - comment: Any additional comments about the variable (if available).
+    """
+
+    if isinstance(data, str):
+        print("information is based on file: {}".format(data))
+        dataset = Dataset(data)
+        variables = dataset.variables
+    elif isinstance(data, xr.Dataset):
+        print("information is based on xarray Dataset")
+        variables = data.variables
+    else:
+        raise TypeError("Input data must be a file path (str) or an xarray Dataset")
+
+    info = {}
+    for i, key in enumerate(variables):
+        var = variables[key]
+        if isinstance(data, str):
+            dims = var.dimensions[0] if len(var.dimensions) == 1 else "string"
+            units = "" if not hasattr(var, "units") else var.units
+            comment = "" if not hasattr(var, "comment") else var.comment
+        else:
+            dims = var.dims[0] if len(var.dims) == 1 else "string"
+            units = var.attrs.get("units", "")
+            comment = var.attrs.get("comment", "")
+        
+        if dims == dimension_name:
+            info[i] = {
+                "name": key,
+                "dims": dims,
+                "units": units,
+                "comment": comment,
+            }
+
+    vars = DataFrame(info).T
+
+    dim = vars.dims
+    dim[dim.str.startswith("str")] = "string"
+    vars["dims"] = dim
+
+    vars = (
+        vars.sort_values(["dims", "name"])
+        .reset_index(drop=True)
+        .loc[:, ["dims", "name", "units", "comment"]]
+        .set_index("name")
+        .style
+    )
+
+    return vars
