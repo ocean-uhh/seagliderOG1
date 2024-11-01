@@ -10,12 +10,15 @@ coords_rename_dict = {
 vars_rename_dict = {
     'conductivity': 'CNDC',
     'temperature': 'TEMP',
+#    'temperature_raw': 'TEMP_RAW',
+#    'salinity_raw': 'PSAL_RAW',
+#    'conductivity_raw': 'CNDC_RAW',
     'salinity': 'PSAL',  # after thermal lag correction
     # 'conductivity_qc': 'CNDC_QC',
     # 'salinity_qc': 'PSAL_QC',
     # 'temperature_qc': 'TEMP_QC',
-    'vert_speed': 'VERT_GLIDER_SPEED',  # This is using the hdm
-    'horz_speed': 'HORZ_GLIDER_SPEED',  # This is using the hdm
+    'vert_speed': 'GLIDER_VERT_VELO_MODEL',  # This is using the hdm
+    'horz_speed': 'GLIDER_HORZ_VELO_MODEL',  # This is using the hdm
     'density': 'POTDENS0',
     'pressure': 'PRES',
     'eng_pitchAng': 'PITCH',
@@ -34,7 +37,7 @@ standard_names = {
     "ctd_time": "TIME",
     "eng_pitchAng": "PITCH",
     "eng_rollAng": "ROLL",
-    "end_head": "HEADING",
+    "eng_head": "HEADING",
     "ctd_depth": "DEPTH",
     "pressure": "PRES",
     "conductivity": "CNDC",  #Conductivity corrected for anomalies
@@ -42,16 +45,16 @@ standard_names = {
 #    "chlorophyll": "CHLA",
     "temperature": "TEMP",
     "salinity": "PSAL",
-    "salinity_raw": "PSAL_RAW",
-    "temperature_raw": "TEMP_RAW",
-    "conductivity_raw": "CNDC_RAW",
+#    "salinity_raw": "PSAL_RAW",
+#    "temperature_raw": "TEMP_RAW",
+#    "conductivity_raw": "CNDC_RAW",
     "temperature_qc": "TEMP_QC",
     "salinity_qc": "PSAL_QC",
     "conductivity_qc": "CNDC_QC",
     "ctd_density": "POTDENS0", # Seawater potential density - need to check standard name for sigma
     "profile_index": "PROFILE_NUMBER",
-    "horz_speed": "HORZ_VELO_GLIDER_MODEL",
-    "vert_speed": "VERT_VELO_GLIDER_MODEL",
+    "vert_speed": "GLIDER_VERT_VELO_MODEL",
+    "horz_speed": "GLIDER_HORZ_VELO_MODEL",
     "speed": "GLIDER_SPEED",
     "glide_angle": "GLIDE_ANGLE"
 #    "adcp_Pressure": "PRES_ADCP",
@@ -80,7 +83,21 @@ standard_names = {
 }
 
 vocab_attrs = {
-    "GLIDER_HORZ_VELO_FLIGHTMODEL": {
+    "GLIDE_ANGLE": {
+        "long_name": "Glide angle based on hdm",
+        "units": "degrees",
+        "observation_type": "calculated",
+        "positive": "east",
+        "URI": "",
+    },
+   "GLIDER_SPEED": {
+        "long_name": "Vehicle speed based on hdm",
+        "units": "m s-1",
+        "observation_type": "calculated",
+        "positive": "east",
+        "URI": "",
+    },
+    "GLIDER_HORZ_VELO_MODEL": {
         "long_name": "Glider horizontal speed - modelled",
         "standard_name": "horizontal_glider_speed",
         "units": "m s-1",
@@ -88,8 +105,8 @@ vocab_attrs = {
         "sensor": "sensor_glider_model",
         "positive": "east",
         "URI": "",
-    }
-    "GLIDER_VERT_VELO_FLIGHTMODEL": {
+    },
+    "GLIDER_VERT_VELO_MODEL": {
         "long_name": "Glider vertical speed - modelled",
         "standard_name": "vertical_glider_speed",
         "units": "m s-1",
@@ -97,7 +114,7 @@ vocab_attrs = {
         "sensor": "sensor_glider_model",
         "positive": "up",
         "URI": "",
-    }
+    },
     "GLIDER_VERT_VELO_PRESSURE": {
         "long_name": "Glider vertical speed - from pressure",
         "standard_name": "vertical_glider_speed",
@@ -106,7 +123,7 @@ vocab_attrs = {
         "sensor": "sensor_ctd",
         "positive": "up",
         "URI": "",
-    }
+    },
     "VERT_CURR_FLIGHTMODEL": {
         "long_name": "Vertical current of seawater derived from glider flight model",
         "standard_name": "vertical_current",
@@ -115,7 +132,7 @@ vocab_attrs = {
         "sensor": "sensor_ctd",
         "positive": "up",
         "URI": "http://vocab.nerc.ac.uk/collection/P01/current/LRZAZZZZ/",
-    }
+    },
     "LATITUDE": {
         "coordinate_reference_frame": "urn:ogc:crs:EPSG::4326",
         "long_name": "Latitude north",
