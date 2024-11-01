@@ -50,8 +50,8 @@ standard_names = {
     "conductivity_qc": "CNDC_QC",
     "ctd_density": "POTDENS0", # Seawater potential density - need to check standard name for sigma
     "profile_index": "PROFILE_NUMBER",
-    "horz_speed": "HORZ_GLIDER_SPEED",
-    "vert_speed": "VERT_GLIDER_SPEED",
+    "horz_speed": "HORZ_VELO_GLIDER_MODEL",
+    "vert_speed": "VERT_VELO_GLIDER_MODEL",
     "speed": "GLIDER_SPEED",
     "glide_angle": "GLIDE_ANGLE"
 #    "adcp_Pressure": "PRES_ADCP",
@@ -80,6 +80,42 @@ standard_names = {
 }
 
 vocab_attrs = {
+    "GLIDER_HORZ_VELO_FLIGHTMODEL": {
+        "long_name": "Glider horizontal speed - modelled",
+        "standard_name": "horizontal_glider_speed",
+        "units": "m s-1",
+        "observation_type": "calculated",
+        "sensor": "sensor_glider_model",
+        "positive": "east",
+        "URI": "",
+    }
+    "GLIDER_VERT_VELO_FLIGHTMODEL": {
+        "long_name": "Glider vertical speed - modelled",
+        "standard_name": "vertical_glider_speed",
+        "units": "m s-1",
+        "observation_type": "calculated",
+        "sensor": "sensor_glider_model",
+        "positive": "up",
+        "URI": "",
+    }
+    "GLIDER_VERT_VELO_PRESSURE": {
+        "long_name": "Glider vertical speed - from pressure",
+        "standard_name": "vertical_glider_speed",
+        "units": "m s-1",
+        "observation_type": "calculated",
+        "sensor": "sensor_ctd",
+        "positive": "up",
+        "URI": "",
+    }
+    "VERT_CURR_FLIGHTMODEL": {
+        "long_name": "Vertical current of seawater derived from glider flight model",
+        "standard_name": "vertical_current",
+        "units": "m s-1",
+        "observation_type": "calculated",
+        "sensor": "sensor_ctd",
+        "positive": "up",
+        "URI": "http://vocab.nerc.ac.uk/collection/P01/current/LRZAZZZZ/",
+    }
     "LATITUDE": {
         "coordinate_reference_frame": "urn:ogc:crs:EPSG::4326",
         "long_name": "Latitude north",
@@ -141,6 +177,23 @@ vocab_attrs = {
         "valid_max": 2000,
         "reference_datum": "surface",
         "positive": "down",
+    },
+    "Z": {
+        "source": "pressure",
+        "long_name": "glider depth",
+        "standard_name": "depth",
+        "units": "m",
+        "comment": "from science pressure and interpolated",
+        "sensor": "sensor_ctd",
+        "observation_type": "calculated",
+        "accuracy": 1,
+        "precision": 2,
+        "resolution": 0.02,
+        "platform": "platform",
+        "valid_min": -4000,
+        "valid_max": 0,
+        "reference_datum": "surface",
+        "positive": "up",
     },
     "DOXY": {
         "long_name": "oxygen concentration",
@@ -242,7 +295,7 @@ vocab_attrs = {
     },
     "PHASE": {
         "long_name": "behavior of the glider at sea",
-        "comment": "This is the variable NAV_STATE from the SeaExplorer nav file",
+        "comment": "This is based only on splitting each dive cycle into the period before the glider reaches the maximum pressure of that cycle (descent, PHASE=2) and the period after the glider reaches the maximum pressure of that cycle (ascent, PHASE=1)",
         "units": "1",
     },
     "AD2CP_PRES": {
