@@ -89,21 +89,21 @@ standard_names = {
 
 vocab_attrs = {
     "GLIDE_ANGLE": {
-        "long_name": "Glide angle based on hdm",
+        "long_name": "glide_angle_from_hydrodynamic_model",
         "units": "degrees",
         "observation_type": "calculated",
         "positive": "east",
         "comment": "Glide angle based on hdm",
     },
    "GLIDE_SPEED": {
-        "long_name": "Vehicle speed based on hdm",
+        "long_name": "glider_speed_from_hydrodynamic_model",
         "units": "m s-1",
         "observation_type": "calculated",
         "positive": "east",
         "comment": "Vehicle speed based on hdm",
     },
     "GLIDER_HORZ_VELO_MODEL": {
-        "long_name": "Glider horizontal speed - modelled",
+        "long_name": "glider_horizontal_speed_from_glider_flight_model",
         "standard_name": "horizontal_glider_speed",
         "units": "m s-1",
         "observation_type": "calculated",
@@ -112,7 +112,7 @@ vocab_attrs = {
         "comment": "Vehicle horizontal speed based on hdm",
     },
     "GLIDER_VERT_VELO_MODEL": {
-        "long_name": "Glider vertical speed - modelled",
+        "long_name": "glider_vertical_speed_from_glider_flight_model",
         "standard_name": "vertical_glider_speed",
         "units": "m s-1",
         "observation_type": "calculated",
@@ -120,7 +120,7 @@ vocab_attrs = {
         "positive": "up",
     },
     "GLIDER_VERT_VELO_PRESSURE": {
-        "long_name": "Glider vertical speed - from pressure",
+        "long_name": "glider_vertical_speed_from_pressure",
         "standard_name": "vertical_glider_speed",
         "units": "m s-1",
         "observation_type": "calculated",
@@ -128,7 +128,7 @@ vocab_attrs = {
         "positive": "up",
     },
     "VERT_CURR_FLIGHTMODEL": {
-        "long_name": "Vertical current of seawater derived from glider flight model",
+        "long_name": "vertical_current_of_seawater_derived_from_glider_flight_model",
         "standard_name": "vertical_current",
         "units": "m s-1",
         "observation_type": "calculated",
