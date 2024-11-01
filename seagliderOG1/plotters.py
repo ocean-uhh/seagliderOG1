@@ -77,7 +77,7 @@ def show_contents(data, content_type='variables'):
         if isinstance(data, str):
             return show_attributes(data)
         elif isinstance(data, xr.Dataset):
-            return show_attributes_xarray(data)
+            return show_attributes(data)
         else:
             raise TypeError("Attributes can only be shown for netCDF files (str)")
     else:
@@ -128,6 +128,7 @@ def show_variables(data):
             "dims": dims,
             "units": units,
             "comment": comment,
+            "standard_name": var.attrs.get("standard_name", ""),
         }
 
     vars = DataFrame(info).T
@@ -139,7 +140,7 @@ def show_variables(data):
     vars = (
         vars.sort_values(["dims", "name"])
         .reset_index(drop=True)
-        .loc[:, ["dims", "name", "units", "comment"]]
+        .loc[:, ["dims", "name", "units", "comment", "standard_name"]]
         .set_index("name")
         .style
     )

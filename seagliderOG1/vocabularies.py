@@ -10,12 +10,17 @@ coords_rename_dict = {
 vars_rename_dict = {
     'conductivity': 'CNDC',
     'temperature': 'TEMP',
+#    'temperature_raw': 'TEMP_RAW',
+#    'salinity_raw': 'PSAL_RAW',
+#    'conductivity_raw': 'CNDC_RAW',
     'salinity': 'PSAL',  # after thermal lag correction
     # 'conductivity_qc': 'CNDC_QC',
     # 'salinity_qc': 'PSAL_QC',
     # 'temperature_qc': 'TEMP_QC',
-    'vert_speed': 'VERT_GLIDER_SPEED',  # This is using the hdm
-    'horz_speed': 'HORZ_GLIDER_SPEED',  # This is using the hdm
+    'vert_speed': 'GLIDER_VERT_VELO_MODEL',  # This is using the hdm
+    'horz_speed': 'GLIDER_HORZ_VELO_MODEL',  # This is using the hdm
+    'speed': 'GLIDE_SPEED',  # This is using the hdm
+    'glide_angle': 'GLIDE_ANGLE',  # This is using the hdm
     'density': 'POTDENS0',
     'pressure': 'PRES',
     'eng_pitchAng': 'PITCH',
@@ -31,10 +36,13 @@ vars_rename_dict = {
 standard_names = {
     "latitude": "LATITUDE",
     "longitude": "LONGITUDE",
+    "gps_lat": "LATITUDE_GPS",
+    "gps_lon": "LONGITUDE_GPS",
+    "gps_time": "TIME_GPS",
     "ctd_time": "TIME",
     "eng_pitchAng": "PITCH",
     "eng_rollAng": "ROLL",
-    "end_head": "HEADING",
+    "eng_head": "HEADING",
     "ctd_depth": "DEPTH",
     "pressure": "PRES",
     "conductivity": "CNDC",  #Conductivity corrected for anomalies
@@ -42,17 +50,17 @@ standard_names = {
 #    "chlorophyll": "CHLA",
     "temperature": "TEMP",
     "salinity": "PSAL",
-    "salinity_raw": "PSAL_RAW",
-    "temperature_raw": "TEMP_RAW",
-    "conductivity_raw": "CNDC_RAW",
+#    "salinity_raw": "PSAL_RAW",
+#    "temperature_raw": "TEMP_RAW",
+#    "conductivity_raw": "CNDC_RAW",
     "temperature_qc": "TEMP_QC",
     "salinity_qc": "PSAL_QC",
     "conductivity_qc": "CNDC_QC",
     "ctd_density": "POTDENS0", # Seawater potential density - need to check standard name for sigma
     "profile_index": "PROFILE_NUMBER",
-    "horz_speed": "HORZ_GLIDER_SPEED",
-    "vert_speed": "VERT_GLIDER_SPEED",
-    "speed": "GLIDER_SPEED",
+    "vert_speed": "GLIDER_VERT_VELO_MODEL",
+    "horz_speed": "GLIDER_HORZ_VELO_MODEL",
+    "speed": "GLIDE_SPEED",
     "glide_angle": "GLIDE_ANGLE"
 #    "adcp_Pressure": "PRES_ADCP",
 #    "particulate_backscatter": "BBP700",
@@ -80,6 +88,54 @@ standard_names = {
 }
 
 vocab_attrs = {
+    "GLIDE_ANGLE": {
+        "long_name": "Glide angle based on hdm",
+        "units": "degrees",
+        "observation_type": "calculated",
+        "positive": "east",
+        "comment": "Glide angle based on hdm",
+    },
+   "GLIDE_SPEED": {
+        "long_name": "Vehicle speed based on hdm",
+        "units": "m s-1",
+        "observation_type": "calculated",
+        "positive": "east",
+        "comment": "Vehicle speed based on hdm",
+    },
+    "GLIDER_HORZ_VELO_MODEL": {
+        "long_name": "Glider horizontal speed - modelled",
+        "standard_name": "horizontal_glider_speed",
+        "units": "m s-1",
+        "observation_type": "calculated",
+        "sensor": "sensor_glider_model",
+        "positive": "east",
+        "comment": "Vehicle horizontal speed based on hdm",
+    },
+    "GLIDER_VERT_VELO_MODEL": {
+        "long_name": "Glider vertical speed - modelled",
+        "standard_name": "vertical_glider_speed",
+        "units": "m s-1",
+        "observation_type": "calculated",
+        "sensor": "sensor_glider_model",
+        "positive": "up",
+    },
+    "GLIDER_VERT_VELO_PRESSURE": {
+        "long_name": "Glider vertical speed - from pressure",
+        "standard_name": "vertical_glider_speed",
+        "units": "m s-1",
+        "observation_type": "calculated",
+        "sensor": "sensor_ctd",
+        "positive": "up",
+    },
+    "VERT_CURR_FLIGHTMODEL": {
+        "long_name": "Vertical current of seawater derived from glider flight model",
+        "standard_name": "vertical_current",
+        "units": "m s-1",
+        "observation_type": "calculated",
+        "sensor": "sensor_ctd",
+        "positive": "up",
+        "URI": "http://vocab.nerc.ac.uk/collection/P01/current/LRZAZZZZ/",
+    },
     "LATITUDE": {
         "coordinate_reference_frame": "urn:ogc:crs:EPSG::4326",
         "long_name": "Latitude north",
@@ -106,13 +162,36 @@ vocab_attrs = {
         "axis": "X",
         "URI": "https://vocab.nerc.ac.uk/collection/OG1/current/LON/",
     },
+    "LATITUDE_GPS": {
+        "long_name": "Latitude of each GPS location",
+        "observation_type": "measured",
+        "platform": "platform",
+        "standard_name": "latitude",
+        "units": "degrees_north",
+        "valid_max": 90,
+        "valid_min": -90,
+        "axis": "Y",
+        "URI": "https://vocab.nerc.ac.uk/collection/OG1/current/LAT/",
+    },
+    "LONGITUDE_GPS": {
+        "long_name": "Longitude of each GPS location",
+        "observation_type": "measured",
+        "platform": "platform",
+        "standard_name": "longitude",
+        "units": "degrees_east",
+        "valid_max": 180,
+        "valid_min": -180,
+        "axis": "X",
+        "URI": "https://vocab.nerc.ac.uk/collection/OG1/current/LON/",
+    },
+    "TIME_GPS": {
+        "long_name": "time of each GPS location",
+#        "units": "seconds since 1970-01-01T00:00:00Z",
+    },
     "TIME": {
         "long_name": "time of measurement",
         "observation_type": "measured",
         "standard_name": "time",
-        "units": "seconds since 1970-01-01 00:00:00 UTC",
-        "calendar": "gregorian",
-        "axis": "T",
         "URI": "https://vocab.nerc.ac.uk/collection/P02/current/AYMD/",
     },
     "AD2CP_TIME": {
@@ -141,6 +220,20 @@ vocab_attrs = {
         "valid_max": 2000,
         "reference_datum": "surface",
         "positive": "down",
+    },
+    "DEPTH_Z": {
+        "source": "pressure",
+        "long_name": "glider depth",
+        "standard_name": "depth",
+        "units": "m",
+        "comment": "Defined with positive up",
+        "sensor": "sensor_ctd",
+        "observation_type": "calculated",
+        "platform": "platform",
+        "valid_min": -4000,
+        "valid_max": 0,
+        "reference_datum": "surface",
+        "positive": "up",
     },
     "DOXY": {
         "long_name": "oxygen concentration",
@@ -242,7 +335,8 @@ vocab_attrs = {
     },
     "PHASE": {
         "long_name": "behavior of the glider at sea",
-        "comment": "This is the variable NAV_STATE from the SeaExplorer nav file",
+        "comment": "This is based only on splitting each dive cycle into the period before the glider reaches the maximum pressure of that cycle (descent, PHASE=2) and the period after the glider reaches the maximum pressure of that cycle (ascent, PHASE=1)",
+        "phase_vocabulary:": "https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md",
         "units": "1",
     },
     "AD2CP_PRES": {
