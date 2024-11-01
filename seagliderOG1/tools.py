@@ -356,17 +356,12 @@ def create_renamed_dataset(ds):
     if 'PHASE' not in ds_renamed.variables:
         ds_renamed = assign_phase(ds_renamed)
 
-
-    if 1:
-        # Cycle through the variables within ds_renamed and ds_renamed.coords
-        for var_name in list(ds_renamed) + list(ds_renamed.coords):
-            if var_name in vocabularies.standard_names.keys():
-                name = vocabularies.standard_names[var_name]
-                ds_renamed[name] = ("N_MEASUREMENTS", ds_renamed[var_name].values, vocabularies.vocab_attrs[name])
-                if var_name in vocabularies.standard_names.keys():
-                    for key, val in ds_renamed[var_name].attrs.items():
-                        if key not in ds_renamed[name].attrs.keys():
-                            ds_renamed[var_name].attrs[key] = val
+    # Cycle through the variables within ds_renamed and ds_renamed.coords
+    for name in list(ds_renamed):
+        if name in vocabularies.standard_names.values():
+            for key, val in vocabularies.vocab_attrs[name].items():
+                if key not in ds_renamed[name].attrs.keys():
+                    ds_renamed[name].attrs[key] = val
 
     return ds_renamed
 
@@ -397,7 +392,8 @@ def calc_Z(ds):
     ds['DEPTH_Z'].attrs = {
         "units": "meters",
         "positive": "up",
-        "standard_name": "depth (z)"
+        "standard_name": "depth",
+        "comment": "Depth calculated from pressure using gsw library, positive up.",
     }
     
     return ds
