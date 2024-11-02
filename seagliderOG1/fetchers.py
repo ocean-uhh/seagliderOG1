@@ -110,29 +110,53 @@ def add_gps_coordinates(ds):
         ds['gps_lat'][nearest_index] = gps_lat
         ds['gps_lon'][nearest_index] = gps_lon
         ds['gps_time'][nearest_index] = gps_time
+
+    # Add attributes to the new variables
+    ds['gps_time'].attrs = ds['log_gps_time'].attrs
+    ds['gps_lon'].attrs = ds['log_gps_lon'].attrs
+    ds['gps_lat'].attrs = ds['log_gps_lat'].attrs
     return ds
 
-def extract_non_sg_data_point_vars(ds):
+def append_gps_coordinates(ds):
     """
-    Extract variables from an xarray dataset that do not have the 'sg_data_point' dimension.
+    Append GPS coordinates to the dataset.
+
     Parameters:
-    ds (xarray.Dataset): The input xarray dataset containing various variables.
+    ds (xarray.Dataset): The input xarray dataset.
+
     Returns:
-    xarray.Dataset: A new xarray dataset containing only the variables that do not have the 'sg_data_point' dimension.
+    xarray.Dataset: The dataset with appended GPS coordinates.
     """
-    # Create a dictionary to hold the new variables
-    new_vars = {}
-    
-    # Iterate over the variables in the dataset
-    for var_name, var_data in ds.data_vars.items():
-        # Check if the variable has a different dimension from 'sg_data_point'
-        if 'sg_data_point' not in var_data.dims:
-            new_vars[var_name] = var_data
-    
-    # Create a new xarray dataset with the extracted variables
-    new_ds = xr.Dataset(new_vars)
-    
-    return new_ds
+    # Create new variables TIME, LATITUDE, and LONGITUDE with dimensions sg_data_point
+    ds['TIME'] = (['sg_data_point'], np.full(ds.dims['sg_data_point'], np.nan))
+    ds['LATITUDE'] = (['sg_data_point'], np.full(ds.dims['sg_data_point'], np.nan))
+    ds['LONGITUDE'] = (['sg_data_point'], np.full(ds.dims['sg_data_point'], np.nan))
+
+    # Fill TIME with values from ctd_time and log_gps_time
+    ds['TIME'][:] = ds['ctd_time'].values
+
+    # Append log_gps_time values to TIME
+    time_length = ds['TIME'].size
+    log_gps_time_length = ds['log_gps_time'].size
+    new_time_length = time_length + log_gps_time_length
+
+    new_time = np.full(new_time_length, np.nan)
+    new_time[:time_length] = ds['TIME'].values
+    new_time[time_length:] = ds['log_gps_time'].values
+
+    ds['TIME'] = (['sg_data_point'], new_time)
+
+    # Fill LATITUDE and LONGITUDE with values from log_gps_lat and log_gps_lon
+    ds['LATITUDE'][:] = ds['log_gps_lat'].values
+    ds['LONGITUDE'][:] = ds['log_gps_lon'].values
+
+    # Add attributes to the new variables
+    ds['TIME'].attrs = ds['ctd_time'].attrs
+    ds['LATITUDE'].attrs = ds['log_gps_lat'].attrs
+    ds['LONGITUDE'].attrs = ds['log_gps_lon'].attrs
+
+    return ds
+
 
 
 def list_files_in_https_server(url):

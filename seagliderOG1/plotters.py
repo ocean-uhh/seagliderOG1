@@ -82,6 +82,7 @@ def show_variables(data):
             "units": units,
             "comment": comment,
             "standard_name": var.attrs.get("standard_name", ""),
+            "dtype": str(var.dtype) if isinstance(data, str) else str(var.data.dtype),
         }
 
     vars = DataFrame(info).T
@@ -93,7 +94,7 @@ def show_variables(data):
     vars = (
         vars.sort_values(["dims", "name"])
         .reset_index(drop=True)
-        .loc[:, ["dims", "name", "units", "comment", "standard_name"]]
+        .loc[:, ["dims", "name", "units", "comment", "standard_name", "dtype"]]
         .set_index("name")
         .style
     )
@@ -130,9 +131,11 @@ def show_attributes(data):
 
     info = {}
     for i, key in enumerate(attributes):
+        dtype = type(get_attr(key)).__name__
         info[i] = {
             "Attribute": key,
-            "Value": get_attr(key)
+            "Value": get_attr(key),
+            "DType": dtype
         }
 
     attrs = DataFrame(info).T
@@ -202,9 +205,9 @@ def show_variables_by_dimension(data, dimension_name='trajectory'):
 
     return vars
 
-##------------------------------------------------------------------------------------
+##----------------------------------------------------------------------------
 ## Sawtooth plots
-##------------------------------------------------------------------------------------
+##----------------------------------------------------------------------------
 def plot_profile_depth(data):
     """
     Plots the profile depth (ctd_depth) as a function of time (ctd_time).

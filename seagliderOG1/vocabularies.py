@@ -1,36 +1,33 @@
 dims_rename_dict = {'sg_data_point': 'N_MEASUREMENTS'}
 
-coords_rename_dict = {
-    'longitude': 'LONGITUDE',
-    'latitude': 'LATITUDE',
-    'ctd_time': 'TIME',
-    'ctd_depth': 'DEPTH'
+# Specify the preferred units, and it will convert if the conversion is available in unit_conversion
+preferred_units = ['m s-1', 'dbar', 'S m-1']
+
+# String formats for units.  The key is the original, the value is the desired format
+unit_str_format = {
+    'm/s': 'm s-1',
+    'cm/s': 'cm s-1',
+    'S/m': 'S m-1',
+    'meters': 'm',
+    'degrees_Celcius': 'Celcius'
 }
 
-vars_rename_dict = {
-    'conductivity': 'CNDC',
-    'temperature': 'TEMP',
-#    'temperature_raw': 'TEMP_RAW',
-#    'salinity_raw': 'PSAL_RAW',
-#    'conductivity_raw': 'CNDC_RAW',
-    'salinity': 'PSAL',  # after thermal lag correction
-    # 'conductivity_qc': 'CNDC_QC',
-    # 'salinity_qc': 'PSAL_QC',
-    # 'temperature_qc': 'TEMP_QC',
-    'vert_speed': 'GLIDER_VERT_VELO_MODEL',  # This is using the hdm
-    'horz_speed': 'GLIDER_HORZ_VELO_MODEL',  # This is using the hdm
-    'speed': 'GLIDE_SPEED',  # This is using the hdm
-    'glide_angle': 'GLIDE_ANGLE',  # This is using the hdm
-    'density': 'POTDENS0',
-    'pressure': 'PRES',
-    'eng_pitchAng': 'PITCH',
-    'eng_rollAng': 'ROLL',
-    'eng_head': 'HEADING',
-    'gps_lat': 'LATITUDE_GPS',
-    'gps_lon': 'LONGITUDE_GPS',
-    'gps_time': 'TIME_GPS',
-    'trajectory': 'dive_num'
+# Various conversions from the key to units_name with the multiplicative conversion factor
+unit_conversion = {
+    'cm/s': {'units_name': 'm/s', 'factor': 0.01},
+    'cm s-1': {'units_name': 'm s-1', 'factor': 0.01},
+    'm/s': {'units_name': 'cm/s', 'factor': 100},
+    'm s-1': {'units_name': 'cm s-1', 'factor': 100},
+    'S/m': {'units_name': 'mS/cm', 'factor': 0.1},
+    'S m-1': {'units_name': 'mS cm-1', 'factor': 0.1},
+    'mS/cm': {'units_name': 'S/m', 'factor': 10},
+    'mS cm-1': {'units_name': 'S m-1', 'factor': 10},
+    'dbar': {'units_name': 'Pa', 'factor': 10000},
+    'Pa': {'units_name': 'dbar', 'factor': 0.0001},
+    'dbar': {'units_name': 'kPa', 'factor': 10},
 }
+
+
 
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
 standard_names = {
@@ -53,9 +50,6 @@ standard_names = {
 #    "salinity_raw": "PSAL_RAW",
 #    "temperature_raw": "TEMP_RAW",
 #    "conductivity_raw": "CNDC_RAW",
-    "temperature_qc": "TEMP_QC",
-    "salinity_qc": "PSAL_QC",
-    "conductivity_qc": "CNDC_QC",
     "ctd_density": "POTDENS0", # Seawater potential density - need to check standard name for sigma
     "profile_index": "PROFILE_NUMBER",
     "vert_speed": "GLIDER_VERT_VELO_MODEL",
@@ -186,10 +180,11 @@ vocab_attrs = {
     },
     "TIME_GPS": {
         "long_name": "time of each GPS location",
-#        "units": "seconds since 1970-01-01T00:00:00Z",
+        "units": "seconds since 1970-01-01T00:00:00Z",
     },
     "TIME": {
         "long_name": "time of measurement",
+#        "units": "seconds since 1970-01-01T00:00:00Z",
         "observation_type": "measured",
         "standard_name": "time",
         "URI": "https://vocab.nerc.ac.uk/collection/P02/current/AYMD/",
