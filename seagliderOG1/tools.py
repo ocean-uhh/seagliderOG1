@@ -363,6 +363,19 @@ def create_renamed_dataset(ds):
                 if key not in ds_renamed[name].attrs.keys():
                     ds_renamed[name].attrs[key] = val
 
+    # Update the attributes time_coverage_start and time_coverage_end
+    time_coverage_start = pd.to_datetime(ds_renamed.TIME.values[0]).strftime("%Y%m%dT%H%M%S")
+    time_coverage_end = pd.to_datetime(ds_renamed.TIME.values[-1]).strftime("%Y%m%dT%H%M%S")
+    ds_renamed.attrs["time_coverage_start"] = time_coverage_start
+    ds_renamed.attrs["time_coverage_end"] = time_coverage_end
+
+    # Update the attribute date_created to today's date
+    ds_renamed.attrs["date_created"] = datetime.utcnow().strftime('%Y%m%dT%H%M%S')
+
+    # Check whether time_coverage_start is before start_date.  If so, then update start_date
+    if time_coverage_start < ds_renamed.attrs["start_date"]:
+        ds_renamed.attrs["start_date"] = time_coverage_start
+
     return ds_renamed
 
 def calc_Z(ds):
@@ -398,61 +411,35 @@ def calc_Z(ds):
     
     return ds
 
-
-
-
-def modify_attributes(ds, attr_to_add, attr_as_is, attr_to_change, attr_to_remove):
-
-    # Define the order of attributes
-    ordered_attributes = [
-        "title", "platform", "platform_vocabulary", "id", "naming_authority", 
-        "institution", "geospatial_lat_min", "geospatial_lat_max", 
-        "geospatial_lon_min", "geospatial_lon_max", "geospatial_vertical_min", 
-        "geospatial_vertical_max", "time_coverage_start", "time_coverage_end", 
-        "site", "project", "contributor_name", "contributor_email", 
-        "contributor_role", "contributor_role_vocabulary", "uri", "data_url", 
-        "doi", "rtqc_method", "rtqc_method_doi", "web_link", "comment", 
-        "start_date", "date_created", "featureType", "Conventions"
-    ]
-    # Retain specified attributes
-    new_attrs = {key: ds.attrs[key] for key in attr_as_is if key in ds.attrs}
-
-    # Change specified attributes
-    for key, value in attr_to_change.items():
-        new_attrs[key] = value
-
-    # Add new attributes
-    for key, value in attr_to_add.items():
-        new_attrs[key] = value
-
-    # Remove specified attributes
-    for key in attr_to_remove:
-        if key in new_attrs:
-            del new_attrs[key]
-
-    ds.attrs = new_attrs
-
-    # Add the rest of the attributes that are present in the dataset but not in the ordered list
-    for attr in ds.attrs:
-        if attr not in ordered_attributes:
-            ordered_attributes.append(attr)
-
-    # Reorder the attributes in ds_new_att according to ordered_attributes
-    new_attrs = {attr: ds.attrs[attr] for attr in ordered_attributes if attr in ds.attrs}
-    for attr in ds.attrs:
-        if attr not in new_attrs:
-            new_attrs[attr] = ds.attrs[attr]
-
-    ds.attrs = new_attrs
+def convert_velocity_units(ds, var_name):
+    """
+    Convert the units of the specified variable to m/s if they are in cm/s.
+    
+    Parameters:
+    ds (xarray.Dataset): The dataset containing the variable.
+    var_name (str): The name of the variable to check and convert.
+    
+    Returns:
+    xarray.Dataset: The dataset with the converted variable.
+    """
+    if var_name in ds.variables:
+        # Pass through all other attributes as is
+        for attr_name, attr_value in ds[var_name].attrs.items():
+            if attr_name != 'units':
+                ds[var_name].attrs[attr_name] = attr_value
+            elif attr_name == 'units':
+                if ds[var_name].attrs['units'] == 'cm/s':  
+                    ds[var_name].values = ds[var_name].values / 100.0
+                    ds[var_name].attrs['units'] = 'm/s'
+                    print(f"Converted {var_name} to m/s")
+                else:
+                    print(f"{var_name} is already in m/s or units attribute is missing")
+        
+    else:
+        print(f"{var_name} not found in the dataset")
     return ds
 
-if __name__ == "__main__":
-    dsn = xr.open_dataset(
-        "/data/data_l0_pyglider/nrt/SEA76/M19/timeseries/mission_timeseries.nc",
-    )
-    dsn = standardise_og10(dsn)
-    dsn = convert_to_og1(dsn)
-    dsn.to_netcdf("new.nc")
+
 
 
 def assign_profile_number(ds):
@@ -694,3 +681,58 @@ def generate_attributes(ds_all):
 
 
     return attr_to_add, attr_as_is, attr_to_change, attr_to_remove
+
+
+def modify_attributes(ds, attr_to_add, attr_as_is, attr_to_change, attr_to_remove):
+
+    # Define the order of attributes
+    ordered_attributes = [
+        "title", "platform", "platform_vocabulary", "id", "naming_authority", 
+        "institution", "geospatial_lat_min", "geospatial_lat_max", 
+        "geospatial_lon_min", "geospatial_lon_max", "geospatial_vertical_min", 
+        "geospatial_vertical_max", "time_coverage_start", "time_coverage_end", 
+        "site", "project", "contributor_name", "contributor_email", 
+        "contributor_role", "contributor_role_vocabulary", "uri", "data_url", 
+        "doi", "rtqc_method", "rtqc_method_doi", "web_link", "comment", 
+        "start_date", "date_created", "featureType", "Conventions"
+    ]
+    # Retain specified attributes
+    new_attrs = {key: ds.attrs[key] for key in attr_as_is if key in ds.attrs}
+
+    # Change specified attributes
+    for key, value in attr_to_change.items():
+        new_attrs[key] = value
+
+    # Add new attributes
+    for key, value in attr_to_add.items():
+        if key not in new_attrs:
+            new_attrs[key] = value
+
+    # Remove specified attributes
+    for key in attr_to_remove:
+        if key in new_attrs:
+            del new_attrs[key]
+
+    ds.attrs = new_attrs
+
+    # Add the rest of the attributes that are present in the dataset but not in the ordered list
+    for attr in ds.attrs:
+        if attr not in ordered_attributes:
+            ordered_attributes.append(attr)
+
+    # Reorder the attributes in ds_new_att according to ordered_attributes
+    new_attrs = {attr: ds.attrs[attr] for attr in ordered_attributes if attr in ds.attrs}
+    for attr in ds.attrs:
+        if attr not in new_attrs:
+            new_attrs[attr] = ds.attrs[attr]
+
+    ds.attrs = new_attrs
+    return ds
+
+if __name__ == "__main__":
+    dsn = xr.open_dataset(
+        "/data/data_l0_pyglider/nrt/SEA76/M19/timeseries/mission_timeseries.nc",
+    )
+    dsn = standardise_og10(dsn)
+    dsn = convert_to_og1(dsn)
+    dsn.to_netcdf("new.nc")
