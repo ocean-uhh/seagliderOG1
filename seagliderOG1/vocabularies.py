@@ -89,21 +89,21 @@ standard_names = {
 
 vocab_attrs = {
     "GLIDE_ANGLE": {
-        "long_name": "Glide angle based on hdm",
+        "long_name": "glide angle from hydrodynamic model",
         "units": "degrees",
         "observation_type": "calculated",
         "positive": "east",
         "comment": "Glide angle based on hdm",
     },
    "GLIDE_SPEED": {
-        "long_name": "Vehicle speed based on hdm",
+        "long_name": "glider speed from hydrodynamic model",
         "units": "m s-1",
         "observation_type": "calculated",
         "positive": "east",
         "comment": "Vehicle speed based on hdm",
     },
     "GLIDER_HORZ_VELO_MODEL": {
-        "long_name": "Glider horizontal speed - modelled",
+        "long_name": "glider_horizontal_speed_from_glider_flight_model",
         "standard_name": "horizontal_glider_speed",
         "units": "m s-1",
         "observation_type": "calculated",
@@ -112,7 +112,7 @@ vocab_attrs = {
         "comment": "Vehicle horizontal speed based on hdm",
     },
     "GLIDER_VERT_VELO_MODEL": {
-        "long_name": "Glider vertical speed - modelled",
+        "long_name": "glider vertical speed from glider flight model",
         "standard_name": "vertical_glider_speed",
         "units": "m s-1",
         "observation_type": "calculated",
@@ -120,15 +120,15 @@ vocab_attrs = {
         "positive": "up",
     },
     "GLIDER_VERT_VELO_PRESSURE": {
-        "long_name": "Glider vertical speed - from pressure",
+        "long_name": "glider vertical speed from pressure",
         "standard_name": "vertical_glider_speed",
         "units": "m s-1",
         "observation_type": "calculated",
         "sensor": "sensor_ctd",
         "positive": "up",
     },
-    "VERT_CURR_FLIGHTMODEL": {
-        "long_name": "Vertical current of seawater derived from glider flight model",
+    "VERT_CURR_MODEL": {
+        "long_name": "vertical current of seawater derived from glider flight model",
         "standard_name": "vertical_current",
         "units": "m s-1",
         "observation_type": "calculated",
@@ -163,7 +163,7 @@ vocab_attrs = {
         "URI": "https://vocab.nerc.ac.uk/collection/OG1/current/LON/",
     },
     "LATITUDE_GPS": {
-        "long_name": "Latitude of each GPS location",
+        "long_name": "Latitude north by unspecified GPS system",
         "observation_type": "measured",
         "platform": "platform",
         "standard_name": "latitude",
@@ -174,7 +174,7 @@ vocab_attrs = {
         "URI": "https://vocab.nerc.ac.uk/collection/OG1/current/LAT/",
     },
     "LONGITUDE_GPS": {
-        "long_name": "Longitude of each GPS location",
+        "long_name": "Longitude east by unspecified GPS system",
         "observation_type": "measured",
         "platform": "platform",
         "standard_name": "longitude",
@@ -562,6 +562,15 @@ sensor_vocabs = {
         "sensor_model": "Sea-Bird CT Sail CTD",
         "sensor_model_vocabulary": "http://vocab.nerc.ac.uk/collection/L22/current/TOOL1188/",
         "long_name": "Sea-Bird CT Sail CTD",
+    },
+    "RBR legato CTD": {
+         "sensor_type": "CTD",
+         "sensor_type_vocabulary": "https://vocab.nerc.ac.uk/collection/L05/current/130/",
+         "sensor_maker": "RBR",
+         "sensor_maker_vocabulary": "https://vocab.nerc.ac.uk/collection/L35/current/MAN0049/",
+         "sensor_model": "RBR Legato3 CTD",
+         "sensor_model_vocabulary": "https://vocab.nerc.ac.uk/collection/L22/current/TOOL1745/",
+         "long_name": "RBR Legato3 CTD",
     },
     "Wetlabs BB2FL-VMT": {
         "sensor_type": "fluorometers",

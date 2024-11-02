@@ -5,56 +5,9 @@ from pandas import DataFrame
 
 import matplotlib.pyplot as plt
 
-def plot_profile_depth(data):
-    """
-    Plots the profile depth (ctd_depth) as a function of time (ctd_time).
-    Reduces the total number of points to be less than 100,000.
-    
-    Parameters:
-    data (pd.DataFrame or xr.Dataset): The input data containing 'ctd_depth' and 'ctd_time'.
-    """
-    if isinstance(data, pd.DataFrame):
-        ctd_time = data['ctd_time']
-        ctd_depth = data['ctd_depth']
-    elif isinstance(data, xr.Dataset):
-        ctd_time = data['ctd_time'].values
-        ctd_depth = data['ctd_depth'].values
-    else:
-        raise TypeError("Input data must be a pandas DataFrame or xarray Dataset")
-    
-    # Reduce the number of points
-    if len(ctd_time) > 100000:
-        indices = np.linspace(0, len(ctd_time) - 1, 100000).astype(int)
-        ctd_time = ctd_time[indices]
-        ctd_depth = ctd_depth[indices]
-    
-    plt.figure(figsize=(10, 6))
-    plt.plot(ctd_time, ctd_depth, label='Profile Depth')
-    plt.ylabel('Depth')
-    plt.title('Profile Depth as a Function of Time')
-    plt.legend()
-    plt.grid(True)
-
-    # Set y-axis limits to be tight around the data plotted to the nearest 10 meters
-    y_min = np.floor(ctd_depth.min() / 10) * 10
-    y_max = np.ceil(ctd_depth.max() / 10) * 10
-    plt.ylim([y_min, y_max])
-    plt.gca().invert_yaxis()
-
-    plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%b-%d'))
-
-    # Add the year or year range to the xlabel
-    start_year = pd.to_datetime(ctd_time.min()).year
-    end_year = pd.to_datetime(ctd_time.max()).year
-    if start_year == end_year:
-        plt.xlabel(f'Time ({start_year})')
-    else:
-        plt.xlabel(f'Time ({start_year}-{end_year})')
-
-    plt.show()
-
-
-
+##------------------------------------------------------------------------------------
+## Views of the ds or nc file
+##------------------------------------------------------------------------------------
 def show_contents(data, content_type='variables'):
     """
     Wrapper function to show contents of an xarray Dataset or a netCDF file.
@@ -186,6 +139,120 @@ def show_attributes(data):
 
     return attrs
 
+def show_variables_by_dimension(data, dimension_name='trajectory'):
+    """
+    Processes an xarray Dataset or a netCDF file, extracts variable information,
+    and returns a styled DataFrame with details about the variables filtered by a specific dimension.
+    
+    Parameters:
+    data (str or xr.Dataset): The input data, either a file path to a netCDF file or an xarray Dataset.
+    dimension_name (str): The name of the dimension to filter variables by.
+    
+    Returns:
+    pandas.io.formats.style.Styler: A styled DataFrame containing the following columns:
+        - dims: The dimension of the variable (or "string" if it is a string type).
+        - name: The name of the variable.
+        - units: The units of the variable (if available).
+        - comment: Any additional comments about the variable (if available).
+    """
+
+    if isinstance(data, str):
+        print("information is based on file: {}".format(data))
+        dataset = Dataset(data)
+        variables = dataset.variables
+    elif isinstance(data, xr.Dataset):
+        print("information is based on xarray Dataset")
+        variables = data.variables
+    else:
+        raise TypeError("Input data must be a file path (str) or an xarray Dataset")
+
+    info = {}
+    for i, key in enumerate(variables):
+        var = variables[key]
+        if isinstance(data, str):
+            dims = var.dimensions[0] if len(var.dimensions) == 1 else "string"
+            units = "" if not hasattr(var, "units") else var.units
+            comment = "" if not hasattr(var, "comment") else var.comment
+        else:
+            dims = var.dims[0] if len(var.dims) == 1 else "string"
+            units = var.attrs.get("units", "")
+            comment = var.attrs.get("comment", "")
+        
+        if dims == dimension_name:
+            info[i] = {
+                "name": key,
+                "dims": dims,
+                "units": units,
+                "comment": comment,
+            }
+
+    vars = DataFrame(info).T
+
+    dim = vars.dims
+    dim[dim.str.startswith("str")] = "string"
+    vars["dims"] = dim
+
+    vars = (
+        vars.sort_values(["dims", "name"])
+        .reset_index(drop=True)
+        .loc[:, ["dims", "name", "units", "comment"]]
+        .set_index("name")
+        .style
+    )
+
+    return vars
+
+##------------------------------------------------------------------------------------
+## Sawtooth plots
+##------------------------------------------------------------------------------------
+def plot_profile_depth(data):
+    """
+    Plots the profile depth (ctd_depth) as a function of time (ctd_time).
+    Reduces the total number of points to be less than 100,000.
+    
+    Parameters:
+    data (pd.DataFrame or xr.Dataset): The input data containing 'ctd_depth' and 'ctd_time'.
+    """
+    if isinstance(data, pd.DataFrame):
+        ctd_time = data['ctd_time']
+        ctd_depth = data['ctd_depth']
+    elif isinstance(data, xr.Dataset):
+        ctd_time = data['ctd_time'].values
+        ctd_depth = data['ctd_depth'].values
+    else:
+        raise TypeError("Input data must be a pandas DataFrame or xarray Dataset")
+    
+    # Reduce the number of points
+    if len(ctd_time) > 100000:
+        indices = np.linspace(0, len(ctd_time) - 1, 100000).astype(int)
+        ctd_time = ctd_time[indices]
+        ctd_depth = ctd_depth[indices]
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(ctd_time, ctd_depth, label='Profile Depth')
+    plt.ylabel('Depth')
+    plt.title('Profile Depth as a Function of Time')
+    plt.legend()
+    plt.grid(True)
+
+    # Set y-axis limits to be tight around the data plotted to the nearest 10 meters
+    y_min = np.floor(ctd_depth.min() / 10) * 10
+    y_max = np.ceil(ctd_depth.max() / 10) * 10
+    plt.ylim([y_min, y_max])
+    plt.gca().invert_yaxis()
+
+    plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%b-%d'))
+
+    # Add the year or year range to the xlabel
+    start_year = pd.to_datetime(ctd_time.min()).year
+    end_year = pd.to_datetime(ctd_time.max()).year
+    if start_year == end_year:
+        plt.xlabel(f'Time ({start_year})')
+    else:
+        plt.xlabel(f'Time ({start_year}-{end_year})')
+
+    plt.show()
+
 
 def plot_depth_colored(data, color_by=None, start_dive=None, end_dive=None):
     """
@@ -259,65 +326,31 @@ def plot_depth_colored(data, color_by=None, start_dive=None, end_dive=None):
     plt.show()
 
 
-def show_variables_by_dimension(data, dimension_name='trajectory'):
+def plot_ctd_depth_vs_time(ds, start_traj=None, end_traj=None):
     """
-    Processes an xarray Dataset or a netCDF file, extracts variable information,
-    and returns a styled DataFrame with details about the variables filtered by a specific dimension.
+    Plots CTD depth vs time, optionally filtered by trajectory range, and highlights non-NaN GPS latitude values.
     
     Parameters:
-    data (str or xr.Dataset): The input data, either a file path to a netCDF file or an xarray Dataset.
-    dimension_name (str): The name of the dimension to filter variables by.
-    
-    Returns:
-    pandas.io.formats.style.Styler: A styled DataFrame containing the following columns:
-        - dims: The dimension of the variable (or "string" if it is a string type).
-        - name: The name of the variable.
-        - units: The units of the variable (if available).
-        - comment: Any additional comments about the variable (if available).
+    ds (xr.Dataset): The input dataset containing 'ctd_time', 'ctd_depth', and 'gps_lat'.
+    start_traj (int, optional): The starting trajectory number to filter the data. Default is None.
+    end_traj (int, optional): The ending trajectory number to filter the data. Default is None.
     """
+    # Filter data by trajectory number if specified
+    if start_traj is not None and end_traj is not None:
+        ds = ds.where((ds['trajectory'] >= start_traj) & (ds['trajectory'] <= end_traj), drop=True)
+    
+    plt.figure(figsize=(10, 6))
 
-    if isinstance(data, str):
-        print("information is based on file: {}".format(data))
-        dataset = Dataset(data)
-        variables = dataset.variables
-    elif isinstance(data, xr.Dataset):
-        print("information is based on xarray Dataset")
-        variables = data.variables
-    else:
-        raise TypeError("Input data must be a file path (str) or an xarray Dataset")
+    # Plot ctd_depth against ctd_time using a black line
+    plt.plot(ds['ctd_time'], ds['ctd_depth'], 'k.', label='CTD Depth')
 
-    info = {}
-    for i, key in enumerate(variables):
-        var = variables[key]
-        if isinstance(data, str):
-            dims = var.dimensions[0] if len(var.dimensions) == 1 else "string"
-            units = "" if not hasattr(var, "units") else var.units
-            comment = "" if not hasattr(var, "comment") else var.comment
-        else:
-            dims = var.dims[0] if len(var.dims) == 1 else "string"
-            units = var.attrs.get("units", "")
-            comment = var.attrs.get("comment", "")
-        
-        if dims == dimension_name:
-            info[i] = {
-                "name": key,
-                "dims": dims,
-                "units": units,
-                "comment": comment,
-            }
+    # Plot ctd_depth against ctd_time where gps_lat is non NaN, with a colored red circle
+    non_nan_indices = ~np.isnan(ds['gps_lat'])
+    plt.plot(ds['ctd_time'][non_nan_indices], ds['ctd_depth'][non_nan_indices], 'ro', label='GPS Lat Non-NaN')
 
-    vars = DataFrame(info).T
-
-    dim = vars.dims
-    dim[dim.str.startswith("str")] = "string"
-    vars["dims"] = dim
-
-    vars = (
-        vars.sort_values(["dims", "name"])
-        .reset_index(drop=True)
-        .loc[:, ["dims", "name", "units", "comment"]]
-        .set_index("name")
-        .style
-    )
-
-    return vars
+    plt.xlabel('CTD Time')
+    plt.ylabel('CTD Depth')
+    plt.legend()
+    plt.title('CTD Depth vs Time')
+    plt.gca().invert_yaxis()  # Invert y-axis to have depth increasing downwards
+    plt.show()
