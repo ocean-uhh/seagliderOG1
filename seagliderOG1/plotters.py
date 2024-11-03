@@ -220,8 +220,19 @@ def plot_profile_depth(data):
         ctd_time = data['ctd_time']
         ctd_depth = data['ctd_depth']
     elif isinstance(data, xr.Dataset):
-        ctd_time = data['ctd_time'].values
-        ctd_depth = data['ctd_depth'].values
+        if 'ctd_time' in data.variables:
+            ctd_time = data['ctd_time'].values
+        elif 'TIME' in data.variables:
+            ctd_time = data['TIME'].values
+        else:
+            raise KeyError("Neither 'ctd_time' nor 'TIME' found in the dataset")
+        
+        if 'ctd_depth' in data.variables:
+            ctd_depth = data['ctd_depth'].values
+        elif 'DEPTH' in data.variables:
+            ctd_depth = data['DEPTH'].values
+        else:
+            raise KeyError("Neither 'ctd_depth' nor 'DEPTH' found in the dataset")
     else:
         raise TypeError("Input data must be a pandas DataFrame or xarray Dataset")
     

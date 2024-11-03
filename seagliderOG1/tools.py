@@ -19,6 +19,76 @@ from datetime import datetime
 
 _log = logging.getLogger(__name__)
 
+def find_best_dtype(var_name, da):
+    input_dtype = da.dtype.type
+    if "latitude" in var_name.lower() or "longitude" in var_name.lower():
+        return np.double
+    if var_name[-2:].lower() == "qc":
+        return np.int8
+    if "time" in var_name.lower():
+        return input_dtype
+    if var_name[-3:] == "raw" or "int" in str(input_dtype):
+        if np.nanmax(da.values) < 2**16 / 2:
+            return np.int16
+        elif np.nanmax(da.values) < 2**32 / 2:
+            return np.int32
+    if input_dtype == np.float64:
+        return np.float32
+    return input_dtype
+
+def set_best_dtype(ds):
+    bytes_in = ds.nbytes
+    for var_name in list(ds):
+        da = ds[var_name]
+        input_dtype = da.dtype.type
+        new_dtype = find_best_dtype(var_name, da)
+        for att in ["valid_min", "valid_max"]:
+            if att in da.attrs.keys():
+                da.attrs[att] = np.array(da.attrs[att]).astype(new_dtype)
+        if new_dtype == input_dtype:
+            continue
+        _log.debug(f"{var_name} input dtype {input_dtype} change to {new_dtype}")
+        da_new = da.astype(new_dtype)
+        ds = ds.drop_vars(var_name)
+        if "int" in str(new_dtype):
+            fill_val = set_fill_value(new_dtype)
+            da_new[np.isnan(da)] = fill_val
+            da_new.encoding["_FillValue"] = fill_val
+        ds[var_name] = da_new
+    bytes_out = ds.nbytes
+    _log.info(
+        f"Space saved by dtype downgrade: {int(100 * (bytes_in - bytes_out) / bytes_in)} %",
+    )
+    return ds
+
+def set_best_dtype_value(value, var_name):
+    """
+    Determines the best data type for a single value based on its variable name and converts it.
+
+    Parameters
+    ----------
+    value : any
+        The input value to convert.
+
+    Returns
+    -------
+    converted_value : any
+        The value converted to the best data type.
+    """
+    input_dtype = type(value)
+    new_dtype = find_best_dtype(var_name, xr.DataArray(value))
+    
+    if new_dtype == input_dtype:
+        return value
+    
+    converted_value = np.array(value).astype(new_dtype)
+    
+    if "int" in str(new_dtype) and np.isnan(value):
+        fill_val = set_fill_value(new_dtype)
+        converted_value = fill_val
+    
+    return converted_value
+
 variables_sensors = {
     "CNDC": "CTD",
     "DOXY": "dissolved gas sensors",

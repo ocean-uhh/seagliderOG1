@@ -1,6 +1,17 @@
 # Attributes to convert sg015 Labrador Sea to OG1
 # base_station_version 2.8
 # nodc_template_version_v0.9
+contrib_to_append = {
+    'contributor_name': 'Eleanor Frajka-Williams',
+    'contributor_email': 'eleanorfrajka@gmail.com',
+    'contributor_role': 'Data scientist',
+    'contributor_role_vocabulary': 'http://vocab.nerc.ac.uk/search_nvs/W08',
+    'contributing_institutions': 'University of Hamburg - Institute of Oceanography',
+    'contributing_institutions_vocabulary': 'https://edmo.seadatanet.org/report/1156',
+    'contributing_institutions_role': 'Data scientist',
+    'contributing_institutions_role_vocabulary': 'http://vocab.nerc.ac.uk/search_nvs/W08',
+}
+
 attr_to_add = {
     'title': 'OceanGliders trajectory file',
     'platform': 'sub-surface gliders',
