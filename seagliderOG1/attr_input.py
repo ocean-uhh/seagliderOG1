@@ -28,6 +28,7 @@ attr_as_is = [
     "naming_authority",
     "institution",
     "project",
+    "id",
     "geospatial_lat_min",
     "geospatial_lat_max",
     "geospatial_lon_min",
@@ -48,13 +49,15 @@ attr_to_rename = {
     'uri': 'uuid',
     'uri_comment': 'UUID',
     'comment': 'history',
+    'id': 'PLATFORM_SERIAL_NUMBER'
 }
 
 order_of_attr = [
     'title', # OceanGliders trajectory file
-    'platform', # sub-surface gliders
-    'platform_vocabulary', # https://vocab.nerc.ac.uk/collection/L06/current/27
     'id', # sg015_20040920T000000_delayed
+    'platform_vocabulary', # https://vocab.nerc.ac.uk/collection/L06/current/27
+    'platform', # sub-surface gliders
+    'PLATFORM_SERIAL_NUMBER', # sg015
     'naming_authority', # edu.washington.apl
     'institution', # University of washington
     'internal_mission_identifier', # p0150003_20040924

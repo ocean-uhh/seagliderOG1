@@ -66,7 +66,10 @@ def convert_to_OG1(datasets, contrib_to_append=None):
     processed_datasets = []
     for ds in datasets:
         ds_new, attr_warnings, sg_cal, dc_other, dc_log = convert_to_OG1_dataset(ds, contrib_to_append)
-        processed_datasets.append(ds_new)
+        if ds_new:
+            processed_datasets.append(ds_new)
+        else:
+            print(f"Warning: Dataset for dive number {ds.attrs['dive_number']} is empty or invalid.")
 
     concatenated_ds = xr.concat(processed_datasets, dim='N_MEASUREMENTS')
     concatenated_ds = concatenated_ds.sortby('TIME')
@@ -75,6 +78,16 @@ def convert_to_OG1(datasets, contrib_to_append=None):
     ordered_attributes = update_dataset_attributes(datasets[0], contrib_to_append)
     for key, value in ordered_attributes.items():
         concatenated_ds.attrs[key] = value
+
+    # Construct the platform serial number
+    PLATFORM_SERIAL_NUMBER = 'sg' + concatenated_ds.attrs['id'][1:4]
+    print(PLATFORM_SERIAL_NUMBER)
+    concatenated_ds['PLATFORM_SERIAL_NUMBER'] = PLATFORM_SERIAL_NUMBER
+    concatenated_ds['PLATFORM_SERIAL_NUMBER'].attrs['long_name'] = "glider serial number"
+
+    # Construct the unique identifier attribute
+    id = f"{PLATFORM_SERIAL_NUMBER}_{concatenated_ds.start_date}_delayed"
+    concatenated_ds.attrs['id'] = id
 
     return concatenated_ds
 
@@ -99,9 +112,6 @@ def convert_to_OG1_dataset(ds1, contrib_to_append=None):
     """
     # Convert the dataset and output also variables not included
     ds_new, attr_warnings, sg_cal, dc_other, dc_log = process_dataset(ds1)
-
-    # Create the attributes in order
-    ordered_attributes = update_dataset_attributes(ds1, contrib_to_append)
 
     return ds_new, attr_warnings, sg_cal, dc_other, dc_log
 
@@ -145,6 +155,9 @@ def process_dataset(ds1):
         - It sorts by TIME
         - If there are not two surface GPS fixes before a dive, it may inadvertantly turn the whole thing to a dive.
     """
+    # Check if the dataset has 'LONGITUDE' as a coordinate
+    if 'longitude' not in ds1.coords:
+        return xr.Dataset(), [], xr.Dataset(), xr.Dataset(), xr.Dataset()
     # Handle and split the inputs.
     #--------------------------------
     # Extract the dive number from the attributes
