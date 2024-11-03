@@ -1,0 +1,139 @@
+# initial attributes of basestation file:
+Conventions: CF-1.6
+Metadata_Conventions: Unidata Dataset Discovery v1.0
+acknowledgment: 'NOAA Office of Arctic Research, Grant NA17RJ1232
+
+  US Office of Naval Research Grant N00014-02-1-0791'
+base_station_micro_version: '3705'
+base_station_version: '2.8'
+cdm_data_type: Trajectory
+contributor_name: Peter Rhines
+contributor_role: Co-principal investigator
+creator_email: charlie@ocean.washington.edu
+creator_name: Charlie Eriksen
+creator_url: http://iop.apl.washington.edu/seaglider/index.php?glider=*&base=*&status=*&mission=LabSea&logic=and
+date_created: '2013-08-01T05:08:03Z'
+date_modified: '2013-08-01T05:08:03Z'
+disclaimer: Data has not been reviewed and is provided AS-IS.
+dive_number: '3'
+featureType: trajectory
+file_version: '2.71'
+geospatial_lat_max: '67.03964285098805'
+geospatial_lat_min: '67.03528333333334'
+geospatial_lat_resolution: seconds
+geospatial_lat_units: degrees
+geospatial_lon_max: '-57.03104633598396'
+geospatial_lon_min: '-57.03634083448303'
+geospatial_lon_resolution: seconds
+geospatial_lon_units: degrees
+geospatial_vertical_max: '184.06544067831808'
+geospatial_vertical_min: '0.3587496896074949'
+geospatial_vertical_positive: 'no'
+geospatial_vertical_resolution: centimeter
+geospatial_vertical_units: meter
+glider: '15'
+history: 'Processing start:
+
+  05:35:02 01 Aug 2013 UTC: INFO: QC.py(380): Changed (11/323) 3 63 87 116 213 218
+  222 223 237 247 248 to QC_PROBABLY_BAD because raw temperature spikes
+
+  05:35:02 01 Aug 2013 UTC: INFO: QC.py(195): Changed (11/323) 3 63 87 116 213 218
+  222 223 237 247 248 to QC_PROBABLY_BAD because changed raw temp implies changed
+  raw salinity
+
+  05:35:02 01 Aug 2013 UTC: INFO: QC.py(380): Changed (11/323) 3 63 87 116 213 218
+  222 223 237 247 248 to QC_INTERPOLATED because temperature spikes
+
+  05:35:02 01 Aug 2013 UTC: INFO: MakeDiveProfiles.py(3156): Changed (11/323) 110:120
+  to QC_BAD because slow apogee CT flow
+
+  05:35:02 01 Aug 2013 UTC: INFO: MakeDiveProfiles.py(3256): Changed (12/323) 1:12
+  to QC_BAD because prior to dive start
+
+  05:35:02 01 Aug 2013 UTC: INFO: MakeDiveProfiles.py(3356): Changed (23/323) 1:12
+  110:120 to QC_BAD because bad corrected temperature and conductivity suggests bad
+  salinity
+
+  05:35:02 01 Aug 2013 UTC: INFO: QC.py(195): Changed (23/323) 1:12 110:120 to QC_BAD
+  because changed corrected salin implies changed speed
+
+  05:35:03 01 Aug 2013 UTC: INFO: TempSalinityVelocity.py(984): TSV exiting after
+  4 iterations
+
+  05:35:03 01 Aug 2013 UTC: INFO: TempSalinityVelocity.py(999): SUGGESTION: 3 interp_salinity
+  data_points in_between 37 50 % suspect thermal-inertia points 38 39 41:47
+
+  05:35:03 01 Aug 2013 UTC: INFO: TempSalinityVelocity.py(999): SUGGESTION: 3 interp_salinity
+  data_points in_between 64 78 % suspect thermal-inertia points 71
+
+  05:35:03 01 Aug 2013 UTC: INFO: TempSalinityVelocity.py(999): SUGGESTION: 3 interp_salinity
+  data_points in_between 243 245 % suspect thermal-inertia points 243:245
+
+  05:35:03 01 Aug 2013 UTC: INFO: TempSalinityVelocity.py(999): SUGGESTION: 3 interp_salinity
+  data_points in_between 247 253 % suspect thermal-inertia points 247:253
+
+  05:35:03 01 Aug 2013 UTC: INFO: TempSalinityVelocity.py(999): SUGGESTION: 3 interp_salinity
+  data_points in_between 255 265 % suspect thermal-inertia points 255:265
+
+  05:35:03 01 Aug 2013 UTC: INFO: QC.py(195): Changed (9/323) 63 87 213 218 222 223
+  237 247 248 to QC_INTERPOLATED because changed corrected temp implies changed corrected
+  salinity
+
+  05:35:03 01 Aug 2013 UTC: INFO: QC.py(195): Changed (9/323) 63 87 213 218 222 223
+  237 247 248 to QC_INTERPOLATED because changed corrected temp implies changed speed
+
+  05:35:03 01 Aug 2013 UTC: INFO: MakeDiveProfiles.py(3509): Average estimated final
+  speed: 23.04 cm/s
+
+  05:35:03 01 Aug 2013 UTC: INFO: MakeDiveProfiles.py(3512): RMS observed vs. computed
+  w: 2.14 cm/s
+
+  05:35:03 01 Aug 2013 UTC: INFO: MakeDiveProfiles.py(3563): Starting sensor extensions
+  data processing
+
+  05:35:03 01 Aug 2013 UTC: INFO: MakeDiveProfiles.py(3565): Finished sensor extensions
+  data processing
+
+  '
+id: p0150003_20040924
+institution: 'School of Oceanography
+
+  University of Washington
+
+  Seattle, WA 98195-5351'
+instrument: 'wlbb2f sbe41 '
+keywords: Water Temperature, Conductivity, Salinity, Density, Potential Density, Potential
+  Temperature, Fluorescence
+keywords_vocabulary: NASA/GCMD Earth Science Keywords Version 6.0.0.0
+license: These data may be redistributed and used without restriction.
+mission: '1'
+naming_authority: edu.washington.apl
+nodc_template_version: NODC_NetCDF_Trajectory_Template_v0.9
+platform: glider
+platform_id: SG015
+processing_level: '1.100000'
+project: Labrador Sea September 2004
+quality_control_version: '1.1'
+references: 'Frajka-Williams, E.F. and P.B.Rhines 2009: Physical controls over the
+  spring phytoplankton bloom in the Labrador Sea observed with Seagliders Deep-Sea
+  Research, doi:10.1016/j.dsr.2009.07.008
+
+  H.Hatun, C.Eriksen and P.Rhines, 2007: Buoyant eddies entering the Labrador Sea
+  observed with gliders and altimetry J. Physical Oceanography, 37, 2838-2854.
+
+  Eriksen, C. and P.B.Rhines, 2008: Convective to gyre-scale dynamics: Seaglider campaigns
+  in the Labrador Sea 2003-2005,in Arctic-subarctic ocean fluxes: defining the role
+  of the northern seas in climate, Dickson, Meincke & Rhines Eds., Springer Verlag'
+sea_name: Labrador Sea
+seaglider_software_version: '66.05'
+source: Seaglider SG015
+standard_name_vocabulary: CF-1.6
+start_time: '1096048926.0'
+summary: Multiple transects of Labrador Sea upper-ocean structure from Davis Strait
+  to the WOCE AR7W repeat line.
+time_coverage_end: '2004-09-24T18:09:02Z'
+time_coverage_resolution: PT1S
+time_coverage_start: '2004-09-24T18:09:22Z'
+title: Physical data collected from Seaglider SG015 during Labrador Sea September
+  2004 in the Labrador Sea deployed on 2004-09-24
+uuid: 1da81794-fa6c-11e2-9287-0026bb609360

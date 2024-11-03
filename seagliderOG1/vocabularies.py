@@ -27,8 +27,6 @@ unit_conversion = {
     'dbar': {'units_name': 'kPa', 'factor': 10},
 }
 
-
-
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
 standard_names = {
     "latitude": "LATITUDE",
@@ -80,6 +78,31 @@ standard_names = {
 #    "tke_dissipation_shear_1": "EPSIFY01",
 #    "tke_dissipation_shear_2": "EPSIFY02",
 }
+
+vars_to_remove = [
+    'dissolved_oxygen_sat',
+    'depth', 
+    'eng_depth',
+    'eng_elaps_t',
+    'eng_elaps_t_0000',
+    'latitude_gsm',
+    'longitude_gsm',
+    'sigma_t',
+    'sigma_theta',
+    'sound_velocity',
+    'theta',
+    'time',
+    'eng_sbect_condFreq',
+    'eng_sbect_tempFreq',
+    'glide_angle_gsm',
+    'horz_speed_gsm',
+    'north_displacement_gsm',
+    'east_displacement_gsm',
+    'speed_gsm',
+    'vert_speed_gsm',
+    'dive_num_cast',
+    'density'
+]
 
 vocab_attrs = {
     "GLIDE_ANGLE": {
