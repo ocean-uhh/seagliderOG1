@@ -76,6 +76,16 @@ def convert_to_OG1(datasets, contrib_to_append=None):
     for key, value in ordered_attributes.items():
         concatenated_ds.attrs[key] = value
 
+    # Construct the platform serial number
+    PLATFORM_SERIAL_NUMBER = 'sg' + concatenated_ds.attrs['id'][1:4]
+    print(PLATFORM_SERIAL_NUMBER)
+    concatenated_ds['PLATFORM_SERIAL_NUMBER'] = PLATFORM_SERIAL_NUMBER
+    concatenated_ds['PLATFORM_SERIAL_NUMBER'].attrs['long_name'] = "glider serial number"
+
+    # Construct the unique identifier attribute
+    id = f"{PLATFORM_SERIAL_NUMBER}_{concatenated_ds.start_date}_delayed"
+    concatenated_ds.attrs['id'] = id
+
     return concatenated_ds
 
 def convert_to_OG1_dataset(ds1, contrib_to_append=None):

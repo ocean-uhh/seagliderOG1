@@ -12,6 +12,21 @@ import numpy as np
 # This was necessary to get an initial file list
 # mylist = fetchers.list_files_in_https_server(server)
 # fetchers.create_pooch_registry_from_directory("/Users/eddifying/Dropbox/data/sg015-ncei-download/")
+# Example usage
+#directory_path = "/Users/eddifying/Dropbox/data/sg015-ncei-snippet"
+#pooch_registry = create_pooch_registry_from_directory(directory_path)
+#print(pooch_registry)
+
+
+server = "https://www.dropbox.com/scl/fo/dhinr4hvpk05zcecqyz2x/ADTqIuEpWHCxeZDspCiTN68?rlkey=bt9qheandzbucca5zhf5v9j7a&dl=0"
+server = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/"
+data_source_og = pooch.create(
+    path=pooch.os_cache("seagliderOG1"),
+    base_url=server,
+    registry=None,
+)
+registry_file = '../seagliderOG1/seaglider_registry.txt'
+data_source_og.load_registry(registry_file)
 
 def load_sample_dataset(dataset_name="p0150500_20050213.nc"):
     if dataset_name in data_source_og.registry.keys():
@@ -67,10 +82,12 @@ def read_basestation(source, start_profile=None, end_profile=None):
     if source.startswith("http://") or source.startswith("https://"):
         # Create a Pooch object to manage the remote files
         data_source_online = pooch.create(
-            path=pooch.os_cache("seagliderOG1_online"),
+            path=pooch.os_cache("seagliderOG1"),
             base_url=source,
             registry=None,
         )
+        registry_file = '../seagliderOG1/seaglider_registry.txt'
+        data_source_og.load_registry(registry_file)
 
         # List all files in the URL directory
         file_list = list_files_in_https_server(source)
