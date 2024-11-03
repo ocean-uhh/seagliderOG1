@@ -279,11 +279,20 @@ def plot_depth_colored(data, color_by=None, start_dive=None, end_dive=None):
     end_dive (int, optional): The ending dive number to filter the data. Default is None.
     """
     # Filter data by dive number if specified
+    if 'dive_number' in data.variables:
+        divenum_str = 'dive_number'
+    elif 'divenum' in data.variables:
+        divenum_str = 'divenum'
+    elif 'dive_num' in data.variables:
+        divenum_str = 'dive_num'
+    else:
+        raise ValueError("No valid dive number variable found in the dataset.")
+
     if start_dive is not None and end_dive is not None:
         if isinstance(data, pd.DataFrame):
-            data = data[(data['dive_num'] >= start_dive) & (data['dive_num'] <= end_dive)]
+            data = data[(data[divenum_str] >= start_dive) & (data[divenum_str] <= end_dive)]
         elif isinstance(data, xr.Dataset):
-            data = data.where((data['dive_num'] >= start_dive) & (data['dive_num'] <= end_dive), drop=True)
+            data = data.where((data[divenum_str] >= start_dive) & (data[divenum_str] <= end_dive), drop=True)
         else:
             raise TypeError("Input data must be a pandas DataFrame or xarray Dataset")
     
