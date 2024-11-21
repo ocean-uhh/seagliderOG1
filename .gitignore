@@ -1,5 +1,5 @@
 # Test data
-data/test.nc
+data/*test*.nc
 
 # Holdover files
 #test_fetchers.py
