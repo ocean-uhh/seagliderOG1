@@ -10,6 +10,27 @@ from votoutils.upload.sync_functions import sync_script_dir
 _log = logging.getLogger(__name__)
 
 
+def _validate_coords(ds1):
+    id = ds1.attrs['id']
+    if 'longitude' not in ds1.coords:
+        ds1 = ds1.assign_coords(longitude=("sg_data_point", [float('nan')] * ds1.dims['sg_data_point']))
+        print(f'{id}: No coord longitude - adding as NaNs to length of sg_data_point')
+    if 'latitude' not in ds1.coords:
+        ds1 = ds1.assign_coords(latitude=("sg_data_point", [float('nan')] * ds1.dims['sg_data_point']))
+        print(f'{id}: No coord latitude - adding as NaNs to length of sg_data_point')
+    if 'ctd_time' in ds1.variables:
+        if 'ctd_time' not in ds1.coords:
+            ds1 = ds1.assign_coords(ctd_time=("sg_data_point", ds1['ctd_time'].values))
+            print(f'{id}: No coord ctd_time, but exists as variable - assigning coord from variable')
+        if 'ctd_depth' not in ds1.coords:
+            ds1 = ds1.assign_coords(ctd_depth=("sg_data_point", ds1['ctd_depth'].values))
+            print(f'{id}: No coord ctd_depth, but exists as variable - assigning coord from variable')
+    else:
+        print(f'{id}: !!! No variable ctd_time - returning an empty dataset')
+
+        ds1 = xr.Dataset()
+    return ds1
+
 def natural_sort(unsorted_list):
     convert = lambda text: int(text) if text.isdigit() else text.lower()  # noqa: E731
     alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]  # noqa: E731

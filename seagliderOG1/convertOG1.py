@@ -158,24 +158,14 @@ def process_dataset(ds1):
     Possibility of undesired behaviour:
         - It sorts by TIME
         - If there are not two surface GPS fixes before a dive, it may inadvertantly turn the whole thing to a dive.
+    Checking for valid coordinates: https://github.com/pydata/xarray/issues/3743
     """
+
     # Check if the dataset has 'LONGITUDE' as a coordinate
-    if 'longitude' not in ds1.coords:
-        ds1 = ds1.assign_coords(longitude=("sg_data_point", [float('nan')] * ds1.dims['sg_data_point']))
-        print('No coord longitude - adding as NaNs to length of sg_data_point')
-    if 'latitude' not in ds1.coords:
-        ds1 = ds1.assign_coords(latitude=("sg_data_point", [float('nan')] * ds1.dims['sg_data_point']))
-        print('No coord latitude - adding as NaNs to length of sg_data_point')
-    if 'ctd_time' in ds1.variables:
-        if 'ctd_time' not in ds1.coords:
-            ds1 = ds1.assign_coords(ctd_time=("sg_data_point", ds1['ctd_time'].values))
-            print('No coord ctd_time, but exists as variable - assigning coord from variable')
-        if 'ctd_depth' not in ds1.coords:
-            ds1 = ds1.assign_coords(ctd_depth=("sg_data_point", ds1['ctd_depth'].values))
-            print('No coord ctd_depth, but exists as variable - assigning coord from variable')
-    else:
-        print('!!! No variable ctd_time - returning an empty dataset')
+    ds1 = utilities._validate_coordinates(ds1)
+    if ds1 is None or len(ds1.variables) == 0:
         return xr.Dataset(), [], xr.Dataset(), xr.Dataset(), xr.Dataset()
+
     # Handle and split the inputs.
     #--------------------------------
     # Extract the dive number from the attributes
