@@ -5,6 +5,7 @@ from seagliderOG1 import attr_input
 import gsw
 import logging
 from datetime import datetime
+from numbers import Number
 #import importlib
 #importlib.reload(vocabularies)
 
@@ -24,10 +25,13 @@ def save_dataset(ds, output_file='../test.nc'):
     Returns
     -------
     bool: True if the dataset was saved successfully, False otherwise.
+
+    Based on: https://github.com/pydata/xarray/issues/3743
     """
     valid_types = (str, int, float, np.float32, np.float64, np.int32, np.int64)
+    valid_types = (str, Number, np.ndarray, np.number, list, tuple)
     try:
-        ds.to_netcdf(output_file, format='NETCDF4_CLASSIC')
+        ds.to_netcdf(output_file, format='NETCDF4')
         return True
     except TypeError as e:
         print(e.__class__.__name__, e)
@@ -36,13 +40,14 @@ def save_dataset(ds, output_file='../test.nc'):
                 if not isinstance(v, valid_types) or isinstance(v, bool):
                     variable.attrs[k] = str(v)
         try:
-            ds.to_netcdf(output_file, format='NETCDF4_CLASSIC')
+            ds.to_netcdf(output_file, format='NETCDF4')
             return True
         except Exception as e:
             print("Failed to save dataset:", e)
             datetime_vars = [var for var in ds_new.variables if ds_new[var].dtype == 'datetime64[ns]']
             print("Variables with dtype datetime64[ns]:", datetime_vars)
-
+            float_attrs = [attr for attr in ds_new.attrs if isinstance(ds_new.attrs[attr], float)]
+            print("Attributes with dtype float64:", float_attrs)
             return False
 
 
@@ -81,7 +86,6 @@ def convert_to_OG1(datasets, contrib_to_append=None):
 
     # Construct the platform serial number
     PLATFORM_SERIAL_NUMBER = 'sg' + concatenated_ds.attrs['id'][1:4]
-    print(PLATFORM_SERIAL_NUMBER)
     concatenated_ds['PLATFORM_SERIAL_NUMBER'] = PLATFORM_SERIAL_NUMBER
     concatenated_ds['PLATFORM_SERIAL_NUMBER'].attrs['long_name'] = "glider serial number"
 
@@ -157,6 +161,20 @@ def process_dataset(ds1):
     """
     # Check if the dataset has 'LONGITUDE' as a coordinate
     if 'longitude' not in ds1.coords:
+        ds1 = ds1.assign_coords(longitude=("sg_data_point", [float('nan')] * ds1.dims['sg_data_point']))
+        print('No coord longitude - adding as NaNs to length of sg_data_point')
+    if 'latitude' not in ds1.coords:
+        ds1 = ds1.assign_coords(latitude=("sg_data_point", [float('nan')] * ds1.dims['sg_data_point']))
+        print('No coord latitude - adding as NaNs to length of sg_data_point')
+    if 'ctd_time' in ds1.variables:
+        if 'ctd_time' not in ds1.coords:
+            ds1 = ds1.assign_coords(ctd_time=("sg_data_point", ds1['ctd_time'].values))
+            print('No coord ctd_time, but exists as variable - assigning coord from variable')
+        if 'ctd_depth' not in ds1.coords:
+            ds1 = ds1.assign_coords(ctd_depth=("sg_data_point", ds1['ctd_depth'].values))
+            print('No coord ctd_depth, but exists as variable - assigning coord from variable')
+    else:
+        print('!!! No variable ctd_time - returning an empty dataset')
         return xr.Dataset(), [], xr.Dataset(), xr.Dataset(), xr.Dataset()
     # Handle and split the inputs.
     #--------------------------------
