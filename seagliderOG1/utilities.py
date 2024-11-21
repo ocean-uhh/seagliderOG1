@@ -5,6 +5,7 @@ import pandas as pd
 import logging
 import subprocess
 import datetime
+import xarray as xr
 #from votoutils.upload.sync_functions import sync_script_dir
 
 _log = logging.getLogger(__name__)

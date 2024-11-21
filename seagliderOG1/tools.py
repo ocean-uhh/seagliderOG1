@@ -9,11 +9,6 @@ from matplotlib.dates import DateFormatter
 import matplotlib.colors as mcolors
 from seagliderOG1 import vocabularies
 import gsw
-#import pandas as pd
-#import numpy as np
-#import xarray as xr
-#from votoutils.utilities.utilities import encode_times_og1, set_best_dtype
-#from votoutils.utilities import vocabularies
 import logging
 from datetime import datetime
 
@@ -150,518 +145,145 @@ def add_sensors(ds, dsa):
 
     return ds, dsa
 
-
-
-def convert_to_og1(ds, num_vals=None):
+def split_by_unique_dims(ds):
     """
-    Converts a given dataset to the OG1 format, applying specific variable names, units, and attributes as per the OG1 vocabulary and standards.
-
-    This function is based on an example by Jen Seva (https://github.com/OceanGlidersCommunity/OG-format-user-manual/pull/136/files) and uses variable names from the OG1 vocabulary (https://vocab.nerc.ac.uk/collection/OG1/current/) and units from collection P07 (http://vocab.nerc.ac.uk/collection/P07/current/).
-
-    The function processes the dataset, including handling quality control variables, setting coordinates, adding GPS information, and assigning various metadata attributes. It also adds sensor information and encodes times in the OG1 format.
-
-    Parameters
-    ----------
-    :ds: xarray.Dataset
-        The input dataset to convert.
-    :num_vals: int, optional
-        An optional argument to subset the input dataset to the first num_vals values. Default is None, which means no subsetting.
-    Return
-    ------
-    dsa (xarray.Dataset) -    The converted dataset in OG1 format.
-    
-    Based on example by Jen Seva https://github.com/OceanGlidersCommunity/OG-format-user-manual/pull/136/files
-    Using variable names from OG1 vocab https://vocab.nerc.ac.uk/collection/OG1/current/
-    Using units from collection P07 http://vocab.nerc.ac.uk/collection/P07/current/
-    e.g. mass_concentration_of_chlorophyll_a_in_sea_water from https://vocab.nerc.ac.uk/collection/P07/current/CF14N7/
-    """
-    dsa = xr.Dataset()
-    for var_name in list(ds) + list(ds.coords):
-        if "_QC" in var_name:
-            continue
-        dsa[var_name] = (
-            "N_MEASUREMENTS",
-            ds[var_name].values[:num_vals],
-            ds[var_name].attrs,
-        )
-        qc_name = f"{var_name}_QC"
-        if qc_name in list(ds):
-            dsa[qc_name] = (
-                "N_MEASUREMENTS",
-                ds[qc_name].values[:num_vals].astype("int8"),
-                ds[qc_name].attrs,
-            )
-            dsa[qc_name].attrs["long_name"] = (
-                f'{dsa[var_name].attrs["long_name"]} Quality Flag'
-            )
-            dsa[qc_name].attrs["standard_name"] = "status_flag"
-            dsa[qc_name].attrs["flag_values"] = np.array((1, 2, 3, 4, 9)).astype("int8")
-            dsa[qc_name].attrs["flag_meanings"] = "GOOD UNKNOWN SUSPECT FAIL MISSING"
-            dsa[var_name].attrs["ancillary_variables"] = qc_name
-    if "time" in str(dsa.TIME.dtype):
-        var_name = "TIME"
-        dsa[var_name].values = dsa[var_name].values.astype(float)
-        if np.nanmean(dsa[var_name].values) > 1e12:
-            dsa[var_name].values = dsa[var_name].values / 1e9
-    dsa = dsa.set_coords(("TIME", "LATITUDE", "LONGITUDE", "DEPTH"))
-    for vname in ["LATITUDE", "LONGITUDE", "TIME"]:
-        dsa[f"{vname}_GPS"] = dsa[vname].copy()
-        dsa[f"{vname}_GPS"].values[dsa["nav_state"].values != 119] = np.nan
-        dsa[f"{vname}_GPS"].attrs["long_name"] = f"{vname.lower()} of each GPS location"
-    dsa["LATITUDE_GPS"].attrs["URI"] = (
-        "https://vocab.nerc.ac.uk/collection/OG1/current/LAT_GPS/"
-    )
-    dsa["LONGITUDE_GPS"].attrs["URI"] = (
-        "https://vocab.nerc.ac.uk/collection/OG1/current/LON_GPS/"
-    )
-    seaex_phase = dsa["nav_state"].values
-    standard_phase = np.zeros(len(seaex_phase)).astype(int)
-    standard_phase[seaex_phase == 115] = 3
-    standard_phase[seaex_phase == 116] = 3
-    standard_phase[seaex_phase == 119] = 3
-    standard_phase[seaex_phase == 110] = 5
-    standard_phase[seaex_phase == 118] = 5
-    standard_phase[seaex_phase == 100] = 2
-    standard_phase[seaex_phase == 117] = 1
-    standard_phase[seaex_phase == 123] = 4
-    standard_phase[seaex_phase == 124] = 4
-    dsa["PHASE"] = xr.DataArray(
-        standard_phase,
-        coords=dsa["LATITUDE"].coords,
-        attrs={
-            "long_name": "behavior of the glider at sea",
-            "phase_vocabulary": "https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md",
-        },
-    )
-    ds, dsa = add_sensors(ds, dsa)
-    attrs = ds.attrs
-    ts = pd.to_datetime(ds.time_coverage_start).strftime("%Y%m%dT%H%M")
-    if "delayed" in ds.attrs["dataset_id"]:
-        postscript = "delayed"
-    else:
-        postscript = "R"
-    attrs["id"] = f"sea{str(attrs['glider_serial']).zfill(3)}_{ts}_{postscript}"
-    attrs["title"] = "OceanGliders example file for SeaExplorer data"
-    attrs["platform"] = "sub-surface gliders"
-    attrs["platform_vocabulary"] = "https://vocab.nerc.ac.uk/collection/L06/current/27/"
-    attrs["contributor_email"] = (
-        "callum.rollo@voiceoftheocean.org, louise.biddle@voiceoftheocean.org, , , , , , "
-    )
-    attrs["contributor_role_vocabulary"] = "https://vocab.nerc.ac.uk/collection/W08/"
-    attrs["contributor_role"] = (
-        "Data scientist, PI, Operator, Operator, Operator, Operator, Operator, Operator,"
-    )
-    attrs["contributing_institutions"] = "Voice of the Ocean Foundation"
-    attrs["contributing_institutions_role"] = "Operator"
-    attrs["contributing_institutions_role_vocabulary"] = (
-        "https://vocab.nerc.ac.uk/collection/W08/current/"
-    )
-    attrs["date_modified"] = attrs["date_created"]
-    attrs["agency"] = "Voice of the Ocean"
-    attrs["agency_role"] = "contact point"
-    attrs["agency_role_vocabulary"] = "https://vocab.nerc.ac.uk/collection/C86/current/"
-    attrs["data_url"] = (
-        f"https://erddap.observations.voiceoftheocean.org/erddap/tabledap/{attrs['dataset_id']}"
-    )
-    attrs["rtqc_method"] = "IOOS QC QARTOD https://github.com/ioos/ioos_qc"
-    attrs["rtqc_method_doi"] = "None"
-    attrs["featureType"] = "trajectory"
-    attrs["Conventions"] = "CF-1.10, OG-1.0"
-    if num_vals:
-        attrs["comment"] = (
-            f"Dataset for demonstration purposes only. Original dataset truncated to {num_vals} values for the sake of simplicity"
-        )
-    attrs["start_date"] = attrs["time_coverage_start"]
-    dsa.attrs = attrs
-    dsa["TRAJECTORY"] = xr.DataArray(
-        ds.attrs["id"],
-        attrs={"cf_role": "trajectory_id", "long_name": "trajectory name"},
-    )
-    dsa["WMO_IDENTIFIER"] = xr.DataArray(
-        ds.attrs["wmo_id"],
-        attrs={"long_name": "wmo id"},
-    )
-    dsa["PLATFORM_MODEL"] = xr.DataArray(
-        ds.attrs["glider_model"],
-        attrs={
-            "long_name": "model of the glider",
-            "platform_model_vocabulary": "None",
-        },
-    )
-    dsa["PLATFORM_SERIAL_NUMBER"] = xr.DataArray(
-        f"sea{ds.attrs['glider_serial'].zfill(3)}",
-        attrs={"long_name": "glider serial number"},
-    )
-    dsa["DEPLOYMENT_TIME"] = np.nanmin(dsa.TIME.values)
-    dsa["DEPLOYMENT_TIME"].attrs = {
-        "long_name": "date of deployment",
-        "standard_name": "time",
-        "units": "seconds since 1970-01-01T00:00:00Z",
-        "calendar": "gregorian",
-    }
-    dsa["DEPLOYMENT_LATITUDE"] = dsa.LATITUDE.values[0]
-    dsa["DEPLOYMENT_LATITUDE"].attrs = {"long_name": "latitude of deployment"}
-    dsa["DEPLOYMENT_LONGITUDE"] = dsa.LONGITUDE.values[0]
-    dsa["DEPLOYMENT_LONGITUDE"].attrs = {"long_name": "longitude of deployment"}
-    dsa = encode_times_og1(dsa)
-#    dsa = set_best_dtype(dsa)
-    return dsa
-
-def standardise_og10(ds):
-    """
-    Standardizes the given xarray Dataset according to predefined vocabularies.
-
-    This function processes the input Dataset `ds` by renaming variables based on
-    a predefined vocabulary and adding quality control (QC) variables where applicable.
-    It also ensures that the attributes of the original variables are preserved and
-    assigns the best data types to the resulting Dataset.
-
-    Parameters
-    ----------
-    ds (xarray.Dataset): The input Dataset to be standardized.
-
-    Returns
-    -------
-    xarray.Dataset: A new Dataset with standardized variable names and attributes.
-
-    Notes
-    -----
-    - Variables with "qc" in their names are skipped.
-    - If a variable name is found in the predefined vocabulary, it is renamed and
-      its attributes are updated accordingly.
-    - QC variables are added with the suffix "_QC" and linked to their corresponding
-      variables via the "ancillary_variables" attribute.
-    - Variables not found in the vocabulary are added as-is, and a log message is
-      generated for those not in `vars_as_is`.
-
-    Raises:
-    - Any exceptions raised by the `set_best_dtype` function.
-    """
-    dsa = xr.Dataset()
-    dsa.attrs = ds.attrs
-
-    ds_renamed = ds.rename_dims(vocabularies.dims_rename_dict)
-#    ds_renamed = ds_renamed.rename_vars(vocabularies.coords_rename_dict)
-#    ds_renamed = ds_renamed.rename_vars(vocabularies.vars_rename_dict)
-    vars_to_keep = set(vocabularies.vars_rename_dict.values())
-
-    # Rename dimensions based on the vocabularies.dims_rename_dict
-    for dim_name, size in ds_renamed.dims.items():
-        if dim_name not in dsa.dims:
-            dsa = dsa.assign_coords({dim_name: np.arange(size)})
-    # Rename coordinates based on the vocabularies.coords_rename_dict
-    for coord_name in ds_renamed.dims.items():
-        if coord_name in vocabularies.coords_rename_dict:
-            new_coord_name = vocabularies.coords_rename_dict[coord_name]
-            dsa = dsa.rename({coord_name: new_coord_name})
-
-    for var_name in list(ds) + list(ds.coords):
-        if "qc" in var_name:
-            continue
-        if var_name in vocabularies.standard_names.keys():
-            print(var_name)
-            name = vocabularies.standard_names[var_name]
-            dsa[name] = ("time", ds[var_name].values, vocabularies.vocab_attrs[name])
-            for key, val in ds[var_name].attrs.items():
-                if key not in dsa[name].attrs.keys():
-                    dsa[name].attrs[key] = val
-            qc_name = f"{var_name}_qc"
-            if qc_name in list(ds):
-                dsa[f"{name}_QC"] = ("time", ds[qc_name].values, ds[qc_name].attrs)
-                dsa[name].attrs["ancillary_variables"] = f"{name}_QC"
-        else:
-#           Note: this differs from the original standardise_og10 function
-#            dsa[var_name] = ("time", ds[var_name].values, ds[var_name].attrs)
-            if var_name not in vars_as_is:
-                _log.error(f"variable {var_name} not translated.")
-                
-    # dsa = set_best_dtype(dsa) - this changes data types - skipping for now
-    return dsa
-
-##----------------------------------------------------------------------------------------------------------------------------
-## Editing variables
-##----------------------------------------------------------------------------------------------------------------------------
-vars_as_is = [
-    "altimeter",
-    "nav_resource",
-    "angular_cmd",
-    "angular_pos",
-    "ballast_cmd",
-    "ballast_pos",
-    "dead_reckoning",
-    "declination",
-    "desired_heading",
-    "dive_num",
-    "internal_pressure",
-    "internal_temperature",
-    "linear_cmd",
-    "linear_pos",
-    "security_level",
-    "voltage",
-    "distance_over_ground",
-#    "ad2cp_beam1_cell_number1",
-#    "ad2cp_beam2_cell_number1",
-#    "ad2cp_beam3_cell_number1",
-#    "ad2cp_beam4_cell_number1",
-#    "vertical_distance_to_seafloor",
-#    "profile_direction",
-    "profile_num",
-    "nav_state",
-]
-
-def create_renamed_dataset(ds):
-    from seagliderOG1 import vocabularies
-
-    # Apply renaming using the dictionaries
-    ds_renamed = ds.rename_dims(vocabularies.dims_rename_dict)
-    ds_renamed = ds_renamed.rename_vars(vocabularies.coords_rename_dict)
-    ds_renamed = ds_renamed.rename_vars(vocabularies.vars_rename_dict)
-
-    # Remove variables not in vars_rename_dict().values
-    vars_to_keep = set(vocabularies.vars_rename_dict.values())
-    ds_renamed = ds_renamed[vars_to_keep]
-
-    # Check if PROFILE_NUMBER is present as a variable
-    if 'PROFILE_NUMBER' not in ds_renamed.variables:
-        ds_renamed = assign_profile_number(ds_renamed)
-    if 'PHASE' not in ds_renamed.variables:
-        ds_renamed = assign_phase(ds_renamed)
-
-    # Cycle through the variables within ds_renamed and ds_renamed.coords
-    for name in list(ds_renamed):
-        if name in vocabularies.standard_names.values():
-            for key, val in vocabularies.vocab_attrs[name].items():
-                if key not in ds_renamed[name].attrs.keys():
-                    ds_renamed[name].attrs[key] = val
-
-    # Update the attributes time_coverage_start and time_coverage_end
-    time_coverage_start = pd.to_datetime(ds_renamed.TIME.values[0]).strftime("%Y%m%dT%H%M%S")
-    time_coverage_end = pd.to_datetime(ds_renamed.TIME.values[-1]).strftime("%Y%m%dT%H%M%S")
-    ds_renamed.attrs["time_coverage_start"] = time_coverage_start
-    ds_renamed.attrs["time_coverage_end"] = time_coverage_end
-
-    # Update the attribute date_created to today's date
-    ds_renamed.attrs["date_created"] = datetime.utcnow().strftime('%Y%m%dT%H%M%S')
-
-    # Check whether time_coverage_start is before start_date.  If so, then update start_date
-    if time_coverage_start < ds_renamed.attrs["start_date"]:
-        ds_renamed.attrs["start_date"] = time_coverage_start
-
-    return ds_renamed
-
-##----------------------------------------------------------------------------------------------------------------------------
-## Editing attributes
-##----------------------------------------------------------------------------------------------------------------------------
-def generate_attributes(ds_all):
-    """
-    Generate a dictionary of attributes to add and change for a dataset.
+    Splits an xarray dataset into multiple datasets based on the unique set of dimensions of the variables.
 
     Parameters:
-    ds_all (object): An object containing various metadata attributes of the dataset.
+    ds (xarray.Dataset): The input xarray dataset containing various variables.
 
     Returns:
-    tuple: A tuple containing two dictionaries:
-        - attr_to_add (dict): Attributes to add to the dataset.
-        - attr_to_change (dict): Attributes to change in the dataset.
-
-    The dictionaries contain the following keys:
-    attr_to_add:
-        - title: Title of the dataset.
-        - platform: Platform type.
-        - platform_vocabulary: URL to the platform vocabulary.
-        - id: Unique identifier for the dataset.
-        - contributor_email: Email of the contributor.
-        - contributor_role_vocabulary: URL to the contributor role vocabulary.
-        - contributing_institutions: Name of the contributing institutions.
-        - contributing_institutions_vocabulary: URL to the contributing institutions vocabulary.
-        - contributing_institutions_role: Role of the contributing institutions.
-        - contributing_institutions_role_vocabulary: URL to the contributing institutions role vocabulary.
-        - uri: Unique resource identifier.
-        - uri_comment: Comment about the URI.
-        - web_link: Web link to the dataset.
-        - start_date: Start date of the dataset.
-        - featureType: Feature type of the dataset.
-        - landstation_version: Version of the land station.
-        - glider_firmware_version: Version of the glider firmware.
-        - rtqc_method: Real-time quality control method.
-        - rtqc_method_doi: DOI for the RTQC method.
-        - doi: DOI of the dataset.
-        - data_url: URL to the data.
-        - comment: History comment.
-
-    attr_to_change:
-        - time_coverage_start: Start time of the dataset coverage.
-        - time_coverage_end: End time of the dataset coverage.
-        - Conventions: Conventions followed by the dataset.
-        - date_created: Creation date of the dataset.
-        - date_modified: Modification date of the dataset.
-        - contributor_name: Name of the contributor.
-        - contributor_role: Role of the contributor.
+    tuple: A tuple containing xarray datasets, each with variables sharing the same set of dimensions.
     """
+    # Dictionary to hold datasets with unique dimension sets
+    unique_dims_datasets = {}
 
-    title = "OceanGliders trajectory file"
-    platform = "sub-surface gliders"
-    platform_vocabulary = "https://vocab.nerc.ac.uk/collection/L06/current/27/"
+    # Iterate over the variables in the dataset
+    for var_name, var_data in ds.data_vars.items():
+        # Get the dimensions of the variable
+        dims = tuple(var_data.dims)
+        
+        # If this dimension set is not in the dictionary, create a new dataset
+        if dims not in unique_dims_datasets:
+            unique_dims_datasets[dims] = xr.Dataset()
+        
+        # Add the variable to the corresponding dataset
+        unique_dims_datasets[dims][var_name] = var_data
 
-    time_str = ds_all.time_coverage_start.replace('_', '').replace(':', '').rstrip('Z').rstrip('Z').replace('-','')
-    id = ds_all.platform_id + '_' + time_str + '_delayed'
-    time_coverage_start = time_str
-    time_coverage_end = ds_all.time_coverage_end.replace('_', '').replace(':', '').rstrip('Z').replace('-','')
+    # Convert the dictionary values to a dictionary of datasets
+    return {dims: dataset for dims, dataset in unique_dims_datasets.items()}
 
-    site = ds_all.summary
-    contributor_name = ds_all.creator_name + ', ' + ds_all.contributor_name
-    contributor_email = ds_all.creator_email
-    contributor_role = "PI, " + ds_all.contributor_role
-    contributor_role_vocabulary = "http://vocab.nerc.ac.uk/search_nvs/W08/"
-    contributing_institutions = "University of Washington - School of Oceanography, University of Hamburg - Institute of Oceanography"
-    contributing_institutions_vocabulary = 'https://edmo.seadatanet.org/report/1434, https://edmo.seadatanet.org/report/1156'
-    contributing_institutions_role = "Operator, Data scientist"
-    contributing_institutions_role_vocabulary = "http://vocab.nerc.ac.uk/collection/W08/current/"
-    uri = ds_all.uuid
-    uri_comment = "UUID"
-    web_link = "https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:0111844"
-    comment = "history: " + ds_all.history
-    start_date = time_coverage_start
-    date_created = ds_all.date_created.replace('_', '').replace(':', '').rstrip('Z').rstrip('Z').replace('-','')
-    date_modified = datetime.now().strftime('%Y%m%dT%H%M%S')
-    featureType = "trajectory"
-    Conventions = "CF-1.10,OG-1.0"
-    landstation_version = ds_all.base_station_version + ds_all.base_station_micro_version
-    glider_firmware_version = ds_all.seaglider_software_version
-    rtqc_method = "No QC applied"
-    rtqc_method_doi = "n/a"
-    doi = "none yet"
-    data_url = ""
+def assign_profile_number(ds, divenum_str = 'divenum'):
+    # Remove the variable dive_num_cast if it exists
+    if 'dive_num_cast' in ds.variables:
+        ds = ds.drop_vars('dive_num_cast')
+    # Initialize the new variable with the same dimensions as dive_num
+    ds['dive_num_cast'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
 
-    attr_to_add = {
-        "title": title,
-        "platform": platform, 
-        "platform_vocabulary": platform_vocabulary,
-        "id": id,
-        "contributor_email": contributor_email,
-        "contributor_role_vocabulary": contributor_role_vocabulary,
-        "contributing_institutions": contributing_institutions,
-        "contributing_institutions_vocabulary": contributing_institutions_vocabulary,
-        "contributing_institutions_role": contributing_institutions_role,
-        "contributing_institutions_role_vocabulary": contributing_institutions_role_vocabulary,
-        "uri": uri,
-        "uri_comment": uri_comment,
-        "web_link": web_link,
-        "comment": comment,
-        "start_date": start_date,
-        "featureType": featureType,
-        "landstation_version": landstation_version,
-        "glider_firmware_version": glider_firmware_version,
-        "rtqc_method": rtqc_method,
-        "rtqc_method_doi": rtqc_method_doi,
-        "doi": doi,
-        "data_url": data_url,
-    }
+    # Iterate over each unique dive_num
+    for dive in np.unique(ds[divenum_str]):
+        # Get the indices for the current dive
+        dive_indices = np.where(ds[divenum_str] == dive)[0]
+        # Find the start and end index for the current dive
+        start_index = dive_indices[0]
+        end_index = dive_indices[-1]
+        
+        # Find the index of the maximum pressure between start_index and end_index
+        pmax = np.nanmax(ds['PRES'][start_index:end_index + 1].values) 
+        # Find the index where PRES attains the value pmax between start_index and end_index
+        pmax_index = start_index + np.argmax(ds['PRES'][start_index:end_index + 1].values == pmax)
+        
+        # Assign dive_num to all values up to and including the point where pmax is reached
+        ds['dive_num_cast'][start_index:pmax_index + 1] = dive
 
-    attr_to_change = {
-        "time_coverage_start": time_coverage_start,
-        "time_coverage_end": time_coverage_end,
-        "Conventions": Conventions,
-        "date_created": date_created,
-        "date_modified": date_modified,
-        "contributor_name": contributor_name,
-        "contributor_role": contributor_role,
-    }
+        # Assign dive_num + 0.5 to all values after pmax is reached
+        ds['dive_num_cast'][pmax_index + 1:end_index + 1] = dive + 0.5
 
-    attr_as_is = [
-        "naming_authority",
-        "institution",
-        "project",
-        "geospatial_lat_min",
-        "geospatial_lat_max",
-        "geospatial_lon_min",
-        "geospatial_lon_max",
-        "geospatial_vertical_min",
-        "geospatial_vertical_max",
-        "license",
-        "keywords",
-        "keywords_vocabulary",
-        "file_version",
-        "acknowledgment",
-        "date_created",
-        "disclaimer",
-    ]
-
-
-    # After changing attributes
-    attr_to_remove = [
-        "summary",
-        "history",
-        "time_coverage_resolution",
-        "geospatial_lat_units",
-        "geospatial_lon units",
-        "geospatial_vertical_units",
-        "geospatial_vertical_positive",
-        "geospatial_vertical_resolution",
-        "geospatial_lat_resolution",
-        "geospatial_lon_resolution",
-        "creator_name",
-        "creator_email",
-        "Metadata_Conventions",
-    ]
-
-
-    return attr_to_add, attr_as_is, attr_to_change, attr_to_remove
-
-
-def modify_attributes(ds, attr_to_add, attr_as_is, attr_to_change, attr_to_remove):
-
-    # Define the order of attributes
-    ordered_attributes = [
-        "title", "platform", "platform_vocabulary", "id", "naming_authority", 
-        "institution", "geospatial_lat_min", "geospatial_lat_max", 
-        "geospatial_lon_min", "geospatial_lon_max", "geospatial_vertical_min", 
-        "geospatial_vertical_max", "time_coverage_start", "time_coverage_end", 
-        "site", "project", "contributor_name", "contributor_email", 
-        "contributor_role", "contributor_role_vocabulary", "uri", "data_url", 
-        "doi", "rtqc_method", "rtqc_method_doi", "web_link", "comment", 
-        "start_date", "date_created", "featureType", "Conventions"
-    ]
-    # Retain specified attributes
-    new_attrs = {key: ds.attrs[key] for key in attr_as_is if key in ds.attrs}
-
-    # Change specified attributes
-    for key, value in attr_to_change.items():
-        new_attrs[key] = value
-
-    # Add new attributes
-    for key, value in attr_to_add.items():
-        if key not in new_attrs:
-            new_attrs[key] = value
-
-    # Remove specified attributes
-    for key in attr_to_remove:
-        if key in new_attrs:
-            del new_attrs[key]
-
-    ds.attrs = new_attrs
-
-    # Add the rest of the attributes that are present in the dataset but not in the ordered list
-    for attr in ds.attrs:
-        if attr not in ordered_attributes:
-            ordered_attributes.append(attr)
-
-    # Reorder the attributes in ds_new_att according to ordered_attributes
-    new_attrs = {attr: ds.attrs[attr] for attr in ordered_attributes if attr in ds.attrs}
-    for attr in ds.attrs:
-        if attr not in new_attrs:
-            new_attrs[attr] = ds.attrs[attr]
-
-    ds.attrs = new_attrs
+        # Remove the variable PROFILE_NUMBER if it exists
+        if 'PROFILE_NUMBER' in ds.variables:
+            ds = ds.drop_vars('PROFILE_NUMBER')
+        # Assign PROFILE_NUMBER as 2 * dive_num_cast - 1
+        ds['PROFILE_NUMBER'] = 2 * ds['dive_num_cast'] - 1
     return ds
 
-if __name__ == "__main__":
-    dsn = xr.open_dataset(
-        "/data/data_l0_pyglider/nrt/SEA76/M19/timeseries/mission_timeseries.nc",
-    )
-    dsn = standardise_og10(dsn)
-    dsn = convert_to_og1(dsn)
-    dsn.to_netcdf("new.nc")
+def add_dive_number(ds, dive_number):
+    """
+    Add dive number as a variable to the dataset.
+
+    Parameters:
+    ds (xarray.Dataset): The dataset to which the dive number will be added.
+
+    Returns:
+    xarray.Dataset: The dataset with the dive number added.
+    """
+    if dive_number==None:
+        dive_number = ds.attrs.get('dive_number', np.nan)
+    return ds.assign(divenum=('N_MEASUREMENTS', [dive_number] * ds.dims['N_MEASUREMENTS']))
+
+def assign_phase(ds):
+    """
+    This function adds new variables 'PHASE' and 'PHASE_QC' to the dataset `ds`, which indicate the phase of each measurement. The phase is determined based on the pressure readings ('PRES') for each unique dive number ('dive_num').
+    
+    Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth. Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC.
+    Assigns phase values to the dataset based on pressure readings.
+        
+    Parameters
+    ----------
+    ds (xarray.Dataset): The input dataset containing 'dive_num' and 'PRES' variables.
+    
+    Returns
+    -------
+    xarray.Dataset: The dataset with an additional 'PHASE' variable, where:
+    xarray.Dataset: The dataset with additional 'PHASE' and 'PHASE_QC' variables, where:
+        - 'PHASE' indicates the phase of each measurement:
+            - Phase 2 is assigned to measurements up to and including the maximum pressure point.
+            - Phase 1 is assigned to measurements after the maximum pressure point.
+        - 'PHASE_QC' is an additional variable with no QC applied.
+        
+    Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth.  Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC
+    """
+    # Determine the correct keystring for divenum
+    if 'dive_number' in ds.variables:
+        divenum_str = 'dive_number'
+    elif 'divenum' in ds.variables:
+        divenum_str = 'divenum'
+    elif 'dive_num' in ds.variables:
+        divenum_str = 'dive_num'
+    else:
+        raise ValueError("No valid dive number variable found in the dataset.")
+    # Initialize the new variable with the same dimensions as dive_num
+    ds['PHASE'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
+    # Initialize the new variable PHASE_QC with the same dimensions as dive_num
+    ds['PHASE_QC'] = (['N_MEASUREMENTS'], np.zeros(ds.dims['N_MEASUREMENTS'], dtype=int))
+
+    # Iterate over each unique dive_num
+    for dive in np.unique(ds[divenum_str]):
+        # Get the indices for the current dive
+        dive_indices = np.where(ds[divenum_str] == dive)[0]
+        # Find the start and end index for the current dive
+        start_index = dive_indices[0]
+        end_index = dive_indices[-1]
+        
+        # Find the index of the maximum pressure between start_index and end_index
+        pmax = np.nanmax(ds['PRES'][start_index:end_index + 1].values) 
+
+        # Find the index where PRES attains the value pmax between start_index and end_index
+        pmax_index = start_index + np.argmax(ds['PRES'][start_index:end_index + 1].values == pmax)
+        
+        # Assign phase 2 to all values up to and including the point where pmax is reached
+        ds['PHASE'][start_index:pmax_index + 1] = 2
+
+        # Assign phase 1 to all values after pmax is reached
+        ds['PHASE'][pmax_index + 1:end_index + 1] = 1
+
+        # Assign phase 3 to the time at the beginning of the dive, between the first valid TIME_GPS and the second valid TIME_GPS
+        valid_time_gps_indices = np.where(~np.isnan(ds['TIME_GPS'][start_index:end_index + 1].values))[0]
+        if len(valid_time_gps_indices) >= 2:
+            first_valid_index = start_index + valid_time_gps_indices[0]
+            second_valid_index = start_index + valid_time_gps_indices[1]
+            ds['PHASE'][first_valid_index:second_valid_index + 1] = 3
+
+    return ds
 
 ##----------------------------------------------------------------------------------------------------------------------------
 ## Calculations for new variables
@@ -727,87 +349,33 @@ def convert_velocity_units(ds, var_name):
         print(f"{var_name} not found in the dataset")
     return ds
 
-def assign_profile_number(ds):
-    # Remove the variable dive_num_cast if it exists
-    if 'dive_num_cast' in ds.variables:
-        ds = ds.drop_vars('dive_num_cast')
-    # Initialize the new variable with the same dimensions as dive_num
-    ds['dive_num_cast'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
-
-    # Iterate over each unique dive_num
-    for dive in np.unique(ds['dive_num']):
-        # Get the indices for the current dive
-        dive_indices = np.where(ds['dive_num'] == dive)[0]
-        # Find the start and end index for the current dive
-        start_index = dive_indices[0]
-        end_index = dive_indices[-1]
-        
-        # Find the index of the maximum pressure between start_index and end_index
-        pmax = np.max(ds['PRES'][start_index:end_index + 1].values) 
-
-        # Find the index where PRES attains the value pmax between start_index and end_index
-        pmax_index = start_index + np.argmax(ds['PRES'][start_index:end_index + 1].values == pmax)
-        
-        # Assign dive_num to all values up to and including the point where pmax is reached
-        ds['dive_num_cast'][start_index:pmax_index + 1] = dive
-
-        # Assign dive_num + 0.5 to all values after pmax is reached
-        ds['dive_num_cast'][pmax_index + 1:end_index + 1] = dive + 0.5
-
-        # Remove the variable PROFILE_NUMBER if it exists
-        if 'PROFILE_NUMBER' in ds.variables:
-            ds = ds.drop_vars('PROFILE_NUMBER')
-        # Assign PROFILE_NUMBER as 2 * dive_num_cast - 1
-        ds['PROFILE_NUMBER'] = 2 * ds['dive_num_cast'] - 1
-    return ds
-
-def assign_phase(ds):
+def convert_units(ds, preferred_units=vocabularies.preferred_units, unit_conversion=vocabularies.unit_conversion):
     """
-    This function adds new variables 'PHASE' and 'PHASE_QC' to the dataset `ds`, which indicate the phase of each measurement. The phase is determined based on the pressure readings ('PRES') for each unique dive number ('dive_num').
-    
-    Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth. Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC.
-    Assigns phase values to the dataset based on pressure readings.
-        
+    Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.
+
     Parameters
     ----------
-    ds (xarray.Dataset): The input dataset containing 'dive_num' and 'PRES' variables.
-    
+    ds (xarray.Dataset): The dataset containing variables to convert.
+    preferred_units (list): A list of strings representing the preferred units.
+    unit_conversion (dict): A dictionary mapping current units to conversion information.
+    Each key is a unit string, and each value is a dictionary with:
+        - 'factor': The factor to multiply the variable by to convert it.
+        - 'units_name': The new unit name after conversion.
+
     Returns
     -------
-    xarray.Dataset: The dataset with an additional 'PHASE' variable, where:
-    xarray.Dataset: The dataset with additional 'PHASE' and 'PHASE_QC' variables, where:
-        - 'PHASE' indicates the phase of each measurement:
-            - Phase 2 is assigned to measurements up to and including the maximum pressure point.
-            - Phase 1 is assigned to measurements after the maximum pressure point.
-        - 'PHASE_QC' is an additional variable with no QC applied.
-        
-    Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth.  Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC
+    xarray.Dataset: The dataset with converted units.
     """
 
-    # Initialize the new variable with the same dimensions as dive_num
-    ds['PHASE'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
-    # Initialize the new variable PHASE_QC with the same dimensions as dive_num
-    ds['PHASE_QC'] = (['N_MEASUREMENTS'], np.zeros(ds.dims['N_MEASUREMENTS'], dtype=int))
-
-    # Iterate over each unique dive_num
-    for dive in np.unique(ds['dive_num']):
-        # Get the indices for the current dive
-        dive_indices = np.where(ds['dive_num'] == dive)[0]
-        # Find the start and end index for the current dive
-        start_index = dive_indices[0]
-        end_index = dive_indices[-1]
-        
-        # Find the index of the maximum pressure between start_index and end_index
-        pmax = np.max(ds['PRES'][start_index:end_index + 1].values) 
-
-        # Find the index where PRES attains the value pmax between start_index and end_index
-        pmax_index = start_index + np.argmax(ds['PRES'][start_index:end_index + 1].values == pmax)
-        
-        # Assign phase 2 to all values up to and including the point where pmax is reached
-        ds['PHASE'][start_index:pmax_index + 1] = 2
-
-        # Assign phase 1 to all values after pmax is reached
-        ds['PHASE'][pmax_index + 1:end_index + 1] = 1
+    for var in ds.variables:
+        current_unit = ds[var].attrs.get('units')
+        if current_unit in unit_conversion:
+            conversion_info = unit_conversion[current_unit]
+            new_unit = conversion_info['units_name']
+            if new_unit in preferred_units:
+                conversion_factor = conversion_info['factor']
+                ds[var] = ds[var] * conversion_factor
+                ds[var].attrs['units'] = new_unit
 
     return ds
 
