@@ -40,7 +40,7 @@ unit_conversion = {
 
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
 # Key is the basestation variable name, value is the OG1 standard name
-with open(config_dir + 'OG1_standard_names.yaml', 'r') as file:
+with open(config_dir + 'OG1_var_names.yaml', 'r') as file:
     standard_names = yaml.safe_load(file)
 
 vars_to_remove = [
