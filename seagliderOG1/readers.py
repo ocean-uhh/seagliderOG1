@@ -4,6 +4,7 @@ import os
 from bs4 import BeautifulSoup
 import requests
 import numpy as np
+from importlib_resources import files
 
 # readers.py: Will only read files.  Not manipulate them.
 #
@@ -17,7 +18,10 @@ import numpy as np
 #pooch_registry = create_pooch_registry_from_directory(directory_path)
 #print(pooch_registry)
 
-
+# Information on creating a registry file: https://www.fatiando.org/pooch/latest/registry-files.html
+# But instead of pkg_resources (https://setuptools.pypa.io/en/latest/pkg_resources.html#)
+# we should use importlib.resources
+# Here's how to use importlib.resources (https://importlib-resources.readthedocs.io/en/latest/using.html)
 server = "https://www.dropbox.com/scl/fo/dhinr4hvpk05zcecqyz2x/ADTqIuEpWHCxeZDspCiTN68?rlkey=bt9qheandzbucca5zhf5v9j7a&dl=0"
 server = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/"
 data_source_og = pooch.create(
@@ -25,7 +29,10 @@ data_source_og = pooch.create(
     base_url=server,
     registry=None,
 )
-registry_file = '../seagliderOG1/seaglider_registry.txt'
+#registry_file = pkg_resources.resource_stream("seagliderOG1", "seaglider_registry.txt")
+registry_file = files('seagliderOG1').joinpath('seaglider_registry.txt')
+
+#registry_file = 'seaglider_registry.txt'
 data_source_og.load_registry(registry_file)
 
 def load_sample_dataset(dataset_name="p0150500_20050213.nc"):
