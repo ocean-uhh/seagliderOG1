@@ -11,6 +11,24 @@ _log = logging.getLogger(__name__)
 
 
 def _validate_coords(ds1):
+    """
+    Validates and assigns coordinates to the given xarray Dataset.
+    Parameters:
+    ds1 (xarray.Dataset): The dataset to validate and assign coordinates to. 
+                          It is expected to have an 'id' attribute and may contain 
+                          'longitude', 'latitude', 'ctd_time', and 'ctd_depth' variables.
+    Returns:
+    xarray.Dataset: The validated dataset with necessary coordinates assigned. 
+                    If 'ctd_time' variable is missing, an empty dataset is returned.
+    Notes:
+    - If 'longitude' or 'latitude' coordinates are missing, they are added as NaNs with the length of 'sg_data_point'.
+    - If 'ctd_time' variable exists but 'ctd_time' or 'ctd_depth' coordinates are missing, they are assigned from the variable.
+    - If 'ctd_time' variable is missing, an empty dataset is returned.
+    - Prints messages indicating the actions taken for missing coordinates or variables.
+
+    Based on: https://github.com/pydata/xarray/issues/3743
+    """
+
     id = ds1.attrs['id']
     if 'longitude' not in ds1.coords:
         ds1 = ds1.assign_coords(longitude=("sg_data_point", [float('nan')] * ds1.dims['sg_data_point']))
