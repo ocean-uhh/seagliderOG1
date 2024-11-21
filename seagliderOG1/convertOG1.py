@@ -2,53 +2,17 @@ import numpy as np
 import xarray as xr
 from seagliderOG1 import vocabularies
 from seagliderOG1 import attr_input
+from seagliderOG1 import readers, writers, utilities
 import gsw
 import logging
 from datetime import datetime
-from numbers import Number
 #import importlib
 #importlib.reload(vocabularies)
+#import votoutils
+import os
 
 _log = logging.getLogger(__name__)
 
-
-def save_dataset(ds, output_file='../test.nc'):
-    """
-    Attempts to save the dataset to a NetCDF file. If a TypeError occurs due to invalid attribute values,
-    it converts the invalid attributes to strings and retries the save operation.
-
-    Parameters
-    ----------
-    ds (xarray.Dataset): The dataset to be saved.
-    output_file (str): The path to the output NetCDF file. Defaults to 'test.nc'.
-
-    Returns
-    -------
-    bool: True if the dataset was saved successfully, False otherwise.
-
-    Based on: https://github.com/pydata/xarray/issues/3743
-    """
-    valid_types = (str, int, float, np.float32, np.float64, np.int32, np.int64)
-    valid_types = (str, Number, np.ndarray, np.number, list, tuple)
-    try:
-        ds.to_netcdf(output_file, format='NETCDF4')
-        return True
-    except TypeError as e:
-        print(e.__class__.__name__, e)
-        for variable in ds.variables.values():
-            for k, v in variable.attrs.items():
-                if not isinstance(v, valid_types) or isinstance(v, bool):
-                    variable.attrs[k] = str(v)
-        try:
-            ds.to_netcdf(output_file, format='NETCDF4')
-            return True
-        except Exception as e:
-            print("Failed to save dataset:", e)
-            datetime_vars = [var for var in ds_new.variables if ds_new[var].dtype == 'datetime64[ns]']
-            print("Variables with dtype datetime64[ns]:", datetime_vars)
-            float_attrs = [attr for attr in ds_new.attrs if isinstance(ds_new.attrs[attr], float)]
-            print("Attributes with dtype float64:", float_attrs)
-            return False
 
 
 def convert_to_OG1(datasets, contrib_to_append=None):
@@ -162,7 +126,7 @@ def process_dataset(ds1):
     """
 
     # Check if the dataset has 'LONGITUDE' as a coordinate
-    ds1 = utilities._validate_coordinates(ds1)
+    ds1 = utilities._validate_coords(ds1)
     if ds1 is None or len(ds1.variables) == 0:
         return xr.Dataset(), [], xr.Dataset(), xr.Dataset(), xr.Dataset()
 
@@ -785,3 +749,49 @@ def extract_attr_to_rename(ds1, attr_to_rename=attr_input.attr_to_rename):
     return renamed_attrs
 
 
+def process_and_save_data(input_location, save=False, output_dir='../data', run_quietly=True):
+    """
+    Processes and saves data from the specified input location.
+    This function loads and concatenates datasets from the server, converts them to OG1 format,
+    and saves the resulting dataset to a NetCDF file. If the file already exists, the function
+    will prompt the user to decide whether to overwrite it or not.
+    
+    Parameters:
+    input_location (str): The location of the input data to be processed.
+    save (bool): Whether to save the processed dataset to a file. Default is False.
+    output_dir (str): The directory where the output file will be saved. Default is '../data'.
+
+    Returns:
+    xarray.Dataset: The processed dataset.
+    """
+
+    # Load and concatenate all datasets from the server
+    list_datasets = readers.read_basestation(input_location)
+    
+    # Convert the list of datasets to OG1
+    ds1 = convert_to_OG1(list_datasets[-1])
+    output_file = os.path.join(output_dir, ds1.attrs['id'] + '.nc')
+    
+    # Check if the file exists and delete it if it does
+    if os.path.exists(output_file):
+        if run_quietly:
+            user_input = 'no'
+        else:
+            user_input = input(f"File {output_file} already exists. Do you want to re-run and overwrite it? (yes/no): ")
+
+        if user_input.lower() != 'yes':
+            print(f"File {output_file} already exists. Exiting the process.")
+            ds_all = xr.open_dataset(output_file)
+            return ds_all
+        elif user_input.lower() == 'yes':
+            ds_all = convert_to_OG1(list_datasets)
+            os.remove(output_file)
+            if save:
+                writers.save_dataset(ds_all, output_file)
+    else:
+        print('Running the directory:', input_location)
+        ds_all = convert_to_OG1(list_datasets)
+        if save:
+            writers.save_dataset(ds_all, output_file)
+
+    return ds_all
