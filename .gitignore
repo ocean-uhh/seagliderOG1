@@ -2,8 +2,8 @@
 data/test.nc
 
 # Holdover files
-test_fetchers.py
-test_tools.py
+#test_fetchers.py
+#test_tools.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
