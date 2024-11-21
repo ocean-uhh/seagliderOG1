@@ -36,7 +36,6 @@ def natural_sort(unsorted_list):
     alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]  # noqa: E731
     return sorted(unsorted_list, key=alphanum_key)
 
-
 def match_input_files(gli_infiles, pld_infiles):
     gli_nums = []
     for fname in gli_infiles:
