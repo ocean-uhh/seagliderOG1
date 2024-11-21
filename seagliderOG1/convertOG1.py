@@ -1,7 +1,6 @@
 import numpy as np
 import xarray as xr
 from seagliderOG1 import vocabularies
-from seagliderOG1 import attr_input
 from seagliderOG1 import readers, writers, utilities, tools
 import gsw
 import logging
@@ -342,16 +341,16 @@ def update_dataset_attributes(ds, contrib_to_append):
     Parameters
     ----------
     ds (xarray.Dataset): The input dataset whose attributes need to be updated.
-    attr_input (module): A module containing attribute configurations such as attr_as_is, attr_to_add, attr_to_rename, and order_of_attr.
+    vocabularies (module): A module containing attribute configurations such as global_attrs['attr_as_is'], attr_to_add, attr_to_rename, and vocabularies.order_of_attr.
 
     Returns
     -------
     xarray.Dataset: The dataset with updated attributes.
     """
-    attr_as_is = attr_input.attr_as_is
-    attr_to_add = attr_input.attr_to_add
-    attr_to_rename = attr_input.attr_to_rename
-    order_of_attr = attr_input.order_of_attr
+    attr_as_is = vocabularies.global_attrs['attr_as_is']
+    attr_to_add = vocabularies.global_attrs['attr_to_add']
+    attr_to_rename = vocabularies.global_attrs['attr_to_rename']
+    order_of_attr = vocabularies.order_of_attr
 
     # Extract creators and contributors and institution, then reformulate strings
     contrib_attrs = get_contributors(ds, contrib_to_append)
@@ -368,7 +367,7 @@ def update_dataset_attributes(ds, contrib_to_append):
     # Combine all attributes
     new_attributes = {**attr_to_add, **contrib_attrs, **time_attrs, **renamed_attrs, **keep_attrs, **attr_to_add}
 
-    # Reorder attributes according to attr_input.order_of_attr
+    # Reorder attributes according to vocabularies.order_of_attr
     ordered_attributes = {attr: new_attributes[attr] for attr in order_of_attr if attr in new_attributes}
 
     # Add any remaining attributes that were not in the order_of_attr list
@@ -523,7 +522,7 @@ def get_time_attributes(ds):
         time_attrs['start_date'] = time_attrs['time_coverage_start']
     return time_attrs
 
-def extract_attr_to_keep(ds1, attr_as_is=attr_input.attr_as_is):
+def extract_attr_to_keep(ds1, attr_as_is=vocabularies.global_attrs['attr_as_is']):
     retained_attrs = {}
 
     # Retain attributes based on attr_as_is
@@ -533,7 +532,7 @@ def extract_attr_to_keep(ds1, attr_as_is=attr_input.attr_as_is):
 
     return retained_attrs
 
-def extract_attr_to_rename(ds1, attr_to_rename=attr_input.attr_to_rename):
+def extract_attr_to_rename(ds1, attr_to_rename=vocabularies.global_attrs['attr_to_rename']):
     renamed_attrs = {}
     # Rename attributes based on values_to_rename
     for new_attr, old_attr in attr_to_rename.items():
