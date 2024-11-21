@@ -172,34 +172,6 @@ def process_dataset(ds1):
 
     return ds_new, attr_warnings, sg_cal, dc_other, dc_log
 
-def split_by_unique_dims(ds):
-    """
-    Splits an xarray dataset into multiple datasets based on the unique set of dimensions of the variables.
-
-    Parameters:
-    ds (xarray.Dataset): The input xarray dataset containing various variables.
-
-    Returns:
-    tuple: A tuple containing xarray datasets, each with variables sharing the same set of dimensions.
-    """
-    # Dictionary to hold datasets with unique dimension sets
-    unique_dims_datasets = {}
-
-    # Iterate over the variables in the dataset
-    for var_name, var_data in ds.data_vars.items():
-        # Get the dimensions of the variable
-        dims = tuple(var_data.dims)
-        
-        # If this dimension set is not in the dictionary, create a new dataset
-        if dims not in unique_dims_datasets:
-            unique_dims_datasets[dims] = xr.Dataset()
-        
-        # Add the variable to the corresponding dataset
-        unique_dims_datasets[dims][var_name] = var_data
-
-    # Convert the dictionary values to a dictionary of datasets
-    return {dims: dataset for dims, dataset in unique_dims_datasets.items()}
-
 def extract_variables(ds):
     """
     Further splits the variables from the basestation file that had no dimensions.  Extracts them according to whether they were originally from sg_calib_constants, or were from log files, or were other mission/dive specific values.
