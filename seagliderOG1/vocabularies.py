@@ -39,56 +39,9 @@ unit_conversion = {
 }
 
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
-standard_names = {
-    "latitude": "LATITUDE",
-    "longitude": "LONGITUDE",
-    "gps_lat": "LATITUDE_GPS",
-    "gps_lon": "LONGITUDE_GPS",
-    "gps_time": "TIME_GPS",
-    "ctd_time": "TIME",
-    "eng_pitchAng": "PITCH",
-    "eng_rollAng": "ROLL",
-    "eng_head": "HEADING",
-    "ctd_depth": "DEPTH",
-    "pressure": "PRES",
-    "conductivity": "CNDC",  #Conductivity corrected for anomalies
-#    "oxygen_concentration": "DOXY",
-#    "chlorophyll": "CHLA",
-    "temperature": "TEMP",
-    "salinity": "PSAL",
-#    "salinity_raw": "PSAL_RAW",
-#    "temperature_raw": "TEMP_RAW",
-#    "conductivity_raw": "CNDC_RAW",
-    "ctd_density": "POTDENS0", # Seawater potential density - need to check standard name for sigma
-    "profile_index": "PROFILE_NUMBER",
-    "vert_speed": "GLIDER_VERT_VELO_MODEL",
-    "horz_speed": "GLIDER_HORZ_VELO_MODEL",
-    "speed": "GLIDE_SPEED",
-    "glide_angle": "GLIDE_ANGLE"
-#    "adcp_Pressure": "PRES_ADCP",
-#    "particulate_backscatter": "BBP700",
-#    "backscatter_scaled": "BBP700",
-#    "backscatter_raw": "RBBP700",
-#    "potential_temperature": "THETA",
-#    "down_irradiance_380": "ED380",
-#    "down_irradiance_490": "ED490",
-#    "downwelling_PAR": "DPAR",
-#    "temperature_oxygen": "TEMP_OXYGEN",
-#    "potential_density": "POTDENS0",
-#    "chlorophyll_raw": "FLUOCHLA",
-#    "ad2cp_pitch": "AD2CP_PITCH",
-#    "ad2cp_roll": "AD2CP_ROLL",
-#    "ad2cp_heading": "AD2CP_HEADING",
-#    "ad2cp_time": "AD2CP_TIME",
-#    "ad2cp_pressure": "AD2CP_PRES",
-#    "turbidity": "TURB",
-#    "cdom": "CDOM",
-#    "cdom_raw": "FLUOCDOM",
-#    "phycoerythrin": "PHYC",
-#    "phycoerythrin_raw": "FLUOPHYC",
-#    "tke_dissipation_shear_1": "EPSIFY01",
-#    "tke_dissipation_shear_2": "EPSIFY02",
-}
+# Key is the basestation variable name, value is the OG1 standard name
+with open(config_dir + 'OG1_standard_names.yaml', 'r') as file:
+    standard_names = yaml.safe_load(file)
 
 vars_to_remove = [
     'dissolved_oxygen_sat',

@@ -10,8 +10,8 @@ attr_to_add:
   data_url: ''
 attr_as_is: !!set
   geospatial_lon_min: null
-  disclaimer: null
   institution: null
+  disclaimer: null
   file_version: null
   geospatial_vertical_max: null
   geospatial_vertical_min: null
@@ -32,3 +32,6 @@ attr_to_rename:
   uri_comment: UUID
   comment: history
   id: PLATFORM_SERIAL_NUMBER
+attr_to_var:
+  landstation_version: base_station_version
+  glider_firmware_version: seaglider_software_version
