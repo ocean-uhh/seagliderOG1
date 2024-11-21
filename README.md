@@ -9,15 +9,13 @@ Code is based on code from [votoutils](https://github.com/voto-ocean-knowledge/v
 Scripts within the `seagliderOG1` package are divided by functionality:
 
 - **readers.py** reads basestation files (`*.nc`) from a server or local directory
-- **convertOG1.py** converts the basestation files to OG1 format
+- **writers.py** writes OG1 `*.nc` files, default directory `data/`
 - **plotters.py** contains some basic plotting and viewing functions
+- **convertOG1.py** converts the basestation files to OG1 format
 - **vocabularies.py** contains some of the vocabulary translation (might be better as a YAML file)
-- **attr_input.py** contains information for attributes of the OG1 file
 - *seaglider_registr.txt* has checksums for data files
-
-Some obsolete files:
-- **tools.py**, **utilities.py** has some functions which were directly copied from votoutils, and are now outdated/inapplicable.  Kept for development purposes.
-- **fetchers.py** is now mostly replaced by **readers.py**
+- **tools.py** functions the user may want to use
+- **utilities.py** functions the user probably will never need to call (only used in other functions)
 
 ### Status
 
