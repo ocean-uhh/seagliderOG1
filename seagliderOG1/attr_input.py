@@ -52,6 +52,7 @@ attr_to_rename = {
     'id': 'PLATFORM_SERIAL_NUMBER'
 }
 
+# If they exist, order the attributes in this way
 order_of_attr = [
     'title', # OceanGliders trajectory file
     'id', # sg015_20040920T000000_delayed
@@ -94,5 +95,4 @@ order_of_attr = [
     'date_created', # date of creation of this dataset YYYYmmddTHHMMss
     'featureType', #trajectory
     'Conventions', # CF-1.10,OG-1.0
-
 ]
