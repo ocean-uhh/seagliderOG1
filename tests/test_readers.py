@@ -1,3 +1,9 @@
+import pathlib
+import sys
+
+parent_dir = script_dir.parents[0]
+sys.path.append(str(parent_dir))
+
 from seagliderOG1 import readers
 
 
