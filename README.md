@@ -17,6 +17,45 @@ Scripts within the `seagliderOG1` package are divided by functionality:
 - **tools.py** functions the user may want to use
 - **utilities.py** functions the user probably will never need to call (only used in other functions)
 
+### Directory 
+File directory structure is as follows.
+
+seagliderOG1
+├── .github
+│  └── workflows
+│     └── tests.yml
+├── config
+│  ├── OG1_author.yaml
+│  ├── OG1_global_attrs.yaml
+│  ├── OG1_sensor_attrs.yaml
+│  ├── OG1_var_names.yaml
+│  ├── OG1_vocab_attrs.yaml
+│  └── mission_yaml.yaml
+├── data
+│  └── test.nc
+├── notebooks
+│  ├── dev_notebooks
+│  │  ├── dev-troubleshoot.ipynb
+│  │  └── download_and_register.ipynb
+│  └── demo.ipynb
+├── seagliderOG1
+│  ├── convertOG1.py
+│  ├── plotters.py
+│  ├── readers.py
+│  ├── seaglider_registry.txt
+│  ├── tools.py
+│  ├── utilities.py
+│  ├── vocabularies.py
+│  └── writers.py
+├── tests
+│  └── test_readers.py
+├── .gitignore
+├── LICENSE
+├── README.md
+├── requirements-dev.txt
+└── requirements.txt
+
+
 ### Status
 
 Active development by one.  Many things may break - not yet ready for collaboration.
