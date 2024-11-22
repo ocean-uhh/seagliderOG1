@@ -20,7 +20,7 @@ Scripts within the `seagliderOG1` package are divided by functionality:
 ### Directory 
 File directory structure is as follows.
 
-seagliderOG1
+seagliderOG1/
 - .github/
 - config/
     - OG1_author.yaml
@@ -30,14 +30,14 @@ seagliderOG1
     - OG1_var_names.yaml
     - OG1_vocab_attrs.yaml
     - mission_yaml.yaml
-- data
+- data/
     - test.nc
-- notebooks
-    - dev_notebooks
+- notebooks/
+    - dev_notebooks/
         - dev-troubleshoot.ipynb
         - download_and_register.ipynb
     - demo.ipynb
-- seagliderOG1
+- seagliderOG1/
     - convertOG1.py
     - plotters.py
     - readers.py
@@ -46,7 +46,7 @@ seagliderOG1
     - utilities.py
     - vocabularies.py
     - writers.py
-- tests
+- tests/
     - test_readers.py
 - .gitignore
 - LICENSE
