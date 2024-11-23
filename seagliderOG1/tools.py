@@ -9,6 +9,7 @@ from matplotlib.dates import DateFormatter
 import matplotlib.colors as mcolors
 from seagliderOG1 import vocabularies
 import gsw
+from seagliderOG1 import utilities
 import logging
 from datetime import datetime
 
@@ -27,7 +28,100 @@ variables_sensors = {
     "PRES_ADCP": "ADVs and turbulence probes",
 }
 
-def add_sensors(ds, dsa):
+def add_sensor_to_dataset(dsa, ds, sg_cal):
+    sensors = list(ds)
+    sensor_name_type = {}
+    for instr in sensors:
+        print(instr)
+        if instr in ["altimeter"]:
+            continue
+        attr_dict = ds[instr].attrs
+        # Code to parse details from sg_cal and calibcomm into the attributes for CTD
+        if instr == 'sbe41':
+            print(instr)
+            if attr_dict["make_model"]=="unpumped Seabird SBE41":
+                attr_dict["make_model"] = "Seabird unpumped CTD"
+            if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
+                _log.error(f"sensor {attr_dict['make_model']} not found")
+            var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
+
+            cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm'])
+            var_dict["serial_number"] = serial_number
+            var_dict["long_name"] += f":{serial_number}"
+            var_dict["calibration_date"] = cal_date
+
+            if "ancillary_variables" in attr_dict.keys():    
+                ancilliary_vars = attr_dict["ancillary_variables"]
+                anc_var_list = utilities._clean_anc_vars_list(attr_dict["ancillary_variables"])
+                calvals = utilities._assign_calval(sg_cal, anc_var_list)
+                var_dict["calibration_parameters"] = calvals
+            da = xr.DataArray(attrs=var_dict)
+            if serial_number is not None:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}_{serial_number}".upper().replace(
+                    " ",
+                    "_",
+                )
+            else:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}".upper().replace(
+                    " ",
+                    "_",
+                )
+            dsa[sensor_var_name] = da
+            sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
+
+        if instr == 'wlbb2f':
+            if attr_dict["make_model"]=="Wetlabs backscatter fluorescence puck":
+                attr_dict["make_model"] = "Wetlabs BB2FL-VMT"
+            if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
+                _log.error(f"sensor {attr_dict['make_model']} not found")
+            var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
+
+            #   Not in sample dataset - see whether more recent files have calibration information
+            #        cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm'])
+            #        if serial_number is not None:
+            #            var_dict["serial_number"] = serial_number
+            #            var_dict["long_name"] += f":{serial_number}"
+            #        if cal_date is not None:
+            #            var_dict["calibration_date"] = cal_date
+            serial_number = None
+
+            da = xr.DataArray(attrs=var_dict)
+            if serial_number:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}_{serial_number}".upper().replace(
+                    " ",
+                    "_",
+                )
+            else:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}".upper().replace(
+                    " ",
+                    "_",
+                )
+            dsa[sensor_var_name] = da
+            sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
+
+            if "ancillary_variables" in attr_dict.keys():    
+                ancilliary_vars = attr_dict["ancillary_variables"]
+                anc_var_list = utilities._clean_anc_vars_list(attr_dict["ancillary_variables"])
+                calvals = utilities._assign_calval(sg_cal, anc_var_list)
+                var_dict["calibration_parameters"] = calvals
+            da = xr.DataArray(attrs=var_dict)
+            if serial_number is not None:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}_{serial_number}".upper().replace(
+                    " ",
+                    "_",
+                )
+            else:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}".upper().replace(
+                    " ",
+                    "_",
+                )
+            print('Adding sensor:', sensor_var_name)
+            dsa[sensor_var_name] = da
+            sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
+    return dsa
+
+
+def add_sensors_old(ds, dsa):
     attrs = ds.attrs
     sensors = []
     for key, var in attrs.items():

@@ -140,12 +140,13 @@ def process_dataset(ds1):
     sg_cal, dc_log, dc_other = extract_variables(split_ds[()])
 
     # Repeat the value of dc_other.depth_avg_curr_east to the length of the dataset
-    var_keep = ['depth_avg_curr_east', 'depth_avg_curr_north']
+    var_keep = ['depth_avg_curr_east', 'depth_avg_curr_north','depth_avg_curr_qc']
     for var in var_keep:
         if var in dc_other:
             v1 = dc_other[var].values
             vector_v = np.full(len(ds['longitude']), v1)
             ds[var] = (['sg_data_point'], vector_v, dc_other[var].attrs)
+
     # Rename variables and attributes to OG1 vocabulary
     #-------------------------------------------------------------------
     # Use variables with dimension 'sg_data_point'
@@ -166,6 +167,14 @@ def process_dataset(ds1):
     ds_new = tools.assign_phase(ds_new)
     # Assign DEPTH_Z to the dataset where positive is up.
     ds_new = tools.calc_Z(ds_new)
+
+    # Gather sensors
+    sensor_names = ['wlbb2f', 'sbe41']
+    ds_sensor = xr.Dataset()
+    for sensor in sensor_names:
+        if sensor in dc_other:
+            ds_sensor[sensor] = dc_other[sensor]
+    ds_new = tools.add_sensor_to_dataset(ds_new, ds_sensor, sg_cal)
 
     # Remove variables matching vocabularies.vars_to_remove and also 'TIME_GPS'
     vars_to_remove = vocabularies.vars_to_remove + ['TIME_GPS']
