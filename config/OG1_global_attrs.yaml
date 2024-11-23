@@ -6,8 +6,8 @@ attr_to_add:
   Conventions: CF-1.10,OG-1.0
   rtqc_method: No QC applied
   rtqc_method_doi: n/a
-  doi: ''
-  data_url: ''
+#  doi: ''
+#  data_url: ''
 attr_as_is: !!set
   geospatial_lon_min: null
   institution: null

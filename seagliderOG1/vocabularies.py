@@ -20,8 +20,11 @@ unit_str_format = {
     'cm/s': 'cm s-1',
     'S/m': 'S m-1',
     'meters': 'm',
-    'degrees_Celcius': 'Celcius'
+    'degrees_Celsius': 'Celsius',
+    'g/m^3': 'g m-3',
 }
+
+
 
 # Various conversions from the key to units_name with the multiplicative conversion factor
 unit_conversion = {
@@ -36,6 +39,14 @@ unit_conversion = {
     'dbar': {'units_name': 'Pa', 'factor': 10000},
     'Pa': {'units_name': 'dbar', 'factor': 0.0001},
     'dbar': {'units_name': 'kPa', 'factor': 10},
+    'degrees_Celsius': {'units_name': 'Celsius', 'factor': 1},
+    'Celsius': {'units_name': 'degrees_Celsius', 'factor': 1},
+    'm': {'units_name': 'cm', 'factor': 100},
+    'm': {'units_name': 'km', 'factor': 0.001},
+    'cm': {'units_name': 'm', 'factor': 0.01},
+    'km': {'units_name': 'm', 'factor': 1000},
+    'g m-3': {'units_name': 'kg m-3', 'factor': 0.001},
+    'kg m-3': {'units_name': 'g m-3', 'factor': 1000},
 }
 
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
@@ -51,8 +62,6 @@ vars_to_remove = [
     'eng_elaps_t_0000',
     'latitude_gsm',
     'longitude_gsm',
-    'sigma_t',
-    'sigma_theta',
     'sound_velocity',
     'theta',
     'time',
@@ -68,6 +77,8 @@ vars_to_remove = [
     'density'
 ]
 
+vars_as_is = []
+
 # Various vocabularies for OG1: http://vocab.nerc.ac.uk/scheme/OG1/current/
 with open(config_dir + 'OG1_vocab_attrs.yaml', 'r') as file:
     vocab_attrs = yaml.safe_load(file)
@@ -80,12 +91,14 @@ with open(config_dir + 'OG1_sensor_attrs.yaml', 'r') as file:
 #--------------------------------
 # Attributes
 #--------------------------------
+with open(config_dir + 'OG1_author.yaml', 'r') as file:
+    contrib_to_append = yaml.safe_load(file)
 
 order_of_attr = [
     'title', # OceanGliders trajectory file
     'id', # sg015_20040920T000000_delayed
-    'platform_vocabulary', # https://vocab.nerc.ac.uk/collection/L06/current/27
     'platform', # sub-surface gliders
+    'platform_vocabulary', # https://vocab.nerc.ac.uk/collection/L06/current/27
     'PLATFORM_SERIAL_NUMBER', # sg015
     'naming_authority', # edu.washington.apl
     'institution', # University of washington
@@ -105,6 +118,8 @@ order_of_attr = [
     'project', # SAMBA
     'network', # Southern California Coastal Ocean Observing System (SCCOOS)
     'contributor_name', # Firstname Lastname, Firstname Lastname
+    'contributor_role', # Principal Investigator, Operator
+    'contributor_role_vocabulary', # http://vocab.nerc.ac.uk/collection/W08/current/
     'contributor_email', # name@name.com, name@name.com
     'contributor_id', # ORCID, ORCID
     'contributor_role_vocabular', # http://vocab.nerc.ac.uk/search_nvs/W08/
@@ -123,7 +138,7 @@ order_of_attr = [
     'date_created', # date of creation of this dataset YYYYmmddTHHMMss
     'featureType', #trajectory
     'Conventions', # CF-1.10,OG-1.0
-
+    'date_modified', # date of last modification of this dataset YYYYmmddTHHMMss
 ]
 
 # Attributes to convert sg015 Labrador Sea to OG1

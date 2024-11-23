@@ -19,15 +19,17 @@ def save_dataset(ds, output_file='../test.nc'):
     Based on: https://github.com/pydata/xarray/issues/3743
     """
     valid_types = (str, int, float, np.float32, np.float64, np.int32, np.int64)
+    # More general
     valid_types = (str, Number, np.ndarray, np.number, list, tuple)
     try:
         ds.to_netcdf(output_file, format='NETCDF4_CLASSIC')
         return True
     except TypeError as e:
         print(e.__class__.__name__, e)
-        for variable in ds.variables.values():
+        for varname, variable in ds.variables.items():
             for k, v in variable.attrs.items():
                 if not isinstance(v, valid_types) or isinstance(v, bool):
+                    print(f"variable '{varname}': Converting attribute '{k}' with value '{v}' to string.")
                     variable.attrs[k] = str(v)
         try:
             ds.to_netcdf(output_file, format='NETCDF4_CLASSIC')
