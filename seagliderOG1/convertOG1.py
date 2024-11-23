@@ -119,6 +119,7 @@ def process_dataset(ds1):
         - If there are not two surface GPS fixes before a dive, it may inadvertantly turn the whole thing to a dive.
     Checking for valid coordinates: https://github.com/pydata/xarray/issues/3743
     """
+    newdim = vocabularies.dims_rename_dict['sg_data_point']
 
     # Check if the dataset has 'LONGITUDE' as a coordinate
     ds1 = utilities._validate_coords(ds1)
@@ -131,17 +132,25 @@ def process_dataset(ds1):
     divenum = ds1.attrs['dive_number']
     # Split the dataset by unique dimensions
     split_ds = tools.split_by_unique_dims(ds1)
+    ds = split_ds[('sg_data_point',)]
     # Extract the gps_info from the split dataset
     gps_info = split_ds[('gps_info',)]
     # Extract variables starting with 'sg_cal'
     # These will be needed to set attributes for the xarray dataset
     sg_cal, dc_log, dc_other = extract_variables(split_ds[()])
 
+    # Repeat the value of dc_other.depth_avg_curr_east to the length of the dataset
+    var_keep = ['depth_avg_curr_east', 'depth_avg_curr_north']
+    for var in var_keep:
+        if var in dc_other:
+            v1 = dc_other[var].values
+            vector_v = np.full(len(ds['longitude']), v1)
+            ds[var] = (['sg_data_point'], vector_v, dc_other[var].attrs)
     # Rename variables and attributes to OG1 vocabulary
     #-------------------------------------------------------------------
     # Use variables with dimension 'sg_data_point'
     # Must be after split_ds
-    dsa = standardise_OG10(split_ds[('sg_data_point',)])
+    dsa = standardise_OG10(ds)
 
     # Add new variables to the dataset (GPS, divenum, PROFILE_NUMBER, PHASE)
     #-----------------------------------------------------------------------
