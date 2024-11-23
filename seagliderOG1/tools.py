@@ -9,6 +9,7 @@ from matplotlib.dates import DateFormatter
 import matplotlib.colors as mcolors
 from seagliderOG1 import vocabularies
 import gsw
+from seagliderOG1 import utilities
 import logging
 from datetime import datetime
 
@@ -27,7 +28,100 @@ variables_sensors = {
     "PRES_ADCP": "ADVs and turbulence probes",
 }
 
-def add_sensors(ds, dsa):
+def add_sensor_to_dataset(dsa, ds, sg_cal):
+    sensors = list(ds)
+    sensor_name_type = {}
+    for instr in sensors:
+        print(instr)
+        if instr in ["altimeter"]:
+            continue
+        attr_dict = ds[instr].attrs
+        # Code to parse details from sg_cal and calibcomm into the attributes for CTD
+        if instr == 'sbe41':
+            print(instr)
+            if attr_dict["make_model"]=="unpumped Seabird SBE41":
+                attr_dict["make_model"] = "Seabird unpumped CTD"
+            if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
+                _log.error(f"sensor {attr_dict['make_model']} not found")
+            var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
+
+            cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm'])
+            var_dict["serial_number"] = serial_number
+            var_dict["long_name"] += f":{serial_number}"
+            var_dict["calibration_date"] = cal_date
+
+            if "ancillary_variables" in attr_dict.keys():    
+                ancilliary_vars = attr_dict["ancillary_variables"]
+                anc_var_list = utilities._clean_anc_vars_list(attr_dict["ancillary_variables"])
+                calvals = utilities._assign_calval(sg_cal, anc_var_list)
+                var_dict["calibration_parameters"] = calvals
+            da = xr.DataArray(attrs=var_dict)
+            if serial_number is not None:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}_{serial_number}".upper().replace(
+                    " ",
+                    "_",
+                )
+            else:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}".upper().replace(
+                    " ",
+                    "_",
+                )
+            dsa[sensor_var_name] = da
+            sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
+
+        if instr == 'wlbb2f':
+            if attr_dict["make_model"]=="Wetlabs backscatter fluorescence puck":
+                attr_dict["make_model"] = "Wetlabs BB2FL-VMT"
+            if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
+                _log.error(f"sensor {attr_dict['make_model']} not found")
+            var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
+
+            #   Not in sample dataset - see whether more recent files have calibration information
+            #        cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm'])
+            #        if serial_number is not None:
+            #            var_dict["serial_number"] = serial_number
+            #            var_dict["long_name"] += f":{serial_number}"
+            #        if cal_date is not None:
+            #            var_dict["calibration_date"] = cal_date
+            serial_number = None
+
+            da = xr.DataArray(attrs=var_dict)
+            if serial_number:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}_{serial_number}".upper().replace(
+                    " ",
+                    "_",
+                )
+            else:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}".upper().replace(
+                    " ",
+                    "_",
+                )
+            dsa[sensor_var_name] = da
+            sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
+
+            if "ancillary_variables" in attr_dict.keys():    
+                ancilliary_vars = attr_dict["ancillary_variables"]
+                anc_var_list = utilities._clean_anc_vars_list(attr_dict["ancillary_variables"])
+                calvals = utilities._assign_calval(sg_cal, anc_var_list)
+                var_dict["calibration_parameters"] = calvals
+            da = xr.DataArray(attrs=var_dict)
+            if serial_number is not None:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}_{serial_number}".upper().replace(
+                    " ",
+                    "_",
+                )
+            else:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}".upper().replace(
+                    " ",
+                    "_",
+                )
+            print('Adding sensor:', sensor_var_name)
+            dsa[sensor_var_name] = da
+            sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
+    return dsa
+
+
+def add_sensors_old(ds, dsa):
     attrs = ds.attrs
     sensors = []
     for key, var in attrs.items():
@@ -266,34 +360,6 @@ def add_dive_number(ds, dive_number):
         dive_number = ds.attrs.get('dive_number', np.nan)
     return ds.assign(divenum=('N_MEASUREMENTS', [dive_number] * ds.dims['N_MEASUREMENTS']))
 
-def convert_velocity_units(ds, var_name):
-    """
-    Convert the units of the specified variable to m/s if they are in cm/s.
-    
-    Parameters:
-    ds (xarray.Dataset): The dataset containing the variable.
-    var_name (str): The name of the variable to check and convert.
-    
-    Returns:
-    xarray.Dataset: The dataset with the converted variable.
-    """
-    if var_name in ds.variables:
-        # Pass through all other attributes as is
-        for attr_name, attr_value in ds[var_name].attrs.items():
-            if attr_name != 'units':
-                ds[var_name].attrs[attr_name] = attr_value
-            elif attr_name == 'units':
-                if ds[var_name].attrs['units'] == 'cm/s':  
-                    ds[var_name].values = ds[var_name].values / 100.0
-                    ds[var_name].attrs['units'] = 'm/s'
-                    print(f"Converted {var_name} to m/s")
-                else:
-                    print(f"{var_name} is already in m/s or units attribute is missing")
-        
-    else:
-        print(f"{var_name} not found in the dataset")
-    return ds
-
 def convert_units(ds, preferred_units=vocabularies.preferred_units, unit_conversion=vocabularies.unit_conversion):
     """
     Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.
@@ -313,13 +379,13 @@ def convert_units(ds, preferred_units=vocabularies.preferred_units, unit_convers
     """
 
     for var in ds.variables:
+        var_values = ds[var].values
         current_unit = ds[var].attrs.get('units')
-        if current_unit in unit_conversion:
-            conversion_info = unit_conversion[current_unit]
-            new_unit = conversion_info['units_name']
-            if new_unit in preferred_units:
-                conversion_factor = conversion_info['factor']
-                ds[var] = ds[var] * conversion_factor
+        if 'units' in vocabularies.vocab_attrs[OG1_name]:
+            new_unit = vocabularies.vocab_attrs[OG1_name].get('units')
+            if orig_unit != new_unit:
+                var_values = tools.convert_units_var(var_values, orig_unit, new_unit)
+                ds[var].values = var_values
                 ds[var].attrs['units'] = new_unit
 
     return ds
@@ -387,7 +453,51 @@ def convert_qc_flags(dsa, qc_name):
         dsa[var_name].attrs['ancillary_variables'] = qc_name
     return dsa
 
+def find_best_dtype(var_name, da):
+    input_dtype = da.dtype.type
+    if "latitude" in var_name.lower() or "longitude" in var_name.lower():
+        return np.double
+    if var_name[-2:].lower() == "qc":
+        return np.int8
+    if "time" in var_name.lower():
+        return input_dtype
+    if var_name[-3:] == "raw" or "int" in str(input_dtype):
+        if np.nanmax(da.values) < 2**16 / 2:
+            return np.int16
+        elif np.nanmax(da.values) < 2**32 / 2:
+            return np.int32
+    if input_dtype == np.float64:
+        return np.float32
+    return input_dtype
 
+def set_fill_value(new_dtype):
+    fill_val = 2 ** (int(re.findall("\d+", str(new_dtype))[0]) - 1) - 1
+    return fill_val
+
+def set_best_dtype(ds):
+    bytes_in = ds.nbytes
+    for var_name in list(ds):
+        da = ds[var_name]
+        input_dtype = da.dtype.type
+        new_dtype = find_best_dtype(var_name, da)
+        for att in ["valid_min", "valid_max"]:
+            if att in da.attrs.keys():
+                da.attrs[att] = np.array(da.attrs[att]).astype(new_dtype)
+        if new_dtype == input_dtype:
+            continue
+        _log.debug(f"{var_name} input dtype {input_dtype} change to {new_dtype}")
+        da_new = da.astype(new_dtype)
+        ds = ds.drop_vars(var_name)
+        if "int" in str(new_dtype):
+            fill_val = set_fill_value(new_dtype)
+            da_new[np.isnan(da)] = fill_val
+            da_new.encoding["_FillValue"] = fill_val
+        ds[var_name] = da_new
+    bytes_out = ds.nbytes
+    _log.info(
+        f"Space saved by dtype downgrade: {int(100 * (bytes_in - bytes_out) / bytes_in)} %",
+    )
+    return ds
 #===============================================================================
 # Unused functions
 #===============================================================================
@@ -421,78 +531,6 @@ def encode_times_og1(ds):
                 ds[var_name].attrs["calendar"] = "gregorian"
     return ds
 
-
-def find_best_dtype(var_name, da):
-    input_dtype = da.dtype.type
-    if "latitude" in var_name.lower() or "longitude" in var_name.lower():
-        return np.double
-    if var_name[-2:].lower() == "qc":
-        return np.int8
-    if "time" in var_name.lower():
-        return input_dtype
-    if var_name[-3:] == "raw" or "int" in str(input_dtype):
-        if np.nanmax(da.values) < 2**16 / 2:
-            return np.int16
-        elif np.nanmax(da.values) < 2**32 / 2:
-            return np.int32
-    if input_dtype == np.float64:
-        return np.float32
-    return input_dtype
-
-
-def set_fill_value(new_dtype):
-    fill_val = 2 ** (int(re.findall("\d+", str(new_dtype))[0]) - 1) - 1
-    return fill_val
-
-
-def set_best_dtype(ds):
-    bytes_in = ds.nbytes
-    for var_name in list(ds):
-        da = ds[var_name]
-        input_dtype = da.dtype.type
-        new_dtype = find_best_dtype(var_name, da)
-        for att in ["valid_min", "valid_max"]:
-            if att in da.attrs.keys():
-                da.attrs[att] = np.array(da.attrs[att]).astype(new_dtype)
-        if new_dtype == input_dtype:
-            continue
-        _log.debug(f"{var_name} input dtype {input_dtype} change to {new_dtype}")
-        da_new = da.astype(new_dtype)
-        ds = ds.drop_vars(var_name)
-        if "int" in str(new_dtype):
-            fill_val = set_fill_value(new_dtype)
-            da_new[np.isnan(da)] = fill_val
-            da_new.encoding["_FillValue"] = fill_val
-        ds[var_name] = da_new
-    bytes_out = ds.nbytes
-    _log.info(
-        f"Space saved by dtype downgrade: {int(100 * (bytes_in - bytes_out) / bytes_in)} %",
-    )
-    return ds
-
-
-def sensor_sampling_period(glider, mission):
-    # Get sampling period of CTD in seconds for a given glider mission
-    fn = f"/data/data_raw/complete_mission/SEA{glider}/M{mission}/sea{str(glider).zfill(3)}.{mission}.pld1.raw.10.gz"
-    df = pd.read_csv(fn, sep=";", dayfirst=True, parse_dates=["PLD_REALTIMECLOCK"])
-    if "LEGATO_TEMPERATURE" in list(df):
-        df_ctd = df.dropna(subset=["LEGATO_TEMPERATURE"])
-    else:
-        df_ctd = df.dropna(subset=["GPCTD_TEMPERATURE"])
-    ctd_seconds = df_ctd["PLD_REALTIMECLOCK"].diff().median().microseconds / 1e6
-
-    if "AROD_FT_DO" in list(df):
-        df_oxy = df.dropna(subset=["AROD_FT_DO"])
-    else:
-        df_oxy = df.dropna(subset=["LEGATO_CODA_DO"])
-    oxy_seconds = df_oxy["PLD_REALTIMECLOCK"].diff().median().microseconds / 1e6
-    sample_dict = {
-        "glider": glider,
-        "mission": mission,
-        "ctd_period": ctd_seconds,
-        "oxy_period": oxy_seconds,
-    }
-    return sample_dict
 
 def set_best_dtype_value(value, var_name):
     """
@@ -541,55 +579,12 @@ def find_best_dtype(var_name, da):
 
 
 
-def natural_sort(unsorted_list):
-    convert = lambda text: int(text) if text.isdigit() else text.lower()  # noqa: E731
-    alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]  # noqa: E731
-    return sorted(unsorted_list, key=alphanum_key)
 
 
 
-def match_input_files(gli_infiles, pld_infiles):
-    gli_nums = []
-    for fname in gli_infiles:
-        parts = fname.split(".")
-        try:
-            gli_nums.append(int(parts[-1]))
-        except ValueError:
-            try:
-                gli_nums.append(int(parts[-2]))
-            except ValueError:
-                raise ValueError(
-                    "Unexpected gli file filename found in input. Aborting",
-                )
-    pld_nums = []
-    for fname in pld_infiles:
-        parts = fname.split(".")
-        try:
-            pld_nums.append(int(parts[-1]))
-        except ValueError:
-            try:
-                pld_nums.append(int(parts[-2]))
-            except ValueError:
-                raise ValueError(
-                    "Unexpected pld file filename found in input. Aborting",
-                )
-    good_cycles = set(pld_nums) & set(gli_nums)
-    good_gli_files = []
-    good_pld_files = []
-    for i, num in enumerate(gli_nums):
-        if num in good_cycles:
-            good_gli_files.append(gli_infiles[i])
-    for i, num in enumerate(pld_nums):
-        if num in good_cycles:
-            good_pld_files.append(pld_infiles[i])
-    return good_gli_files, good_pld_files
 
 
-def mailer(subject, message, recipient="callum.rollo@voiceoftheocean.org"):
-    _log.warning(f"email: {subject}, {message}, {recipient}")
-    subject = subject.replace(" ", "-")
-    send_script = sync_script_dir / "mailer.sh"
-    subprocess.check_call(["/usr/bin/bash", send_script, message, subject, recipient])
+
 
 def add_standard_global_attrs(ds):
     date_created = datetime.datetime.now().isoformat().split(".")[0]
@@ -642,3 +637,40 @@ def add_standard_global_attrs(ds):
             continue
         ds.attrs[key] = val
     return ds
+
+# Deprecated - is Seaexplorer specific
+def sensor_sampling_period(glider, mission):
+    # Get sampling period of CTD in seconds for a given glider mission
+    fn = f"/data/data_raw/complete_mission/SEA{glider}/M{mission}/sea{str(glider).zfill(3)}.{mission}.pld1.raw.10.gz"
+    df = pd.read_csv(fn, sep=";", dayfirst=True, parse_dates=["PLD_REALTIMECLOCK"])
+    if "LEGATO_TEMPERATURE" in list(df):
+        df_ctd = df.dropna(subset=["LEGATO_TEMPERATURE"])
+    else:
+        df_ctd = df.dropna(subset=["GPCTD_TEMPERATURE"])
+    ctd_seconds = df_ctd["PLD_REALTIMECLOCK"].diff().median().microseconds / 1e6
+
+    if "AROD_FT_DO" in list(df):
+        df_oxy = df.dropna(subset=["AROD_FT_DO"])
+    else:
+        df_oxy = df.dropna(subset=["LEGATO_CODA_DO"])
+    oxy_seconds = df_oxy["PLD_REALTIMECLOCK"].diff().median().microseconds / 1e6
+    sample_dict = {
+        "glider": glider,
+        "mission": mission,
+        "ctd_period": ctd_seconds,
+        "oxy_period": oxy_seconds,
+    }
+    return sample_dict
+
+# Not used
+def natural_sort(unsorted_list):
+    convert = lambda text: int(text) if text.isdigit() else text.lower()  # noqa: E731
+    alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]  # noqa: E731
+    return sorted(unsorted_list, key=alphanum_key)
+
+# Template - doesn't work - requires mailer.sh
+def mailer(subject, message, recipient="callum.rollo@voiceoftheocean.org"):
+    _log.warning(f"email: {subject}, {message}, {recipient}")
+    subject = subject.replace(" ", "-")
+    send_script = sync_script_dir / "mailer.sh"
+    subprocess.check_call(["/usr/bin/bash", send_script, message, subject, recipient])

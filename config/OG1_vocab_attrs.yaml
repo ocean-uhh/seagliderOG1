@@ -97,6 +97,25 @@ VERT_CURR_MODEL:
   sensor: sensor_ctd
   positive: up
   URI: http://vocab.nerc.ac.uk/collection/P01/current/LRZAZZZZ/
+DAVG_CURR_EAST:
+  long_name: depth-averaged current in eastward direction
+  standard_name: eastward_sea_water_velocity
+  units: m s-1
+  observation_type: calculated
+  sensor: sensor_ctd, flight_model
+  positive: east
+DAVG_CURR_NORTH:
+  long_name: depth-averaged current in northward direction
+  standard_name: northward_sea_water_velocity
+  units: m s-1
+  observation_type: calculated
+  sensor: sensor_ctd, flight_model
+  positive: north
+DAVG_CURR_EAST_QC:
+  long_name: depth-averaged current quality control
+  standard_name: status_flag
+  observation_type: quality flag
+  sensor: sensor_ctd, flight_model
 LATITUDE:
   coordinate_reference_frame: urn:ogc:crs:EPSG::4326
   long_name: Latitude north

@@ -30,6 +30,9 @@ vert_speed: GLIDER_VERT_VELO_MODEL
 horz_speed: GLIDER_HORZ_VELO_MODEL
 speed: GLIDE_SPEED
 glide_angle: GLIDE_ANGLE
+depth_avg_curr_east: DAVG_CURR_EAST
+depth_avg_curr_north: DAVG_CURR_NORTH
+depth_avg_curr_qc: DAVG_CURR_EAST_QC
 adcp_Pressure: PRES_ADCP
 eng_wlbb2f_blueRef: BBP470_REF
 eng_wlbb2f_blueCount: BBP470
@@ -65,3 +68,6 @@ eng_pitchCtl: PITCH_CTL
 eng_rollCtl: ROLL_CTL
 eng_vbdCC: VBD_CC
 
+sbe41: Seabird unpumped CTD
+wlbb2f: Wetlabs BB2FL-VMT
+ 
