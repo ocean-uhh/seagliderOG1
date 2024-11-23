@@ -14,75 +14,7 @@ from datetime import datetime
 
 _log = logging.getLogger(__name__)
 
-def find_best_dtype(var_name, da):
-    input_dtype = da.dtype.type
-    if "latitude" in var_name.lower() or "longitude" in var_name.lower():
-        return np.double
-    if var_name[-2:].lower() == "qc":
-        return np.int8
-    if "time" in var_name.lower():
-        return input_dtype
-    if var_name[-3:] == "raw" or "int" in str(input_dtype):
-        if np.nanmax(da.values) < 2**16 / 2:
-            return np.int16
-        elif np.nanmax(da.values) < 2**32 / 2:
-            return np.int32
-    if input_dtype == np.float64:
-        return np.float32
-    return input_dtype
 
-def set_best_dtype(ds):
-    bytes_in = ds.nbytes
-    for var_name in list(ds):
-        da = ds[var_name]
-        input_dtype = da.dtype.type
-        new_dtype = find_best_dtype(var_name, da)
-        for att in ["valid_min", "valid_max"]:
-            if att in da.attrs.keys():
-                da.attrs[att] = np.array(da.attrs[att]).astype(new_dtype)
-        if new_dtype == input_dtype:
-            continue
-        _log.debug(f"{var_name} input dtype {input_dtype} change to {new_dtype}")
-        da_new = da.astype(new_dtype)
-        ds = ds.drop_vars(var_name)
-        if "int" in str(new_dtype):
-            fill_val = set_fill_value(new_dtype)
-            da_new[np.isnan(da)] = fill_val
-            da_new.encoding["_FillValue"] = fill_val
-        ds[var_name] = da_new
-    bytes_out = ds.nbytes
-    _log.info(
-        f"Space saved by dtype downgrade: {int(100 * (bytes_in - bytes_out) / bytes_in)} %",
-    )
-    return ds
-
-def set_best_dtype_value(value, var_name):
-    """
-    Determines the best data type for a single value based on its variable name and converts it.
-
-    Parameters
-    ----------
-    value : any
-        The input value to convert.
-
-    Returns
-    -------
-    converted_value : any
-        The value converted to the best data type.
-    """
-    input_dtype = type(value)
-    new_dtype = find_best_dtype(var_name, xr.DataArray(value))
-    
-    if new_dtype == input_dtype:
-        return value
-    
-    converted_value = np.array(value).astype(new_dtype)
-    
-    if "int" in str(new_dtype) and np.isnan(value):
-        fill_val = set_fill_value(new_dtype)
-        converted_value = fill_val
-    
-    return converted_value
 
 variables_sensors = {
     "CNDC": "CTD",
@@ -145,33 +77,6 @@ def add_sensors(ds, dsa):
 
     return ds, dsa
 
-def split_by_unique_dims(ds):
-    """
-    Splits an xarray dataset into multiple datasets based on the unique set of dimensions of the variables.
-
-    Parameters:
-    ds (xarray.Dataset): The input xarray dataset containing various variables.
-
-    Returns:
-    tuple: A tuple containing xarray datasets, each with variables sharing the same set of dimensions.
-    """
-    # Dictionary to hold datasets with unique dimension sets
-    unique_dims_datasets = {}
-
-    # Iterate over the variables in the dataset
-    for var_name, var_data in ds.data_vars.items():
-        # Get the dimensions of the variable
-        dims = tuple(var_data.dims)
-        
-        # If this dimension set is not in the dictionary, create a new dataset
-        if dims not in unique_dims_datasets:
-            unique_dims_datasets[dims] = xr.Dataset()
-        
-        # Add the variable to the corresponding dataset
-        unique_dims_datasets[dims][var_name] = var_data
-
-    # Convert the dictionary values to a dictionary of datasets
-    return {dims: dataset for dims, dataset in unique_dims_datasets.items()}
 
 def assign_profile_number(ds, divenum_str = 'divenum'):
     # Remove the variable dive_num_cast if it exists
@@ -206,19 +111,6 @@ def assign_profile_number(ds, divenum_str = 'divenum'):
         ds['PROFILE_NUMBER'] = 2 * ds['dive_num_cast'] - 1
     return ds
 
-def add_dive_number(ds, dive_number):
-    """
-    Add dive number as a variable to the dataset.
-
-    Parameters:
-    ds (xarray.Dataset): The dataset to which the dive number will be added.
-
-    Returns:
-    xarray.Dataset: The dataset with the dive number added.
-    """
-    if dive_number==None:
-        dive_number = ds.attrs.get('dive_number', np.nan)
-    return ds.assign(divenum=('N_MEASUREMENTS', [dive_number] * ds.dims['N_MEASUREMENTS']))
 
 def assign_phase(ds):
     """
@@ -285,9 +177,9 @@ def assign_phase(ds):
 
     return ds
 
-##----------------------------------------------------------------------------------------------------------------------------
+##-----------------------------------------------------------------------------------------------------------
 ## Calculations for new variables
-##----------------------------------------------------------------------------------------------------------------------------
+##-----------------------------------------------------------------------------------------------------------
 def calc_Z(ds):
     """
     Calculate the depth (Z position) of the glider using the gsw library to convert pressure to depth.
@@ -320,6 +212,59 @@ def calc_Z(ds):
     }
     
     return ds
+
+
+def get_sg_attrs(ds):
+    id = ds.attrs['id']
+    sg_cal, _, _ = extract_variables(ds)
+    sg_vars_dict = {}
+    for var, data in sg_cal.items():
+        sg_vars_dict[var] = {attr: data.attrs.get(attr, '') for attr in data.attrs}
+    return sg_vars_dict
+
+
+def split_by_unique_dims(ds):
+    """
+    Splits an xarray dataset into multiple datasets based on the unique set of dimensions of the variables.
+
+    Parameters:
+    ds (xarray.Dataset): The input xarray dataset containing various variables.
+
+    Returns:
+    tuple: A tuple containing xarray datasets, each with variables sharing the same set of dimensions.
+    """
+    # Dictionary to hold datasets with unique dimension sets
+    unique_dims_datasets = {}
+
+    # Iterate over the variables in the dataset
+    for var_name, var_data in ds.data_vars.items():
+        # Get the dimensions of the variable
+        dims = tuple(var_data.dims)
+        
+        # If this dimension set is not in the dictionary, create a new dataset
+        if dims not in unique_dims_datasets:
+            unique_dims_datasets[dims] = xr.Dataset()
+        
+        # Add the variable to the corresponding dataset
+        unique_dims_datasets[dims][var_name] = var_data
+
+    # Convert the dictionary values to a dictionary of datasets
+    return {dims: dataset for dims, dataset in unique_dims_datasets.items()}
+
+
+def add_dive_number(ds, dive_number):
+    """
+    Add dive number as a variable to the dataset.
+
+    Parameters:
+    ds (xarray.Dataset): The dataset to which the dive number will be added.
+
+    Returns:
+    xarray.Dataset: The dataset with the dive number added.
+    """
+    if dive_number==None:
+        dive_number = ds.attrs.get('dive_number', np.nan)
+    return ds.assign(divenum=('N_MEASUREMENTS', [dive_number] * ds.dims['N_MEASUREMENTS']))
 
 def convert_velocity_units(ds, var_name):
     """
@@ -379,3 +324,321 @@ def convert_units(ds, preferred_units=vocabularies.preferred_units, unit_convers
 
     return ds
 
+def reformat_units_var(ds, var_name, unit_format=vocabularies.unit_str_format):
+    """
+    Renames units in the dataset based on the provided dictionary for OG1.
+
+    Parameters
+    ----------
+    ds (xarray.Dataset): The input dataset containing variables with units to be renamed.
+    unit_format (dict): A dictionary mapping old unit strings to new formatted unit strings.
+
+    Returns
+    -------
+    xarray.Dataset: The dataset with renamed units.
+    """
+    old_unit = ds[var_name].attrs['units']
+    if old_unit in unit_format:
+        new_unit = unit_format[old_unit]
+    else:
+        new_unit = old_unit
+    return new_unit
+
+def convert_units_var(var_values, current_unit, new_unit, unit_conversion=vocabularies.unit_conversion):
+    """
+    Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.
+
+    Parameters
+    ----------
+    ds (xarray.Dataset): The dataset containing variables to convert.
+    preferred_units (list): A list of strings representing the preferred units.
+    unit_conversion (dict): A dictionary mapping current units to conversion information.
+    Each key is a unit string, and each value is a dictionary with:
+        - 'factor': The factor to multiply the variable by to convert it.
+        - 'units_name': The new unit name after conversion.
+
+    Returns
+    -------
+    xarray.Dataset: The dataset with converted units.
+    """
+    if current_unit in unit_conversion and new_unit in unit_conversion[current_unit]['units_name']:
+        conversion_factor = unit_conversion[current_unit]['factor']
+        new_values = var_values * conversion_factor
+    else:
+        new_values = var_values
+        print(f"No conversion information found for {current_unit} to {new_unit}")
+#        raise ValueError(f"No conversion information found for {current_unit} to {new_unit}")
+    return new_values
+
+def convert_qc_flags(dsa, qc_name):
+    # Must be called *after* var_name has OG1 long_name
+    var_name = qc_name[:-3] 
+    if qc_name in list(dsa):
+        # Seaglider default type was a string.  Convert to int8.
+        dsa[qc_name].values = dsa[qc_name].values.astype("int8")
+        # Seaglider default flag_meanings were prefixed with 'QC_'. Remove this prefix.
+        if 'flag_meaning' in dsa[qc_name].attrs:
+            flag_meaning = dsa[qc_name].attrs['flag_meaning']
+            dsa[qc_name].attrs['flag_meaning'] = flag_meaning.replace('QC_', '')
+        # Add a long_name attribute to the QC variable
+        dsa[qc_name].attrs['long_name'] = dsa[var_name].attrs.get('long_name', '') + ' quality flag'
+        dsa[qc_name].attrs['standard_name'] = 'status_flag'
+        # Mention the QC variable in the variable attributes
+        dsa[var_name].attrs['ancillary_variables'] = qc_name
+    return dsa
+
+
+#===============================================================================
+# Unused functions
+#===============================================================================
+def encode_times(ds):
+    if "units" in ds.time.attrs.keys():
+        ds.time.attrs.pop("units")
+    if "calendar" in ds.time.attrs.keys():
+        ds.time.attrs.pop("calendar")
+    ds["time"].encoding["units"] = "seconds since 1970-01-01T00:00:00Z"
+    for var_name in list(ds):
+        if "time" in var_name.lower() and not var_name == "time":
+            for drop_attr in ["units", "calendar", "dtype"]:
+                if drop_attr in ds[var_name].attrs.keys():
+                    ds[var_name].attrs.pop(drop_attr)
+            ds[var_name].encoding["units"] = "seconds since 1970-01-01T00:00:00Z"
+    return ds
+
+
+def encode_times_og1(ds):
+    for var_name in ds.variables:
+        if "axis" in ds[var_name].attrs.keys():
+            ds[var_name].attrs.pop("axis")
+        if "time" in var_name.lower():
+            for drop_attr in ["units", "calendar", "dtype"]:
+                if drop_attr in ds[var_name].attrs.keys():
+                    ds[var_name].attrs.pop(drop_attr)
+                if drop_attr in ds[var_name].encoding.keys():
+                    ds[var_name].encoding.pop(drop_attr)
+            if var_name.lower() == "time":
+                ds[var_name].attrs["units"] = "seconds since 1970-01-01T00:00:00Z"
+                ds[var_name].attrs["calendar"] = "gregorian"
+    return ds
+
+
+def find_best_dtype(var_name, da):
+    input_dtype = da.dtype.type
+    if "latitude" in var_name.lower() or "longitude" in var_name.lower():
+        return np.double
+    if var_name[-2:].lower() == "qc":
+        return np.int8
+    if "time" in var_name.lower():
+        return input_dtype
+    if var_name[-3:] == "raw" or "int" in str(input_dtype):
+        if np.nanmax(da.values) < 2**16 / 2:
+            return np.int16
+        elif np.nanmax(da.values) < 2**32 / 2:
+            return np.int32
+    if input_dtype == np.float64:
+        return np.float32
+    return input_dtype
+
+
+def set_fill_value(new_dtype):
+    fill_val = 2 ** (int(re.findall("\d+", str(new_dtype))[0]) - 1) - 1
+    return fill_val
+
+
+def set_best_dtype(ds):
+    bytes_in = ds.nbytes
+    for var_name in list(ds):
+        da = ds[var_name]
+        input_dtype = da.dtype.type
+        new_dtype = find_best_dtype(var_name, da)
+        for att in ["valid_min", "valid_max"]:
+            if att in da.attrs.keys():
+                da.attrs[att] = np.array(da.attrs[att]).astype(new_dtype)
+        if new_dtype == input_dtype:
+            continue
+        _log.debug(f"{var_name} input dtype {input_dtype} change to {new_dtype}")
+        da_new = da.astype(new_dtype)
+        ds = ds.drop_vars(var_name)
+        if "int" in str(new_dtype):
+            fill_val = set_fill_value(new_dtype)
+            da_new[np.isnan(da)] = fill_val
+            da_new.encoding["_FillValue"] = fill_val
+        ds[var_name] = da_new
+    bytes_out = ds.nbytes
+    _log.info(
+        f"Space saved by dtype downgrade: {int(100 * (bytes_in - bytes_out) / bytes_in)} %",
+    )
+    return ds
+
+
+def sensor_sampling_period(glider, mission):
+    # Get sampling period of CTD in seconds for a given glider mission
+    fn = f"/data/data_raw/complete_mission/SEA{glider}/M{mission}/sea{str(glider).zfill(3)}.{mission}.pld1.raw.10.gz"
+    df = pd.read_csv(fn, sep=";", dayfirst=True, parse_dates=["PLD_REALTIMECLOCK"])
+    if "LEGATO_TEMPERATURE" in list(df):
+        df_ctd = df.dropna(subset=["LEGATO_TEMPERATURE"])
+    else:
+        df_ctd = df.dropna(subset=["GPCTD_TEMPERATURE"])
+    ctd_seconds = df_ctd["PLD_REALTIMECLOCK"].diff().median().microseconds / 1e6
+
+    if "AROD_FT_DO" in list(df):
+        df_oxy = df.dropna(subset=["AROD_FT_DO"])
+    else:
+        df_oxy = df.dropna(subset=["LEGATO_CODA_DO"])
+    oxy_seconds = df_oxy["PLD_REALTIMECLOCK"].diff().median().microseconds / 1e6
+    sample_dict = {
+        "glider": glider,
+        "mission": mission,
+        "ctd_period": ctd_seconds,
+        "oxy_period": oxy_seconds,
+    }
+    return sample_dict
+
+def set_best_dtype_value(value, var_name):
+    """
+    Determines the best data type for a single value based on its variable name and converts it.
+
+    Parameters
+    ----------
+    value : any
+        The input value to convert.
+
+    Returns
+    -------
+    converted_value : any
+        The value converted to the best data type.
+    """
+    input_dtype = type(value)
+    new_dtype = find_best_dtype(var_name, xr.DataArray(value))
+    
+    if new_dtype == input_dtype:
+        return value
+    
+    converted_value = np.array(value).astype(new_dtype)
+    
+    if "int" in str(new_dtype) and np.isnan(value):
+        fill_val = set_fill_value(new_dtype)
+        converted_value = fill_val
+    
+    return converted_value
+
+def find_best_dtype(var_name, da):
+    input_dtype = da.dtype.type
+    if "latitude" in var_name.lower() or "longitude" in var_name.lower():
+        return np.double
+    if var_name[-2:].lower() == "qc":
+        return np.int8
+    if "time" in var_name.lower():
+        return input_dtype
+    if var_name[-3:] == "raw" or "int" in str(input_dtype):
+        if np.nanmax(da.values) < 2**16 / 2:
+            return np.int16
+        elif np.nanmax(da.values) < 2**32 / 2:
+            return np.int32
+    if input_dtype == np.float64:
+        return np.float32
+    return input_dtype
+
+
+
+def natural_sort(unsorted_list):
+    convert = lambda text: int(text) if text.isdigit() else text.lower()  # noqa: E731
+    alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]  # noqa: E731
+    return sorted(unsorted_list, key=alphanum_key)
+
+
+
+def match_input_files(gli_infiles, pld_infiles):
+    gli_nums = []
+    for fname in gli_infiles:
+        parts = fname.split(".")
+        try:
+            gli_nums.append(int(parts[-1]))
+        except ValueError:
+            try:
+                gli_nums.append(int(parts[-2]))
+            except ValueError:
+                raise ValueError(
+                    "Unexpected gli file filename found in input. Aborting",
+                )
+    pld_nums = []
+    for fname in pld_infiles:
+        parts = fname.split(".")
+        try:
+            pld_nums.append(int(parts[-1]))
+        except ValueError:
+            try:
+                pld_nums.append(int(parts[-2]))
+            except ValueError:
+                raise ValueError(
+                    "Unexpected pld file filename found in input. Aborting",
+                )
+    good_cycles = set(pld_nums) & set(gli_nums)
+    good_gli_files = []
+    good_pld_files = []
+    for i, num in enumerate(gli_nums):
+        if num in good_cycles:
+            good_gli_files.append(gli_infiles[i])
+    for i, num in enumerate(pld_nums):
+        if num in good_cycles:
+            good_pld_files.append(pld_infiles[i])
+    return good_gli_files, good_pld_files
+
+
+def mailer(subject, message, recipient="callum.rollo@voiceoftheocean.org"):
+    _log.warning(f"email: {subject}, {message}, {recipient}")
+    subject = subject.replace(" ", "-")
+    send_script = sync_script_dir / "mailer.sh"
+    subprocess.check_call(["/usr/bin/bash", send_script, message, subject, recipient])
+
+def add_standard_global_attrs(ds):
+    date_created = datetime.datetime.now().isoformat().split(".")[0]
+    attrs = {
+        "acknowledgement": "This study used data collected and made freely available by Voice of the Ocean Foundation ("
+        "https://voiceoftheocean.org)",
+        "conventions": "CF-1.11",
+        "institution_country": "SWE",
+        "creator_email": "callum.rollo@voiceoftheocean.org",
+        "creator_name": "Callum Rollo",
+        "creator_type": "Person",
+        "creator_url": "https://observations.voiceoftheocean.org",
+        "date_created": date_created,
+        "date_issued": date_created,
+        "geospatial_lat_max": np.nanmax(ds.LATITUDE),
+        "geospatial_lat_min": np.nanmin(ds.LATITUDE),
+        "geospatial_lat_units": "degrees_north",
+        "geospatial_lon_max": np.nanmax(ds.LONGITUDE),
+        "geospatial_lon_min": np.nanmin(ds.LONGITUDE),
+        "geospatial_lon_units": "degrees_east",
+        "contributor_email": "callum.rollo@voiceoftheocean.org, louise.biddle@voiceoftheocean.org, , , , , , ",
+        "contributor_role_vocabulary": "https://vocab.nerc.ac.uk/collection/W08/",
+        "contributor_role": "Data scientist, PI, Operator, Operator, Operator, Operator, Operator, Operator,",
+        "contributing_institutions": "Voice of the Ocean Foundation",
+        "contributing_institutions_role": "Operator",
+        "contributing_institutions_role_vocabulary": "https://vocab.nerc.ac.uk/collection/W08/current/",
+        "agency": "Voice of the Ocean",
+        "agency_role": "contact point",
+        "agency_role_vocabulary": "https://vocab.nerc.ac.uk/collection/C86/current/",
+        "infoUrl": "https://observations.voiceoftheocean.org",
+        "inspire": "ISO 19115",
+        "institution": "Voice of the Ocean Foundation",
+        "institution_edmo_code": "5579",
+        "keywords": "CTD, Oceans, Ocean Pressure, Water Pressure, Ocean Temperature, Water Temperature, Salinity/Density, "
+        "Conductivity, Density, Salinity",
+        "keywords_vocabulary": "GCMD Science Keywords",
+        "licence": "Creative Commons Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/) This study used data collected and made freely available by Voice of the Ocean Foundation (https://voiceoftheocean.org) accessed from https://erddap.observations.voiceoftheocean.org/erddap/index.html",
+        "disclaimer": "Data, products and services from VOTO are provided 'as is' without any warranty as to fitness for "
+        "a particular purpose.",
+        "references": "Voice of the Ocean Foundation",
+        "source": "Voice of the Ocean Foundation",
+        "sourceUrl": "https://observations.voiceoftheocean.org",
+        "standard_name_vocabulary": "CF Standard Name Table v70",
+        "time_coverage_end": str(np.nanmax(ds.time)).split(".")[0],
+        "time_coverage_start": str(np.nanmin(ds.time)).split(".")[0],
+        "variables": list(ds),
+    }
+    for key, val in attrs.items():
+        if key in ds.attrs.keys():
+            continue
+        ds.attrs[key] = val
+    return ds

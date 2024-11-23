@@ -104,6 +104,7 @@ def process_dataset(ds1):
             - Rename variables according to the OG1 vocabulary.
             - Assign variable attributes according to OG1.  Pass back warnings where there were conflicts.
             - Convert units in the dataset (e.g., cm/s to m/s) where possible.
+            - Convert QC flags to int8.
         3. Add new variables
             - Add GPS info as LATITUDE_GPS, LONGITUDE_GPS and TIME_GPS (increase length of N_MEASUREMENTS)
             - Add the divenum as a variable of length N_MEASUREMENTS
@@ -136,25 +137,17 @@ def process_dataset(ds1):
     # These will be needed to set attributes for the xarray dataset
     sg_cal, dc_log, dc_other = extract_variables(split_ds[()])
 
-    # Rename variables and attributes, and convert units where necessary
+    # Rename variables and attributes to OG1 vocabulary
     #-------------------------------------------------------------------
-    # Extract the dataset for 'sg_data_point'
+    # Use variables with dimension 'sg_data_point'
     # Must be after split_ds
-    renamed_ds = rename_dimensions(split_ds[('sg_data_point',)])
-    # Rename variables according to the OG1 vocabulary
-    # Must be after rename_dimensions
-    renamed_ds = rename_variables(renamed_ds)
-    # Assign attributes to the variables
-    # Must be ater rename_variables
-    renamed_ds, attr_warnings = assign_variable_attributes(renamed_ds)
-    # Convert units in renamed_ds (especially cm/s to m/s)
-    renamed_ds = tools.convert_units(renamed_ds)
+    dsa = standardise_OG10(split_ds[('sg_data_point',)])
 
     # Add new variables to the dataset (GPS, divenum, PROFILE_NUMBER, PHASE)
     #-----------------------------------------------------------------------
     # Add the gps_info to the dataset
     # Must be after split_by_unique_dims and after rename_dimensions
-    ds_new = add_gps_info_to_dataset(renamed_ds, gps_info)
+    ds_new = add_gps_info_to_dataset(dsa, gps_info)
     # Add the variable divenum.  Assumes present in the attributes of the original dataset
     ds_new = tools.add_dive_number(ds_new, divenum)
     # Add the profile number (odd for dives, even for ascents)
@@ -168,8 +161,95 @@ def process_dataset(ds1):
     # Remove variables matching vocabularies.vars_to_remove and also 'TIME_GPS'
     vars_to_remove = vocabularies.vars_to_remove + ['TIME_GPS']
     ds_new = ds_new.drop_vars([var for var in vars_to_remove if var in ds_new.variables])
-
+    attr_warnings = ''
     return ds_new, attr_warnings, sg_cal, dc_other, dc_log
+
+def standardise_OG10(ds, unit_format=vocabularies.unit_str_format):
+    """
+    Standardizes the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.
+
+    Parameters
+    ----------
+    ds (xarray.Dataset): The input dataset to be standardized.
+
+    Returns
+    -------
+    xarray.Dataset: The standardized dataset.
+    """
+    dsa = xr.Dataset()
+    dsa.attrs = ds.attrs
+    suffixes = ['', '_qc', '_raw', '_raw_qc']
+
+    # Set new dimension name
+    newdim = vocabularies.dims_rename_dict['sg_data_point']
+
+    # Rename variables according to the OG1 vocabulary
+    for orig_varname in list(ds) + list(ds.coords):
+        if '_qc' in orig_varname.lower():
+            continue
+        if orig_varname in vocabularies.standard_names.keys(): 
+            OG1_name = vocabularies.standard_names[orig_varname]
+            var_values = ds[orig_varname].values
+            # Reformat units and convert units if necessary
+            if 'units' in ds[orig_varname].attrs:
+                orig_unit = tools.reformat_units_var(ds, orig_varname, unit_format)
+                if 'units' in vocabularies.vocab_attrs[OG1_name]:
+                    new_unit = vocabularies.vocab_attrs[OG1_name].get('units')
+                    if orig_unit != new_unit:
+                        var_values = tools.convert_units_var(var_values, orig_unit, new_unit)
+            dsa[OG1_name] = ([newdim], var_values, vocabularies.vocab_attrs[OG1_name])
+            # Pass attributes that aren't in standard OG1 vocab_attrs
+            for key, val in ds[orig_varname].attrs.items():
+                if key not in dsa[OG1_name].attrs.keys():
+                    dsa[OG1_name].attrs[key] = val
+
+            # Add QC variables if they exist
+            for suffix in suffixes:
+                variant = orig_varname + suffix
+                variant_OG1 = OG1_name + suffix.upper()
+                if variant in list(ds):
+                    dsa[variant_OG1] = ([newdim], ds[variant].values, ds[variant].attrs)
+                    # Should only be the root for *_qc variables
+                    if '_qc' in variant:
+                        # Convert QC flags to int8 and add attributes
+                        dsa = tools.convert_qc_flags(dsa, variant_OG1)
+        else:
+            dsa[orig_varname] = ([newdim], ds[orig_varname].values, ds[orig_varname].attrs)
+            if orig_varname not in vocabularies.vars_as_is:
+                _log.warning(f"Variable '{orig_varname}' not in OG1 vocabulary.")
+                
+    # Assign coordinates
+    dsa = dsa.set_coords(['LONGITUDE', 'LATITUDE', 'DEPTH', 'TIME'])
+    dsa = tools.set_best_dtype(dsa)
+    return dsa
+
+# Deprecated.  Now replaced by functionality in standardise_OG10
+def rename_dimensions(ds, rename_dict=vocabularies.dims_rename_dict):
+    """
+    Rename dimensions of an xarray Dataset based on a provided dictionary for OG1 vocabulary.
+
+    Parameters
+    ----------
+    ds (xarray.Dataset): The dataset whose dimensions are to be renamed.
+    rename_dict (dict, optional): A dictionary where keys are the current dimension names 
+                                  and values are the new dimension names. Defaults to 
+                                  vocabularies.dims_rename_dict.
+
+    Returns
+    -------
+    xarray.Dataset: A new dataset with renamed dimensions.
+    
+    Raises:
+    Warning: If no variables with dimensions matching any key in rename_dict are found.
+    """
+    # Check if there are any variables with dimensions matching 'sg_data_point'
+    matching_vars = [var for var in ds.variables if any(dim in ds[var].dims for dim in rename_dict.keys())]
+    if not matching_vars:
+        _log.warning("No variables with dimensions matching any key in rename_dict found.")
+    dims_to_rename = {dim: rename_dict[dim] for dim in ds.dims if dim in rename_dict}
+    return ds.rename_dims(dims_to_rename)
+
+
 
 def extract_variables(ds):
     """
@@ -199,58 +279,9 @@ def extract_variables(ds):
 
     return sg_cal,  dc_log, dc_other
 
-def rename_dimensions(ds, rename_dict=vocabularies.dims_rename_dict):
-    """
-    Rename dimensions of an xarray Dataset based on a provided dictionary for OG1 vocabulary.
 
-    Parameters
-    ----------
-    ds (xarray.Dataset): The dataset whose dimensions are to be renamed.
-    rename_dict (dict, optional): A dictionary where keys are the current dimension names 
-                                  and values are the new dimension names. Defaults to 
-                                  vocabularies.dims_rename_dict.
 
-    Returns
-    -------
-    xarray.Dataset: A new dataset with renamed dimensions.
-    
-    Raises:
-    Warning: If no variables with dimensions matching any key in rename_dict are found.
-    """
-    # Check if there are any variables with dimensions matching 'sg_data_point'
-    matching_vars = [var for var in ds.variables if any(dim in ds[var].dims for dim in rename_dict.keys())]
-    if not matching_vars:
-        _log.warning("No variables with dimensions matching any key in rename_dict found.")
-    dims_to_rename = {dim: rename_dict[dim] for dim in ds.dims if dim in rename_dict}
-    return ds.rename_dims(dims_to_rename)
-
-def rename_variables(ds, rename_dict=vocabularies.standard_names):
-    """
-    Renames variables in the dataset based on the provided dictionary for OG1.
-
-    Parameters
-    ----------
-    ds (xarray.Dataset): The input dataset containing variables to be renamed.
-    rename_dict (dict): A dictionary where keys are the old variable names and values are the new variable names.
-
-    Returns
-    -------
-    xarray.Dataset: The dataset with renamed variables.
-    """
-    for old_name, new_name in rename_dict.items():
-        suffixes = ['', '_qc', '_raw', '_raw_qc']
-        variants = [old_name + suffix for suffix in suffixes]
-        variants_new = [new_name + suffix.upper() for suffix in suffixes]
-        for variant in variants:
-            new_name1 = variants_new[variants.index(variant)]
-            if new_name1 in ds.variables:
-                print(f"Warning: Variable '{new_name1}' already exists in the dataset.")
-            elif variant in ds.variables:
-                ds = ds.rename({variant: new_name1})
-            elif variant in ds.variables:
-                ds = ds.rename({variant: new_name1})
-    return ds
-
+# Deprecated - currently just uses the standard vocabularies.vocab_attrs but could clobber existing attributes
 def assign_variable_attributes(ds, vocab_attrs=vocabularies.vocab_attrs, unit_format=vocabularies.unit_str_format):
     """
     Assigns variable attributes to a dataset where they are missing and reformats units according to the provided unit_format.
@@ -302,30 +333,40 @@ def add_gps_info_to_dataset(ds, gps_ds):
     ----
     This also sorts by ctd_time (from original basestation dataset) or TIME from ds.  If the data are not sorted by time, there may be unintended consequences.
     """
+    # Set new dimension name
+    newdim = vocabularies.dims_rename_dict['sg_data_point']
     # Create a new dataset with GPS information
     gps_ds = xr.Dataset(
         {
-            'LONGITUDE': (['N_MEASUREMENTS'], gps_ds['log_gps_lon'].values),
+            'LONGITUDE': ([newdim], gps_ds['log_gps_lon'].values),
         },
         coords={
-            'LATITUDE': (['N_MEASUREMENTS'], gps_ds['log_gps_lat'].values),
-            'TIME': (['N_MEASUREMENTS'], gps_ds['log_gps_time'].values),
-            'DEPTH': (['N_MEASUREMENTS'], np.full(len(gps_ds['log_gps_lat']), 0))
+            'LATITUDE': ([newdim], gps_ds['log_gps_lat'].values),
+            'TIME': ([newdim], gps_ds['log_gps_time'].values),
+            'DEPTH': ([newdim], np.full(len(gps_ds['log_gps_lat']), 0))
         }
     )
-    # Make DEPTH a coordinate
     gps_ds = gps_ds.set_coords('LONGITUDE')
 
+    gps_ds['LATITUDE_GPS'] = ([newdim], gps_ds.LATITUDE.values, vocabularies.vocab_attrs['LATITUDE_GPS'], {'dtype': ds['LATITUDE'].dtype})
+    gps_ds['LONGITUDE_GPS'] = ([newdim], gps_ds.LONGITUDE.values, vocabularies.vocab_attrs['LONGITUDE_GPS'], {'dtype': ds['LONGITUDE'].dtype})
+    gps_ds['TIME_GPS'] = ([newdim], gps_ds.TIME.values, vocabularies.vocab_attrs['TIME_GPS'], {'dtype': ds['TIME'].dtype})
+
+    
+#    gps_ds['']
     # Add the variables LATITUDE_GPS, LONGITUDE_GPS, and TIME_GPS to the dataset
-    gps_ds['LATITUDE_GPS'] = (['N_MEASUREMENTS'], gps_ds.LATITUDE.values, {'dtype': gps_ds['LATITUDE'].dtype})
-    gps_ds['LONGITUDE_GPS'] = (['N_MEASUREMENTS'], gps_ds.LONGITUDE.values, {'dtype': gps_ds['LONGITUDE'].dtype})
-    gps_ds['TIME_GPS'] = (['N_MEASUREMENTS'], gps_ds.TIME.values, {'dtype': gps_ds['TIME'].dtype})
+#    gps_ds['LATITUDE_GPS'] = (['N_MEASUREMENTS'], gps_ds.LATITUDE.values, {'dtype': ds['LATITUDE'].dtype})
+#    gps_ds['LONGITUDE_GPS'] = (['N_MEASUREMENTS'], gps_ds.LONGITUDE.values, {'dtype': ds['LONGITUDE'].dtype})
+#    gps_ds['TIME_GPS'] = (['N_MEASUREMENTS'], gps_ds.TIME.values, {'dtype': ds['TIME'].dtype})
+
+    # Add attributes
+
 
     # Concatenate ds and gps_ds
     datasets = []
     datasets.append(ds)
     datasets.append(gps_ds)
-    ds_new = xr.concat(datasets, dim='N_MEASUREMENTS')
+    ds_new = xr.concat(datasets, dim=newdim)
     ds_new = ds_new.sortby('TIME')
 
     return ds_new
