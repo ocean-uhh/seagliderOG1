@@ -1,0 +1,59 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools>=42",
+  "setuptools-scm[toml]>=3.4",
+  "wheel",
+]
+
+[project]
+name = "seagliderOG1"
+description = "Convert from Seaglider basestation to OG1 format"
+readme = "README.md"
+license = { file = "LICENSE" }
+maintainers = [
+  { name = "Eleanor Frajka-Williams", email = "eleanorfrajka@gmail.com" },
+]
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dynamic = [
+  "dependencies",
+  "version",
+]
+urls.documentation = "https://github.com/eleanorfrajka/seagliderOG1"
+urls.homepage = "https://github.com/eleanorfrajka/seagliderOG1"
+urls.repository = "https://github.com/eleanorfrajka/seagliderOG1"
+
+[tool.setuptools]
+packages = [
+  "seagliderOG1",
+]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+dependencies = { file = [
+  "requirements.txt",
+] }
+readme = { file = "README.md", content-type = "text/markdown" }
+
+[tool.setuptools_scm]
+write_to = "seagliderOG1/_version.py"
+write_to_template = "__version__ = '{version}'"
+tag_regex = "^(?P<prefix>v)?(?P<version>[^\\+]+)(?P<suffix>.*)?$"
+
+[tool.check-manifest]
+ignore = [
+  "docs",
+  "docs/*",
+  "notebooks",
+  "notebooks/*",
+  "tests",
+  "tests/*",
+]
