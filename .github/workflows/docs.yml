@@ -1,0 +1,39 @@
+name: Test documentation build
+
+on:
+  pull_request:
+    paths:
+      - '**.py'
+      - '**.ipynb'
+      - '**.rst'
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install flake8 pytest
+        if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+  
+
+    - name: Build documentation
+      shell: bash -l {0}
+      run: |
+        set -e
+        jupyter nbconvert --to notebook --execute notebooks/demo.ipynb --output=demo-output.ipynb
+        mv notebooks/*output.ipynb docs/source/
+        pushd docs
+        make clean html 
+        popd
