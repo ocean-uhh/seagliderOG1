@@ -1,9 +1,20 @@
 name: Tests
 
-on: [push, pull_request]
-  paths:
-    - '**.py'
-    - '**.ipynb'
+on: 
+  push:
+    branches:
+      - main
+      - eleanor-patch-22
+    paths:
+      - '**.py'
+      - '**.ipynb'
+  pull_request:
+    branches:
+      - main
+      - eleanor-patch-22
+    paths:
+      - '**.py'
+      - '**.ipynb'
 
 jobs:
   job_mytests:
