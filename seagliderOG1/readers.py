@@ -1,10 +1,10 @@
-import pooch
 import xarray as xr
 import os
 from bs4 import BeautifulSoup
 import requests
 import numpy as np
 from importlib_resources import files
+import pooch
 
 # readers.py: Will only read files.  Not manipulate them.
 #

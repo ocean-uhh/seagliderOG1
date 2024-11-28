@@ -58,9 +58,13 @@ def _validate_dims(ds):
     
 
 def _parse_calibcomm(calibcomm):
-    print('here')
     if 'calibration' in calibcomm.values.item().decode('utf-8'):
-        cal_date = calibcomm.values.item().decode('utf-8')[-7:]
+
+        cal_date = calibcomm.values.item().decode('utf-8')
+        print(cal_date)
+        cal_date = cal_date.split('calibration')[-1].strip()
+        cal_date = cal_date.replace(' ', '')
+        print(cal_date)
         cal_date_YYYYmmDD = datetime.datetime.strptime(cal_date, '%d%b%y').strftime('%Y%m%d')
     else:   
         cal_date_YYYYmmDD = 'Unknown'
