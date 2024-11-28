@@ -1,13 +1,12 @@
 name: Tests
 
-on:
-  push:
-    paths:
-      - '**.py'
-      - '**.ipynb'
+on: [push, pull_request]
+  paths:
+    - '**.py'
+    - '**.ipynb'
 
 jobs:
-  run:
+  job_mytests:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
