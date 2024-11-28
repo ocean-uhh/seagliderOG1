@@ -4,7 +4,7 @@ import os
 from bs4 import BeautifulSoup
 import requests
 import numpy as np
-from importlib.resources import files
+from importlib_resources import files
 
 # readers.py: Will only read files.  Not manipulate them.
 #
