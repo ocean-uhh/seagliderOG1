@@ -15,8 +15,6 @@ from datetime import datetime
 
 _log = logging.getLogger(__name__)
 
-
-
 variables_sensors = {
     "CNDC": "CTD",
     "DOXY": "dissolved gas sensors",
