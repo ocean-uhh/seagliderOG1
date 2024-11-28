@@ -37,8 +37,6 @@ jobs:
       with:
         environment-name: TEST
         init-shell: bash
-        cache-environment: true
-        post-cleanup: 'all'
         create-args: >-
           python=${{ matrix.python-version }} --file requirements-dev.txt --channel conda-forge
 
