@@ -12,6 +12,7 @@ skyfield
 tqdm
 jupyterlab
 pytest
+pytest-cov
 nbsphinx
 nbconvert
 sphinx
@@ -19,4 +20,4 @@ sphinx-rtd-theme
 cartopy
 gsw
 glidertools
-importlib
+importlib_resources
