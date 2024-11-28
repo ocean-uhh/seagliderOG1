@@ -1,3 +1,13 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# GitHub recommends pinning actions to a commit SHA.
+# To get a newer version, you will need to update the SHA.
+# You can also reference a tag or branch, but the action may change without warning.
+
+# See also https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-python
 name: Publish to PyPI
 
 on:
@@ -5,10 +15,15 @@ on:
     types:
       - published
 
+permissions:
+  contents: read
+
 jobs:
-  packages:
+  release-build:
     runs-on: ubuntu-latest
-    environment: release
+    environment: 
+      name: TEST
+      url: https://pypi.org/project/seagliderOG1/
     permissions:
       id-token: write
     steps:
