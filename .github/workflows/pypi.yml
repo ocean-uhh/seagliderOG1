@@ -22,7 +22,7 @@ jobs:
   release-build:
     runs-on: ubuntu-latest
     environment: 
-      name: TEST
+      name: release
       url: https://pypi.org/project/seagliderOG1/
     permissions:
       id-token: write
