@@ -43,6 +43,11 @@ dependencies = { file = [
 ] }
 readme = { file = "README.md", content-type = "text/markdown" }
 
+[tool.setuptools_scm]
+write_to = "seagliderOG1/_version.py"
+write_to_template = "__version__ = '{version}'"
+tag_regex = "^(?P<prefix>v)?(?P<version>[^\\+]+)(?P<suffix>.*)?$"
+
 [tool.check-manifest]
 ignore = [
   "docs",
