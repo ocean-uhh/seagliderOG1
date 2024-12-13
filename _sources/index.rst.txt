@@ -10,7 +10,7 @@ SeagliderOG1 is a Python package aiming to convert seaglider basestation files i
  
 We provide an example notebook to demonstrate the purpose of the various function and test datasets from Seaglider data in the Labrador Sea.
 
-For recommendations or bug reports, please visit https://github.com/eleanorfrajka/seagliderOG1/issues/new
+For recommendations or bug reports, please visit https://github.com/ifmeo-hamburg/seagliderOG1/issues/new
 
 ======================================
 
