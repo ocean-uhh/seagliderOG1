@@ -57,4 +57,4 @@ seagliderOG1/
 
 ### Status
 
-Active development by one.  Many things may break - not yet ready for collaboration.
+Still early days, but collaborations welcome!

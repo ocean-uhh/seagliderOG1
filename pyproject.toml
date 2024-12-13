@@ -27,9 +27,9 @@ dynamic = [
   "dependencies",
   "version",
 ]
-urls.documentation = "https://github.com/eleanorfrajka/seagliderOG1"
-urls.homepage = "https://github.com/eleanorfrajka/seagliderOG1"
-urls.repository = "https://github.com/eleanorfrajka/seagliderOG1"
+urls.documentation = "https://github.com/ifmeo-hamburg/seagliderOG1"
+urls.homepage = "https://github.com/ifmeo-hamburg/seagliderOG1"
+urls.repository = "https://github.com/ifmeo-hamburg/seagliderOG1"
 
 [tool.setuptools]
 packages = [
