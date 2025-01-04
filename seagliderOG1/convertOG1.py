@@ -459,6 +459,15 @@ def get_contributors(ds, values_to_append=None):
     
     new_attributes = ds.attrs
 
+    # Initialize empty lists for creator/contributor information and institutions if they are not present
+    names = []
+    emails = []
+    roles = []
+    roles_vocab = []
+    insts = []
+    inst_roles = []
+    inst_vocab = []
+    inst_roles_vocab = []
     # Parse the original attributes into lists
     if 'creator_name' in new_attributes:
         names = create_or_append_list([], new_attributes['creator_name'])
