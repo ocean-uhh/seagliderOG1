@@ -60,7 +60,7 @@ def filter_files_by_profile(file_list, start_profile=None, end_profile=None):
         if file.endswith(".nc"):
             # Extract the profile number from the filename now from the begining
             #profile_number = int(file.split("_")[0][4:])
-            profile_number = int(file[4:7])
+            profile_number = int(file[5:8])
             if start_profile is not None and end_profile is not None:
                 if start_profile <= profile_number <= end_profile:
                     filtered_files.append(file)
