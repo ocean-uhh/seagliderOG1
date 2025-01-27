@@ -28,7 +28,7 @@ def convert_to_OG1(datasets, contrib_to_append=None):
 
     processed_datasets = []
     for ds in datasets:
-        ds_new, attr_warnings, sg_cal, dc_other, dc_log = convert_to_OG1_dataset(ds, contrib_to_append)
+        ds_new, attr_warnings, sg_cal, dc_other, dc_log = process_dataset(ds)
         if ds_new:
             processed_datasets.append(ds_new)
         else:
@@ -43,7 +43,10 @@ def convert_to_OG1(datasets, contrib_to_append=None):
         concatenated_ds.attrs[key] = value
 
     # Construct the platform serial number
-    PLATFORM_SERIAL_NUMBER = 'sg' + concatenated_ds.attrs['id'][1:4]
+    if 'platform_id' in ds.attrs:
+        PLATFORM_SERIAL_NUMBER = ds.attrs['platform_id'].lower()
+    else:
+        PLATFORM_SERIAL_NUMBER = 'sg' + concatenated_ds.attrs['id']
     concatenated_ds['PLATFORM_SERIAL_NUMBER'] = PLATFORM_SERIAL_NUMBER
     concatenated_ds['PLATFORM_SERIAL_NUMBER'].attrs['long_name'] = "glider serial number"
 
@@ -53,29 +56,6 @@ def convert_to_OG1(datasets, contrib_to_append=None):
 
     return concatenated_ds
 
-def convert_to_OG1_dataset(ds1, contrib_to_append=None):
-    """
-    Converts the dataset and updates its attributes.
-
-    Parameters
-    ----------
-    ds1 (xarray.Dataset): The input dataset to be processed.
-    contrib_to_append (dict): Dictionary containing additional contributor information to append.
-
-    Returns
-    -------
-    tuple: A tuple containing:
-        - ds_new (xarray.Dataset): The processed dataset.
-        - attr_warnings (list): A list of warnings related to attribute assignments.
-        - sg_cal (xarray.Dataset): A dataset containing variables starting with 'sg_cal'.
-        - dc_other (xarray.Dataset): A dataset containing other variables not categorized under 'sg_cal' or 'dc_log'.
-        - dc_log (xarray.Dataset): A dataset containing variables starting with 'log_'.
-        - ordered_attributes (dict): The dataset with updated attributes.
-    """
-    # Convert the dataset and output also variables not included
-    ds_new, attr_warnings, sg_cal, dc_other, dc_log = process_dataset(ds1)
-
-    return ds_new, attr_warnings, sg_cal, dc_other, dc_log
 
 def process_dataset(ds1):
     """
@@ -93,6 +73,7 @@ def process_dataset(ds1):
         - attr_warnings (list): A list of warnings related to attribute assignments.
         - sg_cal (xarray.Dataset): A dataset containing variables starting with 'sg_cal'.
         - dc_other (xarray.Dataset): A dataset containing other variables not categorized under 'sg_cal' or 'dc_log'.
+        - dc_log (xarray.Dataset): A dataset containing variables starting with 'log_'.
     Steps:
         1. Handle and split the inputs
             - Extract the dive number from the attributes   
@@ -410,6 +391,7 @@ def update_dataset_attributes(ds, contrib_to_append):
     attr_to_add = vocabularies.global_attrs['attr_to_add']
     attr_to_rename = vocabularies.global_attrs['attr_to_rename']
     order_of_attr = vocabularies.order_of_attr
+    mandatory_attr = vocabularies.global_attrs['attr_mandatory']
 
     # Extract creators and contributors and institution, then reformulate strings
     contrib_attrs = get_contributors(ds, contrib_to_append)
@@ -425,6 +407,11 @@ def update_dataset_attributes(ds, contrib_to_append):
 
     # Combine all attributes
     new_attributes = {**attr_to_add, **contrib_attrs, **time_attrs, **renamed_attrs, **keep_attrs, **attr_to_add}
+
+    # Add mandatory attributes if they are not already present
+    for attr in mandatory_attr:
+        if attr not in new_attributes:
+            new_attributes[attr] = mandatory_attr[attr]
 
     # Reorder attributes according to vocabularies.order_of_attr
     ordered_attributes = {attr: new_attributes[attr] for attr in order_of_attr if attr in new_attributes}

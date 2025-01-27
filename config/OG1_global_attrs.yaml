@@ -2,12 +2,14 @@ attr_to_add:
   title: OceanGliders trajectory file
   platform: sub-surface gliders
   platform_vocabulary: https://vocab.nerc.ac.uk/collection/L06/current/27
+  id: null
   featureType: trajectoryProfile
   Conventions: CF-1.10,OG-1.0
   rtqc_method: No QC applied
   rtqc_method_doi: n/a
 #  doi: ''
 #  data_url: ''
+
 attr_as_is: !!set
   geospatial_lon_min: null
   institution: null
@@ -18,7 +20,6 @@ attr_as_is: !!set
   project: null
   keywords: null
   acknowledgment: null
-  id: null
   geospatial_lat_min: null
   naming_authority: null
   keywords_vocabulary: null
@@ -26,12 +27,33 @@ attr_as_is: !!set
   geospatial_lat_max: null
   date_created: null
   license: null
+
 attr_to_rename:
   site: summary
   uri: uuid
   uri_comment: UUID
   comment: history
-  id: PLATFORM_SERIAL_NUMBER
+  platform_id: PLATFORM_SERIAL_NUMBER
+
 attr_to_var:
   landstation_version: base_station_version
   glider_firmware_version: seaglider_software_version
+
+attr_mandatory:
+  title: null
+  platform: null
+  platform_vocabulary: null
+  id: null
+  contributor_name: null
+  contributor_role: null
+  contributer_email: null@null.com
+  contributor_role_vocabulary: null
+  contributing_institutions: null
+  contributing_institutions_role: null
+  contributing_institutions_role_vocabulary: null
+  rtqc_method: null
+  start_date: null
+  date_created: null
+  featureType: null
+  Conventions: null
+
