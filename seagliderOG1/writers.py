@@ -22,7 +22,7 @@ def save_dataset(ds, output_file='../test.nc'):
     # More general
     valid_types = (str, Number, np.ndarray, np.number, list, tuple)
     try:
-        ds.to_netcdf(output_file, format='NETCDF4_CLASSIC')
+        ds.to_netcdf(output_file, format='NETCDF4')
         return True
     except TypeError as e:
         print(e.__class__.__name__, e)
@@ -32,7 +32,7 @@ def save_dataset(ds, output_file='../test.nc'):
                     print(f"variable '{varname}': Converting attribute '{k}' with value '{v}' to string.")
                     variable.attrs[k] = str(v)
         try:
-            ds.to_netcdf(output_file, format='NETCDF4_CLASSIC')
+            ds.to_netcdf(output_file, format='NETCDF4')
             return True
         except Exception as e:
             print("Failed to save dataset:", e)
