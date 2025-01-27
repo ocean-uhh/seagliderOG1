@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>seagliderOG1.convertOG1 &mdash; seagliderOG1 v0.0.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -71,20 +71,20 @@
            <div itemprop="articleBody">
              
   <h1>Source code for seagliderOG1.convertOG1</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
-<span class="kn">from</span> <span class="nn">seagliderOG1</span> <span class="kn">import</span> <span class="n">vocabularies</span>
-<span class="kn">from</span> <span class="nn">seagliderOG1</span> <span class="kn">import</span> <span class="n">readers</span><span class="p">,</span> <span class="n">writers</span><span class="p">,</span> <span class="n">utilities</span><span class="p">,</span> <span class="n">tools</span>
-<span class="kn">import</span> <span class="nn">gsw</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">vocabularies</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">readers</span><span class="p">,</span> <span class="n">writers</span><span class="p">,</span> <span class="n">utilities</span><span class="p">,</span> <span class="n">tools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gsw</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <div class="viewcode-block" id="convert_to_OG1">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.convert_to_OG1">[docs]</a>
-<span class="k">def</span> <span class="nf">convert_to_OG1</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_to_OG1</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,</span>
 <span class="sd">    concatenates the datasets, sorts by time, and applies attributes.</span>
@@ -103,7 +103,7 @@
 
     <span class="n">processed_datasets</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">datasets</span><span class="p">:</span>
-        <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">,</span> <span class="n">dc_other</span><span class="p">,</span> <span class="n">dc_log</span> <span class="o">=</span> <span class="n">convert_to_OG1_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="p">)</span>
+        <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">,</span> <span class="n">dc_other</span><span class="p">,</span> <span class="n">dc_log</span> <span class="o">=</span> <span class="n">process_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">ds_new</span><span class="p">:</span>
             <span class="n">processed_datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -118,7 +118,10 @@
         <span class="n">concatenated_ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1"># Construct the platform serial number</span>
-    <span class="n">PLATFORM_SERIAL_NUMBER</span> <span class="o">=</span> <span class="s1">&#39;sg&#39;</span> <span class="o">+</span> <span class="n">concatenated_ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;platform_id&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+        <span class="n">PLATFORM_SERIAL_NUMBER</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;platform_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">PLATFORM_SERIAL_NUMBER</span> <span class="o">=</span> <span class="s1">&#39;sg000&#39;</span> 
     <span class="n">concatenated_ds</span><span class="p">[</span><span class="s1">&#39;PLATFORM_SERIAL_NUMBER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">PLATFORM_SERIAL_NUMBER</span>
     <span class="n">concatenated_ds</span><span class="p">[</span><span class="s1">&#39;PLATFORM_SERIAL_NUMBER&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;long_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;glider serial number&quot;</span>
 
@@ -129,36 +132,10 @@
     <span class="k">return</span> <span class="n">concatenated_ds</span></div>
 
 
-<div class="viewcode-block" id="convert_to_OG1_dataset">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.convert_to_OG1_dataset">[docs]</a>
-<span class="k">def</span> <span class="nf">convert_to_OG1_dataset</span><span class="p">(</span><span class="n">ds1</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Converts the dataset and updates its attributes.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    ds1 (xarray.Dataset): The input dataset to be processed.</span>
-<span class="sd">    contrib_to_append (dict): Dictionary containing additional contributor information to append.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    tuple: A tuple containing:</span>
-<span class="sd">        - ds_new (xarray.Dataset): The processed dataset.</span>
-<span class="sd">        - attr_warnings (list): A list of warnings related to attribute assignments.</span>
-<span class="sd">        - sg_cal (xarray.Dataset): A dataset containing variables starting with &#39;sg_cal&#39;.</span>
-<span class="sd">        - dc_other (xarray.Dataset): A dataset containing other variables not categorized under &#39;sg_cal&#39; or &#39;dc_log&#39;.</span>
-<span class="sd">        - dc_log (xarray.Dataset): A dataset containing variables starting with &#39;log_&#39;.</span>
-<span class="sd">        - ordered_attributes (dict): The dataset with updated attributes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Convert the dataset and output also variables not included</span>
-    <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">,</span> <span class="n">dc_other</span><span class="p">,</span> <span class="n">dc_log</span> <span class="o">=</span> <span class="n">process_dataset</span><span class="p">(</span><span class="n">ds1</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">,</span> <span class="n">dc_other</span><span class="p">,</span> <span class="n">dc_log</span></div>
-
 
 <div class="viewcode-block" id="process_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.process_dataset">[docs]</a>
-<span class="k">def</span> <span class="nf">process_dataset</span><span class="p">(</span><span class="n">ds1</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_dataset</span><span class="p">(</span><span class="n">ds1</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Processes a dataset by performing a series of transformations and extractions.</span>
 
@@ -174,6 +151,7 @@
 <span class="sd">        - attr_warnings (list): A list of warnings related to attribute assignments.</span>
 <span class="sd">        - sg_cal (xarray.Dataset): A dataset containing variables starting with &#39;sg_cal&#39;.</span>
 <span class="sd">        - dc_other (xarray.Dataset): A dataset containing other variables not categorized under &#39;sg_cal&#39; or &#39;dc_log&#39;.</span>
+<span class="sd">        - dc_log (xarray.Dataset): A dataset containing variables starting with &#39;log_&#39;.</span>
 <span class="sd">    Steps:</span>
 <span class="sd">        1. Handle and split the inputs</span>
 <span class="sd">            - Extract the dive number from the attributes   </span>
@@ -266,7 +244,7 @@
 
 <div class="viewcode-block" id="standardise_OG10">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.standardise_OG10">[docs]</a>
-<span class="k">def</span> <span class="nf">standardise_OG10</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">unit_format</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">standardise_OG10</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">unit_format</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Standardizes the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.</span>
 
@@ -329,7 +307,7 @@
 <span class="c1"># Deprecated.  Now replaced by functionality in standardise_OG10</span>
 <div class="viewcode-block" id="rename_dimensions">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.rename_dimensions">[docs]</a>
-<span class="k">def</span> <span class="nf">rename_dimensions</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">rename_dict</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">dims_rename_dict</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rename_dimensions</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">rename_dict</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">dims_rename_dict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Rename dimensions of an xarray Dataset based on a provided dictionary for OG1 vocabulary.</span>
 
@@ -359,7 +337,7 @@
 
 <div class="viewcode-block" id="extract_variables">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.extract_variables">[docs]</a>
-<span class="k">def</span> <span class="nf">extract_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Further splits the variables from the basestation file that had no dimensions.  Extracts them according to whether they were originally from sg_calib_constants, or were from log files, or were other mission/dive specific values.</span>
 
@@ -393,7 +371,7 @@
 <span class="c1"># Deprecated - currently just uses the standard vocabularies.vocab_attrs but could clobber existing attributes</span>
 <div class="viewcode-block" id="assign_variable_attributes">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.assign_variable_attributes">[docs]</a>
-<span class="k">def</span> <span class="nf">assign_variable_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">vocab_attrs</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">,</span> <span class="n">unit_format</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">assign_variable_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">vocab_attrs</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">,</span> <span class="n">unit_format</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Assigns variable attributes to a dataset where they are missing and reformats units according to the provided unit_format.</span>
 <span class="sd">    Attributes that already exist in the dataset are not changed, except for unit reformatting.</span>
@@ -430,7 +408,7 @@
 
 <div class="viewcode-block" id="add_gps_info_to_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.add_gps_info_to_dataset">[docs]</a>
-<span class="k">def</span> <span class="nf">add_gps_info_to_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">gps_ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_gps_info_to_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">gps_ds</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Add LATITUDE_GPS, LONGITUDE_GPS, and TIME_GPS to the dataset.  The values will be present within the N_MEASUREMENTS but with non-Nan values only when the GPS information is available.  The dataset will be sorted by TIME.</span>
 
@@ -492,7 +470,7 @@
 <span class="c1">##-----------------------------------------------------------------------------------------</span>
 <div class="viewcode-block" id="update_dataset_attributes">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.update_dataset_attributes">[docs]</a>
-<span class="k">def</span> <span class="nf">update_dataset_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_dataset_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Updates the attributes of the dataset based on the provided attribute input.</span>
 
@@ -509,6 +487,7 @@
     <span class="n">attr_to_add</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s1">&#39;attr_to_add&#39;</span><span class="p">]</span>
     <span class="n">attr_to_rename</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s1">&#39;attr_to_rename&#39;</span><span class="p">]</span>
     <span class="n">order_of_attr</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">order_of_attr</span>
+    <span class="n">mandatory_attr</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s1">&#39;attr_mandatory&#39;</span><span class="p">]</span>
 
     <span class="c1"># Extract creators and contributors and institution, then reformulate strings</span>
     <span class="n">contrib_attrs</span> <span class="o">=</span> <span class="n">get_contributors</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="p">)</span>
@@ -525,6 +504,11 @@
     <span class="c1"># Combine all attributes</span>
     <span class="n">new_attributes</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">attr_to_add</span><span class="p">,</span> <span class="o">**</span><span class="n">contrib_attrs</span><span class="p">,</span> <span class="o">**</span><span class="n">time_attrs</span><span class="p">,</span> <span class="o">**</span><span class="n">renamed_attrs</span><span class="p">,</span> <span class="o">**</span><span class="n">keep_attrs</span><span class="p">,</span> <span class="o">**</span><span class="n">attr_to_add</span><span class="p">}</span>
 
+    <span class="c1"># Add mandatory attributes if they are not already present</span>
+    <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">mandatory_attr</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">new_attributes</span><span class="p">:</span>
+            <span class="n">new_attributes</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">mandatory_attr</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
+
     <span class="c1"># Reorder attributes according to vocabularies.order_of_attr</span>
     <span class="n">ordered_attributes</span> <span class="o">=</span> <span class="p">{</span><span class="n">attr</span><span class="p">:</span> <span class="n">new_attributes</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">order_of_attr</span> <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">new_attributes</span><span class="p">}</span>
 
@@ -538,15 +522,15 @@
 
 <div class="viewcode-block" id="get_contributors">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.get_contributors">[docs]</a>
-<span class="k">def</span> <span class="nf">get_contributors</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">values_to_append</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_contributors</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">values_to_append</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="c1"># Function to create or append to a list</span>
-    <span class="k">def</span> <span class="nf">create_or_append_list</span><span class="p">(</span><span class="n">existing_list</span><span class="p">,</span> <span class="n">new_item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_or_append_list</span><span class="p">(</span><span class="n">existing_list</span><span class="p">,</span> <span class="n">new_item</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">new_item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_list</span><span class="p">:</span>
             <span class="n">new_item</span> <span class="o">=</span> <span class="n">new_item</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
             <span class="n">existing_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_item</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">existing_list</span>
 
-    <span class="k">def</span> <span class="nf">list_to_comma_separated_string</span><span class="p">(</span><span class="n">lst</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_to_comma_separated_string</span><span class="p">(</span><span class="n">lst</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Convert a list of strings to a single string with values separated by commas.</span>
 <span class="sd">            Replace any commas present in list elements with hyphens.</span>
@@ -652,7 +636,7 @@
 
 <div class="viewcode-block" id="get_time_attributes">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.get_time_attributes">[docs]</a>
-<span class="k">def</span> <span class="nf">get_time_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_time_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Extracts and cleans time-related attributes from the dataset.</span>
 
@@ -664,7 +648,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    dict: A dictionary containing cleaned time-related attributes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">clean_time_string</span><span class="p">(</span><span class="n">time_str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean_time_string</span><span class="p">(</span><span class="n">time_str</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">time_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
 
     <span class="n">time_attrs</span> <span class="o">=</span> <span class="p">{}</span>
@@ -689,7 +673,7 @@
 
 <div class="viewcode-block" id="extract_attr_to_keep">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.extract_attr_to_keep">[docs]</a>
-<span class="k">def</span> <span class="nf">extract_attr_to_keep</span><span class="p">(</span><span class="n">ds1</span><span class="p">,</span> <span class="n">attr_as_is</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s1">&#39;attr_as_is&#39;</span><span class="p">]):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_attr_to_keep</span><span class="p">(</span><span class="n">ds1</span><span class="p">,</span> <span class="n">attr_as_is</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s1">&#39;attr_as_is&#39;</span><span class="p">]):</span>
     <span class="n">retained_attrs</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="c1"># Retain attributes based on attr_as_is</span>
@@ -702,7 +686,7 @@
 
 <div class="viewcode-block" id="extract_attr_to_rename">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.extract_attr_to_rename">[docs]</a>
-<span class="k">def</span> <span class="nf">extract_attr_to_rename</span><span class="p">(</span><span class="n">ds1</span><span class="p">,</span> <span class="n">attr_to_rename</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s1">&#39;attr_to_rename&#39;</span><span class="p">]):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_attr_to_rename</span><span class="p">(</span><span class="n">ds1</span><span class="p">,</span> <span class="n">attr_to_rename</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s1">&#39;attr_to_rename&#39;</span><span class="p">]):</span>
     <span class="n">renamed_attrs</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="c1"># Rename attributes based on values_to_rename</span>
     <span class="k">for</span> <span class="n">new_attr</span><span class="p">,</span> <span class="n">old_attr</span> <span class="ow">in</span> <span class="n">attr_to_rename</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -715,7 +699,7 @@
 
 <div class="viewcode-block" id="process_and_save_data">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.process_and_save_data">[docs]</a>
-<span class="k">def</span> <span class="nf">process_and_save_data</span><span class="p">(</span><span class="n">input_location</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="s1">&#39;../data&#39;</span><span class="p">,</span> <span class="n">run_quietly</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_and_save_data</span><span class="p">(</span><span class="n">input_location</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="s1">&#39;../data&#39;</span><span class="p">,</span> <span class="n">run_quietly</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Processes and saves data from the specified input location.</span>
 <span class="sd">    This function loads and concatenates datasets from the server, converts them to OG1 format,</span>
@@ -771,7 +755,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Eleanor Frajka-Williams.</p>
+    <p>&#169; Copyright 2025, Eleanor Frajka-Williams.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

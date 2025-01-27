@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>seagliderOG1.tools &mdash; seagliderOG1 v0.0.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -71,20 +71,20 @@
            <div itemprop="articleBody">
              
   <h1>Source code for seagliderOG1.tools</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
-<span class="kn">import</span> <span class="nn">cartopy.crs</span> <span class="k">as</span> <span class="nn">ccrs</span>
-<span class="kn">import</span> <span class="nn">cartopy.feature</span> <span class="k">as</span> <span class="nn">cfeature</span>
-<span class="kn">import</span> <span class="nn">matplotlib.dates</span> <span class="k">as</span> <span class="nn">mdates</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">matplotlib.dates</span> <span class="kn">import</span> <span class="n">DateFormatter</span>
-<span class="kn">import</span> <span class="nn">matplotlib.colors</span> <span class="k">as</span> <span class="nn">mcolors</span>
-<span class="kn">from</span> <span class="nn">seagliderOG1</span> <span class="kn">import</span> <span class="n">vocabularies</span>
-<span class="kn">import</span> <span class="nn">gsw</span>
-<span class="kn">from</span> <span class="nn">seagliderOG1</span> <span class="kn">import</span> <span class="n">utilities</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">cartopy.crs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ccrs</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">cartopy.feature</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfeature</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.dates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mdates</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.dates</span><span class="w"> </span><span class="kn">import</span> <span class="n">DateFormatter</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mcolors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">vocabularies</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gsw</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">utilities</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -101,7 +101,7 @@
 
 <div class="viewcode-block" id="add_sensor_to_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_sensor_to_dataset">[docs]</a>
-<span class="k">def</span> <span class="nf">add_sensor_to_dataset</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_sensor_to_dataset</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">):</span>
     <span class="n">sensors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
     <span class="n">sensor_name_type</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">sensors</span><span class="p">:</span>
@@ -197,7 +197,7 @@
 
 <div class="viewcode-block" id="add_sensors_old">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_sensors_old">[docs]</a>
-<span class="k">def</span> <span class="nf">add_sensors_old</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dsa</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_sensors_old</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dsa</span><span class="p">):</span>
     <span class="n">attrs</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span>
     <span class="n">sensors</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -251,7 +251,7 @@
 
 <div class="viewcode-block" id="assign_profile_number">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.assign_profile_number">[docs]</a>
-<span class="k">def</span> <span class="nf">assign_profile_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">divenum_str</span> <span class="o">=</span> <span class="s1">&#39;divenum&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">assign_profile_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">divenum_str</span> <span class="o">=</span> <span class="s1">&#39;divenum&#39;</span><span class="p">):</span>
     <span class="c1"># Remove the variable dive_num_cast if it exists</span>
     <span class="k">if</span> <span class="s1">&#39;dive_num_cast&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">)</span>
@@ -288,7 +288,7 @@
 
 <div class="viewcode-block" id="assign_phase">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.assign_phase">[docs]</a>
-<span class="k">def</span> <span class="nf">assign_phase</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">assign_phase</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This function adds new variables &#39;PHASE&#39; and &#39;PHASE_QC&#39; to the dataset `ds`, which indicate the phase of each measurement. The phase is determined based on the pressure readings (&#39;PRES&#39;) for each unique dive number (&#39;dive_num&#39;).</span>
 <span class="sd">    </span>
@@ -359,7 +359,7 @@
 <span class="c1">##-----------------------------------------------------------------------------------------------------------</span>
 <div class="viewcode-block" id="calc_Z">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.calc_Z">[docs]</a>
-<span class="k">def</span> <span class="nf">calc_Z</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_Z</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate the depth (Z position) of the glider using the gsw library to convert pressure to depth.</span>
 <span class="sd">    </span>
@@ -396,7 +396,7 @@
 
 <div class="viewcode-block" id="get_sg_attrs">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.get_sg_attrs">[docs]</a>
-<span class="k">def</span> <span class="nf">get_sg_attrs</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_sg_attrs</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
     <span class="nb">id</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
     <span class="n">sg_cal</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extract_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
     <span class="n">sg_vars_dict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -408,7 +408,7 @@
 
 <div class="viewcode-block" id="split_by_unique_dims">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.split_by_unique_dims">[docs]</a>
-<span class="k">def</span> <span class="nf">split_by_unique_dims</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">split_by_unique_dims</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Splits an xarray dataset into multiple datasets based on the unique set of dimensions of the variables.</span>
 
@@ -440,7 +440,7 @@
 
 <div class="viewcode-block" id="add_dive_number">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_dive_number">[docs]</a>
-<span class="k">def</span> <span class="nf">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dive_number</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dive_number</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Add dive number as a variable to the dataset.</span>
 
@@ -457,7 +457,7 @@
 
 <div class="viewcode-block" id="convert_units">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.convert_units">[docs]</a>
-<span class="k">def</span> <span class="nf">convert_units</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">preferred_units</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">preferred_units</span><span class="p">,</span> <span class="n">unit_conversion</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_conversion</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_units</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">preferred_units</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">preferred_units</span><span class="p">,</span> <span class="n">unit_conversion</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_conversion</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.</span>
 
@@ -490,7 +490,7 @@
 
 <div class="viewcode-block" id="reformat_units_var">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.reformat_units_var">[docs]</a>
-<span class="k">def</span> <span class="nf">reformat_units_var</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">unit_format</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reformat_units_var</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">unit_format</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Renames units in the dataset based on the provided dictionary for OG1.</span>
 
@@ -513,7 +513,7 @@
 
 <div class="viewcode-block" id="convert_units_var">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.convert_units_var">[docs]</a>
-<span class="k">def</span> <span class="nf">convert_units_var</span><span class="p">(</span><span class="n">var_values</span><span class="p">,</span> <span class="n">current_unit</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">,</span> <span class="n">unit_conversion</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_conversion</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_units_var</span><span class="p">(</span><span class="n">var_values</span><span class="p">,</span> <span class="n">current_unit</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">,</span> <span class="n">unit_conversion</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_conversion</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.</span>
 
@@ -542,7 +542,7 @@
 
 <div class="viewcode-block" id="convert_qc_flags">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.convert_qc_flags">[docs]</a>
-<span class="k">def</span> <span class="nf">convert_qc_flags</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">qc_name</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_qc_flags</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">qc_name</span><span class="p">):</span>
     <span class="c1"># Must be called *after* var_name has OG1 long_name</span>
     <span class="n">var_name</span> <span class="o">=</span> <span class="n">qc_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> 
     <span class="k">if</span> <span class="n">qc_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dsa</span><span class="p">):</span>
@@ -560,7 +560,7 @@
     <span class="k">return</span> <span class="n">dsa</span></div>
 
 
-<span class="k">def</span> <span class="nf">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">da</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">da</span><span class="p">):</span>
     <span class="n">input_dtype</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
     <span class="k">if</span> <span class="s2">&quot;latitude&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">&quot;longitude&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span>
@@ -579,14 +579,14 @@
 
 <div class="viewcode-block" id="set_fill_value">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.set_fill_value">[docs]</a>
-<span class="k">def</span> <span class="nf">set_fill_value</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_fill_value</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">):</span>
     <span class="n">fill_val</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;\d+&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">fill_val</span></div>
 
 
 <div class="viewcode-block" id="set_best_dtype">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.set_best_dtype">[docs]</a>
-<span class="k">def</span> <span class="nf">set_best_dtype</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_best_dtype</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
     <span class="n">bytes_in</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">nbytes</span>
     <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
         <span class="n">da</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
@@ -616,7 +616,7 @@
 <span class="c1">#===============================================================================</span>
 <div class="viewcode-block" id="encode_times">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.encode_times">[docs]</a>
-<span class="k">def</span> <span class="nf">encode_times</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">encode_times</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
     <span class="k">if</span> <span class="s2">&quot;units&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="s2">&quot;calendar&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -634,7 +634,7 @@
 
 <div class="viewcode-block" id="encode_times_og1">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.encode_times_og1">[docs]</a>
-<span class="k">def</span> <span class="nf">encode_times_og1</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">encode_times_og1</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">&quot;axis&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;axis&quot;</span><span class="p">)</span>
@@ -653,7 +653,7 @@
 
 <div class="viewcode-block" id="set_best_dtype_value">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.set_best_dtype_value">[docs]</a>
-<span class="k">def</span> <span class="nf">set_best_dtype_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">var_name</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_best_dtype_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">var_name</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Determines the best data type for a single value based on its variable name and converts it.</span>
 
@@ -684,7 +684,7 @@
 
 <div class="viewcode-block" id="find_best_dtype">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.find_best_dtype">[docs]</a>
-<span class="k">def</span> <span class="nf">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">da</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">da</span><span class="p">):</span>
     <span class="n">input_dtype</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
     <span class="k">if</span> <span class="s2">&quot;latitude&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">&quot;longitude&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span>
@@ -713,7 +713,7 @@
 
 <div class="viewcode-block" id="add_standard_global_attrs">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_standard_global_attrs">[docs]</a>
-<span class="k">def</span> <span class="nf">add_standard_global_attrs</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_standard_global_attrs</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
     <span class="n">date_created</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">attrs</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;acknowledgement&quot;</span><span class="p">:</span> <span class="s2">&quot;This study used data collected and made freely available by Voice of the Ocean Foundation (&quot;</span>
@@ -769,7 +769,7 @@
 <span class="c1"># Deprecated - is Seaexplorer specific</span>
 <div class="viewcode-block" id="sensor_sampling_period">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.sensor_sampling_period">[docs]</a>
-<span class="k">def</span> <span class="nf">sensor_sampling_period</span><span class="p">(</span><span class="n">glider</span><span class="p">,</span> <span class="n">mission</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sensor_sampling_period</span><span class="p">(</span><span class="n">glider</span><span class="p">,</span> <span class="n">mission</span><span class="p">):</span>
     <span class="c1"># Get sampling period of CTD in seconds for a given glider mission</span>
     <span class="n">fn</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;/data/data_raw/complete_mission/SEA</span><span class="si">{</span><span class="n">glider</span><span class="si">}</span><span class="s2">/M</span><span class="si">{</span><span class="n">mission</span><span class="si">}</span><span class="s2">/sea</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">glider</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">mission</span><span class="si">}</span><span class="s2">.pld1.raw.10.gz&quot;</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;;&quot;</span><span class="p">,</span> <span class="n">dayfirst</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;PLD_REALTIMECLOCK&quot;</span><span class="p">])</span>
@@ -796,7 +796,7 @@
 <span class="c1"># Not used</span>
 <div class="viewcode-block" id="natural_sort">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.natural_sort">[docs]</a>
-<span class="k">def</span> <span class="nf">natural_sort</span><span class="p">(</span><span class="n">unsorted_list</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">natural_sort</span><span class="p">(</span><span class="n">unsorted_list</span><span class="p">):</span>
     <span class="n">convert</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">text</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">if</span> <span class="n">text</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="k">else</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>  <span class="c1"># noqa: E731</span>
     <span class="n">alphanum_key</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="p">[</span><span class="n">convert</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;([0-9]+)&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">)]</span>  <span class="c1"># noqa: E731</span>
     <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">unsorted_list</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">alphanum_key</span><span class="p">)</span></div>
@@ -805,7 +805,7 @@
 <span class="c1"># Template - doesn&#39;t work - requires mailer.sh</span>
 <div class="viewcode-block" id="mailer">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.mailer">[docs]</a>
-<span class="k">def</span> <span class="nf">mailer</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">recipient</span><span class="o">=</span><span class="s2">&quot;callum.rollo@voiceoftheocean.org&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mailer</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">recipient</span><span class="o">=</span><span class="s2">&quot;callum.rollo@voiceoftheocean.org&quot;</span><span class="p">):</span>
     <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;email: </span><span class="si">{</span><span class="n">subject</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">recipient</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">subject</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
     <span class="n">send_script</span> <span class="o">=</span> <span class="n">sync_script_dir</span> <span class="o">/</span> <span class="s2">&quot;mailer.sh&quot;</span>
@@ -820,7 +820,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Eleanor Frajka-Williams.</p>
+    <p>&#169; Copyright 2025, Eleanor Frajka-Williams.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

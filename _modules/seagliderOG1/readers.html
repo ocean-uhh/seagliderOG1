@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>seagliderOG1.readers &mdash; seagliderOG1 v0.0.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
@@ -71,13 +71,13 @@
            <div itemprop="articleBody">
              
   <h1>Source code for seagliderOG1.readers</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
-<span class="kn">import</span> <span class="nn">requests</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">importlib_resources</span> <span class="kn">import</span> <span class="n">files</span>
-<span class="kn">import</span> <span class="nn">pooch</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib_resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pooch</span>
 
 <span class="c1"># readers.py: Will only read files.  Not manipulate them.</span>
 <span class="c1">#</span>
@@ -107,7 +107,7 @@
 
 <div class="viewcode-block" id="load_sample_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_sample_dataset">[docs]</a>
-<span class="k">def</span> <span class="nf">load_sample_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="s2">&quot;p0040034_20031007.nc&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_sample_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="s2">&quot;p0040034_20031007.nc&quot;</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">in</span> <span class="n">data_source_og</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">file_path</span> <span class="o">=</span> <span class="n">data_source_og</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
@@ -118,7 +118,7 @@
 
 <div class="viewcode-block" id="filter_files_by_profile">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.filter_files_by_profile">[docs]</a>
-<span class="k">def</span> <span class="nf">filter_files_by_profile</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_files_by_profile</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Filter a list of files based on the start_profile and end_profile.</span>
 
@@ -152,7 +152,7 @@
 
 <div class="viewcode-block" id="read_basestation">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.read_basestation">[docs]</a>
-<span class="k">def</span> <span class="nf">read_basestation</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_basestation</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Load datasets from either an online source or a local directory, optionally filtering by profile range.</span>
 
@@ -198,7 +198,7 @@
 
 <div class="viewcode-block" id="list_files_in_https_server">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.list_files_in_https_server">[docs]</a>
-<span class="k">def</span> <span class="nf">list_files_in_https_server</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_files_in_https_server</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    List files in an HTTPS server directory using BeautifulSoup and requests.</span>
 
@@ -224,7 +224,7 @@
 
 <div class="viewcode-block" id="create_pooch_registry_from_directory">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.create_pooch_registry_from_directory">[docs]</a>
-<span class="k">def</span> <span class="nf">create_pooch_registry_from_directory</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_pooch_registry_from_directory</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a Pooch registry from files in a specified directory.</span>
 
@@ -255,7 +255,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Eleanor Frajka-Williams.</p>
+    <p>&#169; Copyright 2025, Eleanor Frajka-Williams.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

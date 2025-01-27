@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>seagliderOG1 demo &mdash; seagliderOG1 v0.0.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/nbsphinx-code-cells.css?v=2aa19091" />
 
@@ -111,8 +111,8 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pathlib</span>
-<span class="kn">import</span> <span class="nn">sys</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="n">script_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
 <span class="n">parent_dir</span> <span class="o">=</span> <span class="n">script_dir</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -121,11 +121,11 @@
 <span class="nb">print</span><span class="p">(</span><span class="n">parent_dir</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">pooch</span>
-<span class="kn">from</span> <span class="nn">seagliderOG1</span> <span class="kn">import</span> <span class="n">readers</span><span class="p">,</span> <span class="n">writers</span><span class="p">,</span> <span class="n">plotters</span><span class="p">,</span> <span class="n">tools</span>
-<span class="kn">from</span> <span class="nn">seagliderOG1</span> <span class="kn">import</span> <span class="n">convertOG1</span><span class="p">,</span> <span class="n">vocabularies</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pooch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">readers</span><span class="p">,</span> <span class="n">writers</span><span class="p">,</span> <span class="n">plotters</span><span class="p">,</span> <span class="n">tools</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">convertOG1</span><span class="p">,</span> <span class="n">vocabularies</span>
 <br/></pre></div>
 </div>
 </div>
@@ -200,7 +200,7 @@ Cell <span class="ansi-green-fg">In[3], line 1</span>
 <span class="ansi-green-intense-fg ansi-bold">      2</span> ds
 
 File <span class="ansi-green-fg">~/work/seagliderOG1/seagliderOG1/seagliderOG1/readers.py:37</span>, in <span class="ansi-cyan-fg">load_sample_dataset</span><span class="ansi-blue-fg">(dataset_name)</span>
-<span class="ansi-green-intense-fg ansi-bold">     35</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">load_sample_dataset</span>(dataset_name<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">p0040034_20031007.nc</span><span style="color: rgb(175,0,0)">&#34;</span>):
+<span class="ansi-green-intense-fg ansi-bold">     35</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span style="color: rgb(0,0,255)">load_sample_dataset</span>(dataset_name<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">p0040034_20031007.nc</span><span style="color: rgb(175,0,0)">&#34;</span>):
 <span class="ansi-green-intense-fg ansi-bold">     36</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> dataset_name <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> data_source_og<span style="color: rgb(98,98,98)">.</span>registry<span style="color: rgb(98,98,98)">.</span>keys():
 <span class="ansi-green-fg">---&gt; 37</span>         file_path <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">data_source_og</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">fetch</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">dataset_name</span><span class="ansi-yellow-bg">)</span>
 <span class="ansi-green-intense-fg ansi-bold">     38</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> xr<span style="color: rgb(98,98,98)">.</span>open_dataset(file_path)
@@ -419,7 +419,7 @@ Cell <span class="ansi-green-fg">In[7], line 2</span>
 <span class="ansi-green-intense-fg ansi-bold">      6</span> <span style="color: rgb(95,135,135)"># Check the results - uncomment the following lines to either generate a plot or show the variables.</span>
 
 File <span class="ansi-green-fg">~/work/seagliderOG1/seagliderOG1/seagliderOG1/readers.py:37</span>, in <span class="ansi-cyan-fg">load_sample_dataset</span><span class="ansi-blue-fg">(dataset_name)</span>
-<span class="ansi-green-intense-fg ansi-bold">     35</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">load_sample_dataset</span>(dataset_name<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">p0040034_20031007.nc</span><span style="color: rgb(175,0,0)">&#34;</span>):
+<span class="ansi-green-intense-fg ansi-bold">     35</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span style="color: rgb(0,0,255)">load_sample_dataset</span>(dataset_name<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">p0040034_20031007.nc</span><span style="color: rgb(175,0,0)">&#34;</span>):
 <span class="ansi-green-intense-fg ansi-bold">     36</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> dataset_name <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> data_source_og<span style="color: rgb(98,98,98)">.</span>registry<span style="color: rgb(98,98,98)">.</span>keys():
 <span class="ansi-green-fg">---&gt; 37</span>         file_path <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">data_source_og</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">fetch</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">dataset_name</span><span class="ansi-yellow-bg">)</span>
 <span class="ansi-green-intense-fg ansi-bold">     38</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> xr<span style="color: rgb(98,98,98)">.</span>open_dataset(file_path)
@@ -914,17 +914,17 @@ Cell <span class="ansi-green-fg">In[14], line 33</span>
 <span class="ansi-green-intense-fg ansi-bold">     32</span>     <span style="color: rgb(95,135,135)"># Example usage</span>
 <span class="ansi-green-fg">---&gt; 33</span>     ds_all <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">convertOG1</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">process_and_save_data</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">input_loc</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">output_dir</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">data_path</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">save</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg ansi-bold" style="color: rgb(0,135,0)">True</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg">  </span><span class="ansi-yellow-bg">run_quietly</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg ansi-bold" style="color: rgb(0,135,0)">True</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-fg">~/work/seagliderOG1/seagliderOG1/seagliderOG1/convertOG1.py:621</span>, in <span class="ansi-cyan-fg">process_and_save_data</span><span class="ansi-blue-fg">(input_location, save, output_dir, run_quietly)</span>
-<span class="ansi-green-intense-fg ansi-bold">    605</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;</span>
-<span class="ansi-green-intense-fg ansi-bold">    606</span> <span style="color: rgb(175,0,0)">Processes and saves data from the specified input location.</span>
-<span class="ansi-green-intense-fg ansi-bold">    607</span> <span style="color: rgb(175,0,0)">This function loads and concatenates datasets from the server, converts them to OG1 format,</span>
+File <span class="ansi-green-fg">~/work/seagliderOG1/seagliderOG1/seagliderOG1/convertOG1.py:608</span>, in <span class="ansi-cyan-fg">process_and_save_data</span><span class="ansi-blue-fg">(input_location, save, output_dir, run_quietly)</span>
+<span class="ansi-green-intense-fg ansi-bold">    592</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">    593</span> <span style="color: rgb(175,0,0)">Processes and saves data from the specified input location.</span>
+<span class="ansi-green-intense-fg ansi-bold">    594</span> <span style="color: rgb(175,0,0)">This function loads and concatenates datasets from the server, converts them to OG1 format,</span>
 <span class="ansi-green-fg">   (...)</span>
-<span class="ansi-green-intense-fg ansi-bold">    617</span> <span style="color: rgb(175,0,0)">xarray.Dataset: The processed dataset.</span>
-<span class="ansi-green-intense-fg ansi-bold">    618</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;</span>
-<span class="ansi-green-intense-fg ansi-bold">    620</span> <span style="color: rgb(95,135,135)"># Load and concatenate all datasets from the server</span>
-<span class="ansi-green-fg">--&gt; 621</span> list_datasets <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">readers</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">read_basestation</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">input_location</span><span class="ansi-yellow-bg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    623</span> <span style="color: rgb(95,135,135)"># Convert the list of datasets to OG1</span>
-<span class="ansi-green-intense-fg ansi-bold">    624</span> ds1 <span style="color: rgb(98,98,98)">=</span> convert_to_OG1(list_datasets[<span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">1</span>])
+<span class="ansi-green-intense-fg ansi-bold">    604</span> <span style="color: rgb(175,0,0)">xarray.Dataset: The processed dataset.</span>
+<span class="ansi-green-intense-fg ansi-bold">    605</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">    607</span> <span style="color: rgb(95,135,135)"># Load and concatenate all datasets from the server</span>
+<span class="ansi-green-fg">--&gt; 608</span> list_datasets <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">readers</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">read_basestation</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">input_location</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    610</span> <span style="color: rgb(95,135,135)"># Convert the list of datasets to OG1</span>
+<span class="ansi-green-intense-fg ansi-bold">    611</span> ds1 <span style="color: rgb(98,98,98)">=</span> convert_to_OG1(list_datasets[<span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">1</span>])
 
 File <span class="ansi-green-fg">~/work/seagliderOG1/seagliderOG1/seagliderOG1/readers.py:109</span>, in <span class="ansi-cyan-fg">read_basestation</span><span class="ansi-blue-fg">(source, start_profile, end_profile)</span>
 <span class="ansi-green-intense-fg ansi-bold">    107</span> <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> file <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> filtered_files:
@@ -934,7 +934,7 @@ File <span class="ansi-green-fg">~/work/seagliderOG1/seagliderOG1/seagliderOG1/r
 <span class="ansi-green-intense-fg ansi-bold">    111</span>         ds <span style="color: rgb(98,98,98)">=</span> xr<span style="color: rgb(98,98,98)">.</span>open_dataset(os<span style="color: rgb(98,98,98)">.</span>path<span style="color: rgb(98,98,98)">.</span>join(source, file))
 
 File <span class="ansi-green-fg">~/work/seagliderOG1/seagliderOG1/seagliderOG1/readers.py:37</span>, in <span class="ansi-cyan-fg">load_sample_dataset</span><span class="ansi-blue-fg">(dataset_name)</span>
-<span class="ansi-green-intense-fg ansi-bold">     35</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">load_sample_dataset</span>(dataset_name<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">p0040034_20031007.nc</span><span style="color: rgb(175,0,0)">&#34;</span>):
+<span class="ansi-green-intense-fg ansi-bold">     35</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span style="color: rgb(0,0,255)">load_sample_dataset</span>(dataset_name<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">p0040034_20031007.nc</span><span style="color: rgb(175,0,0)">&#34;</span>):
 <span class="ansi-green-intense-fg ansi-bold">     36</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> dataset_name <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> data_source_og<span style="color: rgb(98,98,98)">.</span>registry<span style="color: rgb(98,98,98)">.</span>keys():
 <span class="ansi-green-fg">---&gt; 37</span>         file_path <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">data_source_og</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">fetch</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">dataset_name</span><span class="ansi-yellow-bg">)</span>
 <span class="ansi-green-intense-fg ansi-bold">     38</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> xr<span style="color: rgb(98,98,98)">.</span>open_dataset(file_path)
@@ -1002,7 +1002,7 @@ File <span class="ansi-green-fg">~/micromamba/envs/TEST/lib/python3.12/site-pack
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Eleanor Frajka-Williams.</p>
+    <p>&#169; Copyright 2025, Eleanor Frajka-Williams.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

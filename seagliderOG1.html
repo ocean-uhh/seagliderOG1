@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>seagliderOG1 API &mdash; seagliderOG1 v0.0.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
@@ -49,7 +49,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#seagliderOG1.convertOG1.add_gps_info_to_dataset"><code class="docutils literal notranslate"><span class="pre">add_gps_info_to_dataset()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#seagliderOG1.convertOG1.assign_variable_attributes"><code class="docutils literal notranslate"><span class="pre">assign_variable_attributes()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#seagliderOG1.convertOG1.convert_to_OG1"><code class="docutils literal notranslate"><span class="pre">convert_to_OG1()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#seagliderOG1.convertOG1.convert_to_OG1_dataset"><code class="docutils literal notranslate"><span class="pre">convert_to_OG1_dataset()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#seagliderOG1.convertOG1.extract_attr_to_keep"><code class="docutils literal notranslate"><span class="pre">extract_attr_to_keep()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#seagliderOG1.convertOG1.extract_attr_to_rename"><code class="docutils literal notranslate"><span class="pre">extract_attr_to_rename()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#seagliderOG1.convertOG1.extract_variables"><code class="docutils literal notranslate"><span class="pre">extract_variables()</span></code></a></li>
@@ -195,42 +194,13 @@ concatenates the datasets, sorts by time, and applies attributes.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.convertOG1.convert_to_OG1_dataset">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">convert_to_OG1_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrib_to_append</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#convert_to_OG1_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.convert_to_OG1_dataset" title="Link to this definition"></a></dt>
-<dd><p>Converts the dataset and updates its attributes.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>(</strong><strong>xarray.Dataset</strong><strong>)</strong> (<em>ds1</em>)</p></li>
-<li><p><strong>(</strong><strong>dict</strong><strong>)</strong> (<em>contrib_to_append</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><p><strong>tuple</strong> –</p>
-<ul class="simple">
-<li><p>ds_new (xarray.Dataset): The processed dataset.</p></li>
-<li><p>attr_warnings (list): A list of warnings related to attribute assignments.</p></li>
-<li><p>sg_cal (xarray.Dataset): A dataset containing variables starting with ‘sg_cal’.</p></li>
-<li><p>dc_other (xarray.Dataset): A dataset containing other variables not categorized under ‘sg_cal’ or ‘dc_log’.</p></li>
-<li><p>dc_log (xarray.Dataset): A dataset containing variables starting with ‘<a href="#id1"><span class="problematic" id="id2">log_</span></a>’.</p></li>
-<li><p>ordered_attributes (dict): The dataset with updated attributes.</p></li>
-</ul>
-</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A tuple containing:</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.extract_attr_to_keep">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">extract_attr_to_keep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr_as_is</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'acknowledgment',</span> <span class="pre">'date_created',</span> <span class="pre">'disclaimer',</span> <span class="pre">'file_version',</span> <span class="pre">'geospatial_lat_max',</span> <span class="pre">'geospatial_lat_min',</span> <span class="pre">'geospatial_lon_max',</span> <span class="pre">'geospatial_lon_min',</span> <span class="pre">'geospatial_vertical_max',</span> <span class="pre">'geospatial_vertical_min',</span> <span class="pre">'id',</span> <span class="pre">'institution',</span> <span class="pre">'keywords',</span> <span class="pre">'keywords_vocabulary',</span> <span class="pre">'license',</span> <span class="pre">'naming_authority',</span> <span class="pre">'project'}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#extract_attr_to_keep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.extract_attr_to_keep" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.extract_attr_to_rename">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">extract_attr_to_rename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr_to_rename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'comment':</span> <span class="pre">'history',</span> <span class="pre">'id':</span> <span class="pre">'PLATFORM_SERIAL_NUMBER',</span> <span class="pre">'site':</span> <span class="pre">'summary',</span> <span class="pre">'uri':</span> <span class="pre">'uuid',</span> <span class="pre">'uri_comment':</span> <span class="pre">'UUID'}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#extract_attr_to_rename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.extract_attr_to_rename" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">extract_attr_to_rename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr_to_rename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'comment':</span> <span class="pre">'history',</span> <span class="pre">'platform_id':</span> <span class="pre">'PLATFORM_SERIAL_NUMBER',</span> <span class="pre">'site':</span> <span class="pre">'summary',</span> <span class="pre">'uri':</span> <span class="pre">'uuid',</span> <span class="pre">'uri_comment':</span> <span class="pre">'UUID'}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#extract_attr_to_rename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.extract_attr_to_rename" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -244,8 +214,8 @@ concatenates the datasets, sorts by time, and applies attributes.</p>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><p><strong>tuple</strong> –</p>
 <ul class="simple">
-<li><p>sg_cal (xarray.Dataset): Dataset with variables starting with ‘<a href="#id3"><span class="problematic" id="id4">sg_cal_</span></a>’, (originally from sg_calib_constants.m). Renamed to remove the prefix, so can be accessed with sg_cal.hd_a.</p></li>
-<li><p>dc_log (xarray.Dataset): Dataset with variables starting with ‘<a href="#id5"><span class="problematic" id="id6">log_</span></a>’. From log files.</p></li>
+<li><p>sg_cal (xarray.Dataset): Dataset with variables starting with ‘<a href="#id1"><span class="problematic" id="id2">sg_cal_</span></a>’, (originally from sg_calib_constants.m). Renamed to remove the prefix, so can be accessed with sg_cal.hd_a.</p></li>
+<li><p>dc_log (xarray.Dataset): Dataset with variables starting with ‘<a href="#id3"><span class="problematic" id="id4">log_</span></a>’. From log files.</p></li>
 <li><p>dc_other (xarray.Dataset): Other mission/dive specific values. Includes depth-averaged currents but also things like magnetic_variation</p></li>
 </ul>
 </p>
@@ -315,6 +285,7 @@ xarray.Dataset: The processed dataset.</p>
 <li><p>attr_warnings (list): A list of warnings related to attribute assignments.</p></li>
 <li><p>sg_cal (xarray.Dataset): A dataset containing variables starting with ‘sg_cal’.</p></li>
 <li><p>dc_other (xarray.Dataset): A dataset containing other variables not categorized under ‘sg_cal’ or ‘dc_log’.</p></li>
+<li><p>dc_log (xarray.Dataset): A dataset containing variables starting with ‘<a href="#id5"><span class="problematic" id="id6">log_</span></a>’.</p></li>
 </ul>
 </li>
 <li><p><em>Steps</em> –</p>
@@ -852,7 +823,7 @@ tuple: A tuple containing xarray datasets, each with variables sharing the same 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Eleanor Frajka-Williams.</p>
+    <p>&#169; Copyright 2025, Eleanor Frajka-Williams.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
