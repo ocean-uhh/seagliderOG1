@@ -46,7 +46,7 @@ def convert_to_OG1(datasets, contrib_to_append=None):
     if 'platform_id' in ds.attrs:
         PLATFORM_SERIAL_NUMBER = ds.attrs['platform_id'].lower()
     else:
-        PLATFORM_SERIAL_NUMBER = 'sg' + concatenated_ds.attrs['id']
+        PLATFORM_SERIAL_NUMBER = 'sg000' 
     concatenated_ds['PLATFORM_SERIAL_NUMBER'] = PLATFORM_SERIAL_NUMBER
     concatenated_ds['PLATFORM_SERIAL_NUMBER'].attrs['long_name'] = "glider serial number"
 
