@@ -2,7 +2,6 @@ attr_to_add:
   title: OceanGliders trajectory file
   platform: sub-surface gliders
   platform_vocabulary: https://vocab.nerc.ac.uk/collection/L06/current/27
-  id: null
   featureType: trajectoryProfile
   Conventions: CF-1.10,OG-1.0
   rtqc_method: No QC applied
@@ -14,6 +13,7 @@ attr_as_is: !!set
   geospatial_lon_min: null
   institution: null
   disclaimer: null
+  id: null
   file_version: null
   geospatial_vertical_max: null
   geospatial_vertical_min: null
