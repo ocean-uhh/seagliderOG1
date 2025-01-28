@@ -65,7 +65,17 @@ def _parse_calibcomm(calibcomm):
         cal_date = cal_date.split('calibration')[-1].strip()
         cal_date = cal_date.replace(' ', '')
         print(cal_date)
-        cal_date_YYYYmmDD = datetime.datetime.strptime(cal_date, '%d%b%y').strftime('%Y%m%d')
+        # Different date formats in calibration comments
+        formats = ['%d%b%y', '%d-%b-%y']
+        cal_date_YYYYmmDD = None
+        for fmt in formats:
+            try:
+            # Try to parse the date with the current format
+                cal_date_YYYYmmDD = datetime.datetime.strptime(cal_date, fmt).strftime('%Y%m%d')
+                break  # Exit the loop if parsing is successful
+            except ValueError:
+                continue  # Try the next format if parsing fails
+        #cal_date_YYYYmmDD = datetime.datetime.strptime(cal_date, '%d%b%y').strftime('%Y%m%d')
     else:   
         cal_date_YYYYmmDD = 'Unknown'
     if 's/n' in calibcomm.values.item().decode('utf-8'):
@@ -86,6 +96,8 @@ def _clean_anc_vars_list(ancillary_variables_str):
 def _assign_calval(sg_cal, anc_var_list):
     calval = {}
     for anc_var in anc_var_list:
-        var_value = sg_cal[anc_var].values.item()
-        calval[anc_var] = var_value
+        # Check if anc_var exists in sg_cal which was not the case in Robs dataset
+        if anc_var in sg_cal:  
+            var_value = sg_cal[anc_var].values.item()
+            calval[anc_var] = var_value
     return calval

@@ -560,3 +560,6 @@ EAST_DISPLACEMENT:
   long_name: eastward displacement of platform, from flight model
   sensor: flight_model
   units: m
+#Time for oxygen concentration was defined in OG1_var_names.yaml but not called here
+TIME_DOXY:
+  long_name: time for oxygen concentration in GMT epoch format

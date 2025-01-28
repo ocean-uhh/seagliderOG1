@@ -32,7 +32,9 @@ data_source_og = pooch.create(
 registry_file = files('seagliderOG1').joinpath('seaglider_registry.txt')
 data_source_og.load_registry(registry_file)
 
-def load_sample_dataset(dataset_name="p0040034_20031007.nc"):
+# old link is not working anymore
+#def load_sample_dataset(dataset_name="p0040034_20031007.nc"):
+def load_sample_dataset(dataset_name="p0150500_20050213.nc"):
     if dataset_name in data_source_og.registry.keys():
         file_path = data_source_og.fetch(dataset_name)
         return xr.open_dataset(file_path)
@@ -56,7 +58,9 @@ def filter_files_by_profile(file_list, start_profile=None, end_profile=None):
 
     for file in file_list:
         if file.endswith(".nc"):
-            profile_number = int(file.split("_")[0][4:])
+            # Extract the profile number from the filename now from the begining
+            #profile_number = int(file.split("_")[0][4:])
+            profile_number = int(file[5:8])
             if start_profile is not None and end_profile is not None:
                 if start_profile <= profile_number <= end_profile:
                     filtered_files.append(file)
