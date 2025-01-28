@@ -22,8 +22,8 @@ temperature_raw: TEMP_RAW
 salinity_raw: PSAL_RAW
 conductivity_raw: CNDC_RAW
 salinity: PSAL
-absolute_salinity: SA
-conservative_temperature: CT
+#absolute_salinity: SA
+#conservative_temperature: CT
 ctd_density: DENSITY
 profile_index: PROFILE_NUMBER
 vert_speed: GLIDER_VERT_VELO_MODEL

@@ -33,19 +33,19 @@ def _validate_coords(ds1):
     id = ds1.attrs['id']
     if 'longitude' not in ds1.coords:
         ds1 = ds1.assign_coords(longitude=("sg_data_point", [float('nan')] * ds1.dims['sg_data_point']))
-        print(f'{id}: No coord longitude - adding as NaNs to length of sg_data_point')
+        _log.warning(f"{id}: No coord longitude - adding as NaNs to length of sg_data_point")
     if 'latitude' not in ds1.coords:
         ds1 = ds1.assign_coords(latitude=("sg_data_point", [float('nan')] * ds1.dims['sg_data_point']))
-        print(f'{id}: No coord latitude - adding as NaNs to length of sg_data_point')
+        _log.warning(f"{id}: No coord latitude - adding as NaNs to length of sg_data_point")
     if 'ctd_time' in ds1.variables:
         if 'ctd_time' not in ds1.coords:
             ds1 = ds1.assign_coords(ctd_time=("sg_data_point", ds1['ctd_time'].values))
-            print(f'{id}: No coord ctd_time, but exists as variable - assigning coord from variable')
+            _log.warning(f"{id}: No coord ctd_time, but exists as variable - assigning coord from variable")    
         if 'ctd_depth' not in ds1.coords:
             ds1 = ds1.assign_coords(ctd_depth=("sg_data_point", ds1['ctd_depth'].values))
-            print(f'{id}: No coord ctd_depth, but exists as variable - assigning coord from variable')
+            _log.warning(f"{id}: No coord ctd_depth, but exists as variable - assigning coord from variable")
     else:
-        print(f'{id}: !!! No variable ctd_time - returning an empty dataset')
+        _log.warning(f"{id}: No variable ctd_time - returning an empty dataset")
 
         ds1 = xr.Dataset()
     return ds1
@@ -57,14 +57,16 @@ def _validate_dims(ds):
         raise ValueError(f"Dimension name '{dim_name}' is not 'N_MEASUREMENTS'.")
     
 
-def _parse_calibcomm(calibcomm):
+def _parse_calibcomm(calibcomm, firstrun=False):
     if 'calibration' in calibcomm.values.item().decode('utf-8'):
 
         cal_date = calibcomm.values.item().decode('utf-8')
-        print(cal_date)
+        if firstrun:
+            _log.info(f"sg_cal_calibcomm: {cal_date}")
         cal_date = cal_date.split('calibration')[-1].strip()
         cal_date = cal_date.replace(' ', '')
-        print(cal_date)
+        if firstrun:
+            _log.info(f"cal_date: {cal_date}")
         # Different date formats in calibration comments
         formats = ['%d%b%y', '%d-%b-%y']
         cal_date_YYYYmmDD = None
@@ -83,9 +85,14 @@ def _parse_calibcomm(calibcomm):
         serial_number = serial_match.group(0).replace('s/n  ', '').strip()
     else:
         serial_number = 'Unknown'
-    print(serial_number)
+    serial_number = serial_number.replace('s/n', '').strip()
+    if firstrun:
+        _log.info(f"serial number: {serial_number}")
 
     return cal_date_YYYYmmDD, serial_number
+
+def _clean_time_string(time_str):
+    return time_str.replace('_', '').replace(':', '').rstrip('Z').replace('-', '')
 
 def _clean_anc_vars_list(ancillary_variables_str):
     ancillary_variables_str = re.sub(r"(\w)(sg_cal)", r"\1 \2", ancillary_variables_str)
@@ -100,4 +107,6 @@ def _assign_calval(sg_cal, anc_var_list):
         if anc_var in sg_cal:  
             var_value = sg_cal[anc_var].values.item()
             calval[anc_var] = var_value
+        else:
+            calval[anc_var] = 'Unknown'
     return calval

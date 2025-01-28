@@ -32,8 +32,7 @@ data_source_og = pooch.create(
 registry_file = files('seagliderOG1').joinpath('seaglider_registry.txt')
 data_source_og.load_registry(registry_file)
 
-# old link is not working anymore
-#def load_sample_dataset(dataset_name="p0040034_20031007.nc"):
+
 def load_sample_dataset(dataset_name="p0150500_20050213.nc"):
     if dataset_name in data_source_og.registry.keys():
         file_path = data_source_og.fetch(dataset_name)
