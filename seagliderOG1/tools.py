@@ -26,17 +26,17 @@ variables_sensors = {
     "PRES_ADCP": "ADVs and turbulence probes",
 }
 
-def add_sensor_to_dataset(dsa, ds, sg_cal):
+def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
     sensors = list(ds)
     sensor_name_type = {}
     for instr in sensors:
-        print(instr)
+        if firstrun:
+            _log.info(instr)
         if instr in ["altimeter"]:
             continue
         attr_dict = ds[instr].attrs
         # Code to parse details from sg_cal and calibcomm into the attributes for CTD
         if instr == 'sbe41':
-            print(instr)
             if attr_dict["make_model"]=="unpumped Seabird SBE41":
                 attr_dict["make_model"] = "Seabird unpumped CTD"
             if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
@@ -113,7 +113,8 @@ def add_sensor_to_dataset(dsa, ds, sg_cal):
                     " ",
                     "_",
                 )
-            print('Adding sensor:', sensor_var_name)
+            if firstrun:
+                _log.info('Adding sensor:', sensor_var_name)
             dsa[sensor_var_name] = da
             sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
     return dsa
@@ -408,7 +409,7 @@ def reformat_units_var(ds, var_name, unit_format=vocabularies.unit_str_format):
         new_unit = old_unit
     return new_unit
 
-def convert_units_var(var_values, current_unit, new_unit, unit_conversion=vocabularies.unit_conversion):
+def convert_units_var(var_values, current_unit, new_unit, unit_conversion=vocabularies.unit_conversion, firstrun=False):
     """
     Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.
 
@@ -430,7 +431,8 @@ def convert_units_var(var_values, current_unit, new_unit, unit_conversion=vocabu
         new_values = var_values * conversion_factor
     else:
         new_values = var_values
-        print(f"No conversion information found for {current_unit} to {new_unit}")
+        if firstrun:
+            _log.warning(f"No conversion information found for {current_unit} to {new_unit}")
 #        raise ValueError(f"No conversion information found for {current_unit} to {new_unit}")
     return new_values
 
@@ -492,7 +494,7 @@ def set_best_dtype(ds):
             da_new.encoding["_FillValue"] = fill_val
         ds[var_name] = da_new
     bytes_out = ds.nbytes
-    _log.info(
+    _log.debug(
         f"Space saved by dtype downgrade: {int(100 * (bytes_in - bytes_out) / bytes_in)} %",
     )
     return ds

@@ -1,6 +1,9 @@
 import numpy as np
 import xarray as xr
 from numbers import Number
+import logging
+
+_log = logging.getLogger(__name__)
 
 def save_dataset(ds, output_file='../test.nc'):
     """
@@ -26,18 +29,23 @@ def save_dataset(ds, output_file='../test.nc'):
         return True
     except TypeError as e:
         print(e.__class__.__name__, e)
+        _log.error(f"{e.__class__.__name__}")
+        _log.error(f"{e}")
         for varname, variable in ds.variables.items():
             for k, v in variable.attrs.items():
                 if not isinstance(v, valid_types) or isinstance(v, bool):
-                    print(f"variable '{varname}': Converting attribute '{k}' with value '{v}' to string.")
+                    _log.warning(f"For variable '{varname}': Converting attribute '{k}' with value '{v}' to string.")
                     variable.attrs[k] = str(v)
         try:
             ds.to_netcdf(output_file, format='NETCDF4')
             return True
         except Exception as e:
             print("Failed to save dataset:", e)
+            _log.error(f"Failed to save dataset: {e}")
             datetime_vars = [var for var in ds.variables if ds[var].dtype == 'datetime64[ns]']
             print("Variables with dtype datetime64[ns]:", datetime_vars)
+            _log.warning(f"Variables with dtype datetime64[ns]: {datetime_vars}")
             float_attrs = [attr for attr in ds.attrs if isinstance(ds.attrs[attr], float)]
             print("Attributes with dtype float64:", float_attrs)
+            _log.warning(f"Attributes with dtype float64: {float_attrs}")
             return False

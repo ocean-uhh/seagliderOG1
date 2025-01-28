@@ -3,9 +3,9 @@ import xarray as xr
 from seagliderOG1 import vocabularies
 from seagliderOG1 import readers, writers, utilities, tools
 import gsw
-import logging
 from datetime import datetime
 import os
+import logging
 
 _log = logging.getLogger(__name__)
 
@@ -27,12 +27,16 @@ def convert_to_OG1(datasets, contrib_to_append=None):
         datasets = [datasets]
 
     processed_datasets = []
+    firstrun = True
+    # This would be faster if we concatenated the basestation files first, and then processed them.
+    # But we need to process them first to get the dive number, assign GPS (could be after), ?
     for ds in datasets:
-        ds_new, attr_warnings, sg_cal, dc_other, dc_log = process_dataset(ds)
+        ds_new, attr_warnings, sg_cal, dc_other, dc_log = process_dataset(ds, firstrun)
         if ds_new:
             processed_datasets.append(ds_new)
+            firstrun = False
         else:
-            print(f"Warning: Dataset for dive number {ds.attrs['dive_number']} is empty or invalid.")
+            _log.warning(f"Dataset for dive number {ds.attrs['dive_number']} is empty or invalid.")
 
     concatenated_ds = xr.concat(processed_datasets, dim='N_MEASUREMENTS')
     concatenated_ds = concatenated_ds.sortby('TIME')
@@ -50,6 +54,31 @@ def convert_to_OG1(datasets, contrib_to_append=None):
     concatenated_ds['PLATFORM_SERIAL_NUMBER'] = PLATFORM_SERIAL_NUMBER
     concatenated_ds['PLATFORM_SERIAL_NUMBER'].attrs['long_name'] = "glider serial number"
 
+    # Update time_coverage attributes
+    tstart_in_numpy_datetime64 = concatenated_ds.TIME[0].values
+    tend_in_numpy_datetime64 = concatenated_ds.TIME[-1].values
+    tstart_str = utilities._clean_time_string(np.datetime_as_string(tstart_in_numpy_datetime64, unit='s'))
+    tend_str = utilities._clean_time_string(np.datetime_as_string(tend_in_numpy_datetime64, unit='s'))
+    _log.info('Start of mission from TIME[0]: ' + tstart_str)
+    _log.info('End of mission from TIME[-1]: ' + tend_str)
+    concatenated_ds.attrs['time_coverage_start'] = tstart_str #concatenated_ds.TIME[0].values.strftime('%Y%m%dT%H%M%S')
+    concatenated_ds.attrs['time_coverage_end'] = tend_str #concatenated_ds.TIME[-1].values.strftime('%Y%m%dT%H%M%S')
+    concatenated_ds.attrs['date_created'] = utilities._clean_time_string(concatenated_ds.attrs['date_created'])
+
+    # Update geospatial attributes
+    lat_min = concatenated_ds.LATITUDE.min().values
+    lat_max = concatenated_ds.LATITUDE.max().values
+    lon_min = concatenated_ds.LONGITUDE.min().values
+    lon_max = concatenated_ds.LONGITUDE.max().values
+    concatenated_ds.attrs['geospatial_lat_min'] = lat_min
+    concatenated_ds.attrs['geospatial_lat_max'] = lat_max
+    concatenated_ds.attrs['geospatial_lon_min'] = lon_min
+    concatenated_ds.attrs['geospatial_lon_max'] = lon_max
+    depth_min = concatenated_ds.DEPTH.min().values
+    depth_max = concatenated_ds.DEPTH.max().values
+    concatenated_ds.attrs['geospatial_vertical_min'] = depth_min
+    concatenated_ds.attrs['geospatial_vertical_max'] = depth_max
+
     # Construct the unique identifier attribute
     id = f"{PLATFORM_SERIAL_NUMBER}_{concatenated_ds.start_date}_delayed"
     concatenated_ds.attrs['id'] = id
@@ -57,7 +86,7 @@ def convert_to_OG1(datasets, contrib_to_append=None):
     return concatenated_ds
 
 
-def process_dataset(ds1):
+def process_dataset(ds1, firstrun=False):
     """
     Processes a dataset by performing a series of transformations and extractions.
 
@@ -132,7 +161,7 @@ def process_dataset(ds1):
     #-------------------------------------------------------------------
     # Use variables with dimension 'sg_data_point'
     # Must be after split_ds
-    dsa = standardise_OG10(ds)
+    dsa = standardise_OG10(ds, firstrun)
 
     # Add new variables to the dataset (GPS, divenum, PROFILE_NUMBER, PHASE)
     #-----------------------------------------------------------------------
@@ -155,7 +184,7 @@ def process_dataset(ds1):
     for sensor in sensor_names:
         if sensor in dc_other:
             ds_sensor[sensor] = dc_other[sensor]
-    ds_new = tools.add_sensor_to_dataset(ds_new, ds_sensor, sg_cal)
+    ds_new = tools.add_sensor_to_dataset(ds_new, ds_sensor, sg_cal, firstrun)
 
     # Remove variables matching vocabularies.vars_to_remove and also 'TIME_GPS'
     vars_to_remove = vocabularies.vars_to_remove + ['TIME_GPS']
@@ -163,7 +192,7 @@ def process_dataset(ds1):
     attr_warnings = ''
     return ds_new, attr_warnings, sg_cal, dc_other, dc_log
 
-def standardise_OG10(ds, unit_format=vocabularies.unit_str_format):
+def standardise_OG10(ds, firstrun=False, unit_format=vocabularies.unit_str_format):
     """
     Standardizes the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.
 
@@ -195,7 +224,7 @@ def standardise_OG10(ds, unit_format=vocabularies.unit_str_format):
                 if 'units' in vocabularies.vocab_attrs[OG1_name]:
                     new_unit = vocabularies.vocab_attrs[OG1_name].get('units')
                     if orig_unit != new_unit:
-                        var_values = tools.convert_units_var(var_values, orig_unit, new_unit)
+                        var_values = tools.convert_units_var(var_values, orig_unit, new_unit, vocabularies.unit_conversion, firstrun)
             dsa[OG1_name] = ([newdim], var_values, vocabularies.vocab_attrs[OG1_name])
             # Pass attributes that aren't in standard OG1 vocab_attrs
             for key, val in ds[orig_varname].attrs.items():
@@ -215,7 +244,8 @@ def standardise_OG10(ds, unit_format=vocabularies.unit_str_format):
         else:
             dsa[orig_varname] = ([newdim], ds[orig_varname].values, ds[orig_varname].attrs)
             if orig_varname not in vocabularies.vars_as_is:
-                _log.warning(f"Variable '{orig_varname}' not in OG1 vocabulary.")
+                if firstrun:
+                   _log.warning(f"Variable '{orig_varname}' not in OG1 vocabulary.")
                 
     # Assign coordinates
     dsa = dsa.set_coords(['LONGITUDE', 'LATITUDE', 'DEPTH', 'TIME'])
@@ -307,8 +337,8 @@ def assign_variable_attributes(ds, vocab_attrs=vocabularies.vocab_attrs, unit_fo
                         ds[var].attrs[attr] = unit_format[old_value]
                     old_value = ds[var].attrs[attr]
                     if old_value != new_value:
-                        warning_msg = f"Warning: Variable '{var}' attribute '{attr}' mismatch: Old value: {old_value}, New value: {new_value}"
-#                        print(warning_msg)
+                        warning_msg = f"Variable '{var}' attribute '{attr}' mismatch: Old value: {old_value}, New value: {new_value}"
+                        _log.warning(warning_msg)
                         attr_warnings.add(warning_msg)
                 else:
                     ds[var].attrs[attr] = new_value
@@ -546,8 +576,7 @@ def get_time_attributes(ds):
     -------
     dict: A dictionary containing cleaned time-related attributes.
     """
-    def clean_time_string(time_str):
-        return time_str.replace('_', '').replace(':', '').rstrip('Z').replace('-', '')
+
 
     time_attrs = {}
     time_attr_list = ['time_coverage_start', 'time_coverage_end', 'date_created', 'start_time']
@@ -557,7 +586,7 @@ def get_time_attributes(ds):
             if isinstance(val1, (int, float)):
                 val1 = datetime.utcfromtimestamp(val1).strftime('%Y%m%dT%H%M%S')
             if isinstance(val1, str) and ('-' in val1 or ':' in val1):
-                val1 = clean_time_string(val1)
+                val1 = utilities._clean_time_string(val1)
             time_attrs[attr] = val1
     time_attrs['date_modified'] = datetime.now().strftime('%Y%m%dT%H%M%S')
 
@@ -620,6 +649,7 @@ def process_and_save_data(input_location, save=False, output_dir='../data', run_
 
         if user_input.lower() != 'yes':
             print(f"File {output_file} already exists. Exiting the process.")
+            _log.warning(f"File {output_file} already exists. Exiting the process.")
             ds_all = xr.open_dataset(output_file)
             return ds_all
         elif user_input.lower() == 'yes':
@@ -629,6 +659,7 @@ def process_and_save_data(input_location, save=False, output_dir='../data', run_
                 writers.save_dataset(ds_all, output_file)
     else:
         print('Running the directory:', input_location)
+        _log.info(f"Running the directory: {input_location}")
         ds_all = convert_to_OG1(list_datasets)
         if save:
             writers.save_dataset(ds_all, output_file)

@@ -214,6 +214,8 @@ DOXY:
   valid_max: 425
   valid_min: 0
   URI: https://vocab.nerc.ac.uk/collection/P02/current/DOXY/
+TIME_DOXY:
+  long_name: time for oxygen concentration in GMT epoch format
 OXYSAT:
   long_name: Oxygen saturation by Optode
   observation_type: calculated
@@ -311,6 +313,8 @@ THETA:
   valid_max: 42
   valid_min: -5
   URI: https://vocab.nerc.ac.uk/collection/OG1/current/THETA/
+CT:
+  long_name: Conservative temperature
 POTDENS0:
   long_name: Potential density of water body at surface
   standard_name: sea_water_potential_density
