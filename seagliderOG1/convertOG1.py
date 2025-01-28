@@ -28,9 +28,12 @@ def convert_to_OG1(datasets, contrib_to_append=None):
 
     processed_datasets = []
     firstrun = True
+
+    varlist = []
     # This would be faster if we concatenated the basestation files first, and then processed them.
     # But we need to process them first to get the dive number, assign GPS (could be after), ?
     for ds in datasets:
+        varlist = list(set(varlist + list(ds.variables)))
         ds_new, attr_warnings, sg_cal, dc_other, dc_log = process_dataset(ds, firstrun)
         if ds_new:
             processed_datasets.append(ds_new)
@@ -83,7 +86,7 @@ def convert_to_OG1(datasets, contrib_to_append=None):
     id = f"{PLATFORM_SERIAL_NUMBER}_{concatenated_ds.start_date}_delayed"
     concatenated_ds.attrs['id'] = id
 
-    return concatenated_ds
+    return concatenated_ds, varlist
 
 
 def process_dataset(ds1, firstrun=False):
@@ -179,11 +182,29 @@ def process_dataset(ds1, firstrun=False):
     ds_new = tools.calc_Z(ds_new)
 
     # Gather sensors
-    sensor_names = ['wlbb2f', 'sbe41']
+    sensor_names = ['wlbb2f', 'sbe41', 'aa4330', 'aa4381', 'aa4330']
+
     ds_sensor = xr.Dataset()
+    if 'aanderaa4330_instrument_dissolved_oxygen' in dc_other.variables:
+        dc_other['aa4330'] = dc_other['aanderaa4330_instrument_dissolved_oxygen']
     for sensor in sensor_names:
         if sensor in dc_other:
             ds_sensor[sensor] = dc_other[sensor]
+
+    if 'Pcor' in sg_cal:
+        ds_sensor['sbe43'] = ds_sensor['sbe41']
+        ds_sensor['sbe43'].attrs['long_name'] = 'Sea-Bird SBE 43F Oxygen Sensor'
+        ds_sensor['sbe43'].attrs['ancillary_variables'] = 'sg_cal_Pcor sg_cal_Foffset sg_cal_A sg_cal_B sg_cal_C sg_cal_E sg_cal_Soc'
+
+    aanderaa_ancillary = 'optode_FoilCoefA1 optode_FoilCoefA2	optode_FoilCoefA3 optode_FoilCoefA4	optode_FoilCoefA5 optode_FoilCoefA6 optode_FoilCoefA7 optode_FoilCoefA8 optode_FoilCoefA9 optode_FoilCoefA10 optode_FoilCoefA11	optode_FoilCoefA12 optode_FoilCoefA13 optode_FoilCoefB1	optode_FoilCoefB2 optode_FoilCoefB3	optode_FoilCoefB4 optode_FoilCoefB5	 optode_FoilCoefB6 optode_PhaseCoef0 optode_PhaseCoef1 optode_PhaseCoef2 optode_PhaseCoef3 optode_ConcCoef0 optode_ConcCoef1 optode_SVU_enabled optode_TempCoef0 optode_TempCoef1 optode_TempCoef2 optode_TempCoef3 optode_TempCoef4 optode_TempCoef5'
+    if 'optode_FoilCoefA1' in sg_cal:
+        ds_sensor['aa4831'] = ds_sensor['sbe41']
+        ds_sensor['aa4831'].attrs['long_name'] = 'Aanderaa 4831F Oxygen Sensor'
+        ds_sensor['aa4831'].attrs['ancillary_variables'] = aanderaa_ancillary
+    if 'aa4330' in ds_sensor.variables:
+        ds_sensor['aa4330'].attrs['long_name'] = 'Aanderaa 4330 Oxygen Sensor'
+        ds_sensor['aa4330'].attrs['ancillary_variables'] = aanderaa_ancillary
+
     ds_new = tools.add_sensor_to_dataset(ds_new, ds_sensor, sg_cal, firstrun)
 
     # Remove variables matching vocabularies.vars_to_remove and also 'TIME_GPS'
@@ -646,9 +667,9 @@ def process_and_save_data(input_location, save=False, output_dir='../data', run_
     list_datasets = readers.read_basestation(input_location)
     
     # Convert the list of datasets to OG1
-    ds1 = convert_to_OG1(list_datasets[-1])
+    ds1, varlist = convert_to_OG1(list_datasets[0])
     output_file = os.path.join(output_dir, ds1.attrs['id'] + '.nc')
-    
+
     # Check if the file exists and delete it if it does
     if os.path.exists(output_file):
         if run_quietly:
@@ -662,15 +683,26 @@ def process_and_save_data(input_location, save=False, output_dir='../data', run_
             ds_all = xr.open_dataset(output_file)
             return ds_all
         elif user_input.lower() == 'yes':
-            ds_all = convert_to_OG1(list_datasets)
+            ds_all, varlist = convert_to_OG1(list_datasets)
             os.remove(output_file)
             if save:
                 writers.save_dataset(ds_all, output_file)
     else:
         print('Running the directory:', input_location)
         _log.info(f"Running the directory: {input_location}")
-        ds_all = convert_to_OG1(list_datasets)
+        ds_all, varlist = convert_to_OG1(list_datasets)
+        output_file = os.path.join(output_dir, ds_all.attrs['id'] + '.nc')
         if save:
             writers.save_dataset(ds_all, output_file)
+
+        _log.info(f"===================================================")
+        _log.info(f"input_var: Variables in original basestation files:")
+        for varname in sorted(varlist):
+            _log.info(f"{varname}")
+
+        _log.info(f"=========================================")
+        _log.info(f"output_var: Variables in OG1 format file:")
+        for varname in sorted(ds_all.variables):
+            _log.info(f"{varname}")
 
     return ds_all

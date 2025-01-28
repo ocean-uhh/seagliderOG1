@@ -43,7 +43,12 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
                 _log.error(f"sensor {attr_dict['make_model']} not found")
             var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
 
-            cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm'])
+            calstr = f"sg_cal_calibcomm: {sg_cal['calibcomm'].values.item().decode('utf-8')}"
+            if firstrun:
+                _log.info(calstr)
+                print(calstr)
+            
+            cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm'], firstrun)
             var_dict["serial_number"] = serial_number
             var_dict["long_name"] += f":{serial_number}"
             var_dict["calibration_date"] = cal_date
@@ -53,6 +58,67 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
                 anc_var_list = utilities._clean_anc_vars_list(attr_dict["ancillary_variables"])
                 calvals = utilities._assign_calval(sg_cal, anc_var_list)
                 var_dict["calibration_parameters"] = calvals
+            da = xr.DataArray(attrs=var_dict)
+            if serial_number is not None:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}_{serial_number}".upper().replace(
+                    " ",
+                    "_",
+                )
+            else:
+                sensor_var_name = f"sensor_{var_dict['sensor_type']}".upper().replace(
+                    " ",
+                    "_",
+                )
+            dsa[sensor_var_name] = da
+            sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
+
+        # Handle oxygen sensor
+        optode_flag = False
+        if instr == 'sbe43':
+            attr_dict["make_model"] = "Seabird SBE43F"
+            if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
+                _log.error(f"sensor {attr_dict['make_model']} not found")
+            var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
+            optode_flag = True
+        if instr == 'aa4381':
+            attr_dict["make_model"] = "Aanderaa 4381"
+            if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
+                _log.error(f"sensor {attr_dict['make_model']} not found")
+            var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
+            optode_flag = True
+        if instr == 'aa4330':
+            attr_dict["make_model"] = "Aanderaa 4330"
+            if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
+                _log.error(f"sensor {attr_dict['make_model']} not found")
+            var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
+            optode_flag = True
+
+        if optode_flag:
+            if 'calibcomm_oxygen' in sg_cal:
+                calstr = f"sg_cal_calibcomm_oxygen: {sg_cal['calibcomm_oxygen'].values.item().decode('utf-8')}"
+                if firstrun:
+                    _log.info(calstr)
+                    print(calstr)
+
+                cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm_oxygen'], firstrun)
+            elif 'calibcomm_optode' in sg_cal:
+                calstr = f"sg_cal_calibcomm_optode: {sg_cal['calibcomm_optode'].values.item().decode('utf-8')}"
+                if firstrun:
+                    _log.info(calstr)
+                    print(calstr)
+
+                cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm_optode'], firstrun)
+            var_dict["serial_number"] = serial_number
+            var_dict["long_name"] += f":{serial_number}"
+            var_dict["calibration_date"] = cal_date
+
+            # All the sg_cal_optode_*
+            if "ancillary_variables" in attr_dict.keys():    
+                ancilliary_vars = attr_dict["ancillary_variables"]
+                anc_var_list = utilities._clean_anc_vars_list(attr_dict["ancillary_variables"])
+                calvals = utilities._assign_calval(sg_cal, anc_var_list)
+                var_dict["calibration_parameters"] = calvals
+
             da = xr.DataArray(attrs=var_dict)
             if serial_number is not None:
                 sensor_var_name = f"sensor_{var_dict['sensor_type']}_{serial_number}".upper().replace(
