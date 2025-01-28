@@ -105,9 +105,11 @@
 <span class="n">registry_file</span> <span class="o">=</span> <span class="n">files</span><span class="p">(</span><span class="s1">&#39;seagliderOG1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;seaglider_registry.txt&#39;</span><span class="p">)</span>
 <span class="n">data_source_og</span><span class="o">.</span><span class="n">load_registry</span><span class="p">(</span><span class="n">registry_file</span><span class="p">)</span>
 
+<span class="c1"># old link is not working anymore</span>
+<span class="c1">#def load_sample_dataset(dataset_name=&quot;p0040034_20031007.nc&quot;):</span>
 <div class="viewcode-block" id="load_sample_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_sample_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_sample_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="s2">&quot;p0040034_20031007.nc&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_sample_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="s2">&quot;p0150500_20050213.nc&quot;</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">in</span> <span class="n">data_source_og</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">file_path</span> <span class="o">=</span> <span class="n">data_source_og</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
@@ -134,7 +136,9 @@
 
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">file_list</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.nc&quot;</span><span class="p">):</span>
-            <span class="n">profile_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">4</span><span class="p">:])</span>
+            <span class="c1"># Extract the profile number from the filename now from the begining</span>
+            <span class="c1">#profile_number = int(file.split(&quot;_&quot;)[0][4:])</span>
+            <span class="n">profile_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="mi">5</span><span class="p">:</span><span class="mi">8</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">start_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">end_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">start_profile</span> <span class="o">&lt;=</span> <span class="n">profile_number</span> <span class="o">&lt;=</span> <span class="n">end_profile</span><span class="p">:</span>
                     <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
