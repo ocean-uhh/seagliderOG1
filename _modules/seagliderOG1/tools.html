@@ -101,17 +101,17 @@
 
 <div class="viewcode-block" id="add_sensor_to_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_sensor_to_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">add_sensor_to_dataset</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_sensor_to_dataset</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="n">sensors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
     <span class="n">sensor_name_type</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">sensors</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">instr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">instr</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">instr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;altimeter&quot;</span><span class="p">]:</span>
             <span class="k">continue</span>
         <span class="n">attr_dict</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">instr</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
         <span class="c1"># Code to parse details from sg_cal and calibcomm into the attributes for CTD</span>
         <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s1">&#39;sbe41&#39;</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">instr</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;unpumped Seabird SBE41&quot;</span><span class="p">:</span>
                 <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Seabird unpumped CTD&quot;</span>
             <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -188,7 +188,8 @@
                     <span class="s2">&quot; &quot;</span><span class="p">,</span>
                     <span class="s2">&quot;_&quot;</span><span class="p">,</span>
                 <span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Adding sensor:&#39;</span><span class="p">,</span> <span class="n">sensor_var_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
+                <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Adding sensor:&#39;</span><span class="p">,</span> <span class="n">sensor_var_name</span><span class="p">)</span>
             <span class="n">dsa</span><span class="p">[</span><span class="n">sensor_var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">da</span>
             <span class="n">sensor_name_type</span><span class="p">[</span><span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">sensor_var_name</span>
     <span class="k">return</span> <span class="n">dsa</span></div>
@@ -513,7 +514,7 @@
 
 <div class="viewcode-block" id="convert_units_var">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.convert_units_var">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convert_units_var</span><span class="p">(</span><span class="n">var_values</span><span class="p">,</span> <span class="n">current_unit</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">,</span> <span class="n">unit_conversion</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_conversion</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_units_var</span><span class="p">(</span><span class="n">var_values</span><span class="p">,</span> <span class="n">current_unit</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">,</span> <span class="n">unit_conversion</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_conversion</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.</span>
 
@@ -535,7 +536,8 @@
         <span class="n">new_values</span> <span class="o">=</span> <span class="n">var_values</span> <span class="o">*</span> <span class="n">conversion_factor</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">new_values</span> <span class="o">=</span> <span class="n">var_values</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No conversion information found for </span><span class="si">{</span><span class="n">current_unit</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new_unit</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No conversion information found for </span><span class="si">{</span><span class="n">current_unit</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new_unit</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="c1">#        raise ValueError(f&quot;No conversion information found for {current_unit} to {new_unit}&quot;)</span>
     <span class="k">return</span> <span class="n">new_values</span></div>
 
@@ -606,7 +608,7 @@
             <span class="n">da_new</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">&quot;_FillValue&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_val</span>
         <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">da_new</span>
     <span class="n">bytes_out</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">nbytes</span>
-    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">&quot;Space saved by dtype downgrade: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">bytes_in</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">bytes_out</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">bytes_in</span><span class="p">)</span><span class="si">}</span><span class="s2"> %&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">ds</span></div>
