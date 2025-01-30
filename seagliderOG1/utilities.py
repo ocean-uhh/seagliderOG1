@@ -51,10 +51,10 @@ def _validate_coords(ds1):
     return ds1
 
 
-def _validate_dims(ds):
+def _validate_dims(ds, expected_dims='N_MEASUREMENTS'):
     dim_name = list(ds.dims)[0] # Should be 'N_MEASUREMENTS' for OG1
-    if dim_name != 'N_MEASUREMENTS':
-        raise ValueError(f"Dimension name '{dim_name}' is not 'N_MEASUREMENTS'.")
+    if dim_name != expected_dims:
+        raise ValueError(f"Dimension name '{dim_name}' is not {expected_dims}.")
     
 
 def _parse_calibcomm(calibcomm, firstrun=False):

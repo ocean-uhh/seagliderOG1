@@ -6,9 +6,68 @@ parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
 from seagliderOG1 import utilities
+import xarray as xr
+import numpy as np
 
 
-def calibcomm():
+def test_validate_coords():
+    """
+    Test function for the `utilities._validate_coords` function.
+    This function creates a dummy xarray dataset with coordinates N_MEASUREMENTS and variables.
+    It then validates the coordinates using the `_validate_coords` function.
+    Asserts:
+        - The coordinates are validated correctly.
+    """
+    # Create a dummy xarray dataset with correct coordinates
+    data = np.random.rand(10, 2)
+    dims = ['sg_data_point', 'variables']
+    coords = {
+        'sg_data_point': np.arange(10),
+        'variables': ['ctd_time', 'ctd_depth'],
+        'longitude': ('sg_data_point', np.random.uniform(-180, 180, 10)),
+    }
+    dataset = xr.Dataset({'data': (dims, data)}, coords=coords)
+
+    # Validate coordinates using the _validate_coords function
+    ds1 = utilities._validate_coords(dataset)
+    assert 'ctd_time' in ds1.coords
+    assert 'ctd_depth' in ds1.coords
+    assert 'latitude' in ds1.coords
+    assert len(ds1.coords['longitude']) == len(ds1.dims['sg_data_point'])
+
+
+def test_validate_dims():
+    """
+    Test function for the `utilities._validate_dims` function.
+    This function creates a dummy xarray dataset with dimensions N_MEASUREMENTS.
+    It then validates the dimensions using the `_validate_dims` function.
+    Asserts:
+        - The dimensions are validated correctly.
+    """
+    # Create a dummy xarray dataset with dimensions N_MEASUREMENTS
+    data = np.random.rand(10, 5)
+    dims = ['N_MEASUREMENTS', 'variables']
+    coords = {'N_MEASUREMENTS': np.arange(10), 'variables': ['var1', 'var2', 'var3', 'var4', 'var5']}
+    dataset = xr.Dataset({'data': (dims, data)}, coords=coords)
+
+    # Validate dimensions using the _validate_dims function
+    valid = utilities._validate_dims(dataset)
+
+    assert valid is True
+
+    # Create a dummy xarray dataset with incorrect dimensions
+    data_invalid = np.random.rand(10, 5)
+    dims_invalid = ['INVALID_DIM', 'variables']
+    coords_invalid = {'INVALID_DIM': np.arange(10), 'variables': ['var1', 'var2', 'var3', 'var4', 'var5']}
+    dataset_invalid = xr.Dataset({'data': (dims_invalid, data_invalid)}, coords=coords_invalid)
+
+    # Validate dimensions using the _validate_dims function
+    valid_invalid = utilities._validate_dims(dataset_invalid)
+
+    assert valid_invalid is False
+
+
+def test_parse_calibcomm():
     """
     Test function for the `utilities._parse_calibcomm` function.
     This function defines a set of test strings with expected calibration dates and serial numbers.
@@ -49,4 +108,58 @@ def calibcomm():
 
         assert caldate == caldate1
         assert serialnum == serialnum1
+
+def test_clean_time_string():
+    """
+    Test function for the `utilities._clean_time_string` function.
+    This function defines a set of test strings with expected cleaned strings.
+    It then iterates over these test strings, cleans them using the `_clean_time_string` function,
+    and asserts that the cleaned strings match the expected values.
+    Test strings and their expected results:
+        - "2018-01-01T00:00:00Z": "20180101T000000"
+        - "2018-01-01T00:00:00": "20180101T000000"
+        - "2018-01-01_00:00:00": "20180101T000000"
+        - "2018-01-01_00:00:00Z": "20180101T000000"
+    Asserts:
+        - The cleaned string matches the expected cleaned string.
+    """
+    test_strings = {
+        "2018-01-01T00:00:00Z": "20180101T000000",
+        "2018-01-01T00:00:00": "20180101T000000",
+        "2018-01-01_00:00:00": "20180101000000",
+        "2018-01-01_00:00:00Z": "20180101000000",
+    }
+
+    for tstring, tstring1 in test_strings.items():
+        cleaned_tstring = utilities._clean_time_string(tstring)
+
+        assert cleaned_tstring == tstring1
+
+
+def test_clean_anc_vars():
+    def test_clean_anc_vars():
+        """
+        Test function for the `utilities._clean_anc_vars_list` function.
+        This function defines a set of test strings with expected cleaned lists.
+        It then iterates over these test strings, cleans them using the `_clean_anc_vars_list` function,
+        and asserts that the cleaned lists match the expected values.
+        Test strings and their expected results:
+            - "sg_cal_t_j sg_cal_t_k": ["t_j", "t_k"]
+            - "sg_cal_Pcor sg_cal_Foffset": ["Pcor", "Foffset"]
+        Asserts:
+            - The cleaned list matches the expected cleaned list.
+        """
+        test_strings = {
+            "sg_cal_t_j sg_cal_t_h sg_cal_t_i": ["t_j", "t_h", "t_i"],
+            "sg_cal_A sg_cal_Pcor sg_cal_Foffset": ["A", "Pcor", "Foffset"],
+            "c_g c_h c_i": ["c_g", "c_h", "c_i"],
+        }
+
+        for anc_vars_str, expected_list in test_strings.items():
+            cleaned_list = utilities._clean_anc_vars_list(anc_vars_str)
+
+            assert cleaned_list == expected_list
+
+            
+
 
