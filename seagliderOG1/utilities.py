@@ -58,36 +58,39 @@ def _validate_dims(ds):
     
 
 def _parse_calibcomm(calibcomm, firstrun=False):
-    if 'calibration' in calibcomm.values.item().decode('utf-8'):
+    calstr = calibcomm.values.item().decode('utf-8')
 
-        cal_date = calibcomm.values.item().decode('utf-8')
-        if firstrun:
-            _log.info(f"sg_cal_calibcomm: {cal_date}")
-        cal_date = cal_date.split('calibration')[-1].strip()
-        cal_date = cal_date.replace(' ', '')
-        if firstrun:
-            _log.info(f"cal_date: {cal_date}")
-        # Different date formats in calibration comments
-        formats = ['%d%b%y', '%d-%b-%y']
-        cal_date_YYYYmmDD = None
-        for fmt in formats:
-            try:
-            # Try to parse the date with the current format
-                cal_date_YYYYmmDD = datetime.datetime.strptime(cal_date, fmt).strftime('%Y%m%d')
-                break  # Exit the loop if parsing is successful
-            except ValueError:
-                continue  # Try the next format if parsing fails
-        #cal_date_YYYYmmDD = datetime.datetime.strptime(cal_date, '%d%b%y').strftime('%Y%m%d')
-    else:   
-        cal_date_YYYYmmDD = 'Unknown'
-    if 's/n' in calibcomm.values.item().decode('utf-8'):
-        serial_match = re.search(r's/n\s*(\d+)', calibcomm.values.item().decode('utf-8'))
-        serial_number = serial_match.group(0).replace('s/n  ', '').strip()
-    else:
-        serial_number = 'Unknown'
-    serial_number = serial_number.replace('s/n', '').strip()
+    # Parse for calibration date
+    cal_date = calstr
+    cal_date_before_keyword = cal_date
+    cal_date_YYYYmmDD = 'Unknown'
+    formats = ['%d%b%y', '%d-%b-%y', '%d/%b/%y', '%b/%d/%y', '%b-%d-%y', '%b%d%y']
+    for keyword in ['calibration', 'calibrated']:
+        if keyword in cal_date:
+            cal_date_before_keyword = cal_date.split(keyword)[0].strip()
+            cal_date = cal_date.split(keyword)[-1].strip()
+            cal_date = cal_date.replace(' ', '')
+            for fmt in formats:
+                try:
+                    cal_date_YYYYmmDD = datetime.datetime.strptime(cal_date, fmt).strftime('%Y%m%d')
+                    break  # Exit the loop if parsing is successful
+                except ValueError:
+                    continue  # Try the next format if parsing fails
+            break  # Exit the outer loop if keyword is found
+
     if firstrun:
-        _log.info(f"serial number: {serial_number}")
+        _log.info(f"     --> produces {cal_date_YYYYmmDD}")
+
+    # Parse for serial number of sensor
+    serial_number = 'unknown'
+    for keyword in ['s/n', 'S/N', 'SN', 'SBE#', 'SBE']:
+        if keyword in cal_date_before_keyword:
+            serial_match = cal_date_before_keyword.split(keyword)[-1].strip()
+            serial_number = serial_match.replace(keyword, '').strip()
+            serial_number = serial_number.replace('/','').strip()
+            break # Exit the outer loop if keyword is found
+    if firstrun:
+        _log.info(f"     --> produces serial_number {serial_number}")
 
     return cal_date_YYYYmmDD, serial_number
 

@@ -12,6 +12,8 @@ pressure: PRES
 conductivity: CNDC
 aanderaa4330_dissolved_oxygen: DOXY 
 aanderaa4330_results_time: TIME_DOXY
+sbe43_dissolved_oxygen: DOXY
+sbe43_results_time: TIME_DOXY
 dissolved_oxygen_sat: OXYSAT
 oxygen_concentration: DOXY
 chlorophyll: CHLA
