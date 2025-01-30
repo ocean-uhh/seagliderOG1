@@ -4,14 +4,12 @@ on:
   push:
     branches:
       - main
-      - eleanor-patch-22
     paths:
       - '**.py'
       - '**.ipynb'
   pull_request:
     branches:
       - main
-      - eleanor-patch-22
     paths:
       - '**.py'
       - '**.ipynb'

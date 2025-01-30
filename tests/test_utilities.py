@@ -145,7 +145,7 @@ def test_parse_calibcomm():
         - "SBE t12/c12 calibration 30DEC03": ('20031230', 'Unknown')
         - "SBE s/n 19, calibration 9/10/08": ('20080910', '19')
         - "SBE 0015 calibration 4/28/08": ('20080428', '0015')
-        - "SBE 24520-1 calibration 04FEB08": ('20080204', '24520-1')
+        - "SBE 24520-1 calibration 04FEB08": ('20080204', '24520')
         - "SBE 0021 calibration 15sep08": ('20080915', '0021')
         - "SBE s/n 0025, calibration 10 june 08": ('20080610', '0025')
     Asserts:
