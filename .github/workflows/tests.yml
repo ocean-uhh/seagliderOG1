@@ -39,6 +39,15 @@ jobs:
         init-shell: bash
         create-args: >-
           python=${{ matrix.python-version }} --file requirements-dev.txt --channel conda-forge
+      env:
+        MAMBA_NO_BANNER: true
+        
+    - name: Check Package Installation
+      run: |
+        micromamba env list
+        micromamba list
+        python -m pip check
+      
 
     - name: Install seagliderOG1
       run: |
