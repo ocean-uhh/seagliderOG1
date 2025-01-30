@@ -186,55 +186,6 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
     return dsa
 
 
-def add_sensors_old(ds, dsa):
-    attrs = ds.attrs
-    sensors = []
-    for key, var in attrs.items():
-        if not isinstance(var, str):
-            continue
-        if "{" not in var:
-            continue
-        if isinstance(eval(var), dict):
-            sensors.append(key)
-
-    sensor_name_type = {}
-    for instr in sensors:
-        if instr in ["altimeter"]:
-            continue
-        attr_dict = eval(attrs[instr])
-        if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
-            _log.error(f"sensor {attr_dict['make_model']} not found")
-            continue
-        var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
-        if "serial" in attr_dict.keys():
-            var_dict["serial_number"] = str(attr_dict["serial"])
-            var_dict["long_name"] += f":{str(attr_dict['serial'])}"
-        for var_name in ["calibration_date", "calibration_parameters"]:
-            if var_name in attr_dict.keys():
-                var_dict[var_name] = str(attr_dict[var_name])
-        da = xr.DataArray(attrs=var_dict)
-        sensor_var_name = f"sensor_{var_dict['sensor_type']}_{var_dict['serial_number']}".upper().replace(
-            " ",
-            "_",
-        )
-        dsa[sensor_var_name] = da
-        sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
-
-    for key, var in attrs.copy().items():
-        if not isinstance(var, str):
-            continue
-        if "{" not in var:
-            continue
-        if isinstance(eval(var), dict):
-            attrs.pop(key)
-    ds.attrs = attrs
-
-    for key, sensor_type in variables_sensors.items():
-        if key in dsa.variables:
-            instr_key = sensor_name_type[sensor_type]
-            dsa[key].attrs["sensor"] = instr_key
-
-    return ds, dsa
 
 
 def assign_profile_number(ds, divenum_str = 'divenum'):
@@ -710,6 +661,58 @@ def add_standard_global_attrs(ds):
             continue
         ds.attrs[key] = val
     return ds
+
+
+# Deprecated
+def add_sensors_old(ds, dsa):
+    attrs = ds.attrs
+    sensors = []
+    for key, var in attrs.items():
+        if not isinstance(var, str):
+            continue
+        if "{" not in var:
+            continue
+        if isinstance(eval(var), dict):
+            sensors.append(key)
+
+    sensor_name_type = {}
+    for instr in sensors:
+        if instr in ["altimeter"]:
+            continue
+        attr_dict = eval(attrs[instr])
+        if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
+            _log.error(f"sensor {attr_dict['make_model']} not found")
+            continue
+        var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
+        if "serial" in attr_dict.keys():
+            var_dict["serial_number"] = str(attr_dict["serial"])
+            var_dict["long_name"] += f":{str(attr_dict['serial'])}"
+        for var_name in ["calibration_date", "calibration_parameters"]:
+            if var_name in attr_dict.keys():
+                var_dict[var_name] = str(attr_dict[var_name])
+        da = xr.DataArray(attrs=var_dict)
+        sensor_var_name = f"sensor_{var_dict['sensor_type']}_{var_dict['serial_number']}".upper().replace(
+            " ",
+            "_",
+        )
+        dsa[sensor_var_name] = da
+        sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
+
+    for key, var in attrs.copy().items():
+        if not isinstance(var, str):
+            continue
+        if "{" not in var:
+            continue
+        if isinstance(eval(var), dict):
+            attrs.pop(key)
+    ds.attrs = attrs
+
+    for key, sensor_type in variables_sensors.items():
+        if key in dsa.variables:
+            instr_key = sensor_name_type[sensor_type]
+            dsa[key].attrs["sensor"] = instr_key
+
+    return ds, dsa
 
 # Deprecated - is Seaexplorer specific
 def sensor_sampling_period(glider, mission):

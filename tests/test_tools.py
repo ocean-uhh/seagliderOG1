@@ -38,7 +38,7 @@ def test_convert_units_var():
     
 
 def test_calc_z():
-    pressure_values = np.arange(10, 101, 10)
+    pressure_values = np.arange(10, 10000, 10)
     # Create a dummy xarray dataset with correct coordinates
     dataset = xr.Dataset(
     {
@@ -52,3 +52,25 @@ def test_calc_z():
     depth_z = tools.calc_Z(dataset)['DEPTH_Z'].values
 
     assert np.array_equal(depth, depth_z)
+
+
+def test_assign_profile_number():
+    # Create a dummy xarray dataset with dive numbers and pressure values
+    dive_numbers = np.array([1, 1, 1, 2, 2, 2, 2])
+    pressure_values = np.array([10, 20, 30, 10, 20, 30, 40])
+    
+    dataset = xr.Dataset(
+        {
+            'PRES': ('N_MEASUREMENTS', pressure_values),
+            'divenum': ('N_MEASUREMENTS', dive_numbers),
+        }
+    )
+    
+    # Assign profile numbers
+    dataset = tools.assign_profile_number(dataset)
+    
+    # Expected profile numbers
+    expected_profile_numbers = np.array([1, 1, 1, 2, 2, 2.5, 2.5])
+    
+    assert np.array_equal(dataset['dive_num_cast'].values, expected_profile_numbers)
+    assert np.array_equal(dataset['PROFILE_NUMBER'].values, 2 * expected_profile_numbers - 1)
