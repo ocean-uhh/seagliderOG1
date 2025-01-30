@@ -13,27 +13,30 @@ import numpy as np
 def test_validate_coords():
     """
     Test function for the `utilities._validate_coords` function.
-    This function creates a dummy xarray dataset with coordinates N_MEASUREMENTS and variables.
+    This function creates a dummy xarray dataset with coordinates N_MEASUREMENTS.
     It then validates the coordinates using the `_validate_coords` function.
     Asserts:
         - The coordinates are validated correctly.
     """
     # Create a dummy xarray dataset with correct coordinates
-    data = np.random.rand(10, 2)
-    dims = ['sg_data_point', 'variables']
-    coords = {
-        'sg_data_point': np.arange(10),
-        'variables': ['ctd_time', 'ctd_depth'],
-        'longitude': ('sg_data_point', np.random.uniform(-180, 180, 10)),
-    }
-    dataset = xr.Dataset({'data': (dims, data)}, coords=coords)
+    dataset = xr.Dataset(
+        {
+            'ctd_time': ('sg_data_point', np.random.rand(10)),
+            'ctd_depth': ('sg_data_point', np.random.rand(10))
+        },
+        coords={
+            'longitude': np.random.rand(10),
+            'latitude': np.random.rand(10)
+        }
+    )
+    dataset.attrs['id'] = 'testID'
 
     # Validate coordinates using the _validate_coords function
     ds1 = utilities._validate_coords(dataset)
     assert 'ctd_time' in ds1.coords
     assert 'ctd_depth' in ds1.coords
     assert 'latitude' in ds1.coords
-    assert len(ds1.coords['longitude']) == len(ds1.dims['sg_data_point'])
+    assert len(ds1.coords['longitude']) == ds1.dims['sg_data_point']
 
 
 def test_validate_dims():
@@ -45,69 +48,37 @@ def test_validate_dims():
         - The dimensions are validated correctly.
     """
     # Create a dummy xarray dataset with dimensions N_MEASUREMENTS
-    data = np.random.rand(10, 5)
-    dims = ['N_MEASUREMENTS', 'variables']
-    coords = {'N_MEASUREMENTS': np.arange(10), 'variables': ['var1', 'var2', 'var3', 'var4', 'var5']}
-    dataset = xr.Dataset({'data': (dims, data)}, coords=coords)
-
+    # Create a dummy xarray dataset with correct coordinates
+    dataset = xr.Dataset(
+        {
+            'ctd_time': ('N_MEASUREMENTS', np.random.rand(10)),
+        },
+        coords={
+            'longitude': np.random.rand(10),
+            'latitude': np.random.rand(10)
+        }
+    )
     # Validate dimensions using the _validate_dims function
     valid = utilities._validate_dims(dataset)
 
     assert valid is True
 
     # Create a dummy xarray dataset with incorrect dimensions
-    data_invalid = np.random.rand(10, 5)
-    dims_invalid = ['INVALID_DIM', 'variables']
-    coords_invalid = {'INVALID_DIM': np.arange(10), 'variables': ['var1', 'var2', 'var3', 'var4', 'var5']}
-    dataset_invalid = xr.Dataset({'data': (dims_invalid, data_invalid)}, coords=coords_invalid)
+    dataset_invalid = xr.Dataset(
+        {
+            'ctd_time': ('INVALID_DIM', np.random.rand(10)),
+        },
+        coords={
+            'longitude': np.random.rand(10),
+            'latitude': np.random.rand(10)
+        }
+    )
 
     # Validate dimensions using the _validate_dims function
     valid_invalid = utilities._validate_dims(dataset_invalid)
 
     assert valid_invalid is False
 
-
-def test_parse_calibcomm():
-    """
-    Test function for the `utilities._parse_calibcomm` function.
-    This function defines a set of test strings with expected calibration dates and serial numbers.
-    It then iterates over these test strings, parses them using the `_parse_calibcomm` function,
-    and asserts that the parsed results match the expected values.
-    Test strings and their expected results:
-        - "SBE s/n 0112 calibration 20apr09": ('20090420', '0112')
-        - "SBE#29613t1/c1 calibration 7 Sep 02": ('20020907', '29613')
-        - "SBE t12/c12 calibration 30DEC03": ('20031230', 'Unknown')
-        - "SBE s/n 19, calibration 9/10/08": ('20080910', '19')
-        - "SBE 0015 calibration 4/28/08": ('20080428', '0015')
-        - "SBE 24520-1 calibration 04FEB08": ('20080204', '24520-1')
-        - "SBE 0021 calibration 15sep08": ('20080915', '0021')
-        - "SBE s/n 0025, calibration 10 june 08": ('20080610', '0025')
-    Asserts:
-        - The parsed calibration date matches the expected calibration date.
-        - The parsed serial number matches the expected serial number.
-    """
-    
-    test_strings = {"SBE s/n 0112 calibration 20apr09": ('20090420', '0112'),
-        "SBE#29613t1/c1 calibration 7 Sep 02": ('20020907', '29613t1c1'),
-        "SBE t12/c12 calibration 30DEC03": ('20031230', 't12c12'),
-        "SBE s/n 19, calibration 9/10/08": ('20080910', '19'),
-        "SBE 0015 calibration 4/28/08": ('20080428', '0015'),
-        "SBE 24520-1 calibration 04FEB08": ('20080204', '24520'),
-        "SBE 0021 calibration 15sep08": ('20080915', '0021'),
-        "SBE s/n 0025, calibration 10 june 08": ('20080610', '0025'),
-        "Optode 4330F S/N 182 foil batch 2808F calibrated 09may09": ('20090509', '182'),
-        "SBE 43F s/n 25281-1 calibration 12 Aug 01": ('20010812', '25281'),
-        "SBE 43F s/n 041 calibration 22JAN04": ('20040122', '041'),
-        "SBE 43 s/n F0012 calibration 27 Aug 02": ('20020827', 'F0012'), 
-        "0061": ('Unknown', '0061'),
-        "SBE 43F s/n 029 calibration 07May07": ('20070507', '029'),
-    }
-
-    for calstring, (caldate1, serialnum1) in test_strings.items():
-        caldate, serialnum = utilities._parse_calibcomm(calstring, firstrun=False)
-
-        assert caldate == caldate1
-        assert serialnum == serialnum1
 
 def test_clean_time_string():
     """
@@ -160,6 +131,47 @@ def test_clean_anc_vars():
 
             assert cleaned_list == expected_list
 
-            
 
 
+def test_parse_calibcomm():
+    """
+    Test function for the `utilities._parse_calibcomm` function.
+    This function defines a set of test strings with expected calibration dates and serial numbers.
+    It then iterates over these test strings, parses them using the `_parse_calibcomm` function,
+    and asserts that the parsed results match the expected values.
+    Test strings and their expected results:
+        - "SBE s/n 0112 calibration 20apr09": ('20090420', '0112')
+        - "SBE#29613t1/c1 calibration 7 Sep 02": ('20020907', '29613')
+        - "SBE t12/c12 calibration 30DEC03": ('20031230', 'Unknown')
+        - "SBE s/n 19, calibration 9/10/08": ('20080910', '19')
+        - "SBE 0015 calibration 4/28/08": ('20080428', '0015')
+        - "SBE 24520-1 calibration 04FEB08": ('20080204', '24520-1')
+        - "SBE 0021 calibration 15sep08": ('20080915', '0021')
+        - "SBE s/n 0025, calibration 10 june 08": ('20080610', '0025')
+    Asserts:
+        - The parsed calibration date matches the expected calibration date.
+        - The parsed serial number matches the expected serial number.
+    """
+    
+    test_strings = {"SBE s/n 0112 calibration 20apr09": ('20090420', '0112'),
+        "SBE#29613t1/c1 calibration 7 Sep 02": ('20020907', '29613t1c1'),
+        "SBE t12/c12 calibration 30DEC03": ('20031230', 't12c12'),
+        "SBE s/n 19, calibration 9/10/08": ('20080910', '19'),
+        "SBE 0015 calibration 4/28/08": ('20080428', '0015'),
+        "SBE 24520-1 calibration 04FEB08": ('20080204', '24520'),
+        "SBE 0021 calibration 15sep08": ('20080915', '0021'),
+        "SBE s/n 0025, calibration 10 june 08": ('20080610', '0025'),
+        "Optode 4330F S/N 182 foil batch 2808F calibrated 09may09": ('20090509', '182'),
+        "SBE 43F s/n 25281-1 calibration 12 Aug 01": ('20010812', '25281'),
+        "SBE 43F s/n 041 calibration 22JAN04": ('20040122', '041'),
+        "SBE 43 s/n F0012 calibration 27 Aug 02": ('20020827', 'F0012'), 
+        "0061": ('Unknown', '0061'),
+        "SBE 43F s/n 029 calibration 07May07": ('20070507', '029'),
+    }
+
+
+    for calstring, (caldate1, serialnum1) in test_strings.items():
+        caldate, serialnum = utilities._parse_calibcomm(calstring, firstrun=False)
+
+        assert caldate == caldate1
+        assert serialnum == serialnum1
