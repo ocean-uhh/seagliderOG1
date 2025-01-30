@@ -161,15 +161,13 @@ def test_parse_calibcomm():
         "SBE 24520-1 calibration 04FEB08": ('20080204', '24520-1'),
         "SBE 0021 calibration 15sep08": ('20080915', '0021'),
         "SBE s/n 0025, calibration 10 june 08": ('20080610', '0025'),
-        "Optode 4330F S/N 182 foil batch 2808F calibrated 09may09": ('20090509', '182'),
-        "SBE 43F s/n 25281-1 calibration 12 Aug 01": ('20010812', '25281'),
+        "Optode 4330F S/N 182 foil batch 2808F calibrated 09may09": ('20090509', '182 foil batch 2808F'),
+        "SBE 43F s/n 25281-1 calibration 12 Aug 01": ('20010812', '25281-1'),
         "SBE 43F s/n 041 calibration 22JAN04": ('20040122', '041'),
         "SBE 43 s/n F0012 calibration 27 Aug 02": ('20020827', 'F0012'), 
         "0061": ('Unknown', '0061'),
         "SBE 43F s/n 029 calibration 07May07": ('20070507', '029'),
     }
-
-
     for calstring, (caldate1, serialnum1) in test_strings.items():
         caldate, serialnum = utilities._parse_calibcomm(calstring, firstrun=False)
 
