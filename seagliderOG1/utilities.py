@@ -87,6 +87,7 @@ def _parse_calibcomm(calibcomm, firstrun=False):
         if keyword in cal_date_before_keyword:
             serial_match = cal_date_before_keyword.split(keyword)[-1].strip()
             serial_number = serial_match.replace(keyword, '').strip()
+            serial_number = serial_number.replace('/','').strip()
             break # Exit the outer loop if keyword is found
     if firstrun:
         _log.info(f"     --> produces serial_number {serial_number}")
