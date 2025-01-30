@@ -245,7 +245,7 @@ def standardise_OG10(ds, firstrun=False, unit_format=vocabularies.unit_str_forma
                 if 'units' in vocabularies.vocab_attrs[OG1_name]:
                     new_unit = vocabularies.vocab_attrs[OG1_name].get('units')
                     if orig_unit != new_unit:
-                        var_values = tools.convert_units_var(var_values, orig_unit, new_unit, vocabularies.unit_conversion, firstrun)
+                        var_values, _ = tools.convert_units_var(var_values, orig_unit, new_unit, vocabularies.unit1_to_unit2, firstrun)
             dsa[OG1_name] = ([newdim], var_values, vocabularies.vocab_attrs[OG1_name])
             # Pass attributes that aren't in standard OG1 vocab_attrs
             for key, val in ds[orig_varname].attrs.items():

@@ -19,35 +19,61 @@ unit_str_format = {
     'm/s': 'm s-1',
     'cm/s': 'cm s-1',
     'S/m': 'S m-1',
+    'mS/cm': 'mS cm-1',
     'meters': 'm',
     'degrees_Celsius': 'Celsius',
+    'degreesCelsius': 'Celsius',
     'g/m^3': 'g m-3',
+    'kg/m^3': 'kg m-3',
 }
-
-
 
 # Various conversions from the key to units_name with the multiplicative conversion factor
-unit_conversion = {
-    'cm/s': {'units_name': 'm/s', 'factor': 0.01},
-    'cm s-1': {'units_name': 'm s-1', 'factor': 0.01},
-    'm/s': {'units_name': 'cm/s', 'factor': 100},
-    'm s-1': {'units_name': 'cm s-1', 'factor': 100},
-    'S/m': {'units_name': 'mS/cm', 'factor': 0.1},
-    'S m-1': {'units_name': 'mS cm-1', 'factor': 0.1},
-    'mS/cm': {'units_name': 'S/m', 'factor': 10},
-    'mS cm-1': {'units_name': 'S m-1', 'factor': 10},
-    'dbar': {'units_name': 'Pa', 'factor': 10000},
-    'Pa': {'units_name': 'dbar', 'factor': 0.0001},
-    'dbar': {'units_name': 'kPa', 'factor': 10},
-    'degrees_Celsius': {'units_name': 'Celsius', 'factor': 1},
-    'Celsius': {'units_name': 'degrees_Celsius', 'factor': 1},
-    'm': {'units_name': 'cm', 'factor': 100},
-    'm': {'units_name': 'km', 'factor': 0.001},
-    'cm': {'units_name': 'm', 'factor': 0.01},
-    'km': {'units_name': 'm', 'factor': 1000},
-    'g m-3': {'units_name': 'kg m-3', 'factor': 0.001},
-    'kg m-3': {'units_name': 'g m-3', 'factor': 1000},
+unit1_to_unit2 = {
+    'cm s-1_to_m s-1': {'current_unit': 'cm s-1', 'new_unit': 'm s-1', 'factor': 0.01},
+    'cm/s_to_m/s': {'current_unit': 'cm/s', 'new_unit': 'm/s', 'factor': 0.01},
+    'm/s_to_cm/s': {'current_unit': 'm/s', 'new_unit': 'cm/s', 'factor': 100},
+    'm s-1_to_cm s-1': {'current_unit': 'm s-1', 'new_unit': 'cm s-1', 'factor': 100},
+    'S/m_to_mS/cm': {'current_unit': 'S/m', 'new_unit': 'mS/cm', 'factor': 0.1},
+    'S m-1_to_mS cm-1': {'current_unit': 'S m-1', 'new_unit': 'mS cm-1', 'factor': 0.1},
+    'mS/cm_to_S/m': {'current_unit': 'mS/cm', 'new_unit': 'S/m', 'factor': 10},
+    'mS cm-1_to_S m-1': {'current_unit': 'mS cm-1', 'new_unit': 'S m-1', 'factor': 10},
+    'dbar_to_Pa': {'current_unit': 'dbar', 'new_unit': 'Pa', 'factor': 10000},
+    'Pa_to_dbar': {'current_unit': 'Pa', 'new_unit': 'dbar', 'factor': 0.0001},
+    'dbar_to_kPa': {'current_unit': 'dbar', 'new_unit': 'kPa', 'factor': 10},
+    'degreesCelsius_to_Celsius': {'current_unit': 'degreesCelsius', 'new_unit': 'Celsius', 'factor': 1},
+    'Celsius_to_degreesCelsius': {'current_unit': 'Celsius', 'new_unit': 'degreesCelsius', 'factor': 1},
+    'm_to_cm': {'current_unit': 'm', 'new_unit': 'cm', 'factor': 100},
+    'm_to_km': {'current_unit': 'm', 'new_unit': 'km', 'factor': 0.001},
+    'cm_to_m': {'current_unit': 'cm', 'new_unit': 'm', 'factor': 0.01},
+    'km_to_m': {'current_unit': 'km', 'new_unit': 'm', 'factor': 1000},
+    'g/m^3_to_kg/m^3': {'current_unit': 'g/m3', 'new_unit': 'kg/m3', 'factor': 0.001},
+    'g m-3_to_kg m-3': {'current_unit': 'g m-3', 'new_unit': 'kg m-3', 'factor': 0.001},
+    'kg/m^3_to_g/m^3': {'current_unit': 'kg/m3', 'new_unit': 'g/m3', 'factor': 1000},
+    'kg m-3_to_g m-3': {'current_unit': 'kg m-3', 'new_unit': 'g m-3', 'factor': 1000},
 }
+
+# Various conversions from the key to units_name with the multiplicative conversion factor
+#unit_conversion = {
+#    'cm/s': {'units_name': 'm/s', 'factor': 0.01},
+#    'cm s-1': {'units_name': 'm s-1', 'factor': 0.01},
+#    'm/s': {'units_name': 'cm/s', 'factor': 100},
+#    'm s-1': {'units_name': 'cm s-1', 'factor': 100},
+#    'S/m': {'units_name': 'mS/cm', 'factor': 0.1},
+#    'S m-1': {'units_name': 'mS cm-1', 'factor': 0.1},
+#    'mS/cm': {'units_name': 'S/m', 'factor': 10},
+#    'mS cm-1': {'units_name': 'S m-1', 'factor': 10},
+#    'dbar': {'units_name': 'Pa', 'factor': 10000},
+#    'Pa': {'units_name': 'dbar', 'factor': 0.0001},
+#    'dbar': {'units_name': 'kPa', 'factor': 10},
+#    'degrees_Celsius': {'units_name': 'Celsius', 'factor': 1},
+#    'Celsius': {'units_name': 'degrees_Celsius', 'factor': 1},
+#    'm': {'units_name': 'cm', 'factor': 100},
+#    'm': {'units_name': 'km', 'factor': 0.001},
+#    'cm': {'units_name': 'm', 'factor': 0.01},
+#    'km': {'units_name': 'm', 'factor': 1000},
+#    'g m-3': {'units_name': 'kg m-3', 'factor': 0.001},
+#    'kg m-3': {'units_name': 'g m-3', 'factor': 1000},
+#}
 
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
 # Key is the basestation variable name, value is the OG1 standard name
