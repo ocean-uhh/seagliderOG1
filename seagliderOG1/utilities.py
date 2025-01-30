@@ -51,20 +51,23 @@ def _validate_coords(ds1):
     return ds1
 
 
-def _validate_dims(ds):
+def _validate_dims(ds, expected_dims='N_MEASUREMENTS'):
     dim_name = list(ds.dims)[0] # Should be 'N_MEASUREMENTS' for OG1
-    if dim_name != 'N_MEASUREMENTS':
-        raise ValueError(f"Dimension name '{dim_name}' is not 'N_MEASUREMENTS'.")
+    if dim_name != expected_dims:
+        _log.error(f"Dimension name '{dim_name}' is not {expected_dims}.")
+        return False
+#        raise ValueError(f"Dimension name '{dim_name}' is not {expected_dims}.")
+    else:
+        return True
     
 
-def _parse_calibcomm(calibcomm, firstrun=False):
-    calstr = calibcomm.values.item().decode('utf-8')
+def _parse_calibcomm(calstr, firstrun=False):
 
     # Parse for calibration date
     cal_date = calstr
     cal_date_before_keyword = cal_date
     cal_date_YYYYmmDD = 'Unknown'
-    formats = ['%d%b%y', '%d-%b-%y', '%d/%b/%y', '%b/%d/%y', '%b-%d-%y', '%b%d%y']
+    formats = ['%d%b%y', '%d-%b-%y', '%m/%d/%y', '%b/%d/%y', '%b-%d-%y', '%b%d%y', '%d%b%y', '%d%B%y']
     for keyword in ['calibration', 'calibrated']:
         if keyword in cal_date:
             cal_date_before_keyword = cal_date.split(keyword)[0].strip()
@@ -72,7 +75,7 @@ def _parse_calibcomm(calibcomm, firstrun=False):
             cal_date = cal_date.replace(' ', '')
             for fmt in formats:
                 try:
-                    cal_date_YYYYmmDD = datetime.datetime.strptime(cal_date, fmt).strftime('%Y%m%d')
+                    cal_date_YYYYmmDD = datetime.datetime.strptime(cal_date,  fmt).strftime('%Y%m%d')
                     break  # Exit the loop if parsing is successful
                 except ValueError:
                     continue  # Try the next format if parsing fails
@@ -86,11 +89,15 @@ def _parse_calibcomm(calibcomm, firstrun=False):
     for keyword in ['s/n', 'S/N', 'SN', 'SBE#', 'SBE']:
         if keyword in cal_date_before_keyword:
             serial_match = cal_date_before_keyword.split(keyword)[-1].strip()
-            serial_number = serial_match.replace(keyword, '').strip()
-            serial_number = serial_number.replace('/','').strip()
+            serial_number = serial_match.replace(keyword, '').replace('/','').replace(',','').strip()
             break # Exit the outer loop if keyword is found
+
+    if len(calstr)<5:
+        serial_number = calstr
     if firstrun:
         _log.info(f"     --> produces serial_number {serial_number}")
+
+
 
     return cal_date_YYYYmmDD, serial_number
 

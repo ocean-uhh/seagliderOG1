@@ -43,12 +43,12 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
                 _log.error(f"sensor {attr_dict['make_model']} not found")
             var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
 
-            calstr = f"sg_cal_calibcomm: {sg_cal['calibcomm'].values.item().decode('utf-8')}"
+            calstr = sg_cal['calibcomm'].values.item().decode('utf-8')
             if firstrun:
-                _log.info(calstr)
-                print(calstr)
+                _log.info(f"sg_cal_calibcomm: {calstr}")
+                print(f"sg_cal_calibcomm: {calstr}")
             
-            cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm'], firstrun)
+            cal_date, serial_number = utilities._parse_calibcomm(calstr, firstrun)
             var_dict["serial_number"] = serial_number
             var_dict["long_name"] += f":{serial_number}"
             var_dict["calibration_date"] = cal_date
@@ -95,19 +95,19 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
 
         if optode_flag:
             if 'calibcomm_oxygen' in sg_cal:
-                calstr = f"sg_cal_calibcomm_oxygen: {sg_cal['calibcomm_oxygen'].values.item().decode('utf-8')}"
+                calstr = sg_cal['calibcomm_oxygen'].values.item().decode('utf-8')
                 if firstrun:
-                    _log.info(calstr)
-                    print(calstr)
+                    _log.info(f"sg_cal_calibcomm_oxygen: {calstr}")
+                    print(f"sg_cal_calibcomm_oxygen: {calstr}")
 
-                cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm_oxygen'], firstrun)
+                cal_date, serial_number = utilities._parse_calibcomm(calstr, firstrun)
             elif 'calibcomm_optode' in sg_cal:
-                calstr = f"sg_cal_calibcomm_optode: {sg_cal['calibcomm_optode'].values.item().decode('utf-8')}"
+                calstr = sg_cal['calibcomm_optode'].values.item().decode('utf-8')                
                 if firstrun:
-                    _log.info(calstr)
-                    print(calstr)
+                    _log.info(f"sg_cal_calibcomm_optode: {calstr}")
+                    print(f"sg_cal_calibcomm_optode: {calstr}")
 
-                cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm_optode'], firstrun)
+                cal_date, serial_number = utilities._parse_calibcomm(calstr, firstrun)
             var_dict["serial_number"] = serial_number
             var_dict["long_name"] += f":{serial_number}"
             var_dict["calibration_date"] = cal_date
