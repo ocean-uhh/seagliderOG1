@@ -9,7 +9,7 @@ from seagliderOG1 import readers
 
 
 def test_demo_datasets():
-    ds = readers.load_sample_dataset(dataset_name="p0150500_20050213.nc")
+    ds = readers.load_sample_dataset(dataset_name="p0330001_20100903.nc")
     assert ds is not None
 
 
@@ -60,7 +60,7 @@ def test_validate_filename():
         assert readers._validate_filename(filename) is False, f"Expected False for {filename}"
 
 
-def test_filter_files_by_profile():
+def test_filter_filelist_by_profile():
     """
     Test the filter_files_by_profile function from the readers module.
     This test checks the filtering of filenames based on the start_profile and
