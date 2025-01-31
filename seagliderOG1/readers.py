@@ -5,6 +5,7 @@ import requests
 import numpy as np
 from importlib_resources import files
 import pooch
+import re
 
 # readers.py: Will only read files.  Not manipulate them.
 #
@@ -41,9 +42,55 @@ def load_sample_dataset(dataset_name="p0150500_20050213.nc"):
         msg = f"Requested sample dataset {dataset_name} not known"
         raise ValueError(msg)
 
+def _validate_filename(filename):
+    """
+    Validates if the given filename matches the expected pattern.
+    The expected pattern is a string that starts with 'p', followed by exactly 
+    7 digits, and ends with '.nc'.
+    Args:
+        filename (str): The filename to validate.
+    Returns:
+        bool: True if the filename matches the pattern, False otherwise.
+    """
+    # pattern 1: p1234567.nc
+    pattern1 = r'^p\d{7}\.nc$'
+    # pattern 2: p0420100_20100903.nc
+    pattern2 = r'^p\d{7}_\d{8}\.nc$'
+    if re.match(pattern1, filename) or re.match(pattern2, filename):
+        glider_sn = _glider_sn_from_filename(filename)
+        divenum = _profnum_from_filename(filename)
+        if int(glider_sn) > 0 and int(divenum) > 0:
+            return True
+        else:
+            return False
+    else:
+        return False
+        
+def _profnum_from_filename(filename):
+    """
+    Extract the profile number from the filename.
+    Args:
+        filename (str): The filename from which to extract the profile number.
+    Returns:
+        int: The profile number extracted from the filename.
+    """
+    return int(filename[4:8])
+    
+def _glider_sn_from_filename(filename):
+    """
+    Extract the glider serial number from the filename.
+    Args:
+        filename (str): The filename from which to extract the glider serial number.
+    Returns:
+        int: The glider serial number extracted from the filename.
+    """
+    return int(filename[1:4])
+
 def filter_files_by_profile(file_list, start_profile=None, end_profile=None):
     """
     Filter a list of files based on the start_profile and end_profile.
+    Expects filenames of the form pXXXYYYY.nc, where XXX is the seaglider serial number and YYYY the divecycle number, e.g. p0420001.nc for glider 41 and divenum 0001. 
+    Note: Does not require file_list to be alphabetical/sorted.
 
     Parameters:
     file_list (list): List of filenames to filter.
@@ -56,25 +103,47 @@ def filter_files_by_profile(file_list, start_profile=None, end_profile=None):
     filtered_files = []
 
     for file in file_list:
-        if file.endswith(".nc"):
-            # Extract the profile number from the filename now from the begining
-            #profile_number = int(file.split("_")[0][4:])
-            profile_number = int(file[5:8])
-            if start_profile is not None and end_profile is not None:
-                if start_profile <= profile_number <= end_profile:
-                    filtered_files.append(file)
-            elif start_profile is not None:
-                if profile_number >= start_profile:
-                    filtered_files.append(file)
-            elif end_profile is not None:
-                if profile_number <= end_profile:
-                    filtered_files.append(file)
-            else:
+        if not _validate_filename(file):
+            file_list.remove(file)
+            #_log.warning(f"Skipping file {file} as it does not have the expected format.")
+
+#    divenum_values = [int(file[4:8]) for file in file_list]
+
+    # This could be refactored: see divenum_values above, and find values between start_profile and end_profil
+    for file in file_list:
+        # Extract the profile number from the filename now from the begining
+        profile_number = _profnum_from_filename(file)
+        if start_profile is not None and end_profile is not None:
+            if start_profile <= profile_number <= end_profile:
                 filtered_files.append(file)
+        elif start_profile is not None:
+            if profile_number >= start_profile:
+                filtered_files.append(file)
+        elif end_profile is not None:
+            if profile_number <= end_profile:
+                filtered_files.append(file)
+        else:
+            filtered_files.append(file)
 
     return filtered_files
 
-def read_basestation(source, start_profile=None, end_profile=None):
+def load_first_basestation_file(source):
+    """
+    Load the first dataset from either an online source or a local directory.
+
+    Parameters:
+    source (str): The URL to the directory containing the NetCDF files or the path to the local directory.
+
+    Returns:
+    An xarray.Dataset object loaded from the first NetCDF file.
+    """
+    file_list = list_files(source)
+    filename = file_list[0]
+    start_profile = _profnum_from_filename(filename)
+    datasets = load_basestation_files(source, start_profile, start_profile)
+    return datasets[0]
+
+def load_basestation_files(source, start_profile=None, end_profile=None):
     """
     Load datasets from either an online source or a local directory, optionally filtering by profile range.
 
@@ -86,23 +155,7 @@ def read_basestation(source, start_profile=None, end_profile=None):
     Returns:
     A list of xarray.Dataset objects loaded from the filtered NetCDF files.
     """
-    if source.startswith("http://") or source.startswith("https://"):
-        # Create a Pooch object to manage the remote files
-        data_source_online = pooch.create(
-            path=pooch.os_cache("seagliderOG1"),
-            base_url=source,
-            registry=None,
-        )
-        registry_file = files('seagliderOG1').joinpath('seaglider_registry.txt')
-        data_source_og.load_registry(registry_file)
-
-        # List all files in the URL directory
-        file_list = list_files_in_https_server(source)
-    elif os.path.isdir(source):
-        file_list = os.listdir(source)
-    else:
-        raise ValueError("Source must be a valid URL or directory path.")
-
+    file_list = list_files(source)
     filtered_files = filter_files_by_profile(file_list, start_profile, end_profile)
     
     datasets = []
@@ -117,28 +170,52 @@ def read_basestation(source, start_profile=None, end_profile=None):
 
     return datasets
 
-def list_files_in_https_server(url):
+def list_files(source, registry_loc="seagliderOG1", registry_name="seaglider_registry.txt"):
     """
-    List files in an HTTPS server directory using BeautifulSoup and requests.
+    List files from a given source, which can be either a URL or a directory path. For an online source,
+    uses BeautifulSoup and requests.
 
     Parameters:
-    url (str): The URL to the directory containing the files.
+    source (str): The source from which to list files. It can be a URL (starting with "http://" or "https://")
+                  or a local directory path.
 
     Returns:
-    list: A list of filenames found in the directory.
+    list: A list of filenames available in the specified source, sorted alphabetically
+    Raises:
+    ValueError: If the source is neither a valid URL nor a directory path.
     """
-    response = requests.get(url)
-    response.raise_for_status()  # Raise an error for bad status codes
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    files = []
+    if source.startswith("http://") or source.startswith("https://"):
+        # Create a Pooch object to manage the remote files
+        data_source_online = pooch.create(
+            path=pooch.os_cache(registry_loc),
+            base_url=source,
+            registry=None,
+        )
+        registry_file = files(registry_loc).joinpath(registry_name)
+        data_source_og.load_registry(registry_file)
 
-    for link in soup.find_all("a"):
-        href = link.get("href")
-        if href and href.endswith(".nc"):
-            files.append(href)
+        # List all files in the URL directory
+        response = requests.get(source)
+        response.raise_for_status()  # Raise an error for bad status codes
 
-    return files
+        soup = BeautifulSoup(response.text, "html.parser")
+        file_list = []
+
+        for link in soup.find_all("a"):
+            href = link.get("href")
+            if href and href.endswith(".nc"):
+                file_list.append(href)
+    
+    elif os.path.isdir(source):
+        file_list = os.listdir(source)
+    else:
+        raise ValueError("Source must be a valid URL or directory path.")
+
+    # Sort alphabetically
+    file_list.sort()
+
+    return file_list
 
 def create_pooch_registry_from_directory(directory):
     """

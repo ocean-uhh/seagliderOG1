@@ -690,11 +690,11 @@ def process_and_save_data(input_location, save=False, output_dir='../data', run_
     """
 
     # Load and concatenate all datasets from the server
-    list_datasets = readers.read_basestation(input_location)
+    ds1_base = readers.load_first_basestation_file(input_location)
     
     # Convert the list of datasets to OG1
-    ds1, varlist = convert_to_OG1(list_datasets[0])
-    output_file = os.path.join(output_dir, ds1.attrs['id'] + '.nc')
+    ds1_og1, varlist = convert_to_OG1(ds1_base)
+    output_file = os.path.join(output_dir, ds1_og1.attrs['id'] + '.nc')
 
     # Check if the file exists and delete it if it does
     if os.path.exists(output_file):
@@ -716,6 +716,7 @@ def process_and_save_data(input_location, save=False, output_dir='../data', run_
     else:
         print('Running the directory:', input_location)
         _log.info(f"Running the directory: {input_location}")
+        list_datasets = readers.load_basestation_files(input_location)
         ds_all, varlist = convert_to_OG1(list_datasets)
         output_file = os.path.join(output_dir, ds_all.attrs['id'] + '.nc')
         if save:
