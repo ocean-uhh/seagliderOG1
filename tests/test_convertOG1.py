@@ -58,5 +58,9 @@ def test_process_dataset():
     assert 'PROFILE_NUMBER' in list(ds_new.variables)
     assert ds_new['PROFILE_NUMBER'].values.max() == 2*ds1.attrs['dive_number']
 
-    
+    ds_new = tools.calc_Z(ds_new)
+    meanZ = ds_new['DEPTH_Z'].mean().item()
+    meanZpos = ds_new['DEPTH'].mean().item()
+    assert abs(meanZ + meanZpos) < 10 
+
 
