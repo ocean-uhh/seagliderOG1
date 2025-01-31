@@ -19,6 +19,72 @@ from datetime import datetime
 
 _log = logging.getLogger(__name__)
 
+
+
+
+# from convertOG1 - Deprecated - currently just uses the standard vocabularies.vocab_attrs but could clobber existing attributes
+def assign_variable_attributes(ds, vocab_attrs=vocabularies.vocab_attrs, unit_format=vocabularies.unit_str_format):
+    """
+    Assigns variable attributes to a dataset where they are missing and reformats units according to the provided unit_format.
+    Attributes that already exist in the dataset are not changed, except for unit reformatting.
+
+    Parameters
+    ----------
+    ds (xarray.Dataset): The dataset to which attributes will be assigned.
+    vocab_attrs (dict): A dictionary containing the vocabulary attributes to be assigned to the dataset variables.
+    unit_str_format (dict): A dictionary mapping old unit strings to new formatted unit strings.
+
+    Returns
+    -------
+    xarray.Dataset: The dataset with updated attributes.
+    attr_warnings (set): A set containing warning messages for attribute mismatches.
+    """
+    attr_warnings = set()
+    for var in ds.variables:
+        if var in vocab_attrs:
+            for attr, new_value in vocab_attrs[var].items():
+                if attr in ds[var].attrs:
+                    old_value = ds[var].attrs[attr]
+                    if old_value in unit_format:
+                        ds[var].attrs[attr] = unit_format[old_value]
+                    old_value = ds[var].attrs[attr]
+                    if old_value != new_value:
+                        warning_msg = f"Variable '{var}' attribute '{attr}' mismatch: Old value: {old_value}, New value: {new_value}"
+                        _log.warning(warning_msg)
+                        attr_warnings.add(warning_msg)
+                else:
+                    ds[var].attrs[attr] = new_value
+    return ds, attr_warnings
+                    
+
+# from convertOG1. Deprecated.  Now replaced by functionality in standardise_OG10
+def rename_dimensions(ds, rename_dict=vocabularies.dims_rename_dict):
+    """
+    Rename dimensions of an xarray Dataset based on a provided dictionary for OG1 vocabulary.
+
+    Parameters
+    ----------
+    ds (xarray.Dataset): The dataset whose dimensions are to be renamed.
+    rename_dict (dict, optional): A dictionary where keys are the current dimension names 
+                                  and values are the new dimension names. Defaults to 
+                                  vocabularies.dims_rename_dict.
+
+    Returns
+    -------
+    xarray.Dataset: A new dataset with renamed dimensions.
+    
+    Raises:
+    Warning: If no variables with dimensions matching any key in rename_dict are found.
+    """
+    # Check if there are any variables with dimensions matching 'sg_data_point'
+    matching_vars = [var for var in ds.variables if any(dim in ds[var].dims for dim in rename_dict.keys())]
+    if not matching_vars:
+        _log.warning("No variables with dimensions matching any key in rename_dict found.")
+    dims_to_rename = {dim: rename_dict[dim] for dim in ds.dims if dim in rename_dict}
+    return ds.rename_dims(dims_to_rename)
+
+
+
 def find_best_dtype(var_name, da):
     input_dtype = da.dtype.type
     if "latitude" in var_name.lower() or "longitude" in var_name.lower():
@@ -36,58 +102,7 @@ def find_best_dtype(var_name, da):
         return np.float32
     return input_dtype
 
-def set_best_dtype(ds):
-    bytes_in = ds.nbytes
-    for var_name in list(ds):
-        da = ds[var_name]
-        input_dtype = da.dtype.type
-        new_dtype = find_best_dtype(var_name, da)
-        for att in ["valid_min", "valid_max"]:
-            if att in da.attrs.keys():
-                da.attrs[att] = np.array(da.attrs[att]).astype(new_dtype)
-        if new_dtype == input_dtype:
-            continue
-        _log.debug(f"{var_name} input dtype {input_dtype} change to {new_dtype}")
-        da_new = da.astype(new_dtype)
-        ds = ds.drop_vars(var_name)
-        if "int" in str(new_dtype):
-            fill_val = set_fill_value(new_dtype)
-            da_new[np.isnan(da)] = fill_val
-            da_new.encoding["_FillValue"] = fill_val
-        ds[var_name] = da_new
-    bytes_out = ds.nbytes
-    _log.info(
-        f"Space saved by dtype downgrade: {int(100 * (bytes_in - bytes_out) / bytes_in)} %",
-    )
-    return ds
 
-def set_best_dtype_value(value, var_name):
-    """
-    Determines the best data type for a single value based on its variable name and converts it.
-
-    Parameters
-    ----------
-    value : any
-        The input value to convert.
-
-    Returns
-    -------
-    converted_value : any
-        The value converted to the best data type.
-    """
-    input_dtype = type(value)
-    new_dtype = find_best_dtype(var_name, xr.DataArray(value))
-    
-    if new_dtype == input_dtype:
-        return value
-    
-    converted_value = np.array(value).astype(new_dtype)
-    
-    if "int" in str(new_dtype) and np.isnan(value):
-        fill_val = set_fill_value(new_dtype)
-        converted_value = fill_val
-    
-    return converted_value
 
 variables_sensors = {
     "CNDC": "CTD",
@@ -378,6 +393,145 @@ def standardise_og10(ds):
     # dsa = set_best_dtype(dsa) - this changes data types - skipping for now
     return dsa
 
+def add_standard_global_attrs(ds):
+    date_created = datetime.datetime.now().isoformat().split(".")[0]
+    attrs = {
+        "acknowledgement": "This study used data collected and made freely available by Voice of the Ocean Foundation ("
+        "https://voiceoftheocean.org)",
+        "conventions": "CF-1.11",
+        "institution_country": "SWE",
+        "creator_email": "callum.rollo@voiceoftheocean.org",
+        "creator_name": "Callum Rollo",
+        "creator_type": "Person",
+        "creator_url": "https://observations.voiceoftheocean.org",
+        "date_created": date_created,
+        "date_issued": date_created,
+        "geospatial_lat_max": np.nanmax(ds.LATITUDE),
+        "geospatial_lat_min": np.nanmin(ds.LATITUDE),
+        "geospatial_lat_units": "degrees_north",
+        "geospatial_lon_max": np.nanmax(ds.LONGITUDE),
+        "geospatial_lon_min": np.nanmin(ds.LONGITUDE),
+        "geospatial_lon_units": "degrees_east",
+        "contributor_email": "callum.rollo@voiceoftheocean.org, louise.biddle@voiceoftheocean.org, , , , , , ",
+        "contributor_role_vocabulary": "https://vocab.nerc.ac.uk/collection/W08/",
+        "contributor_role": "Data scientist, PI, Operator, Operator, Operator, Operator, Operator, Operator,",
+        "contributing_institutions": "Voice of the Ocean Foundation",
+        "contributing_institutions_role": "Operator",
+        "contributing_institutions_role_vocabulary": "https://vocab.nerc.ac.uk/collection/W08/current/",
+        "agency": "Voice of the Ocean",
+        "agency_role": "contact point",
+        "agency_role_vocabulary": "https://vocab.nerc.ac.uk/collection/C86/current/",
+        "infoUrl": "https://observations.voiceoftheocean.org",
+        "inspire": "ISO 19115",
+        "institution": "Voice of the Ocean Foundation",
+        "institution_edmo_code": "5579",
+        "keywords": "CTD, Oceans, Ocean Pressure, Water Pressure, Ocean Temperature, Water Temperature, Salinity/Density, "
+        "Conductivity, Density, Salinity",
+        "keywords_vocabulary": "GCMD Science Keywords",
+        "licence": "Creative Commons Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/) This study used data collected and made freely available by Voice of the Ocean Foundation (https://voiceoftheocean.org) accessed from https://erddap.observations.voiceoftheocean.org/erddap/index.html",
+        "disclaimer": "Data, products and services from VOTO are provided 'as is' without any warranty as to fitness for "
+        "a particular purpose.",
+        "references": "Voice of the Ocean Foundation",
+        "source": "Voice of the Ocean Foundation",
+        "sourceUrl": "https://observations.voiceoftheocean.org",
+        "standard_name_vocabulary": "CF Standard Name Table v70",
+        "time_coverage_end": str(np.nanmax(ds.time)).split(".")[0],
+        "time_coverage_start": str(np.nanmin(ds.time)).split(".")[0],
+        "variables": list(ds),
+    }
+    for key, val in attrs.items():
+        if key in ds.attrs.keys():
+            continue
+        ds.attrs[key] = val
+    return ds
+
+# Deprecated
+def add_sensors_old(ds, dsa):
+    attrs = ds.attrs
+    sensors = []
+    for key, var in attrs.items():
+        if not isinstance(var, str):
+            continue
+        if "{" not in var:
+            continue
+        if isinstance(eval(var), dict):
+            sensors.append(key)
+
+    sensor_name_type = {}
+    for instr in sensors:
+        if instr in ["altimeter"]:
+            continue
+        attr_dict = eval(attrs[instr])
+        if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
+            _log.error(f"sensor {attr_dict['make_model']} not found")
+            continue
+        var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
+        if "serial" in attr_dict.keys():
+            var_dict["serial_number"] = str(attr_dict["serial"])
+            var_dict["long_name"] += f":{str(attr_dict['serial'])}"
+        for var_name in ["calibration_date", "calibration_parameters"]:
+            if var_name in attr_dict.keys():
+                var_dict[var_name] = str(attr_dict[var_name])
+        da = xr.DataArray(attrs=var_dict)
+        sensor_var_name = f"sensor_{var_dict['sensor_type']}_{var_dict['serial_number']}".upper().replace(
+            " ",
+            "_",
+        )
+        dsa[sensor_var_name] = da
+        sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
+
+    for key, var in attrs.copy().items():
+        if not isinstance(var, str):
+            continue
+        if "{" not in var:
+            continue
+        if isinstance(eval(var), dict):
+            attrs.pop(key)
+    ds.attrs = attrs
+
+    for key, sensor_type in variables_sensors.items():
+        if key in dsa.variables:
+            instr_key = sensor_name_type[sensor_type]
+            dsa[key].attrs["sensor"] = instr_key
+
+    return ds, dsa
+
+# Deprecated - is Seaexplorer specific
+def sensor_sampling_period(glider, mission):
+    # Get sampling period of CTD in seconds for a given glider mission
+    fn = f"/data/data_raw/complete_mission/SEA{glider}/M{mission}/sea{str(glider).zfill(3)}.{mission}.pld1.raw.10.gz"
+    df = pd.read_csv(fn, sep=";", dayfirst=True, parse_dates=["PLD_REALTIMECLOCK"])
+    if "LEGATO_TEMPERATURE" in list(df):
+        df_ctd = df.dropna(subset=["LEGATO_TEMPERATURE"])
+    else:
+        df_ctd = df.dropna(subset=["GPCTD_TEMPERATURE"])
+    ctd_seconds = df_ctd["PLD_REALTIMECLOCK"].diff().median().microseconds / 1e6
+
+    if "AROD_FT_DO" in list(df):
+        df_oxy = df.dropna(subset=["AROD_FT_DO"])
+    else:
+        df_oxy = df.dropna(subset=["LEGATO_CODA_DO"])
+    oxy_seconds = df_oxy["PLD_REALTIMECLOCK"].diff().median().microseconds / 1e6
+    sample_dict = {
+        "glider": glider,
+        "mission": mission,
+        "ctd_period": ctd_seconds,
+        "oxy_period": oxy_seconds,
+    }
+    return sample_dict
+
+# Not used
+def natural_sort(unsorted_list):
+    convert = lambda text: int(text) if text.isdigit() else text.lower()  # noqa: E731
+    alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]  # noqa: E731
+    return sorted(unsorted_list, key=alphanum_key)
+
+# Template - doesn't work - requires mailer.sh
+def mailer(subject, message, recipient="callum.rollo@voiceoftheocean.org"):
+    _log.warning(f"email: {subject}, {message}, {recipient}")
+    subject = subject.replace(" ", "-")
+    send_script = sync_script_dir / "mailer.sh"
+    subprocess.check_call(["/usr/bin/bash", send_script, message, subject, recipient])
 ##----------------------------------------------------------------------------------------------------------------------------
 ## Editing variables
 ##----------------------------------------------------------------------------------------------------------------------------
