@@ -1,6 +1,6 @@
 netcdf4
 pooch
-xarray
+xarray>=2025.1.1
 numpy
 matplotlib
 pandas  

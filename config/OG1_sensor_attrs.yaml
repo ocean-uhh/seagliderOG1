@@ -111,7 +111,23 @@ Aanderaa 4330:
   sensor_model_vocabulary: https://vocab.nerc.ac.uk/collection/L22/current/TOOL1247
   sensor_type: dissolved gas sensors
   sensor_type_vocabulary: https://vocab.nerc.ac.uk/collection/L05/current/351/
+Aanderaa 4330:
+  long_name: Aanderaa 4330F oxygen optode
+  sensor_maker: Aanderaa
+  sensor_maker_vocabulary: https://vocab.nerc.ac.uk/collection/L35/current/MAN0007/
+  sensor_model: Aanderaa 4330F oxygen optode
+  sensor_model_vocabulary: http://vocab.nerc.ac.uk/collection/L22/current/TOOL1248/
+  sensor_type: dissolved gas sensors
+  sensor_type_vocabulary: https://vocab.nerc.ac.uk/collection/L05/current/351/
 Aanderaa 4831:
+  long_name: Aanderaa 4831 oxygen optode
+  sensor_maker: Aanderaa
+  sensor_maker_vocabulary: https://vocab.nerc.ac.uk/collection/L35/current/MAN0007/
+  sensor_model: Aanderaa 4831 oxygen optode
+  sensor_model_vocabulary: http://vocab.nerc.ac.uk/collection/L22/current/TOOL1239/
+  sensor_type: dissolved gas sensors
+  sensor_type_vocabulary: https://vocab.nerc.ac.uk/collection/L05/current/351/
+Aanderaa 4831F:
   long_name: Aanderaa 4831F oxygen optode
   sensor_maker: Aanderaa
   sensor_maker_vocabulary: https://vocab.nerc.ac.uk/collection/L35/current/MAN0007/

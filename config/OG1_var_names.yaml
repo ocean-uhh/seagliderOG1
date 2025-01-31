@@ -10,6 +10,7 @@ eng_head: HEADING
 ctd_depth: DEPTH
 pressure: PRES
 conductivity: CNDC
+trajectory: TRAJECTORY
 aanderaa4330_dissolved_oxygen: DOXY 
 aanderaa4330_results_time: TIME_DOXY
 sbe43_dissolved_oxygen: DOXY
@@ -28,6 +29,8 @@ salinity: PSAL
 #conservative_temperature: CT
 ctd_density: DENSITY
 profile_index: PROFILE_NUMBER
+platform: PLATFORM_MODEL
+source: PLATFORM_SERIAL_NUMBER
 vert_speed: GLIDER_VERT_VELO_MODEL
 horz_speed: GLIDER_HORZ_VELO_MODEL
 speed: GLIDE_SPEED

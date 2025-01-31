@@ -52,34 +52,7 @@ unit1_to_unit2 = {
     'kg m-3_to_g m-3': {'current_unit': 'kg m-3', 'new_unit': 'g m-3', 'factor': 1000},
 }
 
-# Various conversions from the key to units_name with the multiplicative conversion factor
-#unit_conversion = {
-#    'cm/s': {'units_name': 'm/s', 'factor': 0.01},
-#    'cm s-1': {'units_name': 'm s-1', 'factor': 0.01},
-#    'm/s': {'units_name': 'cm/s', 'factor': 100},
-#    'm s-1': {'units_name': 'cm s-1', 'factor': 100},
-#    'S/m': {'units_name': 'mS/cm', 'factor': 0.1},
-#    'S m-1': {'units_name': 'mS cm-1', 'factor': 0.1},
-#    'mS/cm': {'units_name': 'S/m', 'factor': 10},
-#    'mS cm-1': {'units_name': 'S m-1', 'factor': 10},
-#    'dbar': {'units_name': 'Pa', 'factor': 10000},
-#    'Pa': {'units_name': 'dbar', 'factor': 0.0001},
-#    'dbar': {'units_name': 'kPa', 'factor': 10},
-#    'degrees_Celsius': {'units_name': 'Celsius', 'factor': 1},
-#    'Celsius': {'units_name': 'degrees_Celsius', 'factor': 1},
-#    'm': {'units_name': 'cm', 'factor': 100},
-#    'm': {'units_name': 'km', 'factor': 0.001},
-#    'cm': {'units_name': 'm', 'factor': 0.01},
-#    'km': {'units_name': 'm', 'factor': 1000},
-#    'g m-3': {'units_name': 'kg m-3', 'factor': 0.001},
-#    'kg m-3': {'units_name': 'g m-3', 'factor': 1000},
-#}
-
-# Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
-# Key is the basestation variable name, value is the OG1 standard name
-with open(config_dir + 'OG1_var_names.yaml', 'r') as file:
-    standard_names = yaml.safe_load(file)
-
+# Variables to remove (especially derived variables)
 vars_to_remove = [
     'dissolved_oxygen_sat',
     'depth', 
@@ -105,6 +78,14 @@ vars_to_remove = [
 
 vars_as_is = []
 
+#--------------------------------
+# Variables + variable attributes
+#--------------------------------
+# Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
+# Key is the basestation variable name, value is the OG1 standard name
+with open(config_dir + 'OG1_var_names.yaml', 'r') as file:
+    standard_names = yaml.safe_load(file)
+
 # Various vocabularies for OG1: http://vocab.nerc.ac.uk/scheme/OG1/current/
 with open(config_dir + 'OG1_vocab_attrs.yaml', 'r') as file:
     vocab_attrs = yaml.safe_load(file)
@@ -115,7 +96,7 @@ with open(config_dir + 'OG1_sensor_attrs.yaml', 'r') as file:
 
 
 #--------------------------------
-# Attributes
+# Global Attributes
 #--------------------------------
 with open(config_dir + 'OG1_author.yaml', 'r') as file:
     contrib_to_append = yaml.safe_load(file)
@@ -125,7 +106,7 @@ order_of_attr = [
     'id', # sg015_20040920T000000_delayed
     'platform', # sub-surface gliders
     'platform_vocabulary', # https://vocab.nerc.ac.uk/collection/L06/current/27
-    'PLATFORM_SERIAL_NUMBER', # sg015
+    'PLATFORM_SERIAL_NUMBER', # sg015 --> This should be a variable, not an attribute
     'naming_authority', # edu.washington.apl
     'institution', # University of washington
     'internal_mission_identifier', # p0150003_20040924
