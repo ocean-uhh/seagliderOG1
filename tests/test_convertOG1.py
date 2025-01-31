@@ -56,5 +56,7 @@ def test_process_dataset():
 
     ds_new = tools.assign_profile_number(ds_new, ds1)
     assert 'PROFILE_NUMBER' in list(ds_new.variables)
+    assert ds_new['PROFILE_NUMBER'].values.max() == 2*ds1.attrs['dive_number']
 
+    
 

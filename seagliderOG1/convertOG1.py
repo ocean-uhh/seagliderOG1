@@ -349,7 +349,7 @@ def add_gps_info_to_dataset(ds, gps_ds):
     datasets = []
     datasets.append(ds)
     datasets.append(gps_ds)
-    ds_new = xr.concat(datasets, dim=newdim)
+    ds_new = xr.concat(datasets, dim=newdim,  data_vars='all')
     ds_new = ds_new.sortby('TIME')
 
     return ds_new
