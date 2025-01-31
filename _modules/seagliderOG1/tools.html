@@ -99,6 +99,56 @@
     <span class="s2">&quot;PRES_ADCP&quot;</span><span class="p">:</span> <span class="s2">&quot;ADVs and turbulence probes&quot;</span><span class="p">,</span>
 <span class="p">}</span>
 
+
+<span class="c1"># EFW 2025-01-01: This could be improved</span>
+<span class="c1"># Sensor information is contained in the basestation file as a variable (e.g., &#39;wlbb2f&#39;) or</span>
+<span class="c1"># in the sg_cal strings, e.g. calibcomm_oxygen or calibcomm_optode contains &#39;SBE 43F&#39; or &#39;Optode 4330F&#39;</span>
+<span class="c1"># Using this, and the presense of calibration coefficients (e.g., optode_FoilCoefA1), we can make</span>
+<span class="c1"># a guess as to the sensor type</span>
+<div class="viewcode-block" id="gather_sensor_info">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.gather_sensor_info">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">gather_sensor_info</span><span class="p">(</span><span class="n">ds_other</span><span class="p">,</span> <span class="n">ds_sgcal</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gathers sensor information from the provided datasets and organizes it into a new dataset.</span>
+<span class="sd">    Parameters:</span>
+<span class="sd">    ds_other (xarray.Dataset): The dataset containing sensor data.</span>
+<span class="sd">    ds_sgcal (xarray.Dataset): The dataset containing calibration data.</span>
+<span class="sd">    firstrun (bool, optional): A flag indicating if this is the first run. Defaults to False.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">    xarray.Dataset: A dataset containing the gathered sensor information.</span>
+<span class="sd">    Notes:</span>
+<span class="sd">    - The function looks for specific sensor names in the `ds_other` dataset and adds them to a new dataset `ds_sensor`.</span>
+<span class="sd">    - If &#39;aanderaa4330_instrument_dissolved_oxygen&#39; is present in `ds_other`, it is renamed to &#39;aa4330&#39;.</span>
+<span class="sd">    - If &#39;Pcor&#39; is present in `ds_sgcal`, an additional sensor &#39;sbe43&#39; is created based on &#39;sbe41&#39; with specific attributes.</span>
+<span class="sd">    - If &#39;optode_FoilCoefA1&#39; is present in `ds_sgcal`, an additional sensor &#39;aa4831&#39; is created based on &#39;sbe41&#39; with specific attributes.</span>
+<span class="sd">    - The function sets appropriate attributes for the sensors &#39;aa4330&#39;, &#39;aa4831&#39;, and &#39;sbe43&#39; if they are present.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Gather sensors</span>
+    <span class="n">sensor_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;wlbb2f&#39;</span><span class="p">,</span> <span class="s1">&#39;sbe41&#39;</span><span class="p">,</span> <span class="s1">&#39;aa4330&#39;</span><span class="p">,</span> <span class="s1">&#39;aa4381&#39;</span><span class="p">,</span> <span class="s1">&#39;aa4330f&#39;</span><span class="p">,</span> <span class="s1">&#39;aa4381f&#39;</span><span class="p">]</span>
+
+    <span class="n">ds_sensor</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s1">&#39;aanderaa4330_instrument_dissolved_oxygen&#39;</span> <span class="ow">in</span> <span class="n">ds_other</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">ds_other</span><span class="p">[</span><span class="s1">&#39;aa4330&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_other</span><span class="p">[</span><span class="s1">&#39;aanderaa4330_instrument_dissolved_oxygen&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_names</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">ds_other</span><span class="p">:</span>
+            <span class="n">ds_sensor</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_other</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="s1">&#39;Pcor&#39;</span> <span class="ow">in</span> <span class="n">ds_sgcal</span><span class="p">:</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;sbe43&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;sbe41&#39;</span><span class="p">]</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;sbe43&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;long_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Sea-Bird SBE 43F Oxygen Sensor&#39;</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;sbe43&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sg_cal_Pcor sg_cal_Foffset sg_cal_A sg_cal_B sg_cal_C sg_cal_E sg_cal_Soc&#39;</span>
+
+    <span class="n">aanderaa_ancillary</span> <span class="o">=</span> <span class="s1">&#39;optode_FoilCoefA1 optode_FoilCoefA2	optode_FoilCoefA3 optode_FoilCoefA4	optode_FoilCoefA5 optode_FoilCoefA6 optode_FoilCoefA7 optode_FoilCoefA8 optode_FoilCoefA9 optode_FoilCoefA10 optode_FoilCoefA11	optode_FoilCoefA12 optode_FoilCoefA13 optode_FoilCoefB1	optode_FoilCoefB2 optode_FoilCoefB3	optode_FoilCoefB4 optode_FoilCoefB5	 optode_FoilCoefB6 optode_PhaseCoef0 optode_PhaseCoef1 optode_PhaseCoef2 optode_PhaseCoef3 optode_ConcCoef0 optode_ConcCoef1 optode_SVU_enabled optode_TempCoef0 optode_TempCoef1 optode_TempCoef2 optode_TempCoef3 optode_TempCoef4 optode_TempCoef5&#39;</span>
+    <span class="k">if</span> <span class="s1">&#39;optode_FoilCoefA1&#39;</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="p">:</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;aa4831&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;sbe41&#39;</span><span class="p">]</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;aa4831&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;long_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Aanderaa 4831F Oxygen Sensor&#39;</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;aa4831&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aanderaa_ancillary</span>
+    <span class="k">if</span> <span class="s1">&#39;aa4330&#39;</span> <span class="ow">in</span> <span class="n">ds_sensor</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;aa4330&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;long_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Aanderaa 4330 Oxygen Sensor&#39;</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;aa4330&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aanderaa_ancillary</span></div>
+
+
 <div class="viewcode-block" id="add_sensor_to_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_sensor_to_dataset">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_sensor_to_dataset</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -264,19 +314,38 @@
 
 
 
+<div class="viewcode-block" id="add_dive_number">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_dive_number">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dive_number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add dive number as a variable to the dataset. Assumes present in the basestation attributes.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    ds (xarray.Dataset): The dataset to which the dive number will be added.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    xarray.Dataset: The dataset with the dive number added.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dive_number</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
+        <span class="n">dive_number</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dive_number&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">divenum</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">dive_number</span><span class="p">]</span> <span class="o">*</span> <span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">]))</span></div>
+
+
+
 <div class="viewcode-block" id="assign_profile_number">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.assign_profile_number">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">assign_profile_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">divenum_str</span> <span class="o">=</span> <span class="s1">&#39;divenum&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">assign_profile_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ds1</span><span class="p">):</span>
     <span class="c1"># Remove the variable dive_num_cast if it exists</span>
     <span class="k">if</span> <span class="s1">&#39;dive_num_cast&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">)</span>
     <span class="c1"># Initialize the new variable with the same dimensions as dive_num</span>
     <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))</span>
 
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;dive_number&#39;</span><span class="p">])</span>
     <span class="c1"># Iterate over each unique dive_num</span>
-    <span class="k">for</span> <span class="n">dive</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">divenum_str</span><span class="p">]):</span>
+    <span class="k">for</span> <span class="n">dive</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;divenum&#39;</span><span class="p">]):</span>
         <span class="c1"># Get the indices for the current dive</span>
-        <span class="n">dive_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">divenum_str</span><span class="p">]</span> <span class="o">==</span> <span class="n">dive</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">dive_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;divenum&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">dive</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="c1"># Find the start and end index for the current dive</span>
         <span class="n">start_index</span> <span class="o">=</span> <span class="n">dive_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">end_index</span> <span class="o">=</span> <span class="n">dive_indices</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -295,6 +364,7 @@
         <span class="c1"># Remove the variable PROFILE_NUMBER if it exists</span>
         <span class="k">if</span> <span class="s1">&#39;PROFILE_NUMBER&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
             <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s1">&#39;PROFILE_NUMBER&#39;</span><span class="p">)</span>
+
         <span class="c1"># Assign PROFILE_NUMBER as 2 * dive_num_cast - 1</span>
         <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PROFILE_NUMBER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">ds</span></div>
@@ -452,22 +522,6 @@
     <span class="k">return</span> <span class="p">{</span><span class="n">dims</span><span class="p">:</span> <span class="n">dataset</span> <span class="k">for</span> <span class="n">dims</span><span class="p">,</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">unique_dims_datasets</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
 
 
-
-<div class="viewcode-block" id="add_dive_number">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_dive_number">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dive_number</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Add dive number as a variable to the dataset.</span>
-
-<span class="sd">    Parameters:</span>
-<span class="sd">    ds (xarray.Dataset): The dataset to which the dive number will be added.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">    xarray.Dataset: The dataset with the dive number added.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">dive_number</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
-        <span class="n">dive_number</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dive_number&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">divenum</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">dive_number</span><span class="p">]</span> <span class="o">*</span> <span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">]))</span></div>
 
 
 <div class="viewcode-block" id="convert_units">
@@ -637,44 +691,6 @@
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">ds</span></div>
 
-<span class="c1">#===============================================================================</span>
-<span class="c1"># Unused functions</span>
-<span class="c1">#===============================================================================</span>
-<div class="viewcode-block" id="encode_times">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.encode_times">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">encode_times</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
-    <span class="k">if</span> <span class="s2">&quot;units&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="s2">&quot;calendar&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;calendar&quot;</span><span class="p">)</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;seconds since 1970-01-01T00:00:00Z&quot;</span>
-    <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">var_name</span> <span class="o">==</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">,</span> <span class="s2">&quot;calendar&quot;</span><span class="p">,</span> <span class="s2">&quot;dtype&quot;</span><span class="p">]:</span>
-                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
-            <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;seconds since 1970-01-01T00:00:00Z&quot;</span>
-    <span class="k">return</span> <span class="n">ds</span></div>
-
-
-
-<div class="viewcode-block" id="encode_times_og1">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.encode_times_og1">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">encode_times_og1</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s2">&quot;axis&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;axis&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
-            <span class="k">for</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">,</span> <span class="s2">&quot;calendar&quot;</span><span class="p">,</span> <span class="s2">&quot;dtype&quot;</span><span class="p">]:</span>
-                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span>
-                <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;seconds since 1970-01-01T00:00:00Z&quot;</span>
-                <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;calendar&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;gregorian&quot;</span>
-    <span class="k">return</span> <span class="n">ds</span></div>
-
 
 
 <div class="viewcode-block" id="set_best_dtype_value">
@@ -732,166 +748,46 @@
 
 
 
-
-
-
-
-
-<div class="viewcode-block" id="add_standard_global_attrs">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_standard_global_attrs">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">add_standard_global_attrs</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
-    <span class="n">date_created</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">attrs</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;acknowledgement&quot;</span><span class="p">:</span> <span class="s2">&quot;This study used data collected and made freely available by Voice of the Ocean Foundation (&quot;</span>
-        <span class="s2">&quot;https://voiceoftheocean.org)&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;conventions&quot;</span><span class="p">:</span> <span class="s2">&quot;CF-1.11&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;institution_country&quot;</span><span class="p">:</span> <span class="s2">&quot;SWE&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;creator_email&quot;</span><span class="p">:</span> <span class="s2">&quot;callum.rollo@voiceoftheocean.org&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;creator_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Callum Rollo&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;creator_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Person&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;creator_url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://observations.voiceoftheocean.org&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;date_created&quot;</span><span class="p">:</span> <span class="n">date_created</span><span class="p">,</span>
-        <span class="s2">&quot;date_issued&quot;</span><span class="p">:</span> <span class="n">date_created</span><span class="p">,</span>
-        <span class="s2">&quot;geospatial_lat_max&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">LATITUDE</span><span class="p">),</span>
-        <span class="s2">&quot;geospatial_lat_min&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">LATITUDE</span><span class="p">),</span>
-        <span class="s2">&quot;geospatial_lat_units&quot;</span><span class="p">:</span> <span class="s2">&quot;degrees_north&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;geospatial_lon_max&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="p">),</span>
-        <span class="s2">&quot;geospatial_lon_min&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="p">),</span>
-        <span class="s2">&quot;geospatial_lon_units&quot;</span><span class="p">:</span> <span class="s2">&quot;degrees_east&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;contributor_email&quot;</span><span class="p">:</span> <span class="s2">&quot;callum.rollo@voiceoftheocean.org, louise.biddle@voiceoftheocean.org, , , , , , &quot;</span><span class="p">,</span>
-        <span class="s2">&quot;contributor_role_vocabulary&quot;</span><span class="p">:</span> <span class="s2">&quot;https://vocab.nerc.ac.uk/collection/W08/&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;contributor_role&quot;</span><span class="p">:</span> <span class="s2">&quot;Data scientist, PI, Operator, Operator, Operator, Operator, Operator, Operator,&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;contributing_institutions&quot;</span><span class="p">:</span> <span class="s2">&quot;Voice of the Ocean Foundation&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;contributing_institutions_role&quot;</span><span class="p">:</span> <span class="s2">&quot;Operator&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;contributing_institutions_role_vocabulary&quot;</span><span class="p">:</span> <span class="s2">&quot;https://vocab.nerc.ac.uk/collection/W08/current/&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;agency&quot;</span><span class="p">:</span> <span class="s2">&quot;Voice of the Ocean&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;agency_role&quot;</span><span class="p">:</span> <span class="s2">&quot;contact point&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;agency_role_vocabulary&quot;</span><span class="p">:</span> <span class="s2">&quot;https://vocab.nerc.ac.uk/collection/C86/current/&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;infoUrl&quot;</span><span class="p">:</span> <span class="s2">&quot;https://observations.voiceoftheocean.org&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;inspire&quot;</span><span class="p">:</span> <span class="s2">&quot;ISO 19115&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;institution&quot;</span><span class="p">:</span> <span class="s2">&quot;Voice of the Ocean Foundation&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;institution_edmo_code&quot;</span><span class="p">:</span> <span class="s2">&quot;5579&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="s2">&quot;CTD, Oceans, Ocean Pressure, Water Pressure, Ocean Temperature, Water Temperature, Salinity/Density, &quot;</span>
-        <span class="s2">&quot;Conductivity, Density, Salinity&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;keywords_vocabulary&quot;</span><span class="p">:</span> <span class="s2">&quot;GCMD Science Keywords&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;licence&quot;</span><span class="p">:</span> <span class="s2">&quot;Creative Commons Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/) This study used data collected and made freely available by Voice of the Ocean Foundation (https://voiceoftheocean.org) accessed from https://erddap.observations.voiceoftheocean.org/erddap/index.html&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;disclaimer&quot;</span><span class="p">:</span> <span class="s2">&quot;Data, products and services from VOTO are provided &#39;as is&#39; without any warranty as to fitness for &quot;</span>
-        <span class="s2">&quot;a particular purpose.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;references&quot;</span><span class="p">:</span> <span class="s2">&quot;Voice of the Ocean Foundation&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;Voice of the Ocean Foundation&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sourceUrl&quot;</span><span class="p">:</span> <span class="s2">&quot;https://observations.voiceoftheocean.org&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;standard_name_vocabulary&quot;</span><span class="p">:</span> <span class="s2">&quot;CF Standard Name Table v70&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;time_coverage_end&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
-        <span class="s2">&quot;time_coverage_start&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
-        <span class="s2">&quot;variables&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">),</span>
-    <span class="p">}</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">continue</span>
-        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+<div class="viewcode-block" id="encode_times">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.encode_times">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">encode_times</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s2">&quot;units&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;calendar&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;calendar&quot;</span><span class="p">)</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;seconds since 1970-01-01T00:00:00Z&quot;</span>
+    <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">var_name</span> <span class="o">==</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">,</span> <span class="s2">&quot;calendar&quot;</span><span class="p">,</span> <span class="s2">&quot;dtype&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
+            <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;seconds since 1970-01-01T00:00:00Z&quot;</span>
     <span class="k">return</span> <span class="n">ds</span></div>
 
 
 
-<span class="c1"># Deprecated</span>
-<div class="viewcode-block" id="add_sensors_old">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_sensors_old">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">add_sensors_old</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dsa</span><span class="p">):</span>
-    <span class="n">attrs</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span>
-    <span class="n">sensors</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">continue</span>
-        <span class="k">if</span> <span class="s2">&quot;{&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">var</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">var</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">sensors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-
-    <span class="n">sensor_name_type</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">sensors</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">instr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;altimeter&quot;</span><span class="p">]:</span>
-            <span class="k">continue</span>
-        <span class="n">attr_dict</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">attrs</span><span class="p">[</span><span class="n">instr</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor </span><span class="si">{</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;make_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
-            <span class="k">continue</span>
-        <span class="n">var_dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]]</span>
-        <span class="k">if</span> <span class="s2">&quot;serial&quot;</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;serial_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;serial&quot;</span><span class="p">])</span>
-            <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;:</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;serial&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;calibration_date&quot;</span><span class="p">,</span> <span class="s2">&quot;calibration_parameters&quot;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">var_dict</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">attr_dict</span><span class="p">[</span><span class="n">var_name</span><span class="p">])</span>
-        <span class="n">da</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="n">var_dict</span><span class="p">)</span>
-        <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;serial_number&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-            <span class="s2">&quot; &quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">dsa</span><span class="p">[</span><span class="n">sensor_var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">da</span>
-        <span class="n">sensor_name_type</span><span class="p">[</span><span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">sensor_var_name</span>
-
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">continue</span>
-        <span class="k">if</span> <span class="s2">&quot;{&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">var</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">var</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-    <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="n">attrs</span>
-
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">sensor_type</span> <span class="ow">in</span> <span class="n">variables_sensors</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dsa</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-            <span class="n">instr_key</span> <span class="o">=</span> <span class="n">sensor_name_type</span><span class="p">[</span><span class="n">sensor_type</span><span class="p">]</span>
-            <span class="n">dsa</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;sensor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instr_key</span>
-
-    <span class="k">return</span> <span class="n">ds</span><span class="p">,</span> <span class="n">dsa</span></div>
+<div class="viewcode-block" id="encode_times_og1">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.encode_times_og1">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">encode_times_og1</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;axis&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;axis&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">,</span> <span class="s2">&quot;calendar&quot;</span><span class="p">,</span> <span class="s2">&quot;dtype&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span>
+                <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;seconds since 1970-01-01T00:00:00Z&quot;</span>
+                <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;calendar&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;gregorian&quot;</span>
+    <span class="k">return</span> <span class="n">ds</span></div>
 
 
-<span class="c1"># Deprecated - is Seaexplorer specific</span>
-<div class="viewcode-block" id="sensor_sampling_period">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.sensor_sampling_period">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">sensor_sampling_period</span><span class="p">(</span><span class="n">glider</span><span class="p">,</span> <span class="n">mission</span><span class="p">):</span>
-    <span class="c1"># Get sampling period of CTD in seconds for a given glider mission</span>
-    <span class="n">fn</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;/data/data_raw/complete_mission/SEA</span><span class="si">{</span><span class="n">glider</span><span class="si">}</span><span class="s2">/M</span><span class="si">{</span><span class="n">mission</span><span class="si">}</span><span class="s2">/sea</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">glider</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">mission</span><span class="si">}</span><span class="s2">.pld1.raw.10.gz&quot;</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;;&quot;</span><span class="p">,</span> <span class="n">dayfirst</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;PLD_REALTIMECLOCK&quot;</span><span class="p">])</span>
-    <span class="k">if</span> <span class="s2">&quot;LEGATO_TEMPERATURE&quot;</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-        <span class="n">df_ctd</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LEGATO_TEMPERATURE&quot;</span><span class="p">])</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">df_ctd</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;GPCTD_TEMPERATURE&quot;</span><span class="p">])</span>
-    <span class="n">ctd_seconds</span> <span class="o">=</span> <span class="n">df_ctd</span><span class="p">[</span><span class="s2">&quot;PLD_REALTIMECLOCK&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="o">.</span><span class="n">microseconds</span> <span class="o">/</span> <span class="mf">1e6</span>
 
-    <span class="k">if</span> <span class="s2">&quot;AROD_FT_DO&quot;</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-        <span class="n">df_oxy</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;AROD_FT_DO&quot;</span><span class="p">])</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">df_oxy</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LEGATO_CODA_DO&quot;</span><span class="p">])</span>
-    <span class="n">oxy_seconds</span> <span class="o">=</span> <span class="n">df_oxy</span><span class="p">[</span><span class="s2">&quot;PLD_REALTIMECLOCK&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="o">.</span><span class="n">microseconds</span> <span class="o">/</span> <span class="mf">1e6</span>
-    <span class="n">sample_dict</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;glider&quot;</span><span class="p">:</span> <span class="n">glider</span><span class="p">,</span>
-        <span class="s2">&quot;mission&quot;</span><span class="p">:</span> <span class="n">mission</span><span class="p">,</span>
-        <span class="s2">&quot;ctd_period&quot;</span><span class="p">:</span> <span class="n">ctd_seconds</span><span class="p">,</span>
-        <span class="s2">&quot;oxy_period&quot;</span><span class="p">:</span> <span class="n">oxy_seconds</span><span class="p">,</span>
-    <span class="p">}</span>
-    <span class="k">return</span> <span class="n">sample_dict</span></div>
-
-
-<span class="c1"># Not used</span>
-<div class="viewcode-block" id="natural_sort">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.natural_sort">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">natural_sort</span><span class="p">(</span><span class="n">unsorted_list</span><span class="p">):</span>
-    <span class="n">convert</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">text</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">if</span> <span class="n">text</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="k">else</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>  <span class="c1"># noqa: E731</span>
-    <span class="n">alphanum_key</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="p">[</span><span class="n">convert</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;([0-9]+)&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">)]</span>  <span class="c1"># noqa: E731</span>
-    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">unsorted_list</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">alphanum_key</span><span class="p">)</span></div>
-
-
-<span class="c1"># Template - doesn&#39;t work - requires mailer.sh</span>
-<div class="viewcode-block" id="mailer">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.mailer">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">mailer</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">recipient</span><span class="o">=</span><span class="s2">&quot;callum.rollo@voiceoftheocean.org&quot;</span><span class="p">):</span>
-    <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;email: </span><span class="si">{</span><span class="n">subject</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">recipient</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">subject</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
-    <span class="n">send_script</span> <span class="o">=</span> <span class="n">sync_script_dir</span> <span class="o">/</span> <span class="s2">&quot;mailer.sh&quot;</span>
-    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s2">&quot;/usr/bin/bash&quot;</span><span class="p">,</span> <span class="n">send_script</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">recipient</span><span class="p">])</span></div>
-
+<span class="c1">#===============================================================================</span>
+<span class="c1"># Unused functions</span>
+<span class="c1">#===============================================================================</span>
 </pre></div>
 
            </div>
