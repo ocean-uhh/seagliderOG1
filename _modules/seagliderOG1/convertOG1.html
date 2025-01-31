@@ -801,11 +801,11 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Load and concatenate all datasets from the server</span>
-    <span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">read_basestation</span><span class="p">(</span><span class="n">input_location</span><span class="p">)</span>
+    <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_first_basestation_file</span><span class="p">(</span><span class="n">input_location</span><span class="p">)</span>
     
     <span class="c1"># Convert the list of datasets to OG1</span>
-    <span class="n">ds1</span><span class="p">,</span> <span class="n">varlist</span> <span class="o">=</span> <span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.nc&#39;</span><span class="p">)</span>
+    <span class="n">ds1_og1</span><span class="p">,</span> <span class="n">varlist</span> <span class="o">=</span> <span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
+    <span class="n">output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">ds1_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.nc&#39;</span><span class="p">)</span>
 
     <span class="c1"># Check if the file exists and delete it if it does</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_file</span><span class="p">):</span>
@@ -827,6 +827,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running the directory:&#39;</span><span class="p">,</span> <span class="n">input_location</span><span class="p">)</span>
         <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running the directory: </span><span class="si">{</span><span class="n">input_location</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="n">input_location</span><span class="p">)</span>
         <span class="n">ds_all</span><span class="p">,</span> <span class="n">varlist</span> <span class="o">=</span> <span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
         <span class="n">output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">ds_all</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.nc&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">save</span><span class="p">:</span>

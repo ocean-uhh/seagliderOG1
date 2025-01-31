@@ -78,50 +78,115 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">importlib_resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pooch</span>
-
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="c1"># readers.py: Will only read files.  Not manipulate them.</span>
-<span class="c1">#</span>
-<span class="c1"># Comment 2024 Oct 30: I needed an initial file list to create the registry</span>
-<span class="c1"># This is impractical for expansion, so may need to move away from pooch.</span>
-<span class="c1"># This was necessary to get an initial file list</span>
-<span class="c1"># mylist = fetchers.list_files_in_https_server(server)</span>
-<span class="c1"># fetchers.create_pooch_registry_from_directory(&quot;/Users/eddifying/Dropbox/data/sg015-ncei-download/&quot;)</span>
-<span class="c1"># Example usage</span>
-<span class="c1">#directory_path = &quot;/Users/eddifying/Dropbox/data/sg015-ncei-snippet&quot;</span>
-<span class="c1">#pooch_registry = create_pooch_registry_from_directory(directory_path)</span>
-<span class="c1">#print(pooch_registry)</span>
+
+<span class="c1"># Use pooch for sample files only.</span>
+<span class="c1"># For the full dataset, just use BeautifulSoup / requests</span>
+<span class="n">server</span> <span class="o">=</span> <span class="s2">&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/&quot;</span>
+<span class="n">data_source_og</span> <span class="o">=</span> <span class="n">pooch</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">path</span><span class="o">=</span><span class="n">pooch</span><span class="o">.</span><span class="n">os_cache</span><span class="p">(</span><span class="s2">&quot;seagliderOG1&quot;</span><span class="p">),</span>
+    <span class="n">base_url</span><span class="o">=</span><span class="n">server</span><span class="p">,</span>
+    <span class="n">registry</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;p0330001_20100903.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;1ee726a4890b5567653fd53501da8887d947946ad63a17df4e5efd2e578fb464&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330002_20100903.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;1c0d6f46904063dbb1e74196bc30bdaf6163e7fbd4cc31c6087eb295688a2cc1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330003_20100903.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;779bdfb4237b17b1de8ccb5d67ef37ea28b595d918b3a034606e8612615058c3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330004_20100904.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;f981d482e04bbe5085e2f93d686eedf3a30ca125bd94696648d04b2e37fa2489&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330005_20100904.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;46e921c06b407a458dd4f788b9887ea4b6a51376021190c89e0402b25b0c8f3f&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330006_20100904.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;3ed79ee0757b573f32c7d72ff818b82d9810ebbd640d8a9b0f6829ab1da3b972&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330007_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;29d83c65ef4649bbc9193bb25eab7a137f92da04912eae21d9fc9860e827281d&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330008_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;66fa25efb8717275e84f326f3c7bd02251db7763758683c60afc4fb2e3cbb170&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330009_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;ee5ce7881c74de9d765ae46c6baed4745b0620dd57f7cd7f8b9f1c7f46570836&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330010_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;fad0d9bb08fc874ffacf8ed1ae25522d48ff9ff8c8f1db82bcaf4e613d6c46e3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330011_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;3b3ae89c653651e10b7a8058536d276aae9958e7d4236a4164e05707ef5a8660&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330012_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;b6318d496ccddd14ede295613a2b4854f0d228c8db996737b5187e73ed226d2a&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330013_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;efeb37be650368470a6fd7a9cf0cc0b6938ee9eb96b10bde166ef86cda9b6082&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330014_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;6ab8bea8bc28a1d270de2da3e4cafe9aff4a01a887ebbf7d39bde5980cf585f5&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330015_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;d22c2bf453601d33e51dc7f3aeecb823fefb532d44b07d45240f5400bc12b464&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330016_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;404a22da318909c42dcb65fd7315ae1f5542ed8b057faa30c7b21e07f50d67a9&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330017_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;06df146adee75439cc4f42e27038bec5596705fbe0a93ea53d2d65d94d719504&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330018_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;3dc2363797adce65c286c5099f0144bb0583b368c84dc24185caba0cad9478a7&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;p0330019_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;7e37ad465f720ea1f1257830a595677f6d5f85d7391e711d6164ccee8ada5399&quot;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
 
 <span class="c1"># Information on creating a registry file: https://www.fatiando.org/pooch/latest/registry-files.html</span>
 <span class="c1"># But instead of pkg_resources (https://setuptools.pypa.io/en/latest/pkg_resources.html#)</span>
 <span class="c1"># we should use importlib.resources</span>
 <span class="c1"># Here&#39;s how to use importlib.resources (https://importlib-resources.readthedocs.io/en/latest/using.html)</span>
-<span class="n">server</span> <span class="o">=</span> <span class="s2">&quot;https://www.dropbox.com/scl/fo/dhinr4hvpk05zcecqyz2x/ADTqIuEpWHCxeZDspCiTN68?rlkey=bt9qheandzbucca5zhf5v9j7a&amp;dl=0&quot;</span>
-<span class="n">server</span> <span class="o">=</span> <span class="s2">&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/&quot;</span>
-<span class="n">data_source_og</span> <span class="o">=</span> <span class="n">pooch</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-    <span class="n">path</span><span class="o">=</span><span class="n">pooch</span><span class="o">.</span><span class="n">os_cache</span><span class="p">(</span><span class="s2">&quot;seagliderOG1&quot;</span><span class="p">),</span>
-    <span class="n">base_url</span><span class="o">=</span><span class="n">server</span><span class="p">,</span>
-    <span class="n">registry</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">registry_file</span> <span class="o">=</span> <span class="n">files</span><span class="p">(</span><span class="s1">&#39;seagliderOG1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;seaglider_registry.txt&#39;</span><span class="p">)</span>
-<span class="n">data_source_og</span><span class="o">.</span><span class="n">load_registry</span><span class="p">(</span><span class="n">registry_file</span><span class="p">)</span>
-
-
 <div class="viewcode-block" id="load_sample_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_sample_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_sample_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="s2">&quot;p0150500_20050213.nc&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_sample_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="s2">&quot;p0330015_20100906.nc&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Download sample datasets for use with seagliderOG1</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dataset_name (str, optional): _description_. Defaults to &quot;p0330015_20100906.nc&quot;.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the requests dataset is not known, raises a value error</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        xarray.Dataset: Requested sample dataset</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">in</span> <span class="n">data_source_og</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">file_path</span> <span class="o">=</span> <span class="n">data_source_og</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Requested sample dataset </span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2"> not known&quot;</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Requested sample dataset </span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2"> not known. Specify one of the following available datasets: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data_source_og</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
 
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validates if the given filename matches the expected pattern.</span>
+<span class="sd">    The expected pattern is a string that starts with &#39;p&#39;, followed by exactly </span>
+<span class="sd">    7 digits, and ends with &#39;.nc&#39;.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        filename (str): The filename to validate.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if the filename matches the pattern, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pattern 1: p1234567.nc</span>
+    <span class="n">pattern1</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;^p\d</span><span class="si">{7}</span><span class="s1">\.nc$&#39;</span>
+    <span class="c1"># pattern 2: p0420100_20100903.nc</span>
+    <span class="n">pattern2</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;^p\d</span><span class="si">{7}</span><span class="s1">_\d</span><span class="si">{8}</span><span class="s1">\.nc$&#39;</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern1</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> <span class="ow">or</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern2</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="n">glider_sn</span> <span class="o">=</span> <span class="n">_glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">divenum</span> <span class="o">=</span> <span class="n">_profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">glider_sn</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">divenum</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+        
+<span class="k">def</span><span class="w"> </span><span class="nf">_profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract the profile number from the filename.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        filename (str): The filename from which to extract the profile number.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        int: The profile number extracted from the filename.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">8</span><span class="p">])</span>
+    
+<span class="k">def</span><span class="w"> </span><span class="nf">_glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract the glider serial number from the filename.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        filename (str): The filename from which to extract the glider serial number.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        int: The glider serial number extracted from the filename.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
 
 <div class="viewcode-block" id="filter_files_by_profile">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.filter_files_by_profile">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">filter_files_by_profile</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Filter a list of files based on the start_profile and end_profile.</span>
+<span class="sd">    Expects filenames of the form pXXXYYYY.nc, where XXX is the seaglider serial number and YYYY the divecycle number, e.g. p0420001.nc for glider 41 and divenum 0001. </span>
+<span class="sd">    Note: Does not require file_list to be alphabetical/sorted.</span>
 
 <span class="sd">    Parameters:</span>
 <span class="sd">    file_list (list): List of filenames to filter.</span>
@@ -134,28 +199,53 @@
     <span class="n">filtered_files</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">file_list</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.nc&quot;</span><span class="p">):</span>
-            <span class="c1"># Extract the profile number from the filename now from the begining</span>
-            <span class="c1">#profile_number = int(file.split(&quot;_&quot;)[0][4:])</span>
-            <span class="n">profile_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="mi">5</span><span class="p">:</span><span class="mi">8</span><span class="p">])</span>
-            <span class="k">if</span> <span class="n">start_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">end_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">start_profile</span> <span class="o">&lt;=</span> <span class="n">profile_number</span> <span class="o">&lt;=</span> <span class="n">end_profile</span><span class="p">:</span>
-                    <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">start_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">profile_number</span> <span class="o">&gt;=</span> <span class="n">start_profile</span><span class="p">:</span>
-                    <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">end_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">profile_number</span> <span class="o">&lt;=</span> <span class="n">end_profile</span><span class="p">:</span>
-                    <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_validate_filename</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+            <span class="n">file_list</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+            <span class="c1">#_log.warning(f&quot;Skipping file {file} as it does not have the expected format.&quot;)</span>
+
+<span class="c1">#    divenum_values = [int(file[4:8]) for file in file_list]</span>
+
+    <span class="c1"># This could be refactored: see divenum_values above, and find values between start_profile and end_profil</span>
+    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">file_list</span><span class="p">:</span>
+        <span class="c1"># Extract the profile number from the filename now from the begining</span>
+        <span class="n">profile_number</span> <span class="o">=</span> <span class="n">_profnum_from_filename</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">start_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">end_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">start_profile</span> <span class="o">&lt;=</span> <span class="n">profile_number</span> <span class="o">&lt;=</span> <span class="n">end_profile</span><span class="p">:</span>
                 <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">start_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">profile_number</span> <span class="o">&gt;=</span> <span class="n">start_profile</span><span class="p">:</span>
+                <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">end_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">profile_number</span> <span class="o">&lt;=</span> <span class="n">end_profile</span><span class="p">:</span>
+                <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">filtered_files</span></div>
 
 
-<div class="viewcode-block" id="read_basestation">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.read_basestation">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">read_basestation</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="load_first_basestation_file">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_first_basestation_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_first_basestation_file</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load the first dataset from either an online source or a local directory.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    source (str): The URL to the directory containing the NetCDF files or the path to the local directory.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    An xarray.Dataset object loaded from the first NetCDF file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_list</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">start_profile</span> <span class="o">=</span> <span class="n">_profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">datasets</span> <span class="o">=</span> <span class="n">load_basestation_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="load_basestation_files">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_basestation_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_basestation_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Load datasets from either an online source or a local directory, optionally filtering by profile range.</span>
 
@@ -167,23 +257,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">    A list of xarray.Dataset objects loaded from the filtered NetCDF files.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;http://&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;https://&quot;</span><span class="p">):</span>
-        <span class="c1"># Create a Pooch object to manage the remote files</span>
-        <span class="n">data_source_online</span> <span class="o">=</span> <span class="n">pooch</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-            <span class="n">path</span><span class="o">=</span><span class="n">pooch</span><span class="o">.</span><span class="n">os_cache</span><span class="p">(</span><span class="s2">&quot;seagliderOG1&quot;</span><span class="p">),</span>
-            <span class="n">base_url</span><span class="o">=</span><span class="n">source</span><span class="p">,</span>
-            <span class="n">registry</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">registry_file</span> <span class="o">=</span> <span class="n">files</span><span class="p">(</span><span class="s1">&#39;seagliderOG1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;seaglider_registry.txt&#39;</span><span class="p">)</span>
-        <span class="n">data_source_og</span><span class="o">.</span><span class="n">load_registry</span><span class="p">(</span><span class="n">registry_file</span><span class="p">)</span>
-
-        <span class="c1"># List all files in the URL directory</span>
-        <span class="n">file_list</span> <span class="o">=</span> <span class="n">list_files_in_https_server</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
-        <span class="n">file_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Source must be a valid URL or directory path.&quot;</span><span class="p">)</span>
-
+    <span class="n">file_list</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
     <span class="n">filtered_files</span> <span class="o">=</span> <span class="n">filter_files_by_profile</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">)</span>
     
     <span class="n">datasets</span> <span class="o">=</span> <span class="p">[]</span>
@@ -199,54 +273,46 @@
     <span class="k">return</span> <span class="n">datasets</span></div>
 
 
-<div class="viewcode-block" id="list_files_in_https_server">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.list_files_in_https_server">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">list_files_in_https_server</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+<div class="viewcode-block" id="list_files">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.list_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">registry_loc</span><span class="o">=</span><span class="s2">&quot;seagliderOG1&quot;</span><span class="p">,</span> <span class="n">registry_name</span><span class="o">=</span><span class="s2">&quot;seaglider_registry.txt&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    List files in an HTTPS server directory using BeautifulSoup and requests.</span>
+<span class="sd">    List files from a given source, which can be either a URL or a directory path. For an online source,</span>
+<span class="sd">    uses BeautifulSoup and requests.</span>
 
 <span class="sd">    Parameters:</span>
-<span class="sd">    url (str): The URL to the directory containing the files.</span>
+<span class="sd">    source (str): The source from which to list files. It can be a URL (starting with &quot;http://&quot; or &quot;https://&quot;)</span>
+<span class="sd">                  or a local directory path.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">    list: A list of filenames found in the directory.</span>
+<span class="sd">    list: A list of filenames available in the specified source, sorted alphabetically</span>
+<span class="sd">    Raises:</span>
+<span class="sd">    ValueError: If the source is neither a valid URL nor a directory path.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>  <span class="c1"># Raise an error for bad status codes</span>
 
-    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
-    <span class="n">files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;http://&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;https://&quot;</span><span class="p">):</span>
+       <span class="c1"># List all files in the URL directory</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>  <span class="c1"># Raise an error for bad status codes</span>
 
-    <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">):</span>
-        <span class="n">href</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;href&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">href</span> <span class="ow">and</span> <span class="n">href</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.nc&quot;</span><span class="p">):</span>
-            <span class="n">files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">href</span><span class="p">)</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
+        <span class="n">file_list</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="k">return</span> <span class="n">files</span></div>
+        <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">):</span>
+            <span class="n">href</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;href&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">href</span> <span class="ow">and</span> <span class="n">href</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.nc&quot;</span><span class="p">):</span>
+                <span class="n">file_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">href</span><span class="p">)</span>
+    
+    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+        <span class="n">file_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Source must be a valid URL or directory path.&quot;</span><span class="p">)</span>
 
+    <span class="c1"># Sort alphabetically</span>
+    <span class="n">file_list</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
 
-<div class="viewcode-block" id="create_pooch_registry_from_directory">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.create_pooch_registry_from_directory">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">create_pooch_registry_from_directory</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Create a Pooch registry from files in a specified directory.</span>
+    <span class="k">return</span> <span class="n">file_list</span></div>
 
-<span class="sd">    Parameters:</span>
-<span class="sd">    directory (str): The path to the directory containing the files.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">    dict: A dictionary representing the Pooch registry with filenames as keys and their SHA256 hashes as values.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">registry</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">files</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.nc&quot;</span><span class="p">):</span>
-            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
-            <span class="n">sha256_hash</span> <span class="o">=</span> <span class="n">pooch</span><span class="o">.</span><span class="n">file_hash</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">alg</span><span class="o">=</span><span class="s2">&quot;sha256&quot;</span><span class="p">)</span>
-            <span class="n">registry</span><span class="p">[</span><span class="n">file</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sha256:</span><span class="si">{</span><span class="n">sha256_hash</span><span class="si">}</span><span class="s2">&quot;</span>
-
-    <span class="k">return</span> <span class="n">registry</span></div>
 
 
 </pre></div>
