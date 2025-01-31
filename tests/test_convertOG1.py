@@ -54,6 +54,7 @@ def test_process_dataset():
     assert 'LATITUDE_GPS' in list(ds_new.variables)
     assert 'LONGITUDE_GPS' in list(ds_new.variables)
 
-    ds_new = tools.add_dive_number(ds_new, divenum)
+    ds_new = tools.assign_profile_number(ds_new, ds1)
+    assert 'PROFILE_NUMBER' in list(ds_new.variables)
 
 

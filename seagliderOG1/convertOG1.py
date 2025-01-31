@@ -199,7 +199,7 @@ def process_dataset(ds1_base, firstrun=False):
     # Must be after split_by_unique_dims and after rename_dimensions
     ds_new = add_gps_info_to_dataset(ds_new, ds_gps)
     # Add the profile number (odd for dives, even for ascents)
-    ds_new = tools.assign_profile_number(ds_new)
+    ds_new = tools.assign_profile_number(ds_new, ds1)
     # Assign the phase of the dive (must be after adding divenum)
     ds_new = tools.assign_phase(ds_new)
     # Assign DEPTH_Z to the dataset where positive is up.
