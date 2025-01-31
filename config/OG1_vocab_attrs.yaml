@@ -96,7 +96,7 @@ VERT_CURR_MODEL:
   observation_type: calculated
   sensor: sensor_ctd
   positive: up
-  URI: http://vocab.nerc.ac.uk/collection/P01/current/LRZAZZZZ/
+  uri: http://vocab.nerc.ac.uk/collection/P01/current/LRZAZZZZ/
 DAVG_CURR_EAST:
   long_name: depth-averaged current in eastward direction
   standard_name: eastward_sea_water_velocity
@@ -127,7 +127,7 @@ LATITUDE:
   valid_max: 90
   valid_min: -90
   axis: Y
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/LAT/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/LAT/
 LONGITUDE:
   coordinate_reference_frame: urn:ogc:crs:EPSG::4326
   long_name: Longitude east
@@ -139,7 +139,7 @@ LONGITUDE:
   valid_max: 180
   valid_min: -180
   axis: X
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/LON/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/LON/
 LATITUDE_GPS:
   long_name: Latitude north by unspecified GPS system
   observation_type: measured
@@ -149,7 +149,7 @@ LATITUDE_GPS:
   valid_max: 90
   valid_min: -90
   axis: Y
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/LAT/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/LAT/
 LONGITUDE_GPS:
   long_name: Longitude east by unspecified GPS system
   observation_type: measured
@@ -159,7 +159,7 @@ LONGITUDE_GPS:
   valid_max: 180
   valid_min: -180
   axis: X
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/LON/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/LON/
 TIME_GPS:
   long_name: time of each GPS location
   units: seconds since 1970-01-01T00:00:00Z
@@ -167,7 +167,7 @@ TIME:
   long_name: time of measurement
   observation_type: measured
   standard_name: time
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/AYMD/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/AYMD/
 AD2CP_TIME:
   long_name: time of measurement
   observation_type: measured
@@ -175,7 +175,7 @@ AD2CP_TIME:
   units: seconds since 1970-01-01 00:00:00 UTC
   calendar: gregorian
   axis: T
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/AYMD/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/AYMD/
   comment: measured by AD2CP
 DEPTH:
   source: pressure
@@ -213,7 +213,7 @@ DOXY:
   units: mmol m-3
   valid_max: 425
   valid_min: 0
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/DOXY/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/DOXY/
 TIME_DOXY:
   long_name: time for oxygen concentration in GMT epoch format
 OXYSAT:
@@ -223,7 +223,7 @@ OXYSAT:
   units: percent
   valid_max: 150
   valid_min: 0
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/OXYSAT/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/OXYSAT/
 CHLA:
   long_name: chlorophyll
   observation_type: calculated
@@ -231,7 +231,7 @@ CHLA:
   units: mg m-3
   valid_max: 50
   valid_min: 0
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/CPWC/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/CPWC/
 CNDC:
   sensor: sensor_ctd
   long_name: Electrical conductivity of the water body by CTD
@@ -240,7 +240,7 @@ CNDC:
   units: mS cm-1
   valid_max: 85.0
   valid_min: 0.0
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/CNDC/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/CNDC/
 CNDC_RAW:
   sensor: sensor_ctd
   long_name: Electrical conductivity of the water body by CTD
@@ -249,7 +249,7 @@ CNDC_RAW:
   units: mS cm-1
   valid_max: 85.0
   valid_min: 0.0
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/CNDC/ 
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/CNDC/ 
 PRES:
   comment: ctd pressure sensor
   sensor: sensor_ctd
@@ -262,7 +262,7 @@ PRES:
   units: dbar
   valid_max: 2000
   valid_min: 0
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/PRES
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/PRES
 PSAL:
   long_name: water salinity
   standard_name: sea_water_practical_salinity
@@ -274,7 +274,7 @@ PSAL:
   sensor: sensor_ctd
   valid_max: 40
   valid_min: 0
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/PSAL/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/PSAL/
 PSAL_RAW:
   long_name: water salinity
   standard_name: sea_water_practical_salinity
@@ -286,7 +286,7 @@ PSAL_RAW:
   sensor: sensor_ctd
   valid_max: 40
   valid_min: 0
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/PSAL/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/PSAL/
 TEMP:
   long_name: 'Temperature of the water body by CTD '
   observation_type: measured
@@ -294,7 +294,7 @@ TEMP:
   units: Celsius
   valid_max: 42
   valid_min: -5
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
 TEMP_RAW:
   long_name: 'Temperature of the water body by CTD '
   observation_type: measured
@@ -302,7 +302,7 @@ TEMP_RAW:
   units: Celsius
   valid_max: 42
   valid_min: -5
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
 THETA:
   long_name: Potential temperature of the water body by computation using UNESCO 1983
     algorithm.
@@ -312,7 +312,7 @@ THETA:
   units: Celsius
   valid_max: 42
   valid_min: -5
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/THETA/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/THETA/
 CT:
   long_name: Conservative temperature
 POTDENS0:
@@ -323,7 +323,7 @@ POTDENS0:
   sources: salinity temperature pressure
   valid_min: 1000
   valid_max: 1040
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/POTDENS0/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/POTDENS0/
 SIGTHETA:
   long_name: Sigma-theta
   standard_name: sea_water_sigma_theta
@@ -332,7 +332,7 @@ SIGTHETA:
   sources: salinity temperature pressure
   valid_min: 0
   valid_max: 50
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/SIGTHETA/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/SIGTHETA/
 SIGMA_T:
   long_name: Sigma-t
   standard_name: sea_water_sigma_t
@@ -341,7 +341,7 @@ SIGMA_T:
   sources: salinity temperature pressure
   valid_min: 0
   valid_max: 50
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/SIGMA_T/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/SIGMA_T/
 DENSITY:
   long_name: The mass of a unit volume of any body of fresh or salt water
   standard_name: sea_water_density
@@ -351,7 +351,7 @@ DENSITY:
   sources: salinity temperature pressure
   valid_min: 1000
   valid_max: 1040
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/DENSITY/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/DENSITY/
 PROFILE_NUMBER:
   long_name: profile index
   units: '1'
@@ -374,12 +374,12 @@ AD2CP_PRES:
   units: dbar
   valid_max: 2000
   valid_min: 0
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/PRES
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/PRES
 BBP700:
   long_name: Particle backscattering at 700 nanometers.
   observation_type: calculated
   units: m-1
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/BBP700/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/BBP700/
 #  processing: Particulate backscatter bbp calculated following methods in the Ocean
 #    Observatories Initiative document DATA PRODUCT SPECIFICATION FOR OPTICAL BACKSCATTER
 #    (RED WAVELENGTHS) Version 1-05 Document Control Number 1341-00540 2014-05-28.
@@ -388,7 +388,7 @@ BBP470:
   long_name: Particle backscattering at 470 nanometers.
   observation_type: calculated
   units: m-1
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/BBP470/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/BBP470/
 #  processing: Verify whether applied. Particulate backscatter bbp calculated following methods in #the Ocean
 #    (BLUE WAVELENGTHS) Version 1-05 Document Control Number 1341-00540 2014-05-28.
 ##    Observatories Initiative document DATA PRODUCT SPECIFICATION FOR OPTICAL BACKSCATTER
@@ -403,48 +403,48 @@ RBBP700:
   long_name: Raw signal from backscattering sensor.
   observation_type: observed
   units: '1'
-  URI: http://vocab.nerc.ac.uk/collection/OG1/current/RBBP700/
+  uri: http://vocab.nerc.ac.uk/collection/OG1/current/RBBP700/
 ED380:
   average_method: geometric mean
   long_name: The vertical component of light at 380nm wavelength travelling downwards
   observation_type: measured
   standard_name: 380nm_downwelling_irradiance
   units: W m-2 nm-1
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/ED380/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/ED380/
 ED490:
   average_method: geometric mean
   long_name: The vertical component of light at 490nm wavelength travelling downwards
   observation_type: measured
   standard_name: 490nm_downwelling_irradiance
   units: W m-2 nm-1
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/ED490/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/ED490/
 DPAR:
   long_name: Downwelling vector irradiance as energy of electromagnetic radiation
     (PAR wavelengths) in the water body by cosine-collector radiometer.
   observation_type: measured
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/DPAR/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/DPAR/
 PITCH:
   long_name: Orientation (pitch) of measurement platform by inclinometer
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/PITCH/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/PITCH/
 ROLL:
   long_name: Orientation (roll angle) of measurement platform by inclinometer
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/ROLL/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/ROLL/
 HEADING:
   long_name: Orientation (horizontal relative to magnetic north) of measurement platform
     {heading} by compass
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/HEADING/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/HEADING/
 AD2CP_PITCH:
   long_name: Orientation (pitch) of measurement platform by inclinometer
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/PITCH/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/PITCH/
   comment: measured by AD2CP
 AD2CP_ROLL:
   long_name: Orientation (roll angle) of measurement platform by inclinometer
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/ROLL/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/ROLL/
   comment: measured by AD2CP
 AD2CP_HEADING:
   long_name: Orientation (horizontal relative to magnetic north) of measurement platform
     {heading} by compass
-  URI: https://vocab.nerc.ac.uk/collection/P02/current/HEADING/
+  uri: https://vocab.nerc.ac.uk/collection/P02/current/HEADING/
   comment: measured by AD2CP
 TEMP_OXYGEN:
   long_name: 'Temperature of the water body by CTD '
@@ -454,36 +454,36 @@ TEMP_OXYGEN:
   units: Celsius
   valid_max: 42
   valid_min: -5
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
 FLUOCHLA:
   long_name: Raw signal (counts) of instrument output by in-situ chlorophyll fluorometer
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/FLUOCHLA/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/FLUOCHLA/
 TURB:
   long_name: Turbidity of water in the water body
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/TURB/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/TURB/
 TCPUCHLA:
   long_name: Turbidity of water in the water body
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/TCPUCHLA/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/TCPUCHLA/
 CDOM:
   long_name: Concentration of coloured dissolved organic matter in sea water
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/CDOM/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/CDOM/
 FLUOCDOM:
   long_name: Raw fluorescence from coloured dissolved organic matter sensor
-  URI: https://vocab.nerc.ac.uk/collection/OG1/current/FLUOCDOM/
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/FLUOCDOM/
 PHYC:
   long_name: Phycoerythrin concentration per unit volume of fresh or salt water.
-  URI: http://vocab.nerc.ac.uk/collection/OG1/current/PHYC/
+  uri: http://vocab.nerc.ac.uk/collection/OG1/current/PHYC/
 FLUOPHYC:
   long_name: Phycoerythrin signal from fluorescence sensor
-  URI: http://vocab.nerc.ac.uk/collection/OG1/current/FLUOPHYC/
+  uri: http://vocab.nerc.ac.uk/collection/OG1/current/FLUOPHYC/
 EPSIFY01:
   long_name: Log10 turbulent kinetic energy dissipation {epsilon} per unit volume
     of the water body by turbulence profiler shear sensor
-  URI: http://vocab.nerc.ac.uk/collection/P01/current/EPSIFY01/
+  uri: http://vocab.nerc.ac.uk/collection/P01/current/EPSIFY01/
 EPSIFY02:
   long_name: Log10 turbulent kinetic energy dissipation {epsilon} per unit volume
     of the water body by turbulence profiler shear sensor
-  URI: http://vocab.nerc.ac.uk/collection/P01/current/EPSIFY02/
+  uri: http://vocab.nerc.ac.uk/collection/P01/current/EPSIFY02/
 vertical_displacement:
   long_name: Vertical displacement of platform, from MOSE sensor
   sensor: sensor_wave
@@ -513,37 +513,37 @@ significant_wave_period:
     Ts} on the water body
   sensor: sensor_wave
   units: s
-  URI: http://vocab.nerc.ac.uk/collection/P01/current/GTZHZZ01/
+  uri: http://vocab.nerc.ac.uk/collection/P01/current/GTZHZZ01/
 significant_wave_height:
   long_name: Significant wave height of waves {Hs} on the water body
   sensor: sensor_wave
   units: m
-  URI: http://vocab.nerc.ac.uk/collection/P01/current/GTDHZZ01/
+  uri: http://vocab.nerc.ac.uk/collection/P01/current/GTDHZZ01/
 HUMIDITY:
   long_name: Relative humidity of the atmosphere
   units: percent
   sensor: sensor_meteorology
-  URI: http://vocab.nerc.ac.uk/collection/P01/current/CRELZZ01/
+  uri: http://vocab.nerc.ac.uk/collection/P01/current/CRELZZ01/
 PRESSURE_AIR:
   long_name: Pressure (spatial coordinate) exerted by the atmosphere
   units: dbar
   sensor: sensor_meteorology
-  URI: http://vocab.nerc.ac.uk/collection/P01/current/CAPBZZ01/
+  uri: http://vocab.nerc.ac.uk/collection/P01/current/CAPBZZ01/
 TEMP_AIR:
   long_name: Temperature of the atmosphere by dry bulb thermometer
   units: Celsius
   sensor: sensor_meteorology
-  URI: http://vocab.nerc.ac.uk/collection/P01/current/CDTASS01/
+  uri: http://vocab.nerc.ac.uk/collection/P01/current/CDTASS01/
 WIND_SPEED:
   long_name: Speed of wind {wind speed} in the atmosphere by in-situ anemometer
   units: m s-1
   sensor: sensor_meteorology
-  URI: http://vocab.nerc.ac.uk/collection/P01/current/EWSBSS01/
+  uri: http://vocab.nerc.ac.uk/collection/P01/current/EWSBSS01/
 WIND_DIRECTION:
   long_name: Direction (from) of wind relative to True North {wind direction} in the
     atmosphere by in-situ anemometer
   sensor: sensor_meteorology
-  URI: http://vocab.nerc.ac.uk/collection/P01/current/EWDASS01/
+  uri: http://vocab.nerc.ac.uk/collection/P01/current/EWDASS01/
 PITCH_CTL:
   long_name: Pitch control of the glider
   units: counts

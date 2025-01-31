@@ -57,6 +57,31 @@ def convert_to_OG1(datasets, contrib_to_append=None):
     concatenated_ds['PLATFORM_SERIAL_NUMBER'] = PLATFORM_SERIAL_NUMBER
     concatenated_ds['PLATFORM_SERIAL_NUMBER'].attrs['long_name'] = "glider serial number"
 
+    # ---- Added some more mandatory variables from OG1 ----
+    # Construct the platform model
+    PLATFORM_MODEL = "University of Washington Seaglider M1 glider"
+    concatenated_ds['PLATFORM_MODEL'] = PLATFORM_MODEL
+    concatenated_ds['PLATFORM_MODEL'].attrs['long_name'] = "model of the glider"
+    concatenated_ds['PLATFORM_MODEL'].attrs['platform_model_vocabulary'] = "https://vocab.nerc.ac.uk/collection/B76/current/B7600024/"
+
+    # WMO identifier
+    if 'wmo_identifier' in ds.attrs:
+        wmo_id = ds.attrs['wmo_identifier']
+    else:
+        wmo_id = '0000000'
+    concatenated_ds['WMO_IDENTIFIER'] = wmo_id
+    concatenated_ds['WMO_IDENTIFIER'].attrs['long_name'] = "wmo id"
+
+    # Trajectory
+    concatenated_ds['TRAJECTORY'] = concatenated_ds['PLATFORM_SERIAL_NUMBER'] + '_' + concatenated_ds.attrs['start_date'] 
+    concatenated_ds['TRAJECTORY'].attrs['long_name'] = "trajectory name"
+    concatenated_ds['TRAJECTORY'].attrs['cf_role'] = "trajectory_id"
+
+    # Remove attributes from TIME_GPS
+    if 'TIME_GPS' in concatenated_ds.variables:
+        concatenated_ds['TIME_GPS'].attrs = {}
+    # ---- -------------------------------------------- ----
+
     # Update time_coverage attributes
     tstart_in_numpy_datetime64 = concatenated_ds.TIME[0].values
     tend_in_numpy_datetime64 = concatenated_ds.TIME[-1].values
@@ -208,6 +233,7 @@ def process_dataset(ds1, firstrun=False):
     ds_new = tools.add_sensor_to_dataset(ds_new, ds_sensor, sg_cal, firstrun)
 
     # Remove variables matching vocabularies.vars_to_remove and also 'TIME_GPS'
+    # TIME_GPS throws errors on saving as netCDF, possibly because of the format of the NaNs?
     vars_to_remove = vocabularies.vars_to_remove + ['TIME_GPS']
     ds_new = ds_new.drop_vars([var for var in vars_to_remove if var in ds_new.variables])
     attr_warnings = ''
@@ -245,7 +271,7 @@ def standardise_OG10(ds, firstrun=False, unit_format=vocabularies.unit_str_forma
                 if 'units' in vocabularies.vocab_attrs[OG1_name]:
                     new_unit = vocabularies.vocab_attrs[OG1_name].get('units')
                     if orig_unit != new_unit:
-                        var_values = tools.convert_units_var(var_values, orig_unit, new_unit, vocabularies.unit_conversion, firstrun)
+                        var_values, _ = tools.convert_units_var(var_values, orig_unit, new_unit, vocabularies.unit1_to_unit2, firstrun)
             dsa[OG1_name] = ([newdim], var_values, vocabularies.vocab_attrs[OG1_name])
             # Pass attributes that aren't in standard OG1 vocab_attrs
             for key, val in ds[orig_varname].attrs.items():

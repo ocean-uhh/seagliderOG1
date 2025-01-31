@@ -186,55 +186,6 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
     return dsa
 
 
-def add_sensors_old(ds, dsa):
-    attrs = ds.attrs
-    sensors = []
-    for key, var in attrs.items():
-        if not isinstance(var, str):
-            continue
-        if "{" not in var:
-            continue
-        if isinstance(eval(var), dict):
-            sensors.append(key)
-
-    sensor_name_type = {}
-    for instr in sensors:
-        if instr in ["altimeter"]:
-            continue
-        attr_dict = eval(attrs[instr])
-        if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
-            _log.error(f"sensor {attr_dict['make_model']} not found")
-            continue
-        var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
-        if "serial" in attr_dict.keys():
-            var_dict["serial_number"] = str(attr_dict["serial"])
-            var_dict["long_name"] += f":{str(attr_dict['serial'])}"
-        for var_name in ["calibration_date", "calibration_parameters"]:
-            if var_name in attr_dict.keys():
-                var_dict[var_name] = str(attr_dict[var_name])
-        da = xr.DataArray(attrs=var_dict)
-        sensor_var_name = f"sensor_{var_dict['sensor_type']}_{var_dict['serial_number']}".upper().replace(
-            " ",
-            "_",
-        )
-        dsa[sensor_var_name] = da
-        sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
-
-    for key, var in attrs.copy().items():
-        if not isinstance(var, str):
-            continue
-        if "{" not in var:
-            continue
-        if isinstance(eval(var), dict):
-            attrs.pop(key)
-    ds.attrs = attrs
-
-    for key, sensor_type in variables_sensors.items():
-        if key in dsa.variables:
-            instr_key = sensor_name_type[sensor_type]
-            dsa[key].attrs["sensor"] = instr_key
-
-    return ds, dsa
 
 
 def assign_profile_number(ds, divenum_str = 'divenum'):
@@ -352,8 +303,8 @@ def calc_Z(ds):
     xarray.Dataset: The dataset with an additional 'DEPTH' variable.
     """
     # Ensure the required variables are present
-    if 'PRES' not in ds.variables or 'LATITUDE' not in ds.variables or 'LONGITUDE' not in ds.variables:
-        raise ValueError("Dataset must contain 'PRES', 'LATITUDE', and 'LONGITUDE' variables.")
+    if 'PRES' not in ds.variables or 'LATITUDE' not in ds.variables:
+        raise ValueError("Dataset must contain 'PRES' and 'LATITUDE' variables.")
 
     # Initialize the new variable with the same dimensions as dive_num
     ds['DEPTH_Z'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
@@ -425,18 +376,13 @@ def add_dive_number(ds, dive_number):
         dive_number = ds.attrs.get('dive_number', np.nan)
     return ds.assign(divenum=('N_MEASUREMENTS', [dive_number] * ds.dims['N_MEASUREMENTS']))
 
-def convert_units(ds, preferred_units=vocabularies.preferred_units, unit_conversion=vocabularies.unit_conversion):
+def convert_units(ds):
     """
     Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.
 
     Parameters
     ----------
     ds (xarray.Dataset): The dataset containing variables to convert.
-    preferred_units (list): A list of strings representing the preferred units.
-    unit_conversion (dict): A dictionary mapping current units to conversion information.
-    Each key is a unit string, and each value is a dictionary with:
-        - 'factor': The factor to multiply the variable by to convert it.
-        - 'units_name': The new unit name after conversion.
 
     Returns
     -------
@@ -445,11 +391,11 @@ def convert_units(ds, preferred_units=vocabularies.preferred_units, unit_convers
 
     for var in ds.variables:
         var_values = ds[var].values
-        current_unit = ds[var].attrs.get('units')
+        orig_unit = ds[var].attrs.get('units')
         if 'units' in vocabularies.vocab_attrs[OG1_name]:
             new_unit = vocabularies.vocab_attrs[OG1_name].get('units')
             if orig_unit != new_unit:
-                var_values = tools.convert_units_var(var_values, orig_unit, new_unit)
+                var_values, new_unit = tools.convert_units_var(var_values, orig_unit, new_unit)
                 ds[var].values = var_values
                 ds[var].attrs['units'] = new_unit
 
@@ -475,7 +421,14 @@ def reformat_units_var(ds, var_name, unit_format=vocabularies.unit_str_format):
         new_unit = old_unit
     return new_unit
 
-def convert_units_var(var_values, current_unit, new_unit, unit_conversion=vocabularies.unit_conversion, firstrun=False):
+def reformat_units_str(old_unit, unit_format=vocabularies.unit_str_format):
+    if old_unit in unit_format:
+        new_unit = unit_format[old_unit]
+    else:
+        new_unit = old_unit
+    return new_unit
+
+def convert_units_var(var_values, current_unit, new_unit, unit1_to_unit2=vocabularies.unit1_to_unit2, firstrun=False):
     """
     Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.
 
@@ -483,7 +436,7 @@ def convert_units_var(var_values, current_unit, new_unit, unit_conversion=vocabu
     ----------
     ds (xarray.Dataset): The dataset containing variables to convert.
     preferred_units (list): A list of strings representing the preferred units.
-    unit_conversion (dict): A dictionary mapping current units to conversion information.
+    unit1_to_unit2 (dict): A dictionary mapping current units to conversion information.
     Each key is a unit string, and each value is a dictionary with:
         - 'factor': The factor to multiply the variable by to convert it.
         - 'units_name': The new unit name after conversion.
@@ -492,15 +445,20 @@ def convert_units_var(var_values, current_unit, new_unit, unit_conversion=vocabu
     -------
     xarray.Dataset: The dataset with converted units.
     """
-    if current_unit in unit_conversion and new_unit in unit_conversion[current_unit]['units_name']:
-        conversion_factor = unit_conversion[current_unit]['factor']
+    current_unit = reformat_units_str(current_unit)
+    new_unit = reformat_units_str(new_unit)
+
+    u1_to_u2 = current_unit + '_to_' + new_unit
+    if u1_to_u2 in unit1_to_unit2.keys():
+        conversion_factor = unit1_to_unit2[u1_to_u2]['factor']
         new_values = var_values * conversion_factor
     else:
         new_values = var_values
+        new_unit = current_unit
         if firstrun:
             _log.warning(f"No conversion information found for {current_unit} to {new_unit}")
 #        raise ValueError(f"No conversion information found for {current_unit} to {new_unit}")
-    return new_values
+    return new_values, new_unit
 
 def convert_qc_flags(dsa, qc_name):
     # Must be called *after* var_name has OG1 long_name
@@ -703,6 +661,58 @@ def add_standard_global_attrs(ds):
             continue
         ds.attrs[key] = val
     return ds
+
+
+# Deprecated
+def add_sensors_old(ds, dsa):
+    attrs = ds.attrs
+    sensors = []
+    for key, var in attrs.items():
+        if not isinstance(var, str):
+            continue
+        if "{" not in var:
+            continue
+        if isinstance(eval(var), dict):
+            sensors.append(key)
+
+    sensor_name_type = {}
+    for instr in sensors:
+        if instr in ["altimeter"]:
+            continue
+        attr_dict = eval(attrs[instr])
+        if attr_dict["make_model"] not in vocabularies.sensor_vocabs.keys():
+            _log.error(f"sensor {attr_dict['make_model']} not found")
+            continue
+        var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
+        if "serial" in attr_dict.keys():
+            var_dict["serial_number"] = str(attr_dict["serial"])
+            var_dict["long_name"] += f":{str(attr_dict['serial'])}"
+        for var_name in ["calibration_date", "calibration_parameters"]:
+            if var_name in attr_dict.keys():
+                var_dict[var_name] = str(attr_dict[var_name])
+        da = xr.DataArray(attrs=var_dict)
+        sensor_var_name = f"sensor_{var_dict['sensor_type']}_{var_dict['serial_number']}".upper().replace(
+            " ",
+            "_",
+        )
+        dsa[sensor_var_name] = da
+        sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
+
+    for key, var in attrs.copy().items():
+        if not isinstance(var, str):
+            continue
+        if "{" not in var:
+            continue
+        if isinstance(eval(var), dict):
+            attrs.pop(key)
+    ds.attrs = attrs
+
+    for key, sensor_type in variables_sensors.items():
+        if key in dsa.variables:
+            instr_key = sensor_name_type[sensor_type]
+            dsa[key].attrs["sensor"] = instr_key
+
+    return ds, dsa
 
 # Deprecated - is Seaexplorer specific
 def sensor_sampling_period(glider, mission):
