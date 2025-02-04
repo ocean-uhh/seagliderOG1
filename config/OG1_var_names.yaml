@@ -29,6 +29,7 @@ salinity: PSAL
 #conservative_temperature: CT
 ctd_density: DENSITY
 profile_index: PROFILE_NUMBER
+divenum: DIVE_NUM
 platform: PLATFORM_MODEL
 source: PLATFORM_SERIAL_NUMBER
 vert_speed: GLIDER_VERT_VELO_MODEL
