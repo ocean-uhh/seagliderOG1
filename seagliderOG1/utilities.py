@@ -11,6 +11,30 @@ import xarray as xr
 _log = logging.getLogger(__name__)
 
 
+def _reorder_attributes(ds, ordered_list):
+    """
+    Reorders the attributes of the given xarray Dataset to the given order.
+    Parameters:
+    ds (xarray.Dataset): The dataset to reorder the attributes of.
+    ordered_list (list): The list of attribute names in the desired order.
+    Returns:
+    xarray.Dataset: The dataset with the attributes reordered.
+    Notes:
+    - The attributes not in the given ordered_list are appended at the end in the order they appear in the dataset.
+    """
+
+    new_attributes = ds.attrs
+    # Reorder attributes according to vocabularies.order_of_attr
+    ordered_attributes = {attr: new_attributes[attr] for attr in ordered_list if attr in new_attributes}
+
+    # Add any remaining attributes that were not in the order_of_attr list
+    for attr in new_attributes:
+        if attr not in ordered_attributes:
+            ordered_attributes[attr] = new_attributes[attr]
+    ds.attrs = ordered_attributes
+
+    return ds
+
 def _validate_coords(ds1):
     """
     Validates and assigns coordinates to the given xarray Dataset.

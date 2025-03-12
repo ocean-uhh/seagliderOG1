@@ -1,0 +1,214 @@
+basestn_attr:
+  basestn_project:
+    instrument: 'magnetometer sbe41 aa4330 wlbbfl2 '
+    project: DY152
+    summary: SG042 DY152
+    title: Physical, chemical, and biological data collected from Seaglider SG042
+      during DY152 deployed on 2022-07-18
+  basestn_software:
+    Conventions: CF-1.6
+    Metadata_Conventions: Unidata Dataset Discovery v1.0
+    base_station_micro_version: '5017'
+    base_station_version: '2.10'
+    cdm_data_type: Trajectory
+    featureType: trajectory
+    file_version: '2.71'
+    nodc_template_version: NODC_NetCDF_Trajectory_Template_v0.9
+    processing_level: '1.12'
+    quality_control_version: '1.12'
+    seaglider_software_version: '66.14'
+    standard_name_vocabulary: CF-1.6
+  basestn_timing:
+    date_created: '2022-07-18T10:07:47Z'
+    date_modified: '2022-07-18T10:07:47Z'
+    start_time: '1658140335.0'
+    time_coverage_start: '2022-07-18T10:07:28Z'
+    uuid: 9950c5b4-0688-11ed-88f1-005056a20480
+  basestn_vehicle:
+    glider: '42'
+    id: p0420001_20220718
+    mission: '6'
+    platform: glider
+    platform_id: SG042
+    source: Deepglider SG042
+  creator:
+    institution: 'Applied Physics Lab
+
+      University of Washington
+
+      Seattle, WA'
+    naming_authority: edu.washington.apl
+basestn_sensors:
+  ALTIMETER:
+    sensor_attributes: {}
+    sensor_calcomm: Unknown
+    sensor_name: ALTIMETER
+    sensor_presence: true
+    sensor_singletons:
+      log_ALTIM_BOTTOM_PING_RANGE: 0.0
+      log_ALTIM_BOTTOM_TURN_MARGIN: 50.0
+      log_ALTIM_FREQUENCY: 13.0
+      log_ALTIM_PING_DELTA: 5.0
+      log_ALTIM_PING_DEPTH: 1500.0
+      log_ALTIM_PULSE: 2.0
+      log_ALTIM_SENSITIVITY: 2.0
+      log_ALTIM_TOP_MIN_OBSTACLE: 1.0
+      log_ALTIM_TOP_PING_RANGE: 0.0
+      log_ALTIM_TOP_TURN_MARGIN: 0.0
+    sensor_variables: {}
+  CTD:
+    sensor_attributes:
+      sbe41: '{''long_name'': ''underway thermosalinograph'', ''ancillary_variables'':
+        '' sg_cal_t_g sg_cal_t_h sg_cal_t_i sg_cal_t_jsg_cal_c_g sg_cal_c_h sg_cal_c_i
+        sg_cal_c_j sg_cal_cpcor sg_cal_ctcor'', ''make_model'': ''unpumped Seabird
+        SBE41'', ''nodc_name'': ''thermosalinograph''}'
+    sensor_calcomm: SBE s/n 0292, calibration 17-Mar-17
+    sensor_name: CTD
+    sensor_presence: true
+    sensor_singletons:
+      log_SEABIRD_C_G: -9.7694378
+      log_SEABIRD_C_H: 1.1168441
+      log_SEABIRD_C_I: -0.001969754
+      log_SEABIRD_C_J: 0.000217425
+      log_SEABIRD_T_G: 0.0042671701
+      log_SEABIRD_T_H: 0.00061518798
+      log_SEABIRD_T_I: 2.0015999e-05
+      log_SEABIRD_T_J: 1.84804e-06
+      sg_cal_c_g: -9.76943742
+      sg_cal_c_h: 1.11684406
+      sg_cal_c_i: -0.0019697539
+      sg_cal_c_j: 0.000217425365
+      sg_cal_t_g: 0.0042671697
+      sg_cal_t_h: 0.000615188355
+      sg_cal_t_i: 2.00160377e-05
+      sg_cal_t_j: 1.84803735e-06
+    sensor_variables:
+      eng_sbect_condFreq: DataArray(sg_data_point)
+      eng_sbect_tempFreq: DataArray(sg_data_point)
+  DISSOLVED_GAS:
+    sensor_attributes:
+      aa4330: '{''long_name'': ''underway optode'', ''ancillary_variables'': ''temperature
+        salinity ctd_pressure density eng_aa4330_TCPhase aa4330_tcphase sg_cal_optode_ConcCoef0
+        sg_cal_optode_ConcCoef1 sg_cal_optode_SVUCoef*'', ''make_model'': ''Aanderaa
+        4330'', ''nodc_name'': ''optode''}'
+      aanderaa4330_qc: '{''flag_meanings'': ''QC_NO_CHANGE QC_GOOD QC_PROBABLY_GOOD
+        QC_PROBABLY_BAD QC_BAD QC_CHANGED QC_UNSAMPLED QC_INTERPOLATED QC_MISSING'',
+        ''comment'': ''Whether to trust the Aanderaa 3880 results'', ''flag_values'':
+        ''0 1 2 3 4 5 6 8 9''}'
+      sg_cal_calibcomm_optode: '{}'
+    sensor_calcomm: 'Optode 4831F SN: 453 Foil ID: 1207FM calibrated 31-May-2017'
+    sensor_name: DISSOLVED_GAS
+    sensor_presence: true
+    sensor_singletons:
+      sg_cal_optode_ConcCoef0: 0.0
+      sg_cal_optode_ConcCoef1: 1.0
+      sg_cal_optode_FoilCoefA0: -3.17684e-06
+      sg_cal_optode_FoilCoefA1: -6.41387e-06
+      sg_cal_optode_FoilCoefA10: -304.218
+      sg_cal_optode_FoilCoefA11: 2.46967
+      sg_cal_optode_FoilCoefA12: -0.0070502
+      sg_cal_optode_FoilCoefA13: -2.61627e-05
+      sg_cal_optode_FoilCoefA2: 0.00174394
+      sg_cal_optode_FoilCoefA3: -0.190457
+      sg_cal_optode_FoilCoefA4: 0.000710692
+      sg_cal_optode_FoilCoefA5: -5.01092e-07
+      sg_cal_optode_FoilCoefA6: 10.5609
+      sg_cal_optode_FoilCoefA7: -0.0613539
+      sg_cal_optode_FoilCoefA8: 0.000116588
+      sg_cal_optode_FoilCoefA9: -3.87113e-07
+      sg_cal_optode_FoilCoefB0: 9.13156e-07
+      sg_cal_optode_FoilCoefB1: 3768.25
+      sg_cal_optode_FoilCoefB10: 0.0
+      sg_cal_optode_FoilCoefB11: 0.0
+      sg_cal_optode_FoilCoefB12: 0.0
+      sg_cal_optode_FoilCoefB13: 0.0
+      sg_cal_optode_FoilCoefB2: -40.249
+      sg_cal_optode_FoilCoefB3: 0.150605
+      sg_cal_optode_FoilCoefB4: 0.00109764
+      sg_cal_optode_FoilCoefB5: -1.38498e-05
+      sg_cal_optode_FoilCoefB6: -3.1849e-07
+      sg_cal_optode_FoilCoefB7: 0.0
+      sg_cal_optode_FoilCoefB8: 0.0
+      sg_cal_optode_FoilCoefB9: 0.0
+      sg_cal_optode_PhaseCoef0: 7.942
+      sg_cal_optode_PhaseCoef1: 1.0
+      sg_cal_optode_PhaseCoef2: 0.0
+      sg_cal_optode_PhaseCoef3: 0.0
+      sg_cal_optode_SVUCoef0: 0.00296048
+      sg_cal_optode_SVUCoef1: 0.000123782
+      sg_cal_optode_SVUCoef2: 2.41678e-06
+      sg_cal_optode_SVUCoef3: 220.875
+      sg_cal_optode_SVUCoef4: -0.3609
+      sg_cal_optode_SVUCoef5: -88.8057
+      sg_cal_optode_SVUCoef6: 4.32538
+      sg_cal_optode_SVU_enabled: 1.0
+      sg_cal_optode_st_calphase: 40.84
+      sg_cal_optode_st_slp: 1029.1
+      sg_cal_optode_st_temp: 7.672
+    sensor_variables:
+      aanderaa4330_dissolved_oxygen: DataArray(sg_data_point)
+      aanderaa4330_dissolved_oxygen_qc: DataArray(sg_data_point)
+      aanderaa4330_instrument_dissolved_oxygen: DataArray(sg_data_point)
+      aanderaa4330_results_time: DataArray(sg_data_point)
+      eng_aa4330_AirSat: DataArray(sg_data_point)
+      eng_aa4330_CalPhase: DataArray(sg_data_point)
+      eng_aa4330_O2: DataArray(sg_data_point)
+      eng_aa4330_TCPhase: DataArray(sg_data_point)
+      eng_aa4330_Temp: DataArray(sg_data_point)
+  FLUOROMETER:
+    sensor_attributes:
+      sg_cal_calibcomm_wetlabs: '{}'
+      wlbbfl2: '{''long_name'': ''underway backscatter fluorescence puck'', ''make_model'':
+        ''Wetlabs backscatter fluorescence puck''}'
+    sensor_calcomm: wlbbfl2 SN4746 cal 24-May-17
+    sensor_name: FLUOROMETER
+    sensor_presence: true
+    sensor_singletons:
+      sg_cal_wlbbfl2_sig460nm_dark_counts: 47.0
+      sg_cal_wlbbfl2_sig460nm_max_counts: 4130.0
+      sg_cal_wlbbfl2_sig460nm_resolution_counts: 1.0
+      sg_cal_wlbbfl2_sig460nm_scale_factor: 0.0905
+      sg_cal_wlbbfl2_sig695nm_dark_counts: 43.0
+      sg_cal_wlbbfl2_sig695nm_max_counts: 4130.0
+      sg_cal_wlbbfl2_sig695nm_resolution_counts: 1.0
+      sg_cal_wlbbfl2_sig695nm_scale_factor: 0.0072
+      sg_cal_wlbbfl2_sig700nm_dark_counts: 45.0
+      sg_cal_wlbbfl2_sig700nm_max_counts: 4130.0
+      sg_cal_wlbbfl2_sig700nm_resolution_counts: 1.0
+      sg_cal_wlbbfl2_sig700nm_scale_factor: 1.628e-06
+    sensor_variables:
+      eng_wlbbfl2_sig460nm: DataArray(sg_data_point)
+      eng_wlbbfl2_sig695nm: DataArray(sg_data_point)
+      eng_wlbbfl2_sig700nm: DataArray(sg_data_point)
+      eng_wlbbfl2_temp: DataArray(sg_data_point)
+      wlbbfl2_results_time: DataArray(sg_data_point)
+      wlbbfl2_sig460nm_adjusted: DataArray(sg_data_point)
+      wlbbfl2_sig695nm_adjusted: DataArray(sg_data_point)
+      wlbbfl2_sig700nm_adjusted: DataArray(sg_data_point)
+  MAGNETOMETER:
+    sensor_attributes:
+      magnetometer: '{''long_name'': ''magnetometer'', ''make_model'': ''magnetometer''}'
+    sensor_calcomm: Unknown
+    sensor_name: MAGNETOMETER
+    sensor_presence: true
+    sensor_singletons:
+      log_COMPASS2_DEVICE: -1.0
+      log_COMPASS_DEVICE: 33.0
+      log_COMPASS_USE: 4
+      magnetic_variation: -4.3
+    sensor_variables:
+      eng_mag_x: DataArray(magnetometer_data_point)
+      eng_mag_y: DataArray(magnetometer_data_point)
+      eng_mag_z: DataArray(magnetometer_data_point)
+  RAFOS:
+    sensor_attributes: {}
+    sensor_calcomm: Unknown
+    sensor_name: RAFOS
+    sensor_presence: false
+    sensor_singletons:
+      log_RAFOS_CORR_THRESH: 60.0
+      log_RAFOS_DEVICE: -1.0
+      log_RAFOS_HIT_WINDOW: 3600.0
+      log_RAFOS_MMODEM: 0.0
+      log_RAFOS_PEAK_OFFSET: 1.5
+    sensor_variables: {}
