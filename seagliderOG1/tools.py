@@ -32,7 +32,7 @@ variables_sensors = {
 # in the sg_cal strings, e.g. calibcomm_oxygen or calibcomm_optode contains 'SBE 43F' or 'Optode 4330F'
 # Using this, and the presense of calibration coefficients (e.g., optode_FoilCoefA1), we can make
 # a guess as to the sensor type
-def gather_sensor_info(ds_other, ds_sgcal, firstrun=False):
+def gather_sensor_info(ds_new, ds_other, ds_sgcal, firstrun=False):
     """
     Gathers sensor information from the provided datasets and organizes it into a new dataset.
     Parameters:
@@ -50,7 +50,12 @@ def gather_sensor_info(ds_other, ds_sgcal, firstrun=False):
     """
 
     # Gather sensors
-    sensor_names = ['wlbb2f', 'sbe41', 'aa4330', 'aa4381', 'aa4330f', 'aa4381f']
+    sensor_names = ['wlbb2f', 'wlbbfl2', 'sbe41', 'sbect', 'aa4330', 'aa4381', 'aa4330f', 'aa4381f']
+
+    # Check if sensor names exist in any of the variable names in ds_new
+    for sensor in sensor_names:
+        if any(sensor in var_name for var_name in ds_new.variables):
+            print(sensor)
 
     ds_sensor = xr.Dataset()
     if 'aanderaa4330_instrument_dissolved_oxygen' in ds_other.variables:
@@ -65,15 +70,16 @@ def gather_sensor_info(ds_other, ds_sgcal, firstrun=False):
         ds_sensor['sbe43'].attrs['ancillary_variables'] = 'sg_cal_Pcor sg_cal_Foffset sg_cal_A sg_cal_B sg_cal_C sg_cal_E sg_cal_Soc'
 
     aanderaa_ancillary = 'optode_FoilCoefA1 optode_FoilCoefA2	optode_FoilCoefA3 optode_FoilCoefA4	optode_FoilCoefA5 optode_FoilCoefA6 optode_FoilCoefA7 optode_FoilCoefA8 optode_FoilCoefA9 optode_FoilCoefA10 optode_FoilCoefA11	optode_FoilCoefA12 optode_FoilCoefA13 optode_FoilCoefB1	optode_FoilCoefB2 optode_FoilCoefB3	optode_FoilCoefB4 optode_FoilCoefB5	 optode_FoilCoefB6 optode_PhaseCoef0 optode_PhaseCoef1 optode_PhaseCoef2 optode_PhaseCoef3 optode_ConcCoef0 optode_ConcCoef1 optode_SVU_enabled optode_TempCoef0 optode_TempCoef1 optode_TempCoef2 optode_TempCoef3 optode_TempCoef4 optode_TempCoef5'
-    if 'optode_FoilCoefA1' in sg_cal:
-        ds_sensor['aa4831'] = ds_sensor['sbe41']
-        ds_sensor['aa4831'].attrs['long_name'] = 'Aanderaa 4831F Oxygen Sensor'
-        ds_sensor['aa4831'].attrs['ancillary_variables'] = aanderaa_ancillary
+#    if 'optode_FoilCoefA1' in ds_sgcal:
+#        ds_sensor['aa4831'] = ds_sensor['sbe41']
+#        ds_sensor['aa4831'].attrs['long_name'] = 'Aanderaa 4831F Oxygen Sensor'
+#        ds_sensor['aa4831'].attrs['ancillary_variables'] = aanderaa_ancillary
     if 'aa4330' in ds_sensor.variables:
         ds_sensor['aa4330'].attrs['long_name'] = 'Aanderaa 4330 Oxygen Sensor'
         ds_sensor['aa4330'].attrs['ancillary_variables'] = aanderaa_ancillary
+    return ds_sensor
 
-def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
+def add_sensor_to_dataset(dsa, ds, ds_sgcal, firstrun=False):
     sensors = list(ds)
     sensor_name_type = {}
     for instr in sensors:
@@ -82,7 +88,9 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
         if instr in ["altimeter"]:
             continue
         attr_dict = ds[instr].attrs
-        # Code to parse details from sg_cal and calibcomm into the attributes for CTD
+        # ----------------------------------------------------------------------
+        # Code to parse details from ds_sgcal and calibcomm into the attributes for CTD
+        # CTD for seaglider, usually unpumped SBE
         if instr == 'sbe41':
             if attr_dict["make_model"]=="unpumped Seabird SBE41":
                 attr_dict["make_model"] = "Seabird unpumped CTD"
@@ -90,7 +98,7 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
                 _log.error(f"sensor {attr_dict['make_model']} not found")
             var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
 
-            calstr = sg_cal['calibcomm'].values.item().decode('utf-8')
+            calstr = ds_sgcal['calibcomm'].values.item().decode('utf-8')
             if firstrun:
                 _log.info(f"sg_cal_calibcomm: {calstr}")
                 print(f"sg_cal_calibcomm: {calstr}")
@@ -99,11 +107,12 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
             var_dict["serial_number"] = serial_number
             var_dict["long_name"] += f":{serial_number}"
             var_dict["calibration_date"] = cal_date
+            var_dict["comment"] = calstr
 
             if "ancillary_variables" in attr_dict.keys():    
                 ancilliary_vars = attr_dict["ancillary_variables"]
                 anc_var_list = utilities._clean_anc_vars_list(attr_dict["ancillary_variables"])
-                calvals = utilities._assign_calval(sg_cal, anc_var_list)
+                calvals = utilities._assign_calval(ds_sgcal, anc_var_list)
                 var_dict["calibration_parameters"] = calvals
             da = xr.DataArray(attrs=var_dict)
             if serial_number is not None:
@@ -119,6 +128,7 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
             dsa[sensor_var_name] = da
             sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
 
+        # ----------------------------------------------------------------------
         # Handle oxygen sensor
         optode_flag = False
         if instr == 'sbe43':
@@ -141,15 +151,15 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
             optode_flag = True
 
         if optode_flag:
-            if 'calibcomm_oxygen' in sg_cal:
-                calstr = sg_cal['calibcomm_oxygen'].values.item().decode('utf-8')
+            if 'calibcomm_oxygen' in ds_sgcal:
+                calstr = ds_sgcal['calibcomm_oxygen'].values.item().decode('utf-8')
                 if firstrun:
                     _log.info(f"sg_cal_calibcomm_oxygen: {calstr}")
                     print(f"sg_cal_calibcomm_oxygen: {calstr}")
 
                 cal_date, serial_number = utilities._parse_calibcomm(calstr, firstrun)
-            elif 'calibcomm_optode' in sg_cal:
-                calstr = sg_cal['calibcomm_optode'].values.item().decode('utf-8')                
+            elif 'calibcomm_optode' in ds_sgcal:
+                calstr = ds_sgcal['calibcomm_optode'].values.item().decode('utf-8')                
                 if firstrun:
                     _log.info(f"sg_cal_calibcomm_optode: {calstr}")
                     print(f"sg_cal_calibcomm_optode: {calstr}")
@@ -158,12 +168,13 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
             var_dict["serial_number"] = serial_number
             var_dict["long_name"] += f":{serial_number}"
             var_dict["calibration_date"] = cal_date
+            var_dict["comment"] = calstr
 
             # All the sg_cal_optode_*
             if "ancillary_variables" in attr_dict.keys():    
                 ancilliary_vars = attr_dict["ancillary_variables"]
                 anc_var_list = utilities._clean_anc_vars_list(attr_dict["ancillary_variables"])
-                calvals = utilities._assign_calval(sg_cal, anc_var_list)
+                calvals = utilities._assign_calval(ds_sgcal, anc_var_list)
                 var_dict["calibration_parameters"] = calvals
 
             da = xr.DataArray(attrs=var_dict)
@@ -180,6 +191,7 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
             dsa[sensor_var_name] = da
             sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
 
+        # ----------------------------------------------------------------------
         if instr == 'wlbb2f':
             if attr_dict["make_model"]=="Wetlabs backscatter fluorescence puck":
                 attr_dict["make_model"] = "Wetlabs BB2FL-VMT"
@@ -188,7 +200,7 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
             var_dict = vocabularies.sensor_vocabs[attr_dict["make_model"]]
 
             #   Not in sample dataset - see whether more recent files have calibration information
-            #        cal_date, serial_number = utilities._parse_calibcomm(sg_cal['calibcomm'])
+            #        cal_date, serial_number = utilities._parse_calibcomm(ds_sgcal['calibcomm'])
             #        if serial_number is not None:
             #            var_dict["serial_number"] = serial_number
             #            var_dict["long_name"] += f":{serial_number}"
@@ -213,7 +225,7 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
             if "ancillary_variables" in attr_dict.keys():    
                 ancilliary_vars = attr_dict["ancillary_variables"]
                 anc_var_list = utilities._clean_anc_vars_list(attr_dict["ancillary_variables"])
-                calvals = utilities._assign_calval(sg_cal, anc_var_list)
+                calvals = utilities._assign_calval(ds_sgcal, anc_var_list)
                 var_dict["calibration_parameters"] = calvals
             da = xr.DataArray(attrs=var_dict)
             if serial_number is not None:
@@ -230,6 +242,8 @@ def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
                 _log.info('Adding sensor:', sensor_var_name)
             dsa[sensor_var_name] = da
             sensor_name_type[var_dict["sensor_type"]] = sensor_var_name
+            _log.info('Added sensor:', sensor_var_name)
+            print('FLUORMETER')
     return dsa
 
 

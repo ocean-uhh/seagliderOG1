@@ -45,7 +45,7 @@ def convert_to_OG1(list_of_datasets, contrib_to_append=None):
     ds_og1 = ds_og1.sortby('TIME')
 
     # Apply attributes
-    ordered_attributes = update_dataset_attributes(datasets[0], contrib_to_append)
+    ordered_attributes = update_dataset_attributes(list_of_datasets[0], contrib_to_append)
     for key, value in ordered_attributes.items():
         ds_og1.attrs[key] = value
 
@@ -132,9 +132,9 @@ def process_dataset(ds1_base, firstrun=False):
         - ds_new (xarray.Dataset): The processed dataset with renamed variables, assigned attributes, 
             converted units, and additional information such as GPS info and dive number.
         - attr_warnings (list): A list of warnings related to attribute assignments.
-        - sg_cal (xarray.Dataset): A dataset containing variables starting with 'sg_cal'.
-        - dc_other (xarray.Dataset): A dataset containing other variables not categorized under 'sg_cal' or 'dc_log'.
-        - dc_log (xarray.Dataset): A dataset containing variables starting with 'log_'.
+        - ds_sgcal (xarray.Dataset): A dataset containing variables starting with 'sg_cal'.
+        - ds_log (xarray.Dataset): A dataset containing variables starting with 'log_'.
+        - ds_other (xarray.Dataset): A dataset containing other variables not categorized under 'ds_sgcal' or 'ds_log'.
     Steps:
         1. Handle and split the inputs
             - Extract the dive number from the attributes   
@@ -153,7 +153,7 @@ def process_dataset(ds1_base, firstrun=False):
             - Add the PROFILE_NUMBER (odd for dives, even for ascents)
             - Add the PHASE of the dive (1 for ascent, 2 for descent, 3 for between the first two surface points)
             - Add the DEPTH_Z with positive up
-        4. Return the new dataset, the attribute warnings, the sg_cal dataset, and the dc_other dataset.
+        4. Return the new dataset, the attribute warnings, the ds_sgcal dataset, and the ds_other dataset.
     Note
     ----
     Possibility of undesired behaviour:
@@ -171,8 +171,8 @@ def process_dataset(ds1_base, firstrun=False):
     # Extract the dive number from the attributes
     divenum = ds1_base.attrs['dive_number']
     # Split the dataset by unique dimensions
-    split_ds = tools.split_by_unique_dims(ds1)
-    ds_sgdatapoint = split_ds[('sg_data_point',)]
+    split_ds = tools.split_by_unique_dims(ds1_base)
+    ds_sgdata = split_ds[('sg_data_point',)]
     # Extract the gps_info from the split dataset
     ds_gps = split_ds[('gps_info',)]
     # Extract variables starting with 'sg_cal'
@@ -184,14 +184,14 @@ def process_dataset(ds1_base, firstrun=False):
     for var in var_keep:
         if var in ds_other:
             v1 = ds_other[var].values
-            vector_v = np.full(len(ds['longitude']), v1)
-            ds_sgdatapoint[var] = (['sg_data_point'], vector_v, ds_other[var].attrs)
+            vector_v = np.full(len(ds1_base['longitude']), v1)
+            ds_sgdata[var] = (['sg_data_point'], vector_v, ds_other[var].attrs)
 
     # Rename variables and attributes to OG1 vocabulary
     #-------------------------------------------------------------------
     # Use variables with dimension 'sg_data_point'
     # Must be after split_ds
-    ds_new = standardise_OG10(ds_sgdatapoint, firstrun)
+    ds_new = standardise_OG10(ds_sgdata, firstrun)
 
     # Add new variables to the dataset (GPS, divenum, PROFILE_NUMBER, PHASE)
     #-----------------------------------------------------------------------
@@ -199,7 +199,7 @@ def process_dataset(ds1_base, firstrun=False):
     # Must be after split_by_unique_dims and after rename_dimensions
     ds_new = add_gps_info_to_dataset(ds_new, ds_gps)
     # Add the profile number (odd for dives, even for ascents)
-    ds_new = tools.assign_profile_number(ds_new, ds1)
+    ds_new = tools.assign_profile_number(ds_new, ds1_base)
     # Assign the phase of the dive (must be after adding divenum)
     ds_new = tools.assign_phase(ds_new)
     # Assign DEPTH_Z to the dataset where positive is up.
@@ -207,7 +207,7 @@ def process_dataset(ds1_base, firstrun=False):
 
     # Add sensor information to the dataset - can be done on the concatenated data
     #-----------------------------------------------------------------------------
-    ds_sensor = tools.gather_sensor_info(ds_other, ds_sgcal, firstrun)
+    ds_sensor = tools.gather_sensor_info(ds_new, ds_other, ds_sgcal, firstrun)
     ds_new = tools.add_sensor_to_dataset(ds_new, ds_sensor, ds_sgcal, firstrun)
 
     # Remove variables matching vocabularies.vars_to_remove and also 'TIME_GPS'

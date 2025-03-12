@@ -188,7 +188,7 @@ def load_basestation_files(source, start_profile=None, end_profile=None):
 
     return datasets
 
-def list_files(source, registry_loc="seagliderOG1", registry_name="seaglider_registry.txt"):
+def list_files(source):
     """
     List files from a given source, which can be either a URL or a directory path. For an online source,
     uses BeautifulSoup and requests.

@@ -1,0 +1,136 @@
+selected_attr:
+  basestn_project:
+    instrument: 'wlbb2f sbe41 sbe43 '
+    project: 'Iceland Scotland Ridge June 2008 '
+    summary: Multiple transects of Faroe-Iceland Ridge upper-ocean structure
+    title: Physical data collected from Seaglider SG005 during Iceland Scotland Ridge
+      June 2008  in the North Atlantic Ocean deployed on 2008-06-06
+  basestn_software:
+    Conventions: CF-1.6
+    Metadata_Conventions: Unidata Dataset Discovery v1.0
+    base_station_micro_version: '3897'
+    base_station_version: '2.8'
+    cdm_data_type: Trajectory
+    featureType: trajectory
+    file_version: '2.71'
+    nodc_template_version: NODC_NetCDF_Trajectory_Template_v0.9
+    processing_level: '1.100000'
+    quality_control_version: '1.1'
+    seaglider_software_version: '66.03'
+    standard_name_vocabulary: CF-1.6
+  basestn_timing:
+    date_created: '2014-03-11T20:03:32Z'
+    date_issued: '2014-03-11T20:03:32Z'
+    date_modified: '2014-03-11T20:03:32Z'
+    start_time: '1212775658.0'
+    time_coverage_start: '2008-06-06T18:06:18Z'
+    uuid: 9e33a22e-a959-11e3-b35f-0026bb609360
+  basestn_vehicle:
+    glider: '5'
+    id: p0050001_20080606
+    mission: '1'
+    platform: glider
+    platform_id: SG005
+    source: Seaglider SG005
+  creator:
+    contributor_name: Peter Rhines
+    contributor_role: Principal investigator
+    creator_email: eriksen@uw.edu
+    creator_name: Charlie Eriksen
+    creator_url: http://iop.apl.washington.edu/seaglider/index.php?glider=*&base=*&status=*&mission=Faroes&logic=and
+    institution: 'School of Oceanography
+
+      University of Washington
+
+      Seattle, WA 98195-5351'
+    naming_authority: edu.washington.apl
+sens_presence:
+  ALTIMETER: true
+  CTD: true
+  DISSOLVED_GAS: true
+  FLUOROMETER: true
+sens_with_attrs:
+  ALTIMETER:
+    log_ALTIM_TOP_PING: '{}'
+  CTD:
+    sbe41: '{''long_name'': ''underway thermosalinograph'', ''ancillary_variables'':
+      '' sg_cal_t_g sg_cal_t_h sg_cal_t_i sg_cal_t_jsg_cal_c_g sg_cal_c_h sg_cal_c_i
+      sg_cal_c_j sg_cal_cpcor sg_cal_ctcor'', ''make_model'': ''unpumped Seabird SBE41'',
+      ''nodc_name'': ''thermosalinograph''}'
+  DISSOLVED_GAS:
+    SBE43_qc: '{''flag_meanings'': ''QC_NO_CHANGE QC_GOOD QC_PROBABLY_GOOD QC_PROBABLY_BAD
+      QC_BAD QC_CHANGED QC_UNSAMPLED QC_INTERPOLATED QC_MISSING'', ''comment'': ''Whether
+      to trust the SBE43 results'', ''flag_values'': ''0 1 2 3 4 5 6 8 9''}'
+    sbe43: '{''long_name'': ''underway oxygen sensor'', ''ancillary_variables'': ''temperature
+      ctd_press dissolved_oxygen_sat density sg_cal_Soc sg_cal_Foffset sg_cal_A sg_cal_B
+      sg_cal_C sg_cal_E'', ''make_model'': ''unpumped Seabird SBE43'', ''nodc_name'':
+      ''oxygen sensor''}'
+    sg_cal_calibcomm_oxygen: '{}'
+  FLUOROMETER:
+    wlbb2f: '{''long_name'': ''underway backscatter fluorescence puck'', ''make_model'':
+      ''Wetlabs backscatter fluorescence puck''}'
+sensor_calstrings:
+  ALTIMETER:
+    sg_cal_None: Unknown
+  CTD:
+    sg_cal_calibcomm: SBE 24520-1 calibration 04FEB08
+  DISSOLVED_GAS:
+    sg_cal_calibcomm_optode: SBE 43F s/n 005 calibration 09FEB08
+  FLUOROMETER:
+    sg_cal_calibcomm_wetlabs: Unknown
+sensor_singles:
+  ALTIMETER:
+    log_ALTIM_BOTTOM_PING_RANGE: 0.0
+    log_ALTIM_BOTTOM_TURN_MARGIN: 10.0
+    log_ALTIM_FREQUENCY: 13.0
+    log_ALTIM_PING_DELTA: 25.0
+    log_ALTIM_PING_DEPTH: 150.0
+    log_ALTIM_PULSE: 3.0
+    log_ALTIM_SENSITIVITY: 3.0
+    log_ALTIM_TOP_MIN_OBSTACLE: 1.0
+    log_ALTIM_TOP_PING: variable with attributes
+    log_ALTIM_TOP_PING_RANGE: 20.0
+    log_ALTIM_TOP_TURN_MARGIN: 0.0
+  CTD:
+    eng_condFreq: DataArray(sg_data_point)
+    eng_tempFreq: DataArray(sg_data_point)
+    log_SEABIRD_C_G: -10.354986
+    log_SEABIRD_C_H: 1.1996267
+    log_SEABIRD_C_I: -0.0023424325
+    log_SEABIRD_C_J: 0.0002635108
+    log_SEABIRD_T_G: 0.0043890956
+    log_SEABIRD_T_H: 0.00065287336
+    log_SEABIRD_T_I: 2.754709e-05
+    log_SEABIRD_T_J: 3.0424237e-06
+    sbe41: variable with attributes
+    sg_cal_c_g: -10.3549864
+    sg_cal_c_h: 1.19962672
+    sg_cal_c_i: -0.00234243256
+    sg_cal_c_j: 0.000263510809
+    sg_cal_t_g: 0.00438909553
+    sg_cal_t_h: 0.000652873359
+    sg_cal_t_i: 2.75470906e-05
+    sg_cal_t_j: 3.04242362e-06
+  DISSOLVED_GAS:
+    SBE43_qc: variable with attributes
+    eng_sbe43_O2Freq: DataArray(sg_data_point)
+    sbe43: variable with attributes
+    sbe43_dissolved_oxygen: DataArray(sg_data_point)
+    sbe43_dissolved_oxygen_qc: DataArray(sg_data_point)
+    sbe43_results_time: DataArray(sg_data_point)
+    sg_cal_A: -0.00066486
+    sg_cal_B: 5.6556e-05
+    sg_cal_C: -1.4701e-06
+    sg_cal_E: 0.036
+    sg_cal_Foffset: -828.0638
+    sg_cal_Pcor: 0.0
+    sg_cal_Soc: 0.00028374
+    sg_cal_calibcomm_oxygen: variable with attributes
+  FLUOROMETER:
+    eng_wlbb2f_VFtemp: DataArray(sg_data_point)
+    eng_wlbb2f_blueCount: DataArray(sg_data_point)
+    eng_wlbb2f_blueRef: DataArray(sg_data_point)
+    eng_wlbb2f_fluorCount: DataArray(sg_data_point)
+    eng_wlbb2f_redCount: DataArray(sg_data_point)
+    eng_wlbb2f_redRef: DataArray(sg_data_point)
+    wlbb2f: variable with attributes

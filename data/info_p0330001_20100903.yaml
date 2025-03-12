@@ -1,0 +1,182 @@
+basestn_attr:
+  basestn_project:
+    instrument: 'aa4330 sbe41 '
+    project: Rapid-Mocha San Juan 3 September 2010
+    summary: Test deployments of DeepGliders in the Puerto Rico trench
+    title: Physical data collected from Seaglider SG033 during Rapid-Mocha San Juan
+      3 September 2010 in the Caribbean Sea deployed on 2010-09-03
+  basestn_software:
+    Conventions: CF-1.6
+    Metadata_Conventions: Unidata Dataset Discovery v1.0
+    base_station_micro_version: '4935'
+    base_station_version: '2.10'
+    cdm_data_type: Trajectory
+    featureType: trajectory
+    file_version: '2.71'
+    nodc_template_version: NODC_NetCDF_Trajectory_Template_v0.9
+    processing_level: '1.12'
+    quality_control_version: '1.12'
+    seaglider_software_version: '66.07'
+    standard_name_vocabulary: CF-1.6
+  basestn_timing:
+    date_created: '2017-04-04T22:04:19Z'
+    date_modified: '2017-04-04T22:04:19Z'
+    start_time: '1283538256.0'
+    time_coverage_start: '2010-09-03T18:09:38Z'
+    uuid: 4e94f963-1985-11e7-bf57-0026bb609360
+  basestn_vehicle:
+    glider: '33'
+    id: p0330001_20100903
+    mission: '1'
+    platform: glider
+    platform_id: SG033
+    source: Deepglider SG033
+  creator:
+    creator_email: charlie@ocean.washington.edu
+    creator_name: Charlie Eriksen
+    creator_url: http://iop.apl.washington.edu/seaglider/index.php?glider=*&base=*&status=*&mission=RapidMocha&logic=and
+    institution: 'School of Oceanography
+
+      University of Washington
+
+      Seattle, WA 98195-5351'
+    naming_authority: edu.washington.apl
+    publisher_email: NODC.Services@noaa.gov
+    publisher_name: US National Oceanographic Data Center
+    publisher_url: www.nodc.noaa.gov
+basestn_sensors:
+  ALTIMETER:
+    sensor_attributes:
+      log_ALTIM_TOP_PING: '{}'
+    sensor_calcomm: Unknown
+    sensor_name: ALTIMETER
+    sensor_presence: true
+    sensor_singletons:
+      log_ALTIM_BOTTOM_PING_RANGE: 0.0
+      log_ALTIM_BOTTOM_TURN_MARGIN: 20.0
+      log_ALTIM_FREQUENCY: 13.0
+      log_ALTIM_PING_DELTA: 10.0
+      log_ALTIM_PING_DEPTH: 200.0
+      log_ALTIM_PULSE: 3.0
+      log_ALTIM_SENSITIVITY: 3.0
+      log_ALTIM_TOP_MIN_OBSTACLE: 1.0
+      log_ALTIM_TOP_PING_RANGE: 20.0
+      log_ALTIM_TOP_TURN_MARGIN: 0.0
+    sensor_variables: {}
+  CTD:
+    sensor_attributes:
+      sbe41: '{''long_name'': ''underway thermosalinograph'', ''ancillary_variables'':
+        '' sg_cal_t_g sg_cal_t_h sg_cal_t_i sg_cal_t_jsg_cal_c_g sg_cal_c_h sg_cal_c_i
+        sg_cal_c_j sg_cal_cpcor sg_cal_ctcor'', ''make_model'': ''unpumped Seabird
+        SBE41'', ''nodc_name'': ''thermosalinograph''}'
+    sensor_calcomm: SBE s/n 0112 calibration 20apr09
+    sensor_name: CTD
+    sensor_presence: true
+    sensor_singletons:
+      log_SEABIRD_C_G: -10.332057
+      log_SEABIRD_C_H: 1.2094743
+      log_SEABIRD_C_I: -0.0016192879
+      log_SEABIRD_C_J: 0.00021825745
+      log_SEABIRD_T_G: 0.0043575475
+      log_SEABIRD_T_H: 0.00062940316
+      log_SEABIRD_T_I: 2.4306677e-05
+      log_SEABIRD_T_J: 2.6223986e-06
+      sg_cal_c_g: -10.3320573
+      sg_cal_c_h: 1.20947434
+      sg_cal_c_i: -0.00161928789
+      sg_cal_c_j: 0.000218257457
+      sg_cal_t_g: 0.00435754738
+      sg_cal_t_h: 0.000629403181
+      sg_cal_t_i: 2.43066775e-05
+      sg_cal_t_j: 2.62239863e-06
+    sensor_variables:
+      eng_sbect_condFreq: DataArray(sg_data_point)
+      eng_sbect_tempFreq: DataArray(sg_data_point)
+  DISSOLVED_GAS:
+    sensor_attributes:
+      aa4330: '{''long_name'': ''underway optode'', ''ancillary_variables'': ''temperature
+        salinity ctd_pressure density eng_aa4330_TCPhase aa4330_tcphase sg_cal_optode_FoilCoef*'',
+        ''make_model'': ''Aanderaa 4330'', ''nodc_name'': ''optode''}'
+      aanderaa4330_qc: '{''flag_meanings'': ''QC_NO_CHANGE QC_GOOD QC_PROBABLY_GOOD
+        QC_PROBABLY_BAD QC_BAD QC_CHANGED QC_UNSAMPLED QC_INTERPOLATED QC_MISSING'',
+        ''comment'': ''Whether to trust the Aanderaa 3880 results'', ''flag_values'':
+        ''0 1 2 3 4 5 6 8 9''}'
+      sg_cal_calibcomm_optode: '{}'
+    sensor_calcomm: Optode 4330F S/N 182 foil batch 2808F calibrated 09may09
+    sensor_name: DISSOLVED_GAS
+    sensor_presence: true
+    sensor_singletons:
+      sg_cal_optode_FoilCoefA0: -3.738569e-06
+      sg_cal_optode_FoilCoefA1: -8.656474e-06
+      sg_cal_optode_FoilCoefA10: -324.9648
+      sg_cal_optode_FoilCoefA11: 2.497815
+      sg_cal_optode_FoilCoefA12: -0.007050041
+      sg_cal_optode_FoilCoefA13: -1.363821e-05
+      sg_cal_optode_FoilCoefA2: 0.002206881
+      sg_cal_optode_FoilCoefA3: -0.2269625
+      sg_cal_optode_FoilCoefA4: 0.0007958563
+      sg_cal_optode_FoilCoefA5: -6.780085e-07
+      sg_cal_optode_FoilCoefA6: 11.89709
+      sg_cal_optode_FoilCoefA7: -0.06533028
+      sg_cal_optode_FoilCoefA8: 0.0001284304
+      sg_cal_optode_FoilCoefA9: -2.894669e-07
+      sg_cal_optode_FoilCoefB0: 5.316652e-07
+      sg_cal_optode_FoilCoefB1: 3832.035
+      sg_cal_optode_FoilCoefB10: 0.0
+      sg_cal_optode_FoilCoefB11: 0.0
+      sg_cal_optode_FoilCoefB12: 0.0
+      sg_cal_optode_FoilCoefB13: 0.0
+      sg_cal_optode_FoilCoefB2: -38.71124
+      sg_cal_optode_FoilCoefB3: 0.1475505
+      sg_cal_optode_FoilCoefB4: -0.0003303319
+      sg_cal_optode_FoilCoefB5: 2.289283e-05
+      sg_cal_optode_FoilCoefB6: -5.008295e-07
+      sg_cal_optode_FoilCoefB7: 0.0
+      sg_cal_optode_FoilCoefB8: 0.0
+      sg_cal_optode_FoilCoefB9: 0.0
+      sg_cal_optode_PhaseCoef0: -1.71375
+      sg_cal_optode_PhaseCoef1: 1.01926
+      sg_cal_optode_PhaseCoef2: 0.0
+      sg_cal_optode_PhaseCoef3: 0.0
+      sg_cal_optode_SVU_enabled: 0.0
+      sg_cal_optode_TempCoef0: 27.4057
+      sg_cal_optode_TempCoef1: -0.0312835
+      sg_cal_optode_TempCoef2: 3.00922e-06
+      sg_cal_optode_TempCoef3: -4.4295e-09
+      sg_cal_optode_TempCoef4: 0.0
+      sg_cal_optode_TempCoef5: 0.0
+    sensor_variables:
+      aanderaa4330_dissolved_oxygen: DataArray(sg_data_point)
+      aanderaa4330_dissolved_oxygen_qc: DataArray(sg_data_point)
+      aanderaa4330_instrument_dissolved_oxygen: DataArray(sg_data_point)
+      aanderaa4330_results_time: DataArray(sg_data_point)
+      eng_aa4330_AirSat: DataArray(sg_data_point)
+      eng_aa4330_CalPhase: DataArray(sg_data_point)
+      eng_aa4330_O2: DataArray(sg_data_point)
+      eng_aa4330_TCPhase: DataArray(sg_data_point)
+      eng_aa4330_Temp: DataArray(sg_data_point)
+  FLUOROMETER:
+    sensor_name: FLUOROMETER
+    sensor_presence: false
+  MAGNETOMETER:
+    sensor_attributes: {}
+    sensor_calcomm: Unknown
+    sensor_name: MAGNETOMETER
+    sensor_presence: false
+    sensor_singletons:
+      log_COMPASS2_DEVICE: -1.0
+      log_COMPASS_DEVICE: 33.0
+      log_COMPASS_USE: 0
+      magnetic_variation: -12.7
+    sensor_variables: {}
+  RAFOS:
+    sensor_attributes: {}
+    sensor_calcomm: Unknown
+    sensor_name: RAFOS
+    sensor_presence: false
+    sensor_singletons:
+      log_RAFOS_CORR_THRESH: 60.0
+      log_RAFOS_DEVICE: -1.0
+      log_RAFOS_HIT_WINDOW: 3600.0
+      log_RAFOS_PEAK_OFFSET: 1.5
+    sensor_variables: {}

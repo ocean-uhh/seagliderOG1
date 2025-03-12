@@ -1,0 +1,112 @@
+basestn_attr:
+  basestn_project:
+    instrument: 'wlbb2f sbe41 '
+    project: Labrador Sea, April 2005
+    summary: Multiple transects of Labrador Sea upper-ocean structure from Davis Strait
+      to the WOCE AR7W repeat line.
+    title: Physical data collected from Seaglider SG016 during Labrador Sea, April
+      2005 in the Labrador Sea deployed on 2005-04-06
+  basestn_software:
+    Conventions: CF-1.6
+    Metadata_Conventions: Unidata Dataset Discovery v1.0
+    base_station_micro_version: '3705'
+    base_station_version: '2.8'
+    cdm_data_type: Trajectory
+    featureType: trajectory
+    file_version: '2.71'
+    nodc_template_version: NODC_NetCDF_Trajectory_Template_v0.9
+    processing_level: '1.100000'
+    quality_control_version: '1.1'
+    seaglider_software_version: '66.05'
+    standard_name_vocabulary: CF-1.6
+  basestn_timing:
+    date_created: '2013-08-01T03:08:27Z'
+    date_modified: '2013-08-01T03:08:27Z'
+    start_time: '1112766597.0'
+    time_coverage_start: '2005-04-06T05:04:16Z'
+    uuid: 5b6b524c-fa57-11e2-9809-0026bb609360
+  basestn_vehicle:
+    glider: '16'
+    id: p0160001_20050406
+    mission: '1'
+    platform: glider
+    platform_id: SG016
+    source: Seaglider SG016
+  creator:
+    contributor_name: Peter Rhines
+    contributor_role: Co-principal investigator
+    creator_email: charlie@ocean.washington.edu
+    creator_name: Charlie Eriksen
+    creator_url: http://iop.apl.washington.edu/seaglider/index.php?glider=*&base=*&status=*&mission=LabSea&logic=and
+    institution: 'School of Oceanography
+
+      University of Washington
+
+      Seattle, WA 98195-5351'
+    naming_authority: edu.washington.apl
+basestn_sensors:
+  ALTIMETER:
+    sensor_name: ALTIMETER
+    sensor_presence: false
+  CTD:
+    sensor_attributes:
+      sbe41: '{''long_name'': ''underway thermosalinograph'', ''ancillary_variables'':
+        '' sg_cal_t_g sg_cal_t_h sg_cal_t_i sg_cal_t_jsg_cal_c_g sg_cal_c_h sg_cal_c_i
+        sg_cal_c_j sg_cal_cpcor sg_cal_ctcor'', ''make_model'': ''unpumped Seabird
+        SBE41'', ''nodc_name'': ''thermosalinograph''}'
+    sensor_calcomm: SBE t15/c15 calibration 18OCT04
+    sensor_name: CTD
+    sensor_presence: true
+    sensor_singletons:
+      sg_cal_c_g: -9.86783179
+      sg_cal_c_h: 1.1129186
+      sg_cal_c_i: -0.00167756889
+      sg_cal_c_j: 0.000216414999
+      sg_cal_t_g: 0.00437286038
+      sg_cal_t_h: 0.000642816357
+      sg_cal_t_i: 2.51728749e-05
+      sg_cal_t_j: 2.63716675e-06
+    sensor_variables:
+      eng_sbect_condFreq: DataArray(sg_data_point)
+      eng_sbect_tempFreq: DataArray(sg_data_point)
+  DISSOLVED_GAS:
+    sensor_attributes:
+      sg_cal_calibcomm_oxygen: '{}'
+    sensor_calcomm: SBE 43F s/n 042 calibration 25SEP04
+    sensor_name: DISSOLVED_GAS
+    sensor_presence: true
+    sensor_singletons:
+      sg_cal_A: -0.0012792
+      sg_cal_B: 7.4495e-05
+      sg_cal_C: -1.3001e-06
+      sg_cal_E: 0.036
+      sg_cal_Foffset: -856.8758
+      sg_cal_Pcor: 0.0
+      sg_cal_Soc: 0.00022302
+    sensor_variables: {}
+  FLUOROMETER:
+    sensor_attributes:
+      wlbb2f: '{''long_name'': ''underway backscatter fluorescence puck'', ''make_model'':
+        ''Wetlabs backscatter fluorescence puck''}'
+    sensor_calcomm: Unknown
+    sensor_name: FLUOROMETER
+    sensor_presence: true
+    sensor_singletons: {}
+    sensor_variables:
+      eng_wlbb2f_VFtemp: DataArray(sg_data_point)
+      eng_wlbb2f_blueCount: DataArray(sg_data_point)
+      eng_wlbb2f_blueRef: DataArray(sg_data_point)
+      eng_wlbb2f_fluorCount: DataArray(sg_data_point)
+      eng_wlbb2f_redCount: DataArray(sg_data_point)
+      eng_wlbb2f_redRef: DataArray(sg_data_point)
+  MAGNETOMETER:
+    sensor_attributes: {}
+    sensor_calcomm: Unknown
+    sensor_name: MAGNETOMETER
+    sensor_presence: false
+    sensor_singletons:
+      magnetic_variation: -34.6
+    sensor_variables: {}
+  RAFOS:
+    sensor_name: RAFOS
+    sensor_presence: false

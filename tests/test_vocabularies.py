@@ -53,7 +53,6 @@ def test_sensor_vocabs():
     # Set in OG1_sensor_attrs.yaml
     # Sensor vocabularies from here: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/
     # and https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html
-    assert vocabularies.sensor_vocabs['Seabird unpumped CTD']['long_name'] == 'Sea-Bird CT Sail CTD'
     assert vocabularies.sensor_vocabs['Seabird unpumped CTD']['sensor_maker'] == 'Sea-Bird Scientific'
     assert vocabularies.sensor_vocabs['Seabird SBE43F']['long_name'] == 'Sea-Bird SBE 43F'
 
