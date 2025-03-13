@@ -65,7 +65,7 @@ def gather_sensor_info(ds_other, ds_sgcal, firstrun=False):
         ds_sensor['sbe43'].attrs['ancillary_variables'] = 'sg_cal_Pcor sg_cal_Foffset sg_cal_A sg_cal_B sg_cal_C sg_cal_E sg_cal_Soc'
 
     aanderaa_ancillary = 'optode_FoilCoefA1 optode_FoilCoefA2	optode_FoilCoefA3 optode_FoilCoefA4	optode_FoilCoefA5 optode_FoilCoefA6 optode_FoilCoefA7 optode_FoilCoefA8 optode_FoilCoefA9 optode_FoilCoefA10 optode_FoilCoefA11	optode_FoilCoefA12 optode_FoilCoefA13 optode_FoilCoefB1	optode_FoilCoefB2 optode_FoilCoefB3	optode_FoilCoefB4 optode_FoilCoefB5	 optode_FoilCoefB6 optode_PhaseCoef0 optode_PhaseCoef1 optode_PhaseCoef2 optode_PhaseCoef3 optode_ConcCoef0 optode_ConcCoef1 optode_SVU_enabled optode_TempCoef0 optode_TempCoef1 optode_TempCoef2 optode_TempCoef3 optode_TempCoef4 optode_TempCoef5'
-    if 'optode_FoilCoefA1' in sg_cal:
+    if 'optode_FoilCoefA1' in ds_sgcal:
         ds_sensor['aa4831'] = ds_sensor['sbe41']
         ds_sensor['aa4831'].attrs['long_name'] = 'Aanderaa 4831F Oxygen Sensor'
         ds_sensor['aa4831'].attrs['ancillary_variables'] = aanderaa_ancillary
@@ -74,6 +74,8 @@ def gather_sensor_info(ds_other, ds_sgcal, firstrun=False):
         ds_sensor['aa4330'].attrs['ancillary_variables'] = aanderaa_ancillary
 
 def add_sensor_to_dataset(dsa, ds, sg_cal, firstrun=False):
+    if ds is None:
+        return dsa
     sensors = list(ds)
     sensor_name_type = {}
     for instr in sensors:
@@ -249,7 +251,7 @@ def add_dive_number(ds, dive_number=None):
         dive_number = ds.attrs.get('dive_number', np.nan)
     return ds.assign(divenum=('N_MEASUREMENTS', [dive_number] * ds.dims['N_MEASUREMENTS']))
 
-
+"""
 def assign_profile_number(ds, ds1):
     # Remove the variable dive_num_cast if it exists
     if 'dive_num_cast' in ds.variables:
@@ -266,10 +268,14 @@ def assign_profile_number(ds, ds1):
         start_index = dive_indices[0]
         end_index = dive_indices[-1]
         
+        possible_press_names = ["PRES", "pressure", "Pressure", "pres"]
+        press_var = [var for var in possible_press_names if var in ds.variables]
+        if len(press_var) == 0:
+            press_var = [var for var in possible_press_names if var in ds1.variables]
         # Find the index of the maximum pressure between start_index and end_index
-        pmax = np.nanmax(ds['PRES'][start_index:end_index + 1].values) 
+        pmax = np.nanmax(ds[press_var[0]][start_index:end_index + 1].values) 
         # Find the index where PRES attains the value pmax between start_index and end_index
-        pmax_index = start_index + np.argmax(ds['PRES'][start_index:end_index + 1].values == pmax)
+        pmax_index = start_index + np.argmax(ds[press_var[0]][start_index:end_index + 1].values == pmax)
         
         # Assign dive_num to all values up to and including the point where pmax is reached
         ds['dive_num_cast'][start_index:pmax_index + 1] = dive
@@ -284,6 +290,64 @@ def assign_profile_number(ds, ds1):
         # Assign PROFILE_NUMBER as 2 * dive_num_cast - 1
         ds['PROFILE_NUMBER'] = 2 * ds['dive_num_cast'] - 1
     return ds
+"""
+
+def assign_profile_number(ds, ds1):
+    # Remove the variable dive_num_cast if it exists
+    if 'dive_num_cast' in ds.variables:
+        ds = ds.drop_vars('dive_num_cast')
+
+    # Initialize the new variable with the same dimensions as dive_num
+    ds['dive_num_cast'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
+
+    ds = add_dive_number(ds, ds1.attrs['dive_number'])
+
+    # Iterate over each unique dive_num
+    for dive in np.unique(ds['divenum']):
+        # Get the indices for the current dive
+        dive_indices = np.where(ds['divenum'] == dive)[0]
+        if len(dive_indices) == 0:
+            continue  # Skip if no indices found
+
+        # Find the start and end index for the current dive
+        start_index = dive_indices[0]
+        end_index = dive_indices[-1]
+
+        # Check for possible pressure variable names in ds, then ds1
+        possible_press_names = ["PRES", "ctd_pressure", "Pressure", "pres"]
+        press_var = next((var for var in possible_press_names if var in ds.variables), None)
+        
+        if press_var is None:  
+            press_var = next((var for var in possible_press_names if var in ds1.variables), None)
+
+        if press_var is None:
+            raise ValueError("No valid pressure variable (PRES or pressure) found in ds or ds1")
+
+        # Get pressure values from the correct dataset
+        pressure_data = ds[press_var] if press_var in ds.variables else ds1[press_var]
+
+        # Find the maximum pressure value between start_index and end_index
+        pmax = np.nanmax(pressure_data[start_index:end_index + 1].values)
+
+        # Find the index where PRES attains pmax
+        pmax_index = start_index + np.argmax(pressure_data[start_index:end_index + 1].values == pmax)
+
+        # Assign dive_num to all values up to and including pmax
+        ds['dive_num_cast'][start_index:pmax_index + 1] = dive
+
+        # Assign dive_num + 0.5 to values after pmax
+        ds['dive_num_cast'][pmax_index + 1:end_index + 1] = dive + 0.5
+
+        # Remove PROFILE_NUMBER if it exists
+        if 'PROFILE_NUMBER' in ds.variables:
+            ds = ds.drop_vars('PROFILE_NUMBER')
+
+        # Assign PROFILE_NUMBER
+        ds['PROFILE_NUMBER'] = 2 * ds['dive_num_cast'] - 1
+
+    return ds
+
+
 
 
 def assign_phase(ds):
@@ -329,7 +393,7 @@ def assign_phase(ds):
         # Find the start and end index for the current dive
         start_index = dive_indices[0]
         end_index = dive_indices[-1]
-        
+
         # Find the index of the maximum pressure between start_index and end_index
         pmax = np.nanmax(ds['PRES'][start_index:end_index + 1].values) 
 
@@ -365,26 +429,23 @@ def calc_Z(ds):
     Returns
     -------
     xarray.Dataset: The dataset with an additional 'DEPTH' variable.
-    """
+    """ 
     # Ensure the required variables are present
     if 'PRES' not in ds.variables or 'LATITUDE' not in ds.variables:
         raise ValueError("Dataset must contain 'PRES' and 'LATITUDE' variables.")
 
-    # Initialize the new variable with the same dimensions as dive_num
-    ds['DEPTH_Z'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
+    # Convert pressure to depth using gsw (pressure in dbar, latitude in degrees)
+    depth = gsw.z_from_p(ds["PRES"], ds["LATITUDE"]).compute()  # Compute to handle dask arrays
 
-    # Calculate depth using gsw
-    depth = gsw.z_from_p(ds['PRES'], ds['LATITUDE'])
-    ds['DEPTH_Z'] = depth
-
-    # Assign the calculated depth to a new variable in the dataset
-    ds['DEPTH_Z'].attrs = {
+    # Add depth to dataset
+    ds["DEPTH_Z"] = (["N_MEASUREMENTS"], depth.data)
+    ds["DEPTH_Z"].attrs = {
         "units": "meters",
         "positive": "up",
         "standard_name": "depth",
         "comment": "Depth calculated from pressure using gsw library, positive up.",
     }
-    
+
     return ds
 
 
@@ -446,7 +507,7 @@ def convert_units(ds):
         if 'units' in vocabularies.vocab_attrs[OG1_name]:
             new_unit = vocabularies.vocab_attrs[OG1_name].get('units')
             if orig_unit != new_unit:
-                var_values, new_unit = tools.convert_units_var(var_values, orig_unit, new_unit)
+                var_values, new_unit = convert_units_var(var_values, orig_unit, new_unit)
                 ds[var].values = var_values
                 ds[var].attrs['units'] = new_unit
 
@@ -515,7 +576,17 @@ def convert_qc_flags(dsa, qc_name):
     # Must be called *after* var_name has OG1 long_name
     var_name = qc_name[:-3] 
     if qc_name in list(dsa):
-        # Seaglider default type was a string.  Convert to int8.
+        # Seaglider default type was a string.  Convert to int8 and take care of NaNs
+        #dsa[qc_name].values = dsa[qc_name].values.astype("int8")
+        values = dsa[qc_name].values
+        # Convert byte strings to regular strings (if necessary)
+        if values.dtype.type is np.bytes_:
+            values = values.astype(str)
+
+        # Use pandas to handle NaNs safely
+        values = pd.to_numeric(values, errors="coerce")  # Convert strings to numbers, NaNs stay NaNs
+        # Assign back to dataset
+        dsa[qc_name].values = values
         dsa[qc_name].values = dsa[qc_name].values.astype("int8")
         # Seaglider default flag_meanings were prefixed with 'QC_'. Remove this prefix.
         if 'flag_meaning' in dsa[qc_name].attrs:
@@ -654,6 +725,119 @@ def encode_times_og1(ds):
                 ds[var_name].attrs["calendar"] = "gregorian"
     return ds
 
+def merge_parts_of_dataset(ds, dim1 = 'sg_data_point', dim2 = 'ctd_data_point'):
+    """
+    Merges variables from a dataset along two dimensions, ensuring consistency in coordinates 
+    and handling missing values.
+
+    Parameters
+    ----------
+    ds: xarray.Dataset 
+        The input dataset containing both dimensions.
+    dim1: str 
+        Primary dimension name (e.g., 'sg_data_point').
+    dim2: str 
+        Secondary dimension name to be merged into dim1 (e.g., 'ctd_data_point').
+
+    Returns
+    -------
+    merged_ds: xarray.Dataset
+        A merged dataset sorted by time, with missing values handled.
+    """
+    
+    def get_time_var(ds, dim):
+        """Finds the appropriate time variable based on dimension naming conventions."""
+        prefix = dim.split("_data_point")[0]  # Extract prefix
+        time_var = "time" if dim == "sg_data_point" else f"{prefix}_time"
+        return time_var if time_var in ds.variables else None
+
+    # Extract variables for each dimension
+    vars1 = {var: ds[var] for var in ds.variables if dim1 in ds[var].dims}
+    vars2 = {var: ds[var] for var in ds.variables if dim2 in ds[var].dims}
+
+    # Create separate datasets
+    new_ds1, new_ds2 = xr.Dataset(vars1), xr.Dataset(vars2)
+
+    # Rename time variables to 'time' if present
+    time_var1, time_var2 = get_time_var(ds, dim1), get_time_var(ds, dim2)
+    if time_var1: new_ds1 = new_ds1.rename({time_var1: "time"})
+    if time_var2: new_ds2 = new_ds2.rename({time_var2: "time"})
+    # Ensure "time" is a coordinate
+    new_ds1 = new_ds1.set_coords("time") if "time" in new_ds1 else new_ds1
+    new_ds2 = new_ds2.set_coords("time") if "time" in new_ds2 else new_ds2
+
+    # Rename dim2 to dim1 for consistency
+    new_ds2 = new_ds2.rename({dim2: dim1})
+
+    # Add original dimension as attribute
+    for new_ds, original_dim in [(new_ds1, dim1), (new_ds2, dim2)]:
+        for var in new_ds.variables:
+            new_ds[var].attrs["dimension_info"] = f"Original dimension: {original_dim}"
+
+    # Find max size for primary dimension
+    max_size = max(new_ds1.sizes.get(dim1, 0), new_ds2.sizes.get(dim1, 0))
+
+    # Pad function to match sizes along dim1
+    def pad_ds(ds, max_size):
+        pad_size = max_size - ds.sizes.get(dim1, 0)
+        if pad_size > 0:
+            ds = ds.pad({dim1: (0, pad_size)}, constant_values=np.nan)
+        return ds
+
+    new_ds1, new_ds2 = pad_ds(new_ds1, max_size), pad_ds(new_ds2, max_size)
+
+    # Get all unique coordinates across both datasets
+    all_coords = set(new_ds1.coords) | set(new_ds2.coords)
+
+    # Ensure both datasets contain the same coordinates, filling missing ones with NaN
+    for coord in all_coords:
+        if coord not in new_ds1:
+            new_shape = (new_ds1.dims[dim1],) if dim1 in new_ds1.dims else (len(new_ds1["time"]),)
+            new_ds1[coord] = xr.DataArray(np.full(new_shape, np.nan), dims=dim1)
+            new_ds1 = new_ds1.set_coords(coord)
+        if coord not in new_ds2:
+            new_shape = (new_ds2.dims[dim1],) if dim1 in new_ds2.dims else (len(new_ds2["time"]),)
+            new_ds2[coord] = xr.DataArray(np.full(new_shape, np.nan), dims=dim1)
+            new_ds2 = new_ds2.set_coords(coord)
+
+    # Concatenate along dim1 while allowing missing values
+    merged_ds = xr.concat([new_ds1, new_ds2], dim=dim1, join="inner", combine_attrs="drop_conflicts")
+
+    # Sort by time and drop NaT values
+    merged_ds = merged_ds.sortby("time").dropna(dim=dim1, subset=["time"])
+
+    return merged_ds
+
+def combine_two_dim_of_dataset(ds, dim1='sg_data_point', dim2='ctd_data_point'):
+    """
+    Updates the original dataset by removing variables with dim1 and dim2 
+    and adding the merged dataset.
+
+    Parameters
+    ----------
+    ds: xarray.Dataset
+        The original dataset.
+    merged_ds: xarray.Dataset
+        The merged dataset to be added.
+    dim1: str
+        First dimension to be removed.
+    dim2: str
+        Second dimension to be removed.
+
+    Returns
+    -------
+    updated_ds: xarray.Dataset
+        The updated dataset with merged variables.
+    """
+    
+    # Drop all variables that have dim1 or dim2
+    vars_to_drop = [var for var in ds.variables if dim1 in ds[var].dims or dim2 in ds[var].dims]
+    cleaned_ds = ds.drop_vars(vars_to_drop, errors="ignore")
+    merged_ds = merge_parts_of_dataset(ds, dim1=dim1, dim2=dim2)
+    # Merge the cleaned dataset with the merged dataset
+    updated_ds = xr.merge([cleaned_ds, merged_ds], combine_attrs="drop_conflicts")
+
+    return updated_ds
 
 #===============================================================================
 # Unused functions

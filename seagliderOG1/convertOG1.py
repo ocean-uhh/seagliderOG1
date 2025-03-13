@@ -45,7 +45,7 @@ def convert_to_OG1(list_of_datasets, contrib_to_append=None):
     ds_og1 = ds_og1.sortby('TIME')
 
     # Apply attributes
-    ordered_attributes = update_dataset_attributes(datasets[0], contrib_to_append)
+    ordered_attributes = update_dataset_attributes(list_of_datasets[0], contrib_to_append)
     for key, value in ordered_attributes.items():
         ds_og1.attrs[key] = value
 
@@ -165,14 +165,22 @@ def process_dataset(ds1_base, firstrun=False):
     ds1_base = utilities._validate_coords(ds1_base)
     if ds1_base is None or len(ds1_base.variables) == 0:
         return xr.Dataset(), [], xr.Dataset(), xr.Dataset(), xr.Dataset()
-
     # Handle and split the inputs.
     #--------------------------------
     # Extract the dive number from the attributes
     divenum = ds1_base.attrs['dive_number']
+    ### check if the pressure dim and longitude dim are the same
+    ### if not, combine them inside the dataset
+    longitude_dim = ds1_base['longitude'].dims[0]
+    pressure_dim = ds1_base['pressure'].dims[0]
+    if pressure_dim != longitude_dim:
+        ds1_base = tools.combine_two_dim_of_dataset(ds1_base, longitude_dim, pressure_dim)
     # Split the dataset by unique dimensions
-    split_ds = tools.split_by_unique_dims(ds1)
-    ds_sgdatapoint = split_ds[('sg_data_point',)]
+    split_ds = tools.split_by_unique_dims(ds1_base)
+    
+    # Extract the sg_data_point from the split dataset
+    ds_sgdatapoint = split_ds[(longitude_dim,)]
+        
     # Extract the gps_info from the split dataset
     ds_gps = split_ds[('gps_info',)]
     # Extract variables starting with 'sg_cal'
@@ -184,8 +192,8 @@ def process_dataset(ds1_base, firstrun=False):
     for var in var_keep:
         if var in ds_other:
             v1 = ds_other[var].values
-            vector_v = np.full(len(ds['longitude']), v1)
-            ds_sgdatapoint[var] = (['sg_data_point'], vector_v, ds_other[var].attrs)
+            vector_v = np.full(len(ds_sgdatapoint['longitude']), v1)
+            ds_sgdatapoint[var] = ([longitude_dim], vector_v, ds_other[var].attrs)
 
     # Rename variables and attributes to OG1 vocabulary
     #-------------------------------------------------------------------
@@ -199,7 +207,7 @@ def process_dataset(ds1_base, firstrun=False):
     # Must be after split_by_unique_dims and after rename_dimensions
     ds_new = add_gps_info_to_dataset(ds_new, ds_gps)
     # Add the profile number (odd for dives, even for ascents)
-    ds_new = tools.assign_profile_number(ds_new, ds1)
+    ds_new = tools.assign_profile_number(ds_new, ds1_base)
     # Assign the phase of the dive (must be after adding divenum)
     ds_new = tools.assign_phase(ds_new)
     # Assign DEPTH_Z to the dataset where positive is up.
