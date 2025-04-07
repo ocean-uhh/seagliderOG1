@@ -6,6 +6,7 @@ import gsw
 from datetime import datetime
 import os
 import logging
+from tqdm import tqdm
 
 _log = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def convert_to_OG1(list_of_datasets, contrib_to_append=None):
     varlist = []
     # This would be faster if we concatenated the basestation files first, and then processed them.
     # But we need to process them first to get the dive number, assign GPS (could be after), ?
-    for ds1_base in list_of_datasets:
+    for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
         varlist = list(set(varlist + list(ds1_base.variables)))
         ds_new, attr_warnings, sg_cal, dc_other, dc_log = process_dataset(ds1_base, firstrun)
         if ds_new:
