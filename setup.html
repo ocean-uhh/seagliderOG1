@@ -1,0 +1,199 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting Started: Installation &mdash; seagliderOG1 v0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2fea6348"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="What’s in seagliderOG1 project?" href="project_structure.html" />
+    <link rel="prev" title="Welcome to seagliderOG1’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started: Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#option-1-install-via-pip-recommended-for-most-users">Option 1: Install via <code class="docutils literal notranslate"><span class="pre">pip</span></code> (recommended for most users)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#option-2-clone-for-custom-use">Option 2: Clone for custom use</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#a-clone-the-repository-to-your-computer">a. Clone the repository to your computer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#b-set-up-a-python-environment-and-install">b. Set up a Python environment and install</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#option-3-contribute-to-the-project">Option 3: Contribute to the project</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">seagliderOG1 demo</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Help and reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/ifmeo-hamburg/seagliderOG1">GitHub Repo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Getting Started: Installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/setup.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started-installation">
+<h1>Getting Started: Installation<a class="headerlink" href="#getting-started-installation" title="Link to this heading"></a></h1>
+<p>This guide walks you through installing and using the <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> Python package.  It includes:</p>
+<ol class="arabic simple">
+<li><p>Basic installation via <code class="docutils literal notranslate"><span class="pre">pip</span></code> (for most users)</p></li>
+<li><p>Cloning the repo for custom use or development</p></li>
+<li><p>Setup for contributors</p></li>
+</ol>
+<hr class="docutils" />
+<section id="option-1-install-via-pip-recommended-for-most-users">
+<h2>Option 1: Install via <code class="docutils literal notranslate"><span class="pre">pip</span></code> (recommended for most users)<a class="headerlink" href="#option-1-install-via-pip-recommended-for-most-users" title="Link to this heading"></a></h2>
+<p>If you just want to use the package without modifying the code:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>seagliderOG1
+</pre></div>
+</div>
+<p>Then in your Python scripts or notebooks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">seagliderOG1</span>
+</pre></div>
+</div>
+<p>💡 You can install into a virtual environment (e.g. using venv, conda, or micromamba) to keep things clean.</p>
+</section>
+<hr class="docutils" />
+<section id="option-2-clone-for-custom-use">
+<h2>Option 2: Clone for custom use<a class="headerlink" href="#option-2-clone-for-custom-use" title="Link to this heading"></a></h2>
+<p>If you want a local editable copy of the code, for example to adapt it to your own purposes:</p>
+<section id="a-clone-the-repository-to-your-computer">
+<h3>a. Clone the repository to your computer<a class="headerlink" href="#a-clone-the-repository-to-your-computer" title="Link to this heading"></a></h3>
+<p>From a <strong>terminal</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ifmeo-hamburg/seagliderOG1
+<span class="nb">cd</span><span class="w"> </span>seagliderOG1
+</pre></div>
+</div>
+<p>Or using <strong>Github Desktop</strong>:</p>
+<ol class="arabic simple">
+<li><p>Visit https://github.com/ifmeo-hamburg/seagliderOG1</p></li>
+<li><p>Click the green &lt;&gt; Code button</p></li>
+<li><p>Choose <strong>Open with GitHub Desktop</strong></p></li>
+</ol>
+<p>💡 Rename the folder if desired.</p>
+</section>
+<section id="b-set-up-a-python-environment-and-install">
+<h3>b. Set up a Python environment and install<a class="headerlink" href="#b-set-up-a-python-environment-and-install" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate<span class="w"> </span><span class="c1"># On Windows use `venv\Scripts\activate`</span>
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w"> </span><span class="c1"># Editable install</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="option-3-contribute-to-the-project">
+<h2>Option 3: Contribute to the project<a class="headerlink" href="#option-3-contribute-to-the-project" title="Link to this heading"></a></h2>
+<p>To contribute to development:</p>
+<ol class="arabic simple">
+<li><p>Fork the repository on GitHub</p></li>
+<li><p>Clone your fork locally</p></li>
+<li><p>Set up a virtual environment and install dev tools:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p>Run tests:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
+</pre></div>
+</div>
+<p>For full guidance on contributing to a project like <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code>, see https://eleanorfrajka.github.io/template-project/gitcollab.html.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to seagliderOG1’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="project_structure.html" class="btn btn-neutral float-right" title="What’s in seagliderOG1 project?" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

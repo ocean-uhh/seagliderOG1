@@ -5,14 +5,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.tools &mdash; seagliderOG1 v0.0.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+  <title>seagliderOG1.tools &mdash; seagliderOG1 v0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=8b92e751"></script>
+      <script src="../../_static/documentation_options.js?v=2fea6348"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -31,6 +32,7 @@
           
           <a href="../../index.html" class="icon icon-home">
             seagliderOG1
+              <img src="../../_static/logo_seaglider.png" class="logo" alt="Logo"/>
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -40,9 +42,18 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../setup.html">Getting Started: Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">seagliderOG1 demo</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Help and reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/ifmeo-hamburg/seagliderOG1">GitHub Repo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
 </ul>
 
@@ -72,19 +83,11 @@
              
   <h1>Source code for seagliderOG1.tools</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">cartopy.crs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ccrs</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">cartopy.feature</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfeature</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.dates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mdates</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.dates</span><span class="w"> </span><span class="kn">import</span> <span class="n">DateFormatter</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mcolors</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">vocabularies</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">gsw</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">utilities</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -103,7 +106,7 @@
 <span class="c1"># EFW 2025-01-01: This could be improved</span>
 <span class="c1"># Sensor information is contained in the basestation file as a variable (e.g., &#39;wlbb2f&#39;) or</span>
 <span class="c1"># in the sg_cal strings, e.g. calibcomm_oxygen or calibcomm_optode contains &#39;SBE 43F&#39; or &#39;Optode 4330F&#39;</span>
-<span class="c1"># Using this, and the presense of calibration coefficients (e.g., optode_FoilCoefA1), we can make</span>
+<span class="c1"># Using this, and the presence of calibration coefficients (e.g., optode_FoilCoefA1), we can make</span>
 <span class="c1"># a guess as to the sensor type</span>
 <div class="viewcode-block" id="gather_sensor_info">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.gather_sensor_info">[docs]</a>
@@ -125,28 +128,31 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Gather sensors</span>
-    <span class="n">sensor_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;wlbb2f&#39;</span><span class="p">,</span> <span class="s1">&#39;sbe41&#39;</span><span class="p">,</span> <span class="s1">&#39;aa4330&#39;</span><span class="p">,</span> <span class="s1">&#39;aa4381&#39;</span><span class="p">,</span> <span class="s1">&#39;aa4330f&#39;</span><span class="p">,</span> <span class="s1">&#39;aa4381f&#39;</span><span class="p">]</span>
+    <span class="n">sensor_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;wlbb2f&quot;</span><span class="p">,</span> <span class="s2">&quot;sbe41&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4330&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4381&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4330f&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4381f&quot;</span><span class="p">]</span>
 
     <span class="n">ds_sensor</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
-    <span class="k">if</span> <span class="s1">&#39;aanderaa4330_instrument_dissolved_oxygen&#39;</span> <span class="ow">in</span> <span class="n">ds_other</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">ds_other</span><span class="p">[</span><span class="s1">&#39;aa4330&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_other</span><span class="p">[</span><span class="s1">&#39;aanderaa4330_instrument_dissolved_oxygen&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;aanderaa4330_instrument_dissolved_oxygen&quot;</span> <span class="ow">in</span> <span class="n">ds_other</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">ds_other</span><span class="p">[</span><span class="s2">&quot;aa4330&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_other</span><span class="p">[</span><span class="s2">&quot;aanderaa4330_instrument_dissolved_oxygen&quot;</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_names</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">ds_other</span><span class="p">:</span>
             <span class="n">ds_sensor</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_other</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="s1">&#39;Pcor&#39;</span> <span class="ow">in</span> <span class="n">ds_sgcal</span><span class="p">:</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;sbe43&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;sbe41&#39;</span><span class="p">]</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;sbe43&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;long_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Sea-Bird SBE 43F Oxygen Sensor&#39;</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;sbe43&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sg_cal_Pcor sg_cal_Foffset sg_cal_A sg_cal_B sg_cal_C sg_cal_E sg_cal_Soc&#39;</span>
+    <span class="k">if</span> <span class="s2">&quot;Pcor&quot;</span> <span class="ow">in</span> <span class="n">ds_sgcal</span><span class="p">:</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;sbe43&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;sbe41&quot;</span><span class="p">]</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;sbe43&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Sea-Bird SBE 43F Oxygen Sensor&quot;</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;sbe43&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span>
+            <span class="s2">&quot;ancillary_variables&quot;</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;sg_cal_Pcor sg_cal_Foffset sg_cal_A sg_cal_B sg_cal_C sg_cal_E sg_cal_Soc&quot;</span>
 
-    <span class="n">aanderaa_ancillary</span> <span class="o">=</span> <span class="s1">&#39;optode_FoilCoefA1 optode_FoilCoefA2	optode_FoilCoefA3 optode_FoilCoefA4	optode_FoilCoefA5 optode_FoilCoefA6 optode_FoilCoefA7 optode_FoilCoefA8 optode_FoilCoefA9 optode_FoilCoefA10 optode_FoilCoefA11	optode_FoilCoefA12 optode_FoilCoefA13 optode_FoilCoefB1	optode_FoilCoefB2 optode_FoilCoefB3	optode_FoilCoefB4 optode_FoilCoefB5	 optode_FoilCoefB6 optode_PhaseCoef0 optode_PhaseCoef1 optode_PhaseCoef2 optode_PhaseCoef3 optode_ConcCoef0 optode_ConcCoef1 optode_SVU_enabled optode_TempCoef0 optode_TempCoef1 optode_TempCoef2 optode_TempCoef3 optode_TempCoef4 optode_TempCoef5&#39;</span>
-    <span class="k">if</span> <span class="s1">&#39;optode_FoilCoefA1&#39;</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="p">:</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;aa4831&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;sbe41&#39;</span><span class="p">]</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;aa4831&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;long_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Aanderaa 4831F Oxygen Sensor&#39;</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;aa4831&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aanderaa_ancillary</span>
-    <span class="k">if</span> <span class="s1">&#39;aa4330&#39;</span> <span class="ow">in</span> <span class="n">ds_sensor</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;aa4330&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;long_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Aanderaa 4330 Oxygen Sensor&#39;</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s1">&#39;aa4330&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aanderaa_ancillary</span></div>
+    <span class="n">aanderaa_ancillary</span> <span class="o">=</span> <span class="s2">&quot;optode_FoilCoefA1 optode_FoilCoefA2	optode_FoilCoefA3 optode_FoilCoefA4	optode_FoilCoefA5 optode_FoilCoefA6 optode_FoilCoefA7 optode_FoilCoefA8 optode_FoilCoefA9 optode_FoilCoefA10 optode_FoilCoefA11	optode_FoilCoefA12 optode_FoilCoefA13 optode_FoilCoefB1	optode_FoilCoefB2 optode_FoilCoefB3	optode_FoilCoefB4 optode_FoilCoefB5	 optode_FoilCoefB6 optode_PhaseCoef0 optode_PhaseCoef1 optode_PhaseCoef2 optode_PhaseCoef3 optode_ConcCoef0 optode_ConcCoef1 optode_SVU_enabled optode_TempCoef0 optode_TempCoef1 optode_TempCoef2 optode_TempCoef3 optode_TempCoef4 optode_TempCoef5&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;optode_FoilCoefA1&quot;</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="p">:</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4831&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;sbe41&quot;</span><span class="p">]</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4831&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Aanderaa 4831F Oxygen Sensor&quot;</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4831&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aanderaa_ancillary</span>
+    <span class="k">if</span> <span class="s2">&quot;aa4330&quot;</span> <span class="ow">in</span> <span class="n">ds_sensor</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4330&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Aanderaa 4330 Oxygen Sensor&quot;</span>
+        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4330&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aanderaa_ancillary</span></div>
+
 
 
 <div class="viewcode-block" id="add_sensor_to_dataset">
@@ -161,33 +167,37 @@
             <span class="k">continue</span>
         <span class="n">attr_dict</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">instr</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
         <span class="c1"># Code to parse details from sg_cal and calibcomm into the attributes for CTD</span>
-        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s1">&#39;sbe41&#39;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;unpumped Seabird SBE41&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s2">&quot;sbe41&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;unpumped Seabird SBE41&quot;</span><span class="p">:</span>
                 <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Seabird unpumped CTD&quot;</span>
             <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor </span><span class="si">{</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;make_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
             <span class="n">var_dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]]</span>
 
-            <span class="n">calstr</span> <span class="o">=</span> <span class="n">sg_cal</span><span class="p">[</span><span class="s1">&#39;calibcomm&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="n">calstr</span> <span class="o">=</span> <span class="n">sg_cal</span><span class="p">[</span><span class="s2">&quot;calibcomm&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
                 <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            
+
             <span class="n">cal_date</span><span class="p">,</span> <span class="n">serial_number</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_parse_calibcomm</span><span class="p">(</span><span class="n">calstr</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
             <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;serial_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">serial_number</span>
             <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;:</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;calibration_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cal_date</span>
 
-            <span class="k">if</span> <span class="s2">&quot;ancillary_variables&quot;</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>    
+            <span class="k">if</span> <span class="s2">&quot;ancillary_variables&quot;</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">ancilliary_vars</span> <span class="o">=</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
-                <span class="n">anc_var_list</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_anc_vars_list</span><span class="p">(</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">])</span>
+                <span class="n">anc_var_list</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_anc_vars_list</span><span class="p">(</span>
+                    <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
                 <span class="n">calvals</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_assign_calval</span><span class="p">(</span><span class="n">sg_cal</span><span class="p">,</span> <span class="n">anc_var_list</span><span class="p">)</span>
                 <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;calibration_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">calvals</span>
             <span class="n">da</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="n">var_dict</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">serial_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                    <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;_&quot;</span><span class="p">,</span>
+                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                        <span class="s2">&quot; &quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;_&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
@@ -199,19 +209,19 @@
 
         <span class="c1"># Handle oxygen sensor</span>
         <span class="n">optode_flag</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s1">&#39;sbe43&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s2">&quot;sbe43&quot;</span><span class="p">:</span>
             <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Seabird SBE43F&quot;</span>
             <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor </span><span class="si">{</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;make_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
             <span class="n">var_dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]]</span>
             <span class="n">optode_flag</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s1">&#39;aa4381&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s2">&quot;aa4381&quot;</span><span class="p">:</span>
             <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Aanderaa 4381&quot;</span>
             <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor </span><span class="si">{</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;make_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
             <span class="n">var_dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]]</span>
             <span class="n">optode_flag</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s1">&#39;aa4330&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s2">&quot;aa4330&quot;</span><span class="p">:</span>
             <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Aanderaa 4330&quot;</span>
             <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor </span><span class="si">{</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;make_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
@@ -219,15 +229,15 @@
             <span class="n">optode_flag</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">if</span> <span class="n">optode_flag</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s1">&#39;calibcomm_oxygen&#39;</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="p">:</span>
-                <span class="n">calstr</span> <span class="o">=</span> <span class="n">sg_cal</span><span class="p">[</span><span class="s1">&#39;calibcomm_oxygen&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;calibcomm_oxygen&quot;</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="p">:</span>
+                <span class="n">calstr</span> <span class="o">=</span> <span class="n">sg_cal</span><span class="p">[</span><span class="s2">&quot;calibcomm_oxygen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
                     <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm_oxygen: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm_oxygen: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
                 <span class="n">cal_date</span><span class="p">,</span> <span class="n">serial_number</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_parse_calibcomm</span><span class="p">(</span><span class="n">calstr</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="s1">&#39;calibcomm_optode&#39;</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="p">:</span>
-                <span class="n">calstr</span> <span class="o">=</span> <span class="n">sg_cal</span><span class="p">[</span><span class="s1">&#39;calibcomm_optode&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>                
+            <span class="k">elif</span> <span class="s2">&quot;calibcomm_optode&quot;</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="p">:</span>
+                <span class="n">calstr</span> <span class="o">=</span> <span class="n">sg_cal</span><span class="p">[</span><span class="s2">&quot;calibcomm_optode&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
                     <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm_optode: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm_optode: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -238,17 +248,21 @@
             <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;calibration_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cal_date</span>
 
             <span class="c1"># All the sg_cal_optode_*</span>
-            <span class="k">if</span> <span class="s2">&quot;ancillary_variables&quot;</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>    
+            <span class="k">if</span> <span class="s2">&quot;ancillary_variables&quot;</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">ancilliary_vars</span> <span class="o">=</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
-                <span class="n">anc_var_list</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_anc_vars_list</span><span class="p">(</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">])</span>
+                <span class="n">anc_var_list</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_anc_vars_list</span><span class="p">(</span>
+                    <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
                 <span class="n">calvals</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_assign_calval</span><span class="p">(</span><span class="n">sg_cal</span><span class="p">,</span> <span class="n">anc_var_list</span><span class="p">)</span>
                 <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;calibration_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">calvals</span>
 
             <span class="n">da</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="n">var_dict</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">serial_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                    <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;_&quot;</span><span class="p">,</span>
+                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                        <span class="s2">&quot; &quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;_&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
@@ -258,8 +272,8 @@
             <span class="n">dsa</span><span class="p">[</span><span class="n">sensor_var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">da</span>
             <span class="n">sensor_name_type</span><span class="p">[</span><span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">sensor_var_name</span>
 
-        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s1">&#39;wlbb2f&#39;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;Wetlabs backscatter fluorescence puck&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s2">&quot;wlbb2f&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Wetlabs backscatter fluorescence puck&quot;</span><span class="p">:</span>
                 <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Wetlabs BB2FL-VMT&quot;</span>
             <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor </span><span class="si">{</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;make_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
@@ -276,9 +290,11 @@
 
             <span class="n">da</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="n">var_dict</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">serial_number</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                    <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;_&quot;</span><span class="p">,</span>
+                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                        <span class="s2">&quot; &quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;_&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
@@ -288,16 +304,20 @@
             <span class="n">dsa</span><span class="p">[</span><span class="n">sensor_var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">da</span>
             <span class="n">sensor_name_type</span><span class="p">[</span><span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">sensor_var_name</span>
 
-            <span class="k">if</span> <span class="s2">&quot;ancillary_variables&quot;</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>    
+            <span class="k">if</span> <span class="s2">&quot;ancillary_variables&quot;</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">ancilliary_vars</span> <span class="o">=</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
-                <span class="n">anc_var_list</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_anc_vars_list</span><span class="p">(</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">])</span>
+                <span class="n">anc_var_list</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_anc_vars_list</span><span class="p">(</span>
+                    <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
                 <span class="n">calvals</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_assign_calval</span><span class="p">(</span><span class="n">sg_cal</span><span class="p">,</span> <span class="n">anc_var_list</span><span class="p">)</span>
                 <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;calibration_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">calvals</span>
             <span class="n">da</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="n">var_dict</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">serial_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                    <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;_&quot;</span><span class="p">,</span>
+                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                        <span class="s2">&quot; &quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;_&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
@@ -305,12 +325,10 @@
                     <span class="s2">&quot;_&quot;</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
-                <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Adding sensor:&#39;</span><span class="p">,</span> <span class="n">sensor_var_name</span><span class="p">)</span>
+                <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding sensor:&quot;</span><span class="p">,</span> <span class="n">sensor_var_name</span><span class="p">)</span>
             <span class="n">dsa</span><span class="p">[</span><span class="n">sensor_var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">da</span>
             <span class="n">sensor_name_type</span><span class="p">[</span><span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">sensor_var_name</span>
     <span class="k">return</span> <span class="n">dsa</span></div>
-
-
 
 
 
@@ -326,9 +344,11 @@
 <span class="sd">    Returns:</span>
 <span class="sd">    xarray.Dataset: The dataset with the dive number added.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">dive_number</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
-        <span class="n">dive_number</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dive_number&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">divenum</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">dive_number</span><span class="p">]</span> <span class="o">*</span> <span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">]))</span></div>
+    <span class="k">if</span> <span class="n">dive_number</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dive_number</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dive_number&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+        <span class="n">divenum</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">dive_number</span><span class="p">]</span> <span class="o">*</span> <span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">])</span>
+    <span class="p">)</span></div>
 
 
 
@@ -336,37 +356,42 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.assign_profile_number">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">assign_profile_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ds1</span><span class="p">):</span>
     <span class="c1"># Remove the variable dive_num_cast if it exists</span>
-    <span class="k">if</span> <span class="s1">&#39;dive_num_cast&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;dive_num_cast&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">)</span>
     <span class="c1"># Initialize the new variable with the same dimensions as dive_num</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">],</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
+    <span class="p">)</span>
 
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;dive_number&#39;</span><span class="p">])</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;dive_number&quot;</span><span class="p">])</span>
     <span class="c1"># Iterate over each unique dive_num</span>
-    <span class="k">for</span> <span class="n">dive</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;divenum&#39;</span><span class="p">]):</span>
+    <span class="k">for</span> <span class="n">dive</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">&quot;divenum&quot;</span><span class="p">]):</span>
         <span class="c1"># Get the indices for the current dive</span>
-        <span class="n">dive_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;divenum&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">dive</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">dive_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">&quot;divenum&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">dive</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="c1"># Find the start and end index for the current dive</span>
         <span class="n">start_index</span> <span class="o">=</span> <span class="n">dive_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">end_index</span> <span class="o">=</span> <span class="n">dive_indices</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        
+
         <span class="c1"># Find the index of the maximum pressure between start_index and end_index</span>
-        <span class="n">pmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PRES&#39;</span><span class="p">][</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> 
+        <span class="n">pmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
         <span class="c1"># Find the index where PRES attains the value pmax between start_index and end_index</span>
-        <span class="n">pmax_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PRES&#39;</span><span class="p">][</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">pmax</span><span class="p">)</span>
-        
+        <span class="n">pmax_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span>
+            <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">pmax</span>
+        <span class="p">)</span>
+
         <span class="c1"># Assign dive_num to all values up to and including the point where pmax is reached</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">][</span><span class="n">start_index</span><span class="p">:</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dive</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dive</span>
 
         <span class="c1"># Assign dive_num + 0.5 to all values after pmax is reached</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">][</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dive</span> <span class="o">+</span> <span class="mf">0.5</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">][</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dive</span> <span class="o">+</span> <span class="mf">0.5</span>
 
         <span class="c1"># Remove the variable PROFILE_NUMBER if it exists</span>
-        <span class="k">if</span> <span class="s1">&#39;PROFILE_NUMBER&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s1">&#39;PROFILE_NUMBER&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;PROFILE_NUMBER&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;PROFILE_NUMBER&quot;</span><span class="p">)</span>
 
         <span class="c1"># Assign PROFILE_NUMBER as 2 * dive_num_cast - 1</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PROFILE_NUMBER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PROFILE_NUMBER&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">ds</span></div>
 
 
@@ -376,14 +401,14 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">assign_phase</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This function adds new variables &#39;PHASE&#39; and &#39;PHASE_QC&#39; to the dataset `ds`, which indicate the phase of each measurement. The phase is determined based on the pressure readings (&#39;PRES&#39;) for each unique dive number (&#39;dive_num&#39;).</span>
-<span class="sd">    </span>
+
 <span class="sd">    Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth. Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC.</span>
 <span class="sd">    Assigns phase values to the dataset based on pressure readings.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    ds (xarray.Dataset): The input dataset containing &#39;dive_num&#39; and &#39;PRES&#39; variables.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset: The dataset with an additional &#39;PHASE&#39; variable, where:</span>
@@ -392,22 +417,25 @@
 <span class="sd">            - Phase 2 is assigned to measurements up to and including the maximum pressure point.</span>
 <span class="sd">            - Phase 1 is assigned to measurements after the maximum pressure point.</span>
 <span class="sd">        - &#39;PHASE_QC&#39; is an additional variable with no QC applied.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth.  Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Determine the correct keystring for divenum</span>
-    <span class="k">if</span> <span class="s1">&#39;dive_number&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">divenum_str</span> <span class="o">=</span> <span class="s1">&#39;dive_number&#39;</span>
-    <span class="k">elif</span> <span class="s1">&#39;divenum&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">divenum_str</span> <span class="o">=</span> <span class="s1">&#39;divenum&#39;</span>
-    <span class="k">elif</span> <span class="s1">&#39;dive_num&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">divenum_str</span> <span class="o">=</span> <span class="s1">&#39;dive_num&#39;</span>
+    <span class="k">if</span> <span class="s2">&quot;dive_number&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">divenum_str</span> <span class="o">=</span> <span class="s2">&quot;dive_number&quot;</span>
+    <span class="k">elif</span> <span class="s2">&quot;divenum&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">divenum_str</span> <span class="o">=</span> <span class="s2">&quot;divenum&quot;</span>
+    <span class="k">elif</span> <span class="s2">&quot;dive_num&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">divenum_str</span> <span class="o">=</span> <span class="s2">&quot;dive_num&quot;</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No valid dive number variable found in the dataset.&quot;</span><span class="p">)</span>
     <span class="c1"># Initialize the new variable with the same dimensions as dive_num</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PHASE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PHASE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))</span>
     <span class="c1"># Initialize the new variable PHASE_QC with the same dimensions as dive_num</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PHASE_QC&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PHASE_QC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">],</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+    <span class="p">)</span>
 
     <span class="c1"># Iterate over each unique dive_num</span>
     <span class="k">for</span> <span class="n">dive</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">divenum_str</span><span class="p">]):</span>
@@ -416,27 +444,32 @@
         <span class="c1"># Find the start and end index for the current dive</span>
         <span class="n">start_index</span> <span class="o">=</span> <span class="n">dive_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">end_index</span> <span class="o">=</span> <span class="n">dive_indices</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        
+
         <span class="c1"># Find the index of the maximum pressure between start_index and end_index</span>
-        <span class="n">pmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PRES&#39;</span><span class="p">][</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> 
+        <span class="n">pmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 
         <span class="c1"># Find the index where PRES attains the value pmax between start_index and end_index</span>
-        <span class="n">pmax_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PRES&#39;</span><span class="p">][</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">pmax</span><span class="p">)</span>
-        
+        <span class="n">pmax_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span>
+            <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">pmax</span>
+        <span class="p">)</span>
+
         <span class="c1"># Assign phase 2 to all values up to and including the point where pmax is reached</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PHASE&#39;</span><span class="p">][</span><span class="n">start_index</span><span class="p">:</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PHASE&quot;</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
 
         <span class="c1"># Assign phase 1 to all values after pmax is reached</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PHASE&#39;</span><span class="p">][</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PHASE&quot;</span><span class="p">][</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="c1"># Assign phase 3 to the time at the beginning of the dive, between the first valid TIME_GPS and the second valid TIME_GPS</span>
-        <span class="n">valid_time_gps_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;TIME_GPS&#39;</span><span class="p">][</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">valid_time_gps_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">&quot;TIME_GPS&quot;</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_time_gps_indices</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">first_valid_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">valid_time_gps_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">second_valid_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">valid_time_gps_indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PHASE&#39;</span><span class="p">][</span><span class="n">first_valid_index</span><span class="p">:</span><span class="n">second_valid_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PHASE&quot;</span><span class="p">][</span><span class="n">first_valid_index</span> <span class="p">:</span> <span class="n">second_valid_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
 
     <span class="k">return</span> <span class="n">ds</span></div>
+
 
 
 <span class="c1">##-----------------------------------------------------------------------------------------------------------</span>
@@ -447,34 +480,34 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">calc_Z</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate the depth (Z position) of the glider using the gsw library to convert pressure to depth.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    ds (xarray.Dataset): The input dataset containing &#39;PRES&#39;, &#39;LATITUDE&#39;, and &#39;LONGITUDE&#39; variables.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset: The dataset with an additional &#39;DEPTH&#39; variable.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Ensure the required variables are present</span>
-    <span class="k">if</span> <span class="s1">&#39;PRES&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="ow">or</span> <span class="s1">&#39;LATITUDE&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">&quot;PRES&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="ow">or</span> <span class="s2">&quot;LATITUDE&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Dataset must contain &#39;PRES&#39; and &#39;LATITUDE&#39; variables.&quot;</span><span class="p">)</span>
 
     <span class="c1"># Initialize the new variable with the same dimensions as dive_num</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;DEPTH_Z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;DEPTH_Z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))</span>
 
     <span class="c1"># Calculate depth using gsw</span>
-    <span class="n">depth</span> <span class="o">=</span> <span class="n">gsw</span><span class="o">.</span><span class="n">z_from_p</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PRES&#39;</span><span class="p">],</span> <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;LATITUDE&#39;</span><span class="p">])</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;DEPTH_Z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">depth</span>
+    <span class="n">depth</span> <span class="o">=</span> <span class="n">gsw</span><span class="o">.</span><span class="n">z_from_p</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">],</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;LATITUDE&quot;</span><span class="p">])</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;DEPTH_Z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">depth</span>
 
     <span class="c1"># Assign the calculated depth to a new variable in the dataset</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;DEPTH_Z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;DEPTH_Z&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;units&quot;</span><span class="p">:</span> <span class="s2">&quot;meters&quot;</span><span class="p">,</span>
         <span class="s2">&quot;positive&quot;</span><span class="p">:</span> <span class="s2">&quot;up&quot;</span><span class="p">,</span>
         <span class="s2">&quot;standard_name&quot;</span><span class="p">:</span> <span class="s2">&quot;depth&quot;</span><span class="p">,</span>
         <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="s2">&quot;Depth calculated from pressure using gsw library, positive up.&quot;</span><span class="p">,</span>
     <span class="p">}</span>
-    
+
     <span class="k">return</span> <span class="n">ds</span></div>
 
 
@@ -482,11 +515,11 @@
 <div class="viewcode-block" id="get_sg_attrs">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.get_sg_attrs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_sg_attrs</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
-    <span class="nb">id</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
     <span class="n">sg_cal</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extract_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
     <span class="n">sg_vars_dict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">sg_vars_dict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">attr</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">}</span>
+        <span class="n">sg_vars_dict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">attr</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">}</span>
     <span class="k">return</span> <span class="n">sg_vars_dict</span></div>
 
 
@@ -510,17 +543,16 @@
     <span class="k">for</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">var_data</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="c1"># Get the dimensions of the variable</span>
         <span class="n">dims</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">var_data</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
-        
+
         <span class="c1"># If this dimension set is not in the dictionary, create a new dataset</span>
         <span class="k">if</span> <span class="n">dims</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">unique_dims_datasets</span><span class="p">:</span>
             <span class="n">unique_dims_datasets</span><span class="p">[</span><span class="n">dims</span><span class="p">]</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
-        
+
         <span class="c1"># Add the variable to the corresponding dataset</span>
         <span class="n">unique_dims_datasets</span><span class="p">[</span><span class="n">dims</span><span class="p">][</span><span class="n">var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_data</span>
 
     <span class="c1"># Convert the dictionary values to a dictionary of datasets</span>
     <span class="k">return</span> <span class="p">{</span><span class="n">dims</span><span class="p">:</span> <span class="n">dataset</span> <span class="k">for</span> <span class="n">dims</span><span class="p">,</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">unique_dims_datasets</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
-
 
 
 
@@ -541,15 +573,18 @@
 
     <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="n">var_values</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-        <span class="n">orig_unit</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;units&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s1">&#39;units&#39;</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]:</span>
-            <span class="n">new_unit</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;units&#39;</span><span class="p">)</span>
+        <span class="n">orig_unit</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;units&quot;</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]:</span>
+            <span class="n">new_unit</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">orig_unit</span> <span class="o">!=</span> <span class="n">new_unit</span><span class="p">:</span>
-                <span class="n">var_values</span><span class="p">,</span> <span class="n">new_unit</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">convert_units_var</span><span class="p">(</span><span class="n">var_values</span><span class="p">,</span> <span class="n">orig_unit</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">)</span>
+                <span class="n">var_values</span><span class="p">,</span> <span class="n">new_unit</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">convert_units_var</span><span class="p">(</span>
+                    <span class="n">var_values</span><span class="p">,</span> <span class="n">orig_unit</span><span class="p">,</span> <span class="n">new_unit</span>
+                <span class="p">)</span>
                 <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">var_values</span>
-                <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_unit</span>
+                <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_unit</span>
 
     <span class="k">return</span> <span class="n">ds</span></div>
+
 
 
 <div class="viewcode-block" id="reformat_units_var">
@@ -567,12 +602,13 @@
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset: The dataset with renamed units.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">old_unit</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span>
+    <span class="n">old_unit</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">old_unit</span> <span class="ow">in</span> <span class="n">unit_format</span><span class="p">:</span>
         <span class="n">new_unit</span> <span class="o">=</span> <span class="n">unit_format</span><span class="p">[</span><span class="n">old_unit</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">new_unit</span> <span class="o">=</span> <span class="n">old_unit</span>
     <span class="k">return</span> <span class="n">new_unit</span></div>
+
 
 
 <div class="viewcode-block" id="reformat_units_str">
@@ -585,9 +621,16 @@
     <span class="k">return</span> <span class="n">new_unit</span></div>
 
 
+
 <div class="viewcode-block" id="convert_units_var">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.convert_units_var">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convert_units_var</span><span class="p">(</span><span class="n">var_values</span><span class="p">,</span> <span class="n">current_unit</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">,</span> <span class="n">unit1_to_unit2</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit1_to_unit2</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_units_var</span><span class="p">(</span>
+    <span class="n">var_values</span><span class="p">,</span>
+    <span class="n">current_unit</span><span class="p">,</span>
+    <span class="n">new_unit</span><span class="p">,</span>
+    <span class="n">unit1_to_unit2</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit1_to_unit2</span><span class="p">,</span>
+    <span class="n">firstrun</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.</span>
 
@@ -607,37 +650,43 @@
     <span class="n">current_unit</span> <span class="o">=</span> <span class="n">reformat_units_str</span><span class="p">(</span><span class="n">current_unit</span><span class="p">)</span>
     <span class="n">new_unit</span> <span class="o">=</span> <span class="n">reformat_units_str</span><span class="p">(</span><span class="n">new_unit</span><span class="p">)</span>
 
-    <span class="n">u1_to_u2</span> <span class="o">=</span> <span class="n">current_unit</span> <span class="o">+</span> <span class="s1">&#39;_to_&#39;</span> <span class="o">+</span> <span class="n">new_unit</span>
+    <span class="n">u1_to_u2</span> <span class="o">=</span> <span class="n">current_unit</span> <span class="o">+</span> <span class="s2">&quot;_to_&quot;</span> <span class="o">+</span> <span class="n">new_unit</span>
     <span class="k">if</span> <span class="n">u1_to_u2</span> <span class="ow">in</span> <span class="n">unit1_to_unit2</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">conversion_factor</span> <span class="o">=</span> <span class="n">unit1_to_unit2</span><span class="p">[</span><span class="n">u1_to_u2</span><span class="p">][</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
+        <span class="n">conversion_factor</span> <span class="o">=</span> <span class="n">unit1_to_unit2</span><span class="p">[</span><span class="n">u1_to_u2</span><span class="p">][</span><span class="s2">&quot;factor&quot;</span><span class="p">]</span>
         <span class="n">new_values</span> <span class="o">=</span> <span class="n">var_values</span> <span class="o">*</span> <span class="n">conversion_factor</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">new_values</span> <span class="o">=</span> <span class="n">var_values</span>
         <span class="n">new_unit</span> <span class="o">=</span> <span class="n">current_unit</span>
         <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No conversion information found for </span><span class="si">{</span><span class="n">current_unit</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new_unit</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="c1">#        raise ValueError(f&quot;No conversion information found for {current_unit} to {new_unit}&quot;)</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No conversion information found for </span><span class="si">{</span><span class="n">current_unit</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new_unit</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+    <span class="c1">#        raise ValueError(f&quot;No conversion information found for {current_unit} to {new_unit}&quot;)</span>
     <span class="k">return</span> <span class="n">new_values</span><span class="p">,</span> <span class="n">new_unit</span></div>
+
 
 
 <div class="viewcode-block" id="convert_qc_flags">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.convert_qc_flags">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_qc_flags</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">qc_name</span><span class="p">):</span>
     <span class="c1"># Must be called *after* var_name has OG1 long_name</span>
-    <span class="n">var_name</span> <span class="o">=</span> <span class="n">qc_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> 
+    <span class="n">var_name</span> <span class="o">=</span> <span class="n">qc_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">qc_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dsa</span><span class="p">):</span>
         <span class="c1"># Seaglider default type was a string.  Convert to int8.</span>
         <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">)</span>
         <span class="c1"># Seaglider default flag_meanings were prefixed with &#39;QC_&#39;. Remove this prefix.</span>
-        <span class="k">if</span> <span class="s1">&#39;flag_meaning&#39;</span> <span class="ow">in</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
-            <span class="n">flag_meaning</span> <span class="o">=</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;flag_meaning&#39;</span><span class="p">]</span>
-            <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;flag_meaning&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flag_meaning</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;QC_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;flag_meaning&quot;</span> <span class="ow">in</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+            <span class="n">flag_meaning</span> <span class="o">=</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;flag_meaning&quot;</span><span class="p">]</span>
+            <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;flag_meaning&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flag_meaning</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;QC_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="c1"># Add a long_name attribute to the QC variable</span>
-        <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;long_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dsa</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;long_name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; quality flag&#39;</span>
-        <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;standard_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;status_flag&#39;</span>
+        <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">dsa</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;long_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; quality flag&quot;</span>
+        <span class="p">)</span>
+        <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;standard_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;status_flag&quot;</span>
         <span class="c1"># Mention the QC variable in the variable attributes</span>
-        <span class="n">dsa</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">qc_name</span>
+        <span class="n">dsa</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">qc_name</span>
     <span class="k">return</span> <span class="n">dsa</span></div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">da</span><span class="p">):</span>
@@ -657,11 +706,13 @@
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span>
     <span class="k">return</span> <span class="n">input_dtype</span>
 
+
 <div class="viewcode-block" id="set_fill_value">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.set_fill_value">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_fill_value</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">):</span>
-    <span class="n">fill_val</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;\d+&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">fill_val</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d+&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">fill_val</span></div>
+
 
 
 <div class="viewcode-block" id="set_best_dtype">
@@ -711,17 +762,18 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">input_dtype</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
     <span class="n">new_dtype</span> <span class="o">=</span> <span class="n">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
-    
+
     <span class="k">if</span> <span class="n">new_dtype</span> <span class="o">==</span> <span class="n">input_dtype</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">value</span>
-    
+
     <span class="n">converted_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span>
-    
+
     <span class="k">if</span> <span class="s2">&quot;int&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
         <span class="n">fill_val</span> <span class="o">=</span> <span class="n">set_fill_value</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span>
         <span class="n">converted_value</span> <span class="o">=</span> <span class="n">fill_val</span>
-    
+
     <span class="k">return</span> <span class="n">converted_value</span></div>
+
 
 
 <div class="viewcode-block" id="find_best_dtype">
@@ -742,9 +794,6 @@
     <span class="k">if</span> <span class="n">input_dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span>
     <span class="k">return</span> <span class="n">input_dtype</span></div>
-
-
-
 
 
 
@@ -785,9 +834,9 @@
 
 
 
-<span class="c1">#===============================================================================</span>
+<span class="c1"># ===============================================================================</span>
 <span class="c1"># Unused functions</span>
-<span class="c1">#===============================================================================</span>
+<span class="c1"># ===============================================================================</span>
 </pre></div>
 
            </div>
@@ -797,7 +846,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025, Eleanor Frajka-Williams.</p>
+    <p>&#169; Copyright 2025, Eleanor Frajka-Williams, Till Moritz.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

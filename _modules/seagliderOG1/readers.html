@@ -5,14 +5,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.readers &mdash; seagliderOG1 v0.0.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+  <title>seagliderOG1.readers &mdash; seagliderOG1 v0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=8b92e751"></script>
+      <script src="../../_static/documentation_options.js?v=2fea6348"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -31,6 +32,7 @@
           
           <a href="../../index.html" class="icon icon-home">
             seagliderOG1
+              <img src="../../_static/logo_seaglider.png" class="logo" alt="Logo"/>
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -40,9 +42,18 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../setup.html">Getting Started: Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">seagliderOG1 demo</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Help and reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/ifmeo-hamburg/seagliderOG1">GitHub Repo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
 </ul>
 
@@ -75,10 +86,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">importlib_resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pooch</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
 <span class="c1"># readers.py: Will only read files.  Not manipulate them.</span>
 
 <span class="c1"># Use pooch for sample files only.</span>
@@ -106,9 +116,10 @@
         <span class="s2">&quot;p0330016_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;404a22da318909c42dcb65fd7315ae1f5542ed8b057faa30c7b21e07f50d67a9&quot;</span><span class="p">,</span>
         <span class="s2">&quot;p0330017_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;06df146adee75439cc4f42e27038bec5596705fbe0a93ea53d2d65d94d719504&quot;</span><span class="p">,</span>
         <span class="s2">&quot;p0330018_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;3dc2363797adce65c286c5099f0144bb0583b368c84dc24185caba0cad9478a7&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330019_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;7e37ad465f720ea1f1257830a595677f6d5f85d7391e711d6164ccee8ada5399&quot;</span>
-    <span class="p">}</span>
+        <span class="s2">&quot;p0330019_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;7e37ad465f720ea1f1257830a595677f6d5f85d7391e711d6164ccee8ada5399&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
 <span class="p">)</span>
+
 
 <span class="c1"># Information on creating a registry file: https://www.fatiando.org/pooch/latest/registry-files.html</span>
 <span class="c1"># But instead of pkg_resources (https://setuptools.pypa.io/en/latest/pkg_resources.html#)</span>
@@ -136,10 +147,11 @@
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
 
 
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_validate_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Validates if the given filename matches the expected pattern.</span>
-<span class="sd">    The expected pattern is a string that starts with &#39;p&#39;, followed by exactly </span>
+<span class="sd">    The expected pattern is a string that starts with &#39;p&#39;, followed by exactly</span>
 <span class="sd">    7 digits, and ends with &#39;.nc&#39;.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        filename (str): The filename to validate.</span>
@@ -147,9 +159,9 @@
 <span class="sd">        bool: True if the filename matches the pattern, False otherwise.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># pattern 1: p1234567.nc</span>
-    <span class="n">pattern1</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;^p\d</span><span class="si">{7}</span><span class="s1">\.nc$&#39;</span>
+    <span class="n">pattern1</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^p\d</span><span class="si">{7}</span><span class="s2">\.nc$&quot;</span>
     <span class="c1"># pattern 2: p0420100_20100903.nc</span>
-    <span class="n">pattern2</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;^p\d</span><span class="si">{7}</span><span class="s1">_\d</span><span class="si">{8}</span><span class="s1">\.nc$&#39;</span>
+    <span class="n">pattern2</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^p\d</span><span class="si">{7}</span><span class="s2">_\d</span><span class="si">{8}</span><span class="s2">\.nc$&quot;</span>
     <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern1</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> <span class="ow">or</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern2</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="n">glider_sn</span> <span class="o">=</span> <span class="n">_glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
         <span class="n">divenum</span> <span class="o">=</span> <span class="n">_profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
@@ -159,7 +171,8 @@
             <span class="k">return</span> <span class="kc">False</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
-        
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Extract the profile number from the filename.</span>
@@ -169,7 +182,8 @@
 <span class="sd">        int: The profile number extracted from the filename.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">8</span><span class="p">])</span>
-    
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Extract the glider serial number from the filename.</span>
@@ -180,12 +194,13 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
 
+
 <div class="viewcode-block" id="filter_files_by_profile">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.filter_files_by_profile">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">filter_files_by_profile</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Filter a list of files based on the start_profile and end_profile.</span>
-<span class="sd">    Expects filenames of the form pXXXYYYY.nc, where XXX is the seaglider serial number and YYYY the divecycle number, e.g. p0420001.nc for glider 41 and divenum 0001. </span>
+<span class="sd">    Expects filenames of the form pXXXYYYY.nc, where XXX is the seaglider serial number and YYYY the divecycle number, e.g. p0420001.nc for glider 41 and divenum 0001.</span>
 <span class="sd">    Note: Does not require file_list to be alphabetical/sorted.</span>
 
 <span class="sd">    Parameters:</span>
@@ -201,13 +216,13 @@
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">file_list</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">_validate_filename</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
             <span class="n">file_list</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-            <span class="c1">#_log.warning(f&quot;Skipping file {file} as it does not have the expected format.&quot;)</span>
+            <span class="c1"># _log.warning(f&quot;Skipping file {file} as it does not have the expected format.&quot;)</span>
 
-<span class="c1">#    divenum_values = [int(file[4:8]) for file in file_list]</span>
+    <span class="c1">#    divenum_values = [int(file[4:8]) for file in file_list]</span>
 
     <span class="c1"># This could be refactored: see divenum_values above, and find values between start_profile and end_profil</span>
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">file_list</span><span class="p">:</span>
-        <span class="c1"># Extract the profile number from the filename now from the begining</span>
+        <span class="c1"># Extract the profile number from the filename now from the beginning</span>
         <span class="n">profile_number</span> <span class="o">=</span> <span class="n">_profnum_from_filename</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">start_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">end_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">start_profile</span> <span class="o">&lt;=</span> <span class="n">profile_number</span> <span class="o">&lt;=</span> <span class="n">end_profile</span><span class="p">:</span>
@@ -222,6 +237,7 @@
             <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">filtered_files</span></div>
+
 
 
 <div class="viewcode-block" id="load_first_basestation_file">
@@ -243,6 +259,7 @@
     <span class="k">return</span> <span class="n">datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
 
 
+
 <div class="viewcode-block" id="load_basestation_files">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_basestation_files">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_basestation_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -259,7 +276,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">file_list</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
     <span class="n">filtered_files</span> <span class="o">=</span> <span class="n">filter_files_by_profile</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">)</span>
-    
+
     <span class="n">datasets</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">filtered_files</span><span class="p">:</span>
@@ -267,15 +284,18 @@
             <span class="n">ds</span> <span class="o">=</span> <span class="n">load_sample_dataset</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">file</span><span class="p">))</span>
-        
+
         <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">datasets</span></div>
 
 
+
 <div class="viewcode-block" id="list_files">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.list_files">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">registry_loc</span><span class="o">=</span><span class="s2">&quot;seagliderOG1&quot;</span><span class="p">,</span> <span class="n">registry_name</span><span class="o">=</span><span class="s2">&quot;seaglider_registry.txt&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_files</span><span class="p">(</span>
+    <span class="n">source</span><span class="p">,</span> <span class="n">registry_loc</span><span class="o">=</span><span class="s2">&quot;seagliderOG1&quot;</span><span class="p">,</span> <span class="n">registry_name</span><span class="o">=</span><span class="s2">&quot;seaglider_registry.txt&quot;</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    List files from a given source, which can be either a URL or a directory path. For an online source,</span>
 <span class="sd">    uses BeautifulSoup and requests.</span>
@@ -291,7 +311,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;http://&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;https://&quot;</span><span class="p">):</span>
-       <span class="c1"># List all files in the URL directory</span>
+        <span class="c1"># List all files in the URL directory</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
         <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>  <span class="c1"># Raise an error for bad status codes</span>
 
@@ -302,7 +322,7 @@
             <span class="n">href</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;href&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">href</span> <span class="ow">and</span> <span class="n">href</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.nc&quot;</span><span class="p">):</span>
                 <span class="n">file_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">href</span><span class="p">)</span>
-    
+
     <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
         <span class="n">file_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -313,8 +333,6 @@
 
     <span class="k">return</span> <span class="n">file_list</span></div>
 
-
-
 </pre></div>
 
            </div>
@@ -324,7 +342,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025, Eleanor Frajka-Williams.</p>
+    <p>&#169; Copyright 2025, Eleanor Frajka-Williams, Till Moritz.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
