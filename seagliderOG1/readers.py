@@ -2,10 +2,9 @@ import xarray as xr
 import os
 from bs4 import BeautifulSoup
 import requests
-import numpy as np
-from importlib_resources import files
 import pooch
 import re
+
 # readers.py: Will only read files.  Not manipulate them.
 
 # Use pooch for sample files only.
@@ -33,9 +32,10 @@ data_source_og = pooch.create(
         "p0330016_20100906.nc": "404a22da318909c42dcb65fd7315ae1f5542ed8b057faa30c7b21e07f50d67a9",
         "p0330017_20100906.nc": "06df146adee75439cc4f42e27038bec5596705fbe0a93ea53d2d65d94d719504",
         "p0330018_20100906.nc": "3dc2363797adce65c286c5099f0144bb0583b368c84dc24185caba0cad9478a7",
-        "p0330019_20100906.nc": "7e37ad465f720ea1f1257830a595677f6d5f85d7391e711d6164ccee8ada5399"
-    }
+        "p0330019_20100906.nc": "7e37ad465f720ea1f1257830a595677f6d5f85d7391e711d6164ccee8ada5399",
+    },
 )
+
 
 # Information on creating a registry file: https://www.fatiando.org/pooch/latest/registry-files.html
 # But instead of pkg_resources (https://setuptools.pypa.io/en/latest/pkg_resources.html#)
@@ -60,10 +60,11 @@ def load_sample_dataset(dataset_name="p0330015_20100906.nc"):
         msg = f"Requested sample dataset {dataset_name} not known. Specify one of the following available datasets: {list(data_source_og.registry.keys())}"
         raise KeyError(msg)
 
+
 def _validate_filename(filename):
     """
     Validates if the given filename matches the expected pattern.
-    The expected pattern is a string that starts with 'p', followed by exactly 
+    The expected pattern is a string that starts with 'p', followed by exactly
     7 digits, and ends with '.nc'.
     Args:
         filename (str): The filename to validate.
@@ -71,9 +72,9 @@ def _validate_filename(filename):
         bool: True if the filename matches the pattern, False otherwise.
     """
     # pattern 1: p1234567.nc
-    pattern1 = r'^p\d{7}\.nc$'
+    pattern1 = r"^p\d{7}\.nc$"
     # pattern 2: p0420100_20100903.nc
-    pattern2 = r'^p\d{7}_\d{8}\.nc$'
+    pattern2 = r"^p\d{7}_\d{8}\.nc$"
     if re.match(pattern1, filename) or re.match(pattern2, filename):
         glider_sn = _glider_sn_from_filename(filename)
         divenum = _profnum_from_filename(filename)
@@ -83,7 +84,8 @@ def _validate_filename(filename):
             return False
     else:
         return False
-        
+
+
 def _profnum_from_filename(filename):
     """
     Extract the profile number from the filename.
@@ -93,7 +95,8 @@ def _profnum_from_filename(filename):
         int: The profile number extracted from the filename.
     """
     return int(filename[4:8])
-    
+
+
 def _glider_sn_from_filename(filename):
     """
     Extract the glider serial number from the filename.
@@ -104,10 +107,11 @@ def _glider_sn_from_filename(filename):
     """
     return int(filename[1:4])
 
+
 def filter_files_by_profile(file_list, start_profile=None, end_profile=None):
     """
     Filter a list of files based on the start_profile and end_profile.
-    Expects filenames of the form pXXXYYYY.nc, where XXX is the seaglider serial number and YYYY the divecycle number, e.g. p0420001.nc for glider 41 and divenum 0001. 
+    Expects filenames of the form pXXXYYYY.nc, where XXX is the seaglider serial number and YYYY the divecycle number, e.g. p0420001.nc for glider 41 and divenum 0001.
     Note: Does not require file_list to be alphabetical/sorted.
 
     Parameters:
@@ -123,13 +127,13 @@ def filter_files_by_profile(file_list, start_profile=None, end_profile=None):
     for file in file_list:
         if not _validate_filename(file):
             file_list.remove(file)
-            #_log.warning(f"Skipping file {file} as it does not have the expected format.")
+            # _log.warning(f"Skipping file {file} as it does not have the expected format.")
 
-#    divenum_values = [int(file[4:8]) for file in file_list]
+    #    divenum_values = [int(file[4:8]) for file in file_list]
 
     # This could be refactored: see divenum_values above, and find values between start_profile and end_profil
     for file in file_list:
-        # Extract the profile number from the filename now from the begining
+        # Extract the profile number from the filename now from the beginning
         profile_number = _profnum_from_filename(file)
         if start_profile is not None and end_profile is not None:
             if start_profile <= profile_number <= end_profile:
@@ -144,6 +148,7 @@ def filter_files_by_profile(file_list, start_profile=None, end_profile=None):
             filtered_files.append(file)
 
     return filtered_files
+
 
 def load_first_basestation_file(source):
     """
@@ -161,6 +166,7 @@ def load_first_basestation_file(source):
     datasets = load_basestation_files(source, start_profile, start_profile)
     return datasets[0]
 
+
 def load_basestation_files(source, start_profile=None, end_profile=None):
     """
     Load datasets from either an online source or a local directory, optionally filtering by profile range.
@@ -175,7 +181,7 @@ def load_basestation_files(source, start_profile=None, end_profile=None):
     """
     file_list = list_files(source)
     filtered_files = filter_files_by_profile(file_list, start_profile, end_profile)
-    
+
     datasets = []
 
     for file in filtered_files:
@@ -183,12 +189,15 @@ def load_basestation_files(source, start_profile=None, end_profile=None):
             ds = load_sample_dataset(file)
         else:
             ds = xr.open_dataset(os.path.join(source, file))
-        
+
         datasets.append(ds)
 
     return datasets
 
-def list_files(source, registry_loc="seagliderOG1", registry_name="seaglider_registry.txt"):
+
+def list_files(
+    source, registry_loc="seagliderOG1", registry_name="seaglider_registry.txt"
+):
     """
     List files from a given source, which can be either a URL or a directory path. For an online source,
     uses BeautifulSoup and requests.
@@ -204,7 +213,7 @@ def list_files(source, registry_loc="seagliderOG1", registry_name="seaglider_reg
     """
 
     if source.startswith("http://") or source.startswith("https://"):
-       # List all files in the URL directory
+        # List all files in the URL directory
         response = requests.get(source)
         response.raise_for_status()  # Raise an error for bad status codes
 
@@ -215,7 +224,7 @@ def list_files(source, registry_loc="seagliderOG1", registry_name="seaglider_reg
             href = link.get("href")
             if href and href.endswith(".nc"):
                 file_list.append(href)
-    
+
     elif os.path.isdir(source):
         file_list = os.listdir(source)
     else:
@@ -225,5 +234,3 @@ def list_files(source, registry_loc="seagliderOG1", registry_name="seaglider_reg
     file_list.sort()
 
     return file_list
-
-
