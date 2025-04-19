@@ -249,7 +249,7 @@ CNDC_RAW:
   units: mS cm-1
   valid_max: 85.0
   valid_min: 0.0
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/CNDC/ 
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/CNDC/
 PRES:
   comment: ctd pressure sensor
   sensor: sensor_ctd
@@ -565,5 +565,3 @@ EAST_DISPLACEMENT:
   sensor: flight_model
   units: m
 #Time for oxygen concentration was defined in OG1_var_names.yaml but not called here
-TIME_DOXY:
-  long_name: time for oxygen concentration in GMT epoch format

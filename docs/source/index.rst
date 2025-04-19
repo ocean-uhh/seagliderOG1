@@ -15,13 +15,26 @@ For recommendations or bug reports, please visit https://github.com/ifmeo-hambur
 ======================================
 
 .. toctree::
+   :maxdepth: 2
+   :caption: Getting started
+
+   setup.md
+   project_structure.md
+
+.. toctree::
    :maxdepth: 3
    :caption: Contents:
 
    demo-output.ipynb
+   
+.. toctree::
+   :maxdepth: 2
+   :caption: Help and reference
+
+   GitHub Repo <http://github.com/ifmeo-hamburg/seagliderOG1>
    seagliderOG1
-
-
+   
+   
 Indices and tables
 ==================
 

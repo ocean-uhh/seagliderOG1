@@ -13,6 +13,7 @@ readme = "README.md"
 license = { file = "LICENSE" }
 maintainers = [
   { name = "Eleanor Frajka-Williams", email = "eleanorfrajka@gmail.com" },
+  { name = "Till Moritz", email = "till.moritz@uni-hamburg.de" }
 ]
 requires-python = ">=3.8"
 classifiers = [
@@ -47,6 +48,8 @@ readme = { file = "README.md", content-type = "text/markdown" }
 write_to = "seagliderOG1/_version.py"
 write_to_template = "__version__ = '{version}'"
 tag_regex = "^(?P<prefix>v)?(?P<version>[^\\+]+)(?P<suffix>.*)?$"
+version_scheme = "no-guess-dev"
+local_scheme = "no-local-version"
 
 [tool.check-manifest]
 ignore = [
@@ -56,4 +59,36 @@ ignore = [
   "notebooks/*",
   "tests",
   "tests/*",
+]
+
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+
+[tool.ruff]
+# …any other top‑level settings you use (extend, cache-dir, line-length, exclude, etc.)…
+
+[tool.ruff.lint]
+select = [
+  "D",       # pydocstyle
+  "E",       # pycodestyle errors
+  "F",       # pyflakes errors
+  "W",       # pycodestyle warnings
+  "C90",     # mccabe complexity
+  "ANN",     # type annotations
+  "B",       # flake8-bugbear
+  "BLE",     # bleach checks
+  "TRY",     # tryceratops
+  "ARG",     # flake8-arguments
+  "SLF",     # flake8-self
+]
+ignore = [
+  "D107",    # missing docstring in __init__
+  "D203",    # 1 blank line required before class docstring
+  "D213",    # multi-line summary docstring style
+  "D401",    # first line should be in imperative mood
+  "E501",    # line‑length
+  "PLR0913", # too many arguments
+  "C901",    # complexity
 ]
