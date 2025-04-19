@@ -1,30 +1,28 @@
-netcdf4
-pooch
+netCDF4>=1.6
+pooch>=1.7
 sgp4>=2.14
-xarray
-numpy
-matplotlib
-pandas
-seaborn
-scipy
-cmocean
-skyfield
-tqdm
-cartopy
-gsw
-glidertools
-importlib_resources
-
+xarray>=2023.1
+numpy>=1.23
+matplotlib>=3.6
+pandas>=2.1
+seaborn>=0.12
+scipy>=1.10
+cmocean>=2.0
+skyfield>=1.45
+tqdm>=4.65
+cartopy>=0.21
+gsw>=3.6
+glidertools>=0.5
 
 # Jupyter and notebooks
-jupyter
+jupyter>=1.0
 jupyterlab>=4.0
 nbconvert>=7.8
 myst-nb>=1.0
-nbsphinx>=0.9  # optional, confirm usage
+nbsphinx>=0.9,<0.10  # requires sphinx <8.2
 
 # Documentation
-sphinx>=7.2
+sphinx>=7.2,<8.2  # required for compatibility with nbsphinx
 sphinx-rtd-theme>=2.0
 pypandoc>=1.11  # optional, confirm usage
 myst-parser>=2.0
@@ -37,4 +35,4 @@ pytest-cov>=4.1  # optional, if you use coverage
 black>=24.0
 ruff>=0.3
 pre-commit>=3.5
-codespell
+codespell>=2.2
