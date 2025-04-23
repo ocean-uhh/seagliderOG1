@@ -727,8 +727,12 @@ def encode_times_og1(ds):
 
 def merge_parts_of_dataset(ds, dim1 = 'sg_data_point', dim2 = 'ctd_data_point'):
     """
-    Merges variables from a dataset along two dimensions, ensuring consistency in coordinates 
-    and handling missing values.
+    Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.
+    The function first separates the dataset into two datasets based on the specified dimensions, 
+    renames the second dimension to match the first, and then concatenates them along the first dimension.
+
+    Missing time values are filled with NaN, and the final dataset is sorted by time.
+
 
     Parameters
     ----------
@@ -742,7 +746,11 @@ def merge_parts_of_dataset(ds, dim1 = 'sg_data_point', dim2 = 'ctd_data_point'):
     Returns
     -------
     merged_ds: xarray.Dataset
-        A merged dataset sorted by time, with missing values handled.
+        A merged dataset sorted by time.
+
+    Notes
+    -----
+    Original author: Till Moritz
     """
     
     def get_time_var(ds, dim):
@@ -800,7 +808,7 @@ def merge_parts_of_dataset(ds, dim1 = 'sg_data_point', dim2 = 'ctd_data_point'):
             new_ds2[coord] = xr.DataArray(np.full(new_shape, np.nan), dims=dim1)
             new_ds2 = new_ds2.set_coords(coord)
 
-    # Concatenate along dim1 while allowing missing values
+    # Concatenate along dim1. Missing values will be filled with NaN.
     merged_ds = xr.concat([new_ds1, new_ds2], dim=dim1, join="inner", combine_attrs="drop_conflicts")
 
     # Sort by time and drop NaT values
