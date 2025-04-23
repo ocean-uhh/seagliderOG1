@@ -279,16 +279,16 @@ def assign_profile_number(ds, ds1):
         # Find the start and end index for the current dive
         start_index = dive_indices[0]
         end_index = dive_indices[-1]
-        
+
         possible_press_names = ["PRES", "pressure", "Pressure", "pres"]
         press_var = [var for var in possible_press_names if var in ds.variables]
         if len(press_var) == 0:
             press_var = [var for var in possible_press_names if var in ds1.variables]
         # Find the index of the maximum pressure between start_index and end_index
-        pmax = np.nanmax(ds[press_var[0]][start_index:end_index + 1].values) 
+        pmax = np.nanmax(ds[press_var[0]][start_index:end_index + 1].values)
         # Find the index where PRES attains the value pmax between start_index and end_index
         pmax_index = start_index + np.argmax(ds[press_var[0]][start_index:end_index + 1].values == pmax)
-        
+
         # Assign dive_num to all values up to and including the point where pmax is reached
         ds["dive_num_cast"][start_index : pmax_index + 1] = dive
 
@@ -328,8 +328,8 @@ def assign_profile_number(ds, ds1):
         # Check for possible pressure variable names in ds, then ds1
         possible_press_names = ["PRES", "ctd_pressure", "Pressure", "pres"]
         press_var = next((var for var in possible_press_names if var in ds.variables), None)
-        
-        if press_var is None:  
+
+        if press_var is None:
             press_var = next((var for var in possible_press_names if var in ds1.variables), None)
 
         if press_var is None:
@@ -449,7 +449,7 @@ def calc_Z(ds):
     Returns
     -------
     xarray.Dataset: The dataset with an additional 'DEPTH' variable.
-    """ 
+    """
     # Ensure the required variables are present
     if "PRES" not in ds.variables or "LATITUDE" not in ds.variables:
         raise ValueError("Dataset must contain 'PRES' and 'LATITUDE' variables.")
@@ -461,7 +461,7 @@ def calc_Z(ds):
     # Add depth to dataset
     ds["DEPTH_Z"] = (["N_MEASUREMENTS"], depth.data)
     # Assign the calculated depth to a new variable in the dataset
-    
+
     ds["DEPTH_Z"].attrs = {
         "units": "meters",
         "positive": "up",
@@ -531,7 +531,7 @@ def convert_units(ds):
             if orig_unit != new_unit:
 
                 var_values, new_unit = convert_units_var(var_values, orig_unit, new_unit)
-                
+
                 ds[var].values = var_values
                 ds[var].attrs["units"] = new_unit
 
@@ -767,7 +767,7 @@ def encode_times_og1(ds):
 def merge_parts_of_dataset(ds, dim1 = 'sg_data_point', dim2 = 'ctd_data_point'):
     """
     Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.
-    The function first separates the dataset into two datasets based on the specified dimensions, 
+    The function first separates the dataset into two datasets based on the specified dimensions,
     renames the second dimension to match the first, and then concatenates them along the first dimension.
 
     Missing time values are filled with NaN, and the final dataset is sorted by time.
@@ -775,11 +775,11 @@ def merge_parts_of_dataset(ds, dim1 = 'sg_data_point', dim2 = 'ctd_data_point'):
 
     Parameters
     ----------
-    ds: xarray.Dataset 
+    ds: xarray.Dataset
         The input dataset containing both dimensions.
-    dim1: str 
+    dim1: str
         Primary dimension name (e.g., 'sg_data_point').
-    dim2: str 
+    dim2: str
         Secondary dimension name to be merged into dim1 (e.g., 'ctd_data_point').
 
     Returns
@@ -791,7 +791,7 @@ def merge_parts_of_dataset(ds, dim1 = 'sg_data_point', dim2 = 'ctd_data_point'):
     -----
     Original author: Till Moritz
     """
-    
+
     def get_time_var(ds, dim):
         """Finds the appropriate time variable based on dimension naming conventions."""
         prefix = dim.split("_data_point")[0]  # Extract prefix
@@ -857,7 +857,7 @@ def merge_parts_of_dataset(ds, dim1 = 'sg_data_point', dim2 = 'ctd_data_point'):
 
 def combine_two_dim_of_dataset(ds, dim1='sg_data_point', dim2='ctd_data_point'):
     """
-    Updates the original dataset by removing variables with dim1 and dim2 
+    Updates the original dataset by removing variables with dim1 and dim2
     and adding the merged dataset.
 
     Parameters
@@ -876,7 +876,7 @@ def combine_two_dim_of_dataset(ds, dim1='sg_data_point', dim2='ctd_data_point'):
     updated_ds: xarray.Dataset
         The updated dataset with merged variables.
     """
-    
+
     # Drop all variables that have dim1 or dim2
     vars_to_drop = [var for var in ds.variables if dim1 in ds[var].dims or dim2 in ds[var].dims]
     cleaned_ds = ds.drop_vars(vars_to_drop, errors="ignore")

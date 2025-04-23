@@ -4,6 +4,7 @@ from datetime import datetime
 
 import numpy as np
 import xarray as xr
+import pandas as pd
 import gsw
 import logging
 from tqdm import tqdm
@@ -216,10 +217,10 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
         ds1_base = tools.combine_two_dim_of_dataset(ds1_base, longitude_dim, pressure_dim)
     # Split the dataset by unique dimensions
     split_ds = tools.split_by_unique_dims(ds1_base)
-    
+
     # Extract the sg_data_point from the split dataset
     ds_sgdatapoint = split_ds[(longitude_dim,)]
-        
+
     # Extract the gps_info from the split dataset
     ds_gps = split_ds[('gps_info',)]
     # Extract variables starting with 'sg_cal'
