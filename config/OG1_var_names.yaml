@@ -12,7 +12,7 @@ ctd_depth: DEPTH
 pressure: PRES
 conductivity: CNDC
 trajectory: TRAJECTORY
-aanderaa4330_dissolved_oxygen: DOXY 
+aanderaa4330_dissolved_oxygen: DOXY
 aanderaa4330_results_time: TIME_DOXY
 sbe43_dissolved_oxygen: DOXY
 sbe43_results_time: TIME_DOXY
@@ -20,7 +20,7 @@ dissolved_oxygen_sat: OXYSAT
 oxygen_concentration: DOXY
 chlorophyll: CHLA
 sigma_theta: SIGTHETA
-sigma_t: SIGMA_T 
+sigma_t: SIGMA_T
 temperature: TEMP
 temperature_raw: TEMP_RAW
 salinity_raw: PSAL_RAW
@@ -76,4 +76,3 @@ eng_vbdCC: VBD_CC
 
 sbe41: Seabird unpumped CTD
 wlbb2f: Wetlabs BB2FL-VMT
- 

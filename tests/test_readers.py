@@ -35,12 +35,8 @@ def test_validate_filename():
     filenames and False for invalid filenames, providing an appropriate error
     message if the assertion fails.
     """
-    
-    valid_filenames = [
-        "p1234567.nc",
-        "p7654321.nc",
-        "p0330001_20100903.nc"
-    ]
+
+    valid_filenames = ["p1234567.nc", "p7654321.nc", "p0330001_20100903.nc"]
     invalid_filenames = [
         "p0010000.nc",
         "p0000001.nc",
@@ -50,14 +46,18 @@ def test_validate_filename():
         "p1234567.txt",
         "1234567.nc",
         "pabcdefg.nc",
-        "p0420100_20100903T101010.nc"
+        "p0420100_20100903T101010.nc",
     ]
 
     for filename in valid_filenames:
-        assert readers._validate_filename(filename) is True, f"Expected True for {filename}"
+        assert (
+            readers._validate_filename(filename) is True
+        ), f"Expected True for {filename}"
 
     for filename in invalid_filenames:
-        assert readers._validate_filename(filename) is False, f"Expected False for {filename}"
+        assert (
+            readers._validate_filename(filename) is False
+        ), f"Expected False for {filename}"
 
 
 def test_filter_filelist_by_profile():
@@ -69,7 +69,7 @@ def test_filter_filelist_by_profile():
     function returns the correct list of filtered filenames, providing an appropriate
     error message if the assertion fails.
     """
-    
+
     file_list = [
         "p7654321.nc",
         "p0010000.nc",
@@ -79,7 +79,7 @@ def test_filter_filelist_by_profile():
         "p0010002.nc",
         "p0010003.nc",
         "p0010004.nc",
-        "p0010005.nc", 
+        "p0010005.nc",
         "p0010006.nc",
         "p0010007.nc",
         "p0010008.nc",
@@ -87,9 +87,19 @@ def test_filter_filelist_by_profile():
     ]
     start_profile = 5
     end_profile = 20
-    expected_result = ["p0010005.nc", "p0010006.nc", "p0010007.nc", "p0010008.nc", "p0010009.nc"]
+    expected_result = [
+        "p0010005.nc",
+        "p0010006.nc",
+        "p0010007.nc",
+        "p0010008.nc",
+        "p0010009.nc",
+    ]
 
-    assert readers.filter_files_by_profile(file_list, start_profile, end_profile) == expected_result, "Unexpected result for filter_files_by_profile"
+    assert (
+        readers.filter_files_by_profile(file_list, start_profile, end_profile)
+        == expected_result
+    ), "Unexpected result for filter_files_by_profile"
+
 
 def test_load_basestation_files():
     """
@@ -106,7 +116,11 @@ def test_load_basestation_files():
     datasets = readers.load_basestation_files(source, start_profile, end_profile)
     assert len(datasets) == 6, "Unexpected number of datasets loaded"
     assert datasets[-1].dive_number == 10, "Unexpected profile number for last dataset"
-    assert datasets[0].latitude.values.mean() > 18 and datasets[0].latitude.values.mean() < 19, "Unexpected latitude range for first dataset"
+    assert (
+        datasets[0].latitude.values.mean() > 18
+        and datasets[0].latitude.values.mean() < 19
+    ), "Unexpected latitude range for first dataset"
+
 
 def test_load_first_basestation_file():
     """
@@ -120,5 +134,9 @@ def test_load_first_basestation_file():
     source = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/"
     dataset = readers.load_first_basestation_file(source)
     assert dataset.dive_number == 1, "Unexpected profile number for first dataset"
-    assert dataset.latitude.values.mean() > 18.5 and dataset.latitude.values.mean() < 18.6, "Unexpected latitude range for first dataset"
-    assert len(dataset.longitude) == 130, "Unexpected number of longitude values for first dataset"
+    assert (
+        dataset.latitude.values.mean() > 18.5 and dataset.latitude.values.mean() < 18.6
+    ), "Unexpected latitude range for first dataset"
+    assert (
+        len(dataset.longitude) == 130
+    ), "Unexpected number of longitude values for first dataset"
