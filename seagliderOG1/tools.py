@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+import pandas as pd
 from seagliderOG1 import vocabularies
 import gsw
 from seagliderOG1 import utilities
