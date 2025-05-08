@@ -4,6 +4,7 @@ gps_lat: LATITUDE_GPS
 gps_lon: LONGITUDE_GPS
 gps_time: TIME_GPS
 ctd_time: TIME
+time: TIME
 eng_pitchAng: PITCH
 eng_rollAng: ROLL
 eng_head: HEADING

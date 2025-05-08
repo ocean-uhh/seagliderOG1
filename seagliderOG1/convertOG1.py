@@ -4,6 +4,10 @@ from datetime import datetime
 
 import numpy as np
 import xarray as xr
+import pandas as pd
+import gsw
+import logging
+from tqdm import tqdm
 
 from seagliderOG1 import readers, tools, utilities, vocabularies, writers
 
@@ -41,7 +45,7 @@ def convert_to_OG1(
     varlist = []
     # This would be faster if we concatenated the basestation files first, and then processed them.
     # But we need to process them first to get the dive number, assign GPS (could be after), ?
-    for ds1_base in list_of_datasets:
+    for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
         varlist = list(set(varlist + list(ds1_base.variables)))
         ds_new, attr_warnings, sg_cal, dc_other, dc_log = process_dataset(
             ds1_base, firstrun
@@ -58,7 +62,7 @@ def convert_to_OG1(
     ds_og1 = ds_og1.sortby("TIME")
 
     # Apply attributes
-    ordered_attributes = update_dataset_attributes(datasets[0], contrib_to_append)
+    ordered_attributes = update_dataset_attributes(list_of_datasets[0], contrib_to_append)
     for key, value in ordered_attributes.items():
         ds_og1.attrs[key] = value
 
@@ -197,8 +201,69 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
 
     - The function sorts the dataset by TIME and may exhibit undesired behavior if there are not two surface GPS fixes before a dive.
     """
-    # Function implementation here
+    # Check if the dataset has 'LONGITUDE' as a coordinate
+    ds1_base = utilities._validate_coords(ds1_base)
+    if ds1_base is None or len(ds1_base.variables) == 0:
+        return xr.Dataset(), [], xr.Dataset(), xr.Dataset(), xr.Dataset()
+    # Handle and split the inputs.
+    #--------------------------------
+    # Extract the dive number from the attributes
+    divenum = ds1_base.attrs['dive_number']
+    ### check if the pressure dim and longitude dim are the same
+    ### if not, combine them inside the dataset
+    longitude_dim = ds1_base['longitude'].dims[0]
+    pressure_dim = ds1_base['pressure'].dims[0]
+    if pressure_dim != longitude_dim:
+        ds1_base = tools.combine_two_dim_of_dataset(ds1_base, longitude_dim, pressure_dim)
+    # Split the dataset by unique dimensions
+    split_ds = tools.split_by_unique_dims(ds1_base)
 
+    # Extract the sg_data_point from the split dataset
+    ds_sgdatapoint = split_ds[(longitude_dim,)]
+
+    # Extract the gps_info from the split dataset
+    ds_gps = split_ds[('gps_info',)]
+    # Extract variables starting with 'sg_cal'
+    # These will be needed to set attributes for the xarray dataset
+    ds_sgcal, ds_log, ds_other = extract_variables(split_ds[()])
+
+    # Repeat the value of dc_other.depth_avg_curr_east to the length of the dataset
+    var_keep = ['depth_avg_curr_east', 'depth_avg_curr_north','depth_avg_curr_qc']
+    for var in var_keep:
+        if var in ds_other:
+            v1 = ds_other[var].values
+            vector_v = np.full(len(ds_sgdatapoint['longitude']), v1)
+            ds_sgdatapoint[var] = ([longitude_dim], vector_v, ds_other[var].attrs)
+
+    # Rename variables and attributes to OG1 vocabulary
+    #-------------------------------------------------------------------
+    # Use variables with dimension 'sg_data_point'
+    # Must be after split_ds
+    ds_new = standardise_OG10(ds_sgdatapoint, firstrun)
+
+    # Add new variables to the dataset (GPS, divenum, PROFILE_NUMBER, PHASE)
+    #-----------------------------------------------------------------------
+    # Add the gps_info to the dataset
+    # Must be after split_by_unique_dims and after rename_dimensions
+    ds_new = add_gps_info_to_dataset(ds_new, ds_gps)
+    # Add the profile number (odd for dives, even for ascents)
+    ds_new = tools.assign_profile_number(ds_new, ds1_base)
+    # Assign the phase of the dive (must be after adding divenum)
+    ds_new = tools.assign_phase(ds_new)
+    # Assign DEPTH_Z to the dataset where positive is up.
+    ds_new = tools.calc_Z(ds_new)
+
+    # Add sensor information to the dataset - can be done on the concatenated data
+    #-----------------------------------------------------------------------------
+    ds_sensor = tools.gather_sensor_info(ds_other, ds_sgcal, firstrun)
+    ds_new = tools.add_sensor_to_dataset(ds_new, ds_sensor, ds_sgcal, firstrun)
+
+    # Remove variables matching vocabularies.vars_to_remove and also 'TIME_GPS'
+    # TIME_GPS throws errors on saving as netCDF, possibly because of the format of the NaNs?
+    vars_to_remove = vocabularies.vars_to_remove + ['TIME_GPS']
+    ds_new = ds_new.drop_vars([var for var in vars_to_remove if var in ds_new.variables])
+    attr_warnings = ''
+    return ds_new, attr_warnings, ds_sgcal, ds_other, ds_log
 
 def standardise_OG10(
     ds: xr.Dataset,

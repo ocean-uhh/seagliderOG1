@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 import pooch
 import re
+from tqdm import tqdm
 
 # readers.py: Will only read files.  Not manipulate them.
 
@@ -184,7 +185,8 @@ def load_basestation_files(source, start_profile=None, end_profile=None):
 
     datasets = []
 
-    for file in filtered_files:
+    ### Include a tqdm progress bar
+    for file in tqdm(filtered_files, desc="Loading datasets", unit="file"):
         if source.startswith("http://") or source.startswith("https://"):
             ds = load_sample_dataset(file)
         else:
@@ -226,7 +228,8 @@ def list_files(
                 file_list.append(href)
 
     elif os.path.isdir(source):
-        file_list = os.listdir(source)
+        ### only list files that are nc files
+        file_list = [f for f in os.listdir(source) if f.endswith(".nc")]
     else:
         raise ValueError("Source must be a valid URL or directory path.")
 
