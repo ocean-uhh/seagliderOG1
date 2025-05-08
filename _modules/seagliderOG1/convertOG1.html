@@ -88,6 +88,10 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gsw</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">readers</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">utilities</span><span class="p">,</span> <span class="n">vocabularies</span><span class="p">,</span> <span class="n">writers</span>
 
@@ -127,7 +131,7 @@
     <span class="n">varlist</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="c1"># This would be faster if we concatenated the basestation files first, and then processed them.</span>
     <span class="c1"># But we need to process them first to get the dive number, assign GPS (could be after), ?</span>
-    <span class="k">for</span> <span class="n">ds1_base</span> <span class="ow">in</span> <span class="n">list_of_datasets</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">ds1_base</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Processing datasets&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">):</span>
         <span class="n">varlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">varlist</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span><span class="p">)))</span>
         <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">,</span> <span class="n">dc_other</span><span class="p">,</span> <span class="n">dc_log</span> <span class="o">=</span> <span class="n">process_dataset</span><span class="p">(</span>
             <span class="n">ds1_base</span><span class="p">,</span> <span class="n">firstrun</span>
@@ -144,7 +148,7 @@
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">&quot;TIME&quot;</span><span class="p">)</span>
 
     <span class="c1"># Apply attributes</span>
-    <span class="n">ordered_attributes</span> <span class="o">=</span> <span class="n">update_dataset_attributes</span><span class="p">(</span><span class="n">datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">contrib_to_append</span><span class="p">)</span>
+    <span class="n">ordered_attributes</span> <span class="o">=</span> <span class="n">update_dataset_attributes</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">contrib_to_append</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">ordered_attributes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
@@ -285,9 +289,70 @@
 <span class="sd">        4. Returns the processed dataset, attribute warnings, and categorized datasets.</span>
 
 <span class="sd">    - The function sorts the dataset by TIME and may exhibit undesired behavior if there are not two surface GPS fixes before a dive.</span>
-<span class="sd">    &quot;&quot;&quot;</span></div>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check if the dataset has &#39;LONGITUDE&#39; as a coordinate</span>
+    <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_validate_coords</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ds1_base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(),</span> <span class="p">[],</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(),</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(),</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+    <span class="c1"># Handle and split the inputs.</span>
+    <span class="c1">#--------------------------------</span>
+    <span class="c1"># Extract the dive number from the attributes</span>
+    <span class="n">divenum</span> <span class="o">=</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;dive_number&#39;</span><span class="p">]</span>
+    <span class="c1">### check if the pressure dim and longitude dim are the same</span>
+    <span class="c1">### if not, combine them inside the dataset</span>
+    <span class="n">longitude_dim</span> <span class="o">=</span> <span class="n">ds1_base</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">pressure_dim</span> <span class="o">=</span> <span class="n">ds1_base</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">pressure_dim</span> <span class="o">!=</span> <span class="n">longitude_dim</span><span class="p">:</span>
+        <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">combine_two_dim_of_dataset</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">,</span> <span class="n">longitude_dim</span><span class="p">,</span> <span class="n">pressure_dim</span><span class="p">)</span>
+    <span class="c1"># Split the dataset by unique dimensions</span>
+    <span class="n">split_ds</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">split_by_unique_dims</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
 
-    <span class="c1"># Function implementation here</span>
+    <span class="c1"># Extract the sg_data_point from the split dataset</span>
+    <span class="n">ds_sgdatapoint</span> <span class="o">=</span> <span class="n">split_ds</span><span class="p">[(</span><span class="n">longitude_dim</span><span class="p">,)]</span>
+
+    <span class="c1"># Extract the gps_info from the split dataset</span>
+    <span class="n">ds_gps</span> <span class="o">=</span> <span class="n">split_ds</span><span class="p">[(</span><span class="s1">&#39;gps_info&#39;</span><span class="p">,)]</span>
+    <span class="c1"># Extract variables starting with &#39;sg_cal&#39;</span>
+    <span class="c1"># These will be needed to set attributes for the xarray dataset</span>
+    <span class="n">ds_sgcal</span><span class="p">,</span> <span class="n">ds_log</span><span class="p">,</span> <span class="n">ds_other</span> <span class="o">=</span> <span class="n">extract_variables</span><span class="p">(</span><span class="n">split_ds</span><span class="p">[()])</span>
+
+    <span class="c1"># Repeat the value of dc_other.depth_avg_curr_east to the length of the dataset</span>
+    <span class="n">var_keep</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;depth_avg_curr_east&#39;</span><span class="p">,</span> <span class="s1">&#39;depth_avg_curr_north&#39;</span><span class="p">,</span><span class="s1">&#39;depth_avg_curr_qc&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">var_keep</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds_other</span><span class="p">:</span>
+            <span class="n">v1</span> <span class="o">=</span> <span class="n">ds_other</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">vector_v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ds_sgdatapoint</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]),</span> <span class="n">v1</span><span class="p">)</span>
+            <span class="n">ds_sgdatapoint</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="n">longitude_dim</span><span class="p">],</span> <span class="n">vector_v</span><span class="p">,</span> <span class="n">ds_other</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
+
+    <span class="c1"># Rename variables and attributes to OG1 vocabulary</span>
+    <span class="c1">#-------------------------------------------------------------------</span>
+    <span class="c1"># Use variables with dimension &#39;sg_data_point&#39;</span>
+    <span class="c1"># Must be after split_ds</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">standardise_OG10</span><span class="p">(</span><span class="n">ds_sgdatapoint</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
+
+    <span class="c1"># Add new variables to the dataset (GPS, divenum, PROFILE_NUMBER, PHASE)</span>
+    <span class="c1">#-----------------------------------------------------------------------</span>
+    <span class="c1"># Add the gps_info to the dataset</span>
+    <span class="c1"># Must be after split_by_unique_dims and after rename_dimensions</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">add_gps_info_to_dataset</span><span class="p">(</span><span class="n">ds_new</span><span class="p">,</span> <span class="n">ds_gps</span><span class="p">)</span>
+    <span class="c1"># Add the profile number (odd for dives, even for ascents)</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">assign_profile_number</span><span class="p">(</span><span class="n">ds_new</span><span class="p">,</span> <span class="n">ds1_base</span><span class="p">)</span>
+    <span class="c1"># Assign the phase of the dive (must be after adding divenum)</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">assign_phase</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
+    <span class="c1"># Assign DEPTH_Z to the dataset where positive is up.</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">calc_Z</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
+
+    <span class="c1"># Add sensor information to the dataset - can be done on the concatenated data</span>
+    <span class="c1">#-----------------------------------------------------------------------------</span>
+    <span class="n">ds_sensor</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">gather_sensor_info</span><span class="p">(</span><span class="n">ds_other</span><span class="p">,</span> <span class="n">ds_sgcal</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_sensor_to_dataset</span><span class="p">(</span><span class="n">ds_new</span><span class="p">,</span> <span class="n">ds_sensor</span><span class="p">,</span> <span class="n">ds_sgcal</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
+
+    <span class="c1"># Remove variables matching vocabularies.vars_to_remove and also &#39;TIME_GPS&#39;</span>
+    <span class="c1"># TIME_GPS throws errors on saving as netCDF, possibly because of the format of the NaNs?</span>
+    <span class="n">vars_to_remove</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vars_to_remove</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;TIME_GPS&#39;</span><span class="p">]</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">ds_new</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">([</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">vars_to_remove</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds_new</span><span class="o">.</span><span class="n">variables</span><span class="p">])</span>
+    <span class="n">attr_warnings</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span><span class="p">,</span> <span class="n">ds_sgcal</span><span class="p">,</span> <span class="n">ds_other</span><span class="p">,</span> <span class="n">ds_log</span></div>
 
 
 <div class="viewcode-block" id="standardise_OG10">

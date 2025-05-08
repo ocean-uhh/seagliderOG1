@@ -100,6 +100,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.assign_phase"><code class="docutils literal notranslate"><span class="pre">assign_phase()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.assign_profile_number"><code class="docutils literal notranslate"><span class="pre">assign_profile_number()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.calc_Z"><code class="docutils literal notranslate"><span class="pre">calc_Z()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.combine_two_dim_of_dataset"><code class="docutils literal notranslate"><span class="pre">combine_two_dim_of_dataset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.convert_qc_flags"><code class="docutils literal notranslate"><span class="pre">convert_qc_flags()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.convert_units"><code class="docutils literal notranslate"><span class="pre">convert_units()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.convert_units_var"><code class="docutils literal notranslate"><span class="pre">convert_units_var()</span></code></a></li>
@@ -108,6 +109,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.find_best_dtype"><code class="docutils literal notranslate"><span class="pre">find_best_dtype()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.gather_sensor_info"><code class="docutils literal notranslate"><span class="pre">gather_sensor_info()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.get_sg_attrs"><code class="docutils literal notranslate"><span class="pre">get_sg_attrs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.merge_parts_of_dataset"><code class="docutils literal notranslate"><span class="pre">merge_parts_of_dataset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.reformat_units_str"><code class="docutils literal notranslate"><span class="pre">reformat_units_str()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.reformat_units_var"><code class="docutils literal notranslate"><span class="pre">reformat_units_var()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.set_best_dtype"><code class="docutils literal notranslate"><span class="pre">set_best_dtype()</span></code></a></li>
@@ -694,6 +696,29 @@ Assigns phase values to the dataset based on pressure readings.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.tools.combine_two_dim_of_dataset">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">combine_two_dim_of_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sg_data_point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ctd_data_point'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#combine_two_dim_of_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.combine_two_dim_of_dataset" title="Link to this definition"></a></dt>
+<dd><p>Updates the original dataset by removing variables with dim1 and dim2
+and adding the merged dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The original dataset.</p></li>
+<li><p><strong>merged_ds</strong> (<em>xarray.Dataset</em>) – The merged dataset to be added.</p></li>
+<li><p><strong>dim1</strong> (<em>str</em>) – First dimension to be removed.</p></li>
+<li><p><strong>dim2</strong> (<em>str</em>) – Second dimension to be removed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>updated_ds</strong> – The updated dataset with merged variables.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.convert_qc_flags">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">convert_qc_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dsa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qc_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#convert_qc_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.convert_qc_flags" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -783,6 +808,32 @@ Notes:
 <dt class="sig sig-object py" id="seagliderOG1.tools.get_sg_attrs">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">get_sg_attrs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#get_sg_attrs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.get_sg_attrs" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.tools.merge_parts_of_dataset">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">merge_parts_of_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sg_data_point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ctd_data_point'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#merge_parts_of_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.merge_parts_of_dataset" title="Link to this definition"></a></dt>
+<dd><p>Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.
+The function first separates the dataset into two datasets based on the specified dimensions,
+renames the second dimension to match the first, and then concatenates them along the first dimension.</p>
+<p>Missing time values are filled with NaN, and the final dataset is sorted by time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The input dataset containing both dimensions.</p></li>
+<li><p><strong>dim1</strong> (<em>str</em>) – Primary dimension name (e.g., ‘sg_data_point’).</p></li>
+<li><p><strong>dim2</strong> (<em>str</em>) – Secondary dimension name to be merged into dim1 (e.g., ‘ctd_data_point’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>merged_ds</strong> – A merged dataset sorted by time.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Original author: Till Moritz</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.reformat_units_str">
