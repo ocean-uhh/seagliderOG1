@@ -39,5 +39,10 @@
             }
         ]
     },
-    "jupyter.interactiveWindow.creationMode": "perFile"
+    "jupyter.interactiveWindow.creationMode": "perFile",
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

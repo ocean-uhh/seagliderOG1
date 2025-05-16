@@ -60,7 +60,7 @@ def gather_sensor_info(ds_other, ds_sgcal, firstrun=False):
         ] = "sg_cal_Pcor sg_cal_Foffset sg_cal_A sg_cal_B sg_cal_C sg_cal_E sg_cal_Soc"
 
     aanderaa_ancillary = "optode_FoilCoefA1 optode_FoilCoefA2	optode_FoilCoefA3 optode_FoilCoefA4	optode_FoilCoefA5 optode_FoilCoefA6 optode_FoilCoefA7 optode_FoilCoefA8 optode_FoilCoefA9 optode_FoilCoefA10 optode_FoilCoefA11	optode_FoilCoefA12 optode_FoilCoefA13 optode_FoilCoefB1	optode_FoilCoefB2 optode_FoilCoefB3	optode_FoilCoefB4 optode_FoilCoefB5	 optode_FoilCoefB6 optode_PhaseCoef0 optode_PhaseCoef1 optode_PhaseCoef2 optode_PhaseCoef3 optode_ConcCoef0 optode_ConcCoef1 optode_SVU_enabled optode_TempCoef0 optode_TempCoef1 optode_TempCoef2 optode_TempCoef3 optode_TempCoef4 optode_TempCoef5"
-    if "optode_FoilCoefA1" in sg_cal:
+    if "optode_FoilCoefA1" in ds_sgcal:
         ds_sensor["aa4831"] = ds_sensor["sbe41"]
         ds_sensor["aa4831"].attrs["long_name"] = "Aanderaa 4831F Oxygen Sensor"
         ds_sensor["aa4831"].attrs["ancillary_variables"] = aanderaa_ancillary
