@@ -481,18 +481,12 @@ An xarray.Dataset object loaded from the first NetCDF file.</p>
 <dt class="sig sig-object py" id="seagliderOG1.readers.load_sample_dataset">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">load_sample_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'p0330015_20100906.nc'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/readers.html#load_sample_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.load_sample_dataset" title="Link to this definition"></a></dt>
 <dd><p>Download sample datasets for use with seagliderOG1</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dataset_name</strong> (<em>str</em><em>, </em><em>optional</em>) – _description_. Defaults to “p0330015_20100906.nc”.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>dataset_name (str, optional): _description_. Defaults to “p0330015_20100906.nc”.</p>
 </dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the requests dataset is not known, raises a value error</p>
+<dt>Raises:</dt><dd><p>ValueError: If the requests dataset is not known, raises a value error</p>
 </dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Requested sample dataset</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>xarray.Dataset</p>
+<dt>Returns:</dt><dd><p>xarray.Dataset: Requested sample dataset</p>
 </dd>
 </dl>
 </dd></dl>
@@ -603,23 +597,25 @@ pandas.io.formats.style.Styler: A styled DataFrame containing the following colu
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.writers.save_dataset">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.writers.</span></span><span class="sig-name descname"><span class="pre">save_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'../test.nc'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/writers.html#save_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.writers.save_dataset" title="Link to this definition"></a></dt>
-<dd><p>Attempts to save the dataset to a NetCDF file. If a TypeError occurs due to invalid attribute values,
-it converts the invalid attributes to strings and retries the save operation.</p>
+<dd><p>Attempts to save the dataset to a NetCDF file.</p>
+<p>If a TypeError occurs due to invalid attribute values, converts the invalid
+attributes to strings and retries the save operation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>(</strong><strong>xarray.Dataset</strong><strong>)</strong> (<em>ds</em>)</p></li>
-<li><p><strong>(</strong><strong>str</strong><strong>)</strong> (<em>output_file</em>)</p></li>
+<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The dataset to be saved.</p></li>
+<li><p><strong>output_file</strong> (<em>str</em><em>, </em><em>optional</em>) – The path to the output NetCDF file. Defaults to ‘../test.nc’.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>bool</strong> (<em>True if the dataset was saved successfully, False otherwise.</em>)</p></li>
-<li><p><strong>Based on</strong> (<em>https://github.com/pydata/xarray/issues/3743</em>)</p></li>
-</ul>
-</p>
+<dd class="field-even"><p>True if the dataset was saved successfully, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Based on: <a class="reference external" href="https://github.com/pydata/xarray/issues/3743">https://github.com/pydata/xarray/issues/3743</a></p>
 </dd></dl>
 
 </section>
@@ -627,22 +623,63 @@ it converts the invalid attributes to strings and retries the save operation.</p
 <span id="tools"></span><h2>tools<a class="headerlink" href="#module-seagliderOG1.tools" title="Link to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.add_dive_number">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_dive_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dive_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_dive_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_dive_number" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_dive_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dive_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_dive_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_dive_number" title="Link to this definition"></a></dt>
 <dd><p>Add dive number as a variable to the dataset. Assumes present in the basestation attributes.</p>
-<p>Parameters:
-ds (xarray.Dataset): The dataset to which the dive number will be added.</p>
-<p>Returns:
-xarray.Dataset: The dataset with the dive number added.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> – The dataset to which the dive number will be added.</p></li>
+<li><p><strong>dive_number</strong> – The dive number to add. If None, extracts from dataset attributes.</p></li>
+<li><p><strong>optional</strong> – The dive number to add. If None, extracts from dataset attributes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The dataset with the dive number added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.add_sensor_to_dataset">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_sensor_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dsa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sg_cal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_sensor_to_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_sensor_to_dataset" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_sensor_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dsa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sg_cal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_sensor_to_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_sensor_to_dataset" title="Link to this definition"></a></dt>
+<dd><p>Add sensor information to the dataset based on instrument data and calibration parameters.</p>
+<p>This function processes different types of seaglider sensors including CTD (sbe41),
+oxygen sensors (sbe43, aa4381, aa4330), and optical sensors (wlbb2f). For each sensor,
+it extracts calibration information, parses serial numbers and calibration dates,
+and creates sensor variables with appropriate attributes and metadata.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dsa</strong> – The target dataset to add sensor information to.</p></li>
+<li><p><strong>ds</strong> – Dataset containing instrument/sensor data with attributes.</p></li>
+<li><p><strong>sg_cal</strong> – Dataset containing calibration information and calibcomm strings.</p></li>
+<li><p><strong>firstrun</strong> – Whether to enable detailed logging for debugging. Default is False.</p></li>
+<li><p><strong>optional</strong> – Whether to enable detailed logging for debugging. Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The updated dataset with sensor variables and metadata added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Handles CTD sensors by parsing calibcomm strings for serial numbers and dates</p></li>
+<li><p>Processes oxygen sensors using calibcomm_oxygen or calibcomm_optode information</p></li>
+<li><p>Creates sensor variable names in format: ‘SENSOR_{type}_{serial}’</p></li>
+<li><p>Skips altimeter sensors as they are not processed in current implementation</p></li>
+<li><p>For wlbb2f sensors, calibration parsing is commented out pending data availability</p></li>
+</ul>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.assign_phase">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">assign_phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#assign_phase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.assign_phase" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">assign_phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#assign_phase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.assign_phase" title="Link to this definition"></a></dt>
 <dd><p>This function adds new variables ‘PHASE’ and ‘PHASE_QC’ to the dataset <cite>ds</cite>, which indicate the phase of each measurement. The phase is determined based on the pressure readings (‘PRES’) for each unique dive number (‘dive_num’).</p>
 <p>Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth. Future work needs to separate out the other phases: <a class="reference external" href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md">https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md</a> and generate a PHASE_QC.
 Assigns phase values to the dataset based on pressure readings.</p>
@@ -675,42 +712,69 @@ Assigns phase values to the dataset based on pressure readings.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.assign_profile_number">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">assign_profile_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#assign_profile_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.assign_profile_number" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">assign_profile_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#assign_profile_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.assign_profile_number" title="Link to this definition"></a></dt>
+<dd><p>Assign profile numbers to measurements based on dive phases (down/up casts).</p>
+<p>This function separates each dive into two profiles: descent (down cast) and
+ascent (up cast) phases. The dive is split at the maximum pressure point,
+with the descent phase getting the dive number and ascent getting dive + 0.5.
+Profile numbers are then calculated as 2 * dive_num_cast - 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> – The dataset to add profile numbers to.</p></li>
+<li><p><strong>ds1</strong> – Dataset containing dive number information in attributes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dataset with ‘dive_num_cast’ and ‘PROFILE_NUMBER’ variables added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Requires pressure variable (PRES, ctd_pressure, Pressure, or pres)</p></li>
+<li><p>Down cast: dive_num_cast = dive number</p></li>
+<li><p>Up cast: dive_num_cast = dive number + 0.5</p></li>
+<li><p>Profile numbers: descent = 2*dive-1, ascent = 2*dive</p></li>
+</ul>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.calc_Z">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">calc_Z</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#calc_Z"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.calc_Z" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">calc_Z</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#calc_Z"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.calc_Z" title="Link to this definition"></a></dt>
 <dd><p>Calculate the depth (Z position) of the glider using the gsw library to convert pressure to depth.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>(</strong><strong>xarray.Dataset</strong><strong>)</strong> (<em>ds</em>)</p>
+<dd class="field-odd"><p><strong>ds</strong> – The input dataset containing ‘PRES’, ‘LATITUDE’, and ‘LONGITUDE’ variables.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>xarray.Dataset</strong></p>
+<dd class="field-even"><p>The dataset with an additional ‘DEPTH’ variable.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The dataset with an additional ‘DEPTH’ variable.</p>
+<dd class="field-odd"><p>xarray.Dataset</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.combine_two_dim_of_dataset">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">combine_two_dim_of_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sg_data_point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ctd_data_point'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#combine_two_dim_of_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.combine_two_dim_of_dataset" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">combine_two_dim_of_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'sg_data_point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ctd_data_point'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#combine_two_dim_of_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.combine_two_dim_of_dataset" title="Link to this definition"></a></dt>
 <dd><p>Updates the original dataset by removing variables with dim1 and dim2
 and adding the merged dataset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The original dataset.</p></li>
-<li><p><strong>merged_ds</strong> (<em>xarray.Dataset</em>) – The merged dataset to be added.</p></li>
-<li><p><strong>dim1</strong> (<em>str</em>) – First dimension to be removed.</p></li>
-<li><p><strong>dim2</strong> (<em>str</em>) – Second dimension to be removed.</p></li>
+<li><p><strong>ds</strong> – The original dataset.</p></li>
+<li><p><strong>dim1</strong> – First dimension to be removed. Default is ‘sg_data_point’.</p></li>
+<li><p><strong>optional</strong> – First dimension to be removed. Default is ‘sg_data_point’.</p></li>
+<li><p><strong>dim2</strong> – Second dimension to be removed. Default is ‘ctd_data_point’.</p></li>
+<li><p><strong>optional</strong> – Second dimension to be removed. Default is ‘ctd_data_point’.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>updated_ds</strong> – The updated dataset with merged variables.</p>
+<dd class="field-even"><p>The updated dataset with merged variables.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>xarray.Dataset</p>
@@ -720,29 +784,51 @@ and adding the merged dataset.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.convert_qc_flags">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">convert_qc_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dsa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qc_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#convert_qc_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.convert_qc_flags" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">convert_qc_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dsa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qc_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#convert_qc_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.convert_qc_flags" title="Link to this definition"></a></dt>
+<dd><p>Convert QC flag variables to proper integer format and update attributes.</p>
+<p>This function converts QC flag variables from string format to int8,
+handles NaN values appropriately, removes ‘<a href="#id9"><span class="problematic" id="id10">QC_</span></a>’ prefixes from flag meanings,
+and adds proper metadata including long_name and standard_name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dsa</strong> – The dataset containing QC flag variables.</p></li>
+<li><p><strong>qc_name</strong> – The name of the QC flag variable to process.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dataset with converted QC flag variable and updated attributes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Must be called after the main variable has been assigned its OG1 long_name.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.convert_units">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">convert_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#convert_units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.convert_units" title="Link to this definition"></a></dt>
-<dd><p>Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">convert_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#convert_units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.convert_units" title="Link to this definition"></a></dt>
+<dd><p>Convert the units of variables in an xarray Dataset to preferred units.</p>
+<p>This is useful, for instance, to convert cm/s to m/s based on vocabulary
+specifications.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>(</strong><strong>xarray.Dataset</strong><strong>)</strong> (<em>ds</em>)</p>
+<dd class="field-odd"><p><strong>ds</strong> – The dataset containing variables to convert.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>xarray.Dataset</strong></p>
+<dd class="field-even"><p>The dataset with converted units.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The dataset with converted units.</p>
+<dd class="field-odd"><p>xarray.Dataset</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.convert_units_var">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">convert_units_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_unit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_unit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit1_to_unit2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'Celsius_to_degreesCelsius':</span> <span class="pre">{'current_unit':</span> <span class="pre">'Celsius',</span> <span class="pre">'factor':</span> <span class="pre">1,</span> <span class="pre">'new_unit':</span> <span class="pre">'degreesCelsius'},</span> <span class="pre">'Pa_to_dbar':</span> <span class="pre">{'current_unit':</span> <span class="pre">'Pa',</span> <span class="pre">'factor':</span> <span class="pre">0.0001,</span> <span class="pre">'new_unit':</span> <span class="pre">'dbar'},</span> <span class="pre">'S</span> <span class="pre">m-1_to_mS</span> <span class="pre">cm-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'S</span> <span class="pre">m-1',</span> <span class="pre">'factor':</span> <span class="pre">0.1,</span> <span class="pre">'new_unit':</span> <span class="pre">'mS</span> <span class="pre">cm-1'},</span> <span class="pre">'S/m_to_mS/cm':</span> <span class="pre">{'current_unit':</span> <span class="pre">'S/m',</span> <span class="pre">'factor':</span> <span class="pre">0.1,</span> <span class="pre">'new_unit':</span> <span class="pre">'mS/cm'},</span> <span class="pre">'cm</span> <span class="pre">s-1_to_m</span> <span class="pre">s-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'cm</span> <span class="pre">s-1',</span> <span class="pre">'factor':</span> <span class="pre">0.01,</span> <span class="pre">'new_unit':</span> <span class="pre">'m</span> <span class="pre">s-1'},</span> <span class="pre">'cm/s_to_m/s':</span> <span class="pre">{'current_unit':</span> <span class="pre">'cm/s',</span> <span class="pre">'factor':</span> <span class="pre">0.01,</span> <span class="pre">'new_unit':</span> <span class="pre">'m/s'},</span> <span class="pre">'cm_to_m':</span> <span class="pre">{'current_unit':</span> <span class="pre">'cm',</span> <span class="pre">'factor':</span> <span class="pre">0.01,</span> <span class="pre">'new_unit':</span> <span class="pre">'m'},</span> <span class="pre">'dbar_to_Pa':</span> <span class="pre">{'current_unit':</span> <span class="pre">'dbar',</span> <span class="pre">'factor':</span> <span class="pre">10000,</span> <span class="pre">'new_unit':</span> <span class="pre">'Pa'},</span> <span class="pre">'dbar_to_kPa':</span> <span class="pre">{'current_unit':</span> <span class="pre">'dbar',</span> <span class="pre">'factor':</span> <span class="pre">10,</span> <span class="pre">'new_unit':</span> <span class="pre">'kPa'},</span> <span class="pre">'degreesCelsius_to_Celsius':</span> <span class="pre">{'current_unit':</span> <span class="pre">'degreesCelsius',</span> <span class="pre">'factor':</span> <span class="pre">1,</span> <span class="pre">'new_unit':</span> <span class="pre">'Celsius'},</span> <span class="pre">'g</span> <span class="pre">m-3_to_kg</span> <span class="pre">m-3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'g</span> <span class="pre">m-3',</span> <span class="pre">'factor':</span> <span class="pre">0.001,</span> <span class="pre">'new_unit':</span> <span class="pre">'kg</span> <span class="pre">m-3'},</span> <span class="pre">'g/m^3_to_kg/m^3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'g/m3',</span> <span class="pre">'factor':</span> <span class="pre">0.001,</span> <span class="pre">'new_unit':</span> <span class="pre">'kg/m3'},</span> <span class="pre">'kg</span> <span class="pre">m-3_to_g</span> <span class="pre">m-3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'kg</span> <span class="pre">m-3',</span> <span class="pre">'factor':</span> <span class="pre">1000,</span> <span class="pre">'new_unit':</span> <span class="pre">'g</span> <span class="pre">m-3'},</span> <span class="pre">'kg/m^3_to_g/m^3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'kg/m3',</span> <span class="pre">'factor':</span> <span class="pre">1000,</span> <span class="pre">'new_unit':</span> <span class="pre">'g/m3'},</span> <span class="pre">'km_to_m':</span> <span class="pre">{'current_unit':</span> <span class="pre">'km',</span> <span class="pre">'factor':</span> <span class="pre">1000,</span> <span class="pre">'new_unit':</span> <span class="pre">'m'},</span> <span class="pre">'m</span> <span class="pre">s-1_to_cm</span> <span class="pre">s-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m</span> <span class="pre">s-1',</span> <span class="pre">'factor':</span> <span class="pre">100,</span> <span class="pre">'new_unit':</span> <span class="pre">'cm</span> <span class="pre">s-1'},</span> <span class="pre">'m/s_to_cm/s':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m/s',</span> <span class="pre">'factor':</span> <span class="pre">100,</span> <span class="pre">'new_unit':</span> <span class="pre">'cm/s'},</span> <span class="pre">'mS</span> <span class="pre">cm-1_to_S</span> <span class="pre">m-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'mS</span> <span class="pre">cm-1',</span> <span class="pre">'factor':</span> <span class="pre">10,</span> <span class="pre">'new_unit':</span> <span class="pre">'S</span> <span class="pre">m-1'},</span> <span class="pre">'mS/cm_to_S/m':</span> <span class="pre">{'current_unit':</span> <span class="pre">'mS/cm',</span> <span class="pre">'factor':</span> <span class="pre">10,</span> <span class="pre">'new_unit':</span> <span class="pre">'S/m'},</span> <span class="pre">'m_to_cm':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m',</span> <span class="pre">'factor':</span> <span class="pre">100,</span> <span class="pre">'new_unit':</span> <span class="pre">'cm'},</span> <span class="pre">'m_to_km':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m',</span> <span class="pre">'factor':</span> <span class="pre">0.001,</span> <span class="pre">'new_unit':</span> <span class="pre">'km'}}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#convert_units_var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.convert_units_var" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">convert_units_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit1_to_unit2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{'Celsius_to_degreesCelsius':</span> <span class="pre">{'current_unit':</span> <span class="pre">'Celsius',</span> <span class="pre">'factor':</span> <span class="pre">1,</span> <span class="pre">'new_unit':</span> <span class="pre">'degreesCelsius'},</span> <span class="pre">'Pa_to_dbar':</span> <span class="pre">{'current_unit':</span> <span class="pre">'Pa',</span> <span class="pre">'factor':</span> <span class="pre">0.0001,</span> <span class="pre">'new_unit':</span> <span class="pre">'dbar'},</span> <span class="pre">'S</span> <span class="pre">m-1_to_mS</span> <span class="pre">cm-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'S</span> <span class="pre">m-1',</span> <span class="pre">'factor':</span> <span class="pre">0.1,</span> <span class="pre">'new_unit':</span> <span class="pre">'mS</span> <span class="pre">cm-1'},</span> <span class="pre">'S/m_to_mS/cm':</span> <span class="pre">{'current_unit':</span> <span class="pre">'S/m',</span> <span class="pre">'factor':</span> <span class="pre">0.1,</span> <span class="pre">'new_unit':</span> <span class="pre">'mS/cm'},</span> <span class="pre">'cm</span> <span class="pre">s-1_to_m</span> <span class="pre">s-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'cm</span> <span class="pre">s-1',</span> <span class="pre">'factor':</span> <span class="pre">0.01,</span> <span class="pre">'new_unit':</span> <span class="pre">'m</span> <span class="pre">s-1'},</span> <span class="pre">'cm/s_to_m/s':</span> <span class="pre">{'current_unit':</span> <span class="pre">'cm/s',</span> <span class="pre">'factor':</span> <span class="pre">0.01,</span> <span class="pre">'new_unit':</span> <span class="pre">'m/s'},</span> <span class="pre">'cm_to_m':</span> <span class="pre">{'current_unit':</span> <span class="pre">'cm',</span> <span class="pre">'factor':</span> <span class="pre">0.01,</span> <span class="pre">'new_unit':</span> <span class="pre">'m'},</span> <span class="pre">'dbar_to_Pa':</span> <span class="pre">{'current_unit':</span> <span class="pre">'dbar',</span> <span class="pre">'factor':</span> <span class="pre">10000,</span> <span class="pre">'new_unit':</span> <span class="pre">'Pa'},</span> <span class="pre">'dbar_to_kPa':</span> <span class="pre">{'current_unit':</span> <span class="pre">'dbar',</span> <span class="pre">'factor':</span> <span class="pre">10,</span> <span class="pre">'new_unit':</span> <span class="pre">'kPa'},</span> <span class="pre">'degreesCelsius_to_Celsius':</span> <span class="pre">{'current_unit':</span> <span class="pre">'degreesCelsius',</span> <span class="pre">'factor':</span> <span class="pre">1,</span> <span class="pre">'new_unit':</span> <span class="pre">'Celsius'},</span> <span class="pre">'g</span> <span class="pre">m-3_to_kg</span> <span class="pre">m-3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'g</span> <span class="pre">m-3',</span> <span class="pre">'factor':</span> <span class="pre">0.001,</span> <span class="pre">'new_unit':</span> <span class="pre">'kg</span> <span class="pre">m-3'},</span> <span class="pre">'g/m^3_to_kg/m^3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'g/m3',</span> <span class="pre">'factor':</span> <span class="pre">0.001,</span> <span class="pre">'new_unit':</span> <span class="pre">'kg/m3'},</span> <span class="pre">'kg</span> <span class="pre">m-3_to_g</span> <span class="pre">m-3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'kg</span> <span class="pre">m-3',</span> <span class="pre">'factor':</span> <span class="pre">1000,</span> <span class="pre">'new_unit':</span> <span class="pre">'g</span> <span class="pre">m-3'},</span> <span class="pre">'kg/m^3_to_g/m^3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'kg/m3',</span> <span class="pre">'factor':</span> <span class="pre">1000,</span> <span class="pre">'new_unit':</span> <span class="pre">'g/m3'},</span> <span class="pre">'km_to_m':</span> <span class="pre">{'current_unit':</span> <span class="pre">'km',</span> <span class="pre">'factor':</span> <span class="pre">1000,</span> <span class="pre">'new_unit':</span> <span class="pre">'m'},</span> <span class="pre">'m</span> <span class="pre">s-1_to_cm</span> <span class="pre">s-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m</span> <span class="pre">s-1',</span> <span class="pre">'factor':</span> <span class="pre">100,</span> <span class="pre">'new_unit':</span> <span class="pre">'cm</span> <span class="pre">s-1'},</span> <span class="pre">'m/s_to_cm/s':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m/s',</span> <span class="pre">'factor':</span> <span class="pre">100,</span> <span class="pre">'new_unit':</span> <span class="pre">'cm/s'},</span> <span class="pre">'mS</span> <span class="pre">cm-1_to_S</span> <span class="pre">m-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'mS</span> <span class="pre">cm-1',</span> <span class="pre">'factor':</span> <span class="pre">10,</span> <span class="pre">'new_unit':</span> <span class="pre">'S</span> <span class="pre">m-1'},</span> <span class="pre">'mS/cm_to_S/m':</span> <span class="pre">{'current_unit':</span> <span class="pre">'mS/cm',</span> <span class="pre">'factor':</span> <span class="pre">10,</span> <span class="pre">'new_unit':</span> <span class="pre">'S/m'},</span> <span class="pre">'m_to_cm':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m',</span> <span class="pre">'factor':</span> <span class="pre">100,</span> <span class="pre">'new_unit':</span> <span class="pre">'cm'},</span> <span class="pre">'m_to_km':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m',</span> <span class="pre">'factor':</span> <span class="pre">0.001,</span> <span class="pre">'new_unit':</span> <span class="pre">'km'}}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#convert_units_var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.convert_units_var" title="Link to this definition"></a></dt>
 <dd><p>Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -773,45 +859,116 @@ and adding the merged dataset.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.encode_times">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">encode_times</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#encode_times"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.encode_times" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">encode_times</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#encode_times"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.encode_times" title="Link to this definition"></a></dt>
+<dd><p>Encode time variables with standard units and remove problematic attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ds</strong> – Dataset containing time variables to encode.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dataset with properly encoded time variables.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.encode_times_og1">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">encode_times_og1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#encode_times_og1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.encode_times_og1" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">encode_times_og1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#encode_times_og1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.encode_times_og1" title="Link to this definition"></a></dt>
+<dd><p>Encode time variables according to OG1 format specifications.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ds</strong> – Dataset containing time variables to encode.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dataset with OG1-formatted time variables.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.find_best_dtype">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">find_best_dtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">da</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#find_best_dtype"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.find_best_dtype" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">find_best_dtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">da</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataArray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">type</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#find_best_dtype"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.find_best_dtype" title="Link to this definition"></a></dt>
+<dd><p>Determine the optimal data type for a variable based on its name and values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>var_name</strong> – The name of the variable.</p></li>
+<li><p><strong>da</strong> – The data array to analyze.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The recommended numpy data type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>type</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Latitude/longitude variables use double precision</p></li>
+<li><p>QC variables use int8</p></li>
+<li><p>Time variables keep original dtype</p></li>
+<li><p>Integer variables are downsized based on value range</p></li>
+<li><p>Float64 variables are converted to float32</p></li>
+</ul>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.gather_sensor_info">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">gather_sensor_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_other</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds_sgcal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#gather_sensor_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.gather_sensor_info" title="Link to this definition"></a></dt>
-<dd><p>Gathers sensor information from the provided datasets and organizes it into a new dataset.
-Parameters:
-ds_other (xarray.Dataset): The dataset containing sensor data.
-ds_sgcal (xarray.Dataset): The dataset containing calibration data.
-firstrun (bool, optional): A flag indicating if this is the first run. Defaults to False.
-Returns:
-xarray.Dataset: A dataset containing the gathered sensor information.
-Notes:
-- The function looks for specific sensor names in the <cite>ds_other</cite> dataset and adds them to a new dataset <cite>ds_sensor</cite>.
-- If ‘aanderaa4330_instrument_dissolved_oxygen’ is present in <cite>ds_other</cite>, it is renamed to ‘aa4330’.
-- If ‘Pcor’ is present in <cite>ds_sgcal</cite>, an additional sensor ‘sbe43’ is created based on ‘sbe41’ with specific attributes.
-- If ‘optode_FoilCoefA1’ is present in <cite>ds_sgcal</cite>, an additional sensor ‘aa4831’ is created based on ‘sbe41’ with specific attributes.
-- The function sets appropriate attributes for the sensors ‘aa4330’, ‘aa4831’, and ‘sbe43’ if they are present.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">gather_sensor_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds_sgcal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#gather_sensor_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.gather_sensor_info" title="Link to this definition"></a></dt>
+<dd><p>Gathers sensor information from the provided datasets and organizes it into a new dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds_other</strong> – The dataset containing sensor data.</p></li>
+<li><p><strong>ds_sgcal</strong> – The dataset containing calibration data.</p></li>
+<li><p><strong>firstrun</strong> – A flag indicating if this is the first run. Default is False.</p></li>
+<li><p><strong>optional</strong> – A flag indicating if this is the first run. Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dataset containing the gathered sensor information.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The function looks for specific sensor names in the <cite>ds_other</cite> dataset and adds them to a new dataset <cite>ds_sensor</cite>.</p></li>
+<li><p>If ‘aanderaa4330_instrument_dissolved_oxygen’ is present in <cite>ds_other</cite>, it is renamed to ‘aa4330’.</p></li>
+<li><p>If ‘Pcor’ is present in <cite>ds_sgcal</cite>, an additional sensor ‘sbe43’ is created based on ‘sbe41’ with specific attributes.</p></li>
+<li><p>If ‘optode_FoilCoefA1’ is present in <cite>ds_sgcal</cite>, an additional sensor ‘aa4831’ is created based on ‘sbe41’ with specific attributes.</p></li>
+<li><p>The function sets appropriate attributes for the sensors ‘aa4330’, ‘aa4831’, and ‘sbe43’ if they are present.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.get_sg_attrs">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">get_sg_attrs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#get_sg_attrs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.get_sg_attrs" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">get_sg_attrs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#get_sg_attrs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.get_sg_attrs" title="Link to this definition"></a></dt>
+<dd><p>Extract seaglider attributes and calibration information into a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ds</strong> – Dataset containing seaglider attributes and calibration data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing seaglider variables and their attributes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.merge_parts_of_dataset">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">merge_parts_of_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sg_data_point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ctd_data_point'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#merge_parts_of_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.merge_parts_of_dataset" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">merge_parts_of_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'sg_data_point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ctd_data_point'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#merge_parts_of_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.merge_parts_of_dataset" title="Link to this definition"></a></dt>
 <dd><p>Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.
 The function first separates the dataset into two datasets based on the specified dimensions,
 renames the second dimension to match the first, and then concatenates them along the first dimension.</p>
@@ -837,38 +994,68 @@ renames the second dimension to match the first, and then concatenates them alon
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.reformat_units_str">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">reformat_units_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_unit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'S/m':</span> <span class="pre">'S</span> <span class="pre">m-1',</span> <span class="pre">'cm/s':</span> <span class="pre">'cm</span> <span class="pre">s-1',</span> <span class="pre">'degreesCelsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'degrees_Celsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'g/m^3':</span> <span class="pre">'g</span> <span class="pre">m-3',</span> <span class="pre">'kg/m^3':</span> <span class="pre">'kg</span> <span class="pre">m-3',</span> <span class="pre">'m/s':</span> <span class="pre">'m</span> <span class="pre">s-1',</span> <span class="pre">'mS/cm':</span> <span class="pre">'mS</span> <span class="pre">cm-1',</span> <span class="pre">'meters':</span> <span class="pre">'m'}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#reformat_units_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.reformat_units_str" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.tools.reformat_units_var">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">reformat_units_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'S/m':</span> <span class="pre">'S</span> <span class="pre">m-1',</span> <span class="pre">'cm/s':</span> <span class="pre">'cm</span> <span class="pre">s-1',</span> <span class="pre">'degreesCelsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'degrees_Celsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'g/m^3':</span> <span class="pre">'g</span> <span class="pre">m-3',</span> <span class="pre">'kg/m^3':</span> <span class="pre">'kg</span> <span class="pre">m-3',</span> <span class="pre">'m/s':</span> <span class="pre">'m</span> <span class="pre">s-1',</span> <span class="pre">'mS/cm':</span> <span class="pre">'mS</span> <span class="pre">cm-1',</span> <span class="pre">'meters':</span> <span class="pre">'m'}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#reformat_units_var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.reformat_units_var" title="Link to this definition"></a></dt>
-<dd><p>Renames units in the dataset based on the provided dictionary for OG1.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">reformat_units_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{'S/m':</span> <span class="pre">'S</span> <span class="pre">m-1',</span> <span class="pre">'cm/s':</span> <span class="pre">'cm</span> <span class="pre">s-1',</span> <span class="pre">'degreesCelsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'degrees_Celsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'g/m^3':</span> <span class="pre">'g</span> <span class="pre">m-3',</span> <span class="pre">'kg/m^3':</span> <span class="pre">'kg</span> <span class="pre">m-3',</span> <span class="pre">'m/s':</span> <span class="pre">'m</span> <span class="pre">s-1',</span> <span class="pre">'mS/cm':</span> <span class="pre">'mS</span> <span class="pre">cm-1',</span> <span class="pre">'meters':</span> <span class="pre">'m'}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#reformat_units_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.reformat_units_str" title="Link to this definition"></a></dt>
+<dd><p>Reformat a unit string based on the provided unit format dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>(</strong><strong>xarray.Dataset</strong><strong>)</strong> (<em>ds</em>)</p></li>
-<li><p><strong>(</strong><strong>dict</strong><strong>)</strong> (<em>unit_format</em>)</p></li>
+<li><p><strong>old_unit</strong> – The original unit string to reformat.</p></li>
+<li><p><strong>unit_format</strong> – A dictionary mapping old unit strings to new formatted unit strings.</p></li>
+<li><p><strong>optional</strong> – A dictionary mapping old unit strings to new formatted unit strings.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>xarray.Dataset</strong></p>
+<dd class="field-even"><p>The reformatted unit string, or the original if no mapping exists.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The dataset with renamed units.</p>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.tools.reformat_units_var">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">reformat_units_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{'S/m':</span> <span class="pre">'S</span> <span class="pre">m-1',</span> <span class="pre">'cm/s':</span> <span class="pre">'cm</span> <span class="pre">s-1',</span> <span class="pre">'degreesCelsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'degrees_Celsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'g/m^3':</span> <span class="pre">'g</span> <span class="pre">m-3',</span> <span class="pre">'kg/m^3':</span> <span class="pre">'kg</span> <span class="pre">m-3',</span> <span class="pre">'m/s':</span> <span class="pre">'m</span> <span class="pre">s-1',</span> <span class="pre">'mS/cm':</span> <span class="pre">'mS</span> <span class="pre">cm-1',</span> <span class="pre">'meters':</span> <span class="pre">'m'}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#reformat_units_var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.reformat_units_var" title="Link to this definition"></a></dt>
+<dd><p>Rename units in the dataset based on the provided dictionary for OG1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> – The input dataset containing variables with units to be renamed.</p></li>
+<li><p><strong>var_name</strong> – The name of the variable whose units should be reformatted.</p></li>
+<li><p><strong>unit_format</strong> – A dictionary mapping old unit strings to new formatted unit strings.</p></li>
+<li><p><strong>optional</strong> – A dictionary mapping old unit strings to new formatted unit strings.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The reformatted unit string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.set_best_dtype">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">set_best_dtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#set_best_dtype"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.set_best_dtype" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">set_best_dtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#set_best_dtype"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.set_best_dtype" title="Link to this definition"></a></dt>
+<dd><p>Optimize data types across all variables in the dataset to reduce memory usage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ds</strong> – The dataset to optimize.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dataset with optimized data types and appropriate fill values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.set_best_dtype_value">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">set_best_dtype_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#set_best_dtype_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.set_best_dtype_value" title="Link to this definition"></a></dt>
-<dd><p>Determines the best data type for a single value based on its variable name and converts it.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">set_best_dtype_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#set_best_dtype_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.set_best_dtype_value" title="Link to this definition"></a></dt>
+<dd><p>Determine the best data type for a single value based on its variable name and convert it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>value</strong> (<em>any</em>) – The input value to convert.</p>
@@ -884,17 +1071,36 @@ renames the second dimension to match the first, and then concatenates them alon
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.set_fill_value">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">set_fill_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dtype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#set_fill_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.set_fill_value" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">set_fill_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#set_fill_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.set_fill_value" title="Link to this definition"></a></dt>
+<dd><p>Calculate appropriate fill value for integer data types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>new_dtype</strong> – The target integer data type.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The fill value calculated as 2^(bits-1) - 1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.split_by_unique_dims">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">split_by_unique_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#split_by_unique_dims"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.split_by_unique_dims" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">split_by_unique_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#split_by_unique_dims"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.split_by_unique_dims" title="Link to this definition"></a></dt>
 <dd><p>Splits an xarray dataset into multiple datasets based on the unique set of dimensions of the variables.</p>
-<p>Parameters:
-ds (xarray.Dataset): The input xarray dataset containing various variables.</p>
-<p>Returns:
-tuple: A tuple containing xarray datasets, each with variables sharing the same set of dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ds</strong> – The input xarray dataset containing various variables.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary mapping dimension tuples to datasets, each with variables sharing the same set of dimensions.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>

@@ -82,13 +82,15 @@
            <div itemprop="articleBody">
              
   <h1>Source code for seagliderOG1.tools</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">vocabularies</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">gsw</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">utilities</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">utilities</span><span class="p">,</span> <span class="n">vocabularies</span>
 
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -111,16 +113,28 @@
 <span class="c1"># a guess as to the sensor type</span>
 <div class="viewcode-block" id="gather_sensor_info">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.gather_sensor_info">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">gather_sensor_info</span><span class="p">(</span><span class="n">ds_other</span><span class="p">,</span> <span class="n">ds_sgcal</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">gather_sensor_info</span><span class="p">(</span>
+    <span class="n">ds_other</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">ds_sgcal</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Gathers sensor information from the provided datasets and organizes it into a new dataset.</span>
-<span class="sd">    Parameters:</span>
-<span class="sd">    ds_other (xarray.Dataset): The dataset containing sensor data.</span>
-<span class="sd">    ds_sgcal (xarray.Dataset): The dataset containing calibration data.</span>
-<span class="sd">    firstrun (bool, optional): A flag indicating if this is the first run. Defaults to False.</span>
-<span class="sd">    Returns:</span>
-<span class="sd">    xarray.Dataset: A dataset containing the gathered sensor information.</span>
-<span class="sd">    Notes:</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds_other</span>
+<span class="sd">        The dataset containing sensor data.</span>
+<span class="sd">    ds_sgcal</span>
+<span class="sd">        The dataset containing calibration data.</span>
+<span class="sd">    firstrun, optional</span>
+<span class="sd">        A flag indicating if this is the first run. Default is False.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        A dataset containing the gathered sensor information.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
 <span class="sd">    - The function looks for specific sensor names in the `ds_other` dataset and adds them to a new dataset `ds_sensor`.</span>
 <span class="sd">    - If &#39;aanderaa4330_instrument_dissolved_oxygen&#39; is present in `ds_other`, it is renamed to &#39;aa4330&#39;.</span>
 <span class="sd">    - If &#39;Pcor&#39; is present in `ds_sgcal`, an additional sensor &#39;sbe43&#39; is created based on &#39;sbe41&#39; with specific attributes.</span>
@@ -146,7 +160,7 @@
         <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;sg_cal_Pcor sg_cal_Foffset sg_cal_A sg_cal_B sg_cal_C sg_cal_E sg_cal_Soc&quot;</span>
 
     <span class="n">aanderaa_ancillary</span> <span class="o">=</span> <span class="s2">&quot;optode_FoilCoefA1 optode_FoilCoefA2	optode_FoilCoefA3 optode_FoilCoefA4	optode_FoilCoefA5 optode_FoilCoefA6 optode_FoilCoefA7 optode_FoilCoefA8 optode_FoilCoefA9 optode_FoilCoefA10 optode_FoilCoefA11	optode_FoilCoefA12 optode_FoilCoefA13 optode_FoilCoefB1	optode_FoilCoefB2 optode_FoilCoefB3	optode_FoilCoefB4 optode_FoilCoefB5	 optode_FoilCoefB6 optode_PhaseCoef0 optode_PhaseCoef1 optode_PhaseCoef2 optode_PhaseCoef3 optode_ConcCoef0 optode_ConcCoef1 optode_SVU_enabled optode_TempCoef0 optode_TempCoef1 optode_TempCoef2 optode_TempCoef3 optode_TempCoef4 optode_TempCoef5&quot;</span>
-    <span class="k">if</span> <span class="s2">&quot;optode_FoilCoefA1&quot;</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">&quot;optode_FoilCoefA1&quot;</span> <span class="ow">in</span> <span class="n">ds_sgcal</span><span class="p">:</span>
         <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4831&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;sbe41&quot;</span><span class="p">]</span>
         <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4831&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Aanderaa 4831F Oxygen Sensor&quot;</span>
         <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4831&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aanderaa_ancillary</span>
@@ -158,7 +172,41 @@
 
 <div class="viewcode-block" id="add_sensor_to_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_sensor_to_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">add_sensor_to_dataset</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_sensor_to_dataset</span><span class="p">(</span>
+    <span class="n">dsa</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add sensor information to the dataset based on instrument data and calibration parameters.</span>
+
+<span class="sd">    This function processes different types of seaglider sensors including CTD (sbe41),</span>
+<span class="sd">    oxygen sensors (sbe43, aa4381, aa4330), and optical sensors (wlbb2f). For each sensor,</span>
+<span class="sd">    it extracts calibration information, parses serial numbers and calibration dates,</span>
+<span class="sd">    and creates sensor variables with appropriate attributes and metadata.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dsa</span>
+<span class="sd">        The target dataset to add sensor information to.</span>
+<span class="sd">    ds</span>
+<span class="sd">        Dataset containing instrument/sensor data with attributes.</span>
+<span class="sd">    sg_cal</span>
+<span class="sd">        Dataset containing calibration information and calibcomm strings.</span>
+<span class="sd">    firstrun, optional</span>
+<span class="sd">        Whether to enable detailed logging for debugging. Default is False.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        The updated dataset with sensor variables and metadata added.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - Handles CTD sensors by parsing calibcomm strings for serial numbers and dates</span>
+<span class="sd">    - Processes oxygen sensors using calibcomm_oxygen or calibcomm_optode information</span>
+<span class="sd">    - Creates sensor variable names in format: &#39;SENSOR_{type}_{serial}&#39;</span>
+<span class="sd">    - Skips altimeter sensors as they are not processed in current implementation</span>
+<span class="sd">    - For wlbb2f sensors, calibration parsing is commented out pending data availability</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">ds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dsa</span>
     <span class="n">sensors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
@@ -337,15 +385,21 @@
 
 <div class="viewcode-block" id="add_dive_number">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_dive_number">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dive_number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">dive_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Add dive number as a variable to the dataset. Assumes present in the basestation attributes.</span>
 
-<span class="sd">    Parameters:</span>
-<span class="sd">    ds (xarray.Dataset): The dataset to which the dive number will be added.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds</span>
+<span class="sd">        The dataset to which the dive number will be added.</span>
+<span class="sd">    dive_number, optional</span>
+<span class="sd">        The dive number to add. If None, extracts from dataset attributes.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">    xarray.Dataset: The dataset with the dive number added.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        The dataset with the dive number added.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">dive_number</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">dive_number</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dive_number&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
@@ -355,54 +409,36 @@
 
 
 
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">def assign_profile_number(ds, ds1):</span>
-<span class="sd">    # Remove the variable dive_num_cast if it exists</span>
-<span class="sd">    if &quot;dive_num_cast&quot; in ds.variables:</span>
-<span class="sd">        ds = ds.drop_vars(&quot;dive_num_cast&quot;)</span>
-<span class="sd">    # Initialize the new variable with the same dimensions as dive_num</span>
-<span class="sd">    ds[&quot;dive_num_cast&quot;] = (</span>
-<span class="sd">        [&quot;N_MEASUREMENTS&quot;],</span>
-<span class="sd">        np.full(ds.dims[&quot;N_MEASUREMENTS&quot;], np.nan),</span>
-<span class="sd">    )</span>
-
-<span class="sd">    ds = add_dive_number(ds, ds1.attrs[&quot;dive_number&quot;])</span>
-<span class="sd">    # Iterate over each unique dive_num</span>
-<span class="sd">    for dive in np.unique(ds[&quot;divenum&quot;]):</span>
-<span class="sd">        # Get the indices for the current dive</span>
-<span class="sd">        dive_indices = np.where(ds[&quot;divenum&quot;] == dive)[0]</span>
-<span class="sd">        # Find the start and end index for the current dive</span>
-<span class="sd">        start_index = dive_indices[0]</span>
-<span class="sd">        end_index = dive_indices[-1]</span>
-
-<span class="sd">        possible_press_names = [&quot;PRES&quot;, &quot;pressure&quot;, &quot;Pressure&quot;, &quot;pres&quot;]</span>
-<span class="sd">        press_var = [var for var in possible_press_names if var in ds.variables]</span>
-<span class="sd">        if len(press_var) == 0:</span>
-<span class="sd">            press_var = [var for var in possible_press_names if var in ds1.variables]</span>
-<span class="sd">        # Find the index of the maximum pressure between start_index and end_index</span>
-<span class="sd">        pmax = np.nanmax(ds[press_var[0]][start_index:end_index + 1].values)</span>
-<span class="sd">        # Find the index where PRES attains the value pmax between start_index and end_index</span>
-<span class="sd">        pmax_index = start_index + np.argmax(ds[press_var[0]][start_index:end_index + 1].values == pmax)</span>
-
-<span class="sd">        # Assign dive_num to all values up to and including the point where pmax is reached</span>
-<span class="sd">        ds[&quot;dive_num_cast&quot;][start_index : pmax_index + 1] = dive</span>
-
-<span class="sd">        # Assign dive_num + 0.5 to all values after pmax is reached</span>
-<span class="sd">        ds[&quot;dive_num_cast&quot;][pmax_index + 1 : end_index + 1] = dive + 0.5</span>
-
-<span class="sd">        # Remove the variable PROFILE_NUMBER if it exists</span>
-<span class="sd">        if &quot;PROFILE_NUMBER&quot; in ds.variables:</span>
-<span class="sd">            ds = ds.drop_vars(&quot;PROFILE_NUMBER&quot;)</span>
-
-<span class="sd">        # Assign PROFILE_NUMBER as 2 * dive_num_cast - 1</span>
-<span class="sd">        ds[&quot;PROFILE_NUMBER&quot;] = 2 * ds[&quot;dive_num_cast&quot;] - 1</span>
-<span class="sd">    return ds</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
-
 <div class="viewcode-block" id="assign_profile_number">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.assign_profile_number">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">assign_profile_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ds1</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">assign_profile_number</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">ds1</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assign profile numbers to measurements based on dive phases (down/up casts).</span>
+
+<span class="sd">    This function separates each dive into two profiles: descent (down cast) and</span>
+<span class="sd">    ascent (up cast) phases. The dive is split at the maximum pressure point,</span>
+<span class="sd">    with the descent phase getting the dive number and ascent getting dive + 0.5.</span>
+<span class="sd">    Profile numbers are then calculated as 2 * dive_num_cast - 1.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds</span>
+<span class="sd">        The dataset to add profile numbers to.</span>
+<span class="sd">    ds1</span>
+<span class="sd">        Dataset containing dive number information in attributes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        Dataset with &#39;dive_num_cast&#39; and &#39;PROFILE_NUMBER&#39; variables added.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - Requires pressure variable (PRES, ctd_pressure, Pressure, or pres)</span>
+<span class="sd">    - Down cast: dive_num_cast = dive number</span>
+<span class="sd">    - Up cast: dive_num_cast = dive number + 0.5</span>
+<span class="sd">    - Profile numbers: descent = 2*dive-1, ascent = 2*dive</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Remove the variable dive_num_cast if it exists</span>
     <span class="k">if</span> <span class="s2">&quot;dive_num_cast&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">)</span>
@@ -472,7 +508,7 @@
 
 <div class="viewcode-block" id="assign_phase">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.assign_phase">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">assign_phase</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">assign_phase</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This function adds new variables &#39;PHASE&#39; and &#39;PHASE_QC&#39; to the dataset `ds`, which indicate the phase of each measurement. The phase is determined based on the pressure readings (&#39;PRES&#39;) for each unique dive number (&#39;dive_num&#39;).</span>
 
@@ -551,17 +587,19 @@
 <span class="c1">##-----------------------------------------------------------------------------------------------------------</span>
 <div class="viewcode-block" id="calc_Z">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.calc_Z">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">calc_Z</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_Z</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate the depth (Z position) of the glider using the gsw library to convert pressure to depth.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    ds (xarray.Dataset): The input dataset containing &#39;PRES&#39;, &#39;LATITUDE&#39;, and &#39;LONGITUDE&#39; variables.</span>
+<span class="sd">    ds</span>
+<span class="sd">        The input dataset containing &#39;PRES&#39;, &#39;LATITUDE&#39;, and &#39;LONGITUDE&#39; variables.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    xarray.Dataset: The dataset with an additional &#39;DEPTH&#39; variable.</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        The dataset with an additional &#39;DEPTH&#39; variable.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Ensure the required variables are present</span>
     <span class="k">if</span> <span class="s2">&quot;PRES&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="ow">or</span> <span class="s2">&quot;LATITUDE&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
@@ -589,7 +627,20 @@
 
 <div class="viewcode-block" id="get_sg_attrs">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.get_sg_attrs">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_sg_attrs</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_sg_attrs</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract seaglider attributes and calibration information into a dictionary.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds</span>
+<span class="sd">        Dataset containing seaglider attributes and calibration data.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary containing seaglider variables and their attributes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">id</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
     <span class="n">sg_cal</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extract_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
     <span class="n">sg_vars_dict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -601,15 +652,19 @@
 
 <div class="viewcode-block" id="split_by_unique_dims">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.split_by_unique_dims">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">split_by_unique_dims</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">split_by_unique_dims</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Splits an xarray dataset into multiple datasets based on the unique set of dimensions of the variables.</span>
 
-<span class="sd">    Parameters:</span>
-<span class="sd">    ds (xarray.Dataset): The input xarray dataset containing various variables.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds</span>
+<span class="sd">        The input xarray dataset containing various variables.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">    tuple: A tuple containing xarray datasets, each with variables sharing the same set of dimensions.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        A dictionary mapping dimension tuples to datasets, each with variables sharing the same set of dimensions.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Dictionary to hold datasets with unique dimension sets</span>
     <span class="n">unique_dims_datasets</span> <span class="o">=</span> <span class="p">{}</span>
@@ -633,7 +688,23 @@
 
 <div class="viewcode-block" id="convert_units">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.convert_units">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convert_units</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_units</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert the units of variables in an xarray Dataset to preferred units.</span>
+
+<span class="sd">    This is useful, for instance, to convert cm/s to m/s based on vocabulary</span>
+<span class="sd">    specifications.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds</span>
+<span class="sd">        The dataset containing variables to convert.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        The dataset with converted units.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.</span>
 
@@ -666,7 +737,26 @@
 
 <div class="viewcode-block" id="reformat_units_var">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.reformat_units_var">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">reformat_units_var</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">unit_format</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reformat_units_var</span><span class="p">(</span>
+    <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">var_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit_format</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rename units in the dataset based on the provided dictionary for OG1.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds</span>
+<span class="sd">        The input dataset containing variables with units to be renamed.</span>
+<span class="sd">    var_name</span>
+<span class="sd">        The name of the variable whose units should be reformatted.</span>
+<span class="sd">    unit_format, optional</span>
+<span class="sd">        A dictionary mapping old unit strings to new formatted unit strings.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        The reformatted unit string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Renames units in the dataset based on the provided dictionary for OG1.</span>
 
@@ -690,7 +780,24 @@
 
 <div class="viewcode-block" id="reformat_units_str">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.reformat_units_str">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">reformat_units_str</span><span class="p">(</span><span class="n">old_unit</span><span class="p">,</span> <span class="n">unit_format</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reformat_units_str</span><span class="p">(</span>
+    <span class="n">old_unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit_format</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reformat a unit string based on the provided unit format dictionary.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    old_unit</span>
+<span class="sd">        The original unit string to reformat.</span>
+<span class="sd">    unit_format, optional</span>
+<span class="sd">        A dictionary mapping old unit strings to new formatted unit strings.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        The reformatted unit string, or the original if no mapping exists.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">old_unit</span> <span class="ow">in</span> <span class="n">unit_format</span><span class="p">:</span>
         <span class="n">new_unit</span> <span class="o">=</span> <span class="n">unit_format</span><span class="p">[</span><span class="n">old_unit</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
@@ -702,12 +809,12 @@
 <div class="viewcode-block" id="convert_units_var">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.convert_units_var">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_units_var</span><span class="p">(</span>
-    <span class="n">var_values</span><span class="p">,</span>
-    <span class="n">current_unit</span><span class="p">,</span>
-    <span class="n">new_unit</span><span class="p">,</span>
-    <span class="n">unit1_to_unit2</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">unit1_to_unit2</span><span class="p">,</span>
-    <span class="n">firstrun</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="p">):</span>
+    <span class="n">var_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">current_unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">new_unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">unit1_to_unit2</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit1_to_unit2</span><span class="p">,</span>
+    <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.</span>
 
@@ -745,7 +852,30 @@
 
 <div class="viewcode-block" id="convert_qc_flags">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.convert_qc_flags">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convert_qc_flags</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">qc_name</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_qc_flags</span><span class="p">(</span><span class="n">dsa</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">qc_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert QC flag variables to proper integer format and update attributes.</span>
+
+<span class="sd">    This function converts QC flag variables from string format to int8,</span>
+<span class="sd">    handles NaN values appropriately, removes &#39;QC_&#39; prefixes from flag meanings,</span>
+<span class="sd">    and adds proper metadata including long_name and standard_name.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dsa</span>
+<span class="sd">        The dataset containing QC flag variables.</span>
+<span class="sd">    qc_name</span>
+<span class="sd">        The name of the QC flag variable to process.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        Dataset with converted QC flag variable and updated attributes.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Must be called after the main variable has been assigned its OG1 long_name.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Must be called *after* var_name has OG1 long_name</span>
     <span class="n">var_name</span> <span class="o">=</span> <span class="n">qc_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">qc_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dsa</span><span class="p">):</span>
@@ -778,7 +908,32 @@
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">da</span><span class="p">):</span>
+<div class="viewcode-block" id="find_best_dtype">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.find_best_dtype">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">da</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determine the optimal data type for a variable based on its name and values.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    var_name</span>
+<span class="sd">        The name of the variable.</span>
+<span class="sd">    da</span>
+<span class="sd">        The data array to analyze.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    type</span>
+<span class="sd">        The recommended numpy data type.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - Latitude/longitude variables use double precision</span>
+<span class="sd">    - QC variables use int8</span>
+<span class="sd">    - Time variables keep original dtype</span>
+<span class="sd">    - Integer variables are downsized based on value range</span>
+<span class="sd">    - Float64 variables are converted to float32</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">input_dtype</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
     <span class="k">if</span> <span class="s2">&quot;latitude&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">&quot;longitude&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span>
@@ -793,12 +948,26 @@
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span>
     <span class="k">if</span> <span class="n">input_dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span>
-    <span class="k">return</span> <span class="n">input_dtype</span>
+    <span class="k">return</span> <span class="n">input_dtype</span></div>
+
 
 
 <div class="viewcode-block" id="set_fill_value">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.set_fill_value">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">set_fill_value</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_fill_value</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">:</span> <span class="nb">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate appropriate fill value for integer data types.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    new_dtype</span>
+<span class="sd">        The target integer data type.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        The fill value calculated as 2^(bits-1) - 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">fill_val</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d+&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">fill_val</span></div>
 
@@ -806,7 +975,20 @@
 
 <div class="viewcode-block" id="set_best_dtype">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.set_best_dtype">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">set_best_dtype</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_best_dtype</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Optimize data types across all variables in the dataset to reduce memory usage.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds</span>
+<span class="sd">        The dataset to optimize.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        Dataset with optimized data types and appropriate fill values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">bytes_in</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">nbytes</span>
     <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
         <span class="n">da</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
@@ -835,9 +1017,9 @@
 
 <div class="viewcode-block" id="set_best_dtype_value">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.set_best_dtype_value">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">set_best_dtype_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">var_name</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_best_dtype_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">var_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Determines the best data type for a single value based on its variable name and converts it.</span>
+<span class="sd">    Determine the best data type for a single value based on its variable name and convert it.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -865,30 +1047,22 @@
 
 
 
-<div class="viewcode-block" id="find_best_dtype">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.find_best_dtype">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">da</span><span class="p">):</span>
-    <span class="n">input_dtype</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
-    <span class="k">if</span> <span class="s2">&quot;latitude&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">&quot;longitude&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span>
-    <span class="k">if</span> <span class="n">var_name</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;qc&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span>
-    <span class="k">if</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
-        <span class="k">return</span> <span class="n">input_dtype</span>
-    <span class="k">if</span> <span class="n">var_name</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;raw&quot;</span> <span class="ow">or</span> <span class="s2">&quot;int&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_dtype</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">da</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">16</span> <span class="o">/</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span>
-        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">da</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span> <span class="o">/</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span>
-    <span class="k">if</span> <span class="n">input_dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span>
-    <span class="k">return</span> <span class="n">input_dtype</span></div>
-
-
-
 <div class="viewcode-block" id="encode_times">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.encode_times">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">encode_times</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">encode_times</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Encode time variables with standard units and remove problematic attributes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds</span>
+<span class="sd">        Dataset containing time variables to encode.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        Dataset with properly encoded time variables.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="s2">&quot;units&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="s2">&quot;calendar&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -906,7 +1080,20 @@
 
 <div class="viewcode-block" id="encode_times_og1">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.encode_times_og1">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">encode_times_og1</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">encode_times_og1</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Encode time variables according to OG1 format specifications.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds</span>
+<span class="sd">        Dataset containing time variables to encode.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        Dataset with OG1-formatted time variables.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">&quot;axis&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;axis&quot;</span><span class="p">)</span>
@@ -925,7 +1112,9 @@
 
 <div class="viewcode-block" id="merge_parts_of_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.merge_parts_of_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">merge_parts_of_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dim1</span><span class="o">=</span><span class="s2">&quot;sg_data_point&quot;</span><span class="p">,</span> <span class="n">dim2</span><span class="o">=</span><span class="s2">&quot;ctd_data_point&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">merge_parts_of_dataset</span><span class="p">(</span>
+    <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">dim1</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sg_data_point&quot;</span><span class="p">,</span> <span class="n">dim2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ctd_data_point&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.</span>
 <span class="sd">    The function first separates the dataset into two datasets based on the specified dimensions,</span>
@@ -1032,25 +1221,25 @@
 
 <div class="viewcode-block" id="combine_two_dim_of_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.combine_two_dim_of_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">combine_two_dim_of_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dim1</span><span class="o">=</span><span class="s2">&quot;sg_data_point&quot;</span><span class="p">,</span> <span class="n">dim2</span><span class="o">=</span><span class="s2">&quot;ctd_data_point&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">combine_two_dim_of_dataset</span><span class="p">(</span>
+    <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">dim1</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sg_data_point&quot;</span><span class="p">,</span> <span class="n">dim2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ctd_data_point&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Updates the original dataset by removing variables with dim1 and dim2</span>
 <span class="sd">    and adding the merged dataset.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    ds: xarray.Dataset</span>
+<span class="sd">    ds</span>
 <span class="sd">        The original dataset.</span>
-<span class="sd">    merged_ds: xarray.Dataset</span>
-<span class="sd">        The merged dataset to be added.</span>
-<span class="sd">    dim1: str</span>
-<span class="sd">        First dimension to be removed.</span>
-<span class="sd">    dim2: str</span>
-<span class="sd">        Second dimension to be removed.</span>
+<span class="sd">    dim1, optional</span>
+<span class="sd">        First dimension to be removed. Default is &#39;sg_data_point&#39;.</span>
+<span class="sd">    dim2, optional</span>
+<span class="sd">        Second dimension to be removed. Default is &#39;ctd_data_point&#39;.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    updated_ds: xarray.Dataset</span>
+<span class="sd">    xarray.Dataset</span>
 <span class="sd">        The updated dataset with merged variables.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 

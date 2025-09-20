@@ -176,7 +176,7 @@ ruff<span class="w"> </span>check<span class="w">        </span><span class="c1"
 <h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
 <section id="docstrings">
 <h3>Docstrings<a class="headerlink" href="#docstrings" title="Link to this heading"></a></h3>
-<p>Use Google-style docstrings for all public functions:</p>
+<p>Use numpy-style docstrings for all public functions:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">convert_to_OG1</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Processes datasets and converts them to OG1 format.</span>
@@ -192,8 +192,20 @@ ruff<span class="w"> </span>check<span class="w">        </span><span class="c1"
 <span class="sd">    -------</span>
 <span class="sd">    tuple[xr.Dataset, list[str]]</span>
 <span class="sd">        A tuple containing:</span>
-<span class="sd">        - ds_og1 (xr.Dataset): The processed dataset in OG1 format.</span>
-<span class="sd">        - varlist (list[str]): A list of variable names from input datasets.</span>
+<span class="sd">        - ds_og1 : xr.Dataset</span>
+<span class="sd">            The processed dataset in OG1 format.</span>
+<span class="sd">        - varlist : list[str]</span>
+<span class="sd">            A list of variable names from input datasets.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If input datasets are invalid.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; datasets = readers.load_basestation_files(&quot;path/to/files/&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; og1_data, variables = convert_to_OG1(datasets)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </pre></div>
 </div>
