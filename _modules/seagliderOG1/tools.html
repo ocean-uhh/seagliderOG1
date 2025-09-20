@@ -354,6 +354,7 @@
     <span class="p">)</span></div>
 
 
+
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">def assign_profile_number(ds, ds1):</span>
 <span class="sd">    # Remove the variable dive_num_cast if it exists</span>
@@ -398,22 +399,26 @@
 <span class="sd">    return ds</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+
 <div class="viewcode-block" id="assign_profile_number">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.assign_profile_number">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">assign_profile_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ds1</span><span class="p">):</span>
     <span class="c1"># Remove the variable dive_num_cast if it exists</span>
-    <span class="k">if</span> <span class="s1">&#39;dive_num_cast&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;dive_num_cast&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">)</span>
 
     <span class="c1"># Initialize the new variable with the same dimensions as dive_num</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;N_MEASUREMENTS&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">],</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
+    <span class="p">)</span>
 
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;dive_number&#39;</span><span class="p">])</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;dive_number&quot;</span><span class="p">])</span>
 
     <span class="c1"># Iterate over each unique dive_num</span>
-    <span class="k">for</span> <span class="n">dive</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;divenum&#39;</span><span class="p">]):</span>
+    <span class="k">for</span> <span class="n">dive</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">&quot;divenum&quot;</span><span class="p">]):</span>
         <span class="c1"># Get the indices for the current dive</span>
-        <span class="n">dive_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;divenum&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">dive</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">dive_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">&quot;divenum&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">dive</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dive_indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">continue</span>  <span class="c1"># Skip if no indices found</span>
 
@@ -423,39 +428,45 @@
 
         <span class="c1"># Check for possible pressure variable names in ds, then ds1</span>
         <span class="n">possible_press_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">,</span> <span class="s2">&quot;ctd_pressure&quot;</span><span class="p">,</span> <span class="s2">&quot;Pressure&quot;</span><span class="p">,</span> <span class="s2">&quot;pres&quot;</span><span class="p">]</span>
-        <span class="n">press_var</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">possible_press_names</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">press_var</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">possible_press_names</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">),</span> <span class="kc">None</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">press_var</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">press_var</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">possible_press_names</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds1</span><span class="o">.</span><span class="n">variables</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">press_var</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">possible_press_names</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds1</span><span class="o">.</span><span class="n">variables</span><span class="p">),</span> <span class="kc">None</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">press_var</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No valid pressure variable (PRES or pressure) found in ds or ds1&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No valid pressure variable (PRES or pressure) found in ds or ds1&quot;</span>
+            <span class="p">)</span>
 
         <span class="c1"># Get pressure values from the correct dataset</span>
         <span class="n">pressure_data</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">press_var</span><span class="p">]</span> <span class="k">if</span> <span class="n">press_var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="k">else</span> <span class="n">ds1</span><span class="p">[</span><span class="n">press_var</span><span class="p">]</span>
 
         <span class="c1"># Find the maximum pressure value between start_index and end_index</span>
-        <span class="n">pmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">pressure_data</span><span class="p">[</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">pmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">pressure_data</span><span class="p">[</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 
         <span class="c1"># Find the index where PRES attains pmax</span>
-        <span class="n">pmax_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">pressure_data</span><span class="p">[</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">pmax</span><span class="p">)</span>
+        <span class="n">pmax_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span>
+            <span class="n">pressure_data</span><span class="p">[</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">pmax</span>
+        <span class="p">)</span>
 
         <span class="c1"># Assign dive_num to all values up to and including pmax</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">][</span><span class="n">start_index</span><span class="p">:</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dive</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dive</span>
 
         <span class="c1"># Assign dive_num + 0.5 to values after pmax</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">][</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dive</span> <span class="o">+</span> <span class="mf">0.5</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">][</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dive</span> <span class="o">+</span> <span class="mf">0.5</span>
 
         <span class="c1"># Remove PROFILE_NUMBER if it exists</span>
-        <span class="k">if</span> <span class="s1">&#39;PROFILE_NUMBER&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s1">&#39;PROFILE_NUMBER&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;PROFILE_NUMBER&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;PROFILE_NUMBER&quot;</span><span class="p">)</span>
 
         <span class="c1"># Assign PROFILE_NUMBER</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;PROFILE_NUMBER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;dive_num_cast&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PROFILE_NUMBER&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
 
     <span class="k">return</span> <span class="n">ds</span></div>
-
-
 
 
 
@@ -556,9 +567,10 @@
     <span class="k">if</span> <span class="s2">&quot;PRES&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="ow">or</span> <span class="s2">&quot;LATITUDE&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Dataset must contain &#39;PRES&#39; and &#39;LATITUDE&#39; variables.&quot;</span><span class="p">)</span>
 
-
     <span class="c1"># Convert pressure to depth using gsw (pressure in dbar, latitude in degrees)</span>
-    <span class="n">depth</span> <span class="o">=</span> <span class="n">gsw</span><span class="o">.</span><span class="n">z_from_p</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">],</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;LATITUDE&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>  <span class="c1"># Compute to handle dask arrays</span>
+    <span class="n">depth</span> <span class="o">=</span> <span class="n">gsw</span><span class="o">.</span><span class="n">z_from_p</span><span class="p">(</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">],</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;LATITUDE&quot;</span><span class="p">]</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>  <span class="c1"># Compute to handle dask arrays</span>
 
     <span class="c1"># Add depth to dataset</span>
     <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;DEPTH_Z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">],</span> <span class="n">depth</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
@@ -641,7 +653,9 @@
             <span class="n">new_unit</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">orig_unit</span> <span class="o">!=</span> <span class="n">new_unit</span><span class="p">:</span>
 
-                <span class="n">var_values</span><span class="p">,</span> <span class="n">new_unit</span> <span class="o">=</span> <span class="n">convert_units_var</span><span class="p">(</span><span class="n">var_values</span><span class="p">,</span> <span class="n">orig_unit</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">)</span>
+                <span class="n">var_values</span><span class="p">,</span> <span class="n">new_unit</span> <span class="o">=</span> <span class="n">convert_units_var</span><span class="p">(</span>
+                    <span class="n">var_values</span><span class="p">,</span> <span class="n">orig_unit</span><span class="p">,</span> <span class="n">new_unit</span>
+                <span class="p">)</span>
 
                 <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">var_values</span>
                 <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_unit</span>
@@ -736,14 +750,16 @@
     <span class="n">var_name</span> <span class="o">=</span> <span class="n">qc_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">qc_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dsa</span><span class="p">):</span>
         <span class="c1"># Seaglider default type was a string.  Convert to int8 and take care of NaNs</span>
-        <span class="c1">#dsa[qc_name].values = dsa[qc_name].values.astype(&quot;int8&quot;)</span>
+        <span class="c1"># dsa[qc_name].values = dsa[qc_name].values.astype(&quot;int8&quot;)</span>
         <span class="n">values</span> <span class="o">=</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
         <span class="c1"># Convert byte strings to regular strings (if necessary)</span>
         <span class="k">if</span> <span class="n">values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">bytes_</span><span class="p">:</span>
             <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 
         <span class="c1"># Use pandas to handle NaNs safely</span>
-        <span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span>  <span class="c1"># Convert strings to numbers, NaNs stay NaNs</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span>
+            <span class="n">values</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span>
+        <span class="p">)</span>  <span class="c1"># Convert strings to numbers, NaNs stay NaNs</span>
         <span class="c1"># Assign back to dataset</span>
         <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">values</span>
         <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">)</span>
@@ -906,9 +922,10 @@
     <span class="k">return</span> <span class="n">ds</span></div>
 
 
+
 <div class="viewcode-block" id="merge_parts_of_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.merge_parts_of_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">merge_parts_of_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dim1</span> <span class="o">=</span> <span class="s1">&#39;sg_data_point&#39;</span><span class="p">,</span> <span class="n">dim2</span> <span class="o">=</span> <span class="s1">&#39;ctd_data_point&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">merge_parts_of_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dim1</span><span class="o">=</span><span class="s2">&quot;sg_data_point&quot;</span><span class="p">,</span> <span class="n">dim2</span><span class="o">=</span><span class="s2">&quot;ctd_data_point&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.</span>
 <span class="sd">    The function first separates the dataset into two datasets based on the specified dimensions,</span>
@@ -951,8 +968,10 @@
 
     <span class="c1"># Rename time variables to &#39;time&#39; if present</span>
     <span class="n">time_var1</span><span class="p">,</span> <span class="n">time_var2</span> <span class="o">=</span> <span class="n">get_time_var</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dim1</span><span class="p">),</span> <span class="n">get_time_var</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dim2</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">time_var1</span><span class="p">:</span> <span class="n">new_ds1</span> <span class="o">=</span> <span class="n">new_ds1</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">time_var1</span><span class="p">:</span> <span class="s2">&quot;time&quot;</span><span class="p">})</span>
-    <span class="k">if</span> <span class="n">time_var2</span><span class="p">:</span> <span class="n">new_ds2</span> <span class="o">=</span> <span class="n">new_ds2</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">time_var2</span><span class="p">:</span> <span class="s2">&quot;time&quot;</span><span class="p">})</span>
+    <span class="k">if</span> <span class="n">time_var1</span><span class="p">:</span>
+        <span class="n">new_ds1</span> <span class="o">=</span> <span class="n">new_ds1</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">time_var1</span><span class="p">:</span> <span class="s2">&quot;time&quot;</span><span class="p">})</span>
+    <span class="k">if</span> <span class="n">time_var2</span><span class="p">:</span>
+        <span class="n">new_ds2</span> <span class="o">=</span> <span class="n">new_ds2</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">time_var2</span><span class="p">:</span> <span class="s2">&quot;time&quot;</span><span class="p">})</span>
     <span class="c1"># Ensure &quot;time&quot; is a coordinate</span>
     <span class="n">new_ds1</span> <span class="o">=</span> <span class="n">new_ds1</span><span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">new_ds1</span> <span class="k">else</span> <span class="n">new_ds1</span>
     <span class="n">new_ds2</span> <span class="o">=</span> <span class="n">new_ds2</span><span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">new_ds2</span> <span class="k">else</span> <span class="n">new_ds2</span>
@@ -983,16 +1002,26 @@
     <span class="c1"># Ensure both datasets contain the same coordinates, filling missing ones with NaN</span>
     <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">all_coords</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">coord</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">new_ds1</span><span class="p">:</span>
-            <span class="n">new_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_ds1</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">dim1</span><span class="p">],)</span> <span class="k">if</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">new_ds1</span><span class="o">.</span><span class="n">dims</span> <span class="k">else</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_ds1</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]),)</span>
+            <span class="n">new_shape</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">new_ds1</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">dim1</span><span class="p">],)</span>
+                <span class="k">if</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">new_ds1</span><span class="o">.</span><span class="n">dims</span>
+                <span class="k">else</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_ds1</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]),)</span>
+            <span class="p">)</span>
             <span class="n">new_ds1</span><span class="p">[</span><span class="n">coord</span><span class="p">]</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">new_shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span> <span class="n">dims</span><span class="o">=</span><span class="n">dim1</span><span class="p">)</span>
             <span class="n">new_ds1</span> <span class="o">=</span> <span class="n">new_ds1</span><span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">coord</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">new_ds2</span><span class="p">:</span>
-            <span class="n">new_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_ds2</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">dim1</span><span class="p">],)</span> <span class="k">if</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">new_ds2</span><span class="o">.</span><span class="n">dims</span> <span class="k">else</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_ds2</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]),)</span>
+            <span class="n">new_shape</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">new_ds2</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">dim1</span><span class="p">],)</span>
+                <span class="k">if</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">new_ds2</span><span class="o">.</span><span class="n">dims</span>
+                <span class="k">else</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_ds2</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]),)</span>
+            <span class="p">)</span>
             <span class="n">new_ds2</span><span class="p">[</span><span class="n">coord</span><span class="p">]</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">new_shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span> <span class="n">dims</span><span class="o">=</span><span class="n">dim1</span><span class="p">)</span>
             <span class="n">new_ds2</span> <span class="o">=</span> <span class="n">new_ds2</span><span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span>
 
     <span class="c1"># Concatenate along dim1. Missing values will be filled with NaN.</span>
-    <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">new_ds1</span><span class="p">,</span> <span class="n">new_ds2</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim1</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">&quot;inner&quot;</span><span class="p">,</span> <span class="n">combine_attrs</span><span class="o">=</span><span class="s2">&quot;drop_conflicts&quot;</span><span class="p">)</span>
+    <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">new_ds1</span><span class="p">,</span> <span class="n">new_ds2</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim1</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">&quot;inner&quot;</span><span class="p">,</span> <span class="n">combine_attrs</span><span class="o">=</span><span class="s2">&quot;drop_conflicts&quot;</span>
+    <span class="p">)</span>
 
     <span class="c1"># Sort by time and drop NaT values</span>
     <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">merged_ds</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">dim1</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">])</span>
@@ -1000,9 +1029,10 @@
     <span class="k">return</span> <span class="n">merged_ds</span></div>
 
 
+
 <div class="viewcode-block" id="combine_two_dim_of_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.combine_two_dim_of_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">combine_two_dim_of_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dim1</span><span class="o">=</span><span class="s1">&#39;sg_data_point&#39;</span><span class="p">,</span> <span class="n">dim2</span><span class="o">=</span><span class="s1">&#39;ctd_data_point&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">combine_two_dim_of_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dim1</span><span class="o">=</span><span class="s2">&quot;sg_data_point&quot;</span><span class="p">,</span> <span class="n">dim2</span><span class="o">=</span><span class="s2">&quot;ctd_data_point&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Updates the original dataset by removing variables with dim1 and dim2</span>
 <span class="sd">    and adding the merged dataset.</span>
@@ -1025,13 +1055,16 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Drop all variables that have dim1 or dim2</span>
-    <span class="n">vars_to_drop</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="k">if</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span> <span class="ow">or</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span><span class="p">]</span>
+    <span class="n">vars_to_drop</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="k">if</span> <span class="n">dim1</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span> <span class="ow">or</span> <span class="n">dim2</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span>
+    <span class="p">]</span>
     <span class="n">cleaned_ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="n">vars_to_drop</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
     <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">merge_parts_of_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dim1</span><span class="o">=</span><span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span><span class="o">=</span><span class="n">dim2</span><span class="p">)</span>
     <span class="c1"># Merge the cleaned dataset with the merged dataset</span>
     <span class="n">updated_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">merge</span><span class="p">([</span><span class="n">cleaned_ds</span><span class="p">,</span> <span class="n">merged_ds</span><span class="p">],</span> <span class="n">combine_attrs</span><span class="o">=</span><span class="s2">&quot;drop_conflicts&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">updated_ds</span></div>
+
 
 
 <span class="c1"># ===============================================================================</span>

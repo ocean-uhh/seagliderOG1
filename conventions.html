@@ -1,0 +1,429 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coding Conventions &mdash; seagliderOG1 v0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2fea6348"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Getting Started: Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">seagliderOG1 demo</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Help and reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/ocean-uhh/seagliderOG1">GitHub Repo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Coding Conventions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/conventions.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="coding-conventions">
+<h1>Coding Conventions<a class="headerlink" href="#coding-conventions" title="Link to this heading"></a></h1>
+<p>This document outlines the coding standards and conventions for the seagliderOG1 project.</p>
+<section id="code-style">
+<h2>Code Style<a class="headerlink" href="#code-style" title="Link to this heading"></a></h2>
+<section id="python-code-formatting">
+<h3>Python Code Formatting<a class="headerlink" href="#python-code-formatting" title="Link to this heading"></a></h3>
+<p>We use <a class="reference external" href="https://black.readthedocs.io/">Black</a> for consistent code formatting:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>black<span class="w"> </span>.
+</pre></div>
+</div>
+<p><strong>Key formatting rules:</strong></p>
+<ul class="simple">
+<li><p>Line length: 88 characters (Black default)</p></li>
+<li><p>Use double quotes for strings</p></li>
+<li><p>Consistent indentation (4 spaces)</p></li>
+<li><p>Trailing commas in multi-line structures</p></li>
+</ul>
+</section>
+<section id="linting">
+<h3>Linting<a class="headerlink" href="#linting" title="Link to this heading"></a></h3>
+<p>We use <a class="reference external" href="https://docs.astral.sh/ruff/">Ruff</a> for fast Python linting:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ruff<span class="w"> </span>check<span class="w"> </span>--fix<span class="w">  </span><span class="c1"># Auto-fix issues where possible</span>
+ruff<span class="w"> </span>check<span class="w">        </span><span class="c1"># Check without fixing</span>
+</pre></div>
+</div>
+<p><strong>Enabled rule categories:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">E</span></code>, <code class="docutils literal notranslate"><span class="pre">W</span></code> - pycodestyle errors and warnings</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">F</span></code> - pyflakes errors</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">D</span></code> - pydocstyle (documentation)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ANN</span></code> - type annotations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">B</span></code> - flake8-bugbear</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">C90</span></code> - mccabe complexity</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TRY</span></code> - tryceratops</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ARG</span></code> - flake8-arguments</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SLF</span></code> - flake8-self</p></li>
+</ul>
+</section>
+<section id="pre-commit-hooks">
+<h3>Pre-commit Hooks<a class="headerlink" href="#pre-commit-hooks" title="Link to this heading"></a></h3>
+<p>Run before every commit:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+</pre></div>
+</div>
+<p>This automatically runs:</p>
+<ul class="simple">
+<li><p>Black formatting</p></li>
+<li><p>Ruff linting with auto-fix</p></li>
+<li><p>Codespell for typos</p></li>
+<li><p>Basic file checks (trailing whitespace, end-of-file, YAML validation)</p></li>
+<li><p>pytest tests</p></li>
+</ul>
+</section>
+</section>
+<section id="code-organization">
+<h2>Code Organization<a class="headerlink" href="#code-organization" title="Link to this heading"></a></h2>
+<section id="file-structure">
+<h3>File Structure<a class="headerlink" href="#file-structure" title="Link to this heading"></a></h3>
+<p>Follow the established package structure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>seagliderOG1/
+├── readers.py      # Data input/reading functions
+├── writers.py      # Data output/writing functions  
+├── convertOG1.py   # Main conversion logic
+├── tools.py        # User-facing utility functions
+├── utilities.py    # Internal helper functions
+├── vocabularies.py # OG1 vocabulary mappings
+└── plotters.py     # Visualization functions
+</pre></div>
+</div>
+</section>
+<section id="import-organization">
+<h3>Import Organization<a class="headerlink" href="#import-organization" title="Link to this heading"></a></h3>
+<p>Order imports following PEP 8:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Standard library</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="c1"># Third-party packages</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+
+<span class="c1"># Local imports</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">utilities</span><span class="p">,</span> <span class="n">vocabularies</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
+<section id="docstrings">
+<h3>Docstrings<a class="headerlink" href="#docstrings" title="Link to this heading"></a></h3>
+<p>Use Google-style docstrings for all public functions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">convert_to_OG1</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Processes datasets and converts them to OG1 format.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    list_of_datasets : list[xr.Dataset] | xr.Dataset</span>
+<span class="sd">        A list of xarray datasets or a single dataset in basestation format.</span>
+<span class="sd">    contrib_to_append : dict[str, str] | None, optional</span>
+<span class="sd">        Dictionary containing additional contributor information. Default is None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[xr.Dataset, list[str]]</span>
+<span class="sd">        A tuple containing:</span>
+<span class="sd">        - ds_og1 (xr.Dataset): The processed dataset in OG1 format.</span>
+<span class="sd">        - varlist (list[str]): A list of variable names from input datasets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="comments">
+<h3>Comments<a class="headerlink" href="#comments" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Use comments sparingly for complex logic</p></li>
+<li><p>Prefer self-documenting code with clear variable names</p></li>
+<li><p>Add TODO comments for future improvements</p></li>
+</ul>
+</section>
+</section>
+<section id="variable-naming">
+<h2>Variable Naming<a class="headerlink" href="#variable-naming" title="Link to this heading"></a></h2>
+<section id="conventions">
+<h3>Conventions<a class="headerlink" href="#conventions" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Functions and variables</strong>: <code class="docutils literal notranslate"><span class="pre">snake_case</span></code></p></li>
+<li><p><strong>Constants</strong>: <code class="docutils literal notranslate"><span class="pre">UPPER_CASE</span></code></p></li>
+<li><p><strong>Classes</strong>: <code class="docutils literal notranslate"><span class="pre">PascalCase</span></code> (when needed)</p></li>
+<li><p><strong>Private functions</strong>: <code class="docutils literal notranslate"><span class="pre">_leading_underscore</span></code></p></li>
+</ul>
+</section>
+<section id="dataset-variables">
+<h3>Dataset Variables<a class="headerlink" href="#dataset-variables" title="Link to this heading"></a></h3>
+<p>Follow OG1 naming conventions:</p>
+<ul class="simple">
+<li><p>Time coordinates: <code class="docutils literal notranslate"><span class="pre">TIME</span></code>, <code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code></p></li>
+<li><p>Spatial coordinates: <code class="docutils literal notranslate"><span class="pre">LATITUDE</span></code>, <code class="docutils literal notranslate"><span class="pre">LONGITUDE</span></code>, <code class="docutils literal notranslate"><span class="pre">DEPTH</span></code></p></li>
+<li><p>Measurements: Descriptive names in UPPER_CASE</p></li>
+<li><p>QC flags: Append <code class="docutils literal notranslate"><span class="pre">_QC</span></code> to variable name</p></li>
+</ul>
+</section>
+<section id="descriptive-names">
+<h3>Descriptive Names<a class="headerlink" href="#descriptive-names" title="Link to this heading"></a></h3>
+<p>Prefer descriptive names over abbreviations:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Good</span>
+<span class="n">temperature_data</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;TEMP&quot;</span><span class="p">]</span>
+<span class="n">pressure_sensor</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">]</span> 
+<span class="n">dive_number</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;dive_number&quot;</span><span class="p">]</span>
+
+<span class="c1"># Avoid</span>
+<span class="n">temp</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;TEMP&quot;</span><span class="p">]</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">]</span>
+<span class="n">dn</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;dive_number&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h2>
+<section id="test-structure">
+<h3>Test Structure<a class="headerlink" href="#test-structure" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Place tests in <code class="docutils literal notranslate"><span class="pre">tests/</span></code> directory</p></li>
+<li><p>Mirror package structure: <code class="docutils literal notranslate"><span class="pre">test_module.py</span></code> for each <code class="docutils literal notranslate"><span class="pre">module.py</span></code></p></li>
+<li><p>Use pytest for all testing</p></li>
+</ul>
+</section>
+<section id="test-naming">
+<h3>Test Naming<a class="headerlink" href="#test-naming" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_convert_to_og1_single_dataset</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test conversion with a single input dataset.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_convert_to_og1_multiple_datasets</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test conversion with multiple input datasets.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+<section id="coverage">
+<h3>Coverage<a class="headerlink" href="#coverage" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Aim for good test coverage of public functions</p></li>
+<li><p>Test both success and failure cases</p></li>
+<li><p>Include edge cases and boundary conditions</p></li>
+</ul>
+</section>
+</section>
+<section id="data-handling">
+<h2>Data Handling<a class="headerlink" href="#data-handling" title="Link to this heading"></a></h2>
+<section id="xarray-best-practices">
+<h3>xarray Best Practices<a class="headerlink" href="#xarray-best-practices" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Use descriptive coordinate and dimension names</p></li>
+<li><p>Set appropriate attributes for variables</p></li>
+<li><p>Handle missing data consistently (use NaN)</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">.compute()</span></code> for dask arrays when needed</p></li>
+</ul>
+</section>
+<section id="file-i-o">
+<h3>File I/O<a class="headerlink" href="#file-i-o" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Use context managers for file operations</p></li>
+<li><p>Handle file paths consistently (use pathlib when appropriate)</p></li>
+<li><p>Provide informative error messages for I/O failures</p></li>
+</ul>
+</section>
+</section>
+<section id="error-handling">
+<h2>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h2>
+<section id="logging">
+<h3>Logging<a class="headerlink" href="#logging" title="Link to this heading"></a></h3>
+<p>Use the standard logging module:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">process_data</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting data processing&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">expensive_operation</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="si">}</span><span class="s2"> items&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to process data: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span>
+</pre></div>
+</div>
+</section>
+<section id="exception-handling">
+<h3>Exception Handling<a class="headerlink" href="#exception-handling" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Use specific exception types when possible</p></li>
+<li><p>Provide helpful error messages</p></li>
+<li><p>Log errors appropriately</p></li>
+<li><p>Don’t suppress exceptions without good reason</p></li>
+</ul>
+</section>
+</section>
+<section id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Link to this heading"></a></h2>
+<section id="efficiency-guidelines">
+<h3>Efficiency Guidelines<a class="headerlink" href="#efficiency-guidelines" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Use vectorized operations with NumPy/pandas</p></li>
+<li><p>Avoid unnecessary data copying</p></li>
+<li><p>Use appropriate data types (e.g., float32 vs float64)</p></li>
+<li><p>Consider memory usage for large datasets</p></li>
+</ul>
+</section>
+<section id="memory-management">
+<h3>Memory Management<a class="headerlink" href="#memory-management" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Use generators for large data processing</p></li>
+<li><p>Clear large variables when no longer needed</p></li>
+<li><p>Be mindful of xarray lazy loading</p></li>
+</ul>
+</section>
+</section>
+<section id="version-control">
+<h2>Version Control<a class="headerlink" href="#version-control" title="Link to this heading"></a></h2>
+<section id="commit-messages">
+<h3>Commit Messages<a class="headerlink" href="#commit-messages" title="Link to this heading"></a></h3>
+<p>Use clear, descriptive commit messages:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">FEAT</span><span class="p">]</span> <span class="n">Add</span> <span class="n">GPS</span> <span class="n">coordinate</span> <span class="n">interpolation</span>
+<span class="p">[</span><span class="n">FIX</span><span class="p">]</span> <span class="n">Handle</span> <span class="n">missing</span> <span class="n">pressure</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">dive</span> <span class="n">profiles</span>  
+<span class="p">[</span><span class="n">DOC</span><span class="p">]</span> <span class="n">Update</span> <span class="n">installation</span> <span class="n">instructions</span>
+<span class="p">[</span><span class="n">TEST</span><span class="p">]</span> <span class="n">Add</span> <span class="n">tests</span> <span class="k">for</span> <span class="n">vocabulary</span> <span class="n">mapping</span>
+</pre></div>
+</div>
+</section>
+<section id="branch-naming">
+<h3>Branch Naming<a class="headerlink" href="#branch-naming" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Feature branches: <code class="docutils literal notranslate"><span class="pre">feature/description</span></code></p></li>
+<li><p>Bug fixes: <code class="docutils literal notranslate"><span class="pre">fix/description</span></code></p></li>
+<li><p>Documentation: <code class="docutils literal notranslate"><span class="pre">docs/description</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<section id="yaml-files">
+<h3>YAML Files<a class="headerlink" href="#yaml-files" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Use consistent indentation (2 spaces)</p></li>
+<li><p>Include comments for complex configurations</p></li>
+<li><p>Validate YAML syntax</p></li>
+<li><p>Follow the existing structure in <code class="docutils literal notranslate"><span class="pre">config/</span></code> directory</p></li>
+</ul>
+</section>
+</section>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading"></a></h2>
+<section id="adding-new-dependencies">
+<h3>Adding New Dependencies<a class="headerlink" href="#adding-new-dependencies" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add to appropriate requirements file:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> - Runtime dependencies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">requirements-dev.txt</span></code> - Development tools</p></li>
+</ul>
+</li>
+<li><p>Use version constraints appropriately</p></li>
+<li><p>Document why new dependencies are needed</p></li>
+<li><p>Prefer established, well-maintained packages</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
