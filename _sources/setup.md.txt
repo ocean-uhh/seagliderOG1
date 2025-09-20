@@ -32,13 +32,13 @@ If you want a local editable copy of the code, for example to adapt it to your o
 #### a. Clone the repository to your computer
 From a **terminal**:
 ```bash
-git clone https://github.com/ifmeo-hamburg/seagliderOG1
+git clone https://github.com/ocean-uhh/seagliderOG1
 cd seagliderOG1
 ```
 
 Or using **Github Desktop**:
 
-1. Visit https://github.com/ifmeo-hamburg/seagliderOG1
+1. Visit https://github.com/ocean-uhh/seagliderOG1
 2. Click the green <> Code button
 3. Choose **Open with GitHub Desktop**
 
