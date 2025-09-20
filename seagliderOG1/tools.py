@@ -27,7 +27,9 @@ variables_sensors = {
 # in the sg_cal strings, e.g. calibcomm_oxygen or calibcomm_optode contains 'SBE 43F' or 'Optode 4330F'
 # Using this, and the presence of calibration coefficients (e.g., optode_FoilCoefA1), we can make
 # a guess as to the sensor type
-def gather_sensor_info(ds_other: xr.Dataset, ds_sgcal: xr.Dataset, firstrun: bool = False) -> xr.Dataset:
+def gather_sensor_info(
+    ds_other: xr.Dataset, ds_sgcal: xr.Dataset, firstrun: bool = False
+) -> xr.Dataset:
     """
     Gathers sensor information from the provided datasets and organizes it into a new dataset.
 
@@ -81,7 +83,9 @@ def gather_sensor_info(ds_other: xr.Dataset, ds_sgcal: xr.Dataset, firstrun: boo
         ds_sensor["aa4330"].attrs["ancillary_variables"] = aanderaa_ancillary
 
 
-def add_sensor_to_dataset(dsa: xr.Dataset, ds: xr.Dataset, sg_cal: xr.Dataset, firstrun: bool = False) -> xr.Dataset:
+def add_sensor_to_dataset(
+    dsa: xr.Dataset, ds: xr.Dataset, sg_cal: xr.Dataset, firstrun: bool = False
+) -> xr.Dataset:
     """
     Add sensor information to the dataset based on instrument data and calibration parameters.
 
@@ -522,12 +526,12 @@ def calc_Z(ds: xr.Dataset) -> xr.Dataset:
 def get_sg_attrs(ds: xr.Dataset) -> dict:
     """
     Extract seaglider attributes and calibration information into a dictionary.
-    
+
     Parameters
     ----------
     ds
         Dataset containing seaglider attributes and calibration data.
-        
+
     Returns
     -------
     dict
@@ -577,15 +581,15 @@ def split_by_unique_dims(ds: xr.Dataset) -> dict:
 def convert_units(ds: xr.Dataset) -> xr.Dataset:
     """
     Convert the units of variables in an xarray Dataset to preferred units.
-    
+
     This is useful, for instance, to convert cm/s to m/s based on vocabulary
     specifications.
-    
+
     Parameters
     ----------
     ds
         The dataset containing variables to convert.
-        
+
     Returns
     -------
     xarray.Dataset
@@ -620,10 +624,12 @@ def convert_units(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def reformat_units_var(ds: xr.Dataset, var_name: str, unit_format: dict = vocabularies.unit_str_format) -> str:
+def reformat_units_var(
+    ds: xr.Dataset, var_name: str, unit_format: dict = vocabularies.unit_str_format
+) -> str:
     """
     Rename units in the dataset based on the provided dictionary for OG1.
-    
+
     Parameters
     ----------
     ds
@@ -632,7 +638,7 @@ def reformat_units_var(ds: xr.Dataset, var_name: str, unit_format: dict = vocabu
         The name of the variable whose units should be reformatted.
     unit_format, optional
         A dictionary mapping old unit strings to new formatted unit strings.
-        
+
     Returns
     -------
     str
@@ -658,17 +664,19 @@ def reformat_units_var(ds: xr.Dataset, var_name: str, unit_format: dict = vocabu
     return new_unit
 
 
-def reformat_units_str(old_unit: str, unit_format: dict = vocabularies.unit_str_format) -> str:
+def reformat_units_str(
+    old_unit: str, unit_format: dict = vocabularies.unit_str_format
+) -> str:
     """
     Reformat a unit string based on the provided unit format dictionary.
-    
+
     Parameters
     ----------
     old_unit
         The original unit string to reformat.
     unit_format, optional
         A dictionary mapping old unit strings to new formatted unit strings.
-        
+
     Returns
     -------
     str
@@ -725,23 +733,23 @@ def convert_units_var(
 def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
     """
     Convert QC flag variables to proper integer format and update attributes.
-    
+
     This function converts QC flag variables from string format to int8,
     handles NaN values appropriately, removes 'QC_' prefixes from flag meanings,
     and adds proper metadata including long_name and standard_name.
-    
+
     Parameters
     ----------
     dsa
         The dataset containing QC flag variables.
     qc_name
         The name of the QC flag variable to process.
-        
+
     Returns
     -------
     xarray.Dataset
         Dataset with converted QC flag variable and updated attributes.
-        
+
     Notes
     -----
     Must be called after the main variable has been assigned its OG1 long_name.
@@ -780,19 +788,19 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
 def find_best_dtype(var_name: str, da: xr.DataArray) -> type:
     """
     Determine the optimal data type for a variable based on its name and values.
-    
+
     Parameters
     ----------
     var_name
         The name of the variable.
     da
         The data array to analyze.
-        
+
     Returns
     -------
     type
         The recommended numpy data type.
-        
+
     Notes
     -----
     - Latitude/longitude variables use double precision
@@ -821,12 +829,12 @@ def find_best_dtype(var_name: str, da: xr.DataArray) -> type:
 def set_fill_value(new_dtype: type) -> int:
     """
     Calculate appropriate fill value for integer data types.
-    
+
     Parameters
     ----------
     new_dtype
         The target integer data type.
-        
+
     Returns
     -------
     int
@@ -839,12 +847,12 @@ def set_fill_value(new_dtype: type) -> int:
 def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
     """
     Optimize data types across all variables in the dataset to reduce memory usage.
-    
+
     Parameters
     ----------
     ds
         The dataset to optimize.
-        
+
     Returns
     -------
     xarray.Dataset
@@ -904,17 +912,15 @@ def set_best_dtype_value(value, var_name: str):
     return converted_value
 
 
-
-
 def encode_times(ds: xr.Dataset) -> xr.Dataset:
     """
     Encode time variables with standard units and remove problematic attributes.
-    
+
     Parameters
     ----------
     ds
         Dataset containing time variables to encode.
-        
+
     Returns
     -------
     xarray.Dataset
@@ -937,12 +943,12 @@ def encode_times(ds: xr.Dataset) -> xr.Dataset:
 def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
     """
     Encode time variables according to OG1 format specifications.
-    
+
     Parameters
     ----------
     ds
         Dataset containing time variables to encode.
-        
+
     Returns
     -------
     xarray.Dataset
@@ -963,7 +969,9 @@ def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def merge_parts_of_dataset(ds: xr.Dataset, dim1: str = "sg_data_point", dim2: str = "ctd_data_point") -> xr.Dataset:
+def merge_parts_of_dataset(
+    ds: xr.Dataset, dim1: str = "sg_data_point", dim2: str = "ctd_data_point"
+) -> xr.Dataset:
     """
     Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.
     The function first separates the dataset into two datasets based on the specified dimensions,
@@ -1067,7 +1075,9 @@ def merge_parts_of_dataset(ds: xr.Dataset, dim1: str = "sg_data_point", dim2: st
     return merged_ds
 
 
-def combine_two_dim_of_dataset(ds: xr.Dataset, dim1: str = "sg_data_point", dim2: str = "ctd_data_point") -> xr.Dataset:
+def combine_two_dim_of_dataset(
+    ds: xr.Dataset, dim1: str = "sg_data_point", dim2: str = "ctd_data_point"
+) -> xr.Dataset:
     """
     Updates the original dataset by removing variables with dim1 and dim2
     and adding the merged dataset.

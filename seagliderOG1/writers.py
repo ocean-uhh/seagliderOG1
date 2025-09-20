@@ -9,8 +9,8 @@ _log = logging.getLogger(__name__)
 def save_dataset(ds, output_file="../test.nc"):
     """
     Attempts to save the dataset to a NetCDF file.
-    
-    If a TypeError occurs due to invalid attribute values, converts the invalid 
+
+    If a TypeError occurs due to invalid attribute values, converts the invalid
     attributes to strings and retries the save operation.
 
     Parameters
