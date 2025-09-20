@@ -261,6 +261,7 @@ def add_dive_number(ds, dive_number=None):
         divenum=("N_MEASUREMENTS", [dive_number] * ds.dims["N_MEASUREMENTS"])
     )
 
+
 """
 def assign_profile_number(ds, ds1):
     # Remove the variable dive_num_cast if it exists
@@ -305,20 +306,24 @@ def assign_profile_number(ds, ds1):
     return ds
 """
 
+
 def assign_profile_number(ds, ds1):
     # Remove the variable dive_num_cast if it exists
-    if 'dive_num_cast' in ds.variables:
-        ds = ds.drop_vars('dive_num_cast')
+    if "dive_num_cast" in ds.variables:
+        ds = ds.drop_vars("dive_num_cast")
 
     # Initialize the new variable with the same dimensions as dive_num
-    ds['dive_num_cast'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
+    ds["dive_num_cast"] = (
+        ["N_MEASUREMENTS"],
+        np.full(ds.dims["N_MEASUREMENTS"], np.nan),
+    )
 
-    ds = add_dive_number(ds, ds1.attrs['dive_number'])
+    ds = add_dive_number(ds, ds1.attrs["dive_number"])
 
     # Iterate over each unique dive_num
-    for dive in np.unique(ds['divenum']):
+    for dive in np.unique(ds["divenum"]):
         # Get the indices for the current dive
-        dive_indices = np.where(ds['divenum'] == dive)[0]
+        dive_indices = np.where(ds["divenum"] == dive)[0]
         if len(dive_indices) == 0:
             continue  # Skip if no indices found
 
@@ -328,39 +333,45 @@ def assign_profile_number(ds, ds1):
 
         # Check for possible pressure variable names in ds, then ds1
         possible_press_names = ["PRES", "ctd_pressure", "Pressure", "pres"]
-        press_var = next((var for var in possible_press_names if var in ds.variables), None)
+        press_var = next(
+            (var for var in possible_press_names if var in ds.variables), None
+        )
 
         if press_var is None:
-            press_var = next((var for var in possible_press_names if var in ds1.variables), None)
+            press_var = next(
+                (var for var in possible_press_names if var in ds1.variables), None
+            )
 
         if press_var is None:
-            raise ValueError("No valid pressure variable (PRES or pressure) found in ds or ds1")
+            raise ValueError(
+                "No valid pressure variable (PRES or pressure) found in ds or ds1"
+            )
 
         # Get pressure values from the correct dataset
         pressure_data = ds[press_var] if press_var in ds.variables else ds1[press_var]
 
         # Find the maximum pressure value between start_index and end_index
-        pmax = np.nanmax(pressure_data[start_index:end_index + 1].values)
+        pmax = np.nanmax(pressure_data[start_index : end_index + 1].values)
 
         # Find the index where PRES attains pmax
-        pmax_index = start_index + np.argmax(pressure_data[start_index:end_index + 1].values == pmax)
+        pmax_index = start_index + np.argmax(
+            pressure_data[start_index : end_index + 1].values == pmax
+        )
 
         # Assign dive_num to all values up to and including pmax
-        ds['dive_num_cast'][start_index:pmax_index + 1] = dive
+        ds["dive_num_cast"][start_index : pmax_index + 1] = dive
 
         # Assign dive_num + 0.5 to values after pmax
-        ds['dive_num_cast'][pmax_index + 1:end_index + 1] = dive + 0.5
+        ds["dive_num_cast"][pmax_index + 1 : end_index + 1] = dive + 0.5
 
         # Remove PROFILE_NUMBER if it exists
-        if 'PROFILE_NUMBER' in ds.variables:
-            ds = ds.drop_vars('PROFILE_NUMBER')
+        if "PROFILE_NUMBER" in ds.variables:
+            ds = ds.drop_vars("PROFILE_NUMBER")
 
         # Assign PROFILE_NUMBER
-        ds['PROFILE_NUMBER'] = 2 * ds['dive_num_cast'] - 1
+        ds["PROFILE_NUMBER"] = 2 * ds["dive_num_cast"] - 1
 
     return ds
-
-
 
 
 def assign_phase(ds):
@@ -455,9 +466,10 @@ def calc_Z(ds):
     if "PRES" not in ds.variables or "LATITUDE" not in ds.variables:
         raise ValueError("Dataset must contain 'PRES' and 'LATITUDE' variables.")
 
-
     # Convert pressure to depth using gsw (pressure in dbar, latitude in degrees)
-    depth = gsw.z_from_p(ds["PRES"], ds["LATITUDE"]).compute()  # Compute to handle dask arrays
+    depth = gsw.z_from_p(
+        ds["PRES"], ds["LATITUDE"]
+    ).compute()  # Compute to handle dask arrays
 
     # Add depth to dataset
     ds["DEPTH_Z"] = (["N_MEASUREMENTS"], depth.data)
@@ -531,7 +543,9 @@ def convert_units(ds):
             new_unit = vocabularies.vocab_attrs[OG1_name].get("units")
             if orig_unit != new_unit:
 
-                var_values, new_unit = convert_units_var(var_values, orig_unit, new_unit)
+                var_values, new_unit = convert_units_var(
+                    var_values, orig_unit, new_unit
+                )
 
                 ds[var].values = var_values
                 ds[var].attrs["units"] = new_unit
@@ -614,14 +628,16 @@ def convert_qc_flags(dsa, qc_name):
     var_name = qc_name[:-3]
     if qc_name in list(dsa):
         # Seaglider default type was a string.  Convert to int8 and take care of NaNs
-        #dsa[qc_name].values = dsa[qc_name].values.astype("int8")
+        # dsa[qc_name].values = dsa[qc_name].values.astype("int8")
         values = dsa[qc_name].values
         # Convert byte strings to regular strings (if necessary)
         if values.dtype.type is np.bytes_:
             values = values.astype(str)
 
         # Use pandas to handle NaNs safely
-        values = pd.to_numeric(values, errors="coerce")  # Convert strings to numbers, NaNs stay NaNs
+        values = pd.to_numeric(
+            values, errors="coerce"
+        )  # Convert strings to numbers, NaNs stay NaNs
         # Assign back to dataset
         dsa[qc_name].values = values
         dsa[qc_name].values = dsa[qc_name].values.astype("int8")
@@ -765,7 +781,8 @@ def encode_times_og1(ds):
                 ds[var_name].attrs["calendar"] = "gregorian"
     return ds
 
-def merge_parts_of_dataset(ds, dim1 = 'sg_data_point', dim2 = 'ctd_data_point'):
+
+def merge_parts_of_dataset(ds, dim1="sg_data_point", dim2="ctd_data_point"):
     """
     Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.
     The function first separates the dataset into two datasets based on the specified dimensions,
@@ -808,8 +825,10 @@ def merge_parts_of_dataset(ds, dim1 = 'sg_data_point', dim2 = 'ctd_data_point'):
 
     # Rename time variables to 'time' if present
     time_var1, time_var2 = get_time_var(ds, dim1), get_time_var(ds, dim2)
-    if time_var1: new_ds1 = new_ds1.rename({time_var1: "time"})
-    if time_var2: new_ds2 = new_ds2.rename({time_var2: "time"})
+    if time_var1:
+        new_ds1 = new_ds1.rename({time_var1: "time"})
+    if time_var2:
+        new_ds2 = new_ds2.rename({time_var2: "time"})
     # Ensure "time" is a coordinate
     new_ds1 = new_ds1.set_coords("time") if "time" in new_ds1 else new_ds1
     new_ds2 = new_ds2.set_coords("time") if "time" in new_ds2 else new_ds2
@@ -840,23 +859,34 @@ def merge_parts_of_dataset(ds, dim1 = 'sg_data_point', dim2 = 'ctd_data_point'):
     # Ensure both datasets contain the same coordinates, filling missing ones with NaN
     for coord in all_coords:
         if coord not in new_ds1:
-            new_shape = (new_ds1.dims[dim1],) if dim1 in new_ds1.dims else (len(new_ds1["time"]),)
+            new_shape = (
+                (new_ds1.dims[dim1],)
+                if dim1 in new_ds1.dims
+                else (len(new_ds1["time"]),)
+            )
             new_ds1[coord] = xr.DataArray(np.full(new_shape, np.nan), dims=dim1)
             new_ds1 = new_ds1.set_coords(coord)
         if coord not in new_ds2:
-            new_shape = (new_ds2.dims[dim1],) if dim1 in new_ds2.dims else (len(new_ds2["time"]),)
+            new_shape = (
+                (new_ds2.dims[dim1],)
+                if dim1 in new_ds2.dims
+                else (len(new_ds2["time"]),)
+            )
             new_ds2[coord] = xr.DataArray(np.full(new_shape, np.nan), dims=dim1)
             new_ds2 = new_ds2.set_coords(coord)
 
     # Concatenate along dim1. Missing values will be filled with NaN.
-    merged_ds = xr.concat([new_ds1, new_ds2], dim=dim1, join="inner", combine_attrs="drop_conflicts")
+    merged_ds = xr.concat(
+        [new_ds1, new_ds2], dim=dim1, join="inner", combine_attrs="drop_conflicts"
+    )
 
     # Sort by time and drop NaT values
     merged_ds = merged_ds.sortby("time").dropna(dim=dim1, subset=["time"])
 
     return merged_ds
 
-def combine_two_dim_of_dataset(ds, dim1='sg_data_point', dim2='ctd_data_point'):
+
+def combine_two_dim_of_dataset(ds, dim1="sg_data_point", dim2="ctd_data_point"):
     """
     Updates the original dataset by removing variables with dim1 and dim2
     and adding the merged dataset.
@@ -879,13 +909,16 @@ def combine_two_dim_of_dataset(ds, dim1='sg_data_point', dim2='ctd_data_point'):
     """
 
     # Drop all variables that have dim1 or dim2
-    vars_to_drop = [var for var in ds.variables if dim1 in ds[var].dims or dim2 in ds[var].dims]
+    vars_to_drop = [
+        var for var in ds.variables if dim1 in ds[var].dims or dim2 in ds[var].dims
+    ]
     cleaned_ds = ds.drop_vars(vars_to_drop, errors="ignore")
     merged_ds = merge_parts_of_dataset(ds, dim1=dim1, dim2=dim2)
     # Merge the cleaned dataset with the merged dataset
     updated_ds = xr.merge([cleaned_ds, merged_ds], combine_attrs="drop_conflicts")
 
     return updated_ds
+
 
 # ===============================================================================
 # Unused functions

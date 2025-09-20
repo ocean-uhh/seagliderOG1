@@ -24,15 +24,17 @@ def save_dataset(ds, output_file="../test.nc"):
     valid_types = (str, int, float, np.float32, np.float64, np.int32, np.int64)
     # More general
     valid_types = (str, Number, np.ndarray, np.number, list, tuple)
-    
+
     for varname in ds.variables:
         var = ds[varname]
         if np.issubdtype(var.dtype, np.datetime64):
-            for key in ['units', 'calendar']:
+            for key in ["units", "calendar"]:
                 if key in var.attrs:
                     value = var.attrs.pop(key)
                     var.encoding[key] = value
-                    _log.info(f"Moved '{key}' from attrs to encoding for variable '{varname}'.")
+                    _log.info(
+                        f"Moved '{key}' from attrs to encoding for variable '{varname}'."
+                    )
 
     try:
         ds.to_netcdf(output_file, format="NETCDF4")

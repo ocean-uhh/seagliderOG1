@@ -172,3 +172,4 @@ de421.bsp
 
 # Claude Code files
 CLAUDE.md
+.claude/*.json
