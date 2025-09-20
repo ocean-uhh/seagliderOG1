@@ -1,14 +1,23 @@
-netCDF4>=1.6
-pooch>=1.7
-xarray>=2025.1.1
+# Core scientific computing
 numpy>=1.23
-matplotlib>=3.6
-pandas>=2.1
-seaborn>=0.12
 scipy>=1.10
-cmocean>=2.0
-skyfield>=1.45
-tqdm>=4.65
+pandas>=2.1
+
+# Data handling and file I/O
+netCDF4>=1.6
+xarray>=2025.1.1
+pooch>=1.7
+
+# Web scraping and HTTP requests
+beautifulsoup4>=4.12
+requests>=2.31
+
+# Oceanographic and geospatial
 gsw>=3.6
-sgp4>=2.14
 cartopy>=0.21
+
+# Visualization
+matplotlib>=3.6
+
+# Utilities
+tqdm>=4.65
