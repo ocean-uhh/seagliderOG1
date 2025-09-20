@@ -1,6 +1,6 @@
 # seagliderOG1
 
-A[![Run tests](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml/badge.svg)](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml)
+[![Run tests](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml/badge.svg)](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml)
 [![Deploy Documentation](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/docs_deploy.yml/badge.svg)](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/docs_deploy.yml)
 
 This repository converts Seaglider basestation files (`pSSSDDDD*.nc`) into [OG1 format](https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html) for standardized oceanographic glider data.
