@@ -169,3 +169,6 @@ cython_debug/
 #.idea/
 .idea
 de421.bsp
+
+# Claude Code files
+CLAUDE.md
