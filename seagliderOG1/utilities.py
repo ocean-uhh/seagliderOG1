@@ -1,7 +1,8 @@
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/utilities.py
-import re
-import logging
 import datetime
+import logging
+import re
+
 import xarray as xr
 
 # from votoutils.upload.sync_functions import sync_script_dir
@@ -9,23 +10,29 @@ import xarray as xr
 _log = logging.getLogger(__name__)
 
 
-def _validate_coords(ds1):
+def _validate_coords(ds1: xr.Dataset) -> xr.Dataset:
     """
     Validates and assigns coordinates to the given xarray Dataset.
-    Parameters:
-    ds1 (xarray.Dataset): The dataset to validate and assign coordinates to.
-                          It is expected to have an 'id' attribute and may contain
-                          'longitude', 'latitude', 'ctd_time', and 'ctd_depth' variables.
-    Returns:
-    xarray.Dataset: The validated dataset with necessary coordinates assigned.
-                    If 'ctd_time' variable is missing, an empty dataset is returned.
-    Notes:
-    - If 'longitude' or 'latitude' coordinates are missing, they are added as NaNs with the length of 'sg_data_point'.
-    - If 'ctd_time' variable exists but 'ctd_time' or 'ctd_depth' coordinates are missing, they are assigned from the variable.
-    - If 'ctd_time' variable is missing, an empty dataset is returned.
-    - Prints messages indicating the actions taken for missing coordinates or variables.
 
-    Based on: https://github.com/pydata/xarray/issues/3743
+    Parameters
+    ----------
+    ds1
+        The dataset to validate and assign coordinates to.
+        Expected to have an 'id' attribute and may contain
+        'longitude', 'latitude', 'ctd_time', and 'ctd_depth' variables.
+
+    Returns
+    -------
+    xarray.Dataset
+        The validated dataset with necessary coordinates assigned.
+        If 'ctd_time' variable is missing, returns an empty dataset.
+
+    Notes
+    -----
+    - If 'longitude' or 'latitude' coordinates are missing, they are added as NaNs
+    - If 'ctd_time' variable exists but coordinates are missing, assigns from variable
+    - If 'ctd_time' variable is missing, returns an empty dataset
+    - Based on: https://github.com/pydata/xarray/issues/3743
     """
 
     id = ds1.attrs["id"]
@@ -63,7 +70,22 @@ def _validate_coords(ds1):
     return ds1
 
 
-def _validate_dims(ds, expected_dims="N_MEASUREMENTS"):
+def _validate_dims(ds: xr.Dataset, expected_dims: str = "N_MEASUREMENTS") -> bool:
+    """
+    Validates that the dataset has the expected dimension name.
+
+    Parameters
+    ----------
+    ds
+        The dataset to validate.
+    expected_dims, optional
+        The expected dimension name. Default is 'N_MEASUREMENTS'.
+
+    Returns
+    -------
+    bool
+        True if dimension name matches expected, False otherwise.
+    """
     dim_name = list(ds.dims)[0]  # Should be 'N_MEASUREMENTS' for OG1
     if dim_name != expected_dims:
         _log.error(f"Dimension name '{dim_name}' is not {expected_dims}.")
@@ -73,8 +95,23 @@ def _validate_dims(ds, expected_dims="N_MEASUREMENTS"):
         return True
 
 
-def _parse_calibcomm(calstr, firstrun=False):
+def _parse_calibcomm(calstr: str, firstrun: bool = False) -> tuple[str, str]:
+    """
+    Parses calibration string to extract calibration date and serial number.
 
+    Parameters
+    ----------
+    calstr
+        The calibration string to parse.
+    firstrun, optional
+        Whether to log detailed parsing information. Default is False.
+
+    Returns
+    -------
+    tuple[str, str]
+        A tuple containing (calibration_date, serial_number).
+        Date format is YYYYMMDD, or 'Unknown' if not found.
+    """
     # Parse for calibration date
     cal_date = calstr
     cal_date_before_keyword = cal_date
@@ -128,18 +165,60 @@ def _parse_calibcomm(calstr, firstrun=False):
     return cal_date_YYYYmmDD, serial_number
 
 
-def _clean_time_string(time_str):
+def _clean_time_string(time_str: str) -> str:
+    """
+    Cleans time string by removing common separators and timezone indicators.
+
+    Parameters
+    ----------
+    time_str
+        The time string to clean.
+
+    Returns
+    -------
+    str
+        Cleaned time string with underscores, colons, hyphens, and 'Z' removed.
+    """
     return time_str.replace("_", "").replace(":", "").rstrip("Z").replace("-", "")
 
 
-def _clean_anc_vars_list(ancillary_variables_str):
+def _clean_anc_vars_list(ancillary_variables_str: str) -> list[str]:
+    """
+    Cleans and splits ancillary variables string into a list.
+
+    Parameters
+    ----------
+    ancillary_variables_str
+        Space or concatenated string of ancillary variable names.
+
+    Returns
+    -------
+    list[str]
+        List of cleaned variable names with 'sg_cal_' prefix removed.
+    """
     ancillary_variables_str = re.sub(r"(\w)(sg_cal)", r"\1 \2", ancillary_variables_str)
     ancilliary_vars_list = ancillary_variables_str.split()
     ancilliary_vars_list = [var.replace("sg_cal_", "") for var in ancilliary_vars_list]
     return ancilliary_vars_list
 
 
-def _assign_calval(sg_cal, anc_var_list):
+def _assign_calval(sg_cal: xr.Dataset, anc_var_list: list[str]) -> dict:
+    """
+    Assigns calibration values from dataset to a dictionary.
+
+    Parameters
+    ----------
+    sg_cal
+        Dataset containing calibration variables.
+    anc_var_list
+        List of ancillary variable names to extract.
+
+    Returns
+    -------
+    dict
+        Dictionary mapping variable names to their values.
+        Missing variables are assigned 'Unknown'.
+    """
     calval = {}
     for anc_var in anc_var_list:
         # Check if anc_var exists in sg_cal which was not the case in Robs dataset
