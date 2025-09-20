@@ -93,7 +93,7 @@ from seagliderOG1 import utilities, vocabularies
 
 ### Docstrings
 
-Use Google-style docstrings for all public functions:
+Use numpy-style docstrings for all public functions:
 
 ```python
 def convert_to_OG1(list_of_datasets, contrib_to_append=None):
@@ -111,8 +111,20 @@ def convert_to_OG1(list_of_datasets, contrib_to_append=None):
     -------
     tuple[xr.Dataset, list[str]]
         A tuple containing:
-        - ds_og1 (xr.Dataset): The processed dataset in OG1 format.
-        - varlist (list[str]): A list of variable names from input datasets.
+        - ds_og1 : xr.Dataset
+            The processed dataset in OG1 format.
+        - varlist : list[str]
+            A list of variable names from input datasets.
+
+    Raises
+    ------
+    ValueError
+        If input datasets are invalid.
+
+    Examples
+    --------
+    >>> datasets = readers.load_basestation_files("path/to/files/")
+    >>> og1_data, variables = convert_to_OG1(datasets)
     """
 ```
 
