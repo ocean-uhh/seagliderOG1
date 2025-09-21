@@ -170,7 +170,7 @@ def filter_files_by_profile(file_list: list[str], start_profile: int | None = No
         
     Returns
     -------
-    list
+    list of str
         Filtered list of filenames within the specified range.
     """
     filtered_files = []
