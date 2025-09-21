@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 ##------------------------------------------------------------------------------------
 ## Views of the ds or nc file
 ##------------------------------------------------------------------------------------
-def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd.io.formats.style.Styler | pd.DataFrame:
+def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd.DataFrame:
     """Show contents of an xarray Dataset or a netCDF file.
     
     Wrapper function to display either variables or attributes from the dataset.
@@ -30,8 +30,8 @@ def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd
 
     Returns
     -------
-    pandas.io.formats.style.Styler or pandas.DataFrame
-        A styled DataFrame with details about the variables or attributes.
+    pandas.DataFrame
+        A DataFrame with details about the variables or attributes.
         
     Raises
     ------
@@ -39,6 +39,7 @@ def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd
         If input data is not a file path or xarray Dataset.
     ValueError
         If content_type is not 'variables', 'vars', 'attributes', or 'attrs'.
+
     """
     if content_type in ["variables", "vars"]:
         if isinstance(data, str):
@@ -60,7 +61,7 @@ def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd
         )
 
 
-def show_variables(data: str | xr.Dataset) -> pd.io.formats.style.Styler:
+def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
     """Process an xarray Dataset or netCDF file and extract variable information.
     
     Creates a styled DataFrame with comprehensive details about all variables
@@ -86,6 +87,7 @@ def show_variables(data: str | xr.Dataset) -> pd.io.formats.style.Styler:
     ------
     TypeError
         If input data is not a file path or xarray Dataset.
+
     """
     from pandas import DataFrame
     from netCDF4 import Dataset
@@ -161,6 +163,7 @@ def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
     ------
     TypeError
         If input data is not a file path or xarray Dataset.
+
     """
     from pandas import DataFrame
     from netCDF4 import Dataset
@@ -187,7 +190,7 @@ def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
     return attrs
 
 
-def show_variables_by_dimension(data: str | xr.Dataset, dimension_name: str = "trajectory") -> pd.io.formats.style.Styler:
+def show_variables_by_dimension(data: str | xr.Dataset, dimension_name: str = "trajectory") -> pd.DataFrame:
     """Process dataset and extract variables filtered by a specific dimension.
     
     Creates a styled DataFrame showing only variables that have the specified
@@ -214,7 +217,6 @@ def show_variables_by_dimension(data: str | xr.Dataset, dimension_name: str = "t
     TypeError
         If input data is not a file path or xarray Dataset.
     """
-
     if isinstance(data, str):
         print("information is based on file: {}".format(data))
         dataset = Dataset(data)
@@ -290,6 +292,7 @@ def plot_profile_depth(data: pd.DataFrame | xr.Dataset) -> None:
         If input data is not a pandas DataFrame or xarray Dataset.
     KeyError
         If required time or depth variables are not found in the dataset.
+
     """
     if isinstance(data, pd.DataFrame):
         ctd_time = data["ctd_time"]
@@ -373,6 +376,7 @@ def plot_depth_colored(data: pd.DataFrame | xr.Dataset, color_by: str | None = N
         If input data is not a pandas DataFrame or xarray Dataset.
     ValueError
         If no valid dive number variable is found in the dataset.
+
     """
     # Filter data by dive number if specified
     if "dive_number" in data.variables:
@@ -473,6 +477,7 @@ def plot_ctd_depth_vs_time(ds: xr.Dataset, start_traj: int | None = None, end_tr
     - Overlays red circles at points where GPS latitude is non-NaN.
     - Inverts y-axis to show depth increasing downward.
     - Filters data by trajectory range if specified.
+
     """
     # Filter data by trajectory number if specified
     if start_traj is not None and end_traj is not None:

@@ -67,6 +67,7 @@ def load_sample_dataset(dataset_name: str = "p0330015_20100906.nc") -> xr.Datase
     ------
     KeyError
         If the requested dataset is not available in the registry.
+
     """
     if dataset_name in data_source_og.registry.keys():
         file_path = data_source_og.fetch(dataset_name)
@@ -94,6 +95,7 @@ def _validate_filename(filename: str) -> bool:
     -------
     bool
         True if filename matches expected pattern and has valid numbers.
+
     """
     # pattern 1: p1234567.nc
     pattern1 = r"^p\d{7}\.nc$"
@@ -125,6 +127,7 @@ def _profnum_from_filename(filename: str) -> int:
     -------
     int
         The profile/dive number.
+
     """
     return int(filename[4:8])
 
@@ -144,6 +147,7 @@ def _glider_sn_from_filename(filename: str) -> int:
     -------
     int
         The glider serial number.
+
     """
     return int(filename[1:4])
 
@@ -172,6 +176,7 @@ def filter_files_by_profile(file_list: list[str], start_profile: int | None = No
     -------
     list of str
         Filtered list of filenames within the specified range.
+
     """
     filtered_files = []
 
@@ -216,6 +221,7 @@ def load_first_basestation_file(source: str) -> xr.Dataset:
     -------
     xarray.Dataset
         The first basestation dataset.
+
     """
     file_list = list_files(source)
     filename = file_list[0]
@@ -243,6 +249,7 @@ def load_basestation_files(source: str, start_profile: int | None = None, end_pr
     -------
     list of xarray.Dataset
         List of loaded basestation datasets, ordered by filename.
+
     """
     file_list = list_files(source)
     filtered_files = filter_files_by_profile(file_list, start_profile, end_profile)
@@ -288,7 +295,6 @@ def list_files(
     ValueError
         If source is neither a valid URL nor directory path.
     """
-
     if source.startswith("http://") or source.startswith("https://"):
         # List all files in the URL directory
         response = requests.get(source)

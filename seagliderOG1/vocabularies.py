@@ -19,22 +19,21 @@ Configuration Files:
 - OG1_global_attrs.yaml: Global attribute configurations
 - OG1_author.yaml: Default author/contributor information
 
-Notes:
+Notes
 -----
 This module is primarily data-driven and loads most configuration from YAML files
 in the config/ directory. The YAML-based approach allows easy modification of
 OG1 format requirements without code changes.
+
 """
 
 import yaml
 import pathlib
 import os
 
-# Set the directory for yaml files as the root directory + 'config/'
+# Set the directory for yaml files as package directory + 'config/'
 script_dir = pathlib.Path(__file__).parent.absolute()
-parent_dir = script_dir.parents[0]
-rootdir = parent_dir
-config_dir = os.path.join(rootdir, "config/")
+config_dir = os.path.join(script_dir, "config/")
 
 # Dimension renaming: maps basestation dimension names to OG1 standard names
 dims_rename_dict = {"sg_data_point": "N_MEASUREMENTS"}

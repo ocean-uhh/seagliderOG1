@@ -14,8 +14,7 @@ def test_demo_datasets():
 
 
 def test_validate_filename():
-    """
-    Test the _validate_filename function from the readers module.
+    """Test the _validate_filename function from the readers module.
     This test checks the validation of filenames to ensure they meet the expected
     criteria. It uses a list of valid filenames that should pass the validation
     and a list of invalid filenames that should fail the validation.
@@ -35,7 +34,6 @@ def test_validate_filename():
     filenames and False for invalid filenames, providing an appropriate error
     message if the assertion fails.
     """
-
     valid_filenames = ["p1234567.nc", "p7654321.nc", "p0330001_20100903.nc"]
     invalid_filenames = [
         "p0010000.nc",
@@ -61,15 +59,13 @@ def test_validate_filename():
 
 
 def test_filter_filelist_by_profile():
-    """
-    Test the filter_files_by_profile function from the readers module.
+    """Test the filter_files_by_profile function from the readers module.
     This test checks the filtering of filenames based on the start_profile and
     end_profile parameters. It uses a list of filenames to filter and the expected
     result after filtering. The test asserts that the filter_files_by_profile
     function returns the correct list of filtered filenames, providing an appropriate
     error message if the assertion fails.
     """
-
     file_list = [
         "p7654321.nc",
         "p0010000.nc",
@@ -102,8 +98,7 @@ def test_filter_filelist_by_profile():
 
 
 def test_load_basestation_files():
-    """
-    Test the load_basestation_files function from the readers module.
+    """Test the load_basestation_files function from the readers module.
     This test checks the loading of datasets from either an online source or a local
     directory, optionally filtering by profile range. It uses a sample dataset and
     the expected result after loading the dataset. The test asserts that the load_basestation_files
@@ -123,8 +118,7 @@ def test_load_basestation_files():
 
 
 def test_load_first_basestation_file():
-    """
-    Test the load_first_basestation_file function from the readers module.
+    """Test the load_first_basestation_file function from the readers module.
     This test checks the loading of the first dataset from either an online source
     or a local directory. It uses a sample dataset and the expected result after
     loading the dataset. The test asserts that the load_first_basestation_file

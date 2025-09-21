@@ -8,8 +8,7 @@ _log = logging.getLogger(__name__)
 
 
 def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> None:
-    """
-    Attempts to save the dataset to a NetCDF file.
+    """Attempts to save the dataset to a NetCDF file.
 
     If a TypeError occurs due to invalid attribute values, converts the invalid
     attributes to strings and retries the save operation.
@@ -29,6 +28,7 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> None:
     Notes
     -----
     Based on: https://github.com/pydata/xarray/issues/3743
+
     """
     valid_types = (str, Number, np.ndarray, np.number, list, tuple)
 

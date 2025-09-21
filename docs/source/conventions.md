@@ -278,7 +278,7 @@ Use clear, descriptive commit messages:
 - Use consistent indentation (2 spaces)
 - Include comments for complex configurations
 - Validate YAML syntax
-- Follow the existing structure in `config/` directory
+- Follow the existing structure in `seagliderOG1/config/` directory
 
 ## Dependencies
 

@@ -38,6 +38,9 @@ packages = [
 ]
 include-package-data = true
 
+[tool.setuptools.package-data]
+seagliderOG1 = ["config/*.yaml"]
+
 [tool.setuptools.dynamic]
 dependencies = { file = [
   "requirements.txt",
