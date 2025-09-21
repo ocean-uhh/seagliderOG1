@@ -8,21 +8,30 @@ The overall structure of the `seagliderOG1` package is as below.
 seagliderOG1/
 ├── seagliderOG1                  # [core] Main Python package with scientific code
 │   ├── __init__.py               # [core] Makes this a Python package
+│   ├── _version.py               # [core] Automatically generated version from git tags
+│   ├── config/                   # [core] Configuration files for OG1 format conversion
+│   │   ├── OG1_global_attrs.yaml # [core] Global attributes for OG1 format
+│   │   ├── OG1_var_names.yaml    # [core] Variable name mappings
+│   │   ├── OG1_vocab_attrs.yaml  # [core] Vocabulary attribute mappings
+│   │   ├── OG1_sensor_attrs.yaml # [core] Sensor attribute definitions
+│   │   ├── OG1_author.yaml       # [core] Author information template
+│   │   └── mission_yaml.yaml     # [core] Mission configuration template
 │   ├── convertOG1.py             # [core] Functions to convert data into OG1 format
 │   ├── plotters.py               # [core] Functions to plot data
 │   ├── readers.py                # [core] Functions to read raw data into xarray datasets
 │   ├── writers.py                # [core] Functions to write data (e.g., to NetCDF)
 │   ├── tools.py                  # [core] Utilities for unit conversion, calculations, etc.
 │   ├── vocabularies.py           # [core] Vocabularies for OG1 format & standardisation
-│   ├── logger.py                 # [core] Structured logging configuration for reproducible runs
-│   ├── template_project.mplstyle # [core] Default plotting parameters
+│   ├── old-tools.py              # [core] Legacy functions (deprecated)
 │   └── utilities.py              # [core] Helper functions (e.g., file download or parsing)
 │
 ├── tests/                        # [test] Unit tests using pytest
+│   ├── test_convertOG1.py        # [test] Test functions in convertOG1.py
+│   ├── test_plotters.py          # [test] Test functions in plotters.py
 │   ├── test_readers.py           # [test] Test functions in readers.py
 │   ├── test_tools.py             # [test] Test functions in tools.py
 │   ├── test_utilities.py         # [test] Test functions in utilities.py
-│   └── ...
+│   └── test_vocabularies.py      # [test] Test functions in vocabularies.py
 │
 ├── docs/                         # [docs]
 │   ├── source/                   # [docs] Sphinx documentation source files
@@ -41,18 +50,17 @@ seagliderOG1/
 │   ├── demo.ipynb                # [demo] Also run in docs.yml to appear in docs
 │   └── run_dataset.ipynb         # [demo] To run a full dataset through conversion
 │
-├── data/                         # [data]
-│   └── demo_single_test.nc       # [data] Example data file 
-│
-├── logs/                         # [core] Log output from structured logging
-│   └── *.log                     # [core] Log file describing a conversion
+├── data/                         # [data] Sample data files for testing and examples
+│   ├── demo_single_test.nc       # [data] Example data file for basic testing
+│   ├── sg*.nc                    # [data] Seaglider basestation files for testing
+│   └── *.log                     # [data] Log files corresponding to data files 
 │
 ├── .github/                      # [ci] GitHub-specific workflows (e.g., Actions)
 │   ├── workflows/
 │   │   ├── docs.yml              # [ci] Test build documents on *pull-request*
 │   │   ├── docs_deploy.yml       # [ci] Build and deploy documents on "merge"
 │   │   ├── pypi.yml              # [ci] Package and release on GitHub.com "release"
-│   │   └── test.yml              # [ci] Run pytest on tests/test_<name>.py on *pull-request*
+│   │   └── tests.yml             # [ci] Run pytest on tests/test_<name>.py on *pull-request*
 │   ├── ISSUE_TEMPLATE.md         # [ci, meta] Template for issues on Github
 │   └── PULL_REQUEST_TEMPLATE.md  # [ci, meta] Template for pull requests on Github
 │
@@ -82,7 +90,7 @@ The tags above give an indication of what parts of this project are used for wha
 ## 💡 Notes
 
 - **Modularity**: Code is split by function (reading, writing, tools).
-- **Logging**: All major functions support structured logging to `logs/`.
+- **Configuration**: OG1 format specifications are defined in YAML files in `seagliderOG1/config/`.
 - **Tests**: Pytest-compatible tests are in `tests/`, with one file per module.
 - **Docs**: Sphinx documentation is in `docs/`.
 

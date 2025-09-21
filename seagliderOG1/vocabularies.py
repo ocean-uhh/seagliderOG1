@@ -27,9 +27,10 @@ OG1 format requirements without code changes.
 
 """
 
-import yaml
-import pathlib
 import os
+import pathlib
+
+import yaml
 
 # Set the directory for yaml files as package directory + 'config/'
 script_dir = pathlib.Path(__file__).parent.absolute()

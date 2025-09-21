@@ -4,12 +4,12 @@ This module provides functions for plotting and inspecting Seaglider datasets,
 including variable summaries, attribute displays, and depth profile visualizations.
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
+from netCDF4 import Dataset
 from pandas import DataFrame
-
-import matplotlib.pyplot as plt
 
 
 ##------------------------------------------------------------------------------------
@@ -89,8 +89,6 @@ def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
         If input data is not a file path or xarray Dataset.
 
     """
-    from pandas import DataFrame
-    from netCDF4 import Dataset
 
     if isinstance(data, str):
         print("information is based on file: {}".format(data))
@@ -165,8 +163,6 @@ def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
         If input data is not a file path or xarray Dataset.
 
     """
-    from pandas import DataFrame
-    from netCDF4 import Dataset
 
     if isinstance(data, str):
         print("information is based on file: {}".format(data))

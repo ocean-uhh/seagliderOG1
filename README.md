@@ -14,7 +14,7 @@ Code is based on [votoutils](https://github.com/voto-ocean-knowledge/votoutils/b
 For most users, pip installation is the simplest approach:
 
 ```bash
-# Install from PyPI (when available)
+# Install from PyPI
 pip install seagliderOG1
 
 # Or install from source
