@@ -933,7 +933,6 @@ def assign_phase(ds):
         - 'PHASE_QC' is an additional variable with no QC applied.
         
     Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth.  Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC
-
     """
     # Initialize the new variable with the same dimensions as dive_num
     ds['PHASE'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
