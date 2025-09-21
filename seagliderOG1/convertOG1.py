@@ -1,3 +1,10 @@
+"""Convert Seaglider basestation files to OG1 format.
+
+This module provides the core functionality for converting Seaglider basestation
+NetCDF files into OG1 (Ocean Gliders 1) format. It handles data processing,
+variable renaming, attribute assignments, and dataset standardization.
+"""
+
 import logging
 import os
 from datetime import datetime
@@ -15,23 +22,26 @@ def convert_to_OG1(
     list_of_datasets: list[xr.Dataset] | xr.Dataset,
     contrib_to_append: dict[str, str] | None = None,
 ) -> tuple[xr.Dataset, list[str]]:
-    """
+    """Convert Seaglider basestation datasets to OG1 format.
+    
     Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
-    concatenates the datasets, sorts by time, and applies attributes.
+    concatenates the datasets, sorts by time, and applies attributes. Main conversion function that 
+    processes basestation datasets, applies OG1 standardization, concatenates multiple datasets, 
+    and adds global attributes.
 
     Parameters
     ----------
-    list_of_datasets : list[xr.Dataset] | xr.Dataset
+    list_of_datasets : list of xarray.Dataset or xarray.Dataset
         A list of xarray datasets or a single xarray dataset in basestation format.
-    contrib_to_append : dict[str, str] | None, optional
+    contrib_to_append : dict of str, optional
         Dictionary containing additional contributor information to append. Default is None.
 
     Returns
     -------
-    tuple[xr.Dataset, list[str]]
+    tuple of (xarray.Dataset, list of str)
         A tuple containing:
         - ds_og1 (xarray.Dataset): The concatenated and processed dataset in OG1 format.
-        - varlist (list[str]): A list of variable names from the input datasets.
+        - varlist (list of str): A list of variable names from the input datasets.
     """
     if not isinstance(list_of_datasets, list):
         list_of_datasets = [list_of_datasets]
@@ -274,8 +284,10 @@ def standardise_OG10(
     firstrun: bool = False,
     unit_format: dict[str, str] = vocabularies.unit_str_format,
 ) -> xr.Dataset:
-    """
-    Standardize the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.
+    """Standardize the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.
+    
+    Applies OG1 vocabulary for variable names, units, and attributes.
+    Performs unit conversions and QC flag standardization.
 
     Parameters
     ----------
@@ -283,8 +295,9 @@ def standardise_OG10(
         The input dataset to be standardized.
     firstrun : bool, optional
         Indicates whether this is the first run of the standardization process. Default is False.
-    unit_format : dict[str, str], optional
-        A dictionary mapping unit strings to their standardized format. Default is vocabularies.unit_str_format.
+    unit_format : dict of str, optional
+        A dictionary mapping unit strings to their standardized format. 
+        Default is vocabularies.unit_str_format.
 
     Returns
     -------
@@ -352,8 +365,7 @@ def standardise_OG10(
 
 
 def extract_variables(ds: xr.Dataset) -> tuple[xr.Dataset, xr.Dataset, xr.Dataset]:
-    """
-    Splits variables from the basestation file that have no dimensions into categorized datasets.
+    """Split variables from the basestation file that have no dimensions into categorized datasets.
 
     This function further processes the variables from the basestation file that had no dimensions.
     It categorizes them based on their prefixes or characteristics into three groups:
@@ -367,7 +379,7 @@ def extract_variables(ds: xr.Dataset) -> tuple[xr.Dataset, xr.Dataset, xr.Datase
 
     Returns
     -------
-    tuple[xr.Dataset, xr.Dataset, xr.Dataset]
+    tuple of (xarray.Dataset, xarray.Dataset, xarray.Dataset)
         A tuple containing three xarray Datasets:
         - sg_cal : xarray.Dataset
             Dataset containing variables starting with 'sg_cal_' (originally from `sg_calib_constants.m`).
@@ -399,8 +411,7 @@ def extract_variables(ds: xr.Dataset) -> tuple[xr.Dataset, xr.Dataset, xr.Datase
 
 
 def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
-    """
-    Adds GPS information (LATITUDE_GPS, LONGITUDE_GPS, TIME_GPS) to the dataset.
+    """Add GPS information (LATITUDE_GPS, LONGITUDE_GPS, TIME_GPS) to the dataset.
 
     The GPS values will be included within the N_MEASUREMENTS dimension, with non-NaN values
     only when GPS information is available. The dataset will be sorted by TIME.
@@ -475,15 +486,17 @@ def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
 ##-----------------------------------------------------------------------------------------
 ## Editing attributes
 ##-----------------------------------------------------------------------------------------
-def update_dataset_attributes(ds, contrib_to_append):
-    """
-    Updates the attributes of the dataset based on the provided attribute input.
+def update_dataset_attributes(ds: xr.Dataset, contrib_to_append: dict[str, str] | None) -> dict[str, str]:
+    """Update the attributes of the dataset based on the provided attribute input.
+    
+    Processes contributor information, time attributes, and applies OG1
+    global attribute vocabulary in the correct order.
 
     Parameters
     ----------
     ds : xarray.Dataset
         The input dataset whose attributes need to be updated.
-    contrib_to_append : dict[str, str] or None
+    contrib_to_append : dict of str or None
         A dictionary containing additional contributor information to append. Default is None.
 
     Returns
@@ -537,7 +550,24 @@ def update_dataset_attributes(ds, contrib_to_append):
     return ordered_attributes
 
 
-def get_contributors(ds, values_to_append=None):
+def get_contributors(ds: xr.Dataset, values_to_append: dict[str, str] | None = None) -> dict[str, str]:
+    """Extract and format contributor information for OG1 attributes.
+    
+    Processes creator and contributor information from dataset attributes,
+    formats them as comma-separated strings, and handles institution mapping.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset containing original contributor attributes.
+    values_to_append : dict, optional
+        Additional contributor information to append.
+
+    Returns
+    -------
+    dict
+        Dictionary with formatted contributor attribute strings.
+    """
     # Function to create or append to a list
     def create_or_append_list(existing_list, new_item):
         if new_item not in existing_list:
@@ -546,15 +576,19 @@ def get_contributors(ds, values_to_append=None):
         return existing_list
 
     def list_to_comma_separated_string(lst):
-        """
-        Convert a list of strings to a single string with values separated by commas.
+        """Convert a list of strings to a single string with values separated by commas.
+        
         Replace any commas present in list elements with hyphens.
+        
+        Parameters
+        ----------
+        lst : list
+            List of strings.
 
-        Parameters:
-        lst (list): List of strings.
-
-        Returns:
-        str: Comma-separated string with commas in elements replaced by hyphens.
+        Returns
+        -------
+        str
+            Comma-separated string with commas in elements replaced by hyphens.
         """
         return ", ".join([item for item in lst])
 
@@ -709,9 +743,11 @@ def get_contributors(ds, values_to_append=None):
     return attributes_dict
 
 
-def get_time_attributes(ds):
-    """
-    Extract and clean time-related attributes from the dataset.
+def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
+    """Extract and clean time-related attributes from the dataset.
+    
+    Converts various time formats to OG1-standard YYYYMMDDTHHMMSS format
+    and adds date_modified timestamp.
 
     Parameters
     ----------
@@ -749,7 +785,21 @@ def get_time_attributes(ds):
     return time_attrs
 
 
-def extract_attr_to_keep(ds1, attr_as_is=vocabularies.global_attrs["attr_as_is"]):
+def extract_attr_to_keep(ds1: xr.Dataset, attr_as_is: list[str] = vocabularies.global_attrs["attr_as_is"]) -> dict[str, str]:
+    """Extract attributes to retain unchanged.
+    
+    Parameters
+    ----------
+    ds1 : xarray.Dataset
+        Source dataset.
+    attr_as_is : list
+        Attribute names to retain without modification.
+
+    Returns
+    -------
+    dict
+        Retained attributes.
+    """
     retained_attrs = {}
 
     # Retain attributes based on attr_as_is
@@ -761,8 +811,22 @@ def extract_attr_to_keep(ds1, attr_as_is=vocabularies.global_attrs["attr_as_is"]
 
 
 def extract_attr_to_rename(
-    ds1, attr_to_rename=vocabularies.global_attrs["attr_to_rename"]
-):
+    ds1: xr.Dataset, attr_to_rename: dict[str, str] = vocabularies.global_attrs["attr_to_rename"]
+) -> dict[str, str]:
+    """Extract and rename attributes according to OG1 vocabulary.
+    
+    Parameters
+    ----------
+    ds1 : xarray.Dataset
+        Source dataset.
+    attr_to_rename : dict
+        Mapping of new_name: old_name for attribute renaming.
+
+    Returns
+    -------
+    dict
+        Renamed attributes.
+    """
     renamed_attrs = {}
     # Rename attributes based on values_to_rename
     for new_attr, old_attr in attr_to_rename.items():
@@ -772,9 +836,8 @@ def extract_attr_to_rename(
     return renamed_attrs
 
 
-def process_and_save_data(input_location, save=False, output_dir=".", run_quietly=True):
-    """
-    Processes and saves data from the specified input location.
+def process_and_save_data(input_location: str, save: bool = False, output_dir: str = ".", run_quietly: bool = True) -> xr.Dataset:
+    """Process and save data from the specified input location.
 
     This function loads and concatenates datasets from the server, converts them to OG1 format,
     and saves the resulting dataset to a NetCDF file. If the file already exists, the function
