@@ -31,10 +31,10 @@
    "id": "6a1920f3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:24.133343Z",
-     "iopub.status.busy": "2025-09-21T13:42:24.133118Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.108497Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.108002Z"
+     "iopub.execute_input": "2025-09-21T13:50:44.182119Z",
+     "iopub.status.busy": "2025-09-21T13:50:44.181904Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.535988Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.535402Z"
     }
    },
    "outputs": [
@@ -53,7 +53,7 @@
      "traceback": [
       "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
       "\u001b[31mAttributeError\u001b[39m                            Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[1]\u001b[39m\u001b[32m, line 14\u001b[39m\n\u001b[32m     12\u001b[39m \u001b[38;5;28;01mimport\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01mos\u001b[39;00m\n\u001b[32m     13\u001b[39m \u001b[38;5;28;01mimport\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01mpooch\u001b[39;00m\n\u001b[32m---> \u001b[39m\u001b[32m14\u001b[39m \u001b[38;5;28;01mfrom\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01mseagliderOG1\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[38;5;28;01mimport\u001b[39;00m readers, writers, plotters, tools\n\u001b[32m     15\u001b[39m \u001b[38;5;28;01mfrom\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01mseagliderOG1\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[38;5;28;01mimport\u001b[39;00m convertOG1, vocabularies\n",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[1]\u001b[39m\u001b[32m, line 17\u001b[39m\n\u001b[32m     15\u001b[39m \u001b[38;5;28;01mimport\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01mos\u001b[39;00m\n\u001b[32m     16\u001b[39m \u001b[38;5;28;01mimport\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01mpooch\u001b[39;00m\n\u001b[32m---> \u001b[39m\u001b[32m17\u001b[39m \u001b[38;5;28;01mfrom\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01mseagliderOG1\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[38;5;28;01mimport\u001b[39;00m readers, writers, plotters, tools\n\u001b[32m     18\u001b[39m \u001b[38;5;28;01mfrom\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01mseagliderOG1\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[38;5;28;01mimport\u001b[39;00m convertOG1, vocabularies\n",
       "\u001b[36mFile \u001b[39m\u001b[32m~/work/seagliderOG1/seagliderOG1/seagliderOG1/plotters.py:18\u001b[39m\n\u001b[32m     12\u001b[39m \u001b[38;5;28;01mimport\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01mmatplotlib\u001b[39;00m\u001b[34;01m.\u001b[39;00m\u001b[34;01mpyplot\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[38;5;28;01mas\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01mplt\u001b[39;00m\n\u001b[32m     15\u001b[39m \u001b[38;5;66;03m##------------------------------------------------------------------------------------\u001b[39;00m\n\u001b[32m     16\u001b[39m \u001b[38;5;66;03m## Views of the ds or nc file\u001b[39;00m\n\u001b[32m     17\u001b[39m \u001b[38;5;66;03m##------------------------------------------------------------------------------------\u001b[39;00m\n\u001b[32m---> \u001b[39m\u001b[32m18\u001b[39m \u001b[38;5;28;01mdef\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34mshow_contents\u001b[39m(data: \u001b[38;5;28mstr\u001b[39m | xr.Dataset, content_type: \u001b[38;5;28mstr\u001b[39m = \u001b[33m\"\u001b[39m\u001b[33mvariables\u001b[39m\u001b[33m\"\u001b[39m) -> \u001b[43mpd\u001b[49m\u001b[43m.\u001b[49m\u001b[43mio\u001b[49m\u001b[43m.\u001b[49m\u001b[43mformats\u001b[49m\u001b[43m.\u001b[49m\u001b[43mstyle\u001b[49m.Styler | pd.DataFrame:\n\u001b[32m     19\u001b[39m \u001b[38;5;250m    \u001b[39m\u001b[33;03m\"\"\"Show contents of an xarray Dataset or a netCDF file.\u001b[39;00m\n\u001b[32m     20\u001b[39m \u001b[33;03m    \u001b[39;00m\n\u001b[32m     21\u001b[39m \u001b[33;03m    Wrapper function to display either variables or attributes from the dataset.\u001b[39;00m\n\u001b[32m   (...)\u001b[39m\u001b[32m     41\u001b[39m \u001b[33;03m        If content_type is not 'variables', 'vars', 'attributes', or 'attrs'.\u001b[39;00m\n\u001b[32m     42\u001b[39m \u001b[33;03m    \"\"\"\u001b[39;00m\n\u001b[32m     43\u001b[39m     \u001b[38;5;28;01mif\u001b[39;00m content_type \u001b[38;5;129;01min\u001b[39;00m [\u001b[33m\"\u001b[39m\u001b[33mvariables\u001b[39m\u001b[33m\"\u001b[39m, \u001b[33m\"\u001b[39m\u001b[33mvars\u001b[39m\u001b[33m\"\u001b[39m]:\n",
       "\u001b[31mAttributeError\u001b[39m: module 'pandas.io.formats' has no attribute 'style'"
      ]
@@ -69,6 +69,9 @@
     "sys.path.append(str(parent_dir) + '/seagliderOG1')\n",
     "print(parent_dir)\n",
     "print(sys.path)\n",
+    "### silence future warnings\n",
+    "import warnings\n",
+    "warnings.simplefilter(action='ignore', category=FutureWarning)\n",
     "\n",
     "import xarray as xr\n",
     "import os\n",
@@ -79,22 +82,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "e6095e63",
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  },
-  {
-   "cell_type": "code",
    "execution_count": 2,
    "id": "1e070d18",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.110267Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.110106Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.112375Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.111985Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.537848Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.537676Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.540171Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.539677Z"
     }
    },
    "outputs": [],
@@ -131,10 +126,10 @@
    "id": "05ca56cf",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.113866Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.113725Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.129196Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.128763Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.541843Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.541680Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.557956Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.557536Z"
     }
    },
    "outputs": [
@@ -169,10 +164,10 @@
    "id": "83bba8ac",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.130625Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.130485Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.146331Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.145937Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.559557Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.559383Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.581494Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.581058Z"
     }
    },
    "outputs": [
@@ -183,18 +178,18 @@
      "traceback": [
       "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
       "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[4]\u001b[39m\u001b[32m, line 6\u001b[39m\n\u001b[32m      2\u001b[39m input_dir = \u001b[33m\"\u001b[39m\u001b[33m/Users/eddifying/Dropbox/data/sg015-ncei-download\u001b[39m\u001b[33m\"\u001b[39m\n\u001b[32m      4\u001b[39m \u001b[38;5;66;03m# Load and concatenate all datasets in the input directory\u001b[39;00m\n\u001b[32m      5\u001b[39m \u001b[38;5;66;03m# Optionally, specify the range of profiles to load (start_profile, end_profile)\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m6\u001b[39m list_datasets = \u001b[43mreaders\u001b[49m.read_basestation(input_dir, start_profile=\u001b[32m500\u001b[39m, end_profile=\u001b[32m503\u001b[39m)\n\u001b[32m      8\u001b[39m \u001b[38;5;66;03m# Where list_datasets is a list of xarray datasets.  A single dataset can be accessed as\u001b[39;00m\n\u001b[32m      9\u001b[39m ds = list_datasets[\u001b[32m0\u001b[39m]\n",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[4]\u001b[39m\u001b[32m, line 6\u001b[39m\n\u001b[32m      2\u001b[39m input_dir = data_path + \u001b[33m'\u001b[39m\u001b[33m/demo_sg005\u001b[39m\u001b[33m'\u001b[39m \u001b[38;5;66;03m### chose the input directory with your data\u001b[39;00m\n\u001b[32m      4\u001b[39m \u001b[38;5;66;03m# Load and concatenate all datasets in the input directory\u001b[39;00m\n\u001b[32m      5\u001b[39m \u001b[38;5;66;03m# Optionally, specify the range of profiles to load (start_profile, end_profile)\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m6\u001b[39m list_datasets = \u001b[43mreaders\u001b[49m.load_basestation_files(input_dir, start_profile=\u001b[32m0\u001b[39m, end_profile=\u001b[32m5\u001b[39m)\n\u001b[32m      8\u001b[39m \u001b[38;5;66;03m# Where list_datasets is a list of xarray datasets.  A single dataset can be accessed as\u001b[39;00m\n\u001b[32m      9\u001b[39m ds = list_datasets[\u001b[32m0\u001b[39m]\n",
       "\u001b[31mNameError\u001b[39m: name 'readers' is not defined"
      ]
     }
    ],
    "source": [
     "# Specify the input directory on your local machine\n",
-    "input_dir = \"/Users/eddifying/Dropbox/data/sg015-ncei-download\"\n",
+    "input_dir = data_path + '/demo_sg005' ### chose the input directory with your data\n",
     "\n",
     "# Load and concatenate all datasets in the input directory\n",
     "# Optionally, specify the range of profiles to load (start_profile, end_profile)\n",
-    "list_datasets = readers.read_basestation(input_dir, start_profile=500, end_profile=503)\n",
+    "list_datasets = readers.load_basestation_files(input_dir, start_profile=0, end_profile=5)\n",
     "\n",
     "# Where list_datasets is a list of xarray datasets.  A single dataset can be accessed as\n",
     "ds = list_datasets[0]"
@@ -206,27 +201,27 @@
    "id": "926863fd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.147795Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.147639Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.167929Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.167532Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.582964Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.582815Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.598023Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.597482Z"
     }
    },
    "outputs": [
     {
      "ename": "NameError",
-     "evalue": "name 'ds' is not defined",
+     "evalue": "name 'readers' is not defined",
      "output_type": "error",
      "traceback": [
       "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
       "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[5]\u001b[39m\u001b[32m, line 1\u001b[39m\n\u001b[32m----> \u001b[39m\u001b[32m1\u001b[39m \u001b[43mds\u001b[49m\n",
-      "\u001b[31mNameError\u001b[39m: name 'ds' is not defined"
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[5]\u001b[39m\u001b[32m, line 1\u001b[39m\n\u001b[32m----> \u001b[39m\u001b[32m1\u001b[39m ds = \u001b[43mreaders\u001b[49m.load_sample_dataset()\n",
+      "\u001b[31mNameError\u001b[39m: name 'readers' is not defined"
      ]
     }
    ],
    "source": [
-    "ds"
+    "ds = readers.load_sample_dataset()"
    ]
   },
   {
@@ -243,10 +238,10 @@
    "id": "2913eb42",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.169364Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.169204Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.184873Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.184391Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.599650Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.599466Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.615739Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.615294Z"
     }
    },
    "outputs": [
@@ -257,17 +252,17 @@
      "traceback": [
       "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
       "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[6]\u001b[39m\u001b[32m, line 5\u001b[39m\n\u001b[32m      2\u001b[39m server = \u001b[33m\"\u001b[39m\u001b[33mhttps://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/\u001b[39m\u001b[33m\"\u001b[39m\n\u001b[32m      4\u001b[39m \u001b[38;5;66;03m# Load and concatenate all datasets from the server, optionally specifying the range of profiles to load\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m5\u001b[39m list_datasets = \u001b[43mreaders\u001b[49m.read_basestation(server, start_profile=\u001b[32m500\u001b[39m, end_profile=\u001b[32m503\u001b[39m)\n",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[6]\u001b[39m\u001b[32m, line 5\u001b[39m\n\u001b[32m      2\u001b[39m server = \u001b[33m\"\u001b[39m\u001b[33mhttps://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/\u001b[39m\u001b[33m\"\u001b[39m\n\u001b[32m      4\u001b[39m \u001b[38;5;66;03m# Load and concatenate all datasets from the server, optionally specifying the range of profiles to load\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m5\u001b[39m list_datasets = \u001b[43mreaders\u001b[49m.load_basestation_files(server, start_profile=\u001b[32m1\u001b[39m, end_profile=\u001b[32m10\u001b[39m)\n",
       "\u001b[31mNameError\u001b[39m: name 'readers' is not defined"
      ]
     }
    ],
    "source": [
     "# Specify the server where data are located\n",
-    "server = \"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/\"\n",
+    "server = \"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/\"\n",
     "\n",
     "# Load and concatenate all datasets from the server, optionally specifying the range of profiles to load\n",
-    "list_datasets = readers.read_basestation(server, start_profile=500, end_profile=503)"
+    "list_datasets = readers.load_basestation_files(server, start_profile=1, end_profile=10)"
    ]
   },
   {
@@ -322,10 +317,10 @@
    "id": "dd041858-c498-4654-a7c8-1731beb839fc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.186459Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.186312Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.202053Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.201602Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.617233Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.617088Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.633063Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.632540Z"
     }
    },
    "outputs": [
@@ -336,7 +331,7 @@
      "traceback": [
       "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
       "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[7]\u001b[39m\u001b[32m, line 2\u001b[39m\n\u001b[32m      1\u001b[39m \u001b[38;5;66;03m# Loads one dataset (p0150500_20050213.nc)\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m2\u001b[39m ds = \u001b[43mreaders\u001b[49m.load_sample_dataset()\n\u001b[32m      4\u001b[39m ds_OG1 = convertOG1.convert_to_OG1(ds)\n\u001b[32m      6\u001b[39m \u001b[38;5;66;03m# Check the results - uncomment the following lines to either generate a plot or show the variables.\u001b[39;00m\n",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[7]\u001b[39m\u001b[32m, line 2\u001b[39m\n\u001b[32m      1\u001b[39m \u001b[38;5;66;03m# Loads one dataset (p0150500_20050213.nc)\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m2\u001b[39m ds = \u001b[43mreaders\u001b[49m.load_sample_dataset()\n\u001b[32m      4\u001b[39m ds_OG1, var_list = convertOG1.convert_to_OG1(ds)\n\u001b[32m      6\u001b[39m \u001b[38;5;66;03m# Check the results - uncomment the following lines to either generate a plot or show the variables.\u001b[39;00m\n",
       "\u001b[31mNameError\u001b[39m: name 'readers' is not defined"
      ]
     }
@@ -345,7 +340,7 @@
     "# Loads one dataset (p0150500_20050213.nc)\n",
     "ds = readers.load_sample_dataset()\n",
     "\n",
-    "ds_OG1 = convertOG1.convert_to_OG1(ds)\n",
+    "ds_OG1, var_list = convertOG1.convert_to_OG1(ds)\n",
     "\n",
     "# Check the results - uncomment the following lines to either generate a plot or show the variables.\n",
     "plotters.plot_profile_depth(ds_OG1)"
@@ -354,32 +349,91 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "a0c0c0ba",
+   "id": "d5b0e357",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.203456Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.203312Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.218332Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.217804Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.634675Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.634489Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.649793Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.649332Z"
     }
    },
    "outputs": [
     {
      "ename": "NameError",
-     "evalue": "name 'ds_OG1' is not defined",
+     "evalue": "name 'var_list' is not defined",
      "output_type": "error",
      "traceback": [
       "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
       "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[8]\u001b[39m\u001b[32m, line 3\u001b[39m\n\u001b[32m      1\u001b[39m \u001b[38;5;66;03m# Print to screen a table of the variables and variable attributes\u001b[39;00m\n\u001b[32m      2\u001b[39m \u001b[38;5;66;03m#plotters.show_attributes(ds_OG1)\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m3\u001b[39m \u001b[43mds_OG1\u001b[49m\n",
-      "\u001b[31mNameError\u001b[39m: name 'ds_OG1' is not defined"
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[8]\u001b[39m\u001b[32m, line 2\u001b[39m\n\u001b[32m      1\u001b[39m \u001b[38;5;66;03m### print the list of inital variables of the dataset\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m2\u001b[39m \u001b[43mvar_list\u001b[49m\n",
+      "\u001b[31mNameError\u001b[39m: name 'var_list' is not defined"
+     ]
+    }
+   ],
+   "source": [
+    "### print the list of inital variables of the dataset\n",
+    "var_list"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "b697a2f1",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-09-21T13:50:46.651274Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.651115Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.666330Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.665827Z"
+    }
+   },
+   "outputs": [
+    {
+     "ename": "NameError",
+     "evalue": "name 'plotters' is not defined",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
+      "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[9]\u001b[39m\u001b[32m, line 2\u001b[39m\n\u001b[32m      1\u001b[39m \u001b[38;5;66;03m# Print to screen a table of attributes\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m2\u001b[39m \u001b[43mplotters\u001b[49m.show_contents(ds_OG1,\u001b[33m'\u001b[39m\u001b[33mattrs\u001b[39m\u001b[33m'\u001b[39m)\n",
+      "\u001b[31mNameError\u001b[39m: name 'plotters' is not defined"
+     ]
+    }
+   ],
+   "source": [
+    "# Print to screen a table of attributes\n",
+    "plotters.show_contents(ds_OG1,'attrs')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "a0c0c0ba",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-09-21T13:50:46.667857Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.667702Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.682887Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.682364Z"
+    }
+   },
+   "outputs": [
+    {
+     "ename": "NameError",
+     "evalue": "name 'plotters' is not defined",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
+      "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[10]\u001b[39m\u001b[32m, line 2\u001b[39m\n\u001b[32m      1\u001b[39m \u001b[38;5;66;03m# Print to screen a table of the variables and variable attributes\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m2\u001b[39m \u001b[43mplotters\u001b[49m.show_contents(ds_OG1,\u001b[33m'\u001b[39m\u001b[33mvariables\u001b[39m\u001b[33m'\u001b[39m)\n",
+      "\u001b[31mNameError\u001b[39m: name 'plotters' is not defined"
      ]
     }
    ],
    "source": [
     "# Print to screen a table of the variables and variable attributes\n",
-    "#plotters.show_attributes(ds_OG1)\n",
-    "ds_OG1"
+    "plotters.show_contents(ds_OG1,'variables')"
    ]
   },
   {
@@ -395,14 +449,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 9,
+   "execution_count": 11,
    "id": "9d202485",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.219863Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.219704Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.236205Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.235727Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.684552Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.684366Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.701221Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.700724Z"
     }
    },
    "outputs": [
@@ -413,25 +467,25 @@
      "traceback": [
       "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
       "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[9]\u001b[39m\u001b[32m, line 6\u001b[39m\n\u001b[32m      2\u001b[39m input_dir = \u001b[33m\"\u001b[39m\u001b[33m/Users/eddifying/Dropbox/data/sg015-ncei-download\u001b[39m\u001b[33m\"\u001b[39m\n\u001b[32m      4\u001b[39m \u001b[38;5;66;03m# Load and concatenate all datasets in the input directory\u001b[39;00m\n\u001b[32m      5\u001b[39m \u001b[38;5;66;03m# Optionally, specify the range of profiles to load (start_profile, end_profile)\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m6\u001b[39m list_datasets = \u001b[43mreaders\u001b[49m.read_basestation(input_dir, start_profile=\u001b[32m500\u001b[39m, end_profile=\u001b[32m503\u001b[39m)\n\u001b[32m      8\u001b[39m \u001b[38;5;66;03m# Convert the list of datasets to OG1\u001b[39;00m\n\u001b[32m      9\u001b[39m ds_OG1 = convertOG1.convert_to_OG1(list_datasets)\n",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[11]\u001b[39m\u001b[32m, line 6\u001b[39m\n\u001b[32m      2\u001b[39m input_dir = data_path + \u001b[33m'\u001b[39m\u001b[33m/demo_sg005\u001b[39m\u001b[33m'\u001b[39m \u001b[38;5;66;03m### chose the input directory with your data\u001b[39;00m\n\u001b[32m      4\u001b[39m \u001b[38;5;66;03m# Load and concatenate all datasets in the input directory\u001b[39;00m\n\u001b[32m      5\u001b[39m \u001b[38;5;66;03m# Optionally, specify the range of profiles to load (start_profile, end_profile)\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m6\u001b[39m list_datasets = \u001b[43mreaders\u001b[49m.load_basestation_files(input_dir, start_profile=\u001b[32m1\u001b[39m, end_profile=\u001b[32m5\u001b[39m)\n\u001b[32m      8\u001b[39m \u001b[38;5;66;03m# Convert the list of datasets to OG1\u001b[39;00m\n\u001b[32m      9\u001b[39m ds_OG1, var_list = convertOG1.convert_to_OG1(list_datasets)\n",
       "\u001b[31mNameError\u001b[39m: name 'readers' is not defined"
      ]
     }
    ],
    "source": [
     "# Specify the input directory on your local machine\n",
-    "input_dir = \"/Users/eddifying/Dropbox/data/sg015-ncei-download\"\n",
+    "input_dir = data_path + '/demo_sg005' ### chose the input directory with your data\n",
     "\n",
     "# Load and concatenate all datasets in the input directory\n",
     "# Optionally, specify the range of profiles to load (start_profile, end_profile)\n",
-    "list_datasets = readers.read_basestation(input_dir, start_profile=500, end_profile=503)\n",
+    "list_datasets = readers.load_basestation_files(input_dir, start_profile=1, end_profile=5)\n",
     "\n",
     "# Convert the list of datasets to OG1\n",
-    "ds_OG1 = convertOG1.convert_to_OG1(list_datasets)\n",
+    "ds_OG1, var_list = convertOG1.convert_to_OG1(list_datasets)\n",
     "\n",
     "# Generate a simple plot\n",
     "plotters.plot_profile_depth(ds_OG1)\n",
-    "#plotters.show_contents(ds_all,'attrs')"
+    "plotters.show_contents(ds_OG1,'attrs')"
    ]
   },
   {
@@ -446,14 +500,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 10,
+   "execution_count": 12,
    "id": "4ac290a2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.237696Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.237548Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.253656Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.253167Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.702848Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.702690Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.718986Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.718563Z"
     }
    },
    "outputs": [
@@ -464,20 +518,20 @@
      "traceback": [
       "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
       "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[10]\u001b[39m\u001b[32m, line 5\u001b[39m\n\u001b[32m      2\u001b[39m server = \u001b[33m\"\u001b[39m\u001b[33mhttps://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/\u001b[39m\u001b[33m\"\u001b[39m\n\u001b[32m      4\u001b[39m \u001b[38;5;66;03m# Load and concatenate all datasets from the server, optionally specifying the range of profiles to load\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m5\u001b[39m list_datasets = \u001b[43mreaders\u001b[49m.read_basestation(server, start_profile=\u001b[32m500\u001b[39m, end_profile=\u001b[32m503\u001b[39m)\n\u001b[32m      7\u001b[39m \u001b[38;5;66;03m# Convert the list of datasets to OG1\u001b[39;00m\n\u001b[32m      8\u001b[39m ds_OG1 = convertOG1.convert_to_OG1(list_datasets)\n",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[12]\u001b[39m\u001b[32m, line 5\u001b[39m\n\u001b[32m      2\u001b[39m server = \u001b[33m\"\u001b[39m\u001b[33mhttps://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/\u001b[39m\u001b[33m\"\u001b[39m\n\u001b[32m      4\u001b[39m \u001b[38;5;66;03m# Load and concatenate all datasets from the server, optionally specifying the range of profiles to load\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m5\u001b[39m list_datasets = \u001b[43mreaders\u001b[49m.load_basestation_files(server, start_profile=\u001b[32m1\u001b[39m, end_profile=\u001b[32m19\u001b[39m)\n\u001b[32m      7\u001b[39m \u001b[38;5;66;03m# Convert the list of datasets to OG1\u001b[39;00m\n\u001b[32m      8\u001b[39m ds_OG1, var_list = convertOG1.convert_to_OG1(list_datasets)\n",
       "\u001b[31mNameError\u001b[39m: name 'readers' is not defined"
      ]
     }
    ],
    "source": [
     "# Specify the server where data are located\n",
-    "server = \"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/\"\n",
+    "server = \"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/\"\n",
     "\n",
     "# Load and concatenate all datasets from the server, optionally specifying the range of profiles to load\n",
-    "list_datasets = readers.read_basestation(server, start_profile=500, end_profile=503)\n",
+    "list_datasets = readers.load_basestation_files(server, start_profile=1, end_profile=19)\n",
     "\n",
     "# Convert the list of datasets to OG1\n",
-    "ds_OG1 = convertOG1.convert_to_OG1(list_datasets)"
+    "ds_OG1, var_list = convertOG1.convert_to_OG1(list_datasets)"
    ]
   },
   {
@@ -492,14 +546,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 11,
+   "execution_count": 13,
    "id": "3540ad10",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.255165Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.255016Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.271458Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.271045Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.720506Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.720359Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.737349Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.736795Z"
     }
    },
    "outputs": [
@@ -510,7 +564,7 @@
      "traceback": [
       "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
       "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[11]\u001b[39m\u001b[32m, line 8\u001b[39m\n\u001b[32m      5\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m os.path.exists(output_file):\n\u001b[32m      6\u001b[39m     os.remove(output_file) \n\u001b[32m----> \u001b[39m\u001b[32m8\u001b[39m \u001b[43mwriters\u001b[49m.save_dataset(ds_OG1, output_file);\n",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[13]\u001b[39m\u001b[32m, line 8\u001b[39m\n\u001b[32m      5\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m os.path.exists(output_file):\n\u001b[32m      6\u001b[39m     os.remove(output_file)\n\u001b[32m----> \u001b[39m\u001b[32m8\u001b[39m \u001b[43mwriters\u001b[49m.save_dataset(ds_OG1, output_file);\n",
       "\u001b[31mNameError\u001b[39m: name 'writers' is not defined"
      ]
     }
@@ -521,21 +575,21 @@
     "# The solution is to convert them to strings, which may be undesired behaviour\n",
     "output_file = os.path.join(data_path, 'demo_test.nc')\n",
     "if os.path.exists(output_file):\n",
-    "    os.remove(output_file) \n",
+    "    os.remove(output_file)\n",
     "\n",
     "writers.save_dataset(ds_OG1, output_file);"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 12,
+   "execution_count": 14,
    "id": "57da6f9e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.272927Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.272749Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.491613Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.491080Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.738925Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.738767Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.961453Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.960889Z"
     }
    },
    "outputs": [
@@ -548,10 +602,10 @@
       "\u001b[31mKeyError\u001b[39m                                  Traceback (most recent call last)",
       "\u001b[36mFile \u001b[39m\u001b[32m~/micromamba/envs/TEST/lib/python3.13/site-packages/xarray/backends/file_manager.py:211\u001b[39m, in \u001b[36mCachingFileManager._acquire_with_cache_info\u001b[39m\u001b[34m(self, needs_lock)\u001b[39m\n\u001b[32m    210\u001b[39m \u001b[38;5;28;01mtry\u001b[39;00m:\n\u001b[32m--> \u001b[39m\u001b[32m211\u001b[39m     file = \u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_cache\u001b[49m\u001b[43m[\u001b[49m\u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_key\u001b[49m\u001b[43m]\u001b[49m\n\u001b[32m    212\u001b[39m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mKeyError\u001b[39;00m:\n",
       "\u001b[36mFile \u001b[39m\u001b[32m~/micromamba/envs/TEST/lib/python3.13/site-packages/xarray/backends/lru_cache.py:56\u001b[39m, in \u001b[36mLRUCache.__getitem__\u001b[39m\u001b[34m(self, key)\u001b[39m\n\u001b[32m     55\u001b[39m \u001b[38;5;28;01mwith\u001b[39;00m \u001b[38;5;28mself\u001b[39m._lock:\n\u001b[32m---> \u001b[39m\u001b[32m56\u001b[39m     value = \u001b[38;5;28;43mself\u001b[39;49m\u001b[43m.\u001b[49m\u001b[43m_cache\u001b[49m\u001b[43m[\u001b[49m\u001b[43mkey\u001b[49m\u001b[43m]\u001b[49m\n\u001b[32m     57\u001b[39m     \u001b[38;5;28mself\u001b[39m._cache.move_to_end(key)\n",
-      "\u001b[31mKeyError\u001b[39m: [<class 'netCDF4._netCDF4.Dataset'>, ('/home/runner/work/seagliderOG1/seagliderOG1/data/demo_test.nc',), 'r', (('clobber', True), ('diskless', False), ('format', 'NETCDF4'), ('persist', False)), 'a7a0a785-4081-4500-b584-1d0b6cd405bf']",
+      "\u001b[31mKeyError\u001b[39m: [<class 'netCDF4._netCDF4.Dataset'>, ('/home/runner/work/seagliderOG1/seagliderOG1/data/demo_test.nc',), 'r', (('clobber', True), ('diskless', False), ('format', 'NETCDF4'), ('persist', False)), 'c3e9d6a1-efd5-4737-8e1e-4b128aa9fa64']",
       "\nDuring handling of the above exception, another exception occurred:\n",
       "\u001b[31mFileNotFoundError\u001b[39m                         Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[12]\u001b[39m\u001b[32m, line 2\u001b[39m\n\u001b[32m      1\u001b[39m \u001b[38;5;66;03m# Load the data saved\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m2\u001b[39m ds1 = \u001b[43mxr\u001b[49m\u001b[43m.\u001b[49m\u001b[43mopen_dataset\u001b[49m\u001b[43m(\u001b[49m\u001b[43moutput_file\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m      4\u001b[39m \u001b[38;5;66;03m# Generate a simple plot\u001b[39;00m\n\u001b[32m      5\u001b[39m \u001b[38;5;66;03m#plotters.show_contents(ds_all,'attrs')\u001b[39;00m\n\u001b[32m      6\u001b[39m plotters.plot_depth_colored(ds1, color_by=\u001b[33m'\u001b[39m\u001b[33mPROFILE_NUMBER\u001b[39m\u001b[33m'\u001b[39m)\n",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[14]\u001b[39m\u001b[32m, line 2\u001b[39m\n\u001b[32m      1\u001b[39m \u001b[38;5;66;03m# Load the data saved\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m2\u001b[39m ds1 = \u001b[43mxr\u001b[49m\u001b[43m.\u001b[49m\u001b[43mopen_dataset\u001b[49m\u001b[43m(\u001b[49m\u001b[43moutput_file\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m      4\u001b[39m \u001b[38;5;66;03m# Generate a simple plot\u001b[39;00m\n\u001b[32m      5\u001b[39m \u001b[38;5;66;03m#plotters.show_contents(ds_all,'attrs')\u001b[39;00m\n\u001b[32m      6\u001b[39m plotters.plot_depth_colored(ds1, color_by=\u001b[33m'\u001b[39m\u001b[33mPROFILE_NUMBER\u001b[39m\u001b[33m'\u001b[39m)\n",
       "\u001b[36mFile \u001b[39m\u001b[32m~/micromamba/envs/TEST/lib/python3.13/site-packages/xarray/backends/api.py:760\u001b[39m, in \u001b[36mopen_dataset\u001b[39m\u001b[34m(filename_or_obj, engine, chunks, cache, decode_cf, mask_and_scale, decode_times, decode_timedelta, use_cftime, concat_characters, decode_coords, drop_variables, create_default_indexes, inline_array, chunked_array_type, from_array_kwargs, backend_kwargs, **kwargs)\u001b[39m\n\u001b[32m    748\u001b[39m decoders = _resolve_decoders_kwargs(\n\u001b[32m    749\u001b[39m     decode_cf,\n\u001b[32m    750\u001b[39m     open_backend_dataset_parameters=backend.open_dataset_parameters,\n\u001b[32m   (...)\u001b[39m\u001b[32m    756\u001b[39m     decode_coords=decode_coords,\n\u001b[32m    757\u001b[39m )\n\u001b[32m    759\u001b[39m overwrite_encoded_chunks = kwargs.pop(\u001b[33m\"\u001b[39m\u001b[33moverwrite_encoded_chunks\u001b[39m\u001b[33m\"\u001b[39m, \u001b[38;5;28;01mNone\u001b[39;00m)\n\u001b[32m--> \u001b[39m\u001b[32m760\u001b[39m backend_ds = \u001b[43mbackend\u001b[49m\u001b[43m.\u001b[49m\u001b[43mopen_dataset\u001b[49m\u001b[43m(\u001b[49m\n\u001b[32m    761\u001b[39m \u001b[43m    \u001b[49m\u001b[43mfilename_or_obj\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    762\u001b[39m \u001b[43m    \u001b[49m\u001b[43mdrop_variables\u001b[49m\u001b[43m=\u001b[49m\u001b[43mdrop_variables\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    763\u001b[39m \u001b[43m    \u001b[49m\u001b[43m*\u001b[49m\u001b[43m*\u001b[49m\u001b[43mdecoders\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    764\u001b[39m \u001b[43m    \u001b[49m\u001b[43m*\u001b[49m\u001b[43m*\u001b[49m\u001b[43mkwargs\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    765\u001b[39m \u001b[43m\u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    766\u001b[39m ds = _dataset_from_backend_dataset(\n\u001b[32m    767\u001b[39m     backend_ds,\n\u001b[32m    768\u001b[39m     filename_or_obj,\n\u001b[32m   (...)\u001b[39m\u001b[32m    779\u001b[39m     **kwargs,\n\u001b[32m    780\u001b[39m )\n\u001b[32m    781\u001b[39m \u001b[38;5;28;01mreturn\u001b[39;00m ds\n",
       "\u001b[36mFile \u001b[39m\u001b[32m~/micromamba/envs/TEST/lib/python3.13/site-packages/xarray/backends/netCDF4_.py:682\u001b[39m, in \u001b[36mNetCDF4BackendEntrypoint.open_dataset\u001b[39m\u001b[34m(self, filename_or_obj, mask_and_scale, decode_times, concat_characters, decode_coords, drop_variables, use_cftime, decode_timedelta, group, mode, format, clobber, diskless, persist, auto_complex, lock, autoclose)\u001b[39m\n\u001b[32m    660\u001b[39m \u001b[38;5;28;01mdef\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34mopen_dataset\u001b[39m(\n\u001b[32m    661\u001b[39m     \u001b[38;5;28mself\u001b[39m,\n\u001b[32m    662\u001b[39m     filename_or_obj: T_PathFileOrDataStore,\n\u001b[32m   (...)\u001b[39m\u001b[32m    679\u001b[39m     autoclose=\u001b[38;5;28;01mFalse\u001b[39;00m,\n\u001b[32m    680\u001b[39m ) -> Dataset:\n\u001b[32m    681\u001b[39m     filename_or_obj = _normalize_path(filename_or_obj)\n\u001b[32m--> \u001b[39m\u001b[32m682\u001b[39m     store = \u001b[43mNetCDF4DataStore\u001b[49m\u001b[43m.\u001b[49m\u001b[43mopen\u001b[49m\u001b[43m(\u001b[49m\n\u001b[32m    683\u001b[39m \u001b[43m        \u001b[49m\u001b[43mfilename_or_obj\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    684\u001b[39m \u001b[43m        \u001b[49m\u001b[43mmode\u001b[49m\u001b[43m=\u001b[49m\u001b[43mmode\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    685\u001b[39m \u001b[43m        \u001b[49m\u001b[38;5;28;43mformat\u001b[39;49m\u001b[43m=\u001b[49m\u001b[38;5;28;43mformat\u001b[39;49m\u001b[43m,\u001b[49m\n\u001b[32m    686\u001b[39m \u001b[43m        \u001b[49m\u001b[43mgroup\u001b[49m\u001b[43m=\u001b[49m\u001b[43mgroup\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    687\u001b[39m \u001b[43m        \u001b[49m\u001b[43mclobber\u001b[49m\u001b[43m=\u001b[49m\u001b[43mclobber\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    688\u001b[39m \u001b[43m        \u001b[49m\u001b[43mdiskless\u001b[49m\u001b[43m=\u001b[49m\u001b[43mdiskless\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    689\u001b[39m \u001b[43m        \u001b[49m\u001b[43mpersist\u001b[49m\u001b[43m=\u001b[49m\u001b[43mpersist\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    690\u001b[39m \u001b[43m        \u001b[49m\u001b[43mauto_complex\u001b[49m\u001b[43m=\u001b[49m\u001b[43mauto_complex\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    691\u001b[39m \u001b[43m        \u001b[49m\u001b[43mlock\u001b[49m\u001b[43m=\u001b[49m\u001b[43mlock\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    692\u001b[39m \u001b[43m        \u001b[49m\u001b[43mautoclose\u001b[49m\u001b[43m=\u001b[49m\u001b[43mautoclose\u001b[49m\u001b[43m,\u001b[49m\n\u001b[32m    693\u001b[39m \u001b[43m    \u001b[49m\u001b[43m)\u001b[49m\n\u001b[32m    695\u001b[39m     store_entrypoint = StoreBackendEntrypoint()\n\u001b[32m    696\u001b[39m     \u001b[38;5;28;01mwith\u001b[39;00m close_on_error(store):\n",
       "\u001b[36mFile \u001b[39m\u001b[32m~/micromamba/envs/TEST/lib/python3.13/site-packages/xarray/backends/netCDF4_.py:468\u001b[39m, in \u001b[36mNetCDF4DataStore.open\u001b[39m\u001b[34m(cls, filename, mode, format, group, clobber, diskless, persist, auto_complex, lock, lock_maker, autoclose)\u001b[39m\n\u001b[32m    464\u001b[39m     kwargs[\u001b[33m\"\u001b[39m\u001b[33mauto_complex\u001b[39m\u001b[33m\"\u001b[39m] = auto_complex\n\u001b[32m    465\u001b[39m manager = CachingFileManager(\n\u001b[32m    466\u001b[39m     netCDF4.Dataset, filename, mode=mode, kwargs=kwargs\n\u001b[32m    467\u001b[39m )\n\u001b[32m--> \u001b[39m\u001b[32m468\u001b[39m \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;43mcls\u001b[39;49m\u001b[43m(\u001b[49m\u001b[43mmanager\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43mgroup\u001b[49m\u001b[43m=\u001b[49m\u001b[43mgroup\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43mmode\u001b[49m\u001b[43m=\u001b[49m\u001b[43mmode\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43mlock\u001b[49m\u001b[43m=\u001b[49m\u001b[43mlock\u001b[49m\u001b[43m,\u001b[49m\u001b[43m \u001b[49m\u001b[43mautoclose\u001b[49m\u001b[43m=\u001b[49m\u001b[43mautoclose\u001b[49m\u001b[43m)\u001b[49m\n",
@@ -586,14 +640,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 13,
+   "execution_count": 15,
    "id": "12f47f0f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.493426Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.493267Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.509284Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.508793Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.963276Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.963110Z",
+     "iopub.status.idle": "2025-09-21T13:50:46.982887Z",
+     "shell.execute_reply": "2025-09-21T13:50:46.982479Z"
     }
    },
    "outputs": [
@@ -604,7 +658,7 @@
      "traceback": [
       "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
       "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[13]\u001b[39m\u001b[32m, line 2\u001b[39m\n\u001b[32m      1\u001b[39m \u001b[38;5;66;03m# Add these to existing attributes - update to your details\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m2\u001b[39m contrib_to_append = \u001b[43mvocabularies\u001b[49m.contrib_to_append\n\u001b[32m      3\u001b[39m \u001b[38;5;28mprint\u001b[39m(contrib_to_append)\n",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[15]\u001b[39m\u001b[32m, line 2\u001b[39m\n\u001b[32m      1\u001b[39m \u001b[38;5;66;03m# Add these to existing attributes - update to your details\u001b[39;00m\n\u001b[32m----> \u001b[39m\u001b[32m2\u001b[39m contrib_to_append = \u001b[43mvocabularies\u001b[49m.contrib_to_append\n\u001b[32m      3\u001b[39m \u001b[38;5;28mprint\u001b[39m(contrib_to_append)\n",
       "\u001b[31mNameError\u001b[39m: name 'vocabularies' is not defined"
      ]
     }
@@ -617,14 +671,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 14,
+   "execution_count": 16,
    "id": "f6127a51",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-09-21T13:42:27.510731Z",
-     "iopub.status.busy": "2025-09-21T13:42:27.510578Z",
-     "iopub.status.idle": "2025-09-21T13:42:27.528187Z",
-     "shell.execute_reply": "2025-09-21T13:42:27.527678Z"
+     "iopub.execute_input": "2025-09-21T13:50:46.984346Z",
+     "iopub.status.busy": "2025-09-21T13:50:46.984190Z",
+     "iopub.status.idle": "2025-09-21T13:50:47.001885Z",
+     "shell.execute_reply": "2025-09-21T13:50:47.001374Z"
     }
    },
    "outputs": [
@@ -635,7 +689,7 @@
      "traceback": [
       "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
       "\u001b[31mNameError\u001b[39m                                 Traceback (most recent call last)",
-      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[14]\u001b[39m\u001b[32m, line 33\u001b[39m\n\u001b[32m      2\u001b[39m input_locations = [\n\u001b[32m      3\u001b[39m     \u001b[38;5;66;03m# Either Iceland, Faroes or RAPID/MOCHA\u001b[39;00m\n\u001b[32m      4\u001b[39m     \u001b[38;5;66;03m#\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/005/20090829/\", # done\u001b[39;00m\n\u001b[32m   (...)\u001b[39m\u001b[32m     28\u001b[39m     \u001b[38;5;66;03m#\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/034/20110128/\",\u001b[39;00m\n\u001b[32m     29\u001b[39m ]\n\u001b[32m     31\u001b[39m \u001b[38;5;28;01mfor\u001b[39;00m input_loc \u001b[38;5;129;01min\u001b[39;00m input_locations:\n\u001b[32m     32\u001b[39m     \u001b[38;5;66;03m# Example usage\u001b[39;00m\n\u001b[32m---> \u001b[39m\u001b[32m33\u001b[39m     ds_all = \u001b[43mconvertOG1\u001b[49m.process_and_save_data(input_loc, output_dir=data_path, save=\u001b[38;5;28;01mTrue\u001b[39;00m,  run_quietly=\u001b[38;5;28;01mTrue\u001b[39;00m)\n",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[16]\u001b[39m\u001b[32m, line 33\u001b[39m\n\u001b[32m      2\u001b[39m input_locations = [\n\u001b[32m      3\u001b[39m     \u001b[38;5;66;03m# Either Iceland, Faroes or RAPID/MOCHA\u001b[39;00m\n\u001b[32m      4\u001b[39m     \u001b[38;5;66;03m#\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/005/20090829/\", # done\u001b[39;00m\n\u001b[32m   (...)\u001b[39m\u001b[32m     28\u001b[39m     \u001b[38;5;66;03m#\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/034/20110128/\",\u001b[39;00m\n\u001b[32m     29\u001b[39m ]\n\u001b[32m     31\u001b[39m \u001b[38;5;28;01mfor\u001b[39;00m input_loc \u001b[38;5;129;01min\u001b[39;00m input_locations:\n\u001b[32m     32\u001b[39m     \u001b[38;5;66;03m# Example usage\u001b[39;00m\n\u001b[32m---> \u001b[39m\u001b[32m33\u001b[39m     ds_all = \u001b[43mconvertOG1\u001b[49m.process_and_save_data(input_loc, output_dir=data_path, save=\u001b[38;5;28;01mTrue\u001b[39;00m,  run_quietly=\u001b[38;5;28;01mTrue\u001b[39;00m)\n",
       "\u001b[31mNameError\u001b[39m: name 'convertOG1' is not defined"
      ]
     }
@@ -654,15 +708,15 @@
     "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/016/20090605/\", # done\n",
     "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/016/20071113/\", # done\n",
     "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/016/20080607/\",  # done\n",
-    "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100518/\", # done  \n",
-    "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/\", # done\n",
+    "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100518/\", # done\n",
+    "    \"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/\", # done\n",
     "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/101/20081108/\",     # done\n",
     "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/101/20061112/\",    # done\n",
     "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/101/20070609/\",   # done\n",
     "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/102/20061112/\",  # done\n",
     "    # Labrador Sea\n",
     "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/\",\n",
-    "    \"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/014/20040924/\",\n",
+    "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/014/20040924/\",\n",
     "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/008/20031002/\",\n",
     "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/004/20031002/\",\n",
     "    #\"https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/016/20050406/\",\n",
@@ -675,14 +729,6 @@
     "    # Example usage\n",
     "    ds_all = convertOG1.process_and_save_data(input_loc, output_dir=data_path, save=True,  run_quietly=True)"
    ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "4fefe79f",
-   "metadata": {},
-   "outputs": [],
-   "source": []
   }
  ],
  "metadata": {

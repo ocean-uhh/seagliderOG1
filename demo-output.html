@@ -131,6 +131,9 @@
 <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">parent_dir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/seagliderOG1&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">parent_dir</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+<span class="c1">### silence future warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -156,11 +159,11 @@
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">AttributeError</span>                            Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[1]</span><span class="ansi-green-fg">, line 14</span>
-<span class="ansi-green-fg">     12</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">os</span>
-<span class="ansi-green-fg">     13</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">pooch</span>
-<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">14</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">seagliderOG1</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-bold" style="color: rgb(0,135,0)">import</span> readers, writers, plotters, tools
-<span class="ansi-green-fg">     15</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">seagliderOG1</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-bold" style="color: rgb(0,135,0)">import</span> convertOG1, vocabularies
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[1]</span><span class="ansi-green-fg">, line 17</span>
+<span class="ansi-green-fg">     15</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">os</span>
+<span class="ansi-green-fg">     16</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">pooch</span>
+<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">17</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">seagliderOG1</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-bold" style="color: rgb(0,135,0)">import</span> readers, writers, plotters, tools
+<span class="ansi-green-fg">     18</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">seagliderOG1</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-bold" style="color: rgb(0,135,0)">import</span> convertOG1, vocabularies
 
 <span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/work/seagliderOG1/seagliderOG1/seagliderOG1/plotters.py:18</span>
 <span class="ansi-green-fg">     12</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">matplotlib</span><span class="ansi-blue-intense-fg ansi-bold">.</span><span class="ansi-blue-intense-fg ansi-bold">pyplot</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-bold" style="color: rgb(0,135,0)">as</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">plt</span>
@@ -177,14 +180,6 @@
 
 <span class="ansi-red-fg">AttributeError</span>: module &#39;pandas.io.formats&#39; has no attribute &#39;style&#39;
 </pre></div></div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
-</div>
 </div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -233,11 +228,11 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Specify the input directory on your local machine</span>
-<span class="n">input_dir</span> <span class="o">=</span> <span class="s2">&quot;/Users/eddifying/Dropbox/data/sg015-ncei-download&quot;</span>
+<span class="n">input_dir</span> <span class="o">=</span> <span class="n">data_path</span> <span class="o">+</span> <span class="s1">&#39;/demo_sg005&#39;</span> <span class="c1">### chose the input directory with your data</span>
 
 <span class="c1"># Load and concatenate all datasets in the input directory</span>
 <span class="c1"># Optionally, specify the range of profiles to load (start_profile, end_profile)</span>
-<span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">read_basestation</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="mi">503</span><span class="p">)</span>
+<span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 
 <span class="c1"># Where list_datasets is a list of xarray datasets.  A single dataset can be accessed as</span>
 <span class="n">ds</span> <span class="o">=</span> <span class="n">list_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -252,10 +247,10 @@
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
 <span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[4]</span><span class="ansi-green-fg">, line 6</span>
-<span class="ansi-green-fg">      2</span> input_dir = <span class="ansi-yellow-fg">&#34;</span><span class="ansi-yellow-fg">/Users/eddifying/Dropbox/data/sg015-ncei-download</span><span class="ansi-yellow-fg">&#34;</span>
+<span class="ansi-green-fg">      2</span> input_dir = data_path + <span class="ansi-yellow-fg">&#39;</span><span class="ansi-yellow-fg">/demo_sg005</span><span class="ansi-yellow-fg">&#39;</span> <span style="color: rgb(95,135,135)">### chose the input directory with your data</span>
 <span class="ansi-green-fg">      4</span> <span style="color: rgb(95,135,135)"># Load and concatenate all datasets in the input directory</span>
 <span class="ansi-green-fg">      5</span> <span style="color: rgb(95,135,135)"># Optionally, specify the range of profiles to load (start_profile, end_profile)</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">6</span> list_datasets = <span class="ansi-yellow-bg">readers</span>.read_basestation(input_dir, start_profile=<span class="ansi-green-fg">500</span>, end_profile=<span class="ansi-green-fg">503</span>)
+<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">6</span> list_datasets = <span class="ansi-yellow-bg">readers</span>.load_basestation_files(input_dir, start_profile=<span class="ansi-green-fg">0</span>, end_profile=<span class="ansi-green-fg">5</span>)
 <span class="ansi-green-fg">      8</span> <span style="color: rgb(95,135,135)"># Where list_datasets is a list of xarray datasets.  A single dataset can be accessed as</span>
 <span class="ansi-green-fg">      9</span> ds = list_datasets[<span class="ansi-green-fg">0</span>]
 
@@ -266,7 +261,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_sample_dataset</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -278,9 +273,9 @@
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
 <span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[5]</span><span class="ansi-green-fg">, line 1</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">1</span> <span class="ansi-yellow-bg">ds</span>
+<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">1</span> ds = <span class="ansi-yellow-bg">readers</span>.load_sample_dataset()
 
-<span class="ansi-red-fg">NameError</span>: name &#39;ds&#39; is not defined
+<span class="ansi-red-fg">NameError</span>: name &#39;readers&#39; is not defined
 </pre></div></div>
 </div>
 </section>
@@ -291,10 +286,10 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Specify the server where data are located</span>
-<span class="n">server</span> <span class="o">=</span> <span class="s2">&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/&quot;</span>
+<span class="n">server</span> <span class="o">=</span> <span class="s2">&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/&quot;</span>
 
 <span class="c1"># Load and concatenate all datasets from the server, optionally specifying the range of profiles to load</span>
-<span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">read_basestation</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="mi">503</span><span class="p">)</span>
+<span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -306,9 +301,9 @@
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
 <span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[6]</span><span class="ansi-green-fg">, line 5</span>
-<span class="ansi-green-fg">      2</span> server = <span class="ansi-yellow-fg">&#34;</span><span class="ansi-yellow-fg">https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/</span><span class="ansi-yellow-fg">&#34;</span>
+<span class="ansi-green-fg">      2</span> server = <span class="ansi-yellow-fg">&#34;</span><span class="ansi-yellow-fg">https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/</span><span class="ansi-yellow-fg">&#34;</span>
 <span class="ansi-green-fg">      4</span> <span style="color: rgb(95,135,135)"># Load and concatenate all datasets from the server, optionally specifying the range of profiles to load</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">5</span> list_datasets = <span class="ansi-yellow-bg">readers</span>.read_basestation(server, start_profile=<span class="ansi-green-fg">500</span>, end_profile=<span class="ansi-green-fg">503</span>)
+<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">5</span> list_datasets = <span class="ansi-yellow-bg">readers</span>.load_basestation_files(server, start_profile=<span class="ansi-green-fg">1</span>, end_profile=<span class="ansi-green-fg">10</span>)
 
 <span class="ansi-red-fg">NameError</span>: name &#39;readers&#39; is not defined
 </pre></div></div>
@@ -366,7 +361,7 @@
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Loads one dataset (p0150500_20050213.nc)</span>
 <span class="n">ds</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_sample_dataset</span><span class="p">()</span>
 
-<span class="n">ds_OG1</span> <span class="o">=</span> <span class="n">convertOG1</span><span class="o">.</span><span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+<span class="n">ds_OG1</span><span class="p">,</span> <span class="n">var_list</span> <span class="o">=</span> <span class="n">convertOG1</span><span class="o">.</span><span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 
 <span class="c1"># Check the results - uncomment the following lines to either generate a plot or show the variables.</span>
 <span class="n">plotters</span><span class="o">.</span><span class="n">plot_profile_depth</span><span class="p">(</span><span class="n">ds_OG1</span><span class="p">)</span>
@@ -383,7 +378,7 @@
 <span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[7]</span><span class="ansi-green-fg">, line 2</span>
 <span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)"># Loads one dataset (p0150500_20050213.nc)</span>
 <span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">2</span> ds = <span class="ansi-yellow-bg">readers</span>.load_sample_dataset()
-<span class="ansi-green-fg">      4</span> ds_OG1 = convertOG1.convert_to_OG1(ds)
+<span class="ansi-green-fg">      4</span> ds_OG1, var_list = convertOG1.convert_to_OG1(ds)
 <span class="ansi-green-fg">      6</span> <span style="color: rgb(95,135,135)"># Check the results - uncomment the following lines to either generate a plot or show the variables.</span>
 
 <span class="ansi-red-fg">NameError</span>: name &#39;readers&#39; is not defined
@@ -393,9 +388,8 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Print to screen a table of the variables and variable attributes</span>
-<span class="c1">#plotters.show_attributes(ds_OG1)</span>
-<span class="n">ds_OG1</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">### print the list of inital variables of the dataset</span>
+<span class="n">var_list</span>
 </pre></div>
 </div>
 </div>
@@ -406,12 +400,57 @@
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[8]</span><span class="ansi-green-fg">, line 3</span>
-<span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)"># Print to screen a table of the variables and variable attributes</span>
-<span class="ansi-green-fg">      2</span> <span style="color: rgb(95,135,135)">#plotters.show_attributes(ds_OG1)</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">3</span> <span class="ansi-yellow-bg">ds_OG1</span>
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[8]</span><span class="ansi-green-fg">, line 2</span>
+<span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)">### print the list of inital variables of the dataset</span>
+<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">2</span> <span class="ansi-yellow-bg">var_list</span>
 
-<span class="ansi-red-fg">NameError</span>: name &#39;ds_OG1&#39; is not defined
+<span class="ansi-red-fg">NameError</span>: name &#39;var_list&#39; is not defined
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Print to screen a table of attributes</span>
+<span class="n">plotters</span><span class="o">.</span><span class="n">show_contents</span><span class="p">(</span><span class="n">ds_OG1</span><span class="p">,</span><span class="s1">&#39;attrs&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[9]</span><span class="ansi-green-fg">, line 2</span>
+<span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)"># Print to screen a table of attributes</span>
+<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">2</span> <span class="ansi-yellow-bg">plotters</span>.show_contents(ds_OG1,<span class="ansi-yellow-fg">&#39;</span><span class="ansi-yellow-fg">attrs</span><span class="ansi-yellow-fg">&#39;</span>)
+
+<span class="ansi-red-fg">NameError</span>: name &#39;plotters&#39; is not defined
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Print to screen a table of the variables and variable attributes</span>
+<span class="n">plotters</span><span class="o">.</span><span class="n">show_contents</span><span class="p">(</span><span class="n">ds_OG1</span><span class="p">,</span><span class="s1">&#39;variables&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[10]</span><span class="ansi-green-fg">, line 2</span>
+<span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)"># Print to screen a table of the variables and variable attributes</span>
+<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">2</span> <span class="ansi-yellow-bg">plotters</span>.show_contents(ds_OG1,<span class="ansi-yellow-fg">&#39;</span><span class="ansi-yellow-fg">variables</span><span class="ansi-yellow-fg">&#39;</span>)
+
+<span class="ansi-red-fg">NameError</span>: name &#39;plotters&#39; is not defined
 </pre></div></div>
 </div>
 </section>
@@ -422,22 +461,22 @@
 <li><p>Creates a plot of ctd_depth against ctd_time.</p></li>
 </ul>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Specify the input directory on your local machine</span>
-<span class="n">input_dir</span> <span class="o">=</span> <span class="s2">&quot;/Users/eddifying/Dropbox/data/sg015-ncei-download&quot;</span>
+<span class="n">input_dir</span> <span class="o">=</span> <span class="n">data_path</span> <span class="o">+</span> <span class="s1">&#39;/demo_sg005&#39;</span> <span class="c1">### chose the input directory with your data</span>
 
 <span class="c1"># Load and concatenate all datasets in the input directory</span>
 <span class="c1"># Optionally, specify the range of profiles to load (start_profile, end_profile)</span>
-<span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">read_basestation</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="mi">503</span><span class="p">)</span>
+<span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 
 <span class="c1"># Convert the list of datasets to OG1</span>
-<span class="n">ds_OG1</span> <span class="o">=</span> <span class="n">convertOG1</span><span class="o">.</span><span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
+<span class="n">ds_OG1</span><span class="p">,</span> <span class="n">var_list</span> <span class="o">=</span> <span class="n">convertOG1</span><span class="o">.</span><span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
 
 <span class="c1"># Generate a simple plot</span>
 <span class="n">plotters</span><span class="o">.</span><span class="n">plot_profile_depth</span><span class="p">(</span><span class="n">ds_OG1</span><span class="p">)</span>
-<span class="c1">#plotters.show_contents(ds_all,&#39;attrs&#39;)</span>
+<span class="n">plotters</span><span class="o">.</span><span class="n">show_contents</span><span class="p">(</span><span class="n">ds_OG1</span><span class="p">,</span><span class="s1">&#39;attrs&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -448,13 +487,13 @@
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[9]</span><span class="ansi-green-fg">, line 6</span>
-<span class="ansi-green-fg">      2</span> input_dir = <span class="ansi-yellow-fg">&#34;</span><span class="ansi-yellow-fg">/Users/eddifying/Dropbox/data/sg015-ncei-download</span><span class="ansi-yellow-fg">&#34;</span>
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[11]</span><span class="ansi-green-fg">, line 6</span>
+<span class="ansi-green-fg">      2</span> input_dir = data_path + <span class="ansi-yellow-fg">&#39;</span><span class="ansi-yellow-fg">/demo_sg005</span><span class="ansi-yellow-fg">&#39;</span> <span style="color: rgb(95,135,135)">### chose the input directory with your data</span>
 <span class="ansi-green-fg">      4</span> <span style="color: rgb(95,135,135)"># Load and concatenate all datasets in the input directory</span>
 <span class="ansi-green-fg">      5</span> <span style="color: rgb(95,135,135)"># Optionally, specify the range of profiles to load (start_profile, end_profile)</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">6</span> list_datasets = <span class="ansi-yellow-bg">readers</span>.read_basestation(input_dir, start_profile=<span class="ansi-green-fg">500</span>, end_profile=<span class="ansi-green-fg">503</span>)
+<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">6</span> list_datasets = <span class="ansi-yellow-bg">readers</span>.load_basestation_files(input_dir, start_profile=<span class="ansi-green-fg">1</span>, end_profile=<span class="ansi-green-fg">5</span>)
 <span class="ansi-green-fg">      8</span> <span style="color: rgb(95,135,135)"># Convert the list of datasets to OG1</span>
-<span class="ansi-green-fg">      9</span> ds_OG1 = convertOG1.convert_to_OG1(list_datasets)
+<span class="ansi-green-fg">      9</span> ds_OG1, var_list = convertOG1.convert_to_OG1(list_datasets)
 
 <span class="ansi-red-fg">NameError</span>: name &#39;readers&#39; is not defined
 </pre></div></div>
@@ -466,17 +505,17 @@
 <li><p>Data from the sg015 mission in the Labrador Sea (<a class="reference external" href="https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:0111844">https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:0111844</a>), dataset identifier gov.noaa.nodc:0111844.</p></li>
 </ul>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Specify the server where data are located</span>
-<span class="n">server</span> <span class="o">=</span> <span class="s2">&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/&quot;</span>
+<span class="n">server</span> <span class="o">=</span> <span class="s2">&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/&quot;</span>
 
 <span class="c1"># Load and concatenate all datasets from the server, optionally specifying the range of profiles to load</span>
-<span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">read_basestation</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="mi">503</span><span class="p">)</span>
+<span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">start_profile</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">end_profile</span><span class="o">=</span><span class="mi">19</span><span class="p">)</span>
 
 <span class="c1"># Convert the list of datasets to OG1</span>
-<span class="n">ds_OG1</span> <span class="o">=</span> <span class="n">convertOG1</span><span class="o">.</span><span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
+<span class="n">ds_OG1</span><span class="p">,</span> <span class="n">var_list</span> <span class="o">=</span> <span class="n">convertOG1</span><span class="o">.</span><span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -487,12 +526,12 @@
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[10]</span><span class="ansi-green-fg">, line 5</span>
-<span class="ansi-green-fg">      2</span> server = <span class="ansi-yellow-fg">&#34;</span><span class="ansi-yellow-fg">https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/</span><span class="ansi-yellow-fg">&#34;</span>
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[12]</span><span class="ansi-green-fg">, line 5</span>
+<span class="ansi-green-fg">      2</span> server = <span class="ansi-yellow-fg">&#34;</span><span class="ansi-yellow-fg">https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/</span><span class="ansi-yellow-fg">&#34;</span>
 <span class="ansi-green-fg">      4</span> <span style="color: rgb(95,135,135)"># Load and concatenate all datasets from the server, optionally specifying the range of profiles to load</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">5</span> list_datasets = <span class="ansi-yellow-bg">readers</span>.read_basestation(server, start_profile=<span class="ansi-green-fg">500</span>, end_profile=<span class="ansi-green-fg">503</span>)
+<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">5</span> list_datasets = <span class="ansi-yellow-bg">readers</span>.load_basestation_files(server, start_profile=<span class="ansi-green-fg">1</span>, end_profile=<span class="ansi-green-fg">19</span>)
 <span class="ansi-green-fg">      7</span> <span style="color: rgb(95,135,135)"># Convert the list of datasets to OG1</span>
-<span class="ansi-green-fg">      8</span> ds_OG1 = convertOG1.convert_to_OG1(list_datasets)
+<span class="ansi-green-fg">      8</span> ds_OG1, var_list = convertOG1.convert_to_OG1(list_datasets)
 
 <span class="ansi-red-fg">NameError</span>: name &#39;readers&#39; is not defined
 </pre></div></div>
@@ -503,7 +542,7 @@
 <h2>Saving data<a class="headerlink" href="#Saving-data" title="Link to this heading"></a></h2>
 <p>Due to problems with writing <code class="docutils literal notranslate"><span class="pre">xarray</span></code> datasets as netCDF when attributes are not of a specified type (<code class="docutils literal notranslate"><span class="pre">str</span></code>, <code class="docutils literal notranslate"><span class="pre">Number</span></code>, <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">np.number</span></code>, <code class="docutils literal notranslate"><span class="pre">list</span></code>, <code class="docutils literal notranslate"><span class="pre">tuple</span></code>), a function was written <code class="docutils literal notranslate"><span class="pre">save_dataset</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Write the file</span>
@@ -524,7 +563,7 @@
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[11]</span><span class="ansi-green-fg">, line 8</span>
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[13]</span><span class="ansi-green-fg">, line 8</span>
 <span class="ansi-green-fg">      5</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> os.path.exists(output_file):
 <span class="ansi-green-fg">      6</span>     os.remove(output_file)
 <span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">8</span> <span class="ansi-yellow-bg">writers</span>.save_dataset(ds_OG1, output_file);
@@ -533,7 +572,7 @@
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the data saved</span>
@@ -562,12 +601,12 @@
 <span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">56</span>     value = <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">.</span><span class="ansi-yellow-bg">_cache</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg">key</span><span class="ansi-yellow-bg">]</span>
 <span class="ansi-green-fg">     57</span>     <span style="color: rgb(0,135,0)">self</span>._cache.move_to_end(key)
 
-<span class="ansi-red-fg">KeyError</span>: [&lt;class &#39;netCDF4._netCDF4.Dataset&#39;&gt;, (&#39;/home/runner/work/seagliderOG1/seagliderOG1/data/demo_test.nc&#39;,), &#39;r&#39;, ((&#39;clobber&#39;, True), (&#39;diskless&#39;, False), (&#39;format&#39;, &#39;NETCDF4&#39;), (&#39;persist&#39;, False)), &#39;a7a0a785-4081-4500-b584-1d0b6cd405bf&#39;]
+<span class="ansi-red-fg">KeyError</span>: [&lt;class &#39;netCDF4._netCDF4.Dataset&#39;&gt;, (&#39;/home/runner/work/seagliderOG1/seagliderOG1/data/demo_test.nc&#39;,), &#39;r&#39;, ((&#39;clobber&#39;, True), (&#39;diskless&#39;, False), (&#39;format&#39;, &#39;NETCDF4&#39;), (&#39;persist&#39;, False)), &#39;c3e9d6a1-efd5-4737-8e1e-4b128aa9fa64&#39;]
 
 During handling of the above exception, another exception occurred:
 
 <span class="ansi-red-fg">FileNotFoundError</span>                         Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[12]</span><span class="ansi-green-fg">, line 2</span>
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[14]</span><span class="ansi-green-fg">, line 2</span>
 <span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)"># Load the data saved</span>
 <span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">2</span> ds1 = <span class="ansi-yellow-bg">xr</span><span class="ansi-yellow-bg">.</span><span class="ansi-yellow-bg">open_dataset</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">output_file</span><span class="ansi-yellow-bg">)</span>
 <span class="ansi-green-fg">      4</span> <span style="color: rgb(95,135,135)"># Generate a simple plot</span>
@@ -675,7 +714,7 @@ During handling of the above exception, another exception occurred:
 <section id="Run-multiple-missions">
 <h2>Run multiple missions<a class="headerlink" href="#Run-multiple-missions" title="Link to this heading"></a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add these to existing attributes - update to your details</span>
@@ -691,7 +730,7 @@ During handling of the above exception, another exception occurred:
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[13]</span><span class="ansi-green-fg">, line 2</span>
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[15]</span><span class="ansi-green-fg">, line 2</span>
 <span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)"># Add these to existing attributes - update to your details</span>
 <span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">2</span> contrib_to_append = <span class="ansi-yellow-bg">vocabularies</span>.contrib_to_append
 <span class="ansi-green-fg">      3</span> <span style="color: rgb(0,135,0)">print</span>(contrib_to_append)
@@ -700,7 +739,7 @@ During handling of the above exception, another exception occurred:
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Specify a list of servers or local directories</span>
@@ -717,14 +756,14 @@ During handling of the above exception, another exception occurred:
     <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/016/20071113/&quot;, # done</span>
     <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/016/20080607/&quot;,  # done</span>
     <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100518/&quot;, # done</span>
-    <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/&quot;, # done</span>
+    <span class="s2">&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/&quot;</span><span class="p">,</span> <span class="c1"># done</span>
     <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/101/20081108/&quot;,     # done</span>
     <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/101/20061112/&quot;,    # done</span>
     <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/101/20070609/&quot;,   # done</span>
     <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/102/20061112/&quot;,  # done</span>
     <span class="c1"># Labrador Sea</span>
     <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/015/20040924/&quot;,</span>
-    <span class="s2">&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/014/20040924/&quot;</span><span class="p">,</span>
+    <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/014/20040924/&quot;,</span>
     <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/008/20031002/&quot;,</span>
     <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/004/20031002/&quot;,</span>
     <span class="c1">#&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/016/20050406/&quot;,</span>
@@ -746,7 +785,7 @@ During handling of the above exception, another exception occurred:
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[14]</span><span class="ansi-green-fg">, line 33</span>
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[16]</span><span class="ansi-green-fg">, line 33</span>
 <span class="ansi-green-fg">      2</span> input_locations = [
 <span class="ansi-green-fg">      3</span>     <span style="color: rgb(95,135,135)"># Either Iceland, Faroes or RAPID/MOCHA</span>
 <span class="ansi-green-fg">      4</span>     <span style="color: rgb(95,135,135)">#&#34;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/005/20090829/&#34;, # done</span>
@@ -758,14 +797,6 @@ During handling of the above exception, another exception occurred:
 
 <span class="ansi-red-fg">NameError</span>: name &#39;convertOG1&#39; is not defined
 </pre></div></div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
-</div>
 </div>
 </section>
 </section>
