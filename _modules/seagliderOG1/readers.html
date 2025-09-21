@@ -153,6 +153,7 @@
 <span class="sd">    ------</span>
 <span class="sd">    KeyError</span>
 <span class="sd">        If the requested dataset is not available in the registry.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">in</span> <span class="n">data_source_og</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">file_path</span> <span class="o">=</span> <span class="n">data_source_og</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">)</span>
@@ -181,6 +182,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    bool</span>
 <span class="sd">        True if filename matches expected pattern and has valid numbers.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># pattern 1: p1234567.nc</span>
     <span class="n">pattern1</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^p\d</span><span class="si">{7}</span><span class="s2">\.nc$&quot;</span>
@@ -212,6 +214,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    int</span>
 <span class="sd">        The profile/dive number.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">8</span><span class="p">])</span>
 
@@ -231,6 +234,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    int</span>
 <span class="sd">        The glider serial number.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
 
@@ -261,6 +265,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    list of str</span>
 <span class="sd">        Filtered list of filenames within the specified range.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">filtered_files</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -308,6 +313,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset</span>
 <span class="sd">        The first basestation dataset.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">file_list</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
     <span class="n">filename</span> <span class="o">=</span> <span class="n">file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -338,6 +344,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    list of xarray.Dataset</span>
 <span class="sd">        List of loaded basestation datasets, ordered by filename.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">file_list</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
     <span class="n">filtered_files</span> <span class="o">=</span> <span class="n">filter_files_by_profile</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">)</span>
@@ -386,7 +393,6 @@
 <span class="sd">    ValueError</span>
 <span class="sd">        If source is neither a valid URL nor directory path.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;http://&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;https://&quot;</span><span class="p">):</span>
         <span class="c1"># List all files in the URL directory</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>

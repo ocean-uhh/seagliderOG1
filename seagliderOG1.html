@@ -71,10 +71,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convertOG1.update_dataset_attributes"><code class="docutils literal notranslate"><span class="pre">update_dataset_attributes()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.vocabularies">vocabularies</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#notes">Notes:</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.vocabularies">vocabularies</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.readers">readers</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.filter_files_by_profile"><code class="docutils literal notranslate"><span class="pre">filter_files_by_profile()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.list_files"><code class="docutils literal notranslate"><span class="pre">list_files()</span></code></a></li>
@@ -83,7 +80,16 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.load_sample_dataset"><code class="docutils literal notranslate"><span class="pre">load_sample_dataset()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#plotters">plotters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.plotters">plotters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.plot_ctd_depth_vs_time"><code class="docutils literal notranslate"><span class="pre">plot_ctd_depth_vs_time()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.plot_depth_colored"><code class="docutils literal notranslate"><span class="pre">plot_depth_colored()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.plot_profile_depth"><code class="docutils literal notranslate"><span class="pre">plot_profile_depth()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.show_attributes"><code class="docutils literal notranslate"><span class="pre">show_attributes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.show_contents"><code class="docutils literal notranslate"><span class="pre">show_contents()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.show_variables"><code class="docutils literal notranslate"><span class="pre">show_variables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.show_variables_by_dimension"><code class="docutils literal notranslate"><span class="pre">show_variables_by_dimension()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.writers">writers</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.writers.save_dataset"><code class="docutils literal notranslate"><span class="pre">save_dataset()</span></code></a></li>
 </ul>
@@ -494,12 +500,10 @@ throughout the conversion process.</p>
 - OG1_sensor_attrs.yaml: Sensor attribute definitions
 - OG1_global_attrs.yaml: Global attribute configurations
 - OG1_author.yaml: Default author/contributor information</p>
-<section id="notes">
-<h3>Notes:<a class="headerlink" href="#notes" title="Link to this heading"></a></h3>
+<p class="rubric">Notes</p>
 <p>This module is primarily data-driven and loads most configuration from YAML files
 in the config/ directory. The YAML-based approach allows easy modification of
 OG1 format requirements without code changes.</p>
-</section>
 </section>
 <section id="module-seagliderOG1.readers">
 <span id="readers"></span><h2>readers<a class="headerlink" href="#module-seagliderOG1.readers" title="Link to this heading"></a></h2>
@@ -619,8 +623,207 @@ datasets in the registry. Default is “p0330015_20100906.nc”.</p>
 </dd></dl>
 
 </section>
-<section id="plotters">
-<h2>plotters<a class="headerlink" href="#plotters" title="Link to this heading"></a></h2>
+<section id="module-seagliderOG1.plotters">
+<span id="plotters"></span><h2>plotters<a class="headerlink" href="#module-seagliderOG1.plotters" title="Link to this heading"></a></h2>
+<p>Plotting and visualization functions for Seaglider data.</p>
+<p>This module provides functions for plotting and inspecting Seaglider datasets,
+including variable summaries, attribute displays, and depth profile visualizations.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.plotters.plot_ctd_depth_vs_time">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">plot_ctd_depth_vs_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_traj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_traj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#plot_ctd_depth_vs_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.plot_ctd_depth_vs_time" title="Link to this definition"></a></dt>
+<dd><p>Plot CTD depth vs time with GPS fix highlighting.</p>
+<p>Creates a depth time series plot with special highlighting of points where
+GPS latitude data is available (non-NaN), useful for identifying surface intervals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The input dataset containing ‘ctd_time’, ‘ctd_depth’, and ‘gps_lat’ variables.</p></li>
+<li><p><strong>start_traj</strong> (<em>int</em><em>, </em><em>optional</em>) – The starting trajectory number to filter the data. If None, no filtering applied.</p></li>
+<li><p><strong>end_traj</strong> (<em>int</em><em>, </em><em>optional</em>) – The ending trajectory number to filter the data. If None, no filtering applied.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Plots CTD depth as black dots for all data points.</p></li>
+<li><p>Overlays red circles at points where GPS latitude is non-NaN.</p></li>
+<li><p>Inverts y-axis to show depth increasing downward.</p></li>
+<li><p>Filters data by trajectory range if specified.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.plotters.plot_depth_colored">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">plot_depth_colored</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_by</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_dive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_dive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#plot_depth_colored"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.plot_depth_colored" title="Link to this definition"></a></dt>
+<dd><p>Plot depth as a function of time with optional coloring and dive filtering.</p>
+<p>Creates a depth time series plot with optional color coding by another variable
+and filtering by dive number range.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>pandas.DataFrame</em><em> or </em><em>xarray.Dataset</em>) – The input data containing depth, time, and dive number variables.
+Should contain ‘ctd_depth’/’DEPTH’, ‘ctd_time’/’TIME’, and dive number variables.</p></li>
+<li><p><strong>color_by</strong> (<em>str</em><em>, </em><em>optional</em>) – The variable name to color the plot by. If None, uses a simple line plot.</p></li>
+<li><p><strong>start_dive</strong> (<em>int</em><em>, </em><em>optional</em>) – The starting dive number to filter the data. If None, no filtering applied.</p></li>
+<li><p><strong>end_dive</strong> (<em>int</em><em>, </em><em>optional</em>) – The ending dive number to filter the data. If None, no filtering applied.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Accepts dive number variables: ‘dive_number’, ‘divenum’, or ‘dive_num’.</p></li>
+<li><p>Uses scatter plot with colorbar when color_by is specified.</p></li>
+<li><p>Inverts y-axis and formats time axis similar to plot_profile_depth.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>TypeError</strong> – If input data is not a pandas DataFrame or xarray Dataset.</p></li>
+<li><p><strong>ValueError</strong> – If no valid dive number variable is found in the dataset.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.plotters.plot_profile_depth">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">plot_profile_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#plot_profile_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.plot_profile_depth" title="Link to this definition"></a></dt>
+<dd><p>Plot profile depth as a function of time.</p>
+<p>Creates a time series plot of depth data with automatic point reduction
+for large datasets and proper axis formatting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>pandas.DataFrame</em><em> or </em><em>xarray.Dataset</em>) – The input data containing depth and time variables. Should contain either
+‘ctd_depth’/’ctd_time’ or ‘DEPTH’/’TIME’ variables.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Automatically reduces the total number of points to less than 100,000 for performance.</p></li>
+<li><p>Inverts y-axis to show depth increasing downward.</p></li>
+<li><p>Formats x-axis with month-day labels and adds year information.</p></li>
+<li><p>Sets tight y-axis limits rounded to nearest 10 meters.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>TypeError</strong> – If input data is not a pandas DataFrame or xarray Dataset.</p></li>
+<li><p><strong>KeyError</strong> – If required time or depth variables are not found in the dataset.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.plotters.show_attributes">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">show_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#show_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.show_attributes" title="Link to this definition"></a></dt>
+<dd><p>Process an xarray Dataset or netCDF file and extract global attribute information.</p>
+<p>Creates a DataFrame with comprehensive details about all global attributes
+in the dataset, including their values and data types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>str</em><em> or </em><em>xarray.Dataset</em>) – The input data, either a file path to a netCDF file or an xarray Dataset.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A DataFrame containing the following columns:
+- Attribute: The name of the attribute.
+- Value: The value of the attribute.
+- DType: The data type of the attribute value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>TypeError</strong> – If input data is not a file path or xarray Dataset.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.plotters.show_contents">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">show_contents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'variables'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#show_contents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.show_contents" title="Link to this definition"></a></dt>
+<dd><p>Show contents of an xarray Dataset or a netCDF file.</p>
+<p>Wrapper function to display either variables or attributes from the dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>str</em><em> or </em><em>xarray.Dataset</em>) – The input data, either a file path to a netCDF file or an xarray Dataset.</p></li>
+<li><p><strong>content_type</strong> (<em>str</em><em>, </em><em>optional</em>) – The type of content to show, either ‘variables’ (or ‘vars’) or ‘attributes’ (or ‘attrs’).
+Default is ‘variables’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A DataFrame with details about the variables or attributes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – If input data is not a file path or xarray Dataset.</p></li>
+<li><p><strong>ValueError</strong> – If content_type is not ‘variables’, ‘vars’, ‘attributes’, or ‘attrs’.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.plotters.show_variables">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">show_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#show_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.show_variables" title="Link to this definition"></a></dt>
+<dd><p>Process an xarray Dataset or netCDF file and extract variable information.</p>
+<p>Creates a styled DataFrame with comprehensive details about all variables
+in the dataset, including dimensions, units, comments, and data types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>str</em><em> or </em><em>xarray.Dataset</em>) – The input data, either a file path to a netCDF file or an xarray Dataset.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A styled DataFrame containing the following columns:
+- dims: The dimension of the variable (or “string” if it is a string type).
+- name: The name of the variable.
+- units: The units of the variable (if available).
+- comment: Any additional comments about the variable (if available).
+- standard_name: CF standard name (if available).
+- dtype: Data type of the variable.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.io.formats.style.Styler</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>TypeError</strong> – If input data is not a file path or xarray Dataset.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.plotters.show_variables_by_dimension">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">show_variables_by_dimension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'trajectory'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#show_variables_by_dimension"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.show_variables_by_dimension" title="Link to this definition"></a></dt>
+<dd><p>Process dataset and extract variables filtered by a specific dimension.</p>
+<p>Creates a styled DataFrame showing only variables that have the specified
+dimension, useful for examining variables of a particular type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>str</em><em> or </em><em>xarray.Dataset</em>) – The input data, either a file path to a netCDF file or an xarray Dataset.</p></li>
+<li><p><strong>dimension_name</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the dimension to filter variables by. Default is “trajectory”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A styled DataFrame containing the following columns:
+- dims: The dimension of the variable (or “string” if it is a string type).
+- name: The name of the variable.
+- units: The units of the variable (if available).
+- comment: Any additional comments about the variable (if available).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.io.formats.style.Styler</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>TypeError</strong> – If input data is not a file path or xarray Dataset.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-seagliderOG1.writers">
 <span id="writers"></span><h2>writers<a class="headerlink" href="#module-seagliderOG1.writers" title="Link to this heading"></a></h2>
