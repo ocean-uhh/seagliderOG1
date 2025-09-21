@@ -63,7 +63,7 @@ Scripts within the `seagliderOG1` package are organized by functionality:
 
 ## Configuration
 
-The `config/` directory contains YAML files that define OG1 format specifications:
+The `seagliderOG1/config/` directory contains YAML files that define OG1 format specifications:
 
 - `OG1_global_attrs.yaml` - Global attributes for OG1 format
 - `OG1_var_names.yaml` - Variable name mappings

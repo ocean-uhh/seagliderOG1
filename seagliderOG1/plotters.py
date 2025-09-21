@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 ##------------------------------------------------------------------------------------
 ## Views of the ds or nc file
 ##------------------------------------------------------------------------------------
-def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd.io.formats.style.Styler | pd.DataFrame:
+def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd.DataFrame:
     """Show contents of an xarray Dataset or a netCDF file.
     
     Wrapper function to display either variables or attributes from the dataset.
@@ -30,8 +30,8 @@ def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd
 
     Returns
     -------
-    pandas.io.formats.style.Styler or pandas.DataFrame
-        A styled DataFrame with details about the variables or attributes.
+    pandas.DataFrame
+        A DataFrame with details about the variables or attributes.
         
     Raises
     ------
@@ -60,7 +60,7 @@ def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd
         )
 
 
-def show_variables(data: str | xr.Dataset) -> pd.io.formats.style.Styler:
+def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
     """Process an xarray Dataset or netCDF file and extract variable information.
     
     Creates a styled DataFrame with comprehensive details about all variables
@@ -187,7 +187,7 @@ def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
     return attrs
 
 
-def show_variables_by_dimension(data: str | xr.Dataset, dimension_name: str = "trajectory") -> pd.io.formats.style.Styler:
+def show_variables_by_dimension(data: str | xr.Dataset, dimension_name: str = "trajectory") -> pd.DataFrame:
     """Process dataset and extract variables filtered by a specific dimension.
     
     Creates a styled DataFrame showing only variables that have the specified
