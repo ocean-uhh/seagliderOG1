@@ -868,7 +868,6 @@ def process_and_save_data(input_location: str, save: bool = False, output_dir: s
     -------
     xarray.Dataset
         The processed dataset.
-
     """
     # Load and concatenate all datasets from the server
     ds1_base = readers.load_first_basestation_file(input_location)
