@@ -161,7 +161,7 @@ def filter_files_by_profile(file_list: list[str], start_profile: int | None = No
     
     Parameters
     ----------
-    file_list : list
+    file_list : list of str
         List of Seaglider filenames to filter.
     start_profile : int, optional
         Minimum profile number (inclusive).
