@@ -53,7 +53,6 @@ def gather_sensor_info(
     - If 'Pcor' is present in `ds_sgcal`, an additional sensor 'sbe43' is created based on 'sbe41' with specific attributes.
     - If 'optode_FoilCoefA1' is present in `ds_sgcal`, an additional sensor 'aa4831' is created based on 'sbe41' with specific attributes.
     - The function sets appropriate attributes for the sensors 'aa4330', 'aa4831', and 'sbe43' if they are present.
-
     """
     # Gather sensors
     sensor_names = ["wlbb2f", "sbe41", "aa4330", "aa4381", "aa4330f", "aa4381f"]
