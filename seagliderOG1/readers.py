@@ -1,9 +1,10 @@
-import xarray as xr
 import os
-from bs4 import BeautifulSoup
-import requests
-import pooch
 import re
+
+import pooch
+import requests
+import xarray as xr
+from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 """Readers module for Seaglider basestation files.

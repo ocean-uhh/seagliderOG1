@@ -50,7 +50,7 @@ Or using **Github Desktop**:
 python3 -m venv venv
 source venv/bin/activate # On Windows use `venv\Scripts\activate`
 pip install -r requirements.txt
-pip install -e . # Editable install
+pip install -e .  # Install package in editable mode
 ```
 
 ---
@@ -64,6 +64,7 @@ To contribute to development:
 3. Set up a virtual environment and install dev tools:
 ```bash
 pip install -r requirements-dev.txt
+pip install -e .  # Install package in editable mode
 ```
 4. Run tests:
 ```bash
