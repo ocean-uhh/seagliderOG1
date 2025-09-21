@@ -11,8 +11,7 @@ _log = logging.getLogger(__name__)
 
 
 def _validate_coords(ds1: xr.Dataset) -> xr.Dataset:
-    """
-    Validates and assigns coordinates to the given xarray Dataset.
+    """Validates and assigns coordinates to the given xarray Dataset.
 
     Parameters
     ----------
@@ -33,8 +32,8 @@ def _validate_coords(ds1: xr.Dataset) -> xr.Dataset:
     - If 'ctd_time' variable exists but coordinates are missing, assigns from variable
     - If 'ctd_time' variable is missing, returns an empty dataset
     - Based on: https://github.com/pydata/xarray/issues/3743
-    """
 
+    """
     id = ds1.attrs["id"]
     if "longitude" not in ds1.coords:
         ds1 = ds1.assign_coords(
@@ -71,8 +70,7 @@ def _validate_coords(ds1: xr.Dataset) -> xr.Dataset:
 
 
 def _validate_dims(ds: xr.Dataset, expected_dims: str = "N_MEASUREMENTS") -> bool:
-    """
-    Validates that the dataset has the expected dimension name.
+    """Validates that the dataset has the expected dimension name.
 
     Parameters
     ----------
@@ -85,6 +83,7 @@ def _validate_dims(ds: xr.Dataset, expected_dims: str = "N_MEASUREMENTS") -> boo
     -------
     bool
         True if dimension name matches expected, False otherwise.
+
     """
     dim_name = list(ds.dims)[0]  # Should be 'N_MEASUREMENTS' for OG1
     if dim_name != expected_dims:
@@ -96,8 +95,7 @@ def _validate_dims(ds: xr.Dataset, expected_dims: str = "N_MEASUREMENTS") -> boo
 
 
 def _parse_calibcomm(calstr: str, firstrun: bool = False) -> tuple[str, str]:
-    """
-    Parses calibration string to extract calibration date and serial number.
+    """Parses calibration string to extract calibration date and serial number.
 
     Parameters
     ----------
@@ -111,6 +109,7 @@ def _parse_calibcomm(calstr: str, firstrun: bool = False) -> tuple[str, str]:
     tuple[str, str]
         A tuple containing (calibration_date, serial_number).
         Date format is YYYYMMDD, or 'Unknown' if not found.
+
     """
     # Parse for calibration date
     cal_date = calstr
@@ -166,8 +165,7 @@ def _parse_calibcomm(calstr: str, firstrun: bool = False) -> tuple[str, str]:
 
 
 def _clean_time_string(time_str: str) -> str:
-    """
-    Cleans time string by removing common separators and timezone indicators.
+    """Cleans time string by removing common separators and timezone indicators.
 
     Parameters
     ----------
@@ -178,13 +176,13 @@ def _clean_time_string(time_str: str) -> str:
     -------
     str
         Cleaned time string with underscores, colons, hyphens, and 'Z' removed.
+
     """
     return time_str.replace("_", "").replace(":", "").rstrip("Z").replace("-", "")
 
 
 def _clean_anc_vars_list(ancillary_variables_str: str) -> list[str]:
-    """
-    Cleans and splits ancillary variables string into a list.
+    """Cleans and splits ancillary variables string into a list.
 
     Parameters
     ----------
@@ -195,6 +193,7 @@ def _clean_anc_vars_list(ancillary_variables_str: str) -> list[str]:
     -------
     list[str]
         List of cleaned variable names with 'sg_cal_' prefix removed.
+
     """
     ancillary_variables_str = re.sub(r"(\w)(sg_cal)", r"\1 \2", ancillary_variables_str)
     ancilliary_vars_list = ancillary_variables_str.split()
@@ -203,8 +202,7 @@ def _clean_anc_vars_list(ancillary_variables_str: str) -> list[str]:
 
 
 def _assign_calval(sg_cal: xr.Dataset, anc_var_list: list[str]) -> dict:
-    """
-    Assigns calibration values from dataset to a dictionary.
+    """Assigns calibration values from dataset to a dictionary.
 
     Parameters
     ----------
@@ -218,6 +216,7 @@ def _assign_calval(sg_cal: xr.Dataset, anc_var_list: list[str]) -> dict:
     dict
         Dictionary mapping variable names to their values.
         Missing variables are assigned 'Unknown'.
+
     """
     calval = {}
     for anc_var in anc_var_list:

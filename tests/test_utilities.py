@@ -11,8 +11,7 @@ import numpy as np
 
 
 def test_validate_coords():
-    """
-    Test function for the `utilities._validate_coords` function.
+    """Test function for the `utilities._validate_coords` function.
     This function creates a dummy xarray dataset with coordinates N_MEASUREMENTS.
     It then validates the coordinates using the `_validate_coords` function.
     Asserts:
@@ -37,8 +36,7 @@ def test_validate_coords():
 
 
 def test_validate_dims():
-    """
-    Test function for the `utilities._validate_dims` function.
+    """Test function for the `utilities._validate_dims` function.
     This function creates a dummy xarray dataset with dimensions N_MEASUREMENTS.
     It then validates the dimensions using the `_validate_dims` function.
     Asserts:
@@ -72,8 +70,7 @@ def test_validate_dims():
 
 
 def test_clean_time_string():
-    """
-    Test function for the `utilities._clean_time_string` function.
+    """Test function for the `utilities._clean_time_string` function.
     This function defines a set of test strings with expected cleaned strings.
     It then iterates over these test strings, cleans them using the `_clean_time_string` function,
     and asserts that the cleaned strings match the expected values.
@@ -100,8 +97,7 @@ def test_clean_time_string():
 
 def test_clean_anc_vars():
     def test_clean_anc_vars():
-        """
-        Test function for the `utilities._clean_anc_vars_list` function.
+        """Test function for the `utilities._clean_anc_vars_list` function.
         This function defines a set of test strings with expected cleaned lists.
         It then iterates over these test strings, cleans them using the `_clean_anc_vars_list` function,
         and asserts that the cleaned lists match the expected values.
@@ -124,8 +120,7 @@ def test_clean_anc_vars():
 
 
 def test_parse_calibcomm():
-    """
-    Test function for the `utilities._parse_calibcomm` function.
+    """Test function for the `utilities._parse_calibcomm` function.
     This function defines a set of test strings with expected calibration dates and serial numbers.
     It then iterates over these test strings, parses them using the `_parse_calibcomm` function,
     and asserts that the parsed results match the expected values.
@@ -142,7 +137,6 @@ def test_parse_calibcomm():
         - The parsed calibration date matches the expected calibration date.
         - The parsed serial number matches the expected serial number.
     """
-
     test_strings = {
         "SBE s/n 0112 calibration 20apr09": ("20090420", "0112"),
         "SBE#29613t1/c1 calibration 7 Sep 02": ("20020907", "29613t1c1"),

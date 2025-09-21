@@ -30,8 +30,7 @@ variables_sensors = {
 def gather_sensor_info(
     ds_other: xr.Dataset, ds_sgcal: xr.Dataset, firstrun: bool = False
 ) -> xr.Dataset:
-    """
-    Gathers sensor information from the provided datasets and organizes it into a new dataset.
+    """Gathers sensor information from the provided datasets and organizes it into a new dataset.
 
     Parameters
     ----------
@@ -54,8 +53,8 @@ def gather_sensor_info(
     - If 'Pcor' is present in `ds_sgcal`, an additional sensor 'sbe43' is created based on 'sbe41' with specific attributes.
     - If 'optode_FoilCoefA1' is present in `ds_sgcal`, an additional sensor 'aa4831' is created based on 'sbe41' with specific attributes.
     - The function sets appropriate attributes for the sensors 'aa4330', 'aa4831', and 'sbe43' if they are present.
-    """
 
+    """
     # Gather sensors
     sensor_names = ["wlbb2f", "sbe41", "aa4330", "aa4381", "aa4330f", "aa4381f"]
 
@@ -86,8 +85,7 @@ def gather_sensor_info(
 def add_sensor_to_dataset(
     dsa: xr.Dataset, ds: xr.Dataset, sg_cal: xr.Dataset, firstrun: bool = False
 ) -> xr.Dataset:
-    """
-    Add sensor information to the dataset based on instrument data and calibration parameters.
+    """Add sensor information to the dataset based on instrument data and calibration parameters.
 
     This function processes different types of seaglider sensors including CTD (sbe41),
     oxygen sensors (sbe43, aa4381, aa4330), and optical sensors (wlbb2f). For each sensor,
@@ -117,6 +115,7 @@ def add_sensor_to_dataset(
     - Creates sensor variable names in format: 'SENSOR_{type}_{serial}'
     - Skips altimeter sensors as they are not processed in current implementation
     - For wlbb2f sensors, calibration parsing is commented out pending data availability
+
     """
     if ds is None:
         return dsa
@@ -294,8 +293,7 @@ def add_sensor_to_dataset(
 
 
 def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Dataset:
-    """
-    Add dive number as a variable to the dataset. Assumes present in the basestation attributes.
+    """Add dive number as a variable to the dataset. Assumes present in the basestation attributes.
 
     Parameters
     ----------
@@ -308,6 +306,7 @@ def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Datase
     -------
     xarray.Dataset
         The dataset with the dive number added.
+
     """
     if dive_number == None:
         dive_number = ds.attrs.get("dive_number", np.nan)
@@ -317,8 +316,7 @@ def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Datase
 
 
 def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
-    """
-    Assign profile numbers to measurements based on dive phases (down/up casts).
+    """Assign profile numbers to measurements based on dive phases (down/up casts).
 
     This function separates each dive into two profiles: descent (down cast) and
     ascent (up cast) phases. The dive is split at the maximum pressure point,
@@ -343,6 +341,7 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     - Down cast: dive_num_cast = dive number
     - Up cast: dive_num_cast = dive number + 0.5
     - Profile numbers: descent = 2*dive-1, ascent = 2*dive
+
     """
     # Remove the variable dive_num_cast if it exists
     if "dive_num_cast" in ds.variables:
@@ -411,8 +410,7 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
 
 
 def assign_phase(ds: xr.Dataset) -> xr.Dataset:
-    """
-    This function adds new variables 'PHASE' and 'PHASE_QC' to the dataset `ds`, which indicate the phase of each measurement. The phase is determined based on the pressure readings ('PRES') for each unique dive number ('dive_num').
+    """This function adds new variables 'PHASE' and 'PHASE_QC' to the dataset `ds`, which indicate the phase of each measurement. The phase is determined based on the pressure readings ('PRES') for each unique dive number ('dive_num').
 
     Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth. Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC.
     Assigns phase values to the dataset based on pressure readings.
@@ -431,6 +429,7 @@ def assign_phase(ds: xr.Dataset) -> xr.Dataset:
         - 'PHASE_QC' is an additional variable with no QC applied.
 
     Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth.  Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC
+
     """
     # Determine the correct keystring for divenum
     if "dive_number" in ds.variables:
@@ -487,8 +486,7 @@ def assign_phase(ds: xr.Dataset) -> xr.Dataset:
 ## Calculations for new variables
 ##-----------------------------------------------------------------------------------------------------------
 def calc_Z(ds: xr.Dataset) -> xr.Dataset:
-    """
-    Calculate the depth (Z position) of the glider using the gsw library to convert pressure to depth.
+    """Calculate the depth (Z position) of the glider using the gsw library to convert pressure to depth.
 
     Parameters
     ----------
@@ -499,6 +497,7 @@ def calc_Z(ds: xr.Dataset) -> xr.Dataset:
     -------
     xarray.Dataset
         The dataset with an additional 'DEPTH' variable.
+
     """
     # Ensure the required variables are present
     if "PRES" not in ds.variables or "LATITUDE" not in ds.variables:
@@ -524,8 +523,7 @@ def calc_Z(ds: xr.Dataset) -> xr.Dataset:
 
 
 def get_sg_attrs(ds: xr.Dataset) -> dict:
-    """
-    Extract seaglider attributes and calibration information into a dictionary.
+    """Extract seaglider attributes and calibration information into a dictionary.
 
     Parameters
     ----------
@@ -536,6 +534,7 @@ def get_sg_attrs(ds: xr.Dataset) -> dict:
     -------
     dict
         Dictionary containing seaglider variables and their attributes.
+
     """
     id = ds.attrs["id"]
     sg_cal, _, _ = extract_variables(ds)
@@ -546,8 +545,7 @@ def get_sg_attrs(ds: xr.Dataset) -> dict:
 
 
 def split_by_unique_dims(ds: xr.Dataset) -> dict:
-    """
-    Splits an xarray dataset into multiple datasets based on the unique set of dimensions of the variables.
+    """Splits an xarray dataset into multiple datasets based on the unique set of dimensions of the variables.
 
     Parameters
     ----------
@@ -558,6 +556,7 @@ def split_by_unique_dims(ds: xr.Dataset) -> dict:
     -------
     dict
         A dictionary mapping dimension tuples to datasets, each with variables sharing the same set of dimensions.
+
     """
     # Dictionary to hold datasets with unique dimension sets
     unique_dims_datasets = {}
@@ -579,8 +578,7 @@ def split_by_unique_dims(ds: xr.Dataset) -> dict:
 
 
 def convert_units(ds: xr.Dataset) -> xr.Dataset:
-    """
-    Convert the units of variables in an xarray Dataset to preferred units.
+    """Convert the units of variables in an xarray Dataset to preferred units.
 
     This is useful, for instance, to convert cm/s to m/s based on vocabulary
     specifications.
@@ -594,6 +592,7 @@ def convert_units(ds: xr.Dataset) -> xr.Dataset:
     -------
     xarray.Dataset
         The dataset with converted units.
+
     """
     """
     Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.
@@ -627,8 +626,7 @@ def convert_units(ds: xr.Dataset) -> xr.Dataset:
 def reformat_units_var(
     ds: xr.Dataset, var_name: str, unit_format: dict = vocabularies.unit_str_format
 ) -> str:
-    """
-    Rename units in the dataset based on the provided dictionary for OG1.
+    """Rename units in the dataset based on the provided dictionary for OG1.
 
     Parameters
     ----------
@@ -643,6 +641,7 @@ def reformat_units_var(
     -------
     str
         The reformatted unit string.
+
     """
     """
     Renames units in the dataset based on the provided dictionary for OG1.
@@ -667,8 +666,7 @@ def reformat_units_var(
 def reformat_units_str(
     old_unit: str, unit_format: dict = vocabularies.unit_str_format
 ) -> str:
-    """
-    Reformat a unit string based on the provided unit format dictionary.
+    """Reformat a unit string based on the provided unit format dictionary.
 
     Parameters
     ----------
@@ -681,6 +679,7 @@ def reformat_units_str(
     -------
     str
         The reformatted unit string, or the original if no mapping exists.
+
     """
     if old_unit in unit_format:
         new_unit = unit_format[old_unit]
@@ -696,8 +695,7 @@ def convert_units_var(
     unit1_to_unit2: dict = vocabularies.unit1_to_unit2,
     firstrun: bool = False,
 ) -> tuple[np.ndarray, str]:
-    """
-    Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.
+    """Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.
 
     Parameters
     ----------
@@ -711,6 +709,7 @@ def convert_units_var(
     Returns
     -------
     xarray.Dataset: The dataset with converted units.
+
     """
     current_unit = reformat_units_str(current_unit)
     new_unit = reformat_units_str(new_unit)
@@ -731,8 +730,7 @@ def convert_units_var(
 
 
 def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
-    """
-    Convert QC flag variables to proper integer format and update attributes.
+    """Convert QC flag variables to proper integer format and update attributes.
 
     This function converts QC flag variables from string format to int8,
     handles NaN values appropriately, removes 'QC_' prefixes from flag meanings,
@@ -753,6 +751,7 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
     Notes
     -----
     Must be called after the main variable has been assigned its OG1 long_name.
+
     """
     # Must be called *after* var_name has OG1 long_name
     var_name = qc_name[:-3]
@@ -786,8 +785,7 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
 
 
 def find_best_dtype(var_name: str, da: xr.DataArray) -> type:
-    """
-    Determine the optimal data type for a variable based on its name and values.
+    """Determine the optimal data type for a variable based on its name and values.
 
     Parameters
     ----------
@@ -808,6 +806,7 @@ def find_best_dtype(var_name: str, da: xr.DataArray) -> type:
     - Time variables keep original dtype
     - Integer variables are downsized based on value range
     - Float64 variables are converted to float32
+
     """
     input_dtype = da.dtype.type
     if "latitude" in var_name.lower() or "longitude" in var_name.lower():
@@ -827,8 +826,7 @@ def find_best_dtype(var_name: str, da: xr.DataArray) -> type:
 
 
 def set_fill_value(new_dtype: type) -> int:
-    """
-    Calculate appropriate fill value for integer data types.
+    """Calculate appropriate fill value for integer data types.
 
     Parameters
     ----------
@@ -839,14 +837,14 @@ def set_fill_value(new_dtype: type) -> int:
     -------
     int
         The fill value calculated as 2^(bits-1) - 1.
+
     """
     fill_val = 2 ** (int(re.findall(r"\d+", str(new_dtype))[0]) - 1) - 1
     return fill_val
 
 
 def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
-    """
-    Optimize data types across all variables in the dataset to reduce memory usage.
+    """Optimize data types across all variables in the dataset to reduce memory usage.
 
     Parameters
     ----------
@@ -857,6 +855,7 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
     -------
     xarray.Dataset
         Dataset with optimized data types and appropriate fill values.
+
     """
     bytes_in = ds.nbytes
     for var_name in list(ds):
@@ -884,8 +883,7 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
 
 
 def set_best_dtype_value(value, var_name: str):
-    """
-    Determine the best data type for a single value based on its variable name and convert it.
+    """Determine the best data type for a single value based on its variable name and convert it.
 
     Parameters
     ----------
@@ -896,6 +894,7 @@ def set_best_dtype_value(value, var_name: str):
     -------
     converted_value : any
         The value converted to the best data type.
+
     """
     input_dtype = type(value)
     new_dtype = find_best_dtype(var_name, xr.DataArray(value))
@@ -913,8 +912,7 @@ def set_best_dtype_value(value, var_name: str):
 
 
 def encode_times(ds: xr.Dataset) -> xr.Dataset:
-    """
-    Encode time variables with standard units and remove problematic attributes.
+    """Encode time variables with standard units and remove problematic attributes.
 
     Parameters
     ----------
@@ -925,6 +923,7 @@ def encode_times(ds: xr.Dataset) -> xr.Dataset:
     -------
     xarray.Dataset
         Dataset with properly encoded time variables.
+
     """
     if "units" in ds.time.attrs.keys():
         ds.time.attrs.pop("units")
@@ -941,8 +940,7 @@ def encode_times(ds: xr.Dataset) -> xr.Dataset:
 
 
 def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
-    """
-    Encode time variables according to OG1 format specifications.
+    """Encode time variables according to OG1 format specifications.
 
     Parameters
     ----------
@@ -953,6 +951,7 @@ def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
     -------
     xarray.Dataset
         Dataset with OG1-formatted time variables.
+
     """
     for var_name in ds.variables:
         if "axis" in ds[var_name].attrs.keys():
@@ -972,8 +971,7 @@ def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
 def merge_parts_of_dataset(
     ds: xr.Dataset, dim1: str = "sg_data_point", dim2: str = "ctd_data_point"
 ) -> xr.Dataset:
-    """
-    Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.
+    """Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.
     The function first separates the dataset into two datasets based on the specified dimensions,
     renames the second dimension to match the first, and then concatenates them along the first dimension.
 
@@ -997,6 +995,7 @@ def merge_parts_of_dataset(
     Notes
     -----
     Original author: Till Moritz
+
     """
 
     def get_time_var(ds, dim):
@@ -1078,8 +1077,7 @@ def merge_parts_of_dataset(
 def combine_two_dim_of_dataset(
     ds: xr.Dataset, dim1: str = "sg_data_point", dim2: str = "ctd_data_point"
 ) -> xr.Dataset:
-    """
-    Updates the original dataset by removing variables with dim1 and dim2
+    """Updates the original dataset by removing variables with dim1 and dim2
     and adding the merged dataset.
 
     Parameters
@@ -1095,8 +1093,8 @@ def combine_two_dim_of_dataset(
     -------
     xarray.Dataset
         The updated dataset with merged variables.
-    """
 
+    """
     # Drop all variables that have dim1 or dim2
     vars_to_drop = [
         var for var in ds.variables if dim1 in ds[var].dims or dim2 in ds[var].dims

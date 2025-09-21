@@ -19,11 +19,12 @@ Configuration Files:
 - OG1_global_attrs.yaml: Global attribute configurations
 - OG1_author.yaml: Default author/contributor information
 
-Notes:
+Notes
 -----
 This module is primarily data-driven and loads most configuration from YAML files
 in the config/ directory. The YAML-based approach allows easy modification of
 OG1 format requirements without code changes.
+
 """
 
 import yaml

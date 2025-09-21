@@ -42,6 +42,7 @@ def convert_to_OG1(
         A tuple containing:
         - ds_og1 (xarray.Dataset): The concatenated and processed dataset in OG1 format.
         - varlist (list of str): A list of variable names from the input datasets.
+
     """
     if not isinstance(list_of_datasets, list):
         list_of_datasets = [list_of_datasets]
@@ -165,8 +166,7 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
     xr.Dataset,  # Dataset containing other variables not categorized under 'sg_cal' or 'dc_log'
     xr.Dataset,  # Dataset containing variables starting with 'log_'
 ]:
-    """
-    Processes a dataset by performing a series of transformations and extractions.
+    """Processes a dataset by performing a series of transformations and extractions.
 
     Parameters
     ----------
@@ -209,6 +209,7 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
         4. Returns the processed dataset, attribute warnings, and categorized datasets.
 
     - The function sorts the dataset by TIME and may exhibit undesired behavior if there are not two surface GPS fixes before a dive.
+
     """
     # Check if the dataset has 'LONGITUDE' as a coordinate
     ds1_base = utilities._validate_coords(ds1_base)
@@ -303,6 +304,7 @@ def standardise_OG10(
     -------
     xarray.Dataset
         The standardized dataset in OG1 format.
+
     """
     dsa = xr.Dataset()
     dsa.attrs = ds.attrs
@@ -390,6 +392,7 @@ def extract_variables(ds: xr.Dataset) -> tuple[xr.Dataset, xr.Dataset, xr.Datase
         - dc_other : xarray.Dataset
             Dataset containing other mission/dive-specific values. This includes depth-averaged currents
             and other variables like `magnetic_variation`.
+
     """
     sg_cal_vars = {var: ds[var] for var in ds.variables if var.startswith("sg_cal")}
     divecycle_other = {
@@ -437,6 +440,7 @@ def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
     - The function assumes that the GPS dataset contains variables `log_gps_lon`,
       `log_gps_lat`, and `log_gps_time` for longitude, latitude, and time respectively.
     - The function uses the `sg_data_point` dimension as defined in the OG1 vocabulary.
+
     """
     # Set new dimension name
     newdim = vocabularies.dims_rename_dict["sg_data_point"]
@@ -503,6 +507,7 @@ def update_dataset_attributes(ds: xr.Dataset, contrib_to_append: dict[str, str] 
     -------
     dict
         A dictionary of ordered attributes with updated values.
+
     """
     attr_as_is = vocabularies.global_attrs["attr_as_is"]
     attr_to_add = vocabularies.global_attrs["attr_to_add"]
@@ -567,6 +572,7 @@ def get_contributors(ds: xr.Dataset, values_to_append: dict[str, str] | None = N
     -------
     dict
         Dictionary with formatted contributor attribute strings.
+
     """
     # Function to create or append to a list
     def create_or_append_list(existing_list, new_item):
@@ -589,6 +595,7 @@ def get_contributors(ds: xr.Dataset, values_to_append: dict[str, str] | None = N
         -------
         str
             Comma-separated string with commas in elements replaced by hyphens.
+
         """
         return ", ".join([item for item in lst])
 
@@ -758,6 +765,7 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
     -------
     dict
         A dictionary containing cleaned time-related attributes.
+
     """
     time_attrs = {}
     time_attr_list = [
@@ -799,6 +807,7 @@ def extract_attr_to_keep(ds1: xr.Dataset, attr_as_is: list[str] = vocabularies.g
     -------
     dict
         Retained attributes.
+
     """
     retained_attrs = {}
 
@@ -826,6 +835,7 @@ def extract_attr_to_rename(
     -------
     dict
         Renamed attributes.
+
     """
     renamed_attrs = {}
     # Rename attributes based on values_to_rename
@@ -858,8 +868,8 @@ def process_and_save_data(input_location: str, save: bool = False, output_dir: s
     -------
     xarray.Dataset
         The processed dataset.
-    """
 
+    """
     # Load and concatenate all datasets from the server
     ds1_base = readers.load_first_basestation_file(input_location)
 
