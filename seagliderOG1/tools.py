@@ -1092,7 +1092,6 @@ def combine_two_dim_of_dataset(
     -------
     xarray.Dataset
         The updated dataset with merged variables.
-
     """
     # Drop all variables that have dim1 or dim2
     vars_to_drop = [
