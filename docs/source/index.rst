@@ -18,6 +18,7 @@ For recommendations or bug reports, please visit https://github.com/ocean-uhh/se
    :maxdepth: 2
    :caption: Getting started
 
+   about
    setup.md
    project_structure.md
 
