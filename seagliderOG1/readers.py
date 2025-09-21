@@ -294,7 +294,6 @@ def list_files(
     ------
     ValueError
         If source is neither a valid URL nor directory path.
-
     """
     if source.startswith("http://") or source.startswith("https://"):
         # List all files in the URL directory
