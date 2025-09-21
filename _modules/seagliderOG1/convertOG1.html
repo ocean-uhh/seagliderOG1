@@ -82,7 +82,14 @@
            <div itemprop="articleBody">
              
   <h1>Source code for seagliderOG1.convertOG1</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span></span><span class="sd">&quot;&quot;&quot;Convert Seaglider basestation files to OG1 format.</span>
+
+<span class="sd">This module provides the core functionality for converting Seaglider basestation</span>
+<span class="sd">NetCDF files into OG1 (Ocean Gliders 1) format. It handles data processing,</span>
+<span class="sd">variable renaming, attribute assignments, and dataset standardization.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
@@ -101,23 +108,26 @@
     <span class="n">list_of_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
     <span class="n">contrib_to_append</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert Seaglider basestation datasets to OG1 format.</span>
+<span class="sd">    </span>
 <span class="sd">    Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,</span>
-<span class="sd">    concatenates the datasets, sorts by time, and applies attributes.</span>
+<span class="sd">    concatenates the datasets, sorts by time, and applies attributes. Main conversion function that </span>
+<span class="sd">    processes basestation datasets, applies OG1 standardization, concatenates multiple datasets, </span>
+<span class="sd">    and adds global attributes.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    list_of_datasets : list[xr.Dataset] | xr.Dataset</span>
+<span class="sd">    list_of_datasets : list of xarray.Dataset or xarray.Dataset</span>
 <span class="sd">        A list of xarray datasets or a single xarray dataset in basestation format.</span>
-<span class="sd">    contrib_to_append : dict[str, str] | None, optional</span>
+<span class="sd">    contrib_to_append : dict of str, optional</span>
 <span class="sd">        Dictionary containing additional contributor information to append. Default is None.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    tuple[xr.Dataset, list[str]]</span>
+<span class="sd">    tuple of (xarray.Dataset, list of str)</span>
 <span class="sd">        A tuple containing:</span>
 <span class="sd">        - ds_og1 (xarray.Dataset): The concatenated and processed dataset in OG1 format.</span>
-<span class="sd">        - varlist (list[str]): A list of variable names from the input datasets.</span>
+<span class="sd">        - varlist (list of str): A list of variable names from the input datasets.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">list_of_datasets</span> <span class="o">=</span> <span class="p">[</span><span class="n">list_of_datasets</span><span class="p">]</span>
@@ -366,8 +376,10 @@
     <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">unit_format</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Standardize the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Standardize the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.</span>
+<span class="sd">    </span>
+<span class="sd">    Applies OG1 vocabulary for variable names, units, and attributes.</span>
+<span class="sd">    Performs unit conversions and QC flag standardization.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -375,8 +387,9 @@
 <span class="sd">        The input dataset to be standardized.</span>
 <span class="sd">    firstrun : bool, optional</span>
 <span class="sd">        Indicates whether this is the first run of the standardization process. Default is False.</span>
-<span class="sd">    unit_format : dict[str, str], optional</span>
-<span class="sd">        A dictionary mapping unit strings to their standardized format. Default is vocabularies.unit_str_format.</span>
+<span class="sd">    unit_format : dict of str, optional</span>
+<span class="sd">        A dictionary mapping unit strings to their standardized format. </span>
+<span class="sd">        Default is vocabularies.unit_str_format.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -447,8 +460,7 @@
 <div class="viewcode-block" id="extract_variables">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.extract_variables">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">extract_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Splits variables from the basestation file that have no dimensions into categorized datasets.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split variables from the basestation file that have no dimensions into categorized datasets.</span>
 
 <span class="sd">    This function further processes the variables from the basestation file that had no dimensions.</span>
 <span class="sd">    It categorizes them based on their prefixes or characteristics into three groups:</span>
@@ -462,7 +474,7 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    tuple[xr.Dataset, xr.Dataset, xr.Dataset]</span>
+<span class="sd">    tuple of (xarray.Dataset, xarray.Dataset, xarray.Dataset)</span>
 <span class="sd">        A tuple containing three xarray Datasets:</span>
 <span class="sd">        - sg_cal : xarray.Dataset</span>
 <span class="sd">            Dataset containing variables starting with &#39;sg_cal_&#39; (originally from `sg_calib_constants.m`).</span>
@@ -497,8 +509,7 @@
 <div class="viewcode-block" id="add_gps_info_to_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.add_gps_info_to_dataset">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_gps_info_to_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">gps_ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Adds GPS information (LATITUDE_GPS, LONGITUDE_GPS, TIME_GPS) to the dataset.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add GPS information (LATITUDE_GPS, LONGITUDE_GPS, TIME_GPS) to the dataset.</span>
 
 <span class="sd">    The GPS values will be included within the N_MEASUREMENTS dimension, with non-NaN values</span>
 <span class="sd">    only when GPS information is available. The dataset will be sorted by TIME.</span>
@@ -576,15 +587,17 @@
 <span class="c1">##-----------------------------------------------------------------------------------------</span>
 <div class="viewcode-block" id="update_dataset_attributes">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.update_dataset_attributes">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">update_dataset_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Updates the attributes of the dataset based on the provided attribute input.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_dataset_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the attributes of the dataset based on the provided attribute input.</span>
+<span class="sd">    </span>
+<span class="sd">    Processes contributor information, time attributes, and applies OG1</span>
+<span class="sd">    global attribute vocabulary in the correct order.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    ds : xarray.Dataset</span>
 <span class="sd">        The input dataset whose attributes need to be updated.</span>
-<span class="sd">    contrib_to_append : dict[str, str] or None</span>
+<span class="sd">    contrib_to_append : dict of str or None</span>
 <span class="sd">        A dictionary containing additional contributor information to append. Default is None.</span>
 
 <span class="sd">    Returns</span>
@@ -641,7 +654,24 @@
 
 <div class="viewcode-block" id="get_contributors">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.get_contributors">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_contributors</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">values_to_append</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_contributors</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">values_to_append</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract and format contributor information for OG1 attributes.</span>
+<span class="sd">    </span>
+<span class="sd">    Processes creator and contributor information from dataset attributes,</span>
+<span class="sd">    formats them as comma-separated strings, and handles institution mapping.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds : xarray.Dataset</span>
+<span class="sd">        Dataset containing original contributor attributes.</span>
+<span class="sd">    values_to_append : dict, optional</span>
+<span class="sd">        Additional contributor information to append.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary with formatted contributor attribute strings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Function to create or append to a list</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">create_or_append_list</span><span class="p">(</span><span class="n">existing_list</span><span class="p">,</span> <span class="n">new_item</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">new_item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_list</span><span class="p">:</span>
@@ -650,15 +680,19 @@
         <span class="k">return</span> <span class="n">existing_list</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">list_to_comma_separated_string</span><span class="p">(</span><span class="n">lst</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Convert a list of strings to a single string with values separated by commas.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a list of strings to a single string with values separated by commas.</span>
+<span class="sd">        </span>
 <span class="sd">        Replace any commas present in list elements with hyphens.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        lst : list</span>
+<span class="sd">            List of strings.</span>
 
-<span class="sd">        Parameters:</span>
-<span class="sd">        lst (list): List of strings.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">        str: Comma-separated string with commas in elements replaced by hyphens.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            Comma-separated string with commas in elements replaced by hyphens.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">])</span>
 
@@ -816,9 +850,11 @@
 
 <div class="viewcode-block" id="get_time_attributes">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.get_time_attributes">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_time_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Extract and clean time-related attributes from the dataset.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_time_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract and clean time-related attributes from the dataset.</span>
+<span class="sd">    </span>
+<span class="sd">    Converts various time formats to OG1-standard YYYYMMDDTHHMMSS format</span>
+<span class="sd">    and adds date_modified timestamp.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -859,7 +895,21 @@
 
 <div class="viewcode-block" id="extract_attr_to_keep">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.extract_attr_to_keep">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">extract_attr_to_keep</span><span class="p">(</span><span class="n">ds1</span><span class="p">,</span> <span class="n">attr_as_is</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s2">&quot;attr_as_is&quot;</span><span class="p">]):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_attr_to_keep</span><span class="p">(</span><span class="n">ds1</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">attr_as_is</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s2">&quot;attr_as_is&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract attributes to retain unchanged.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds1 : xarray.Dataset</span>
+<span class="sd">        Source dataset.</span>
+<span class="sd">    attr_as_is : list</span>
+<span class="sd">        Attribute names to retain without modification.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Retained attributes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">retained_attrs</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="c1"># Retain attributes based on attr_as_is</span>
@@ -874,8 +924,22 @@
 <div class="viewcode-block" id="extract_attr_to_rename">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.extract_attr_to_rename">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">extract_attr_to_rename</span><span class="p">(</span>
-    <span class="n">ds1</span><span class="p">,</span> <span class="n">attr_to_rename</span><span class="o">=</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s2">&quot;attr_to_rename&quot;</span><span class="p">]</span>
-<span class="p">):</span>
+    <span class="n">ds1</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">attr_to_rename</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s2">&quot;attr_to_rename&quot;</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract and rename attributes according to OG1 vocabulary.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds1 : xarray.Dataset</span>
+<span class="sd">        Source dataset.</span>
+<span class="sd">    attr_to_rename : dict</span>
+<span class="sd">        Mapping of new_name: old_name for attribute renaming.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Renamed attributes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">renamed_attrs</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="c1"># Rename attributes based on values_to_rename</span>
     <span class="k">for</span> <span class="n">new_attr</span><span class="p">,</span> <span class="n">old_attr</span> <span class="ow">in</span> <span class="n">attr_to_rename</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -888,9 +952,8 @@
 
 <div class="viewcode-block" id="process_and_save_data">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.process_and_save_data">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">process_and_save_data</span><span class="p">(</span><span class="n">input_location</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">run_quietly</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Processes and saves data from the specified input location.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_and_save_data</span><span class="p">(</span><span class="n">input_location</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">run_quietly</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Process and save data from the specified input location.</span>
 
 <span class="sd">    This function loads and concatenates datasets from the server, converts them to OG1 format,</span>
 <span class="sd">    and saves the resulting dataset to a NetCDF file. If the file already exists, the function</span>

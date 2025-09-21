@@ -71,7 +71,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convertOG1.update_dataset_attributes"><code class="docutils literal notranslate"><span class="pre">update_dataset_attributes()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.vocabularies">vocabularies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.vocabularies">vocabularies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#notes">Notes:</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.readers">readers</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.filter_files_by_profile"><code class="docutils literal notranslate"><span class="pre">filter_files_by_profile()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.list_files"><code class="docutils literal notranslate"><span class="pre">list_files()</span></code></a></li>
@@ -80,16 +83,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.load_sample_dataset"><code class="docutils literal notranslate"><span class="pre">load_sample_dataset()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.plotters">plotters</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.plot_ctd_depth_vs_time"><code class="docutils literal notranslate"><span class="pre">plot_ctd_depth_vs_time()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.plot_depth_colored"><code class="docutils literal notranslate"><span class="pre">plot_depth_colored()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.plot_profile_depth"><code class="docutils literal notranslate"><span class="pre">plot_profile_depth()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.show_attributes"><code class="docutils literal notranslate"><span class="pre">show_attributes()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.show_contents"><code class="docutils literal notranslate"><span class="pre">show_contents()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.show_variables"><code class="docutils literal notranslate"><span class="pre">show_variables()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.plotters.show_variables_by_dimension"><code class="docutils literal notranslate"><span class="pre">show_variables_by_dimension()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#plotters">plotters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.writers">writers</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.writers.save_dataset"><code class="docutils literal notranslate"><span class="pre">save_dataset()</span></code></a></li>
 </ul>
@@ -151,10 +145,14 @@
 <h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code><a class="headerlink" href="#seagliderog1-api" title="Link to this heading"></a></h1>
 <section id="module-seagliderOG1.convertOG1">
 <span id="convertog1"></span><h2>convertOG1<a class="headerlink" href="#module-seagliderOG1.convertOG1" title="Link to this heading"></a></h2>
+<p>Convert Seaglider basestation files to OG1 format.</p>
+<p>This module provides the core functionality for converting Seaglider basestation
+NetCDF files into OG1 (Ocean Gliders 1) format. It handles data processing,
+variable renaming, attribute assignments, and dataset standardization.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.add_gps_info_to_dataset">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">add_gps_info_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gps_ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#add_gps_info_to_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.add_gps_info_to_dataset" title="Link to this definition"></a></dt>
-<dd><p>Adds GPS information (LATITUDE_GPS, LONGITUDE_GPS, TIME_GPS) to the dataset.</p>
+<dd><p>Add GPS information (LATITUDE_GPS, LONGITUDE_GPS, TIME_GPS) to the dataset.</p>
 <p>The GPS values will be included within the N_MEASUREMENTS dimension, with non-NaN values
 only when GPS information is available. The dataset will be sorted by TIME.</p>
 <dl class="field-list simple">
@@ -186,40 +184,73 @@ LATITUDE_GPS, LONGITUDE_GPS, and TIME_GPS only when GPS information is available
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.convert_to_OG1">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">convert_to_OG1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_of_datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrib_to_append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#convert_to_OG1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.convert_to_OG1" title="Link to this definition"></a></dt>
-<dd><p>Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
-concatenates the datasets, sorts by time, and applies attributes.</p>
+<dd><p>Convert Seaglider basestation datasets to OG1 format.</p>
+<p>Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
+concatenates the datasets, sorts by time, and applies attributes. Main conversion function that
+processes basestation datasets, applies OG1 standardization, concatenates multiple datasets,
+and adds global attributes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>list_of_datasets</strong> (<em>list</em><em>[</em><em>xr.Dataset</em><em>] </em><em>| </em><em>xr.Dataset</em>) – A list of xarray datasets or a single xarray dataset in basestation format.</p></li>
-<li><p><strong>contrib_to_append</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>] </em><em>| </em><em>None</em><em>, </em><em>optional</em>) – Dictionary containing additional contributor information to append. Default is None.</p></li>
+<li><p><strong>list_of_datasets</strong> (<em>list</em><em> of </em><em>xarray.Dataset</em><em> or </em><em>xarray.Dataset</em>) – A list of xarray datasets or a single xarray dataset in basestation format.</p></li>
+<li><p><strong>contrib_to_append</strong> (<em>dict</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Dictionary containing additional contributor information to append. Default is None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A tuple containing:
 - ds_og1 (xarray.Dataset): The concatenated and processed dataset in OG1 format.
-- varlist (list[str]): A list of variable names from the input datasets.</p>
+- varlist (list of str): A list of variable names from the input datasets.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[xr.Dataset, list[str]]</p>
+<dd class="field-odd"><p>tuple of (xarray.Dataset, list of str)</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.extract_attr_to_keep">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">extract_attr_to_keep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr_as_is</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'acknowledgment',</span> <span class="pre">'date_created',</span> <span class="pre">'disclaimer',</span> <span class="pre">'file_version',</span> <span class="pre">'geospatial_lat_max',</span> <span class="pre">'geospatial_lat_min',</span> <span class="pre">'geospatial_lon_max',</span> <span class="pre">'geospatial_lon_min',</span> <span class="pre">'geospatial_vertical_max',</span> <span class="pre">'geospatial_vertical_min',</span> <span class="pre">'id',</span> <span class="pre">'institution',</span> <span class="pre">'keywords',</span> <span class="pre">'keywords_vocabulary',</span> <span class="pre">'license',</span> <span class="pre">'naming_authority',</span> <span class="pre">'project'}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#extract_attr_to_keep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.extract_attr_to_keep" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">extract_attr_to_keep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr_as_is</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{'acknowledgment',</span> <span class="pre">'date_created',</span> <span class="pre">'disclaimer',</span> <span class="pre">'file_version',</span> <span class="pre">'geospatial_lat_max',</span> <span class="pre">'geospatial_lat_min',</span> <span class="pre">'geospatial_lon_max',</span> <span class="pre">'geospatial_lon_min',</span> <span class="pre">'geospatial_vertical_max',</span> <span class="pre">'geospatial_vertical_min',</span> <span class="pre">'id',</span> <span class="pre">'institution',</span> <span class="pre">'keywords',</span> <span class="pre">'keywords_vocabulary',</span> <span class="pre">'license',</span> <span class="pre">'naming_authority',</span> <span class="pre">'project'}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#extract_attr_to_keep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.extract_attr_to_keep" title="Link to this definition"></a></dt>
+<dd><p>Extract attributes to retain unchanged.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds1</strong> (<em>xarray.Dataset</em>) – Source dataset.</p></li>
+<li><p><strong>attr_as_is</strong> (<em>list</em>) – Attribute names to retain without modification.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Retained attributes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.extract_attr_to_rename">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">extract_attr_to_rename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr_to_rename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'comment':</span> <span class="pre">'history',</span> <span class="pre">'platform_id':</span> <span class="pre">'PLATFORM_SERIAL_NUMBER',</span> <span class="pre">'site':</span> <span class="pre">'summary',</span> <span class="pre">'uri':</span> <span class="pre">'uuid',</span> <span class="pre">'uri_comment':</span> <span class="pre">'UUID'}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#extract_attr_to_rename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.extract_attr_to_rename" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">extract_attr_to_rename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr_to_rename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{'comment':</span> <span class="pre">'history',</span> <span class="pre">'platform_id':</span> <span class="pre">'PLATFORM_SERIAL_NUMBER',</span> <span class="pre">'site':</span> <span class="pre">'summary',</span> <span class="pre">'uri':</span> <span class="pre">'uuid',</span> <span class="pre">'uri_comment':</span> <span class="pre">'UUID'}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#extract_attr_to_rename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.extract_attr_to_rename" title="Link to this definition"></a></dt>
+<dd><p>Extract and rename attributes according to OG1 vocabulary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds1</strong> (<em>xarray.Dataset</em>) – Source dataset.</p></li>
+<li><p><strong>attr_to_rename</strong> (<em>dict</em>) – Mapping of new_name: old_name for attribute renaming.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Renamed attributes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.extract_variables">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">extract_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dataset</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#extract_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.extract_variables" title="Link to this definition"></a></dt>
-<dd><p>Splits variables from the basestation file that have no dimensions into categorized datasets.</p>
+<dd><p>Split variables from the basestation file that have no dimensions into categorized datasets.</p>
 <p>This function further processes the variables from the basestation file that had no dimensions.
 It categorizes them based on their prefixes or characteristics into three groups:
 variables from <cite>sg_calib_constants</cite>, log files, and other mission/dive-specific values.</p>
@@ -252,20 +283,39 @@ and other variables like <cite>magnetic_variation</cite>.</p>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[xr.Dataset, xr.Dataset, xr.Dataset]</p>
+<dd class="field-odd"><p>tuple of (xarray.Dataset, xarray.Dataset, xarray.Dataset)</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.get_contributors">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">get_contributors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values_to_append</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#get_contributors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.get_contributors" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">get_contributors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values_to_append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#get_contributors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.get_contributors" title="Link to this definition"></a></dt>
+<dd><p>Extract and format contributor information for OG1 attributes.</p>
+<p>Processes creator and contributor information from dataset attributes,
+formats them as comma-separated strings, and handles institution mapping.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – Dataset containing original contributor attributes.</p></li>
+<li><p><strong>values_to_append</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional contributor information to append.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with formatted contributor attribute strings.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.get_time_attributes">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">get_time_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#get_time_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.get_time_attributes" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">get_time_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#get_time_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.get_time_attributes" title="Link to this definition"></a></dt>
 <dd><p>Extract and clean time-related attributes from the dataset.</p>
+<p>Converts various time formats to OG1-standard YYYYMMDDTHHMMSS format
+and adds date_modified timestamp.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The input dataset containing various attributes.</p>
@@ -281,8 +331,8 @@ and other variables like <cite>magnetic_variation</cite>.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.process_and_save_data">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">process_and_save_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_location</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_quietly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#process_and_save_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.process_and_save_data" title="Link to this definition"></a></dt>
-<dd><p>Processes and saves data from the specified input location.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">process_and_save_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_location</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_quietly</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#process_and_save_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.process_and_save_data" title="Link to this definition"></a></dt>
+<dd><p>Process and save data from the specified input location.</p>
 <p>This function loads and concatenates datasets from the server, converts them to OG1 format,
 and saves the resulting dataset to a NetCDF file. If the file already exists, the function
 will prompt the user to decide whether to overwrite it or not.</p>
@@ -382,12 +432,15 @@ will prompt the user to decide whether to overwrite it or not.</p>
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.standardise_OG10">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">standardise_OG10</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{'S/m':</span> <span class="pre">'S</span> <span class="pre">m-1',</span> <span class="pre">'cm/s':</span> <span class="pre">'cm</span> <span class="pre">s-1',</span> <span class="pre">'degreesCelsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'degrees_Celsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'g/m^3':</span> <span class="pre">'g</span> <span class="pre">m-3',</span> <span class="pre">'kg/m^3':</span> <span class="pre">'kg</span> <span class="pre">m-3',</span> <span class="pre">'m/s':</span> <span class="pre">'m</span> <span class="pre">s-1',</span> <span class="pre">'mS/cm':</span> <span class="pre">'mS</span> <span class="pre">cm-1',</span> <span class="pre">'meters':</span> <span class="pre">'m'}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#standardise_OG10"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.standardise_OG10" title="Link to this definition"></a></dt>
 <dd><p>Standardize the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.</p>
+<p>Applies OG1 vocabulary for variable names, units, and attributes.
+Performs unit conversions and QC flag standardization.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The input dataset to be standardized.</p></li>
 <li><p><strong>firstrun</strong> (<em>bool</em><em>, </em><em>optional</em>) – Indicates whether this is the first run of the standardization process. Default is False.</p></li>
-<li><p><strong>unit_format</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>, </em><em>optional</em>) – A dictionary mapping unit strings to their standardized format. Default is vocabularies.unit_str_format.</p></li>
+<li><p><strong>unit_format</strong> (<em>dict</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – A dictionary mapping unit strings to their standardized format.
+Default is vocabularies.unit_str_format.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -401,13 +454,15 @@ will prompt the user to decide whether to overwrite it or not.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.update_dataset_attributes">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">update_dataset_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrib_to_append</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#update_dataset_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.update_dataset_attributes" title="Link to this definition"></a></dt>
-<dd><p>Updates the attributes of the dataset based on the provided attribute input.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">update_dataset_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrib_to_append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#update_dataset_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.update_dataset_attributes" title="Link to this definition"></a></dt>
+<dd><p>Update the attributes of the dataset based on the provided attribute input.</p>
+<p>Processes contributor information, time attributes, and applies OG1
+global attribute vocabulary in the correct order.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The input dataset whose attributes need to be updated.</p></li>
-<li><p><strong>contrib_to_append</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>] or </em><em>None</em>) – A dictionary containing additional contributor information to append. Default is None.</p></li>
+<li><p><strong>contrib_to_append</strong> (<em>dict</em><em> of </em><em>str</em><em> or </em><em>None</em>) – A dictionary containing additional contributor information to append. Default is None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -422,181 +477,156 @@ will prompt the user to decide whether to overwrite it or not.</p>
 </section>
 <section id="module-seagliderOG1.vocabularies">
 <span id="vocabularies"></span><h2>vocabularies<a class="headerlink" href="#module-seagliderOG1.vocabularies" title="Link to this heading"></a></h2>
+<p>Vocabularies and mappings for OG1 format conversion.</p>
+<p>This module defines the vocabulary mappings, unit conversions, and attribute
+configurations used to convert Seaglider basestation files to OG1 format.
+It loads YAML configuration files and defines various dictionaries used
+throughout the conversion process.</p>
+<p>Key Components:
+- Variable name mappings from basestation to OG1 format
+- Unit conversion factors and formatting rules
+- Global attribute definitions and ordering
+- Variables to include/exclude during conversion
+- Dimension renaming mappings</p>
+<p>Configuration Files:
+- OG1_var_names.yaml: Variable name mappings
+- OG1_vocab_attrs.yaml: Variable attribute vocabularies
+- OG1_sensor_attrs.yaml: Sensor attribute definitions
+- OG1_global_attrs.yaml: Global attribute configurations
+- OG1_author.yaml: Default author/contributor information</p>
+<section id="notes">
+<h3>Notes:<a class="headerlink" href="#notes" title="Link to this heading"></a></h3>
+<p>This module is primarily data-driven and loads most configuration from YAML files
+in the config/ directory. The YAML-based approach allows easy modification of
+OG1 format requirements without code changes.</p>
+</section>
 </section>
 <section id="module-seagliderOG1.readers">
 <span id="readers"></span><h2>readers<a class="headerlink" href="#module-seagliderOG1.readers" title="Link to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.readers.filter_files_by_profile">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">filter_files_by_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/readers.html#filter_files_by_profile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.filter_files_by_profile" title="Link to this definition"></a></dt>
-<dd><p>Filter a list of files based on the start_profile and end_profile.
-Expects filenames of the form pXXXYYYY.nc, where XXX is the seaglider serial number and YYYY the divecycle number, e.g. p0420001.nc for glider 41 and divenum 0001.
-Note: Does not require file_list to be alphabetical/sorted.</p>
-<p>Parameters:
-file_list (list): List of filenames to filter.
-start_profile (int, optional): The starting profile number to filter files. Defaults to None.
-end_profile (int, optional): The ending profile number to filter files. Defaults to None.</p>
-<p>Returns:
-list: A list of filtered filenames.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">filter_files_by_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#filter_files_by_profile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.filter_files_by_profile" title="Link to this definition"></a></dt>
+<dd><p>Filter files by profile/dive number range.</p>
+<p>Filters Seaglider basestation files based on profile number range.
+Expects filenames of the form pXXXYYYY.nc, where XXX is the 3-digit
+glider serial number and YYYY is the 4-digit dive cycle number.</p>
+<p>Example: p0420001.nc represents glider 042, dive 0001.</p>
+<p>Note: Input file_list does not need to be sorted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_list</strong> (<em>list</em><em> of </em><em>str</em>) – List of Seaglider filenames to filter.</p></li>
+<li><p><strong>start_profile</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum profile number (inclusive).</p></li>
+<li><p><strong>end_profile</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum profile number (inclusive).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Filtered list of filenames within the specified range.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of str</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.readers.list_files">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">list_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry_loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'seagliderOG1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'seaglider_registry.txt'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/readers.html#list_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.list_files" title="Link to this definition"></a></dt>
-<dd><p>List files from a given source, which can be either a URL or a directory path. For an online source,
-uses BeautifulSoup and requests.</p>
-<p>Parameters:
-source (str): The source from which to list files. It can be a URL (starting with “<a class="reference external" href="http://">http://</a>” or “<a class="reference external" href="https://">https://</a>”)</p>
-<blockquote>
-<div><p>or a local directory path.</p>
-</div></blockquote>
-<p>Returns:
-list: A list of filenames available in the specified source, sorted alphabetically
-Raises:
-ValueError: If the source is neither a valid URL nor a directory path.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">list_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry_loc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'seagliderOG1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'seaglider_registry.txt'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#list_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.list_files" title="Link to this definition"></a></dt>
+<dd><p>List NetCDF files from a source (URL or local directory).</p>
+<p>For online sources, scrapes directory listings using BeautifulSoup.
+For local sources, lists files in the directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>str</em>) – URL (http/https) or local directory path to scan for files.</p></li>
+<li><p><strong>registry_loc</strong> (<em>str</em><em>, </em><em>optional</em>) – Legacy parameter, not currently used.</p></li>
+<li><p><strong>registry_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Legacy parameter, not currently used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Sorted list of NetCDF filenames (.nc files only).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If source is neither a valid URL nor directory path.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.readers.load_basestation_files">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">load_basestation_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/readers.html#load_basestation_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.load_basestation_files" title="Link to this definition"></a></dt>
-<dd><p>Load datasets from either an online source or a local directory, optionally filtering by profile range.</p>
-<p>Parameters:
-source (str): The URL to the directory containing the NetCDF files or the path to the local directory.
-start_profile (int, optional): The starting profile number to filter files. Defaults to None.
-end_profile (int, optional): The ending profile number to filter files. Defaults to None.</p>
-<p>Returns:
-A list of xarray.Dataset objects loaded from the filtered NetCDF files.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">load_basestation_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#load_basestation_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.load_basestation_files" title="Link to this definition"></a></dt>
+<dd><p>Load multiple Seaglider basestation files with optional profile filtering.</p>
+<p>Main function for loading Seaglider data from either online repositories
+or local directories. Supports filtering by dive/profile number range.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>str</em>) – URL (http/https) or local directory path containing Seaglider NetCDF files.</p></li>
+<li><p><strong>start_profile</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum profile number to load.</p></li>
+<li><p><strong>end_profile</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum profile number to load.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of loaded basestation datasets, ordered by filename.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of xarray.Dataset</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.readers.load_first_basestation_file">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">load_first_basestation_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/readers.html#load_first_basestation_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.load_first_basestation_file" title="Link to this definition"></a></dt>
-<dd><p>Load the first dataset from either an online source or a local directory.</p>
-<p>Parameters:
-source (str): The URL to the directory containing the NetCDF files or the path to the local directory.</p>
-<p>Returns:
-An xarray.Dataset object loaded from the first NetCDF file.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">load_first_basestation_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#load_first_basestation_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.load_first_basestation_file" title="Link to this definition"></a></dt>
+<dd><p>Load the first (alphabetically) basestation file from a source.</p>
+<p>Useful for quick examination of data structure and metadata from
+a Seaglider mission without loading all files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>source</strong> (<em>str</em>) – URL or local directory path containing NetCDF files.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The first basestation dataset.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.readers.load_sample_dataset">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">load_sample_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'p0330015_20100906.nc'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/readers.html#load_sample_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.load_sample_dataset" title="Link to this definition"></a></dt>
-<dd><p>Download sample datasets for use with seagliderOG1</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>dataset_name (str, optional): _description_. Defaults to “p0330015_20100906.nc”.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">load_sample_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'p0330015_20100906.nc'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#load_sample_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.load_sample_dataset" title="Link to this definition"></a></dt>
+<dd><p>Download sample datasets for use with seagliderOG1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the sample dataset to load. Must be one of the available
+datasets in the registry. Default is “p0330015_20100906.nc”.</p>
 </dd>
-<dt>Raises:</dt><dd><p>ValueError: If the requests dataset is not known, raises a value error</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The requested sample dataset loaded from the cache.</p>
 </dd>
-<dt>Returns:</dt><dd><p>xarray.Dataset: Requested sample dataset</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>KeyError</strong> – If the requested dataset is not available in the registry.</p>
 </dd>
 </dl>
 </dd></dl>
 
 </section>
-<section id="module-seagliderOG1.plotters">
-<span id="plotters"></span><h2>plotters<a class="headerlink" href="#module-seagliderOG1.plotters" title="Link to this heading"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.plotters.plot_ctd_depth_vs_time">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">plot_ctd_depth_vs_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_traj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_traj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#plot_ctd_depth_vs_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.plot_ctd_depth_vs_time" title="Link to this definition"></a></dt>
-<dd><p>Plots CTD depth vs time, optionally filtered by trajectory range, and highlights non-NaN GPS latitude values.</p>
-<p>Parameters:
-ds (xr.Dataset): The input dataset containing ‘ctd_time’, ‘ctd_depth’, and ‘gps_lat’.
-start_traj (int, optional): The starting trajectory number to filter the data. Default is None.
-end_traj (int, optional): The ending trajectory number to filter the data. Default is None.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.plotters.plot_depth_colored">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">plot_depth_colored</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_dive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_dive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#plot_depth_colored"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.plot_depth_colored" title="Link to this definition"></a></dt>
-<dd><p>Plots depth as a function of time, optionally colored by another variable, and filtered by dive number.</p>
-<p>Parameters:
-data (pd.DataFrame or xr.Dataset): The input data containing ‘ctd_depth’ and ‘ctd_time’.
-color_by (str, optional): The variable to color the plot by. Default is None.
-start_dive (int, optional): The starting dive number to filter the data. Default is None.
-end_dive (int, optional): The ending dive number to filter the data. Default is None.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.plotters.plot_profile_depth">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">plot_profile_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#plot_profile_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.plot_profile_depth" title="Link to this definition"></a></dt>
-<dd><p>Plots the profile depth (ctd_depth) as a function of time (ctd_time).
-Reduces the total number of points to be less than 100,000.</p>
-<p>Parameters:
-data (pd.DataFrame or xr.Dataset): The input data containing ‘ctd_depth’ and ‘ctd_time’.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.plotters.show_attributes">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">show_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#show_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.show_attributes" title="Link to this definition"></a></dt>
-<dd><p>Processes an xarray Dataset or a netCDF file, extracts attribute information,
-and returns a DataFrame with details about the attributes.</p>
-<p>Parameters:
-data (str or xr.Dataset): The input data, either a file path to a netCDF file or an xarray Dataset.</p>
-<p>Returns:
-pandas.DataFrame: A DataFrame containing the following columns:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>Attribute: The name of the attribute.</p></li>
-<li><p>Value: The value of the attribute.</p></li>
-</ul>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.plotters.show_contents">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">show_contents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'variables'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#show_contents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.show_contents" title="Link to this definition"></a></dt>
-<dd><p>Wrapper function to show contents of an xarray Dataset or a netCDF file.</p>
-<p>Parameters:
-data (str or xr.Dataset): The input data, either a file path to a netCDF file or an xarray Dataset.
-content_type (str): The type of content to show, either ‘variables’ (or ‘vars’) or ‘attributes’ (or ‘attrs’). Default is ‘variables’.</p>
-<p>Returns:
-pandas.io.formats.style.Styler or pandas.DataFrame: A styled DataFrame with details about the variables or attributes.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.plotters.show_variables">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">show_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#show_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.show_variables" title="Link to this definition"></a></dt>
-<dd><p>Processes an xarray Dataset or a netCDF file, extracts variable information,
-and returns a styled DataFrame with details about the variables.</p>
-<p>Parameters:
-data (str or xr.Dataset): The input data, either a file path to a netCDF file or an xarray Dataset.</p>
-<p>Returns:
-pandas.io.formats.style.Styler: A styled DataFrame containing the following columns:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>dims: The dimension of the variable (or “string” if it is a string type).</p></li>
-<li><p>name: The name of the variable.</p></li>
-<li><p>units: The units of the variable (if available).</p></li>
-<li><p>comment: Any additional comments about the variable (if available).</p></li>
-</ul>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.plotters.show_variables_by_dimension">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.plotters.</span></span><span class="sig-name descname"><span class="pre">show_variables_by_dimension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'trajectory'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/plotters.html#show_variables_by_dimension"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.plotters.show_variables_by_dimension" title="Link to this definition"></a></dt>
-<dd><p>Processes an xarray Dataset or a netCDF file, extracts variable information,
-and returns a styled DataFrame with details about the variables filtered by a specific dimension.</p>
-<p>Parameters:
-data (str or xr.Dataset): The input data, either a file path to a netCDF file or an xarray Dataset.
-dimension_name (str): The name of the dimension to filter variables by.</p>
-<p>Returns:
-pandas.io.formats.style.Styler: A styled DataFrame containing the following columns:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>dims: The dimension of the variable (or “string” if it is a string type).</p></li>
-<li><p>name: The name of the variable.</p></li>
-<li><p>units: The units of the variable (if available).</p></li>
-<li><p>comment: Any additional comments about the variable (if available).</p></li>
-</ul>
-</div></blockquote>
-</dd></dl>
-
+<section id="plotters">
+<h2>plotters<a class="headerlink" href="#plotters" title="Link to this heading"></a></h2>
 </section>
 <section id="module-seagliderOG1.writers">
 <span id="writers"></span><h2>writers<a class="headerlink" href="#module-seagliderOG1.writers" title="Link to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.writers.save_dataset">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.writers.</span></span><span class="sig-name descname"><span class="pre">save_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'../test.nc'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/writers.html#save_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.writers.save_dataset" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.writers.</span></span><span class="sig-name descname"><span class="pre">save_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'../test.nc'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seagliderOG1/writers.html#save_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.writers.save_dataset" title="Link to this definition"></a></dt>
 <dd><p>Attempts to save the dataset to a NetCDF file.</p>
 <p>If a TypeError occurs due to invalid attribute values, converts the invalid
 attributes to strings and retries the save operation.</p>
