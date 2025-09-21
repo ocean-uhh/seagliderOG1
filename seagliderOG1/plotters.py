@@ -1,3 +1,9 @@
+"""Plotting and visualization functions for Seaglider data.
+
+This module provides functions for plotting and inspecting Seaglider datasets,
+including variable summaries, attribute displays, and depth profile visualizations.
+"""
+
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -9,16 +15,30 @@ import matplotlib.pyplot as plt
 ##------------------------------------------------------------------------------------
 ## Views of the ds or nc file
 ##------------------------------------------------------------------------------------
-def show_contents(data, content_type="variables"):
-    """
-    Wrapper function to show contents of an xarray Dataset or a netCDF file.
+def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd.io.formats.style.Styler | pd.DataFrame:
+    """Show contents of an xarray Dataset or a netCDF file.
+    
+    Wrapper function to display either variables or attributes from the dataset.
 
-    Parameters:
-    data (str or xr.Dataset): The input data, either a file path to a netCDF file or an xarray Dataset.
-    content_type (str): The type of content to show, either 'variables' (or 'vars') or 'attributes' (or 'attrs'). Default is 'variables'.
+    Parameters
+    ----------
+    data : str or xarray.Dataset
+        The input data, either a file path to a netCDF file or an xarray Dataset.
+    content_type : str, optional
+        The type of content to show, either 'variables' (or 'vars') or 'attributes' (or 'attrs').
+        Default is 'variables'.
 
-    Returns:
-    pandas.io.formats.style.Styler or pandas.DataFrame: A styled DataFrame with details about the variables or attributes.
+    Returns
+    -------
+    pandas.io.formats.style.Styler or pandas.DataFrame
+        A styled DataFrame with details about the variables or attributes.
+        
+    Raises
+    ------
+    TypeError
+        If input data is not a file path or xarray Dataset.
+    ValueError
+        If content_type is not 'variables', 'vars', 'attributes', or 'attrs'.
     """
     if content_type in ["variables", "vars"]:
         if isinstance(data, str):
@@ -40,20 +60,32 @@ def show_contents(data, content_type="variables"):
         )
 
 
-def show_variables(data):
-    """
-    Processes an xarray Dataset or a netCDF file, extracts variable information,
-    and returns a styled DataFrame with details about the variables.
+def show_variables(data: str | xr.Dataset) -> pd.io.formats.style.Styler:
+    """Process an xarray Dataset or netCDF file and extract variable information.
+    
+    Creates a styled DataFrame with comprehensive details about all variables
+    in the dataset, including dimensions, units, comments, and data types.
 
-    Parameters:
-    data (str or xr.Dataset): The input data, either a file path to a netCDF file or an xarray Dataset.
+    Parameters
+    ----------
+    data : str or xarray.Dataset
+        The input data, either a file path to a netCDF file or an xarray Dataset.
 
-    Returns:
-    pandas.io.formats.style.Styler: A styled DataFrame containing the following columns:
+    Returns
+    -------
+    pandas.io.formats.style.Styler
+        A styled DataFrame containing the following columns:
         - dims: The dimension of the variable (or "string" if it is a string type).
         - name: The name of the variable.
         - units: The units of the variable (if available).
         - comment: Any additional comments about the variable (if available).
+        - standard_name: CF standard name (if available).
+        - dtype: Data type of the variable.
+        
+    Raises
+    ------
+    TypeError
+        If input data is not a file path or xarray Dataset.
     """
     from pandas import DataFrame
     from netCDF4 import Dataset
@@ -106,18 +138,29 @@ def show_variables(data):
     return vars
 
 
-def show_attributes(data):
-    """
-    Processes an xarray Dataset or a netCDF file, extracts attribute information,
-    and returns a DataFrame with details about the attributes.
+def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
+    """Process an xarray Dataset or netCDF file and extract global attribute information.
+    
+    Creates a DataFrame with comprehensive details about all global attributes
+    in the dataset, including their values and data types.
 
-    Parameters:
-    data (str or xr.Dataset): The input data, either a file path to a netCDF file or an xarray Dataset.
+    Parameters
+    ----------
+    data : str or xarray.Dataset
+        The input data, either a file path to a netCDF file or an xarray Dataset.
 
-    Returns:
-    pandas.DataFrame: A DataFrame containing the following columns:
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame containing the following columns:
         - Attribute: The name of the attribute.
         - Value: The value of the attribute.
+        - DType: The data type of the attribute value.
+        
+    Raises
+    ------
+    TypeError
+        If input data is not a file path or xarray Dataset.
     """
     from pandas import DataFrame
     from netCDF4 import Dataset
@@ -144,21 +187,32 @@ def show_attributes(data):
     return attrs
 
 
-def show_variables_by_dimension(data, dimension_name="trajectory"):
-    """
-    Processes an xarray Dataset or a netCDF file, extracts variable information,
-    and returns a styled DataFrame with details about the variables filtered by a specific dimension.
+def show_variables_by_dimension(data: str | xr.Dataset, dimension_name: str = "trajectory") -> pd.io.formats.style.Styler:
+    """Process dataset and extract variables filtered by a specific dimension.
+    
+    Creates a styled DataFrame showing only variables that have the specified
+    dimension, useful for examining variables of a particular type.
 
-    Parameters:
-    data (str or xr.Dataset): The input data, either a file path to a netCDF file or an xarray Dataset.
-    dimension_name (str): The name of the dimension to filter variables by.
+    Parameters
+    ----------
+    data : str or xarray.Dataset
+        The input data, either a file path to a netCDF file or an xarray Dataset.
+    dimension_name : str, optional
+        The name of the dimension to filter variables by. Default is "trajectory".
 
-    Returns:
-    pandas.io.formats.style.Styler: A styled DataFrame containing the following columns:
+    Returns
+    -------
+    pandas.io.formats.style.Styler
+        A styled DataFrame containing the following columns:
         - dims: The dimension of the variable (or "string" if it is a string type).
         - name: The name of the variable.
         - units: The units of the variable (if available).
         - comment: Any additional comments about the variable (if available).
+        
+    Raises
+    ------
+    TypeError
+        If input data is not a file path or xarray Dataset.
     """
 
     if isinstance(data, str):
@@ -211,13 +265,31 @@ def show_variables_by_dimension(data, dimension_name="trajectory"):
 ##----------------------------------------------------------------------------
 ## Sawtooth plots
 ##----------------------------------------------------------------------------
-def plot_profile_depth(data):
-    """
-    Plots the profile depth (ctd_depth) as a function of time (ctd_time).
-    Reduces the total number of points to be less than 100,000.
+def plot_profile_depth(data: pd.DataFrame | xr.Dataset) -> None:
+    """Plot profile depth as a function of time.
+    
+    Creates a time series plot of depth data with automatic point reduction
+    for large datasets and proper axis formatting.
 
-    Parameters:
-    data (pd.DataFrame or xr.Dataset): The input data containing 'ctd_depth' and 'ctd_time'.
+    Parameters
+    ----------
+    data : pandas.DataFrame or xarray.Dataset
+        The input data containing depth and time variables. Should contain either
+        'ctd_depth'/'ctd_time' or 'DEPTH'/'TIME' variables.
+        
+    Notes
+    -----
+    - Automatically reduces the total number of points to less than 100,000 for performance.
+    - Inverts y-axis to show depth increasing downward.
+    - Formats x-axis with month-day labels and adds year information.
+    - Sets tight y-axis limits rounded to nearest 10 meters.
+    
+    Raises
+    ------
+    TypeError
+        If input data is not a pandas DataFrame or xarray Dataset.
+    KeyError
+        If required time or depth variables are not found in the dataset.
     """
     if isinstance(data, pd.DataFrame):
         ctd_time = data["ctd_time"]
@@ -271,15 +343,36 @@ def plot_profile_depth(data):
     plt.show()
 
 
-def plot_depth_colored(data, color_by=None, start_dive=None, end_dive=None):
-    """
-    Plots depth as a function of time, optionally colored by another variable, and filtered by dive number.
+def plot_depth_colored(data: pd.DataFrame | xr.Dataset, color_by: str | None = None, start_dive: int | None = None, end_dive: int | None = None) -> None:
+    """Plot depth as a function of time with optional coloring and dive filtering.
+    
+    Creates a depth time series plot with optional color coding by another variable
+    and filtering by dive number range.
 
-    Parameters:
-    data (pd.DataFrame or xr.Dataset): The input data containing 'ctd_depth' and 'ctd_time'.
-    color_by (str, optional): The variable to color the plot by. Default is None.
-    start_dive (int, optional): The starting dive number to filter the data. Default is None.
-    end_dive (int, optional): The ending dive number to filter the data. Default is None.
+    Parameters
+    ----------
+    data : pandas.DataFrame or xarray.Dataset
+        The input data containing depth, time, and dive number variables.
+        Should contain 'ctd_depth'/'DEPTH', 'ctd_time'/'TIME', and dive number variables.
+    color_by : str, optional
+        The variable name to color the plot by. If None, uses a simple line plot.
+    start_dive : int, optional
+        The starting dive number to filter the data. If None, no filtering applied.
+    end_dive : int, optional
+        The ending dive number to filter the data. If None, no filtering applied.
+        
+    Notes
+    -----
+    - Accepts dive number variables: 'dive_number', 'divenum', or 'dive_num'.
+    - Uses scatter plot with colorbar when color_by is specified.
+    - Inverts y-axis and formats time axis similar to plot_profile_depth.
+    
+    Raises
+    ------
+    TypeError
+        If input data is not a pandas DataFrame or xarray Dataset.
+    ValueError
+        If no valid dive number variable is found in the dataset.
     """
     # Filter data by dive number if specified
     if "dive_number" in data.variables:
@@ -359,14 +452,27 @@ def plot_depth_colored(data, color_by=None, start_dive=None, end_dive=None):
     plt.show()
 
 
-def plot_ctd_depth_vs_time(ds, start_traj=None, end_traj=None):
-    """
-    Plots CTD depth vs time, optionally filtered by trajectory range, and highlights non-NaN GPS latitude values.
+def plot_ctd_depth_vs_time(ds: xr.Dataset, start_traj: int | None = None, end_traj: int | None = None) -> None:
+    """Plot CTD depth vs time with GPS fix highlighting.
+    
+    Creates a depth time series plot with special highlighting of points where
+    GPS latitude data is available (non-NaN), useful for identifying surface intervals.
 
-    Parameters:
-    ds (xr.Dataset): The input dataset containing 'ctd_time', 'ctd_depth', and 'gps_lat'.
-    start_traj (int, optional): The starting trajectory number to filter the data. Default is None.
-    end_traj (int, optional): The ending trajectory number to filter the data. Default is None.
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The input dataset containing 'ctd_time', 'ctd_depth', and 'gps_lat' variables.
+    start_traj : int, optional
+        The starting trajectory number to filter the data. If None, no filtering applied.
+    end_traj : int, optional
+        The ending trajectory number to filter the data. If None, no filtering applied.
+        
+    Notes
+    -----
+    - Plots CTD depth as black dots for all data points.
+    - Overlays red circles at points where GPS latitude is non-NaN.
+    - Inverts y-axis to show depth increasing downward.
+    - Filters data by trajectory range if specified.
     """
     # Filter data by trajectory number if specified
     if start_traj is not None and end_traj is not None:

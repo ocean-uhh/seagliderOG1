@@ -2,11 +2,12 @@ import logging
 from numbers import Number
 
 import numpy as np
+import xarray as xr
 
 _log = logging.getLogger(__name__)
 
 
-def save_dataset(ds, output_file="../test.nc"):
+def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> None:
     """
     Attempts to save the dataset to a NetCDF file.
 

@@ -1,3 +1,31 @@
+"""Vocabularies and mappings for OG1 format conversion.
+
+This module defines the vocabulary mappings, unit conversions, and attribute
+configurations used to convert Seaglider basestation files to OG1 format.
+It loads YAML configuration files and defines various dictionaries used
+throughout the conversion process.
+
+Key Components:
+- Variable name mappings from basestation to OG1 format
+- Unit conversion factors and formatting rules  
+- Global attribute definitions and ordering
+- Variables to include/exclude during conversion
+- Dimension renaming mappings
+
+Configuration Files:
+- OG1_var_names.yaml: Variable name mappings
+- OG1_vocab_attrs.yaml: Variable attribute vocabularies
+- OG1_sensor_attrs.yaml: Sensor attribute definitions
+- OG1_global_attrs.yaml: Global attribute configurations
+- OG1_author.yaml: Default author/contributor information
+
+Notes:
+-----
+This module is primarily data-driven and loads most configuration from YAML files
+in the config/ directory. The YAML-based approach allows easy modification of
+OG1 format requirements without code changes.
+"""
+
 import yaml
 import pathlib
 import os
@@ -8,13 +36,13 @@ parent_dir = script_dir.parents[0]
 rootdir = parent_dir
 config_dir = os.path.join(rootdir, "config/")
 
-# Dimension renaming
+# Dimension renaming: maps basestation dimension names to OG1 standard names
 dims_rename_dict = {"sg_data_point": "N_MEASUREMENTS"}
 
-# Specify the preferred units, and it will convert if the conversion is available in unit_conversion
+# Preferred units for OG1 format - conversion will be attempted if mapping exists
 preferred_units = ["m s-1", "dbar", "S m-1"]
 
-# String formats for units.  The key is the original, the value is the desired format
+# Unit string standardization: maps various unit representations to preferred format
 unit_str_format = {
     "m/s": "m s-1",
     "cm/s": "cm s-1",
@@ -27,7 +55,7 @@ unit_str_format = {
     "kg/m^3": "kg m-3",
 }
 
-# Various conversions from the key to units_name with the multiplicative conversion factor
+# Unit conversion definitions: each entry defines source unit, target unit, and conversion factor
 unit1_to_unit2 = {
     "cm s-1_to_m s-1": {"current_unit": "cm s-1", "new_unit": "m s-1", "factor": 0.01},
     "cm/s_to_m/s": {"current_unit": "cm/s", "new_unit": "m/s", "factor": 0.01},
@@ -60,7 +88,7 @@ unit1_to_unit2 = {
     "kg m-3_to_g m-3": {"current_unit": "kg m-3", "new_unit": "g m-3", "factor": 1000},
 }
 
-# Variables to remove (especially derived variables)
+# Variables to exclude from OG1 output (derived variables, duplicates, etc.)
 vars_to_remove = [
     "dissolved_oxygen_sat",
     "depth",
@@ -84,21 +112,24 @@ vars_to_remove = [
     "density",
 ]
 
+# Variables to keep unchanged during conversion (currently empty)
 vars_as_is = []
 
 # --------------------------------
 # Variables + variable attributes
 # --------------------------------
+# Variable name mappings: basestation variable name -> OG1 standard name
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
-# Key is the basestation variable name, value is the OG1 standard name
 with open(config_dir + "OG1_var_names.yaml", "r") as file:
     standard_names = yaml.safe_load(file)
 
-# Various vocabularies for OG1: http://vocab.nerc.ac.uk/scheme/OG1/current/
+# Variable attribute vocabularies for OG1 format
+# Reference: http://vocab.nerc.ac.uk/scheme/OG1/current/
 with open(config_dir + "OG1_vocab_attrs.yaml", "r") as file:
     vocab_attrs = yaml.safe_load(file)
 
-# Various sensor vocabularies for OG1: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/
+# Sensor attribute vocabularies for OG1 format
+# Reference: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/
 with open(config_dir + "OG1_sensor_attrs.yaml", "r") as file:
     sensor_vocabs = yaml.safe_load(file)
 
@@ -106,9 +137,11 @@ with open(config_dir + "OG1_sensor_attrs.yaml", "r") as file:
 # --------------------------------
 # Global Attributes
 # --------------------------------
+# Default contributor/author information to append to datasets
 with open(config_dir + "OG1_author.yaml", "r") as file:
     contrib_to_append = yaml.safe_load(file)
 
+# Preferred order for global attributes in OG1 files
 order_of_attr = [
     "title",  # OceanGliders trajectory file
     "id",  # sg015_20040920T000000_delayed
@@ -156,9 +189,8 @@ order_of_attr = [
     "date_modified",  # date of last modification of this dataset YYYYmmddTHHMMss
 ]
 
-# Attributes to convert sg015 Labrador Sea to OG1
-# base_station_version 2.8
-# nodc_template_version_v0.9
-
+# Global attribute configuration for OG1 conversion
+# Defines which attributes to keep, rename, or add during conversion
+# Compatible with base_station_version 2.8, nodc_template_version_v0.9
 with open(config_dir + "OG1_global_attrs.yaml", "r") as file:
     global_attrs = yaml.safe_load(file)

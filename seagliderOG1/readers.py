@@ -6,6 +6,13 @@ import pooch
 import re
 from tqdm import tqdm
 
+"""Readers module for Seaglider basestation files.
+
+This module provides functions to read Seaglider basestation NetCDF files
+from either online sources or local directories. It does not manipulate
+the data, only loads it into xarray datasets.
+"""
+
 # readers.py: Will only read files.  Not manipulate them.
 
 # Use pooch for sample files only.
@@ -42,17 +49,24 @@ data_source_og = pooch.create(
 # But instead of pkg_resources (https://setuptools.pypa.io/en/latest/pkg_resources.html#)
 # we should use importlib.resources
 # Here's how to use importlib.resources (https://importlib-resources.readthedocs.io/en/latest/using.html)
-def load_sample_dataset(dataset_name="p0330015_20100906.nc"):
-    """Download sample datasets for use with seagliderOG1
+def load_sample_dataset(dataset_name: str = "p0330015_20100906.nc") -> xr.Dataset:
+    """Download sample datasets for use with seagliderOG1.
 
-    Args:
-        dataset_name (str, optional): _description_. Defaults to "p0330015_20100906.nc".
+    Parameters
+    ----------
+    dataset_name : str, optional
+        Name of the sample dataset to load. Must be one of the available 
+        datasets in the registry. Default is "p0330015_20100906.nc".
 
-    Raises:
-        ValueError: If the requests dataset is not known, raises a value error
+    Returns
+    -------
+    xarray.Dataset
+        The requested sample dataset loaded from the cache.
 
-    Returns:
-        xarray.Dataset: Requested sample dataset
+    Raises
+    ------
+    KeyError
+        If the requested dataset is not available in the registry.
     """
     if dataset_name in data_source_og.registry.keys():
         file_path = data_source_og.fetch(dataset_name)
@@ -62,15 +76,24 @@ def load_sample_dataset(dataset_name="p0330015_20100906.nc"):
         raise KeyError(msg)
 
 
-def _validate_filename(filename):
-    """
-    Validates if the given filename matches the expected pattern.
-    The expected pattern is a string that starts with 'p', followed by exactly
-    7 digits, and ends with '.nc'.
-    Args:
-        filename (str): The filename to validate.
-    Returns:
-        bool: True if the filename matches the pattern, False otherwise.
+def _validate_filename(filename: str) -> bool:
+    """Validate if filename matches expected Seaglider basestation patterns.
+    
+    Validates against two expected patterns:
+    1. p1234567.nc (7 digits after 'p')
+    2. p0420100_20100903.nc (7 digits, underscore, 8 digits)
+    
+    Also validates that both glider serial number and profile number are positive.
+    
+    Parameters
+    ----------
+    filename : str
+        The filename to validate.
+        
+    Returns
+    -------
+    bool
+        True if filename matches expected pattern and has valid numbers.
     """
     # pattern 1: p1234567.nc
     pattern1 = r"^p\d{7}\.nc$"
@@ -87,41 +110,68 @@ def _validate_filename(filename):
         return False
 
 
-def _profnum_from_filename(filename):
-    """
-    Extract the profile number from the filename.
-    Args:
-        filename (str): The filename from which to extract the profile number.
-    Returns:
-        int: The profile number extracted from the filename.
+def _profnum_from_filename(filename: str) -> int:
+    """Extract the profile/dive number from a Seaglider filename.
+    
+    Extracts characters 4-7 (0-indexed) which represent the dive cycle number
+    in filenames like p0420001.nc or p0420001_20100903.nc.
+    
+    Parameters
+    ----------
+    filename : str
+        Seaglider filename to parse.
+        
+    Returns
+    -------
+    int
+        The profile/dive number.
     """
     return int(filename[4:8])
 
 
-def _glider_sn_from_filename(filename):
-    """
-    Extract the glider serial number from the filename.
-    Args:
-        filename (str): The filename from which to extract the glider serial number.
-    Returns:
-        int: The glider serial number extracted from the filename.
+def _glider_sn_from_filename(filename: str) -> int:
+    """Extract the glider serial number from a Seaglider filename.
+    
+    Extracts characters 1-3 (0-indexed) which represent the 3-digit glider
+    serial number in filenames like p0420001.nc.
+    
+    Parameters
+    ----------
+    filename : str
+        Seaglider filename to parse.
+        
+    Returns
+    -------
+    int
+        The glider serial number.
     """
     return int(filename[1:4])
 
 
-def filter_files_by_profile(file_list, start_profile=None, end_profile=None):
-    """
-    Filter a list of files based on the start_profile and end_profile.
-    Expects filenames of the form pXXXYYYY.nc, where XXX is the seaglider serial number and YYYY the divecycle number, e.g. p0420001.nc for glider 41 and divenum 0001.
-    Note: Does not require file_list to be alphabetical/sorted.
-
-    Parameters:
-    file_list (list): List of filenames to filter.
-    start_profile (int, optional): The starting profile number to filter files. Defaults to None.
-    end_profile (int, optional): The ending profile number to filter files. Defaults to None.
-
-    Returns:
-    list: A list of filtered filenames.
+def filter_files_by_profile(file_list: list[str], start_profile: int | None = None, end_profile: int | None = None) -> list[str]:
+    """Filter files by profile/dive number range.
+    
+    Filters Seaglider basestation files based on profile number range.
+    Expects filenames of the form pXXXYYYY.nc, where XXX is the 3-digit 
+    glider serial number and YYYY is the 4-digit dive cycle number.
+    
+    Example: p0420001.nc represents glider 042, dive 0001.
+    
+    Note: Input file_list does not need to be sorted.
+    
+    Parameters
+    ----------
+    file_list : list of str
+        List of Seaglider filenames to filter.
+    start_profile : int, optional
+        Minimum profile number (inclusive).
+    end_profile : int, optional
+        Maximum profile number (inclusive).
+        
+    Returns
+    -------
+    list of str
+        Filtered list of filenames within the specified range.
     """
     filtered_files = []
 
@@ -151,15 +201,21 @@ def filter_files_by_profile(file_list, start_profile=None, end_profile=None):
     return filtered_files
 
 
-def load_first_basestation_file(source):
-    """
-    Load the first dataset from either an online source or a local directory.
-
-    Parameters:
-    source (str): The URL to the directory containing the NetCDF files or the path to the local directory.
-
-    Returns:
-    An xarray.Dataset object loaded from the first NetCDF file.
+def load_first_basestation_file(source: str) -> xr.Dataset:
+    """Load the first (alphabetically) basestation file from a source.
+    
+    Useful for quick examination of data structure and metadata from
+    a Seaglider mission without loading all files.
+    
+    Parameters
+    ----------
+    source : str
+        URL or local directory path containing NetCDF files.
+        
+    Returns
+    -------
+    xarray.Dataset
+        The first basestation dataset.
     """
     file_list = list_files(source)
     filename = file_list[0]
@@ -168,17 +224,25 @@ def load_first_basestation_file(source):
     return datasets[0]
 
 
-def load_basestation_files(source, start_profile=None, end_profile=None):
-    """
-    Load datasets from either an online source or a local directory, optionally filtering by profile range.
-
-    Parameters:
-    source (str): The URL to the directory containing the NetCDF files or the path to the local directory.
-    start_profile (int, optional): The starting profile number to filter files. Defaults to None.
-    end_profile (int, optional): The ending profile number to filter files. Defaults to None.
-
-    Returns:
-    A list of xarray.Dataset objects loaded from the filtered NetCDF files.
+def load_basestation_files(source: str, start_profile: int | None = None, end_profile: int | None = None) -> list[xr.Dataset]:
+    """Load multiple Seaglider basestation files with optional profile filtering.
+    
+    Main function for loading Seaglider data from either online repositories
+    or local directories. Supports filtering by dive/profile number range.
+    
+    Parameters
+    ----------
+    source : str
+        URL (http/https) or local directory path containing Seaglider NetCDF files.
+    start_profile : int, optional
+        Minimum profile number to load.
+    end_profile : int, optional
+        Maximum profile number to load.
+        
+    Returns
+    -------
+    list of xarray.Dataset
+        List of loaded basestation datasets, ordered by filename.
     """
     file_list = list_files(source)
     filtered_files = filter_files_by_profile(file_list, start_profile, end_profile)
@@ -198,20 +262,31 @@ def load_basestation_files(source, start_profile=None, end_profile=None):
 
 
 def list_files(
-    source, registry_loc="seagliderOG1", registry_name="seaglider_registry.txt"
-):
-    """
-    List files from a given source, which can be either a URL or a directory path. For an online source,
-    uses BeautifulSoup and requests.
-
-    Parameters:
-    source (str): The source from which to list files. It can be a URL (starting with "http://" or "https://")
-                  or a local directory path.
-
-    Returns:
-    list: A list of filenames available in the specified source, sorted alphabetically
-    Raises:
-    ValueError: If the source is neither a valid URL nor a directory path.
+    source: str, registry_loc: str = "seagliderOG1", registry_name: str = "seaglider_registry.txt"
+) -> list[str]:
+    """List NetCDF files from a source (URL or local directory).
+    
+    For online sources, scrapes directory listings using BeautifulSoup.
+    For local sources, lists files in the directory.
+    
+    Parameters
+    ----------
+    source : str
+        URL (http/https) or local directory path to scan for files.
+    registry_loc : str, optional
+        Legacy parameter, not currently used.
+    registry_name : str, optional
+        Legacy parameter, not currently used.
+        
+    Returns
+    -------
+    list of str
+        Sorted list of NetCDF filenames (.nc files only).
+        
+    Raises
+    ------
+    ValueError
+        If source is neither a valid URL nor directory path.
     """
 
     if source.startswith("http://") or source.startswith("https://"):
