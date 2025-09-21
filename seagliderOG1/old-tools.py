@@ -648,7 +648,6 @@ def generate_attributes(ds_all):
         - date_modified: Modification date of the dataset.
         - contributor_name: Name of the contributor.
         - contributor_role: Role of the contributor.
-
     """
     title = "OceanGliders trajectory file"
     platform = "sub-surface gliders"
