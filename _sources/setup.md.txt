@@ -1,73 +1,138 @@
-# Getting Started: Installation
+# Installation
 
-This guide walks you through installing and using the `seagliderOG1` Python package.  It includes:
+This guide provides installation instructions for the `seagliderOG1` Python package for different use cases.
 
-1. Basic installation via `pip` (for most users)
-2. Cloning the repo for custom use or development
-3. Setup for contributors
+## Basic Installation (PyPI)
 
----
-
-## Option 1: Install via `pip` (recommended for most users)
-
-If you just want to use the package without modifying the code:
+For most users who want to use the package:
 
 ```bash
 pip install seagliderOG1
 ```
 
-Then in your Python scripts or notebooks:
+Then import in your Python code:
 ```python
 import seagliderOG1
 ```
-💡 You can install into a virtual environment (e.g. using venv, conda, or micromamba) to keep things clean.
 
----
+## Local Development Installation
 
-## Option 2: Clone for custom use
+### Using conda/micromamba
 
-If you want a local editable copy of the code, for example to adapt it to your own purposes:
+If you prefer conda environments:
 
-
-#### a. Clone the repository to your computer
-From a **terminal**:
 ```bash
-git clone https://github.com/ocean-uhh/seagliderOG1
+# Clone the repository
+git clone https://github.com/ocean-uhh/seagliderOG1.git
 cd seagliderOG1
+
+# Create and activate environment
+conda env create -f environment.yml
+conda activate TEST
+
+# Install package in editable mode
+pip install -e .
 ```
 
-Or using **Github Desktop**:
+Using micromamba (faster alternative):
+```bash
+micromamba env create -f environment.yml
+micromamba activate TEST
+pip install -e .
+```
 
-1. Visit https://github.com/ocean-uhh/seagliderOG1
-2. Click the green <> Code button
-3. Choose **Open with GitHub Desktop**
-
-💡 Rename the folder if desired.
-
-#### b. Set up a Python environment and install
+### Using pip and virtual environments
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate # On Windows use `venv\Scripts\activate`
+# Clone the repository
+git clone https://github.com/ocean-uhh/seagliderOG1.git
+cd seagliderOG1
+
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies and package
 pip install -r requirements.txt
-pip install -e . # Editable install
+pip install -e .
 ```
 
----
+## Contributing Installation
 
-## Option 3: Contribute to the project 
+For contributors and developers:
 
-To contribute to development:
+### Setup
 
-1. Fork the repository on GitHub
-2. Clone your fork locally
-3. Set up a virtual environment and install dev tools:
+1. **Fork** the repository on GitHub
+2. **Clone** your fork locally:
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/seagliderOG1.git
+   cd seagliderOG1
+   ```
+
+3. **Set up environment** (choose one):
+
+   **Option A: Using conda/micromamba**
+   ```bash
+   conda env create -f environment.yml
+   conda activate TEST
+   ```
+
+   **Option B: Using pip**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+4. **Install development dependencies**:
+   ```bash
+   pip install -r requirements-dev.txt
+   pip install -e .
+   ```
+
+### Development Workflow
+
+**Run tests:**
 ```bash
-pip install -r requirements-dev.txt
-```
-4. Run tests:
-```bash
-pytest
+pytest                    # Run all tests
+pytest -v                 # Verbose output
+pytest tests/test_*.py    # Run specific test file
 ```
 
-For full guidance on contributing to a project like `seagliderOG1`, see https://eleanorfrajka.github.io/template-project/gitcollab.html.
+**Code quality checks:**
+```bash
+black .                   # Format code
+ruff check --fix          # Lint and auto-fix
+pre-commit run --all-files # Run all pre-commit hooks
+```
+
+**Before committing:**
+```bash
+pytest                    # Ensure tests pass
+ruff check                # Check for linting issues
+```
+
+### Coding Standards
+
+Please follow the project's coding conventions documented in [conventions.md](conventions.md), which covers:
+- Code formatting (Black)
+- Linting (Ruff) 
+- Docstring style (numpy format)
+- Import organization (PEP 8)
+- Testing practices
+
+### Contributing Guidelines
+
+For detailed contribution guidelines, see our [contributing documentation](https://eleanorfrajka.github.io/template-project/gitcollab.html).
+
+## Verification
+
+Verify your installation works:
+
+```python
+from seagliderOG1 import readers, convertOG1, writers
+
+# Load sample data
+dataset = readers.load_sample_dataset()
+print("✅ Installation successful!")
+```

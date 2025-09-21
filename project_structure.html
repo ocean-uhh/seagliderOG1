@@ -19,10 +19,11 @@
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="seagliderOG1 demo" href="demo-output.html" />
-    <link rel="prev" title="Getting Started: Installation" href="setup.html" /> 
+    <link rel="prev" title="Installation" href="setup.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -47,7 +48,8 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="setup.html">Getting Started: Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About seagliderOG1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#project-structure-overview">🔍 Project Structure Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#notes">💡 Notes</a></li>
@@ -96,21 +98,30 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>seagliderOG1/
 ├── seagliderOG1                  # [core] Main Python package with scientific code
 │   ├── __init__.py               # [core] Makes this a Python package
+│   ├── _version.py               # [core] Automatically generated version from git tags
+│   ├── config/                   # [core] Configuration files for OG1 format conversion
+│   │   ├── OG1_global_attrs.yaml # [core] Global attributes for OG1 format
+│   │   ├── OG1_var_names.yaml    # [core] Variable name mappings
+│   │   ├── OG1_vocab_attrs.yaml  # [core] Vocabulary attribute mappings
+│   │   ├── OG1_sensor_attrs.yaml # [core] Sensor attribute definitions
+│   │   ├── OG1_author.yaml       # [core] Author information template
+│   │   └── mission_yaml.yaml     # [core] Mission configuration template
 │   ├── convertOG1.py             # [core] Functions to convert data into OG1 format
 │   ├── plotters.py               # [core] Functions to plot data
 │   ├── readers.py                # [core] Functions to read raw data into xarray datasets
 │   ├── writers.py                # [core] Functions to write data (e.g., to NetCDF)
 │   ├── tools.py                  # [core] Utilities for unit conversion, calculations, etc.
 │   ├── vocabularies.py           # [core] Vocabularies for OG1 format &amp; standardisation
-│   ├── logger.py                 # [core] Structured logging configuration for reproducible runs
-│   ├── template_project.mplstyle # [core] Default plotting parameters
+│   ├── old-tools.py              # [core] Legacy functions (deprecated)
 │   └── utilities.py              # [core] Helper functions (e.g., file download or parsing)
 │
 ├── tests/                        # [test] Unit tests using pytest
+│   ├── test_convertOG1.py        # [test] Test functions in convertOG1.py
+│   ├── test_plotters.py          # [test] Test functions in plotters.py
 │   ├── test_readers.py           # [test] Test functions in readers.py
 │   ├── test_tools.py             # [test] Test functions in tools.py
 │   ├── test_utilities.py         # [test] Test functions in utilities.py
-│   └── ...
+│   └── test_vocabularies.py      # [test] Test functions in vocabularies.py
 │
 ├── docs/                         # [docs]
 │   ├── source/                   # [docs] Sphinx documentation source files
@@ -129,18 +140,17 @@
 │   ├── demo.ipynb                # [demo] Also run in docs.yml to appear in docs
 │   └── run_dataset.ipynb         # [demo] To run a full dataset through conversion
 │
-├── data/                         # [data]
-│   └── demo_single_test.nc       # [data] Example data file 
-│
-├── logs/                         # [core] Log output from structured logging
-│   └── *.log                     # [core] Log file describing a conversion
+├── data/                         # [data] Sample data files for testing and examples
+│   ├── demo_single_test.nc       # [data] Example data file for basic testing
+│   ├── sg*.nc                    # [data] Seaglider basestation files for testing
+│   └── *.log                     # [data] Log files corresponding to data files 
 │
 ├── .github/                      # [ci] GitHub-specific workflows (e.g., Actions)
 │   ├── workflows/
 │   │   ├── docs.yml              # [ci] Test build documents on *pull-request*
 │   │   ├── docs_deploy.yml       # [ci] Build and deploy documents on &quot;merge&quot;
 │   │   ├── pypi.yml              # [ci] Package and release on GitHub.com &quot;release&quot;
-│   │   └── test.yml              # [ci] Run pytest on tests/test_&lt;name&gt;.py on *pull-request*
+│   │   └── tests.yml             # [ci] Run pytest on tests/test_&lt;name&gt;.py on *pull-request*
 │   ├── ISSUE_TEMPLATE.md         # [ci, meta] Template for issues on Github
 │   └── PULL_REQUEST_TEMPLATE.md  # [ci, meta] Template for pull requests on Github
 │
@@ -174,7 +184,7 @@
 <h2>💡 Notes<a class="headerlink" href="#notes" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p><strong>Modularity</strong>: Code is split by function (reading, writing, tools).</p></li>
-<li><p><strong>Logging</strong>: All major functions support structured logging to <code class="docutils literal notranslate"><span class="pre">logs/</span></code>.</p></li>
+<li><p><strong>Configuration</strong>: OG1 format specifications are defined in YAML files in <code class="docutils literal notranslate"><span class="pre">seagliderOG1/config/</span></code>.</p></li>
 <li><p><strong>Tests</strong>: Pytest-compatible tests are in <code class="docutils literal notranslate"><span class="pre">tests/</span></code>, with one file per module.</p></li>
 <li><p><strong>Docs</strong>: Sphinx documentation is in <code class="docutils literal notranslate"><span class="pre">docs/</span></code>.</p></li>
 </ul>
@@ -185,7 +195,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="setup.html" class="btn btn-neutral float-left" title="Getting Started: Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="setup.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="demo-output.html" class="btn btn-neutral float-right" title="seagliderOG1 demo" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Getting Started: Installation &mdash; seagliderOG1 v0.0.1 documentation</title>
+  <title>Installation &mdash; seagliderOG1 v0.0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -19,10 +19,11 @@
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="What’s in seagliderOG1 project?" href="project_structure.html" />
-    <link rel="prev" title="Welcome to seagliderOG1’s documentation!" href="index.html" /> 
+    <link rel="prev" title="About seagliderOG1" href="about.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -47,14 +48,22 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started: Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#option-1-install-via-pip-recommended-for-most-users">Option 1: Install via <code class="docutils literal notranslate"><span class="pre">pip</span></code> (recommended for most users)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#option-2-clone-for-custom-use">Option 2: Clone for custom use</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#a-clone-the-repository-to-your-computer">a. Clone the repository to your computer</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#b-set-up-a-python-environment-and-install">b. Set up a Python environment and install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About seagliderOG1</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-installation-pypi">Basic Installation (PyPI)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#local-development-installation">Local Development Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-conda-micromamba">Using conda/micromamba</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-pip-and-virtual-environments">Using pip and virtual environments</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#option-3-contribute-to-the-project">Option 3: Contribute to the project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contributing-installation">Contributing Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#setup">Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#development-workflow">Development Workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#coding-standards">Coding Standards</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#contributing-guidelines">Contributing Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#verification">Verification</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
@@ -83,7 +92,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Getting Started: Installation</li>
+      <li class="breadcrumb-item active">Installation</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/setup.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -93,75 +102,140 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="getting-started-installation">
-<h1>Getting Started: Installation<a class="headerlink" href="#getting-started-installation" title="Link to this heading"></a></h1>
-<p>This guide walks you through installing and using the <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> Python package.  It includes:</p>
-<ol class="arabic simple">
-<li><p>Basic installation via <code class="docutils literal notranslate"><span class="pre">pip</span></code> (for most users)</p></li>
-<li><p>Cloning the repo for custom use or development</p></li>
-<li><p>Setup for contributors</p></li>
-</ol>
-<hr class="docutils" />
-<section id="option-1-install-via-pip-recommended-for-most-users">
-<h2>Option 1: Install via <code class="docutils literal notranslate"><span class="pre">pip</span></code> (recommended for most users)<a class="headerlink" href="#option-1-install-via-pip-recommended-for-most-users" title="Link to this heading"></a></h2>
-<p>If you just want to use the package without modifying the code:</p>
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<p>This guide provides installation instructions for the <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> Python package for different use cases.</p>
+<section id="basic-installation-pypi">
+<h2>Basic Installation (PyPI)<a class="headerlink" href="#basic-installation-pypi" title="Link to this heading"></a></h2>
+<p>For most users who want to use the package:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>seagliderOG1
 </pre></div>
 </div>
-<p>Then in your Python scripts or notebooks:</p>
+<p>Then import in your Python code:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">seagliderOG1</span>
 </pre></div>
 </div>
-<p>💡 You can install into a virtual environment (e.g. using venv, conda, or micromamba) to keep things clean.</p>
 </section>
-<hr class="docutils" />
-<section id="option-2-clone-for-custom-use">
-<h2>Option 2: Clone for custom use<a class="headerlink" href="#option-2-clone-for-custom-use" title="Link to this heading"></a></h2>
-<p>If you want a local editable copy of the code, for example to adapt it to your own purposes:</p>
-<section id="a-clone-the-repository-to-your-computer">
-<h3>a. Clone the repository to your computer<a class="headerlink" href="#a-clone-the-repository-to-your-computer" title="Link to this heading"></a></h3>
-<p>From a <strong>terminal</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ocean-uhh/seagliderOG1
+<section id="local-development-installation">
+<h2>Local Development Installation<a class="headerlink" href="#local-development-installation" title="Link to this heading"></a></h2>
+<section id="using-conda-micromamba">
+<h3>Using conda/micromamba<a class="headerlink" href="#using-conda-micromamba" title="Link to this heading"></a></h3>
+<p>If you prefer conda environments:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clone the repository</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ocean-uhh/seagliderOG1.git
+<span class="nb">cd</span><span class="w"> </span>seagliderOG1
+
+<span class="c1"># Create and activate environment</span>
+conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
+conda<span class="w"> </span>activate<span class="w"> </span>TEST
+
+<span class="c1"># Install package in editable mode</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+<p>Using micromamba (faster alternative):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>micromamba<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
+micromamba<span class="w"> </span>activate<span class="w"> </span>TEST
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+</section>
+<section id="using-pip-and-virtual-environments">
+<h3>Using pip and virtual environments<a class="headerlink" href="#using-pip-and-virtual-environments" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clone the repository</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ocean-uhh/seagliderOG1.git
+<span class="nb">cd</span><span class="w"> </span>seagliderOG1
+
+<span class="c1"># Create and activate virtual environment</span>
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: venv\Scripts\activate</span>
+
+<span class="c1"># Install dependencies and package</span>
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+</section>
+</section>
+<section id="contributing-installation">
+<h2>Contributing Installation<a class="headerlink" href="#contributing-installation" title="Link to this heading"></a></h2>
+<p>For contributors and developers:</p>
+<section id="setup">
+<h3>Setup<a class="headerlink" href="#setup" title="Link to this heading"></a></h3>
+<ol class="arabic">
+<li><p><strong>Fork</strong> the repository on GitHub</p></li>
+<li><p><strong>Clone</strong> your fork locally:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/YOUR-USERNAME/seagliderOG1.git
 <span class="nb">cd</span><span class="w"> </span>seagliderOG1
 </pre></div>
 </div>
-<p>Or using <strong>Github Desktop</strong>:</p>
-<ol class="arabic simple">
-<li><p>Visit https://github.com/ocean-uhh/seagliderOG1</p></li>
-<li><p>Click the green &lt;&gt; Code button</p></li>
-<li><p>Choose <strong>Open with GitHub Desktop</strong></p></li>
-</ol>
-<p>💡 Rename the folder if desired.</p>
-</section>
-<section id="b-set-up-a-python-environment-and-install">
-<h3>b. Set up a Python environment and install<a class="headerlink" href="#b-set-up-a-python-environment-and-install" title="Link to this heading"></a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
-<span class="nb">source</span><span class="w"> </span>venv/bin/activate<span class="w"> </span><span class="c1"># On Windows use `venv\Scripts\activate`</span>
-pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w"> </span><span class="c1"># Editable install</span>
+</li>
+<li><p><strong>Set up environment</strong> (choose one):</p>
+<p><strong>Option A: Using conda/micromamba</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
+conda<span class="w"> </span>activate<span class="w"> </span>TEST
 </pre></div>
 </div>
-</section>
-</section>
-<hr class="docutils" />
-<section id="option-3-contribute-to-the-project">
-<h2>Option 3: Contribute to the project<a class="headerlink" href="#option-3-contribute-to-the-project" title="Link to this heading"></a></h2>
-<p>To contribute to development:</p>
-<ol class="arabic simple">
-<li><p>Fork the repository on GitHub</p></li>
-<li><p>Clone your fork locally</p></li>
-<li><p>Set up a virtual environment and install dev tools:</p></li>
-</ol>
+<p><strong>Option B: Using pip</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: venv\Scripts\activate</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Install development dependencies</strong>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </pre></div>
 </div>
-<ol class="arabic simple" start="4">
-<li><p>Run tests:</p></li>
+</li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
+</section>
+<section id="development-workflow">
+<h3>Development Workflow<a class="headerlink" href="#development-workflow" title="Link to this heading"></a></h3>
+<p><strong>Run tests:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w">                    </span><span class="c1"># Run all tests</span>
+pytest<span class="w"> </span>-v<span class="w">                 </span><span class="c1"># Verbose output</span>
+pytest<span class="w"> </span>tests/test_*.py<span class="w">    </span><span class="c1"># Run specific test file</span>
 </pre></div>
 </div>
-<p>For full guidance on contributing to a project like <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code>, see https://eleanorfrajka.github.io/template-project/gitcollab.html.</p>
+<p><strong>Code quality checks:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>black<span class="w"> </span>.<span class="w">                   </span><span class="c1"># Format code</span>
+ruff<span class="w"> </span>check<span class="w"> </span>--fix<span class="w">          </span><span class="c1"># Lint and auto-fix</span>
+pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files<span class="w"> </span><span class="c1"># Run all pre-commit hooks</span>
+</pre></div>
+</div>
+<p><strong>Before committing:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w">                    </span><span class="c1"># Ensure tests pass</span>
+ruff<span class="w"> </span>check<span class="w">                </span><span class="c1"># Check for linting issues</span>
+</pre></div>
+</div>
+</section>
+<section id="coding-standards">
+<h3>Coding Standards<a class="headerlink" href="#coding-standards" title="Link to this heading"></a></h3>
+<p>Please follow the project’s coding conventions documented in <a class="reference internal" href="conventions.html"><span class="std std-doc">conventions.md</span></a>, which covers:</p>
+<ul class="simple">
+<li><p>Code formatting (Black)</p></li>
+<li><p>Linting (Ruff)</p></li>
+<li><p>Docstring style (numpy format)</p></li>
+<li><p>Import organization (PEP 8)</p></li>
+<li><p>Testing practices</p></li>
+</ul>
+</section>
+<section id="contributing-guidelines">
+<h3>Contributing Guidelines<a class="headerlink" href="#contributing-guidelines" title="Link to this heading"></a></h3>
+<p>For detailed contribution guidelines, see our <a class="reference external" href="https://eleanorfrajka.github.io/template-project/gitcollab.html">contributing documentation</a>.</p>
+</section>
+</section>
+<section id="verification">
+<h2>Verification<a class="headerlink" href="#verification" title="Link to this heading"></a></h2>
+<p>Verify your installation works:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">readers</span><span class="p">,</span> <span class="n">convertOG1</span><span class="p">,</span> <span class="n">writers</span>
+
+<span class="c1"># Load sample data</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_sample_dataset</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✅ Installation successful!&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -169,7 +243,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to seagliderOG1’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="about.html" class="btn btn-neutral float-left" title="About seagliderOG1" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="project_structure.html" class="btn btn-neutral float-right" title="What’s in seagliderOG1 project?" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
