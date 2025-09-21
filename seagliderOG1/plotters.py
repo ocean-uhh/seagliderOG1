@@ -216,7 +216,6 @@ def show_variables_by_dimension(data: str | xr.Dataset, dimension_name: str = "t
     ------
     TypeError
         If input data is not a file path or xarray Dataset.
-
     """
     if isinstance(data, str):
         print("information is based on file: {}".format(data))
