@@ -56,7 +56,7 @@ def load_sample_dataset(dataset_name: str = "p0330015_20100906.nc") -> xr.Datase
     Parameters
     ----------
     dataset_name : str, optional
-        Name of the sample dataset to load. Must be one of the available 
+        Name of the sample dataset to load. Must be one of the available
         datasets in the registry. Default is "p0330015_20100906.nc".
 
     Returns
@@ -80,18 +80,18 @@ def load_sample_dataset(dataset_name: str = "p0330015_20100906.nc") -> xr.Datase
 
 def _validate_filename(filename: str) -> bool:
     """Validate if filename matches expected Seaglider basestation patterns.
-    
+
     Validates against two expected patterns:
     1. p1234567.nc (7 digits after 'p')
     2. p0420100_20100903.nc (7 digits, underscore, 8 digits)
-    
+
     Also validates that both glider serial number and profile number are positive.
-    
+
     Parameters
     ----------
     filename : str
         The filename to validate.
-        
+
     Returns
     -------
     bool
@@ -115,15 +115,15 @@ def _validate_filename(filename: str) -> bool:
 
 def _profnum_from_filename(filename: str) -> int:
     """Extract the profile/dive number from a Seaglider filename.
-    
+
     Extracts characters 4-7 (0-indexed) which represent the dive cycle number
     in filenames like p0420001.nc or p0420001_20100903.nc.
-    
+
     Parameters
     ----------
     filename : str
         Seaglider filename to parse.
-        
+
     Returns
     -------
     int
@@ -135,15 +135,15 @@ def _profnum_from_filename(filename: str) -> int:
 
 def _glider_sn_from_filename(filename: str) -> int:
     """Extract the glider serial number from a Seaglider filename.
-    
+
     Extracts characters 1-3 (0-indexed) which represent the 3-digit glider
     serial number in filenames like p0420001.nc.
-    
+
     Parameters
     ----------
     filename : str
         Seaglider filename to parse.
-        
+
     Returns
     -------
     int
@@ -155,15 +155,15 @@ def _glider_sn_from_filename(filename: str) -> int:
 
 def filter_files_by_profile(file_list: list[str], start_profile: int | None = None, end_profile: int | None = None) -> list[str]:
     """Filter files by profile/dive number range.
-    
+
     Filters Seaglider basestation files based on profile number range.
-    Expects filenames of the form pXXXYYYY.nc, where XXX is the 3-digit 
+    Expects filenames of the form pXXXYYYY.nc, where XXX is the 3-digit
     glider serial number and YYYY is the 4-digit dive cycle number.
-    
+
     Example: p0420001.nc represents glider 042, dive 0001.
-    
+
     Note: Input file_list does not need to be sorted.
-    
+
     Parameters
     ----------
     file_list : list of str
@@ -172,7 +172,7 @@ def filter_files_by_profile(file_list: list[str], start_profile: int | None = No
         Minimum profile number (inclusive).
     end_profile : int, optional
         Maximum profile number (inclusive).
-        
+
     Returns
     -------
     list of str
@@ -181,10 +181,7 @@ def filter_files_by_profile(file_list: list[str], start_profile: int | None = No
     """
     filtered_files = []
 
-    for file in file_list:
-        if not _validate_filename(file):
-            file_list.remove(file)
-            # _log.warning(f"Skipping file {file} as it does not have the expected format.")
+    file_list = [f for f in file_list if _validate_filename(f)]
 
     #    divenum_values = [int(file[4:8]) for file in file_list]
 
@@ -209,15 +206,15 @@ def filter_files_by_profile(file_list: list[str], start_profile: int | None = No
 
 def load_first_basestation_file(source: str) -> xr.Dataset:
     """Load the first (alphabetically) basestation file from a source.
-    
+
     Useful for quick examination of data structure and metadata from
     a Seaglider mission without loading all files.
-    
+
     Parameters
     ----------
     source : str
         URL or local directory path containing NetCDF files.
-        
+
     Returns
     -------
     xarray.Dataset
@@ -233,10 +230,10 @@ def load_first_basestation_file(source: str) -> xr.Dataset:
 
 def load_basestation_files(source: str, start_profile: int | None = None, end_profile: int | None = None) -> list[xr.Dataset]:
     """Load multiple Seaglider basestation files with optional profile filtering.
-    
+
     Main function for loading Seaglider data from either online repositories
     or local directories. Supports filtering by dive/profile number range.
-    
+
     Parameters
     ----------
     source : str
@@ -245,7 +242,7 @@ def load_basestation_files(source: str, start_profile: int | None = None, end_pr
         Minimum profile number to load.
     end_profile : int, optional
         Maximum profile number to load.
-        
+
     Returns
     -------
     list of xarray.Dataset
@@ -273,10 +270,10 @@ def list_files(
     source: str, registry_loc: str = "seagliderOG1", registry_name: str = "seaglider_registry.txt"
 ) -> list[str]:
     """List NetCDF files from a source (URL or local directory).
-    
+
     For online sources, scrapes directory listings using BeautifulSoup.
     For local sources, lists files in the directory.
-    
+
     Parameters
     ----------
     source : str
@@ -285,12 +282,12 @@ def list_files(
         Legacy parameter, not currently used.
     registry_name : str, optional
         Legacy parameter, not currently used.
-        
+
     Returns
     -------
     list of str
         Sorted list of NetCDF filenames (.nc files only).
-        
+
     Raises
     ------
     ValueError

@@ -307,11 +307,18 @@ def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Datase
         The dataset with the dive number added.
 
     """
-    if dive_number == None:
+    if dive_number is None:
         dive_number = ds.attrs.get("dive_number", np.nan)
-    return ds.assign(
-        divenum=("N_MEASUREMENTS", [dive_number] * ds.dims["N_MEASUREMENTS"])
+
+    dive_var = xr.DataArray(
+        np.full(ds.sizes["N_MEASUREMENTS"], dive_number),
+        dims=["N_MEASUREMENTS"],
+        attrs={
+            "long_name": "dive number",
+            "units": "1",
+        },
     )
+    return ds.assign(DIVE_NUMBER=dive_var)
 
 
 def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
@@ -355,9 +362,9 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     ds = add_dive_number(ds, ds1.attrs["dive_number"])
 
     # Iterate over each unique dive_num
-    for dive in np.unique(ds["divenum"]):
+    for dive in np.unique(ds["DIVE_NUMBER"]):
         # Get the indices for the current dive
-        dive_indices = np.where(ds["divenum"] == dive)[0]
+        dive_indices = np.where(ds["DIVE_NUMBER"] == dive)[0]
         if len(dive_indices) == 0:
             continue  # Skip if no indices found
 
@@ -437,6 +444,8 @@ def assign_phase(ds: xr.Dataset) -> xr.Dataset:
         divenum_str = "divenum"
     elif "dive_num" in ds.variables:
         divenum_str = "dive_num"
+    elif "DIVE_NUMBER" in ds.variables:
+        divenum_str = "DIVE_NUMBER"
     else:
         raise ValueError("No valid dive number variable found in the dataset.")
     # Initialize the new variable with the same dimensions as dive_num

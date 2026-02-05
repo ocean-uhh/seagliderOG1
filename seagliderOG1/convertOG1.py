@@ -23,10 +23,10 @@ def convert_to_OG1(
     contrib_to_append: dict[str, str] | None = None,
 ) -> tuple[xr.Dataset, list[str]]:
     """Convert Seaglider basestation datasets to OG1 format.
-    
+
     Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
-    concatenates the datasets, sorts by time, and applies attributes. Main conversion function that 
-    processes basestation datasets, applies OG1 standardization, concatenates multiple datasets, 
+    concatenates the datasets, sorts by time, and applies attributes. Main conversion function that
+    processes basestation datasets, applies OG1 standardization, concatenates multiple datasets,
     and adds global attributes.
 
     Parameters
@@ -253,7 +253,7 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
     # Must be after split_ds
     ds_new = standardise_OG10(ds_sgdatapoint, firstrun)
 
-    # Add new variables to the dataset (GPS, divenum, PROFILE_NUMBER, PHASE)
+    # Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)
     # -----------------------------------------------------------------------
     # Add the gps_info to the dataset
     # Must be after split_by_unique_dims and after rename_dimensions
@@ -270,9 +270,11 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
     ds_sensor = tools.gather_sensor_info(ds_other, ds_sgcal, firstrun)
     ds_new = tools.add_sensor_to_dataset(ds_new, ds_sensor, ds_sgcal, firstrun)
 
-    # Remove variables matching vocabularies.vars_to_remove and also 'TIME_GPS'
     # TIME_GPS throws errors on saving as netCDF, possibly because of the format of the NaNs?
-    vars_to_remove = vocabularies.vars_to_remove + ["TIME_GPS"]
+    # To avoid problems, reset the dtype of TIME_GPS
+    ds_new['TIME_GPS'] = ds_new['TIME_GPS'].astype('datetime64[ns]')
+
+    vars_to_remove = vocabularies.vars_to_remove #+ ["TIME_GPS"]
     ds_new = ds_new.drop_vars(
         [var for var in vars_to_remove if var in ds_new.variables]
     )
@@ -286,7 +288,7 @@ def standardise_OG10(
     unit_format: dict[str, str] = vocabularies.unit_str_format,
 ) -> xr.Dataset:
     """Standardize the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.
-    
+
     Applies OG1 vocabulary for variable names, units, and attributes.
     Performs unit conversions and QC flag standardization.
 
@@ -297,7 +299,7 @@ def standardise_OG10(
     firstrun : bool, optional
         Indicates whether this is the first run of the standardization process. Default is False.
     unit_format : dict of str, optional
-        A dictionary mapping unit strings to their standardized format. 
+        A dictionary mapping unit strings to their standardized format.
         Default is vocabularies.unit_str_format.
 
     Returns
@@ -492,7 +494,7 @@ def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
 ##-----------------------------------------------------------------------------------------
 def update_dataset_attributes(ds: xr.Dataset, contrib_to_append: dict[str, str] | None) -> dict[str, str]:
     """Update the attributes of the dataset based on the provided attribute input.
-    
+
     Processes contributor information, time attributes, and applies OG1
     global attribute vocabulary in the correct order.
 
@@ -557,7 +559,7 @@ def update_dataset_attributes(ds: xr.Dataset, contrib_to_append: dict[str, str] 
 
 def get_contributors(ds: xr.Dataset, values_to_append: dict[str, str] | None = None) -> dict[str, str]:
     """Extract and format contributor information for OG1 attributes.
-    
+
     Processes creator and contributor information from dataset attributes,
     formats them as comma-separated strings, and handles institution mapping.
 
@@ -583,9 +585,9 @@ def get_contributors(ds: xr.Dataset, values_to_append: dict[str, str] | None = N
 
     def list_to_comma_separated_string(lst):
         """Convert a list of strings to a single string with values separated by commas.
-        
+
         Replace any commas present in list elements with hyphens.
-        
+
         Parameters
         ----------
         lst : list
@@ -752,7 +754,7 @@ def get_contributors(ds: xr.Dataset, values_to_append: dict[str, str] | None = N
 
 def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
     """Extract and clean time-related attributes from the dataset.
-    
+
     Converts various time formats to OG1-standard YYYYMMDDTHHMMSS format
     and adds date_modified timestamp.
 
@@ -795,7 +797,7 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
 
 def extract_attr_to_keep(ds1: xr.Dataset, attr_as_is: list[str] = vocabularies.global_attrs["attr_as_is"]) -> dict[str, str]:
     """Extract attributes to retain unchanged.
-    
+
     Parameters
     ----------
     ds1 : xarray.Dataset
@@ -823,7 +825,7 @@ def extract_attr_to_rename(
     ds1: xr.Dataset, attr_to_rename: dict[str, str] = vocabularies.global_attrs["attr_to_rename"]
 ) -> dict[str, str]:
     """Extract and rename attributes according to OG1 vocabulary.
-    
+
     Parameters
     ----------
     ds1 : xarray.Dataset
