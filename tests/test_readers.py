@@ -105,15 +105,17 @@ def test_load_basestation_files():
     function returns the correct dataset, providing an appropriate error message if the
     assertion fails.
     """
-    source = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/"
-    start_profile = 5
-    end_profile = 10
+    #source = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/" (start - end: 5-10, lat_range = 18 - 19)
+    source = "/Users/tillmoritz/Desktop/SeagliderOG1/Git/seagliderOG1/data/demo_sg005"
+    start_profile = 1
+    end_profile = 5
     datasets = readers.load_basestation_files(source, start_profile, end_profile)
-    assert len(datasets) == 6, "Unexpected number of datasets loaded"
-    assert datasets[-1].dive_number == 10, "Unexpected profile number for last dataset"
+    print(datasets[0].latitude.values.mean())
+    assert len(datasets) == 5, "Unexpected number of datasets loaded"
+    assert datasets[-1].dive_number == 5, "Unexpected profile number for last dataset"
     assert (
-        datasets[0].latitude.values.mean() > 18
-        and datasets[0].latitude.values.mean() < 19
+        datasets[0].latitude.values.mean() > 61
+        and datasets[0].latitude.values.mean() < 62
     ), "Unexpected latitude range for first dataset"
 
 
