@@ -105,8 +105,8 @@ def test_load_basestation_files():
     function returns the correct dataset, providing an appropriate error message if the
     assertion fails.
     """
-    #source = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/" (start - end: 5-10, lat_range = 18 - 19)
-    source = "/Users/tillmoritz/Desktop/SeagliderOG1/Git/seagliderOG1/data/demo_sg005"
+    #source = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/" #(start - end: 5-10, lat_range = 18 - 19)
+    source = str(parent_dir) + '/data/demo_sg005' #(start - end: 1-5, lat_range = 61 - 62)
     start_profile = 1
     end_profile = 5
     datasets = readers.load_basestation_files(source, start_profile, end_profile)
@@ -127,12 +127,13 @@ def test_load_first_basestation_file():
     function returns the correct dataset, providing an appropriate error message
     if the assertion fails.
     """
-    source = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/"
+    #source = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/" #(lat_range = 18.5 - 18.6, length of longitude = 130)
+    source = str(parent_dir) + '/data/demo_sg005' #(lat_range = 61 - 62, length of longitude = 53)
     dataset = readers.load_first_basestation_file(source)
     assert dataset.dive_number == 1, "Unexpected profile number for first dataset"
     assert (
-        dataset.latitude.values.mean() > 18.5 and dataset.latitude.values.mean() < 18.6
+        dataset.latitude.values.mean() > 61 and dataset.latitude.values.mean() < 62
     ), "Unexpected latitude range for first dataset"
     assert (
-        len(dataset.longitude) == 130
-    ), "Unexpected number of longitude values for first dataset"
+        len(dataset.longitude) == 53
+    ), "Unexpected number of longitude values for first dataset"# + str(len(dataset.longitude))

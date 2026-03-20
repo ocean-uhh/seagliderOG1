@@ -69,6 +69,11 @@ def convert_to_OG1(
     ds_og1 = xr.concat(processed_datasets, dim="N_MEASUREMENTS")
     ds_og1 = ds_og1.sortby("TIME")
 
+    ### Add deployment latitude, longitude, time as variables (not attributes)
+    ds_og1["DEPLOYMENT_LATITUDE"] = xr.DataArray(ds_og1.LATITUDE.values[~np.isnan(ds_og1.LATITUDE)][0])
+    ds_og1["DEPLOYMENT_LONGITUDE"] = xr.DataArray(ds_og1.LONGITUDE.values[~np.isnan(ds_og1.LONGITUDE)][0])
+    ds_og1["DEPLOYMENT_TIME"] = xr.DataArray(ds_og1.TIME.values[~np.isnan(ds_og1.TIME)][0])
+
     # Apply attributes
     ordered_attributes = update_dataset_attributes(
         list_of_datasets[0], contrib_to_append

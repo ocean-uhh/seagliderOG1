@@ -16,16 +16,16 @@ ICES_CODE:
 PLATFORM_MAKER:
   long_name: glider manufacturer
   platform_maker_vocabulary: https://vocab.nerc.ac.uk/collection/B75/current/ORG01077/
-DEPLOYMENT_TIME: #### What dimension to use here? N_MEASUREMENTS or nothing?
+DEPLOYMENT_TIME:
   long_name: date of deployment
   standard_name: time
   calendar: gregorian
   units: seconds since 1970-01-01T00:00:00Z
-DEPLOYMENT_LATITUDE: #### What dimension to use here? N_MEASUREMENTS or nothing?
+DEPLOYMENT_LATITUDE:
   long_name: latitude of deployment
   standard_name: latitude
   units: degrees_north
-DEPLOYMENT_LONGITUDE: #### What dimension to use here? N_MEASUREMENTS or nothing?
+DEPLOYMENT_LONGITUDE:
   long_name: longitude of deployment
   standard_name: longitude
   units: degrees_east
@@ -400,7 +400,7 @@ BBP470:
 ##    Observatories Initiative document DATA PRODUCT SPECIFICATION FOR OPTICAL BACKSCATTER
 #    Downloaded from https://oceanobservatories.org/wp-content/uploads/2015/10/1341-00540_Data_Product_SPEC_FLUBSCT_OOI.pdf
 BBP_VFTEMP: ### eng_wlbb2f_VFtemp
-  long_name: What is this variable?
+  long_name: Raw temperature from backscatter sensor
   units: Celsius
   observation_type: observed
 TEMP_FREQ: ### eng_tempFreq
