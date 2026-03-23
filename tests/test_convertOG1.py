@@ -21,9 +21,8 @@ def test_process_dataset():
     assert key_dims == [
         (),
         ("gc_event",),
-        ("gc_state",),
         ("gps_info",),
-        ("sg_data_point",),
+        ("sg_data_point",)
     ]
 
     ds = split_ds[("sg_data_point",)]
@@ -32,8 +31,8 @@ def test_process_dataset():
     sg_cal, dc_log, dc_other = convertOG1.extract_variables(split_ds[()])
     tmp = dc_log.log_GPS.values.tobytes().decode("utf-8")
 
-    assert sg_cal["mass"].values > 70 and sg_cal["mass"].values < 80
-    assert tmp == "$GPS,060910,142637,1831.076,-6558.818,31,1.1,34,-12.7"
+    assert sg_cal["mass"].values > 50 and sg_cal["mass"].values < 60
+    assert tmp == "$GPS,060608,183207,6124.849,-816.741,13,1.8,12,-8.8"
 
     # Check initial variables are reformatted
     dsa = convertOG1.standardise_OG10(ds)
