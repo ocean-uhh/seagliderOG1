@@ -7,15 +7,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>seagliderOG1.readers &mdash; seagliderOG1 v0.0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../../_static/documentation_options.js?v=2fea6348"></script>
-      <script src="../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="author" title="About these documents" href="../../about.html" />
@@ -85,13 +85,19 @@
              
   <h1>Source code for seagliderOG1.readers</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pooch</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="n">script_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
+<span class="n">parent_dir</span> <span class="o">=</span> <span class="n">script_dir</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">parent_dir</span><span class="p">))</span>
 
 <span class="sd">&quot;&quot;&quot;Readers module for Seaglider basestation files.</span>
 
@@ -102,49 +108,47 @@
 
 <span class="c1"># readers.py: Will only read files.  Not manipulate them.</span>
 
-<span class="c1"># Use pooch for sample files only.</span>
-<span class="c1"># For the full dataset, just use BeautifulSoup / requests</span>
-<span class="n">server</span> <span class="o">=</span> <span class="s2">&quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/&quot;</span>
-<span class="n">data_source_og</span> <span class="o">=</span> <span class="n">pooch</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-    <span class="n">path</span><span class="o">=</span><span class="n">pooch</span><span class="o">.</span><span class="n">os_cache</span><span class="p">(</span><span class="s2">&quot;seagliderOG1&quot;</span><span class="p">),</span>
-    <span class="n">base_url</span><span class="o">=</span><span class="n">server</span><span class="p">,</span>
-    <span class="n">registry</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;p0330001_20100903.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;1ee726a4890b5567653fd53501da8887d947946ad63a17df4e5efd2e578fb464&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330002_20100903.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;1c0d6f46904063dbb1e74196bc30bdaf6163e7fbd4cc31c6087eb295688a2cc1&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330003_20100903.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;779bdfb4237b17b1de8ccb5d67ef37ea28b595d918b3a034606e8612615058c3&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330004_20100904.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;f981d482e04bbe5085e2f93d686eedf3a30ca125bd94696648d04b2e37fa2489&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330005_20100904.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;46e921c06b407a458dd4f788b9887ea4b6a51376021190c89e0402b25b0c8f3f&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330006_20100904.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;3ed79ee0757b573f32c7d72ff818b82d9810ebbd640d8a9b0f6829ab1da3b972&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330007_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;29d83c65ef4649bbc9193bb25eab7a137f92da04912eae21d9fc9860e827281d&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330008_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;66fa25efb8717275e84f326f3c7bd02251db7763758683c60afc4fb2e3cbb170&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330009_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;ee5ce7881c74de9d765ae46c6baed4745b0620dd57f7cd7f8b9f1c7f46570836&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330010_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;fad0d9bb08fc874ffacf8ed1ae25522d48ff9ff8c8f1db82bcaf4e613d6c46e3&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330011_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;3b3ae89c653651e10b7a8058536d276aae9958e7d4236a4164e05707ef5a8660&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330012_20100905.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;b6318d496ccddd14ede295613a2b4854f0d228c8db996737b5187e73ed226d2a&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330013_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;efeb37be650368470a6fd7a9cf0cc0b6938ee9eb96b10bde166ef86cda9b6082&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330014_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;6ab8bea8bc28a1d270de2da3e4cafe9aff4a01a887ebbf7d39bde5980cf585f5&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330015_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;d22c2bf453601d33e51dc7f3aeecb823fefb532d44b07d45240f5400bc12b464&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330016_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;404a22da318909c42dcb65fd7315ae1f5542ed8b057faa30c7b21e07f50d67a9&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330017_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;06df146adee75439cc4f42e27038bec5596705fbe0a93ea53d2d65d94d719504&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330018_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;3dc2363797adce65c286c5099f0144bb0583b368c84dc24185caba0cad9478a7&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;p0330019_20100906.nc&quot;</span><span class="p">:</span> <span class="s2">&quot;7e37ad465f720ea1f1257830a595677f6d5f85d7391e711d6164ccee8ada5399&quot;</span><span class="p">,</span>
-    <span class="p">},</span>
-<span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;# Use pooch for sample files only.</span>
+<span class="sd"># For the full dataset, just use BeautifulSoup / requests</span>
+<span class="sd">server = &quot;https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/&quot;</span>
+<span class="sd">data_source_og = pooch.create(</span>
+<span class="sd">    path=pooch.os_cache(&quot;seagliderOG1&quot;),</span>
+<span class="sd">    base_url=server,</span>
+<span class="sd">    registry={</span>
+<span class="sd">        &quot;p0330001_20100903.nc&quot;: &quot;1ee726a4890b5567653fd53501da8887d947946ad63a17df4e5efd2e578fb464&quot;,</span>
+<span class="sd">        &quot;p0330002_20100903.nc&quot;: &quot;1c0d6f46904063dbb1e74196bc30bdaf6163e7fbd4cc31c6087eb295688a2cc1&quot;,</span>
+<span class="sd">        &quot;p0330003_20100903.nc&quot;: &quot;779bdfb4237b17b1de8ccb5d67ef37ea28b595d918b3a034606e8612615058c3&quot;,</span>
+<span class="sd">        &quot;p0330004_20100904.nc&quot;: &quot;f981d482e04bbe5085e2f93d686eedf3a30ca125bd94696648d04b2e37fa2489&quot;,</span>
+<span class="sd">        &quot;p0330005_20100904.nc&quot;: &quot;46e921c06b407a458dd4f788b9887ea4b6a51376021190c89e0402b25b0c8f3f&quot;,</span>
+<span class="sd">        &quot;p0330006_20100904.nc&quot;: &quot;3ed79ee0757b573f32c7d72ff818b82d9810ebbd640d8a9b0f6829ab1da3b972&quot;,</span>
+<span class="sd">        &quot;p0330007_20100905.nc&quot;: &quot;29d83c65ef4649bbc9193bb25eab7a137f92da04912eae21d9fc9860e827281d&quot;,</span>
+<span class="sd">        &quot;p0330008_20100905.nc&quot;: &quot;66fa25efb8717275e84f326f3c7bd02251db7763758683c60afc4fb2e3cbb170&quot;,</span>
+<span class="sd">        &quot;p0330009_20100905.nc&quot;: &quot;ee5ce7881c74de9d765ae46c6baed4745b0620dd57f7cd7f8b9f1c7f46570836&quot;,</span>
+<span class="sd">        &quot;p0330010_20100905.nc&quot;: &quot;fad0d9bb08fc874ffacf8ed1ae25522d48ff9ff8c8f1db82bcaf4e613d6c46e3&quot;,</span>
+<span class="sd">        &quot;p0330011_20100905.nc&quot;: &quot;3b3ae89c653651e10b7a8058536d276aae9958e7d4236a4164e05707ef5a8660&quot;,</span>
+<span class="sd">        &quot;p0330012_20100905.nc&quot;: &quot;b6318d496ccddd14ede295613a2b4854f0d228c8db996737b5187e73ed226d2a&quot;,</span>
+<span class="sd">        &quot;p0330013_20100906.nc&quot;: &quot;efeb37be650368470a6fd7a9cf0cc0b6938ee9eb96b10bde166ef86cda9b6082&quot;,</span>
+<span class="sd">        &quot;p0330014_20100906.nc&quot;: &quot;6ab8bea8bc28a1d270de2da3e4cafe9aff4a01a887ebbf7d39bde5980cf585f5&quot;,</span>
+<span class="sd">        &quot;p0330015_20100906.nc&quot;: &quot;d22c2bf453601d33e51dc7f3aeecb823fefb532d44b07d45240f5400bc12b464&quot;,</span>
+<span class="sd">        &quot;p0330016_20100906.nc&quot;: &quot;404a22da318909c42dcb65fd7315ae1f5542ed8b057faa30c7b21e07f50d67a9&quot;,</span>
+<span class="sd">        &quot;p0330017_20100906.nc&quot;: &quot;06df146adee75439cc4f42e27038bec5596705fbe0a93ea53d2d65d94d719504&quot;,</span>
+<span class="sd">        &quot;p0330018_20100906.nc&quot;: &quot;3dc2363797adce65c286c5099f0144bb0583b368c84dc24185caba0cad9478a7&quot;,</span>
+<span class="sd">        &quot;p0330019_20100906.nc&quot;: &quot;7e37ad465f720ea1f1257830a595677f6d5f85d7391e711d6164ccee8ada5399&quot;,</span>
+<span class="sd">    },</span>
+<span class="sd">)&quot;&quot;&quot;</span>
 
-
-<span class="c1"># Information on creating a registry file: https://www.fatiando.org/pooch/latest/registry-files.html</span>
-<span class="c1"># But instead of pkg_resources (https://setuptools.pypa.io/en/latest/pkg_resources.html#)</span>
-<span class="c1"># we should use importlib.resources</span>
-<span class="c1"># Here&#39;s how to use importlib.resources (https://importlib-resources.readthedocs.io/en/latest/using.html)</span>
+<span class="c1"># Instead of loading from the server, we will load from a local directory for testing and development purposes.</span>
+<span class="c1"># The local directory will contain the same files as the server, but we will not use pooch to manage them.</span>
+<span class="c1"># Instead, we will just read them directly from the filesystem.</span>
 <div class="viewcode-block" id="load_sample_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_sample_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_sample_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;p0330015_20100906.nc&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_sample_dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">parent_dir</span> <span class="o">/</span> <span class="s2">&quot;data/demo_sg005/p0050001_20080606.nc&quot;</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Download sample datasets for use with seagliderOG1.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    dataset_name : str, optional</span>
-<span class="sd">        Name of the sample dataset to load. Must be one of the available </span>
+<span class="sd">        Name of the sample dataset to load. Must be one of the available</span>
 <span class="sd">        datasets in the registry. Default is &quot;p0330015_20100906.nc&quot;.</span>
 
 <span class="sd">    Returns</span>
@@ -158,29 +162,27 @@
 <span class="sd">        If the requested dataset is not available in the registry.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">in</span> <span class="n">data_source_og</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">file_path</span> <span class="o">=</span> <span class="n">data_source_og</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Requested sample dataset </span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2"> not known. Specify one of the following available datasets: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data_source_og</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Requested sample dataset </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2"> not known. Available datasets are: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">parent_dir</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s1">&#39;data/demo_sg005&#39;</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
-
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_validate_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate if filename matches expected Seaglider basestation patterns.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Validates against two expected patterns:</span>
 <span class="sd">    1. p1234567.nc (7 digits after &#39;p&#39;)</span>
 <span class="sd">    2. p0420100_20100903.nc (7 digits, underscore, 8 digits)</span>
-<span class="sd">    </span>
+
 <span class="sd">    Also validates that both glider serial number and profile number are positive.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    filename : str</span>
 <span class="sd">        The filename to validate.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    bool</span>
@@ -204,15 +206,15 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract the profile/dive number from a Seaglider filename.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Extracts characters 4-7 (0-indexed) which represent the dive cycle number</span>
 <span class="sd">    in filenames like p0420001.nc or p0420001_20100903.nc.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    filename : str</span>
 <span class="sd">        Seaglider filename to parse.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    int</span>
@@ -224,15 +226,15 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract the glider serial number from a Seaglider filename.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Extracts characters 1-3 (0-indexed) which represent the 3-digit glider</span>
 <span class="sd">    serial number in filenames like p0420001.nc.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    filename : str</span>
 <span class="sd">        Seaglider filename to parse.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    int</span>
@@ -246,15 +248,15 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.filter_files_by_profile">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">filter_files_by_profile</span><span class="p">(</span><span class="n">file_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">start_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter files by profile/dive number range.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Filters Seaglider basestation files based on profile number range.</span>
-<span class="sd">    Expects filenames of the form pXXXYYYY.nc, where XXX is the 3-digit </span>
+<span class="sd">    Expects filenames of the form pXXXYYYY.nc, where XXX is the 3-digit</span>
 <span class="sd">    glider serial number and YYYY is the 4-digit dive cycle number.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Example: p0420001.nc represents glider 042, dive 0001.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Note: Input file_list does not need to be sorted.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    file_list : list of str</span>
@@ -263,7 +265,7 @@
 <span class="sd">        Minimum profile number (inclusive).</span>
 <span class="sd">    end_profile : int, optional</span>
 <span class="sd">        Maximum profile number (inclusive).</span>
-<span class="sd">        </span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    list of str</span>
@@ -303,15 +305,15 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_first_basestation_file">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_first_basestation_file</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load the first (alphabetically) basestation file from a source.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Useful for quick examination of data structure and metadata from</span>
 <span class="sd">    a Seaglider mission without loading all files.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    source : str</span>
 <span class="sd">        URL or local directory path containing NetCDF files.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset</span>
@@ -330,19 +332,19 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_basestation_files">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_basestation_files</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load multiple Seaglider basestation files with optional profile filtering.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Main function for loading Seaglider data from either online repositories</span>
 <span class="sd">    or local directories. Supports filtering by dive/profile number range.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    source : str</span>
-<span class="sd">        URL (http/https) or local directory path containing Seaglider NetCDF files.</span>
+<span class="sd">        Directory path containing Seaglider NetCDF files.</span>
 <span class="sd">    start_profile : int, optional</span>
 <span class="sd">        Minimum profile number to load.</span>
 <span class="sd">    end_profile : int, optional</span>
 <span class="sd">        Maximum profile number to load.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    list of xarray.Dataset</span>
@@ -356,10 +358,7 @@
 
     <span class="c1">### Include a tqdm progress bar</span>
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">filtered_files</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Loading datasets&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;http://&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;https://&quot;</span><span class="p">):</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">load_sample_dataset</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">file</span><span class="p">))</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">file</span><span class="p">))</span>
 
         <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 
@@ -373,10 +372,10 @@
     <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">registry_loc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;seagliderOG1&quot;</span><span class="p">,</span> <span class="n">registry_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;seaglider_registry.txt&quot;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;List NetCDF files from a source (URL or local directory).</span>
-<span class="sd">    </span>
+
 <span class="sd">    For online sources, scrapes directory listings using BeautifulSoup.</span>
 <span class="sd">    For local sources, lists files in the directory.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    source : str</span>
@@ -385,12 +384,12 @@
 <span class="sd">        Legacy parameter, not currently used.</span>
 <span class="sd">    registry_name : str, optional</span>
 <span class="sd">        Legacy parameter, not currently used.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    list of str</span>
 <span class="sd">        Sorted list of NetCDF filenames (.nc files only).</span>
-<span class="sd">        </span>
+
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
@@ -429,7 +428,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025, Eleanor Frajka-Williams, Till Moritz.</p>
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
