@@ -356,7 +356,7 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     # Initialize the new variable with the same dimensions as dive_num
     ds["dive_num_cast"] = (
         ["N_MEASUREMENTS"],
-        np.full(ds.dims["N_MEASUREMENTS"], np.nan),
+        np.full(ds.sizes["N_MEASUREMENTS"], np.nan),
     )
 
     ds = add_dive_number(ds, ds1.attrs["dive_number"])
@@ -449,11 +449,11 @@ def assign_phase(ds: xr.Dataset) -> xr.Dataset:
     else:
         raise ValueError("No valid dive number variable found in the dataset.")
     # Initialize the new variable with the same dimensions as dive_num
-    ds["PHASE"] = (["N_MEASUREMENTS"], np.full(ds.dims["N_MEASUREMENTS"], np.nan))
+    ds["PHASE"] = (["N_MEASUREMENTS"], np.full(ds.sizes["N_MEASUREMENTS"], np.nan))
     # Initialize the new variable PHASE_QC with the same dimensions as dive_num
     ds["PHASE_QC"] = (
         ["N_MEASUREMENTS"],
-        np.zeros(ds.dims["N_MEASUREMENTS"], dtype=int),
+        np.zeros(ds.sizes["N_MEASUREMENTS"], dtype=int),
     )
 
     # Iterate over each unique dive_num

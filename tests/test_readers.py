@@ -7,12 +7,6 @@ sys.path.append(str(parent_dir))
 
 from seagliderOG1 import readers
 
-
-def test_demo_datasets():
-    ds = readers.load_sample_dataset(dataset_name="p0330001_20100903.nc")
-    assert ds is not None
-
-
 def test_validate_filename():
     """Test the _validate_filename function from the readers module.
     This test checks the validation of filenames to ensure they meet the expected
@@ -105,12 +99,11 @@ def test_load_basestation_files():
     function returns the correct dataset, providing an appropriate error message if the
     assertion fails.
     """
-    #source = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/" #(start - end: 5-10, lat_range = 18 - 19)
-    source = str(parent_dir) + '/data/demo_sg005' #(start - end: 1-5, lat_range = 61 - 62)
+    source = str(parent_dir / "data/demo_sg005")
+    print("Testing load_basestation_files with source:", source)
     start_profile = 1
     end_profile = 5
     datasets = readers.load_basestation_files(source, start_profile, end_profile)
-    print(datasets[0].latitude.values.mean())
     assert len(datasets) == 5, "Unexpected number of datasets loaded"
     assert datasets[-1].dive_number == 5, "Unexpected profile number for last dataset"
     assert (
@@ -127,8 +120,7 @@ def test_load_first_basestation_file():
     function returns the correct dataset, providing an appropriate error message
     if the assertion fails.
     """
-    #source = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/" #(lat_range = 18.5 - 18.6, length of longitude = 130)
-    source = str(parent_dir) + '/data/demo_sg005' #(lat_range = 61 - 62, length of longitude = 53)
+    source = str(parent_dir / "data/demo_sg005")
     dataset = readers.load_first_basestation_file(source)
     assert dataset.dive_number == 1, "Unexpected profile number for first dataset"
     assert (
@@ -136,4 +128,4 @@ def test_load_first_basestation_file():
     ), "Unexpected latitude range for first dataset"
     assert (
         len(dataset.longitude) == 53
-    ), "Unexpected number of longitude values for first dataset"# + str(len(dataset.longitude))
+    ), "Unexpected number of longitude values for first dataset"

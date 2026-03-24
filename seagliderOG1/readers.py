@@ -1,11 +1,17 @@
 import os
+import pathlib
 import re
+import sys
 
 import pooch
 import requests
 import xarray as xr
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+
+script_dir = pathlib.Path(__file__).parent.absolute()
+parent_dir = script_dir.parents[0]
+sys.path.append(str(parent_dir))
 
 """Readers module for Seaglider basestation files.
 
@@ -16,7 +22,7 @@ the data, only loads it into xarray datasets.
 
 # readers.py: Will only read files.  Not manipulate them.
 
-# Use pooch for sample files only.
+"""# Use pooch for sample files only.
 # For the full dataset, just use BeautifulSoup / requests
 server = "https://www.ncei.noaa.gov/data/oceans/glider/seaglider/uw/033/20100903/"
 data_source_og = pooch.create(
@@ -43,14 +49,12 @@ data_source_og = pooch.create(
         "p0330018_20100906.nc": "3dc2363797adce65c286c5099f0144bb0583b368c84dc24185caba0cad9478a7",
         "p0330019_20100906.nc": "7e37ad465f720ea1f1257830a595677f6d5f85d7391e711d6164ccee8ada5399",
     },
-)
+)"""
 
-
-# Information on creating a registry file: https://www.fatiando.org/pooch/latest/registry-files.html
-# But instead of pkg_resources (https://setuptools.pypa.io/en/latest/pkg_resources.html#)
-# we should use importlib.resources
-# Here's how to use importlib.resources (https://importlib-resources.readthedocs.io/en/latest/using.html)
-def load_sample_dataset(dataset_name: str = "p0330015_20100906.nc") -> xr.Dataset:
+# Instead of loading from the server, we will load from a local directory for testing and development purposes.
+# The local directory will contain the same files as the server, but we will not use pooch to manage them.
+# Instead, we will just read them directly from the filesystem.
+def load_sample_dataset(file_path: str = str(parent_dir / "data/demo_sg005/p0050001_20080606.nc")) -> xr.Dataset:
     """Download sample datasets for use with seagliderOG1.
 
     Parameters
@@ -70,13 +74,11 @@ def load_sample_dataset(dataset_name: str = "p0330015_20100906.nc") -> xr.Datase
         If the requested dataset is not available in the registry.
 
     """
-    if dataset_name in data_source_og.registry.keys():
-        file_path = data_source_og.fetch(dataset_name)
-        return xr.open_dataset(file_path)
+    if os.path.isfile(file_path):
+        return xr.open_dataset(file_path, decode_timedelta=False)
     else:
-        msg = f"Requested sample dataset {dataset_name} not known. Specify one of the following available datasets: {list(data_source_og.registry.keys())}"
+        msg = f"Requested sample dataset {file_path} not known. Available datasets are: {os.listdir(str(parent_dir / 'data/demo_sg005'))}"
         raise KeyError(msg)
-
 
 def _validate_filename(filename: str) -> bool:
     """Validate if filename matches expected Seaglider basestation patterns.
@@ -237,7 +239,7 @@ def load_basestation_files(source: str, start_profile: int | None = None, end_pr
     Parameters
     ----------
     source : str
-        URL (http/https) or local directory path containing Seaglider NetCDF files.
+        Directory path containing Seaglider NetCDF files.
     start_profile : int, optional
         Minimum profile number to load.
     end_profile : int, optional
@@ -256,10 +258,7 @@ def load_basestation_files(source: str, start_profile: int | None = None, end_pr
 
     ### Include a tqdm progress bar
     for file in tqdm(filtered_files, desc="Loading datasets", unit="file"):
-        if source.startswith("http://") or source.startswith("https://"):
-            ds = load_sample_dataset(file)
-        else:
-            ds = xr.open_dataset(os.path.join(source, file))
+        ds = xr.open_dataset(os.path.join(source, file))
 
         datasets.append(ds)
 
