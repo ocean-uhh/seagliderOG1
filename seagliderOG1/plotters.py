@@ -17,7 +17,7 @@ from pandas import DataFrame
 ##------------------------------------------------------------------------------------
 def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd.DataFrame:
     """Show contents of an xarray Dataset or a netCDF file.
-    
+
     Wrapper function to display either variables or attributes from the dataset.
 
     Parameters
@@ -32,7 +32,7 @@ def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd
     -------
     pandas.DataFrame
         A DataFrame with details about the variables or attributes.
-        
+
     Raises
     ------
     TypeError
@@ -63,7 +63,7 @@ def show_contents(data: str | xr.Dataset, content_type: str = "variables") -> pd
 
 def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
     """Process an xarray Dataset or netCDF file and extract variable information.
-    
+
     Creates a styled DataFrame with comprehensive details about all variables
     in the dataset, including dimensions, units, comments, and data types.
 
@@ -82,7 +82,7 @@ def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
         - comment: Any additional comments about the variable (if available).
         - standard_name: CF standard name (if available).
         - dtype: Data type of the variable.
-        
+
     Raises
     ------
     TypeError
@@ -140,7 +140,7 @@ def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
 
 def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
     """Process an xarray Dataset or netCDF file and extract global attribute information.
-    
+
     Creates a DataFrame with comprehensive details about all global attributes
     in the dataset, including their values and data types.
 
@@ -156,7 +156,7 @@ def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
         - Attribute: The name of the attribute.
         - Value: The value of the attribute.
         - DType: The data type of the attribute value.
-        
+
     Raises
     ------
     TypeError
@@ -188,7 +188,7 @@ def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
 
 def show_variables_by_dimension(data: str | xr.Dataset, dimension_name: str = "trajectory") -> pd.DataFrame:
     """Process dataset and extract variables filtered by a specific dimension.
-    
+
     Creates a styled DataFrame showing only variables that have the specified
     dimension, useful for examining variables of a particular type.
 
@@ -207,7 +207,7 @@ def show_variables_by_dimension(data: str | xr.Dataset, dimension_name: str = "t
         - name: The name of the variable.
         - units: The units of the variable (if available).
         - comment: Any additional comments about the variable (if available).
-        
+
     Raises
     ------
     TypeError
@@ -265,7 +265,7 @@ def show_variables_by_dimension(data: str | xr.Dataset, dimension_name: str = "t
 ##----------------------------------------------------------------------------
 def plot_profile_depth(data: pd.DataFrame | xr.Dataset) -> None:
     """Plot profile depth as a function of time.
-    
+
     Creates a time series plot of depth data with automatic point reduction
     for large datasets and proper axis formatting.
 
@@ -274,14 +274,14 @@ def plot_profile_depth(data: pd.DataFrame | xr.Dataset) -> None:
     data : pandas.DataFrame or xarray.Dataset
         The input data containing depth and time variables. Should contain either
         'ctd_depth'/'ctd_time' or 'DEPTH'/'TIME' variables.
-        
+
     Notes
     -----
     - Automatically reduces the total number of points to less than 100,000 for performance.
     - Inverts y-axis to show depth increasing downward.
     - Formats x-axis with month-day labels and adds year information.
     - Sets tight y-axis limits rounded to nearest 10 meters.
-    
+
     Raises
     ------
     TypeError
@@ -344,7 +344,7 @@ def plot_profile_depth(data: pd.DataFrame | xr.Dataset) -> None:
 
 def plot_depth_colored(data: pd.DataFrame | xr.Dataset, color_by: str | None = None, start_dive: int | None = None, end_dive: int | None = None) -> None:
     """Plot depth as a function of time with optional coloring and dive filtering.
-    
+
     Creates a depth time series plot with optional color coding by another variable
     and filtering by dive number range.
 
@@ -359,13 +359,13 @@ def plot_depth_colored(data: pd.DataFrame | xr.Dataset, color_by: str | None = N
         The starting dive number to filter the data. If None, no filtering applied.
     end_dive : int, optional
         The ending dive number to filter the data. If None, no filtering applied.
-        
+
     Notes
     -----
     - Accepts dive number variables: 'dive_number', 'divenum', or 'dive_num'.
     - Uses scatter plot with colorbar when color_by is specified.
     - Inverts y-axis and formats time axis similar to plot_profile_depth.
-    
+
     Raises
     ------
     TypeError
@@ -381,6 +381,8 @@ def plot_depth_colored(data: pd.DataFrame | xr.Dataset, color_by: str | None = N
         divenum_str = "divenum"
     elif "dive_num" in data.variables:
         divenum_str = "dive_num"
+    elif "DIVE_NUMBER" in data.variables:
+        divenum_str = "DIVE_NUMBER"
     else:
         raise ValueError("No valid dive number variable found in the dataset.")
 
@@ -454,7 +456,7 @@ def plot_depth_colored(data: pd.DataFrame | xr.Dataset, color_by: str | None = N
 
 def plot_ctd_depth_vs_time(ds: xr.Dataset, start_traj: int | None = None, end_traj: int | None = None) -> None:
     """Plot CTD depth vs time with GPS fix highlighting.
-    
+
     Creates a depth time series plot with special highlighting of points where
     GPS latitude data is available (non-NaN), useful for identifying surface intervals.
 
@@ -466,7 +468,7 @@ def plot_ctd_depth_vs_time(ds: xr.Dataset, start_traj: int | None = None, end_tr
         The starting trajectory number to filter the data. If None, no filtering applied.
     end_traj : int, optional
         The ending trajectory number to filter the data. If None, no filtering applied.
-        
+
     Notes
     -----
     - Plots CTD depth as black dots for all data points.

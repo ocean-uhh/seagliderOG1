@@ -7,7 +7,7 @@ throughout the conversion process.
 
 Key Components:
 - Variable name mappings from basestation to OG1 format
-- Unit conversion factors and formatting rules  
+- Unit conversion factors and formatting rules
 - Global attribute definitions and ordering
 - Variables to include/exclude during conversion
 - Dimension renaming mappings
@@ -53,6 +53,7 @@ unit_str_format = {
     "degreesCelsius": "Celsius",
     "g/m^3": "g m-3",
     "kg/m^3": "kg m-3",
+    "g/kg": "g kg-1",
 }
 
 # Unit conversion definitions: each entry defines source unit, target unit, and conversion factor
@@ -95,21 +96,26 @@ vars_to_remove = [
     "eng_depth",
     "eng_elaps_t",
     "eng_elaps_t_0000",
+    "eng_rec",
+    "eng_GC_state",
     "latitude_gsm",
     "longitude_gsm",
     "sound_velocity",
-    "theta",
-    "time",
     "eng_sbect_condFreq",
     "eng_sbect_tempFreq",
     "glide_angle_gsm",
     "horz_speed_gsm",
     "north_displacement_gsm",
     "east_displacement_gsm",
+    "polar_heading",
     "speed_gsm",
     "vert_speed_gsm",
     "dive_num_cast",
     "density",
+    "gsw_sigma3",
+    "gsw_sigma4",
+    "theta",
+    #"time",
 ]
 
 # Variables to keep unchanged during conversion (currently empty)

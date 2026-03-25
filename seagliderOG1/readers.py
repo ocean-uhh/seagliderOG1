@@ -183,10 +183,7 @@ def filter_files_by_profile(file_list: list[str], start_profile: int | None = No
     """
     filtered_files = []
 
-    for file in file_list:
-        if not _validate_filename(file):
-            file_list.remove(file)
-            # _log.warning(f"Skipping file {file} as it does not have the expected format.")
+    file_list = [f for f in file_list if _validate_filename(f)]
 
     #    divenum_values = [int(file[4:8]) for file in file_list]
 
@@ -261,7 +258,7 @@ def load_basestation_files(source: str, start_profile: int | None = None, end_pr
 
     ### Include a tqdm progress bar
     for file in tqdm(filtered_files, desc="Loading datasets", unit="file"):
-        ds = xr.open_dataset(os.path.join(source, file))
+        ds = xr.open_dataset(os.path.join(source, file), decode_timedelta=False)
 
         datasets.append(ds)
 
