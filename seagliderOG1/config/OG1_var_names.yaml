@@ -5,11 +5,14 @@ gps_lon: LONGITUDE_GPS
 gps_time: TIME_GPS
 ctd_time: TIME
 time: TIME
+delta_time_s: DELTA_TIME_S
 eng_pitchAng: PITCH
 eng_rollAng: ROLL
 eng_head: HEADING
 ctd_depth: DEPTH
+depth: DEPTH
 pressure: PRES
+ctd_pressure: PRES
 conductivity: CNDC
 trajectory: TRAJECTORY
 aanderaa4330_dissolved_oxygen: DOXY
@@ -26,10 +29,12 @@ temperature_raw: TEMP_RAW
 salinity_raw: PSAL_RAW
 conductivity_raw: CNDC_RAW
 salinity: PSAL
-#absolute_salinity: SA
-#conservative_temperature: CT
+absolute_salinity: SA
+conservative_temperature: CT
 ctd_density: DENSITY
+density_insitu: DENSITY
 profile_index: PROFILE_NUMBER
+divenum: DIVE_NUMBER
 platform: PLATFORM_MODEL
 source: PLATFORM_SERIAL_NUMBER
 vert_speed: GLIDER_VERT_VELO_MODEL
@@ -44,6 +49,10 @@ eng_wlbb2f_blueRef: BBP470_REF
 eng_wlbb2f_blueCount: BBP470
 eng_wlbb2f_redCount: BBP700
 eng_wlbb2f_redRef: BBP700_REF
+eng_wlbb2f_VFtemp: BBP_VFTEMP ### What is the correct variable name for this?
+eng_tempFreq: TEMP_FREQ ### What is the correct variable name for this?
+eng_sbe43_O2Freq: O2_FREQ ### What is the correct variable name for this?
+eng_condFreq: COND_FREQ ### What is the correct variable name for this?
 particulate_backscatter: BBP700
 backscatter_scaled: BBP700
 backscatter_raw: RBBP700
@@ -54,6 +63,7 @@ down_irradiance_490: ED490
 downwelling_PAR: DPAR
 temperature_oxygen: TEMP_OXYGEN
 potential_density: POTDENS0
+gsw_sigma0: POTDENS0
 chlorophyll_raw: FLUOCHLA
 eng_wlbb2f_fluorCount: FLUOCHLA
 ad2cp_pitch: AD2CP_PITCH
@@ -73,6 +83,8 @@ north_displacement: NORTH_DISPLACEMENT
 eng_pitchCtl: PITCH_CTL
 eng_rollCtl: ROLL_CTL
 eng_vbdCC: VBD_CC
+buoyancy: BUOYANCY
+sound_velocity: SOUND_VELOCITY
 
 sbe41: Seabird unpumped CTD
 wlbb2f: Wetlabs BB2FL-VMT

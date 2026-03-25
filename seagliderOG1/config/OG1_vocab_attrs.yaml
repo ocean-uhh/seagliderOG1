@@ -287,6 +287,19 @@ PSAL_RAW:
   valid_max: 40
   valid_min: 0
   uri: https://vocab.nerc.ac.uk/collection/OG1/current/PSAL/
+SA:
+  long_name: Absolute salinity of the water body by CTD and computation using TEOS-10
+    algorithm
+  standard_name: sea_water_absolute_salinity
+  units: g kg-1
+  comment: Absolute salinity of the water body by CTD and computation using TEOS-10
+    algorithm
+  sources: CNDC, TEMP, PRES
+  observation_type: calculated
+  sensor: sensor_ctd
+  valid_max: 120
+  valid_min: 0
+  uri: https://vocab.nerc.ac.uk/collection/OG1/current/SA/
 TEMP:
   long_name: 'Temperature of the water body by CTD '
   observation_type: measured
@@ -352,8 +365,14 @@ DENSITY:
   valid_min: 1000
   valid_max: 1040
   uri: https://vocab.nerc.ac.uk/collection/OG1/current/DENSITY/
+BUOYANCY:
+  long_name: Buoyancy of vehicle, corrected for compression effects
+  units: g
 PROFILE_NUMBER:
   long_name: profile index
+  units: '1'
+DIVE_NUMBER:
+  long_name: dive number
   units: '1'
 PHASE:
   long_name: behavior of the glider at sea
@@ -393,6 +412,22 @@ BBP470:
 #    (BLUE WAVELENGTHS) Version 1-05 Document Control Number 1341-00540 2014-05-28.
 ##    Observatories Initiative document DATA PRODUCT SPECIFICATION FOR OPTICAL BACKSCATTER
 #    Downloaded from https://oceanobservatories.org/wp-content/uploads/2015/10/1341-00540_Data_Product_SPEC_FLUBSCT_OOI.pdf
+BBP_VFTEMP: ### eng_wlbb2f_VFtemp
+  long_name: Raw temperature from backscatter sensor
+  units: Celsius
+  observation_type: observed
+TEMP_FREQ: ### eng_tempFreq
+  long_name: What is this variable?
+  units: Hz
+  observation_type: observed
+O2_FREQ: ### eng_sbe43_O2Freq
+  long_name: What is this variable?
+  units: Hz
+  observation_type: observed
+COND_FREQ: ### eng_condFreq
+  long_name: What is this variable?
+  units: Hz
+  observation_type: observed
 BBP700_REF:
   long_name: What is this - maybe dark counts. red.
   observation_type: observed
@@ -564,4 +599,11 @@ EAST_DISPLACEMENT:
   long_name: eastward displacement of platform, from flight model
   sensor: flight_model
   units: m
+SOUND_VELOCITY:
+  long_name: sound velocity in water
+  units: m s-1
+  sensor: sensor_ctd
+DELTA_TIME_S:
+  long_name: Difference between sample times
+  units: seconds
 #Time for oxygen concentration was defined in OG1_var_names.yaml but not called here

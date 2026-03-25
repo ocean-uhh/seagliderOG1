@@ -307,11 +307,18 @@ def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Datase
         The dataset with the dive number added.
 
     """
-    if dive_number == None:
+    if dive_number is None:
         dive_number = ds.attrs.get("dive_number", np.nan)
-    return ds.assign(
-        divenum=("N_MEASUREMENTS", [dive_number] * ds.sizes["N_MEASUREMENTS"])
+
+    dive_var = xr.DataArray(
+        np.full(ds.sizes["N_MEASUREMENTS"], dive_number),
+        dims=["N_MEASUREMENTS"],
+        attrs={
+            "long_name": "dive number",
+            "units": "1",
+        },
     )
+    return ds.assign(DIVE_NUMBER=dive_var)
 
 
 def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
@@ -355,9 +362,9 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     ds = add_dive_number(ds, ds1.attrs["dive_number"])
 
     # Iterate over each unique dive_num
-    for dive in np.unique(ds["divenum"]):
+    for dive in np.unique(ds["DIVE_NUMBER"]):
         # Get the indices for the current dive
-        dive_indices = np.where(ds["divenum"] == dive)[0]
+        dive_indices = np.where(ds["DIVE_NUMBER"] == dive)[0]
         if len(dive_indices) == 0:
             continue  # Skip if no indices found
 
@@ -437,6 +444,8 @@ def assign_phase(ds: xr.Dataset) -> xr.Dataset:
         divenum_str = "divenum"
     elif "dive_num" in ds.variables:
         divenum_str = "dive_num"
+    elif "DIVE_NUMBER" in ds.variables:
+        divenum_str = "DIVE_NUMBER"
     else:
         raise ValueError("No valid dive number variable found in the dataset.")
     # Initialize the new variable with the same dimensions as dive_num
@@ -563,7 +572,7 @@ def split_by_unique_dims(ds: xr.Dataset) -> dict:
     # Iterate over the variables in the dataset
     for var_name, var_data in ds.data_vars.items():
         # Get the dimensions of the variable
-        dims = tuple(var_data.dims)
+        dims = tuple(var_data.sizes)
 
         # If this dimension set is not in the dictionary, create a new dataset
         if dims not in unique_dims_datasets:
@@ -722,7 +731,7 @@ def convert_units_var(
         new_unit = current_unit
         if firstrun:
             _log.warning(
-                f"No conversion information found for {current_unit} to {new_unit}"
+                f"\nNo conversion information found for {current_unit} to {new_unit}"
             )
     #        raise ValueError(f"No conversion information found for {current_unit} to {new_unit}")
     return new_values, new_unit
@@ -768,7 +777,10 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
         )  # Convert strings to numbers, NaNs stay NaNs
         # Assign back to dataset
         dsa[qc_name].values = values
-        dsa[qc_name].values = dsa[qc_name].values.astype("int8")
+        ### Set the nan values to 6 (unsampled flag) and convert to int8
+        ### Before it had just set all values to 0, which is no change flag
+        ### Alternative could be to set to 9 (missing value)
+        dsa[qc_name].values = dsa[qc_name].fillna(6).astype("int8")
         # Seaglider default flag_meanings were prefixed with 'QC_'. Remove this prefix.
         if "flag_meaning" in dsa[qc_name].attrs:
             flag_meaning = dsa[qc_name].attrs["flag_meaning"]
@@ -1004,8 +1016,8 @@ def merge_parts_of_dataset(
         return time_var if time_var in ds.variables else None
 
     # Extract variables for each dimension
-    vars1 = {var: ds[var] for var in ds.variables if dim1 in ds[var].dims}
-    vars2 = {var: ds[var] for var in ds.variables if dim2 in ds[var].dims}
+    vars1 = {var: ds[var] for var in ds.variables if dim1 in ds[var].sizes}
+    vars2 = {var: ds[var] for var in ds.variables if dim2 in ds[var].sizes}
 
     # Create separate datasets
     new_ds1, new_ds2 = xr.Dataset(vars1), xr.Dataset(vars2)
@@ -1033,6 +1045,12 @@ def merge_parts_of_dataset(
 
     # Pad function to match sizes along dim1
     def pad_ds(ds, max_size):
+        ### the dataset makes problems if variables are integers,
+        ### so we convert to float before padding and back to int after padding
+        for var in ds.variables:
+            if "int" in str(ds[var].dtype):
+                ds[var] = ds[var].astype(float)
+
         pad_size = max_size - ds.sizes.get(dim1, 0)
         if pad_size > 0:
             ds = ds.pad({dim1: (0, pad_size)}, constant_values=np.nan)
@@ -1047,16 +1065,16 @@ def merge_parts_of_dataset(
     for coord in all_coords:
         if coord not in new_ds1:
             new_shape = (
-                (new_ds1.dims[dim1],)
-                if dim1 in new_ds1.dims
+                (new_ds1.sizes[dim1],)
+                if dim1 in new_ds1.sizes
                 else (len(new_ds1["time"]),)
             )
             new_ds1[coord] = xr.DataArray(np.full(new_shape, np.nan), dims=dim1)
             new_ds1 = new_ds1.set_coords(coord)
         if coord not in new_ds2:
             new_shape = (
-                (new_ds2.dims[dim1],)
-                if dim1 in new_ds2.dims
+                (new_ds2.sizes[dim1],)
+                if dim1 in new_ds2.sizes
                 else (len(new_ds2["time"]),)
             )
             new_ds2[coord] = xr.DataArray(np.full(new_shape, np.nan), dims=dim1)
@@ -1095,7 +1113,7 @@ def combine_two_dim_of_dataset(
     """
     # Drop all variables that have dim1 or dim2
     vars_to_drop = [
-        var for var in ds.variables if dim1 in ds[var].dims or dim2 in ds[var].dims
+        var for var in ds.variables if dim1 in ds[var].sizes or dim2 in ds[var].sizes
     ]
     cleaned_ds = ds.drop_vars(vars_to_drop, errors="ignore")
     merged_ds = merge_parts_of_dataset(ds, dim1=dim1, dim2=dim2)
