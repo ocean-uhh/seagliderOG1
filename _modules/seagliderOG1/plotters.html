@@ -105,7 +105,7 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.plotters.show_contents">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_contents</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">content_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;variables&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Show contents of an xarray Dataset or a netCDF file.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Wrapper function to display either variables or attributes from the dataset.</span>
 
 <span class="sd">    Parameters</span>
@@ -120,7 +120,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    pandas.DataFrame</span>
 <span class="sd">        A DataFrame with details about the variables or attributes.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    TypeError</span>
@@ -154,7 +154,7 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.plotters.show_variables">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_variables</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Process an xarray Dataset or netCDF file and extract variable information.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Creates a styled DataFrame with comprehensive details about all variables</span>
 <span class="sd">    in the dataset, including dimensions, units, comments, and data types.</span>
 
@@ -173,7 +173,7 @@
 <span class="sd">        - comment: Any additional comments about the variable (if available).</span>
 <span class="sd">        - standard_name: CF standard name (if available).</span>
 <span class="sd">        - dtype: Data type of the variable.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    TypeError</span>
@@ -234,7 +234,7 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.plotters.show_attributes">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_attributes</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Process an xarray Dataset or netCDF file and extract global attribute information.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Creates a DataFrame with comprehensive details about all global attributes</span>
 <span class="sd">    in the dataset, including their values and data types.</span>
 
@@ -250,7 +250,7 @@
 <span class="sd">        - Attribute: The name of the attribute.</span>
 <span class="sd">        - Value: The value of the attribute.</span>
 <span class="sd">        - DType: The data type of the attribute value.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    TypeError</span>
@@ -285,7 +285,7 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.plotters.show_variables_by_dimension">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_variables_by_dimension</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;trajectory&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Process dataset and extract variables filtered by a specific dimension.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Creates a styled DataFrame showing only variables that have the specified</span>
 <span class="sd">    dimension, useful for examining variables of a particular type.</span>
 
@@ -304,7 +304,7 @@
 <span class="sd">        - name: The name of the variable.</span>
 <span class="sd">        - units: The units of the variable (if available).</span>
 <span class="sd">        - comment: Any additional comments about the variable (if available).</span>
-<span class="sd">        </span>
+
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    TypeError</span>
@@ -365,7 +365,7 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.plotters.plot_profile_depth">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_profile_depth</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot profile depth as a function of time.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Creates a time series plot of depth data with automatic point reduction</span>
 <span class="sd">    for large datasets and proper axis formatting.</span>
 
@@ -374,14 +374,14 @@
 <span class="sd">    data : pandas.DataFrame or xarray.Dataset</span>
 <span class="sd">        The input data containing depth and time variables. Should contain either</span>
 <span class="sd">        &#39;ctd_depth&#39;/&#39;ctd_time&#39; or &#39;DEPTH&#39;/&#39;TIME&#39; variables.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    - Automatically reduces the total number of points to less than 100,000 for performance.</span>
 <span class="sd">    - Inverts y-axis to show depth increasing downward.</span>
 <span class="sd">    - Formats x-axis with month-day labels and adds year information.</span>
 <span class="sd">    - Sets tight y-axis limits rounded to nearest 10 meters.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    TypeError</span>
@@ -447,7 +447,7 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.plotters.plot_depth_colored">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_depth_colored</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">color_by</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">start_dive</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">end_dive</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot depth as a function of time with optional coloring and dive filtering.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Creates a depth time series plot with optional color coding by another variable</span>
 <span class="sd">    and filtering by dive number range.</span>
 
@@ -462,13 +462,13 @@
 <span class="sd">        The starting dive number to filter the data. If None, no filtering applied.</span>
 <span class="sd">    end_dive : int, optional</span>
 <span class="sd">        The ending dive number to filter the data. If None, no filtering applied.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    - Accepts dive number variables: &#39;dive_number&#39;, &#39;divenum&#39;, or &#39;dive_num&#39;.</span>
 <span class="sd">    - Uses scatter plot with colorbar when color_by is specified.</span>
 <span class="sd">    - Inverts y-axis and formats time axis similar to plot_profile_depth.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    TypeError</span>
@@ -484,6 +484,8 @@
         <span class="n">divenum_str</span> <span class="o">=</span> <span class="s2">&quot;divenum&quot;</span>
     <span class="k">elif</span> <span class="s2">&quot;dive_num&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="n">divenum_str</span> <span class="o">=</span> <span class="s2">&quot;dive_num&quot;</span>
+    <span class="k">elif</span> <span class="s2">&quot;DIVE_NUMBER&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">divenum_str</span> <span class="o">=</span> <span class="s2">&quot;DIVE_NUMBER&quot;</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No valid dive number variable found in the dataset.&quot;</span><span class="p">)</span>
 
@@ -560,7 +562,7 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.plotters.plot_ctd_depth_vs_time">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_ctd_depth_vs_time</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">start_traj</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">end_traj</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot CTD depth vs time with GPS fix highlighting.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Creates a depth time series plot with special highlighting of points where</span>
 <span class="sd">    GPS latitude data is available (non-NaN), useful for identifying surface intervals.</span>
 
@@ -572,7 +574,7 @@
 <span class="sd">        The starting trajectory number to filter the data. If None, no filtering applied.</span>
 <span class="sd">    end_traj : int, optional</span>
 <span class="sd">        The ending trajectory number to filter the data. If None, no filtering applied.</span>
-<span class="sd">        </span>
+
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    - Plots CTD depth as black dots for all data points.</span>
