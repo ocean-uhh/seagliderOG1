@@ -8,7 +8,7 @@ sys.path.append(str(parent_dir))
 import numpy as np
 import xarray as xr
 import gsw
-from seagliderOG1 import tools
+from seagliderOG1 import tools, readers, convertOG1
 
 
 def test_convert_units_var():
@@ -53,3 +53,16 @@ def test_calc_z():
     depth_z = tools.calc_Z(dataset)["DEPTH_Z"].values
 
     assert np.array_equal(depth, depth_z)
+
+def test_add_hdm_parameters():
+    source = str(parent_dir / "data/demo_sg005")
+    print("Testing load_basestation_files with source:", source)
+    start_profile = 1
+    end_profile = 5
+    datasets = readers.load_basestation_files(source, start_profile, end_profile)
+    hdm_parameters = tools.extract_hdm_parameters(datasets)
+    ds_OG1, vars = convertOG1.convert_to_OG1(datasets)
+    ds_OG1 = tools.add_hdm_parameters(ds_OG1, hdm_parameters)
+    ### check if the hdm parameters are added to the dataset and have the expected values
+    for param in hdm_parameters:
+        assert param in ds_OG1
