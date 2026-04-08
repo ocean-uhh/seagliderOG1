@@ -68,7 +68,7 @@ def convert_to_OG1(
     ds_og1 = xr.concat(processed_datasets, dim="N_MEASUREMENTS")
     ds_og1 = ds_og1.sortby("TIME")
     # Change format of time into datetime64[ns] to avoid problems with attributes and writing to netcdf
-    ds_og1["TIME"] = (ds_og1["TIME"].astype("float64") * 1e9).astype("datetime64[ns]")
+    # ds_og1["TIME"] = (ds_og1["TIME"].astype("float64") * 1e9).astype("datetime64[ns]")
 
     # Apply attributes
     ordered_attributes = update_dataset_attributes(
@@ -285,6 +285,7 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
     ds_new = tools.add_sensor_to_dataset(ds_new, ds_sensor, ds_sgcal, firstrun)
 
     # To avoid problems, reset the dtype of TIME_GPS
+    # ds_new['TIME_GPS'] = ds_new['TIME_GPS'].astype('datetime64[ns]')
     ds_new["TIME_GPS"] = (ds_new["TIME_GPS"].astype("float64") * 1e9).astype(
         "datetime64[ns]"
     )
