@@ -1122,6 +1122,117 @@ def combine_two_dim_of_dataset(
 
     return updated_ds
 
+standard_names = vocabularies.standard_names
+
+def extract_hdm_parameters(list_datasets):
+    """
+    Extracts HDM parameters and their attributes from a list of datasets. If the parameter has the same value across all datasets,
+    it keeps a single value; otherwise, it returns the full list.
+
+    Parameters:
+    -----------
+    list_datasets (list): List of xarray.Dataset objects.
+    standard_names (dict): Vocabulary mapping internal names to standard names.
+
+    Returns:
+    --------
+    dict: A nested dictionary where keys are standard names and values contain
+            the 'data' and 'attributes'.
+    """
+    potential_parameters = [
+        "sg_cal_vbd_min_cnts", "sg_cal_vbd_cnts_per_cc", "sg_cal_mass",
+        "sg_cal_volmax", "log_C_VBD", "sg_cal_hd_a", "sg_cal_hd_b", "sg_cal_hd_c"
+    ]
+    hdm_variables = {}
+
+    for param in potential_parameters:
+        # Determine the key name using standard_names mapping
+        param_key = standard_names.get(param, param)
+        if param_key == param and param not in standard_names:
+            print(f"Warning: '{param}' not found in standard names. Using original name.")
+
+        # 1. Check if the parameter exists in the datasets
+        if param not in list_datasets[0].variables:
+            print(f"Variable '{param}' not found in dataset. Skipping.")
+            continue
+
+        # 2. Extract values from all datasets
+        all_values = [ds[param].values for ds in list_datasets]
+
+        # 3. Determine if we keep a single value or the full list
+        # We flatten to handle case where .values might be arrays
+        unique_vals = np.unique(np.array(all_values))
+
+        final_value = unique_vals[0] if len(unique_vals) == 1 else all_values
+
+        if isinstance(final_value, list):
+            final_value = np.array(final_value)
+
+        # 4. Store as a dictionary to accommodate both value and attributes
+        hdm_variables[param_key] = {
+            "values": final_value,
+            "attributes": list_datasets[0][param].attrs
+        }
+
+    return hdm_variables
+
+def add_hdm_parameters(ds_OG1, hdm_parameters):
+    """
+    Add HDM parameters to the OG1 dataset as new variables with their attributes.
+
+    Parameters:
+    -----------
+    ds_OG1 (xarray.Dataset): The OG1 dataset to which HDM parameters will be added.
+    hdm_parameters (dict): A dictionary containing HDM parameters and their attributes
+                            in the format {standard_name: {"value": ..., "attributes": {...}}}.
+    Returns:
+    --------
+    xarray.Dataset: Updated OG1 dataset with HDM parameters added as variables.
+    """
+    ds_updated = ds_OG1.copy()
+
+    # Get unique profile numbers (e.g., [1, 2, 3, 4...])
+    unique_profiles = np.sort(np.unique(ds_updated.PROFILE_NUMBER.values))
+    num_profiles = len(unique_profiles)
+
+    for param_name, param_info in hdm_parameters.items():
+        # Using .get() because you used "value" in extract and "values" in your draft
+        values = param_info.get("value") or param_info.get("values")
+        attributes = param_info["attributes"]
+
+        # Check if it's a single value (scalar)
+        if np.size(values) == 1:
+            # item() converts a 1-element array to a native python scalar
+            ds_updated[param_name] = values.item() if hasattr(values, "item") else values
+            ds_updated[param_name].attrs = attributes
+
+        # Check if it's dive-based (1 value per 2 profiles)
+        elif np.size(values) == num_profiles // 2:
+            # Initialize an array of zeros/NaNs matching the measurement dimension
+            # Use the same dtype as our input values
+            mapped_array = np.full(ds_updated.N_MEASUREMENTS.shape, np.nan)
+
+            # Iterate through dives (each dive = 2 profiles)
+            for i, dive_val in enumerate(values):
+                # Create mask for the two profiles corresponding to one dive
+                p_idx_1, p_idx_2 = unique_profiles[2 * i], unique_profiles[2 * i + 1]
+
+                # Find all measurement indices belonging to these two profiles
+                mask = (ds_updated.PROFILE_NUMBER == p_idx_1) | (ds_updated.PROFILE_NUMBER == p_idx_2)
+
+                # Fill the array for those specific measurements
+                mapped_array[mask] = dive_val
+
+            # Add to dataset with the N_MEASUREMENTS dimension
+            ds_updated[param_name] = (("N_MEASUREMENTS",), mapped_array)
+            ds_updated[param_name].attrs = attributes
+
+        else:
+            print(f"Warning: {param_name} size ({np.size(values)}) does not match "
+                  f"scalar or dive count ({num_profiles // 2}). Skipping.")
+
+    return ds_updated
+
 
 # ===============================================================================
 # Unused functions
