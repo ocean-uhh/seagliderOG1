@@ -3,11 +3,13 @@ import pathlib
 import re
 import sys
 
-import pooch
 import requests
 import xarray as xr
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+
+from datetime import datetime
+import shutil
 
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
@@ -51,10 +53,13 @@ data_source_og = pooch.create(
     },
 )"""
 
+
 # Instead of loading from the server, we will load from a local directory for testing and development purposes.
 # The local directory will contain the same files as the server, but we will not use pooch to manage them.
 # Instead, we will just read them directly from the filesystem.
-def load_sample_dataset(file_path: str = str(parent_dir / "data/demo_sg005/p0050001_20080606.nc")) -> xr.Dataset:
+def load_sample_dataset(
+    file_path: str = str(parent_dir / "data/demo_sg005/p0050001_20080606.nc"),
+) -> xr.Dataset:
     """Download sample datasets for use with seagliderOG1.
 
     Parameters
@@ -79,6 +84,7 @@ def load_sample_dataset(file_path: str = str(parent_dir / "data/demo_sg005/p0050
     else:
         msg = f"Requested sample dataset {file_path} not known. Available datasets are: {os.listdir(str(parent_dir / 'data/demo_sg005'))}"
         raise KeyError(msg)
+
 
 def _validate_filename(filename: str) -> bool:
     """Validate if filename matches expected Seaglider basestation patterns.
@@ -155,7 +161,11 @@ def _glider_sn_from_filename(filename: str) -> int:
     return int(filename[1:4])
 
 
-def filter_files_by_profile(file_list: list[str], start_profile: int | None = None, end_profile: int | None = None) -> list[str]:
+def filter_files_by_profile(
+    file_list: list[str],
+    start_profile: int | None = None,
+    end_profile: int | None = None,
+) -> list[str]:
     """Filter files by profile/dive number range.
 
     Filters Seaglider basestation files based on profile number range.
@@ -230,7 +240,9 @@ def load_first_basestation_file(source: str) -> xr.Dataset:
     return datasets[0]
 
 
-def load_basestation_files(source: str, start_profile: int | None = None, end_profile: int | None = None) -> list[xr.Dataset]:
+def load_basestation_files(
+    source: str, start_profile: int | None = None, end_profile: int | None = None
+) -> list[xr.Dataset]:
     """Load multiple Seaglider basestation files with optional profile filtering.
 
     Main function for loading Seaglider data from either online repositories
@@ -251,6 +263,9 @@ def load_basestation_files(source: str, start_profile: int | None = None, end_pr
         List of loaded basestation datasets, ordered by filename.
 
     """
+    ### Scan all basestation files and repair any with inconsistent time metadata before loading
+    scan_and_repair_files(source, start_profile, end_profile)
+
     file_list = list_files(source)
     filtered_files = filter_files_by_profile(file_list, start_profile, end_profile)
 
@@ -258,7 +273,7 @@ def load_basestation_files(source: str, start_profile: int | None = None, end_pr
 
     ### Include a tqdm progress bar
     for file in tqdm(filtered_files, desc="Loading datasets", unit="file"):
-        ds = xr.open_dataset(os.path.join(source, file), decode_timedelta=False)
+        ds = xr.open_dataset(os.path.join(source, file))
 
         datasets.append(ds)
 
@@ -266,7 +281,9 @@ def load_basestation_files(source: str, start_profile: int | None = None, end_pr
 
 
 def list_files(
-    source: str, registry_loc: str = "seagliderOG1", registry_name: str = "seaglider_registry.txt"
+    source: str,
+    registry_loc: str = "seagliderOG1",
+    registry_name: str = "seaglider_registry.txt",
 ) -> list[str]:
     """List NetCDF files from a source (URL or local directory).
 
@@ -315,3 +332,135 @@ def list_files(
     file_list.sort()
 
     return file_list
+
+
+def scan_and_repair_files(
+    source: str,
+    start_profile: int | None = None,
+    end_profile: int | None = None,
+) -> None:
+    """
+    Scan NetCDF files and repair inconsistent time metadata only when needed.
+
+    Parameters
+    ----------
+    source : str
+        Directory path containing NetCDF files to scan and repair.
+    start_profile : int, optional
+        Minimum profile number to include (inclusive).
+    end_profile : int, optional
+        Maximum profile number to include (inclusive).
+
+    Returns
+    -------
+    None
+    """
+    file_list = list_files(source)
+    filtered_files = filter_files_by_profile(file_list, start_profile, end_profile)
+
+    fixes_dir = os.path.join(source, "metadata_fixes")
+    os.makedirs(fixes_dir, exist_ok=True)
+
+    log_path = os.path.join(fixes_dir, "repair_log.txt")
+
+    for file in tqdm(filtered_files, desc="Scanning files", unit="file"):
+        full_path = os.path.join(source, file)
+
+        try:
+            # Good files are left untouched
+            ds = xr.open_dataset(full_path, decode_timedelta=False)
+            ds.close()
+
+        except Exception as err:
+            print(f"Need repair: {file}")
+
+            fixed_vars = repair_netcdf_time_metadata_inplace(
+                full_path,
+                repair_dir=fixes_dir,
+                backup=True,
+            )
+
+            if fixed_vars:
+                log_repair(log_path, file, fixed_vars, err)
+                print(f"Repaired {file}: {fixed_vars}")
+
+
+def _repair_folder(source: str | pathlib.Path) -> pathlib.Path:
+    """Return the folder where backups and logs for repaired files are stored."""
+    repair_dir = pathlib.Path(source) / "metadata_fixes"
+    repair_dir.mkdir(exist_ok=True)
+    return repair_dir
+
+
+def _backup_path(
+    path: str | pathlib.Path, repair_dir: str | pathlib.Path
+) -> pathlib.Path:
+    """Return a backup filename stored in metadata_fixes/."""
+    path = pathlib.Path(path)
+    repair_dir = pathlib.Path(repair_dir)
+    return repair_dir / f"{path.stem}_original{path.suffix}"
+
+
+def log_repair(
+    log_path: str | pathlib.Path,
+    filename: str,
+    fixed_vars: list[str],
+    error: Exception | str,
+):
+    """Append one repair entry to the log file."""
+    with open(log_path, "a") as f:
+        f.write(f"{datetime.now().isoformat()} | {filename}\n")
+        f.write(f"  Fixed variables: {fixed_vars}\n")
+        f.write(f"  Original error: {str(error)}\n")
+        f.write("\n")
+
+
+def repair_netcdf_time_metadata_inplace(
+    path: str | pathlib.Path,
+    repair_dir: str | pathlib.Path,
+    backup: bool = True,
+) -> list[str]:
+    """Repair variables stored as text but mislabeled as CF time variables.
+
+    The original file is backed up into repair_dir before the repaired version
+    replaces the original file.
+    """
+    path = pathlib.Path(path)
+    repair_dir = pathlib.Path(repair_dir)
+    fixed_vars: list[str] = []
+
+    ds = xr.open_dataset(path, decode_times=False, decode_timedelta=False)
+    try:
+        for var_name in ds.variables:
+            var = ds[var_name]
+            units = var.attrs.get("units")
+
+            if not isinstance(units, str):
+                continue
+
+            if "since" not in units.lower():
+                continue
+
+            if getattr(var.dtype, "kind", None) in {"S", "U", "O"}:
+                var.attrs.pop("units", None)
+                var.attrs.pop("calendar", None)
+                fixed_vars.append(var_name)
+
+        if not fixed_vars:
+            return []
+
+        ds.load()
+
+        if backup:
+            backup_path = _backup_path(path, repair_dir)
+            if not backup_path.exists():
+                shutil.copy2(path, backup_path)
+
+        tmp_path = path.with_name(f"{path.stem}_tmp_repaired{path.suffix}")
+        ds.to_netcdf(tmp_path)
+
+    finally:
+        ds.close()
+
+    os.replace(tmp_path, path)
+    return fixed_vars
