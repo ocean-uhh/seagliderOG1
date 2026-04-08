@@ -101,6 +101,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.tools">tools</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_dive_number"><code class="docutils literal notranslate"><span class="pre">add_dive_number()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_hdm_parameters"><code class="docutils literal notranslate"><span class="pre">add_hdm_parameters()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_sensor_to_dataset"><code class="docutils literal notranslate"><span class="pre">add_sensor_to_dataset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.assign_phase"><code class="docutils literal notranslate"><span class="pre">assign_phase()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.assign_profile_number"><code class="docutils literal notranslate"><span class="pre">assign_profile_number()</span></code></a></li>
@@ -111,6 +112,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.convert_units_var"><code class="docutils literal notranslate"><span class="pre">convert_units_var()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.encode_times"><code class="docutils literal notranslate"><span class="pre">encode_times()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.encode_times_og1"><code class="docutils literal notranslate"><span class="pre">encode_times_og1()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.extract_hdm_parameters"><code class="docutils literal notranslate"><span class="pre">extract_hdm_parameters()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.find_best_dtype"><code class="docutils literal notranslate"><span class="pre">find_best_dtype()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.gather_sensor_info"><code class="docutils literal notranslate"><span class="pre">gather_sensor_info()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.get_sg_attrs"><code class="docutils literal notranslate"><span class="pre">get_sg_attrs()</span></code></a></li>
@@ -274,13 +276,13 @@ file that had no dimensions, typically after being processed by <cite>split_by_u
 <dd class="field-even"><p><p>A tuple containing three xarray Datasets:
 - sg_cal : xarray.Dataset</p>
 <blockquote>
-<div><p>Dataset containing variables starting with ‘<a href="#id1"><span class="problematic" id="id2">sg_cal_</span></a>’ (originally from <cite>sg_calib_constants.m</cite>).
-The variables are renamed to remove the ‘<a href="#id3"><span class="problematic" id="id4">sg_cal_</span></a>’ prefix, so they can be accessed directly
+<div><p>Dataset containing variables starting with ‘<a href="#id3"><span class="problematic" id="id4">sg_cal_</span></a>’ (originally from <cite>sg_calib_constants.m</cite>).
+The variables are renamed to remove the ‘<a href="#id5"><span class="problematic" id="id6">sg_cal_</span></a>’ prefix, so they can be accessed directly
 (e.g., <cite>sg_cal.hd_a</cite>).</p>
 </div></blockquote>
 <ul class="simple">
 <li><dl class="simple">
-<dt>dc_log<span class="classifier">xarray.Dataset</span></dt><dd><p>Dataset containing variables starting with ‘<a href="#id5"><span class="problematic" id="id6">log_</span></a>’. These variables are typically from log files.</p>
+<dt>dc_log<span class="classifier">xarray.Dataset</span></dt><dd><p>Dataset containing variables starting with ‘<a href="#id7"><span class="problematic" id="id8">log_</span></a>’. These variables are typically from log files.</p>
 </dd>
 </dl>
 </li>
@@ -386,7 +388,7 @@ will prompt the user to decide whether to overwrite it or not.</p>
 <li><p>attr_warnings (list[str]): A list of warnings related to attribute assignments.</p></li>
 <li><p>sg_cal (xarray.Dataset): A dataset containing variables starting with ‘sg_cal’.</p></li>
 <li><p>dc_other (xarray.Dataset): A dataset containing other variables not categorized under ‘sg_cal’ or ‘dc_log’.</p></li>
-<li><p>dc_log (xarray.Dataset): A dataset containing variables starting with ‘<a href="#id7"><span class="problematic" id="id8">log_</span></a>’.</p></li>
+<li><p>dc_log (xarray.Dataset): A dataset containing variables starting with ‘<a href="#id9"><span class="problematic" id="id10">log_</span></a>’.</p></li>
 </ul>
 </p>
 </dd>
@@ -913,6 +915,24 @@ attributes to strings and retries the save operation.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.tools.add_hdm_parameters">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_hdm_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_OG1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdm_parameters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_hdm_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_hdm_parameters" title="Link to this definition"></a></dt>
+<dd><p>Add HDM parameters to the OG1 dataset as new variables with their attributes.</p>
+<section id="parameters">
+<h3>Parameters:<a class="headerlink" href="#parameters" title="Link to this heading"></a></h3>
+<p>ds_OG1 (xarray.Dataset): The OG1 dataset to which HDM parameters will be added.
+hdm_parameters (dict): A dictionary containing HDM parameters and their attributes</p>
+<blockquote>
+<div><p>in the format {standard_name: {“value”: …, “attributes”: {…}}}.</p>
+</div></blockquote>
+</section>
+<section id="returns">
+<h3>Returns:<a class="headerlink" href="#returns" title="Link to this heading"></a></h3>
+<p>xarray.Dataset: Updated OG1 dataset with HDM parameters added as variables.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.add_sensor_to_dataset">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_sensor_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dsa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sg_cal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_sensor_to_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_sensor_to_dataset" title="Link to this definition"></a></dt>
 <dd><p>Add sensor information to the dataset based on instrument data and calibration parameters.</p>
@@ -1057,7 +1077,7 @@ and adding the merged dataset.</p>
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">convert_qc_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dsa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qc_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#convert_qc_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.convert_qc_flags" title="Link to this definition"></a></dt>
 <dd><p>Convert QC flag variables to proper integer format and update attributes.</p>
 <p>This function converts QC flag variables from string format to int8,
-handles NaN values appropriately, removes ‘<a href="#id9"><span class="problematic" id="id10">QC_</span></a>’ prefixes from flag meanings,
+handles NaN values appropriately, removes ‘<a href="#id11"><span class="problematic" id="id12">QC_</span></a>’ prefixes from flag meanings,
 and adds proper metadata including long_name and standard_name.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1159,6 +1179,25 @@ specifications.</p>
 <dd class="field-odd"><p>xarray.Dataset</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.tools.extract_hdm_parameters">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">extract_hdm_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_datasets</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#extract_hdm_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.extract_hdm_parameters" title="Link to this definition"></a></dt>
+<dd><p>Extracts HDM parameters and their attributes from a list of datasets. If the parameter has the same value across all datasets,
+it keeps a single value; otherwise, it returns the full list.</p>
+<section id="id1">
+<h3>Parameters:<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>list_datasets (list): List of xarray.Dataset objects.
+standard_names (dict): Vocabulary mapping internal names to standard names.</p>
+</section>
+<section id="id2">
+<h3>Returns:<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>dict: A nested dictionary where keys are standard names and values contain</dt><dd><p>the ‘data’ and ‘attributes’.</p>
+</dd>
+</dl>
+</section>
 </dd></dl>
 
 <dl class="py function">
