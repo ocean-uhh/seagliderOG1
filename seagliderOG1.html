@@ -80,6 +80,9 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.load_basestation_files"><code class="docutils literal notranslate"><span class="pre">load_basestation_files()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.load_first_basestation_file"><code class="docutils literal notranslate"><span class="pre">load_first_basestation_file()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.load_sample_dataset"><code class="docutils literal notranslate"><span class="pre">load_sample_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.log_repair"><code class="docutils literal notranslate"><span class="pre">log_repair()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.repair_netcdf_time_metadata_inplace"><code class="docutils literal notranslate"><span class="pre">repair_netcdf_time_metadata_inplace()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.scan_and_repair_files"><code class="docutils literal notranslate"><span class="pre">scan_and_repair_files()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.plotters">plotters</a><ul>
@@ -620,6 +623,38 @@ datasets in the registry. Default is “p0330015_20100906.nc”.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>KeyError</strong> – If the requested dataset is not available in the registry.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.readers.log_repair">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">log_repair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Exception</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/readers.html#log_repair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.log_repair" title="Link to this definition"></a></dt>
+<dd><p>Append one repair entry to the log file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.readers.repair_netcdf_time_metadata_inplace">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">repair_netcdf_time_metadata_inplace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repair_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backup</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#repair_netcdf_time_metadata_inplace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.repair_netcdf_time_metadata_inplace" title="Link to this definition"></a></dt>
+<dd><p>Repair variables stored as text but mislabeled as CF time variables.</p>
+<p>The original file is backed up into repair_dir before the repaired version
+replaces the original file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.readers.scan_and_repair_files">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">scan_and_repair_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#scan_and_repair_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.scan_and_repair_files" title="Link to this definition"></a></dt>
+<dd><p>Scan NetCDF files and repair inconsistent time metadata only when needed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>str</em>) – Directory path containing NetCDF files to scan and repair.</p></li>
+<li><p><strong>start_profile</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum profile number to include (inclusive).</p></li>
+<li><p><strong>end_profile</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum profile number to include (inclusive).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
