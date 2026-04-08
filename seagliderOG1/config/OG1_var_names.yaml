@@ -88,13 +88,16 @@ sound_velocity: SOUND_VELOCITY
 
 ### flight model parameters ###
 sg_cal_vbd_min_cnts: VBD_MIN_CNTS
+log_VBD_MIN: VBD_MIN_CNTS
 sg_cal_vbd_cnts_per_cc: VBD_CNTS_PER_CC
+log_VBD_CNV: VBD_CC_PER_CNTS
 sg_cal_mass: MASS
 sg_cal_volmax: VOLMAX
 log_C_VBD: C_VBD
 sg_cal_hd_a: HD_A
 sg_cal_hd_b: HD_B
 sg_cal_hd_c: HD_C
+sg_cal_vbdbias: VBD_BIAS
 
 sbe41: Seabird unpumped CTD
 wlbb2f: Wetlabs BB2FL-VMT

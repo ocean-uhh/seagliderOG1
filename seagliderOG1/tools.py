@@ -1139,10 +1139,8 @@ def extract_hdm_parameters(list_datasets):
     dict: A nested dictionary where keys are standard names and values contain
             the 'data' and 'attributes'.
     """
-    potential_parameters = [
-        "sg_cal_vbd_min_cnts", "sg_cal_vbd_cnts_per_cc", "sg_cal_mass",
-        "sg_cal_volmax", "log_C_VBD", "sg_cal_hd_a", "sg_cal_hd_b", "sg_cal_hd_c"
-    ]
+    potential_parameters_OG1 = ['VBD_MIN_CNTS','VBD_CNTS_PER_CC','VBD_CC_PER_CNTS','VBD_BIAS','MASS','VOLMAX','C_VBD','HD_A','HD_B','HD_C']
+    potential_parameters = [key for key, value in standard_names.items() if value in potential_parameters_OG1]
     hdm_variables = {}
 
     for param in potential_parameters:
@@ -1153,7 +1151,6 @@ def extract_hdm_parameters(list_datasets):
 
         # 1. Check if the parameter exists in the datasets
         if param not in list_datasets[0].variables:
-            print(f"Variable '{param}' not found in dataset. Skipping.")
             continue
 
         # 2. Extract values from all datasets
@@ -1168,11 +1165,19 @@ def extract_hdm_parameters(list_datasets):
         if isinstance(final_value, list):
             final_value = np.array(final_value)
 
-        # 4. Store as a dictionary to accommodate both value and attributes
+        # 4. Store as a dictionary to accommodate both value and attributes and add long_name attribute
         hdm_variables[param_key] = {
             "values": final_value,
-            "attributes": list_datasets[0][param].attrs
+            "attributes": list_datasets[0][param].attrs  # Add long_name attribute
         }
+        hdm_variables[param_key]["attributes"]["original_name"] = param_key
+
+    # 5. Print what parameters from potential_parameters were found and which couldn't not be found in the datasets
+    found_params = [param for param in potential_parameters_OG1 if param in hdm_variables]
+    not_found_params = [param for param in potential_parameters_OG1 if param not in hdm_variables]
+    print(f"The following HDM parameters were found: {found_params}")
+    if not_found_params:
+        print(f"Warning: The following potential HDM parameters were not found in the datasets: {not_found_params}")
 
     return hdm_variables
 
