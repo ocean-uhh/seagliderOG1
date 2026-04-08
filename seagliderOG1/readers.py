@@ -3,7 +3,6 @@ import pathlib
 import re
 import sys
 
-import pooch
 import requests
 import xarray as xr
 from bs4 import BeautifulSoup
@@ -54,10 +53,13 @@ data_source_og = pooch.create(
     },
 )"""
 
+
 # Instead of loading from the server, we will load from a local directory for testing and development purposes.
 # The local directory will contain the same files as the server, but we will not use pooch to manage them.
 # Instead, we will just read them directly from the filesystem.
-def load_sample_dataset(file_path: str = str(parent_dir / "data/demo_sg005/p0050001_20080606.nc")) -> xr.Dataset:
+def load_sample_dataset(
+    file_path: str = str(parent_dir / "data/demo_sg005/p0050001_20080606.nc"),
+) -> xr.Dataset:
     """Download sample datasets for use with seagliderOG1.
 
     Parameters
@@ -82,6 +84,7 @@ def load_sample_dataset(file_path: str = str(parent_dir / "data/demo_sg005/p0050
     else:
         msg = f"Requested sample dataset {file_path} not known. Available datasets are: {os.listdir(str(parent_dir / 'data/demo_sg005'))}"
         raise KeyError(msg)
+
 
 def _validate_filename(filename: str) -> bool:
     """Validate if filename matches expected Seaglider basestation patterns.
@@ -158,7 +161,11 @@ def _glider_sn_from_filename(filename: str) -> int:
     return int(filename[1:4])
 
 
-def filter_files_by_profile(file_list: list[str], start_profile: int | None = None, end_profile: int | None = None) -> list[str]:
+def filter_files_by_profile(
+    file_list: list[str],
+    start_profile: int | None = None,
+    end_profile: int | None = None,
+) -> list[str]:
     """Filter files by profile/dive number range.
 
     Filters Seaglider basestation files based on profile number range.
@@ -233,7 +240,9 @@ def load_first_basestation_file(source: str) -> xr.Dataset:
     return datasets[0]
 
 
-def load_basestation_files(source: str, start_profile: int | None = None, end_profile: int | None = None) -> list[xr.Dataset]:
+def load_basestation_files(
+    source: str, start_profile: int | None = None, end_profile: int | None = None
+) -> list[xr.Dataset]:
     """Load multiple Seaglider basestation files with optional profile filtering.
 
     Main function for loading Seaglider data from either online repositories
@@ -264,7 +273,7 @@ def load_basestation_files(source: str, start_profile: int | None = None, end_pr
 
     ### Include a tqdm progress bar
     for file in tqdm(filtered_files, desc="Loading datasets", unit="file"):
-        ds = xr.open_dataset(os.path.join(source, file), decode_timedelta=False)
+        ds = xr.open_dataset(os.path.join(source, file))
 
         datasets.append(ds)
 
@@ -272,7 +281,9 @@ def load_basestation_files(source: str, start_profile: int | None = None, end_pr
 
 
 def list_files(
-    source: str, registry_loc: str = "seagliderOG1", registry_name: str = "seaglider_registry.txt"
+    source: str,
+    registry_loc: str = "seagliderOG1",
+    registry_name: str = "seaglider_registry.txt",
 ) -> list[str]:
     """List NetCDF files from a source (URL or local directory).
 
@@ -321,6 +332,7 @@ def list_files(
     file_list.sort()
 
     return file_list
+
 
 def scan_and_repair_files(
     source: str,
@@ -380,14 +392,21 @@ def _repair_folder(source: str | pathlib.Path) -> pathlib.Path:
     return repair_dir
 
 
-def _backup_path(path: str | pathlib.Path, repair_dir: str | pathlib.Path) -> pathlib.Path:
+def _backup_path(
+    path: str | pathlib.Path, repair_dir: str | pathlib.Path
+) -> pathlib.Path:
     """Return a backup filename stored in metadata_fixes/."""
     path = pathlib.Path(path)
     repair_dir = pathlib.Path(repair_dir)
     return repair_dir / f"{path.stem}_original{path.suffix}"
 
 
-def log_repair(log_path: str | pathlib.Path, filename: str, fixed_vars: list[str], error: Exception | str):
+def log_repair(
+    log_path: str | pathlib.Path,
+    filename: str,
+    fixed_vars: list[str],
+    error: Exception | str,
+):
     """Append one repair entry to the log file."""
     with open(log_path, "a") as f:
         f.write(f"{datetime.now().isoformat()} | {filename}\n")
