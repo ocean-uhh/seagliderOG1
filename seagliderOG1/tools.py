@@ -1179,6 +1179,19 @@ def extract_hdm_parameters(list_datasets):
     if not_found_params:
         print(f"Warning: The following potential HDM parameters were not found in the datasets: {not_found_params}")
 
+    # 6. Add dive_number in order to be able to assign dive-based parameters to the correct profiles in the OG1 dataset
+    dive_numbers = None
+    if "dive_number" in list_datasets[0].attrs:
+        dive_numbers = [ds.dive_number.item() for ds in list_datasets]
+    elif "trajectory" in list_datasets[0].data_vars:
+        dive_numbers = [ds["trajectory"].values for ds in list_datasets]
+    if dive_numbers is not None:
+        hdm_variables["DIVE_NUMBER"] = {"values": dive_numbers}
+    else:
+        print(
+            "Warning: 'dive_number' or 'trajectory' not found in datasets. "
+            "Dive-based parameters may not be correctly assigned."
+        )
     return hdm_variables
 
 def add_hdm_parameters(ds_OG1, hdm_parameters):
@@ -1196,34 +1209,36 @@ def add_hdm_parameters(ds_OG1, hdm_parameters):
     """
     ds_updated = ds_OG1.copy()
 
-    # Get unique profile numbers (e.g., [1, 2, 3, 4...])
-    unique_profiles = np.sort(np.unique(ds_updated.PROFILE_NUMBER.values))
-    num_profiles = len(unique_profiles)
+    dive_numbers = hdm_parameters.pop("DIVE_NUMBER", {}).get("values", None)
 
     for param_name, param_info in hdm_parameters.items():
         # Using .get() because you used "value" in extract and "values" in your draft
         values = param_info.get("value") or param_info.get("values")
         attributes = param_info["attributes"]
 
+        if values is None or np.size(values) == 0:
+            print(f"Warning: Parameter '{param_name}' values are empty. Skipping.")
+            continue
         # Check if it's a single value (scalar)
-        if np.size(values) == 1:
-            # item() converts a 1-element array to a native python scalar
-            ds_updated[param_name] = values.item() if hasattr(values, "item") else values
+        if dive_numbers is None or np.size(values) == 1:
+            val = np.atleast_1d(values)[0]
+            ds_updated[param_name] = val.item() if hasattr(val, "item") else val
             ds_updated[param_name].attrs = attributes
-
         # Check if it's dive-based (1 value per 2 profiles)
-        elif np.size(values) == num_profiles // 2:
-            # Initialize an array of zeros/NaNs matching the measurement dimension
-            # Use the same dtype as our input values
+        elif np.size(values) > 1:
             mapped_array = np.full(ds_updated.N_MEASUREMENTS.shape, np.nan)
 
             # Iterate through dives (each dive = 2 profiles)
-            for i, dive_val in enumerate(values):
-                # Create mask for the two profiles corresponding to one dive
-                p_idx_1, p_idx_2 = unique_profiles[2 * i], unique_profiles[2 * i + 1]
-
+            for dive, dive_val in zip(dive_numbers, values):
                 # Find all measurement indices belonging to these two profiles
-                mask = (ds_updated.PROFILE_NUMBER == p_idx_1) | (ds_updated.PROFILE_NUMBER == p_idx_2)
+                if "DIVE_NUMBER" in ds_updated.data_vars:
+                    mask = ds_updated.DIVE_NUMBER == dive
+                elif "PROFILE_NUMBER" in ds_updated.data_vars:
+                    # Logic: Dive 1 = Profiles 1 & 2
+                    mask = (ds_updated.PROFILE_NUMBER == 2 * dive - 1) | (ds_updated.PROFILE_NUMBER == 2 * dive)
+                else:
+                    print(f"Error: No reference dimension for {param_name}. Skipping dive mapping.")
+                    break
 
                 # Fill the array for those specific measurements
                 mapped_array[mask] = dive_val
@@ -1231,10 +1246,6 @@ def add_hdm_parameters(ds_OG1, hdm_parameters):
             # Add to dataset with the N_MEASUREMENTS dimension
             ds_updated[param_name] = (("N_MEASUREMENTS",), mapped_array)
             ds_updated[param_name].attrs = attributes
-
-        else:
-            print(f"Warning: {param_name} size ({np.size(values)}) does not match "
-                  f"scalar or dive count ({num_profiles // 2}). Skipping.")
 
     return ds_updated
 
