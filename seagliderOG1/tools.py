@@ -1127,10 +1127,23 @@ def merge_datasets_along_time(split_ds, dims_to_merge, first_run=False):
                 print(f"Skipping '{dim}': No datetime64 variable found.")
             continue
 
-        time_var = time_vars[0]
+        ### if more than one time variable is found, takle ctd_time preferibly, otherwise time or the first one. Delete the other time variables.
+        if len(time_vars) > 1:
+            if "ctd_time" in time_vars:
+                time_var = "ctd_time"
+            elif "time" in time_vars:
+                time_var = "time"
+            else:
+                time_var = time_vars[0]
+            for var in time_vars:
+                if var != time_var:
+                    ds = ds.drop_vars(var)
+        else:
+            time_var = time_vars[0]
 
         # ---3. Rename detected time variable to 'time'---
-        ds = ds.rename({time_var: "time"})
+        if time_var != "time":
+            ds = ds.rename({time_var: "time"})
 
         # ---4. Swap old dimension to time---
         ds = ds.swap_dims({old_dim: "time"})
