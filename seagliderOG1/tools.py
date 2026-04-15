@@ -1,4 +1,5 @@
 import logging
+import profile
 import re
 
 import gsw
@@ -398,20 +399,18 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
         pmax_index = start_index + np.argmax(
             pressure_data[start_index : end_index + 1].values == pmax
         )
-
         # Assign dive_num to all values up to and including pmax
         ds["dive_num_cast"][start_index : pmax_index + 1] = dive
 
         # Assign dive_num + 0.5 to values after pmax
         ds["dive_num_cast"][pmax_index + 1 : end_index + 1] = dive + 0.5
-
         # Remove PROFILE_NUMBER if it exists
         if "PROFILE_NUMBER" in ds.variables:
             ds = ds.drop_vars("PROFILE_NUMBER")
-
-        # Assign PROFILE_NUMBER
-        ds["PROFILE_NUMBER"] = 2 * ds["dive_num_cast"] - 1
-
+        # Calculate profile number and fill Nan with fill value
+        fill_value = -9999
+        ds["PROFILE_NUMBER"] = (2 * ds["dive_num_cast"] - 1).fillna(fill_value).astype(int)
+        ds["PROFILE_NUMBER"].attrs["_FillValue"] = fill_value
     return ds
 
 
@@ -568,7 +567,6 @@ def split_by_unique_dims(ds: xr.Dataset) -> dict:
     """
     # Dictionary to hold datasets with unique dimension sets
     unique_dims_datasets = {}
-
     # Iterate over the variables in the dataset
     for var_name, var_data in ds.data_vars.items():
         # Get the dimensions of the variable
@@ -1087,6 +1085,95 @@ def merge_parts_of_dataset(
 
     # Sort by time and drop NaT values
     merged_ds = merged_ds.sortby("time").dropna(dim=dim1, subset=["time"])
+
+    return merged_ds
+
+def merge_datasets_along_time(split_ds, dims_to_merge, first_run=False):
+    """
+    Merge a list of xarray Datasets along their time dimension.
+
+    Parameters
+    ----------
+    split_ds : dict[(str,), xr.Dataset]
+        Mapping from (dimension,) to Dataset.
+
+    dims_to_merge : list[str]
+        Dimension names to extract and merge.
+
+    Returns
+    -------
+    xr.Dataset or None
+        A time-aligned merged dataset, or None if no datasets were eligible.
+    """
+
+    processed_datasets = []
+
+    all_dims = set([dim[0] for dim in split_ds.keys() if len(dim) > 0])
+    actually_merged_dims = set()
+    for dim in dims_to_merge:
+
+        # ---1. Extract dataset---
+        if (dim,) not in split_ds:
+            print(f"Skipping {dim}: not found in split_ds.")
+            continue
+
+        ds = split_ds[(dim,)].copy()
+        old_dim = list(ds.sizes)[0]
+
+        # ---2. Detect datetime64 variable---
+        time_vars = [v for v in ds.variables if "datetime64" in str(ds[v].dtype)]
+        if not time_vars:
+            if first_run:
+                print(f"Skipping '{dim}': No datetime64 variable found.")
+            continue
+
+        ### if more than one time variable is found, takle ctd_time preferibly, otherwise time or the first one. Delete the other time variables.
+        if len(time_vars) > 1:
+            if "ctd_time" in time_vars:
+                time_var = "ctd_time"
+            elif "time" in time_vars:
+                time_var = "time"
+            else:
+                time_var = time_vars[0]
+            for var in time_vars:
+                if var != time_var:
+                    ds = ds.drop_vars(var)
+        else:
+            time_var = time_vars[0]
+
+        # ---3. Rename detected time variable to 'time'---
+        if time_var != "time":
+            ds = ds.rename({time_var: "time"})
+
+        # ---4. Swap old dimension to time---
+        ds = ds.swap_dims({old_dim: "time"})
+
+        # ---5. Add attribute old_dim to each data variable and coordinate (except the time coordinate)---
+        for var in ds.variables:
+            if var != "time":
+                ds[var].attrs["old_dim"] = old_dim
+        if first_run:
+            print(f"Adding variables with dimension '{dim}' and time variable '{time_var}'.")
+
+        processed_datasets.append(ds)
+        actually_merged_dims.add(dim)
+
+    if not processed_datasets:
+        print("No datasets processed. Returning None.")
+        return None
+
+    # ---6. Merge along shared time coordinate---
+    merged_ds = xr.merge(processed_datasets, join="outer")
+
+    # ---7. Swap to N_MEASUREMENTS (optional)---
+    merged_ds = merged_ds.swap_dims({"time": "N_MEASUREMENTS"})
+
+    merged_ds = merged_ds.sortby("time")
+    if first_run:
+        ## Print what remaining dimensions were not merged into the new dataset
+        print(f"The following dimensions were not merged into the new dataset: {all_dims - actually_merged_dims}"
+              "\nIf instrument data is missing make sure it's dimension follows the naming convention of '<instrument>_data_point'"
+              "\nfrom the ds.attrs['instrument'] list.")
 
     return merged_ds
 
