@@ -241,6 +241,8 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
     for instrument in instruments:
         if instrument + "_data_point" in dims:
             dims_to_merge.append(instrument + "_data_point")
+        elif instrument == "sbe41" and "sbect_data_point" in dims:
+            dims_to_merge.append("sbect_data_point")
     ### add the dimensions of longitude and pressure, as they are possibly different
     longitude_dim = list(ds1_base["longitude"].sizes)[0]
     pressure_dim = list(ds1_base["pressure"].sizes)[0]
