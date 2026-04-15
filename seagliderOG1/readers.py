@@ -273,7 +273,7 @@ def load_basestation_files(
 
     ### Include a tqdm progress bar
     for file in tqdm(filtered_files, desc="Loading datasets", unit="file"):
-        ds = xr.open_dataset(os.path.join(source, file))
+        ds = xr.open_dataset(os.path.join(source, file), decode_timedelta=False)
 
         datasets.append(ds)
 
