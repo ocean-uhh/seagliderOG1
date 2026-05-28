@@ -94,6 +94,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">turtle</span><span class="w"> </span><span class="kn">import</span> <span class="n">pd</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
@@ -367,10 +368,50 @@
     <span class="c1">#ds_sensor = tools.gather_sensor_info(ds_other, ds_sgcal, firstrun)</span>
     <span class="c1">#ds_new = tools.add_sensor_to_dataset(ds_new, ds_sensor, ds_sgcal, firstrun)</span>
 
-    <span class="c1"># To avoid problems, reset the dtype of TIME_GPS</span>
-    <span class="n">ds_new</span><span class="p">[</span><span class="s2">&quot;TIME_GPS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ds_new</span><span class="p">[</span><span class="s2">&quot;TIME_GPS&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e9</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
-        <span class="s2">&quot;datetime64[ns]&quot;</span>
-    <span class="p">)</span>
+    <span class="c1"># Now we check the TIME_GPS;</span>
+    <span class="c1"># Get dtype - if float, convert - test for unrealistic dates - error if unsupported type.</span>
+
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">ds_new</span><span class="p">[</span><span class="s2">&quot;TIME_GPS&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+
+    <span class="c1"># Test 1: dtype is already datetime</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">):</span>
+        <span class="k">pass</span>
+        <span class="c1">#print(&quot;TIME_GPS is already datetime64&quot;)</span>
+
+    <span class="c1"># Case 2: numeric -&gt; convert</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">):</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="n">ds_new</span><span class="p">[</span><span class="s2">&quot;TIME_GPS&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check for NaN or inf</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;TIME_GPS contains NaN or infinite values&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Convert seconds since epoch -&gt; datetime64[ns]</span>
+        <span class="n">converted</span> <span class="o">=</span> <span class="p">(</span><span class="n">values</span> <span class="o">*</span> <span class="mf">1e9</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;datetime64[ns]&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Sanity check</span>
+        <span class="n">min_date</span> <span class="o">=</span> <span class="n">converted</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">max_date</span> <span class="o">=</span> <span class="n">converted</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+        <span class="c1"># Define reasonable limits</span>
+        <span class="n">lower_limit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">(</span><span class="s2">&quot;1990-01-01&quot;</span><span class="p">)</span>
+        <span class="n">upper_limit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">(</span><span class="s2">&quot;2100-01-01&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">min_date</span> <span class="o">&lt;</span> <span class="n">lower_limit</span> <span class="ow">or</span> <span class="n">max_date</span> <span class="o">&gt;</span> <span class="n">upper_limit</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;TIME_GPS dates look unrealistic: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">min_date</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">max_date</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">ds_new</span><span class="p">[</span><span class="s2">&quot;TIME_GPS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">converted</span>
+
+    <span class="c1"># Case 3: unsupported dtype</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unsupported TIME_GPS dtype: </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
     <span class="n">vars_to_remove</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vars_to_remove</span>
     <span class="n">vars_present_to_remove</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">vars_to_remove</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds_new</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
 
@@ -383,7 +424,6 @@
 
     <span class="n">attr_warnings</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
     <span class="k">return</span> <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span></div>
-
 
 
 <div class="viewcode-block" id="standardise_OG10">

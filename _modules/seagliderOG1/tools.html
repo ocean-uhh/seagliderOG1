@@ -85,7 +85,6 @@
              
   <h1>Source code for seagliderOG1.tools</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">profile</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">gsw</span>
@@ -142,6 +141,7 @@
 <span class="sd">    - If &#39;Pcor&#39; is present in `ds_sgcal`, an additional sensor &#39;sbe43&#39; is created based on &#39;sbe41&#39; with specific attributes.</span>
 <span class="sd">    - If &#39;optode_FoilCoefA1&#39; is present in `ds_sgcal`, an additional sensor &#39;aa4831&#39; is created based on &#39;sbe41&#39; with specific attributes.</span>
 <span class="sd">    - The function sets appropriate attributes for the sensors &#39;aa4330&#39;, &#39;aa4831&#39;, and &#39;sbe43&#39; if they are present.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Gather sensors</span>
     <span class="n">sensor_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;wlbb2f&quot;</span><span class="p">,</span> <span class="s2">&quot;sbe41&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4330&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4381&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4330f&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4381f&quot;</span><span class="p">]</span>
@@ -506,7 +506,9 @@
             <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">&quot;PROFILE_NUMBER&quot;</span><span class="p">)</span>
         <span class="c1"># Calculate profile number and fill Nan with fill value</span>
         <span class="n">fill_value</span> <span class="o">=</span> <span class="o">-</span><span class="mi">9999</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PROFILE_NUMBER&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">fill_value</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PROFILE_NUMBER&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;dive_num_cast&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">fill_value</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PROFILE_NUMBER&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;_FillValue&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_value</span>
     <span class="k">return</span> <span class="n">ds</span></div>
 
@@ -1234,11 +1236,11 @@
     <span class="k">return</span> <span class="n">merged_ds</span></div>
 
 
+
 <div class="viewcode-block" id="merge_datasets_along_time">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.merge_datasets_along_time">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">merge_datasets_along_time</span><span class="p">(</span><span class="n">split_ds</span><span class="p">,</span> <span class="n">dims_to_merge</span><span class="p">,</span> <span class="n">first_run</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Merge a list of xarray Datasets along their time dimension.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge a list of xarray Datasets along their time dimension.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1252,8 +1254,8 @@
 <span class="sd">    -------</span>
 <span class="sd">    xr.Dataset or None</span>
 <span class="sd">        A time-aligned merged dataset, or None if no datasets were eligible.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
 
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">processed_datasets</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="n">all_dims</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">split_ds</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span>
@@ -1301,7 +1303,9 @@
             <span class="k">if</span> <span class="n">var</span> <span class="o">!=</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span>
                 <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;old_dim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_dim</span>
         <span class="k">if</span> <span class="n">first_run</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Adding variables with dimension &#39;</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">&#39; and time variable &#39;</span><span class="si">{</span><span class="n">time_var</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Adding variables with dimension &#39;</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">&#39; and time variable &#39;</span><span class="si">{</span><span class="n">time_var</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+            <span class="p">)</span>
 
         <span class="n">processed_datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
         <span class="n">actually_merged_dims</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
@@ -1319,9 +1323,11 @@
     <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">merged_ds</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">first_run</span><span class="p">:</span>
         <span class="c1">## Print what remaining dimensions were not merged into the new dataset</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The following dimensions were not merged into the new dataset: </span><span class="si">{</span><span class="n">all_dims</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">actually_merged_dims</span><span class="si">}</span><span class="s2">&quot;</span>
-              <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">If instrument data is missing make sure it&#39;s dimension follows the naming convention of &#39;&lt;instrument&gt;_data_point&#39;&quot;</span>
-              <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">from the ds.attrs[&#39;instrument&#39;] list.&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;The following dimensions were not merged into the new dataset: </span><span class="si">{</span><span class="n">all_dims</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">actually_merged_dims</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">If instrument data is missing make sure it&#39;s dimension follows the naming convention of &#39;&lt;instrument&gt;_data_point&#39;&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">from the ds.attrs[&#39;instrument&#39;] list.&quot;</span>
+        <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">merged_ds</span></div>
 
@@ -1348,6 +1354,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset</span>
 <span class="sd">        The updated dataset with merged variables.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Drop all variables that have dim1 or dim2</span>
     <span class="n">vars_to_drop</span> <span class="o">=</span> <span class="p">[</span>
@@ -1361,34 +1368,53 @@
     <span class="k">return</span> <span class="n">updated_ds</span></div>
 
 
+
 <span class="n">standard_names</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">standard_names</span>
+
 
 <div class="viewcode-block" id="extract_hdm_parameters">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.extract_hdm_parameters">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">extract_hdm_parameters</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Extracts HDM parameters and their attributes from a list of datasets. If the parameter has the same value across all datasets,</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extracts HDM parameters and their attributes from a list of datasets. If the parameter has the same value across all datasets,</span>
 <span class="sd">    it keeps a single value; otherwise, it returns the full list.</span>
 
-<span class="sd">    Parameters:</span>
-<span class="sd">    -----------</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
 <span class="sd">    list_datasets (list): List of xarray.Dataset objects.</span>
 <span class="sd">    standard_names (dict): Vocabulary mapping internal names to standard names.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">    --------</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
 <span class="sd">    dict: A nested dictionary where keys are standard names and values contain</span>
 <span class="sd">            the &#39;data&#39; and &#39;attributes&#39;.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">potential_parameters_OG1</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;VBD_MIN_CNTS&#39;</span><span class="p">,</span><span class="s1">&#39;VBD_CNTS_PER_CC&#39;</span><span class="p">,</span><span class="s1">&#39;VBD_CC_PER_CNTS&#39;</span><span class="p">,</span><span class="s1">&#39;VBD_BIAS&#39;</span><span class="p">,</span><span class="s1">&#39;MASS&#39;</span><span class="p">,</span><span class="s1">&#39;VOLMAX&#39;</span><span class="p">,</span><span class="s1">&#39;C_VBD&#39;</span><span class="p">,</span><span class="s1">&#39;HD_A&#39;</span><span class="p">,</span><span class="s1">&#39;HD_B&#39;</span><span class="p">,</span><span class="s1">&#39;HD_C&#39;</span><span class="p">]</span>
-    <span class="n">potential_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">standard_names</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">potential_parameters_OG1</span><span class="p">]</span>
+    <span class="n">potential_parameters_OG1</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;VBD_MIN_CNTS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;VBD_CNTS_PER_CC&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;VBD_CC_PER_CNTS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;VBD_BIAS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MASS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;VOLMAX&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;C_VBD&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;HD_A&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;HD_B&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;HD_C&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">potential_parameters</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">key</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">standard_names</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">potential_parameters_OG1</span>
+    <span class="p">]</span>
     <span class="n">hdm_variables</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">potential_parameters</span><span class="p">:</span>
         <span class="c1"># Determine the key name using standard_names mapping</span>
         <span class="n">param_key</span> <span class="o">=</span> <span class="n">standard_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">param_key</span> <span class="o">==</span> <span class="n">param</span> <span class="ow">and</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">standard_names</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: &#39;</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">&#39; not found in standard names. Using original name.&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Warning: &#39;</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">&#39; not found in standard names. Using original name.&quot;</span>
+            <span class="p">)</span>
 
         <span class="c1"># 1. Check if the parameter exists in the datasets</span>
         <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">list_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
@@ -1409,16 +1435,22 @@
         <span class="c1"># 4. Store as a dictionary to accommodate both value and attributes and add long_name attribute</span>
         <span class="n">hdm_variables</span><span class="p">[</span><span class="n">param_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="n">final_value</span><span class="p">,</span>
-            <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="n">list_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">param</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>  <span class="c1"># Add long_name attribute</span>
+            <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="n">list_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">param</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span>  <span class="c1"># Add long_name attribute</span>
         <span class="p">}</span>
         <span class="n">hdm_variables</span><span class="p">[</span><span class="n">param_key</span><span class="p">][</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;original_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">param_key</span>
 
     <span class="c1"># 5. Print what parameters from potential_parameters were found and which couldn&#39;t not be found in the datasets</span>
-    <span class="n">found_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">param</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">potential_parameters_OG1</span> <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">hdm_variables</span><span class="p">]</span>
-    <span class="n">not_found_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">param</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">potential_parameters_OG1</span> <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hdm_variables</span><span class="p">]</span>
+    <span class="n">found_params</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">param</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">potential_parameters_OG1</span> <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">hdm_variables</span>
+    <span class="p">]</span>
+    <span class="n">not_found_params</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">param</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">potential_parameters_OG1</span> <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hdm_variables</span>
+    <span class="p">]</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The following HDM parameters were found: </span><span class="si">{</span><span class="n">found_params</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">not_found_params</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: The following potential HDM parameters were not found in the datasets: </span><span class="si">{</span><span class="n">not_found_params</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Warning: The following potential HDM parameters were not found in the datasets: </span><span class="si">{</span><span class="n">not_found_params</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
 
     <span class="c1"># 6. Add dive_number in order to be able to assign dive-based parameters to the correct profiles in the OG1 dataset</span>
     <span class="n">dive_numbers</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1436,20 +1468,22 @@
     <span class="k">return</span> <span class="n">hdm_variables</span></div>
 
 
+
 <div class="viewcode-block" id="add_hdm_parameters">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_hdm_parameters">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_hdm_parameters</span><span class="p">(</span><span class="n">ds_OG1</span><span class="p">,</span> <span class="n">hdm_parameters</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Add HDM parameters to the OG1 dataset as new variables with their attributes.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add HDM parameters to the OG1 dataset as new variables with their attributes.</span>
 
-<span class="sd">    Parameters:</span>
-<span class="sd">    -----------</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
 <span class="sd">    ds_OG1 (xarray.Dataset): The OG1 dataset to which HDM parameters will be added.</span>
 <span class="sd">    hdm_parameters (dict): A dictionary containing HDM parameters and their attributes</span>
 <span class="sd">                            in the format {standard_name: {&quot;value&quot;: ..., &quot;attributes&quot;: {...}}}.</span>
-<span class="sd">    Returns:</span>
-<span class="sd">    --------</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset: Updated OG1 dataset with HDM parameters added as variables.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">ds_updated</span> <span class="o">=</span> <span class="n">ds_OG1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
@@ -1479,9 +1513,13 @@
                     <span class="n">mask</span> <span class="o">=</span> <span class="n">ds_updated</span><span class="o">.</span><span class="n">DIVE_NUMBER</span> <span class="o">==</span> <span class="n">dive</span>
                 <span class="k">elif</span> <span class="s2">&quot;PROFILE_NUMBER&quot;</span> <span class="ow">in</span> <span class="n">ds_updated</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
                     <span class="c1"># Logic: Dive 1 = Profiles 1 &amp; 2</span>
-                    <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">ds_updated</span><span class="o">.</span><span class="n">PROFILE_NUMBER</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dive</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">ds_updated</span><span class="o">.</span><span class="n">PROFILE_NUMBER</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dive</span><span class="p">)</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">ds_updated</span><span class="o">.</span><span class="n">PROFILE_NUMBER</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dive</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span>
+                        <span class="n">ds_updated</span><span class="o">.</span><span class="n">PROFILE_NUMBER</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dive</span>
+                    <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: No reference dimension for </span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">. Skipping dive mapping.&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Error: No reference dimension for </span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">. Skipping dive mapping.&quot;</span>
+                    <span class="p">)</span>
                     <span class="k">break</span>
 
                 <span class="c1"># Fill the array for those specific measurements</span>
