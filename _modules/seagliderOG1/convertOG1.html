@@ -94,7 +94,6 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">turtle</span><span class="w"> </span><span class="kn">import</span> <span class="n">pd</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
@@ -143,9 +142,7 @@
     <span class="c1"># But we need to process them first to get the dive number, assign GPS (could be after), ?</span>
     <span class="k">for</span> <span class="n">ds1_base</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Processing datasets&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">):</span>
         <span class="n">varlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">varlist</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span><span class="p">)))</span>
-        <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span> <span class="o">=</span> <span class="n">process_dataset</span><span class="p">(</span>
-            <span class="n">ds1_base</span><span class="p">,</span> <span class="n">firstrun</span>
-        <span class="p">)</span>
+        <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span> <span class="o">=</span> <span class="n">process_dataset</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">ds_new</span><span class="p">:</span>
             <span class="n">processed_datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
             <span class="n">firstrun</span> <span class="o">=</span> <span class="kc">False</span>
@@ -156,8 +153,11 @@
 
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">processed_datasets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;N_MEASUREMENTS&quot;</span><span class="p">)</span>
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">&quot;TIME&quot;</span><span class="p">)</span>
-    <span class="c1"># Change format of time into datetime64[ns] to avoid problems with attributes and writing to netcdf</span>
-    <span class="c1"># ds_og1[&quot;TIME&quot;] = (ds_og1[&quot;TIME&quot;].astype(&quot;float64&quot;) * 1e9).astype(&quot;datetime64[ns]&quot;)</span>
+
+    <span class="c1"># Add sensor information to the dataset - can be done on the concatenated data</span>
+    <span class="c1"># -----------------------------------------------------------------------------</span>
+    <span class="n">sensor_dict</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">gather_sensor_info</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_sensor_to_dataset</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">sensor_dict</span><span class="p">)</span>
 
     <span class="c1"># Apply attributes</span>
     <span class="n">ordered_attributes</span> <span class="o">=</span> <span class="n">update_dataset_attributes</span><span class="p">(</span>
@@ -225,8 +225,8 @@
     <span class="c1"># CHECK LOGIC HERE: Should we be using the first and last time from the first and last dive?</span>
     <span class="c1"># Or is time_coverage_start from the base station file a better time to use?</span>
     <span class="c1"># Or is there an earlier TIME_GPS timestamp?</span>
-    <span class="n">tstart_in_numpy_datetime64</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">TIME</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-    <span class="n">tend_in_numpy_datetime64</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">TIME</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">tstart_in_numpy_datetime64</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="p">[</span><span class="s2">&quot;TIME&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">tend_in_numpy_datetime64</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="p">[</span><span class="s2">&quot;TIME&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">tstart_str</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_time_string</span><span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">datetime_as_string</span><span class="p">(</span><span class="n">tstart_in_numpy_datetime64</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
     <span class="p">)</span>
@@ -268,6 +268,8 @@
 
 
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="process_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.process_dataset">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">process_dataset</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
@@ -325,20 +327,27 @@
     <span class="c1"># Check if the dataset has &#39;LONGITUDE&#39; as a coordinate</span>
     <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_validate_coords</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">ds1_base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(),</span> <span class="p">[],</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(),</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(),</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(),</span> <span class="p">[]</span>
     <span class="c1">## Add default dimension sg_data_point</span>
-    <span class="n">dims_to_merge</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sg_data_point&#39;</span><span class="p">]</span>
+    <span class="n">dims_to_merge</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sg_data_point&quot;</span><span class="p">]</span>
     <span class="c1"># add the dimensions that match the instrument names to the list</span>
-    <span class="n">dims</span><span class="p">,</span> <span class="n">instruments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">sizes</span><span class="p">),</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instrument&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="n">dims</span><span class="p">,</span> <span class="n">instruments</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">sizes</span><span class="p">),</span>
+        <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instrument&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span>
+    <span class="p">)</span>
     <span class="k">for</span> <span class="n">instrument</span> <span class="ow">in</span> <span class="n">instruments</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">instrument</span> <span class="o">+</span> <span class="s2">&quot;_data_point&quot;</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">:</span>
             <span class="n">dims_to_merge</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instrument</span> <span class="o">+</span> <span class="s2">&quot;_data_point&quot;</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">instrument</span> <span class="o">==</span> <span class="s2">&quot;sbe41&quot;</span> <span class="ow">and</span> <span class="s2">&quot;sbect_data_point&quot;</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">:</span>
             <span class="n">dims_to_merge</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;sbect_data_point&quot;</span><span class="p">)</span>
-    <span class="c1">### add the dimensions of longitude and pressure, as they are possibly different</span>
-    <span class="n">longitude_dim</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sizes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">pressure_dim</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">[</span><span class="s2">&quot;pressure&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sizes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">dims_to_merge</span> <span class="o">+=</span> <span class="p">[</span><span class="n">longitude_dim</span><span class="p">,</span> <span class="n">pressure_dim</span><span class="p">]</span>
+    <span class="c1">### add the dimension of longitude, as this might be ctd_data_point and different from the instrument data point dimension</span>
+    <span class="c1">### this the dimension that ctd relies on for pressure, depth, longitude, latitude, time</span>
+    <span class="n">ctd_dim</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sizes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1">### delete pressure and depth from dataset if pressure_dim not sg_data_point,</span>
+    <span class="c1">### as then both ctd and navigation pressure exists and we only want to keep the ctd pressure, and depth is redundant with pressure</span>
+    <span class="k">if</span> <span class="n">ctd_dim</span> <span class="o">!=</span> <span class="s2">&quot;sg_data_point&quot;</span><span class="p">:</span>
+        <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">([</span><span class="s2">&quot;pressure&quot;</span><span class="p">,</span> <span class="s2">&quot;depth&quot;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+    <span class="n">dims_to_merge</span> <span class="o">+=</span> <span class="p">[</span><span class="n">ctd_dim</span><span class="p">]</span>
     <span class="c1"># Remove duplicates</span>
     <span class="n">dims_to_merge</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">dims_to_merge</span><span class="p">))</span>
     <span class="c1"># Split the dataset by unique dimensions</span>
@@ -356,61 +365,12 @@
     <span class="c1"># Must be after split_by_unique_dims and after rename_dimensions</span>
     <span class="n">ds_gps</span> <span class="o">=</span> <span class="n">split_ds</span><span class="p">[(</span><span class="s2">&quot;gps_info&quot;</span><span class="p">,)]</span>
     <span class="n">ds_new</span> <span class="o">=</span> <span class="n">add_gps_info_to_dataset</span><span class="p">(</span><span class="n">ds_new</span><span class="p">,</span> <span class="n">ds_gps</span><span class="p">)</span>
-    <span class="c1"># Add the profile number (odd for dives, even for ascents)</span>
+    <span class="c1"># Add the profile number (odd for dives, even for get_sgscents)</span>
     <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">assign_profile_number</span><span class="p">(</span><span class="n">ds_new</span><span class="p">,</span> <span class="n">ds1_base</span><span class="p">)</span>
     <span class="c1"># Assign the phase of the dive (must be after adding divenum)</span>
     <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">assign_phase</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
     <span class="c1"># Assign DEPTH_Z to the dataset where positive is up.</span>
     <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">calc_Z</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
-
-    <span class="c1"># Add sensor information to the dataset - can be done on the concatenated data</span>
-    <span class="c1"># -----------------------------------------------------------------------------</span>
-    <span class="c1">#ds_sensor = tools.gather_sensor_info(ds_other, ds_sgcal, firstrun)</span>
-    <span class="c1">#ds_new = tools.add_sensor_to_dataset(ds_new, ds_sensor, ds_sgcal, firstrun)</span>
-
-    <span class="c1"># Now we check the TIME_GPS;</span>
-    <span class="c1"># Get dtype - if float, convert - test for unrealistic dates - error if unsupported type.</span>
-
-    <span class="n">dtype</span> <span class="o">=</span> <span class="n">ds_new</span><span class="p">[</span><span class="s2">&quot;TIME_GPS&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
-
-    <span class="c1"># Test 1: dtype is already datetime</span>
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">):</span>
-        <span class="k">pass</span>
-        <span class="c1">#print(&quot;TIME_GPS is already datetime64&quot;)</span>
-
-    <span class="c1"># Case 2: numeric -&gt; convert</span>
-    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">):</span>
-
-        <span class="n">values</span> <span class="o">=</span> <span class="n">ds_new</span><span class="p">[</span><span class="s2">&quot;TIME_GPS&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Check for NaN or inf</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;TIME_GPS contains NaN or infinite values&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Convert seconds since epoch -&gt; datetime64[ns]</span>
-        <span class="n">converted</span> <span class="o">=</span> <span class="p">(</span><span class="n">values</span> <span class="o">*</span> <span class="mf">1e9</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;datetime64[ns]&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Sanity check</span>
-        <span class="n">min_date</span> <span class="o">=</span> <span class="n">converted</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
-        <span class="n">max_date</span> <span class="o">=</span> <span class="n">converted</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
-
-        <span class="c1"># Define reasonable limits</span>
-        <span class="n">lower_limit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">(</span><span class="s2">&quot;1990-01-01&quot;</span><span class="p">)</span>
-        <span class="n">upper_limit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">(</span><span class="s2">&quot;2100-01-01&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">min_date</span> <span class="o">&lt;</span> <span class="n">lower_limit</span> <span class="ow">or</span> <span class="n">max_date</span> <span class="o">&gt;</span> <span class="n">upper_limit</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;TIME_GPS dates look unrealistic: &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">min_date</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">max_date</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
-
-        <span class="n">ds_new</span><span class="p">[</span><span class="s2">&quot;TIME_GPS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">converted</span>
-
-    <span class="c1"># Case 3: unsupported dtype</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Unsupported TIME_GPS dtype: </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
 
     <span class="n">vars_to_remove</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vars_to_remove</span>
     <span class="n">vars_present_to_remove</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">vars_to_remove</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds_new</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
@@ -424,6 +384,7 @@
 
     <span class="n">attr_warnings</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
     <span class="k">return</span> <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span></div>
+
 
 
 <div class="viewcode-block" id="standardise_OG10">
@@ -1063,6 +1024,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset</span>
 <span class="sd">        The processed dataset.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Load and concatenate all datasets from the server</span>
     <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_first_basestation_file</span><span class="p">(</span><span class="n">input_location</span><span class="p">)</span>

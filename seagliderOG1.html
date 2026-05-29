@@ -108,16 +108,17 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.calc_Z"><code class="docutils literal notranslate"><span class="pre">calc_Z()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.combine_two_dim_of_dataset"><code class="docutils literal notranslate"><span class="pre">combine_two_dim_of_dataset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.convert_qc_flags"><code class="docutils literal notranslate"><span class="pre">convert_qc_flags()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.convert_units"><code class="docutils literal notranslate"><span class="pre">convert_units()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.convert_units_var"><code class="docutils literal notranslate"><span class="pre">convert_units_var()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.encode_times"><code class="docutils literal notranslate"><span class="pre">encode_times()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.encode_times_og1"><code class="docutils literal notranslate"><span class="pre">encode_times_og1()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.extract_hdm_parameters"><code class="docutils literal notranslate"><span class="pre">extract_hdm_parameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.extract_instrument_info"><code class="docutils literal notranslate"><span class="pre">extract_instrument_info()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.find_best_dtype"><code class="docutils literal notranslate"><span class="pre">find_best_dtype()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.find_variables_for_sensor"><code class="docutils literal notranslate"><span class="pre">find_variables_for_sensor()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.gather_sensor_info"><code class="docutils literal notranslate"><span class="pre">gather_sensor_info()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.get_sg_attrs"><code class="docutils literal notranslate"><span class="pre">get_sg_attrs()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.merge_datasets_along_time"><code class="docutils literal notranslate"><span class="pre">merge_datasets_along_time()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.merge_parts_of_dataset"><code class="docutils literal notranslate"><span class="pre">merge_parts_of_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.parse_8_digit_date"><code class="docutils literal notranslate"><span class="pre">parse_8_digit_date()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.reformat_units_str"><code class="docutils literal notranslate"><span class="pre">reformat_units_str()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.reformat_units_var"><code class="docutils literal notranslate"><span class="pre">reformat_units_var()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.set_best_dtype"><code class="docutils literal notranslate"><span class="pre">set_best_dtype()</span></code></a></li>
@@ -937,24 +938,17 @@ attributes to strings and retries the save operation.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.add_sensor_to_dataset">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_sensor_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dsa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sg_cal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_sensor_to_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_sensor_to_dataset" title="Link to this definition"></a></dt>
-<dd><p>Add sensor information to the dataset based on instrument data and calibration parameters.</p>
-<p>This function processes different types of seaglider sensors including CTD (sbe41),
-oxygen sensors (sbe43, aa4381, aa4330), and optical sensors (wlbb2f). For each sensor,
-it extracts calibration information, parses serial numbers and calibration dates,
-and creates sensor variables with appropriate attributes and metadata.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_sensor_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_og1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_sensor_to_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_sensor_to_dataset" title="Link to this definition"></a></dt>
+<dd><p>Adds sensor information from the provided sensor dictionary to the OG1 dataset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dsa</strong> – The target dataset to add sensor information to.</p></li>
-<li><p><strong>ds</strong> – Dataset containing instrument/sensor data with attributes.</p></li>
-<li><p><strong>sg_cal</strong> – Dataset containing calibration information and calibcomm strings.</p></li>
-<li><p><strong>firstrun</strong> – Whether to enable detailed logging for debugging. Default is False.</p></li>
-<li><p><strong>optional</strong> – Whether to enable detailed logging for debugging. Default is False.</p></li>
+<li><p><strong>ds_og1</strong> (<em>xarray.Dataset</em>) – The OG1 dataset to which sensor information will be added.</p></li>
+<li><p><strong>sensor_dict</strong> (<em>dict</em>) – A dictionary containing sensor metadata and associated variables.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The updated dataset with sensor variables and metadata added.</p>
+<dd class="field-even"><p>The updated OG1 dataset with new sensor metadata variables added.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>xarray.Dataset</p>
@@ -962,11 +956,13 @@ and creates sensor variables with appropriate attributes and metadata.</p>
 </dl>
 <p class="rubric">Notes</p>
 <ul class="simple">
-<li><p>Handles CTD sensors by parsing calibcomm strings for serial numbers and dates</p></li>
-<li><p>Processes oxygen sensors using calibcomm_oxygen or calibcomm_optode information</p></li>
-<li><p>Creates sensor variable names in format: ‘SENSOR_{type}_{serial}’</p></li>
-<li><p>Skips altimeter sensors as they are not processed in current implementation</p></li>
-<li><p>For wlbb2f sensors, calibration parsing is commented out pending data availability</p></li>
+<li><dl class="simple">
+<dt>Each sensor becomes a new dimensionless variable:</dt><dd><p>SENSOR_&lt;SENSOR_TYPE&gt;_&lt;SERIAL&gt;</p>
+</dd>
+</dl>
+</li>
+<li><p>Attributes for each sensor variable are added from sensor_dict.</p></li>
+<li><p><cite>sensor_info[“variables”]</cite> is handled later (point 3).</p></li>
 </ul>
 </dd></dl>
 
@@ -1101,25 +1097,6 @@ and adds proper metadata including long_name and standard_name.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.tools.convert_units">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">convert_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#convert_units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.convert_units" title="Link to this definition"></a></dt>
-<dd><p>Convert the units of variables in an xarray Dataset to preferred units.</p>
-<p>This is useful, for instance, to convert cm/s to m/s based on vocabulary
-specifications.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ds</strong> – The dataset containing variables to convert.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The dataset with converted units.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>xarray.Dataset</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.convert_units_var">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">convert_units_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit1_to_unit2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{'Celsius_to_degreesCelsius':</span> <span class="pre">{'current_unit':</span> <span class="pre">'Celsius',</span> <span class="pre">'factor':</span> <span class="pre">1,</span> <span class="pre">'new_unit':</span> <span class="pre">'degreesCelsius'},</span> <span class="pre">'Pa_to_dbar':</span> <span class="pre">{'current_unit':</span> <span class="pre">'Pa',</span> <span class="pre">'factor':</span> <span class="pre">0.0001,</span> <span class="pre">'new_unit':</span> <span class="pre">'dbar'},</span> <span class="pre">'S</span> <span class="pre">m-1_to_mS</span> <span class="pre">cm-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'S</span> <span class="pre">m-1',</span> <span class="pre">'factor':</span> <span class="pre">0.1,</span> <span class="pre">'new_unit':</span> <span class="pre">'mS</span> <span class="pre">cm-1'},</span> <span class="pre">'S/m_to_mS/cm':</span> <span class="pre">{'current_unit':</span> <span class="pre">'S/m',</span> <span class="pre">'factor':</span> <span class="pre">0.1,</span> <span class="pre">'new_unit':</span> <span class="pre">'mS/cm'},</span> <span class="pre">'cm</span> <span class="pre">s-1_to_m</span> <span class="pre">s-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'cm</span> <span class="pre">s-1',</span> <span class="pre">'factor':</span> <span class="pre">0.01,</span> <span class="pre">'new_unit':</span> <span class="pre">'m</span> <span class="pre">s-1'},</span> <span class="pre">'cm/s_to_m/s':</span> <span class="pre">{'current_unit':</span> <span class="pre">'cm/s',</span> <span class="pre">'factor':</span> <span class="pre">0.01,</span> <span class="pre">'new_unit':</span> <span class="pre">'m/s'},</span> <span class="pre">'cm_to_m':</span> <span class="pre">{'current_unit':</span> <span class="pre">'cm',</span> <span class="pre">'factor':</span> <span class="pre">0.01,</span> <span class="pre">'new_unit':</span> <span class="pre">'m'},</span> <span class="pre">'dbar_to_Pa':</span> <span class="pre">{'current_unit':</span> <span class="pre">'dbar',</span> <span class="pre">'factor':</span> <span class="pre">10000,</span> <span class="pre">'new_unit':</span> <span class="pre">'Pa'},</span> <span class="pre">'dbar_to_kPa':</span> <span class="pre">{'current_unit':</span> <span class="pre">'dbar',</span> <span class="pre">'factor':</span> <span class="pre">10,</span> <span class="pre">'new_unit':</span> <span class="pre">'kPa'},</span> <span class="pre">'degreesCelsius_to_Celsius':</span> <span class="pre">{'current_unit':</span> <span class="pre">'degreesCelsius',</span> <span class="pre">'factor':</span> <span class="pre">1,</span> <span class="pre">'new_unit':</span> <span class="pre">'Celsius'},</span> <span class="pre">'g</span> <span class="pre">m-3_to_kg</span> <span class="pre">m-3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'g</span> <span class="pre">m-3',</span> <span class="pre">'factor':</span> <span class="pre">0.001,</span> <span class="pre">'new_unit':</span> <span class="pre">'kg</span> <span class="pre">m-3'},</span> <span class="pre">'g/m^3_to_kg/m^3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'g/m3',</span> <span class="pre">'factor':</span> <span class="pre">0.001,</span> <span class="pre">'new_unit':</span> <span class="pre">'kg/m3'},</span> <span class="pre">'kg</span> <span class="pre">m-3_to_g</span> <span class="pre">m-3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'kg</span> <span class="pre">m-3',</span> <span class="pre">'factor':</span> <span class="pre">1000,</span> <span class="pre">'new_unit':</span> <span class="pre">'g</span> <span class="pre">m-3'},</span> <span class="pre">'kg/m^3_to_g/m^3':</span> <span class="pre">{'current_unit':</span> <span class="pre">'kg/m3',</span> <span class="pre">'factor':</span> <span class="pre">1000,</span> <span class="pre">'new_unit':</span> <span class="pre">'g/m3'},</span> <span class="pre">'km_to_m':</span> <span class="pre">{'current_unit':</span> <span class="pre">'km',</span> <span class="pre">'factor':</span> <span class="pre">1000,</span> <span class="pre">'new_unit':</span> <span class="pre">'m'},</span> <span class="pre">'m</span> <span class="pre">s-1_to_cm</span> <span class="pre">s-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m</span> <span class="pre">s-1',</span> <span class="pre">'factor':</span> <span class="pre">100,</span> <span class="pre">'new_unit':</span> <span class="pre">'cm</span> <span class="pre">s-1'},</span> <span class="pre">'m/s_to_cm/s':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m/s',</span> <span class="pre">'factor':</span> <span class="pre">100,</span> <span class="pre">'new_unit':</span> <span class="pre">'cm/s'},</span> <span class="pre">'mS</span> <span class="pre">cm-1_to_S</span> <span class="pre">m-1':</span> <span class="pre">{'current_unit':</span> <span class="pre">'mS</span> <span class="pre">cm-1',</span> <span class="pre">'factor':</span> <span class="pre">10,</span> <span class="pre">'new_unit':</span> <span class="pre">'S</span> <span class="pre">m-1'},</span> <span class="pre">'mS/cm_to_S/m':</span> <span class="pre">{'current_unit':</span> <span class="pre">'mS/cm',</span> <span class="pre">'factor':</span> <span class="pre">10,</span> <span class="pre">'new_unit':</span> <span class="pre">'S/m'},</span> <span class="pre">'m_to_cm':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m',</span> <span class="pre">'factor':</span> <span class="pre">100,</span> <span class="pre">'new_unit':</span> <span class="pre">'cm'},</span> <span class="pre">'m_to_km':</span> <span class="pre">{'current_unit':</span> <span class="pre">'m',</span> <span class="pre">'factor':</span> <span class="pre">0.001,</span> <span class="pre">'new_unit':</span> <span class="pre">'km'}}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#convert_units_var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.convert_units_var" title="Link to this definition"></a></dt>
 <dd><p>Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.</p>
@@ -1206,6 +1183,11 @@ it keeps a single value; otherwise, it returns the full list.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.tools.extract_instrument_info">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">extract_instrument_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#extract_instrument_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.extract_instrument_info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.find_best_dtype">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">find_best_dtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">da</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataArray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">type</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#find_best_dtype"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.find_best_dtype" title="Link to this definition"></a></dt>
 <dd><p>Determine the optimal data type for a variable based on its name and values.</p>
@@ -1234,45 +1216,48 @@ it keeps a single value; otherwise, it returns the full list.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.tools.gather_sensor_info">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">gather_sensor_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds_sgcal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#gather_sensor_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.gather_sensor_info" title="Link to this definition"></a></dt>
-<dd><p>Gathers sensor information from the provided datasets and organizes it into a new dataset.</p>
+<dt class="sig sig-object py" id="seagliderOG1.tools.find_variables_for_sensor">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">find_variables_for_sensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensor_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#find_variables_for_sensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.find_variables_for_sensor" title="Link to this definition"></a></dt>
+<dd><p>Finds variables in the dataset that belong to each sensor based on naming patterns or dimensions.
+For each sensor, looks for variables that either have an ‘instrument’ attribute matching the sensor name, or have a dimension named ‘{sensor_name}_data_point’.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ds_other</strong> – The dataset containing sensor data.</p></li>
-<li><p><strong>ds_sgcal</strong> – The dataset containing calibration data.</p></li>
-<li><p><strong>firstrun</strong> – A flag indicating if this is the first run. Default is False.</p></li>
-<li><p><strong>optional</strong> – A flag indicating if this is the first run. Default is False.</p></li>
+<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The dataset to search for variables.</p></li>
+<li><p><strong>sensor_dict</strong> (<em>dict</em>) – Dictionary containing sensor metadata, used to identify sensor names.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A dataset containing the gathered sensor information.</p>
+<dd class="field-even"><p>Updated sensor_dict with a list of variables associated with each sensor.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>xarray.Dataset</p>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>The function looks for specific sensor names in the <cite>ds_other</cite> dataset and adds them to a new dataset <cite>ds_sensor</cite>.</p></li>
-<li><p>If ‘aanderaa4330_instrument_dissolved_oxygen’ is present in <cite>ds_other</cite>, it is renamed to ‘aa4330’.</p></li>
-<li><p>If ‘Pcor’ is present in <cite>ds_sgcal</cite>, an additional sensor ‘sbe43’ is created based on ‘sbe41’ with specific attributes.</p></li>
-<li><p>If ‘optode_FoilCoefA1’ is present in <cite>ds_sgcal</cite>, an additional sensor ‘aa4831’ is created based on ‘sbe41’ with specific attributes.</p></li>
-<li><p>The function sets appropriate attributes for the sensors ‘aa4330’, ‘aa4831’, and ‘sbe43’ if they are present.</p></li>
-</ul>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.tools.get_sg_attrs">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">get_sg_attrs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#get_sg_attrs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.get_sg_attrs" title="Link to this definition"></a></dt>
-<dd><p>Extract seaglider attributes and calibration information into a dictionary.</p>
+<dt class="sig sig-object py" id="seagliderOG1.tools.gather_sensor_info">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">gather_sensor_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds1_base</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#gather_sensor_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.gather_sensor_info" title="Link to this definition"></a></dt>
+<dd><p>Gathers sensor information from an OG1 base dataset.</p>
+<dl class="simple">
+<dt>Extracts:</dt><dd><ul class="simple">
+<li><p>sensor names (from global ‘instrument’ attribute)</p></li>
+<li><p>technical specs (from OG1_sensor_attrs.yaml vocabularies)</p></li>
+<li><p>serial numbers + calibration dates (from calibcomm variables)</p></li>
+<li><p>variables belonging to each sensor</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ds</strong> – Dataset containing seaglider attributes and calibration data.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds1_base</strong> (<em>xarray.Dataset</em>) – The raw base dataset containing sensor metadata.</p></li>
+<li><p><strong>first_run</strong> (<em>bool</em>) – If True, informational print statements are shown.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Dictionary containing seaglider variables and their attributes.</p>
+<dd class="field-even"><p>Dictionary with one key per sensor, each containing metadata.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict</p>
@@ -1324,6 +1309,13 @@ renames the second dimension to match the first, and then concatenates them alon
 </dl>
 <p class="rubric">Notes</p>
 <p>Original author: Till Moritz</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.tools.parse_8_digit_date">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">parse_8_digit_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#parse_8_digit_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.parse_8_digit_date" title="Link to this definition"></a></dt>
+<dd><p>Validates and formats 8-digit strings.
+Prioritizes YYYY-MM-DD, then DD-MM-YYYY based on realistic ranges.</p>
 </dd></dl>
 
 <dl class="py function">

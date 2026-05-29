@@ -86,301 +86,208 @@
   <h1>Source code for seagliderOG1.tools</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dateutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">parser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">gsw</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">utilities</span><span class="p">,</span> <span class="n">vocabularies</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">vocabularies</span>
 
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="n">variables_sensors</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;CNDC&quot;</span><span class="p">:</span> <span class="s2">&quot;CTD&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;DOXY&quot;</span><span class="p">:</span> <span class="s2">&quot;dissolved gas sensors&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;PRES&quot;</span><span class="p">:</span> <span class="s2">&quot;CTD&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;PSAL&quot;</span><span class="p">:</span> <span class="s2">&quot;CTD&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;TEMP&quot;</span><span class="p">:</span> <span class="s2">&quot;CTD&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;BBP700&quot;</span><span class="p">:</span> <span class="s2">&quot;fluorometers&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;CHLA&quot;</span><span class="p">:</span> <span class="s2">&quot;fluorometers&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;PRES_ADCP&quot;</span><span class="p">:</span> <span class="s2">&quot;ADVs and turbulence probes&quot;</span><span class="p">,</span>
-<span class="p">}</span>
 
-
-<span class="c1"># EFW 2025-01-01: This could be improved</span>
-<span class="c1"># Sensor information is contained in the basestation file as a variable (e.g., &#39;wlbb2f&#39;) or</span>
-<span class="c1"># in the sg_cal strings, e.g. calibcomm_oxygen or calibcomm_optode contains &#39;SBE 43F&#39; or &#39;Optode 4330F&#39;</span>
-<span class="c1"># Using this, and the presence of calibration coefficients (e.g., optode_FoilCoefA1), we can make</span>
-<span class="c1"># a guess as to the sensor type</span>
 <div class="viewcode-block" id="gather_sensor_info">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.gather_sensor_info">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">gather_sensor_info</span><span class="p">(</span>
-    <span class="n">ds_other</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">ds_sgcal</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gathers sensor information from the provided datasets and organizes it into a new dataset.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">gather_sensor_info</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gathers sensor information from an OG1 base dataset.</span>
+
+<span class="sd">    Extracts:</span>
+<span class="sd">      - sensor names (from global &#39;instrument&#39; attribute)</span>
+<span class="sd">      - technical specs (from OG1_sensor_attrs.yaml vocabularies)</span>
+<span class="sd">      - serial numbers + calibration dates (from calibcomm variables)</span>
+<span class="sd">      - variables belonging to each sensor</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    ds_other</span>
-<span class="sd">        The dataset containing sensor data.</span>
-<span class="sd">    ds_sgcal</span>
-<span class="sd">        The dataset containing calibration data.</span>
-<span class="sd">    firstrun, optional</span>
-<span class="sd">        A flag indicating if this is the first run. Default is False.</span>
+<span class="sd">    ds1_base : xarray.Dataset</span>
+<span class="sd">        The raw base dataset containing sensor metadata.</span>
+<span class="sd">    first_run : bool</span>
+<span class="sd">        If True, informational print statements are shown.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    xarray.Dataset</span>
-<span class="sd">        A dataset containing the gathered sensor information.</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    - The function looks for specific sensor names in the `ds_other` dataset and adds them to a new dataset `ds_sensor`.</span>
-<span class="sd">    - If &#39;aanderaa4330_instrument_dissolved_oxygen&#39; is present in `ds_other`, it is renamed to &#39;aa4330&#39;.</span>
-<span class="sd">    - If &#39;Pcor&#39; is present in `ds_sgcal`, an additional sensor &#39;sbe43&#39; is created based on &#39;sbe41&#39; with specific attributes.</span>
-<span class="sd">    - If &#39;optode_FoilCoefA1&#39; is present in `ds_sgcal`, an additional sensor &#39;aa4831&#39; is created based on &#39;sbe41&#39; with specific attributes.</span>
-<span class="sd">    - The function sets appropriate attributes for the sensors &#39;aa4330&#39;, &#39;aa4831&#39;, and &#39;sbe43&#39; if they are present.</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary with one key per sensor, each containing metadata.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Gather sensors</span>
-    <span class="n">sensor_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;wlbb2f&quot;</span><span class="p">,</span> <span class="s2">&quot;sbe41&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4330&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4381&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4330f&quot;</span><span class="p">,</span> <span class="s2">&quot;aa4381f&quot;</span><span class="p">]</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># 1. Extract sensor names from the &#39;instrument&#39; global attribute</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="n">sensor_dict</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="n">ds_sensor</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
-    <span class="k">if</span> <span class="s2">&quot;aanderaa4330_instrument_dissolved_oxygen&quot;</span> <span class="ow">in</span> <span class="n">ds_other</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">ds_other</span><span class="p">[</span><span class="s2">&quot;aa4330&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_other</span><span class="p">[</span><span class="s2">&quot;aanderaa4330_instrument_dissolved_oxygen&quot;</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_names</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">ds_other</span><span class="p">:</span>
-            <span class="n">ds_sensor</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_other</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;instrument&quot;</span> <span class="ow">in</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+        <span class="n">sensor_names</span> <span class="o">=</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;instrument&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="c1"># Remove unneeded entries</span>
+        <span class="k">if</span> <span class="s2">&quot;magnetometer&quot;</span> <span class="ow">in</span> <span class="n">sensor_names</span><span class="p">:</span>
+            <span class="n">sensor_names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;magnetometer&quot;</span><span class="p">)</span>
+        <span class="c1"># Initialize dictionary entries</span>
+        <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_names</span><span class="p">:</span>
+            <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">else</span><span class="p">:</span>
 
-    <span class="k">if</span> <span class="s2">&quot;Pcor&quot;</span> <span class="ow">in</span> <span class="n">ds_sgcal</span><span class="p">:</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;sbe43&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;sbe41&quot;</span><span class="p">]</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;sbe43&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Sea-Bird SBE 43F Oxygen Sensor&quot;</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;sbe43&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span>
-            <span class="s2">&quot;ancillary_variables&quot;</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;sg_cal_Pcor sg_cal_Foffset sg_cal_A sg_cal_B sg_cal_C sg_cal_E sg_cal_Soc&quot;</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="s2">&quot;Warning: &#39;instrument&#39; attribute not found in the dataset. Therefore no sensor information extracted from attributes. &quot;</span>
+            <span class="s2">&quot;If you have sensor information in the attributes, please add an &#39;instrument&#39; attribute with the sensor names separated by spaces.&quot;</span>
+            <span class="s2">&quot; For example: ds.attrs[&#39;instrument&#39;] = &#39;sbe41 wlbb2f sbe43&#39;&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">sensor_dict</span>
 
-    <span class="n">aanderaa_ancillary</span> <span class="o">=</span> <span class="s2">&quot;optode_FoilCoefA1 optode_FoilCoefA2	optode_FoilCoefA3 optode_FoilCoefA4	optode_FoilCoefA5 optode_FoilCoefA6 optode_FoilCoefA7 optode_FoilCoefA8 optode_FoilCoefA9 optode_FoilCoefA10 optode_FoilCoefA11	optode_FoilCoefA12 optode_FoilCoefA13 optode_FoilCoefB1	optode_FoilCoefB2 optode_FoilCoefB3	optode_FoilCoefB4 optode_FoilCoefB5	 optode_FoilCoefB6 optode_PhaseCoef0 optode_PhaseCoef1 optode_PhaseCoef2 optode_PhaseCoef3 optode_ConcCoef0 optode_ConcCoef1 optode_SVU_enabled optode_TempCoef0 optode_TempCoef1 optode_TempCoef2 optode_TempCoef3 optode_TempCoef4 optode_TempCoef5&quot;</span>
-    <span class="k">if</span> <span class="s2">&quot;optode_FoilCoefA1&quot;</span> <span class="ow">in</span> <span class="n">ds_sgcal</span><span class="p">:</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4831&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;sbe41&quot;</span><span class="p">]</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4831&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Aanderaa 4831F Oxygen Sensor&quot;</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4831&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aanderaa_ancillary</span>
-    <span class="k">if</span> <span class="s2">&quot;aa4330&quot;</span> <span class="ow">in</span> <span class="n">ds_sensor</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4330&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Aanderaa 4330 Oxygen Sensor&quot;</span>
-        <span class="n">ds_sensor</span><span class="p">[</span><span class="s2">&quot;aa4330&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aanderaa_ancillary</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># 2. Add technical specifications from OG1 vocabularies</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="n">standard_names</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">standard_names</span>
+    <span class="n">sensor_vocabs</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span>
+
+    <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">standard_names</span><span class="p">:</span>
+            <span class="n">new_name</span> <span class="o">=</span> <span class="n">standard_names</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span>
+            <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span> <span class="o">=</span> <span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">new_name</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Adding technical specifications for &#39;</span><span class="si">{</span><span class="n">new_name</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(sensor key: &#39;</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">&#39;) from OG1_sensor_attrs.yaml&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Warning: Sensor &#39;</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">&#39; not found in standard names vocabulary. &quot;</span>
+                <span class="s2">&quot;No technical specifications added.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># 3. Extract calibration information (serial number + calibration dates)</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">varname</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">base</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="k">if</span> <span class="n">varname</span> <span class="ow">in</span> <span class="n">base</span><span class="o">.</span><span class="n">variables</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="n">sensor_nums</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sensor_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">available_calibcomm</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span> <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;sg_cal_calibcomm&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">available_calibcomm</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">sensor_nums</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Warning: More calibration variables found as stated in instrument attributes!</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;The following calibration variables were found: </span><span class="si">{</span><span class="n">available_calibcomm</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;But only </span><span class="si">{</span><span class="n">sensor_nums</span><span class="si">}</span><span class="s2"> sensors were listed in the instrument attributes: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">sensor_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+        <span class="c1"># --- Determine calibcomm variable name --------------------------------</span>
+        <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">ds1_base</span>
+        <span class="n">del_caps</span> <span class="o">=</span> <span class="n">_del_capital_letters</span><span class="p">(</span><span class="n">sensor</span><span class="p">)</span>
+
+        <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm_</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+        <span class="k">elif</span> <span class="p">(</span><span class="n">var</span> <span class="o">:=</span> <span class="n">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm_</span><span class="si">{</span><span class="n">del_caps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+        <span class="k">elif</span> <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;CTD&quot;</span><span class="p">:</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s2">&quot;sg_cal_calibcomm&quot;</span><span class="p">)</span>
+            <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="k">elif</span> <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Oxygen&quot;</span><span class="p">:</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s2">&quot;sg_cal_calibcomm_optode&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">get_if_exists</span><span class="p">(</span>
+                <span class="n">base</span><span class="p">,</span> <span class="s2">&quot;sg_cal_calibcomm_oxygen&quot;</span>
+            <span class="p">)</span>
+            <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="k">elif</span> <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sensor_maker&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;WET Labs&quot;</span><span class="p">:</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s2">&quot;sg_cal_calibcomm_wetlabs&quot;</span><span class="p">)</span>
+            <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">calibcomm_str</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Warning: No calibration info found for sensor &#39;</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Available calibration variables: </span><span class="si">{</span><span class="n">available_calibcomm</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># --- Extract serial number + calibration date --------------------------</span>
+        <span class="n">serial_number</span><span class="p">,</span> <span class="n">cal_info</span> <span class="o">=</span> <span class="n">extract_instrument_info</span><span class="p">(</span><span class="n">calibcomm_str</span><span class="p">)</span>
+
+        <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">][</span><span class="s2">&quot;sensor_serial_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">serial_number</span>
+        <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">][</span><span class="s2">&quot;sensor_calibration_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cal_info</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># 4. Assign variables to sensors based on naming patterns or dimensions</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="n">sensor_dict</span> <span class="o">=</span> <span class="n">find_variables_for_sensor</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">,</span> <span class="n">sensor_dict</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sensor_dict</span></div>
 
 
 
 <div class="viewcode-block" id="add_sensor_to_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_sensor_to_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">add_sensor_to_dataset</span><span class="p">(</span>
-    <span class="n">dsa</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">sg_cal</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add sensor information to the dataset based on instrument data and calibration parameters.</span>
-
-<span class="sd">    This function processes different types of seaglider sensors including CTD (sbe41),</span>
-<span class="sd">    oxygen sensors (sbe43, aa4381, aa4330), and optical sensors (wlbb2f). For each sensor,</span>
-<span class="sd">    it extracts calibration information, parses serial numbers and calibration dates,</span>
-<span class="sd">    and creates sensor variables with appropriate attributes and metadata.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_sensor_to_dataset</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">sensor_dict</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds sensor information from the provided sensor dictionary to the OG1 dataset.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    dsa</span>
-<span class="sd">        The target dataset to add sensor information to.</span>
-<span class="sd">    ds</span>
-<span class="sd">        Dataset containing instrument/sensor data with attributes.</span>
-<span class="sd">    sg_cal</span>
-<span class="sd">        Dataset containing calibration information and calibcomm strings.</span>
-<span class="sd">    firstrun, optional</span>
-<span class="sd">        Whether to enable detailed logging for debugging. Default is False.</span>
+<span class="sd">    ds_og1 : xarray.Dataset</span>
+<span class="sd">        The OG1 dataset to which sensor information will be added.</span>
+<span class="sd">    sensor_dict : dict</span>
+<span class="sd">        A dictionary containing sensor metadata and associated variables.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset</span>
-<span class="sd">        The updated dataset with sensor variables and metadata added.</span>
+<span class="sd">        The updated OG1 dataset with new sensor metadata variables added.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    - Handles CTD sensors by parsing calibcomm strings for serial numbers and dates</span>
-<span class="sd">    - Processes oxygen sensors using calibcomm_oxygen or calibcomm_optode information</span>
-<span class="sd">    - Creates sensor variable names in format: &#39;SENSOR_{type}_{serial}&#39;</span>
-<span class="sd">    - Skips altimeter sensors as they are not processed in current implementation</span>
-<span class="sd">    - For wlbb2f sensors, calibration parsing is commented out pending data availability</span>
+<span class="sd">    - Each sensor becomes a new dimensionless variable:</span>
+<span class="sd">          SENSOR_&lt;SENSOR_TYPE&gt;_&lt;SERIAL&gt;</span>
+<span class="sd">    - Attributes for each sensor variable are added from sensor_dict.</span>
+<span class="sd">    - `sensor_info[&quot;variables&quot;]` is handled later (point 3).</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">ds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">dsa</span>
-    <span class="n">sensors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
-    <span class="n">sensor_name_type</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">sensors</span><span class="p">:</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># 1. Create dimensionless sensor variables in the dataset</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">sensor_info</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+        <span class="c1"># Build sensor variable name</span>
+        <span class="n">sensor_type</span> <span class="o">=</span> <span class="n">sensor_info</span><span class="p">[</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="n">serial</span> <span class="o">=</span> <span class="n">sensor_info</span><span class="p">[</span><span class="s2">&quot;sensor_serial_number&quot;</span><span class="p">]</span>
+        <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;SENSOR_</span><span class="si">{</span><span class="n">sensor_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Create the variable (dimensionless DataArray)</span>
         <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">instr</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">instr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;altimeter&quot;</span><span class="p">]:</span>
-            <span class="k">continue</span>
-        <span class="n">attr_dict</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">instr</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
-        <span class="c1"># Code to parse details from sg_cal and calibcomm into the attributes for CTD</span>
-        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s2">&quot;sbe41&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;unpumped Seabird SBE41&quot;</span><span class="p">:</span>
-                <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Seabird unpumped CTD&quot;</span>
-            <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor </span><span class="si">{</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;make_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
-            <span class="n">var_dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]]</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Adding sensor &#39;</span><span class="si">{</span><span class="n">sensor_info</span><span class="p">[</span><span class="s1">&#39;sensor_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39; to the OG1 dataset with attributes&quot;</span>
+            <span class="p">)</span>
+        <span class="n">ds_og1</span><span class="p">[</span><span class="n">sensor_var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">sensor_info</span><span class="p">[</span><span class="s2">&quot;sensor_model&quot;</span><span class="p">])</span>
 
-            <span class="n">calstr</span> <span class="o">=</span> <span class="n">sg_cal</span><span class="p">[</span><span class="s2">&quot;calibcomm&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
-                <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># ---------------------------------------------------------------------</span>
+        <span class="c1"># 2. Add sensor attributes (except &#39;variables&#39;)</span>
+        <span class="c1"># ---------------------------------------------------------------------</span>
+        <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">sensor_info</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;variables&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">ds_og1</span><span class="p">[</span><span class="n">sensor_var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
-            <span class="n">cal_date</span><span class="p">,</span> <span class="n">serial_number</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_parse_calibcomm</span><span class="p">(</span><span class="n">calstr</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
-            <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;serial_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">serial_number</span>
-            <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;:</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;calibration_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cal_date</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># 3. Assign &#39;sensor&#39; attribute to sensor-specific variables (later update)</span>
+    <span class="c1">#    Leave logic untouched for now.</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
 
-            <span class="k">if</span> <span class="s2">&quot;ancillary_variables&quot;</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">ancilliary_vars</span> <span class="o">=</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
-                <span class="n">anc_var_list</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_anc_vars_list</span><span class="p">(</span>
-                    <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
-                <span class="p">)</span>
-                <span class="n">calvals</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_assign_calval</span><span class="p">(</span><span class="n">sg_cal</span><span class="p">,</span> <span class="n">anc_var_list</span><span class="p">)</span>
-                <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;calibration_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">calvals</span>
-            <span class="n">da</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="n">var_dict</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">serial_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                        <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;_&quot;</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                    <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;_&quot;</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="n">dsa</span><span class="p">[</span><span class="n">sensor_var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">da</span>
-            <span class="n">sensor_name_type</span><span class="p">[</span><span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">sensor_var_name</span>
-
-        <span class="c1"># Handle oxygen sensor</span>
-        <span class="n">optode_flag</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s2">&quot;sbe43&quot;</span><span class="p">:</span>
-            <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Seabird SBE43F&quot;</span>
-            <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor </span><span class="si">{</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;make_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
-            <span class="n">var_dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]]</span>
-            <span class="n">optode_flag</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s2">&quot;aa4381&quot;</span><span class="p">:</span>
-            <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Aanderaa 4381&quot;</span>
-            <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor </span><span class="si">{</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;make_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
-            <span class="n">var_dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]]</span>
-            <span class="n">optode_flag</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s2">&quot;aa4330&quot;</span><span class="p">:</span>
-            <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Aanderaa 4330&quot;</span>
-            <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor </span><span class="si">{</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;make_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
-            <span class="n">var_dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]]</span>
-            <span class="n">optode_flag</span> <span class="o">=</span> <span class="kc">True</span>
-
-        <span class="k">if</span> <span class="n">optode_flag</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">&quot;calibcomm_oxygen&quot;</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="p">:</span>
-                <span class="n">calstr</span> <span class="o">=</span> <span class="n">sg_cal</span><span class="p">[</span><span class="s2">&quot;calibcomm_oxygen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
-                    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm_oxygen: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm_oxygen: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-                <span class="n">cal_date</span><span class="p">,</span> <span class="n">serial_number</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_parse_calibcomm</span><span class="p">(</span><span class="n">calstr</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="s2">&quot;calibcomm_optode&quot;</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="p">:</span>
-                <span class="n">calstr</span> <span class="o">=</span> <span class="n">sg_cal</span><span class="p">[</span><span class="s2">&quot;calibcomm_optode&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
-                    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm_optode: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sg_cal_calibcomm_optode: </span><span class="si">{</span><span class="n">calstr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-                <span class="n">cal_date</span><span class="p">,</span> <span class="n">serial_number</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_parse_calibcomm</span><span class="p">(</span><span class="n">calstr</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
-            <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;serial_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">serial_number</span>
-            <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;:</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;calibration_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cal_date</span>
-
-            <span class="c1"># All the sg_cal_optode_*</span>
-            <span class="k">if</span> <span class="s2">&quot;ancillary_variables&quot;</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">ancilliary_vars</span> <span class="o">=</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
-                <span class="n">anc_var_list</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_anc_vars_list</span><span class="p">(</span>
-                    <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
-                <span class="p">)</span>
-                <span class="n">calvals</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_assign_calval</span><span class="p">(</span><span class="n">sg_cal</span><span class="p">,</span> <span class="n">anc_var_list</span><span class="p">)</span>
-                <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;calibration_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">calvals</span>
-
-            <span class="n">da</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="n">var_dict</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">serial_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                        <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;_&quot;</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                    <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;_&quot;</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="n">dsa</span><span class="p">[</span><span class="n">sensor_var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">da</span>
-            <span class="n">sensor_name_type</span><span class="p">[</span><span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">sensor_var_name</span>
-
-        <span class="k">if</span> <span class="n">instr</span> <span class="o">==</span> <span class="s2">&quot;wlbb2f&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Wetlabs backscatter fluorescence puck&quot;</span><span class="p">:</span>
-                <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Wetlabs BB2FL-VMT&quot;</span>
-            <span class="k">if</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor </span><span class="si">{</span><span class="n">attr_dict</span><span class="p">[</span><span class="s1">&#39;make_model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
-            <span class="n">var_dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;make_model&quot;</span><span class="p">]]</span>
-
-            <span class="c1">#   Not in sample dataset - see whether more recent files have calibration information</span>
-            <span class="c1">#        cal_date, serial_number = utilities._parse_calibcomm(sg_cal[&#39;calibcomm&#39;])</span>
-            <span class="c1">#        if serial_number is not None:</span>
-            <span class="c1">#            var_dict[&quot;serial_number&quot;] = serial_number</span>
-            <span class="c1">#            var_dict[&quot;long_name&quot;] += f&quot;:{serial_number}&quot;</span>
-            <span class="c1">#        if cal_date is not None:</span>
-            <span class="c1">#            var_dict[&quot;calibration_date&quot;] = cal_date</span>
-            <span class="n">serial_number</span> <span class="o">=</span> <span class="kc">None</span>
-
-            <span class="n">da</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="n">var_dict</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">serial_number</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                        <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;_&quot;</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                    <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;_&quot;</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="n">dsa</span><span class="p">[</span><span class="n">sensor_var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">da</span>
-            <span class="n">sensor_name_type</span><span class="p">[</span><span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">sensor_var_name</span>
-
-            <span class="k">if</span> <span class="s2">&quot;ancillary_variables&quot;</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">ancilliary_vars</span> <span class="o">=</span> <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
-                <span class="n">anc_var_list</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_anc_vars_list</span><span class="p">(</span>
-                    <span class="n">attr_dict</span><span class="p">[</span><span class="s2">&quot;ancillary_variables&quot;</span><span class="p">]</span>
-                <span class="p">)</span>
-                <span class="n">calvals</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_assign_calval</span><span class="p">(</span><span class="n">sg_cal</span><span class="p">,</span> <span class="n">anc_var_list</span><span class="p">)</span>
-                <span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;calibration_parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">calvals</span>
-            <span class="n">da</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="n">var_dict</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">serial_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                        <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;_&quot;</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">sensor_var_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">var_dict</span><span class="p">[</span><span class="s1">&#39;sensor_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-                    <span class="s2">&quot; &quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;_&quot;</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
-                <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding sensor:&quot;</span><span class="p">,</span> <span class="n">sensor_var_name</span><span class="p">)</span>
-            <span class="n">dsa</span><span class="p">[</span><span class="n">sensor_var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">da</span>
-            <span class="n">sensor_name_type</span><span class="p">[</span><span class="n">var_dict</span><span class="p">[</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">sensor_var_name</span>
-    <span class="k">return</span> <span class="n">dsa</span></div>
+    <span class="k">return</span> <span class="n">ds_og1</span></div>
 
 
 
@@ -592,6 +499,51 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_del_capital_letters</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">char</span> <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">string</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">char</span><span class="o">.</span><span class="n">isupper</span><span class="p">()])</span>
+
+
+<div class="viewcode-block" id="find_variables_for_sensor">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.find_variables_for_sensor">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_variables_for_sensor</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">sensor_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Finds variables in the dataset that belong to each sensor based on naming patterns or dimensions.</span>
+<span class="sd">    For each sensor, looks for variables that either have an &#39;instrument&#39; attribute matching the sensor name, or have a dimension named &#39;{sensor_name}_data_point&#39;.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds : xarray.Dataset</span>
+<span class="sd">        The dataset to search for variables.</span>
+<span class="sd">    sensor_dict : dict</span>
+<span class="sd">        Dictionary containing sensor metadata, used to identify sensor names.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict:</span>
+<span class="sd">        Updated sensor_dict with a list of variables associated with each sensor.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">sensor_name</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="n">variable</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="s2">&quot;instrument&quot;</span> <span class="ow">in</span> <span class="n">variable</span><span class="o">.</span><span class="n">attrs</span>
+                <span class="ow">and</span> <span class="n">variable</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;instrument&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">sensor_name</span>
+            <span class="p">):</span>
+                <span class="c1">## only keep the part of the variable name that comes after the sensor name, e.g. &#39;eng_wlbb2fl_sig695nm&#39; becomes &#39;sig695nm&#39;</span>
+                <span class="c1"># var_name_clean = var_name.replace(&quot;eng_&quot;, &quot;&quot;).replace(f&quot;{sensor_name}_&quot;, &quot;&quot;).replace(&quot;aander&quot;,&quot;&quot;)</span>
+                <span class="n">variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">var_name</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sensor_name</span><span class="si">}</span><span class="s2">_data_point&quot;</span> <span class="ow">in</span> <span class="n">variable</span><span class="o">.</span><span class="n">sizes</span><span class="p">:</span>
+                <span class="c1"># var_name_clean = var_name.replace(&quot;eng_&quot;, &quot;&quot;).replace(f&quot;{sensor_name}_&quot;, &quot;&quot;).replace(&quot;aander&quot;,&quot;&quot;)</span>
+                <span class="n">variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">var_name</span><span class="p">)</span>
+        <span class="n">sensor_variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">))</span>  <span class="c1"># Remove duplicates</span>
+        <span class="c1"># sensor_variables = [standard_names[var] for var in variables if var in standard_names]</span>
+        <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor_name</span><span class="p">][</span><span class="s2">&quot;variables&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sensor_variables</span>
+
+    <span class="k">return</span> <span class="n">sensor_dict</span></div>
+
+
+
 <span class="c1">##-----------------------------------------------------------------------------------------------------------</span>
 <span class="c1">## Calculations for new variables</span>
 <span class="c1">##-----------------------------------------------------------------------------------------------------------</span>
@@ -635,31 +587,6 @@
 
 
 
-<div class="viewcode-block" id="get_sg_attrs">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.get_sg_attrs">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_sg_attrs</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract seaglider attributes and calibration information into a dictionary.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    ds</span>
-<span class="sd">        Dataset containing seaglider attributes and calibration data.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    dict</span>
-<span class="sd">        Dictionary containing seaglider variables and their attributes.</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="nb">id</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
-    <span class="n">sg_cal</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extract_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
-    <span class="n">sg_vars_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">sg_cal</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">sg_vars_dict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">attr</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">}</span>
-    <span class="k">return</span> <span class="n">sg_vars_dict</span></div>
-
-
-
 <div class="viewcode-block" id="split_by_unique_dims">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.split_by_unique_dims">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">split_by_unique_dims</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -692,55 +619,6 @@
 
     <span class="c1"># Convert the dictionary values to a dictionary of datasets</span>
     <span class="k">return</span> <span class="p">{</span><span class="n">dims</span><span class="p">:</span> <span class="n">dataset</span> <span class="k">for</span> <span class="n">dims</span><span class="p">,</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">unique_dims_datasets</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
-
-
-
-<div class="viewcode-block" id="convert_units">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.convert_units">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convert_units</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert the units of variables in an xarray Dataset to preferred units.</span>
-
-<span class="sd">    This is useful, for instance, to convert cm/s to m/s based on vocabulary</span>
-<span class="sd">    specifications.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    ds</span>
-<span class="sd">        The dataset containing variables to convert.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    xarray.Dataset</span>
-<span class="sd">        The dataset with converted units.</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    ds (xarray.Dataset): The dataset containing variables to convert.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    xarray.Dataset: The dataset with converted units.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">var_values</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-        <span class="n">orig_unit</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s2">&quot;units&quot;</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]:</span>
-            <span class="n">new_unit</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">orig_unit</span> <span class="o">!=</span> <span class="n">new_unit</span><span class="p">:</span>
-
-                <span class="n">var_values</span><span class="p">,</span> <span class="n">new_unit</span> <span class="o">=</span> <span class="n">convert_units_var</span><span class="p">(</span>
-                    <span class="n">var_values</span><span class="p">,</span> <span class="n">orig_unit</span><span class="p">,</span> <span class="n">new_unit</span>
-                <span class="p">)</span>
-
-                <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">var_values</span>
-                <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_unit</span>
-
-    <span class="k">return</span> <span class="n">ds</span></div>
 
 
 
@@ -1232,7 +1110,6 @@
 
     <span class="c1"># Sort by time and drop NaT values</span>
     <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">merged_ds</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">dim1</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">])</span>
-
     <span class="k">return</span> <span class="n">merged_ds</span></div>
 
 
@@ -1530,6 +1407,118 @@
             <span class="n">ds_updated</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="n">attributes</span>
 
     <span class="k">return</span> <span class="n">ds_updated</span></div>
+
+
+
+<div class="viewcode-block" id="parse_8_digit_date">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.parse_8_digit_date">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_8_digit_date</span><span class="p">(</span><span class="n">date_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validates and formats 8-digit strings.</span>
+<span class="sd">    Prioritizes YYYY-MM-DD, then DD-MM-YYYY based on realistic ranges.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Extract only the digits</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d&quot;</span><span class="p">,</span> <span class="n">date_str</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">8</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Try YYYYMMDD (Standard ISO-like)</span>
+    <span class="c1"># Year: 1900-2099, Month: 01-12, Day: 01-31</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">day</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[:</span><span class="mi">4</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">6</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">6</span><span class="p">:])</span>
+    <span class="k">if</span> <span class="mi">1900</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">year</span> <span class="ow">and</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">m</span> <span class="o">&lt;=</span> <span class="mi">12</span> <span class="ow">and</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">day</span> <span class="o">&lt;=</span> <span class="mi">31</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">m</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">day</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="c1"># Try DDMMYYYY (European style)</span>
+    <span class="c1"># Day: 01-31, Month: 01-12, Year: 1900-2099</span>
+    <span class="n">day</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[:</span><span class="mi">2</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">4</span><span class="p">:])</span>
+    <span class="k">if</span> <span class="mi">1900</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">year</span> <span class="ow">and</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">m</span> <span class="o">&lt;=</span> <span class="mi">12</span> <span class="ow">and</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">day</span> <span class="o">&lt;=</span> <span class="mi">31</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">m</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">day</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="c1"># Try MMDDYYYY (US style)</span>
+    <span class="n">m</span><span class="p">,</span> <span class="n">day</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[:</span><span class="mi">2</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">4</span><span class="p">:])</span>
+    <span class="k">if</span> <span class="mi">1900</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">year</span> <span class="ow">and</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">m</span> <span class="o">&lt;=</span> <span class="mi">12</span> <span class="ow">and</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">day</span> <span class="o">&lt;=</span> <span class="mi">31</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">m</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">day</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">return</span> <span class="s2">&quot;Format Error&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="extract_instrument_info">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.extract_instrument_info">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_instrument_info</span><span class="p">(</span><span class="n">input_string</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">input_string</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_string</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="n">input_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;0000&quot;</span><span class="p">,</span> <span class="s2">&quot;00-00-0000&quot;</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="n">input_string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
+
+    <span class="c1"># 1. EXTRACT SERIAL NUMBER (DIGITS ONLY)</span>
+    <span class="n">sn_patterns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">r</span><span class="s2">&quot;(?i)(?:s/n|sn|serial\s*#|serialnum)[:\s]*([\w-]+)&quot;</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;(?i)SBE\s+([\d-]+)&quot;</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;(?i)SN([\d-]+)&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="n">raw_sn</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">sn_patterns</span><span class="p">:</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="n">raw_sn</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">break</span>
+
+    <span class="c1"># Strip letters and dashes, keeping only the numbers</span>
+    <span class="k">if</span> <span class="n">raw_sn</span><span class="p">:</span>
+        <span class="n">serial_number</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d+&quot;</span><span class="p">,</span> <span class="n">raw_sn</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">serial_number</span> <span class="o">=</span> <span class="s2">&quot;0000&quot;</span>
+
+    <span class="c1"># 2. EXTRACT CALIBRATION DATES</span>
+    <span class="n">multi_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\w+):(\d</span><span class="si">{4}</span><span class="s2">-\d</span><span class="si">{2}</span><span class="s2">-\d</span><span class="si">{2}</span><span class="s2">T[\d:]+Z)&quot;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">multi_match</span><span class="p">:</span>
+        <span class="n">cal_info</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">multi_match</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(?i)cal(?:ibration)?[:\s]*&quot;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">date_candidate</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+            <span class="c1"># Handle the specific 8-digit date requirement (29082012 -&gt; 2908-20-12)</span>
+            <span class="n">digit_only_date</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d&quot;</span><span class="p">,</span> <span class="n">date_candidate</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">digit_only_date</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span> <span class="ow">and</span> <span class="s2">&quot;?&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">date_candidate</span><span class="p">:</span>
+                <span class="n">cal_info</span> <span class="o">=</span> <span class="n">parse_8_digit_date</span><span class="p">(</span><span class="n">date_candidate</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="s2">&quot;?&quot;</span> <span class="ow">in</span> <span class="n">date_candidate</span><span class="p">:</span>
+                <span class="n">cal_info</span> <span class="o">=</span> <span class="s2">&quot;0000-00-00&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">dt</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">date_candidate</span><span class="p">,</span> <span class="n">fuzzy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dayfirst</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">cal_info</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">cal_info</span> <span class="o">=</span> <span class="s2">&quot;Format Error&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cal_info</span> <span class="o">=</span> <span class="s2">&quot;None Found&quot;</span>
+
+    <span class="c1">## if cal_info has unrealistic year, month or day, rearrange so that year is first, then try parsing again</span>
+    <span class="k">if</span> <span class="n">cal_info</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;None Found&quot;</span><span class="p">,</span> <span class="s2">&quot;Format Error&quot;</span><span class="p">,</span> <span class="s2">&quot;0000-00-00&quot;</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">cal_info</span><span class="p">,</span> <span class="n">fuzzy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dayfirst</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">dt</span><span class="o">.</span><span class="n">year</span> <span class="o">&lt;</span> <span class="mi">1900</span>
+                <span class="ow">or</span> <span class="n">dt</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">year</span>
+                <span class="ow">or</span> <span class="n">dt</span><span class="o">.</span><span class="n">month</span> <span class="o">&gt;</span> <span class="mi">12</span>
+                <span class="ow">or</span> <span class="n">dt</span><span class="o">.</span><span class="n">day</span> <span class="o">&gt;</span> <span class="mi">31</span>
+            <span class="p">):</span>
+                <span class="c1"># Try parsing with year first</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">cal_info</span><span class="p">,</span> <span class="n">fuzzy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">yearfirst</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">cal_info</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="n">serial_number</span><span class="p">,</span> <span class="n">cal_info</span></div>
 
 
 
