@@ -1,4 +1,5 @@
 import logging
+import os
 from numbers import Number
 
 import numpy as np
@@ -7,29 +8,40 @@ import xarray as xr
 _log = logging.getLogger(__name__)
 
 
-def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> None:
-    """Attempts to save the dataset to a NetCDF file.
-
-    If a TypeError occurs due to invalid attribute values, converts the invalid
-    attributes to strings and retries the save operation.
+def save_dataset(
+    ds: xr.Dataset,
+    output_file: str = "../test.nc",
+    overwrite: bool = False,
+) -> bool:
+    """Save an xarray Dataset to a NetCDF file.
 
     Parameters
     ----------
-    ds : xarray.Dataset
-        The dataset to be saved.
+    ds : xr.Dataset
+        Dataset to save.
     output_file : str, optional
-        The path to the output NetCDF file. Defaults to '../test.nc'.
+        Output NetCDF file.
+    overwrite : bool, optional
+        If True, an existing file will be deleted and replaced.
+        If False, a FileExistsError is raised when the file exists.
 
     Returns
     -------
     bool
         True if the dataset was saved successfully, False otherwise.
-
-    Notes
-    -----
-    Based on: https://github.com/pydata/xarray/issues/3743
-
     """
+
+    # Handle existing file
+    if os.path.exists(output_file):
+        if overwrite:
+            print(f"Removing existing file: {output_file}")
+            os.remove(output_file)
+        else:
+            raise FileExistsError(
+                f"Output file '{output_file}' already exists. "
+                "Use overwrite=True to replace it."
+            )
+
     valid_types = (str, Number, np.ndarray, np.number, list, tuple)
 
     for varname in ds.variables:
@@ -39,7 +51,7 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> None:
                 if key in var.attrs:
                     value = var.attrs.pop(key)
                     var.encoding[key] = value
-                    _log.info(
+                    print(
                         f"Moved '{key}' from attrs to encoding for variable '{varname}'."
                     )
 
@@ -60,7 +72,7 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> None:
         }
 
         ds.to_netcdf(output_file, encoding=encoding, format="NETCDF4")
-        # ds.to_netcdf(output_file, format="NETCDF4")
+        print(f"Dataset successfully saved to {output_file}")
         return True
 
     except TypeError as e:
@@ -70,7 +82,8 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> None:
             for k, v in variable.attrs.items():
                 if not isinstance(v, valid_types) or isinstance(v, bool):
                     _log.warning(
-                        f"For variable '{varname}': Converting attribute '{k}' with value '{v}' to string."
+                        f"For variable '{varname}': "
+                        f"Converting attribute '{k}' with value '{v}' to string."
                     )
                     variable.attrs[k] = str(v)
 
