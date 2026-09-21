@@ -1212,9 +1212,10 @@ it keeps a single value; otherwise, it returns the full list.</p>
 <p class="rubric">Notes</p>
 <ul class="simple">
 <li><p>Latitude/longitude variables use double precision</p></li>
-<li><p>QC variables use int8</p></li>
+<li><p>QC variables (name ending in <code class="docutils literal notranslate"><span class="pre">qc</span></code>, case-insensitive) use int8</p></li>
 <li><p>Time variables keep original dtype</p></li>
-<li><p>Integer variables are downsized based on value range</p></li>
+<li><p>Named integer variables (<code class="docutils literal notranslate"><span class="pre">INTEGER_VARIABLES</span></code>) use their fixed integer type</p></li>
+<li><p>Already-integer variables are downsized to the smallest type that holds their range</p></li>
 <li><p>Float64 variables are converted to float32</p></li>
 </ul>
 </dd></dl>

@@ -263,6 +263,13 @@
     <span class="nb">id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">PLATFORM_SERIAL_NUMBER</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">start_date</span><span class="si">}</span><span class="s2">_delayed"</span>
     <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">id</span>
 
+    <span class="c1"># Re-fix QC flags the concat re-promoted to float, then optimise dtypes once on the</span>
+    <span class="c1"># fully-assembled dataset (coordinates and post-concat variables included).</span>
+    <span class="k">for</span> <span class="n">qc_name</span> <span class="ow">in</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">variables</span> <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"qc"</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">qc_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">convert_qc_flags</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">qc_name</span><span class="p">)</span>
+    <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">set_best_dtype</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">ds_og1</span><span class="p">,</span> <span class="n">varlist</span></div>
 
 
@@ -481,7 +488,8 @@
     <span class="c1"># Assign coordinates</span>
     <span class="n">dsa</span> <span class="o">=</span> <span class="n">dsa</span><span class="o">.</span><span class="n">set_coords</span><span class="p">([</span><span class="s2">"LONGITUDE"</span><span class="p">,</span> <span class="s2">"LATITUDE"</span><span class="p">,</span> <span class="s2">"DEPTH"</span><span class="p">,</span> <span class="s2">"TIME"</span><span class="p">])</span>
     <span class="n">dsa</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">encode_times_og1</span><span class="p">(</span><span class="n">dsa</span><span class="p">)</span>
-    <span class="n">dsa</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">set_best_dtype</span><span class="p">(</span><span class="n">dsa</span><span class="p">)</span>
+    <span class="c1"># dtype optimisation is deferred to convert_to_OG1, once on the concatenated dataset:</span>
+    <span class="c1"># running it per dive lets the concat re-promote int8 QC flags back to float.</span>
     <span class="k">return</span> <span class="n">dsa</span></div>
 
 

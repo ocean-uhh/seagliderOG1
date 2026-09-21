@@ -416,7 +416,8 @@
         <span class="n">ds</span><span class="p">[</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
             <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"dive_num_cast"</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">fill_value</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"_FillValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_value</span>
+        <span class="c1"># _FillValue belongs in encoding, not attrs (xarray rejects it in attrs on write).</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"_FillValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_value</span>
     <span class="k">return</span> <span class="n">ds</span></div>
 
 
@@ -783,6 +784,12 @@
         <span class="c1">### Before it had just set all values to 0, which is no change flag</span>
         <span class="c1">### Alternative could be to set to 9 (missing value)</span>
         <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"int8"</span><span class="p">)</span>
+        <span class="c1"># A flag variable has no missing value (6 = unsampled is itself a flag), so drop</span>
+        <span class="c1"># any inherited float _FillValue that would be invalid on the int8 result.</span>
+        <span class="c1"># Clear both encoding and attrs: set_best_dtype skips QC, so nothing else removes</span>
+        <span class="c1"># a _FillValue left in attrs, and xarray rejects _FillValue in attrs on write.</span>
+        <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"_FillValue"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"_FillValue"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="c1"># Seaglider default flag_meanings were prefixed with 'QC_'. Remove this prefix.</span>
         <span class="k">if</span> <span class="s2">"flag_meaning"</span> <span class="ow">in</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
             <span class="n">flag_meaning</span> <span class="o">=</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"flag_meaning"</span><span class="p">]</span>
@@ -796,6 +803,17 @@
         <span class="n">dsa</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"ancillary_variables"</span><span class="p">]</span> <span class="o">=</span> <span class="n">qc_name</span>
     <span class="k">return</span> <span class="n">dsa</span></div>
 
+
+
+<span class="c1"># Variables that are semantically integer and are stored as the smallest signed integer</span>
+<span class="c1"># that holds their range. Named explicitly: a float variable that happens to be</span>
+<span class="c1"># integer-valued in one deployment is not an integer variable.</span>
+<span class="n">INTEGER_VARIABLES</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"PHASE"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span>
+    <span class="s2">"PROFILE_NUMBER"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span>
+    <span class="s2">"DIVE_NUMBER"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span>
+    <span class="s2">"VBD_MIN_CNTS"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span>
+<span class="p">}</span>
 
 
 <div class="viewcode-block" id="find_best_dtype">
@@ -818,23 +836,27 @@
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    - Latitude/longitude variables use double precision</span>
-<span class="sd">    - QC variables use int8</span>
+<span class="sd">    - QC variables (name ending in ``qc``, case-insensitive) use int8</span>
 <span class="sd">    - Time variables keep original dtype</span>
-<span class="sd">    - Integer variables are downsized based on value range</span>
+<span class="sd">    - Named integer variables (``INTEGER_VARIABLES``) use their fixed integer type</span>
+<span class="sd">    - Already-integer variables are downsized to the smallest type that holds their range</span>
 <span class="sd">    - Float64 variables are converted to float32</span>
 
 <span class="sd">    """</span>
     <span class="n">input_dtype</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
-    <span class="k">if</span> <span class="s2">"latitude"</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">"longitude"</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s2">"latitude"</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">"longitude"</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span>
     <span class="k">if</span> <span class="n">var_name</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"qc"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span>
-    <span class="k">if</span> <span class="s2">"time"</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+    <span class="k">if</span> <span class="s2">"time"</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">input_dtype</span>
-    <span class="k">if</span> <span class="n">var_name</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">"raw"</span> <span class="ow">or</span> <span class="s2">"int"</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_dtype</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">da</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">16</span> <span class="o">/</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">INTEGER_VARIABLES</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">INTEGER_VARIABLES</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">"int"</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_dtype</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">da</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span>
-        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">da</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span> <span class="o">/</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">da</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">31</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span>
     <span class="k">if</span> <span class="n">input_dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span>
@@ -880,7 +902,12 @@
 
 <span class="sd">    """</span>
     <span class="n">bytes_in</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">nbytes</span>
-    <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
+    <span class="n">coord_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">var_name</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"qc"</span><span class="p">:</span>
+            <span class="c1"># QC flags are owned by convert_qc_flags (int8, fill 6, no _FillValue);</span>
+            <span class="c1"># never apply the generic bit-width fill (127) to a flag variable.</span>
+            <span class="k">continue</span>
         <span class="n">da</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
         <span class="n">input_dtype</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
         <span class="n">new_dtype</span> <span class="o">=</span> <span class="n">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">da</span><span class="p">)</span>
@@ -890,13 +917,26 @@
         <span class="k">if</span> <span class="n">new_dtype</span> <span class="o">==</span> <span class="n">input_dtype</span><span class="p">:</span>
             <span class="k">continue</span>
         <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2"> input dtype </span><span class="si">{</span><span class="n">input_dtype</span><span class="si">}</span><span class="s2"> change to </span><span class="si">{</span><span class="n">new_dtype</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="n">da_new</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="n">var_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="s2">"int"</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">):</span>
-            <span class="n">fill_val</span> <span class="o">=</span> <span class="n">set_fill_value</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span>
-            <span class="n">da_new</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">da</span><span class="p">)]</span> <span class="o">=</span> <span class="n">fill_val</span>
+            <span class="c1"># Respect a sentinel the variable already declares (e.g. PROFILE_NUMBER uses</span>
+            <span class="c1"># -9999); only derive one from the bit width when none exists.</span>
+            <span class="n">existing</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"_FillValue"</span><span class="p">,</span> <span class="n">da</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"_FillValue"</span><span class="p">))</span>
+            <span class="n">fill_val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span> <span class="k">if</span> <span class="n">existing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">set_fill_value</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span>
+            <span class="c1"># Replace NaN with the fill before casting; np.where handles scalar (0-d) and</span>
+            <span class="c1"># array variables, and np.isnan is only valid on floating-point source.</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">da</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
+                <span class="n">filled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">da</span><span class="o">.</span><span class="n">values</span><span class="p">),</span> <span class="n">fill_val</span><span class="p">,</span> <span class="n">da</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">filled</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">da_new</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">filled</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">))</span>
+            <span class="n">da_new</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"_FillValue"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># _FillValue lives in encoding only</span>
             <span class="n">da_new</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"_FillValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_val</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">da_new</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span>
         <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">da_new</span>
+    <span class="c1"># drop_vars + reassignment demotes a coordinate to a data variable; restore coords.</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">set_coords</span><span class="p">([</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">coord_names</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">])</span>
     <span class="n">bytes_out</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">nbytes</span>
     <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">"Space saved by dtype downgrade: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">bytes_in</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">bytes_out</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">bytes_in</span><span class="p">)</span><span class="si">}</span><span class="s2"> %"</span><span class="p">,</span>
