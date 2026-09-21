@@ -123,6 +123,25 @@ def test_input_dataset_not_mutated(tmp_path: pathlib.Path) -> None:
         np.testing.assert_array_equal(reloaded["time"].values, times)
 
 
+def test_preserves_integer_fill_value(tmp_path: pathlib.Path) -> None:
+    """A compressed integer variable keeps its _FillValue sentinel on disk.
+
+    No real OG1 fixture carries an integer variable with a fill sentinel yet; that
+    arrives with the dtype work (QC as int8, PROFILE_NUMBER as int16). This
+    synthetic case guards the writer against dropping the sentinel when it does.
+    """
+    ds = xr.Dataset({"q": ("n", np.array([1, 2, -999, 4], dtype="int16"))})
+    ds["q"].encoding["_FillValue"] = np.int16(-999)
+    out = tmp_path / "out.nc"
+
+    assert writers.save_dataset(ds, str(out)) is True
+
+    with netCDF4.Dataset(out) as nc:
+        assert "_FillValue" in nc.variables["q"].ncattrs()
+        assert nc.variables["q"].getncattr("_FillValue") == -999
+        assert nc.variables["q"].filters()["zlib"] is True
+
+
 def test_returns_false_when_unwriteable(tmp_path: pathlib.Path) -> None:
     """A bad global attribute the retry cannot fix makes save_dataset return False."""
     ds = _load_sample()

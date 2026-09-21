@@ -8,6 +8,17 @@ import xarray as xr
 
 _log = logging.getLogger(__name__)
 
+# OG1 serialisation for datetime variables: float64 seconds since the epoch.
+_TIME_ENCODING = {
+    "units": "seconds since 1970-01-01 00:00:00",
+    "calendar": "standard",
+    "dtype": "float64",
+}
+
+# Encoding entries that carry data semantics (missing-value sentinel, packing) and
+# must be kept when an explicit compression encoding replaces a variable's encoding.
+_PRESERVE_ENCODING = ("_FillValue", "missing_value", "scale_factor", "add_offset")
+
 
 def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> bool:
     """Attempts to save the dataset to a NetCDF file with lossless compression.
@@ -38,23 +49,14 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> bool:
     ds = ds.copy()
     valid_types = (str, Number, np.ndarray, np.number, list, tuple)
 
-    for varname in ds.variables:
-        var = ds[varname]
+    encoding = _compression_encoding(ds)
+    for name, var in ds.variables.items():
         if np.issubdtype(var.dtype, np.datetime64):
-            for key in ["units", "calendar"]:
-                if key in var.attrs:
-                    value = var.attrs.pop(key)
-                    var.encoding[key] = value
-                    _log.info(
-                        f"Moved '{key}' from attrs to encoding for variable '{varname}'."
-                    )
-
-    time_vars = [
-        name
-        for name in list(ds.data_vars) + list(ds.coords)
-        if np.issubdtype(ds[name].dtype, np.datetime64)
-    ]
-    encoding = _compression_encoding(ds, time_vars)
+            # Drop units/calendar from attrs so they cannot conflict with the
+            # explicit time encoding applied on write.
+            var.attrs.pop("units", None)
+            var.attrs.pop("calendar", None)
+            encoding.setdefault(name, {}).update(_TIME_ENCODING)
 
     def _write() -> None:
         ds.to_netcdf(output_file, encoding=encoding, format="NETCDF4", engine="netcdf4")
@@ -80,53 +82,38 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> bool:
                 var for var in ds.variables if ds[var].dtype == "datetime64[ns]"
             ]
             _log.warning(f"Variables with dtype datetime64[ns]: {datetime_vars}")
-            float_attrs = [
-                attr for attr in ds.attrs if isinstance(ds.attrs[attr], float)
-            ]
+            float_attrs = [attr for attr in ds.attrs if isinstance(ds.attrs[attr], float)]
             _log.warning(f"Attributes with dtype float64: {float_attrs}")
             return False
-        else:
-            return True
-    else:
-        return True
+    return True
 
 
-def _compression_encoding(ds: xr.Dataset, time_vars: list[str]) -> dict[str, dict]:
-    """Build a per-variable NetCDF encoding with lossless zlib compression.
+def _compression_encoding(ds: xr.Dataset) -> dict[str, dict]:
+    """Build a per-variable zlib encoding for the compressible variables.
 
-    Applies zlib at level 4 and the shuffle filter to every non-scalar numeric
-    variable, coordinates included, and layers the OG1 time encoding on top for
-    datetime variables. String and scalar variables are left uncompressed: the
+    Returns zlib-at-level-4 plus the shuffle filter for every non-scalar numeric
+    variable, coordinates included. String and scalar variables are omitted: the
     HDF5 zlib filter does not apply to variable-length strings and cannot chunk a
-    scalar.
+    scalar. Because an explicit encoding replaces a variable's own encoding on
+    write, any existing semantic entries (`_FillValue`, packing) are carried over
+    so a missing-value sentinel is not written as an ordinary value.
 
     Parameters
     ----------
     ds : xarray.Dataset
         The dataset to be written.
-    time_vars : list of str
-        Names of datetime variables to encode as float64 seconds since 1970-01-01.
 
     Returns
     -------
     dict of str to dict
-        Mapping of variable name to its encoding dictionary.
+        Mapping of variable name to its compression encoding.
 
     """
     compression = {"zlib": True, "complevel": 4, "shuffle": True}
-    time_encoding = {
-        "units": "seconds since 1970-01-01 00:00:00",
-        "calendar": "standard",
-        "dtype": "float64",
-    }
     encoding: dict[str, dict] = {}
-    for name in ds.variables:
-        var = ds[name]
-        enc: dict = {}
+    for name, var in ds.variables.items():
         if var.ndim > 0 and var.dtype.kind not in ("U", "S", "O"):
+            enc = {k: var.encoding[k] for k in _PRESERVE_ENCODING if k in var.encoding}
             enc.update(compression)
-        if name in time_vars:
-            enc.update(time_encoding)
-        if enc:
             encoding[name] = enc
     return encoding

@@ -12,14 +12,18 @@ semantic versioning.
   included, with lossless zlib compression (level 4) and the shuffle filter. String
   and scalar variables are left uncompressed. Output files are smaller and remain
   readable by any netCDF4 client.
-- `tests/test_writers.py` (8 tests, 100% coverage of `writers.py`): compression applied,
+- `tests/test_writers.py` (9 tests, 100% coverage of `writers.py`): compression applied,
   lossless round-trip, string/scalar variables skipped, time encoding preserved, size
-  reduction, retry path, caller's dataset not mutated, and the failure return.
+  reduction, retry path, caller's dataset not mutated, integer `_FillValue` preserved,
+  and the failure return.
 
 ### Fixed
 
+- `writers.save_dataset` preserves each compressed variable's `_FillValue` (and
+  `scale_factor`/`add_offset`) when applying compression, so an integer missing-value
+  sentinel is not written as an ordinary value.
 - `writers.save_dataset` no longer mutates the caller's dataset: it copies the input
-  before moving time attributes into encoding and stringifying attributes.
+  before clearing conflicting time attributes and stringifying attributes.
 - `writers.save_dataset` reuses one encoding on the retry path, so a file written after
   a `TypeError` fallback keeps its time encoding and compression instead of being
   written unencoded.
