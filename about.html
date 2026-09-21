@@ -212,13 +212,13 @@ ctd_depth   → DEPTH
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">readers</span><span class="p">,</span> <span class="n">convertOG1</span><span class="p">,</span> <span class="n">writers</span>
 
 <span class="c1"># Load all basestation files from a mission</span>
-<span class="n">datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="s2">&quot;path/to/mission/files/&quot;</span><span class="p">)</span>
+<span class="n">datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="s2">"path/to/mission/files/"</span><span class="p">)</span>
 
 <span class="c1"># Convert to OG1 format (concatenates all dives)</span>
 <span class="n">og1_dataset</span><span class="p">,</span> <span class="n">variables</span> <span class="o">=</span> <span class="n">convertOG1</span><span class="o">.</span><span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">datasets</span><span class="p">)</span>
 
 <span class="c1"># Save standardized trajectory file</span>
-<span class="n">writers</span><span class="o">.</span><span class="n">save_dataset</span><span class="p">(</span><span class="n">og1_dataset</span><span class="p">,</span> <span class="s2">&quot;sg015_mission_001_delayed.nc&quot;</span><span class="p">)</span>
+<span class="n">writers</span><span class="o">.</span><span class="n">save_dataset</span><span class="p">(</span><span class="n">og1_dataset</span><span class="p">,</span> <span class="s2">"sg015_mission_001_delayed.nc"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This transforms dozens of individual dive files into a single, standardized trajectory file ready for scientific analysis and data sharing.</p>

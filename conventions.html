@@ -180,7 +180,7 @@ ruff<span class="w"> </span>check<span class="w">        </span><span class="c1"
 <h3>Docstrings<a class="headerlink" href="#docstrings" title="Link to this heading"></a></h3>
 <p>Use numpy-style docstrings for all public functions:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">convert_to_OG1</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Processes datasets and converts them to OG1 format.</span>
 
 <span class="sd">    Parameters</span>
@@ -206,9 +206,9 @@ ruff<span class="w"> </span>check<span class="w">        </span><span class="c1"
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; datasets = readers.load_basestation_files(&quot;path/to/files/&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; datasets = readers.load_basestation_files("path/to/files/")</span>
 <span class="sd">    &gt;&gt;&gt; og1_data, variables = convert_to_OG1(datasets)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 </pre></div>
 </div>
 </section>
@@ -246,14 +246,14 @@ ruff<span class="w"> </span>check<span class="w">        </span><span class="c1"
 <h3>Descriptive Names<a class="headerlink" href="#descriptive-names" title="Link to this heading"></a></h3>
 <p>Prefer descriptive names over abbreviations:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Good</span>
-<span class="n">temperature_data</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;TEMP&quot;</span><span class="p">]</span>
-<span class="n">pressure_sensor</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">]</span> 
-<span class="n">dive_number</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;dive_number&quot;</span><span class="p">]</span>
+<span class="n">temperature_data</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"TEMP"</span><span class="p">]</span>
+<span class="n">pressure_sensor</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"PRES"</span><span class="p">]</span> 
+<span class="n">dive_number</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]</span>
 
 <span class="c1"># Avoid</span>
-<span class="n">temp</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;TEMP&quot;</span><span class="p">]</span>
-<span class="n">p</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;PRES&quot;</span><span class="p">]</span>
-<span class="n">dn</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;dive_number&quot;</span><span class="p">]</span>
+<span class="n">temp</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"TEMP"</span><span class="p">]</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"PRES"</span><span class="p">]</span>
+<span class="n">dn</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]</span>
 </pre></div>
 </div>
 </section>
@@ -271,11 +271,11 @@ ruff<span class="w"> </span>check<span class="w">        </span><span class="c1"
 <section id="test-naming">
 <h3>Test Naming<a class="headerlink" href="#test-naming" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_convert_to_og1_single_dataset</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test conversion with a single input dataset.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Test conversion with a single input dataset."""</span>
     <span class="k">pass</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_convert_to_og1_multiple_datasets</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test conversion with multiple input datasets.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Test conversion with multiple input datasets."""</span>
     <span class="k">pass</span>
 </pre></div>
 </div>
@@ -319,13 +319,13 @@ ruff<span class="w"> </span>check<span class="w">        </span><span class="c1"
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">process_data</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting data processing&quot;</span><span class="p">)</span>
+    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting data processing"</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">expensive_operation</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="si">}</span><span class="s2"> items&quot;</span><span class="p">)</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Processed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="si">}</span><span class="s2"> items"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to process data: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to process data: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">raise</span>
 </pre></div>
 </div>

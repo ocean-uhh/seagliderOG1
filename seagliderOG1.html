@@ -868,12 +868,16 @@ dimension, useful for examining variables of a particular type.</p>
 </section>
 <section id="module-seagliderOG1.writers">
 <span id="writers"></span><h2>writers<a class="headerlink" href="#module-seagliderOG1.writers" title="Link to this heading"></a></h2>
+<p>Write OG1 datasets to compressed NetCDF files.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.writers.save_dataset">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.writers.</span></span><span class="sig-name descname"><span class="pre">save_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'../test.nc'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seagliderOG1/writers.html#save_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.writers.save_dataset" title="Link to this definition"></a></dt>
-<dd><p>Attempts to save the dataset to a NetCDF file.</p>
-<p>If a TypeError occurs due to invalid attribute values, converts the invalid
-attributes to strings and retries the save operation.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.writers.</span></span><span class="sig-name descname"><span class="pre">save_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'../test.nc'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/seagliderOG1/writers.html#save_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.writers.save_dataset" title="Link to this definition"></a></dt>
+<dd><p>Attempts to save the dataset to a NetCDF file with lossless compression.</p>
+<p>Every non-scalar numeric variable, coordinates included, is written with zlib
+at level 4 and the shuffle filter. If a TypeError occurs due to invalid
+attribute values, converts the invalid attributes to strings and retries the
+save. The input dataset is copied first, so the caller’s dataset is not
+modified.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
