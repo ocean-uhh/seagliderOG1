@@ -11,7 +11,7 @@ script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
-from seagliderOG1 import writers  # noqa: E402  # import needs the path set above
+from seagliderOG1 import tools, writers  # noqa: E402  # import needs the path set above
 
 SAMPLE = parent_dir / "data" / "demo_single_test.nc"
 
@@ -150,3 +150,25 @@ def test_returns_false_when_unwriteable(tmp_path: pathlib.Path) -> None:
     ds.attrs["bad_global"] = {"not": "serialisable"}
 
     assert writers.save_dataset(ds, str(out)) is False
+
+
+def test_time_units_canonical(tmp_path: pathlib.Path) -> None:
+    """Written time variables use the canonical OG1 units and calendar, not the old form.
+
+    The writer no longer applies its own divergent units string; it uses the single
+    source in tools, so a saved file matches encode_times_og1 (ISO UTC, gregorian).
+    """
+    times = np.array(["2020-01-01", "2020-01-02", "2020-01-03"], dtype="datetime64[ns]")
+    ds = xr.Dataset({"x": ("time", np.arange(3.0))}, coords={"time": ("time", times)})
+    out = tmp_path / "out.nc"
+    writers.save_dataset(ds, str(out))
+
+    assert tools.OG1_TIME_UNITS == "seconds since 1970-01-01T00:00:00Z"
+    with netCDF4.Dataset(out) as nc:
+        v = nc.variables["time"]
+        # xarray normalises the trailing Z to +00:00; both are ISO UTC. The old writer
+        # emitted "seconds since 1970-01-01 00:00:00" (space, no zone) with calendar
+        # "standard" -- assert the ISO form and gregorian instead.
+        assert "1970-01-01T00:00:00" in v.getncattr("units")
+        assert v.getncattr("calendar") == "gregorian"
+        assert v.dtype == np.dtype("float64")

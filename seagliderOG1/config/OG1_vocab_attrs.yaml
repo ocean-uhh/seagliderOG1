@@ -172,7 +172,7 @@ AD2CP_TIME:
   long_name: time of measurement
   observation_type: measured
   standard_name: time
-  units: seconds since 1970-01-01 00:00:00 UTC
+  units: seconds since 1970-01-01T00:00:00Z
   calendar: gregorian
   axis: T
   uri: https://vocab.nerc.ac.uk/collection/P02/current/AYMD/

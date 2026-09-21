@@ -6,12 +6,16 @@ from numbers import Number
 import numpy as np
 import xarray as xr
 
+from seagliderOG1 import tools
+
 _log = logging.getLogger(__name__)
 
-# OG1 serialisation for datetime variables: float64 seconds since the epoch.
+# OG1 serialisation for datetime variables: float64 seconds using the canonical OG1 time
+# units (defined once in tools), so the written file matches encode_times_og1 instead of
+# silently overriding it.
 _TIME_ENCODING = {
-    "units": "seconds since 1970-01-01 00:00:00",
-    "calendar": "standard",
+    "units": tools.OG1_TIME_UNITS,
+    "calendar": tools.OG1_TIME_CALENDAR,
     "dtype": "float64",
 }
 
@@ -82,7 +86,9 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> bool:
                 var for var in ds.variables if ds[var].dtype == "datetime64[ns]"
             ]
             _log.warning(f"Variables with dtype datetime64[ns]: {datetime_vars}")
-            float_attrs = [attr for attr in ds.attrs if isinstance(ds.attrs[attr], float)]
+            float_attrs = [
+                attr for attr in ds.attrs if isinstance(ds.attrs[attr], float)
+            ]
             _log.warning(f"Attributes with dtype float64: {float_attrs}")
             return False
     return True
