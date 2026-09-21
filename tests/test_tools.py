@@ -67,3 +67,68 @@ def test_add_hdm_parameters():
     ### check if the hdm parameters are added to the dataset and have the expected values
     for param in hdm_parameters:
         assert param in ds_OG1
+
+
+def test_find_best_dtype_named_integers() -> None:
+    """Named integer variables map to their fixed integer type."""
+    da = xr.DataArray(np.arange(5.0))
+    assert tools.find_best_dtype("PHASE", da) == np.int8
+    assert tools.find_best_dtype("PROFILE_NUMBER", da) == np.int16
+    assert tools.find_best_dtype("VBD_MIN_CNTS", da) == np.int16
+
+
+def test_find_best_dtype_qc_and_latlon() -> None:
+    """QC variables become int8 (case-insensitive); lat/lon stay double."""
+    da = xr.DataArray(np.arange(3.0))
+    assert tools.find_best_dtype("TEMP_QC", da) == np.int8
+    assert tools.find_best_dtype("temp_qc", da) == np.int8
+    assert tools.find_best_dtype("LATITUDE", da) == np.double
+    assert tools.find_best_dtype("LONGITUDE_GPS", da) == np.double
+
+
+def test_find_best_dtype_raw_not_truncated() -> None:
+    """A float variable whose name ends in 'raw' is not cast to int (clause removed)."""
+    da = xr.DataArray(np.array([1.5, 2.5, 3.5]))
+    assert tools.find_best_dtype("optics_raw", da) == np.float32
+
+
+def test_find_best_dtype_float64_to_float32() -> None:
+    """Generic float64 variables downcast to float32."""
+    assert tools.find_best_dtype("TEMP", xr.DataArray(np.arange(3.0))) == np.float32
+
+
+def test_set_best_dtype_preserves_existing_fill_value() -> None:
+    """An existing _FillValue sentinel is kept, not overwritten by the bit-width default."""
+    da = xr.DataArray(
+        np.array([1, 3, -9999], dtype="int64"), dims="x", name="PROFILE_NUMBER"
+    )
+    da.encoding["_FillValue"] = -9999
+    ds = tools.set_best_dtype(xr.Dataset({"PROFILE_NUMBER": da}))
+    assert ds["PROFILE_NUMBER"].dtype == np.int16
+    assert ds["PROFILE_NUMBER"].encoding["_FillValue"] == -9999
+    assert "_FillValue" not in ds["PROFILE_NUMBER"].attrs
+
+
+def test_set_best_dtype_skips_qc() -> None:
+    """QC flags are left to convert_qc_flags; set_best_dtype adds no bit-width fill."""
+    qc = xr.DataArray(np.array([1, 2, 6], dtype="int8"), dims="x", name="TEMP_QC")
+    ds = tools.set_best_dtype(xr.Dataset({"TEMP_QC": qc}))
+    assert ds["TEMP_QC"].dtype == np.int8
+    assert "_FillValue" not in ds["TEMP_QC"].encoding
+
+
+def test_set_best_dtype_scalar_integer() -> None:
+    """A scalar integer variable coerces without a 0-d indexing error."""
+    ds = xr.Dataset({"VBD_MIN_CNTS": xr.DataArray(np.float64(500.0))})
+    out = tools.set_best_dtype(ds)
+    assert out["VBD_MIN_CNTS"].dtype == np.int16
+
+
+def test_set_best_dtype_restores_depth_coord() -> None:
+    """DEPTH coerces to float32 and remains a coordinate."""
+    ds = xr.Dataset(
+        {"DEPTH": xr.DataArray(np.arange(4.0), dims="x", name="DEPTH")}
+    ).set_coords("DEPTH")
+    out = tools.set_best_dtype(ds)
+    assert out["DEPTH"].dtype == np.float32
+    assert "DEPTH" in out.coords
