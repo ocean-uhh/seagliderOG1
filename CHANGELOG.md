@@ -6,6 +6,15 @@ semantic versioning.
 
 ## [Unreleased]
 
+### Breaking changes
+
+- Output variable dtypes changed. QC flags are `int8` (were `float32`/`int64`); `PHASE` is
+  `int8`; `PROFILE_NUMBER`, `DIVE_NUMBER` and `VBD_MIN_CNTS` are `int16`; `DEPTH` and
+  `DEPTH_Z` are `float32`. `LATITUDE`/`LONGITUDE` stay `float64`. Non-QC integer variables
+  carry a `_FillValue`; QC flags use `6` (unsampled) and have no `_FillValue`. A reader that
+  assumes the old dtypes, or tests `np.isnan` on a QC flag, must adapt; CF-decoding readers
+  are unaffected.
+
 ### Added
 
 - `writers.save_dataset` now writes every non-scalar numeric variable, coordinates
@@ -28,3 +37,13 @@ semantic versioning.
   a `TypeError` fallback keeps its time encoding and compression instead of being
   written unencoded.
 - `writers.save_dataset` return annotation corrected from `None` to `bool`.
+- Dtype optimisation now runs once on the concatenated dataset (in `convert_to_OG1`) instead
+  of per dive, so `int8` QC flags are no longer re-promoted to `float32` by the concat.
+- `tools.set_best_dtype` now visits coordinates (so `DEPTH` becomes `float32`) and restores
+  coordinate status after coercion; it respects an existing `_FillValue` sentinel (e.g.
+  `PROFILE_NUMBER`'s `-9999`) instead of overriding it, never leaves `_FillValue` in attrs,
+  skips QC flags, and coerces scalar variables without an indexing error.
+- `tools.find_best_dtype` no longer casts variables whose name ends in `raw` to `int16` (it
+  truncated float "raw" variables); named integer variables map to a fixed integer type.
+- `tools.convert_qc_flags` drops the inherited float `_FillValue` from the `int8` result;
+  `tools.assign_profile_number` writes `_FillValue` to encoding rather than attrs.

@@ -1,12 +1,14 @@
 import pathlib
 import sys
 
+import netCDF4
+import numpy as np
+
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
-from seagliderOG1 import readers, tools
-from seagliderOG1 import convertOG1
+from seagliderOG1 import convertOG1, readers, tools, writers
 
 
 def test_process_dataset():
@@ -57,3 +59,28 @@ def test_process_dataset():
     meanZ = ds_new["DEPTH_Z"].mean().item()
     meanZpos = ds_new["DEPTH"].mean().item()
     assert abs(meanZ + meanZpos) < 10
+
+
+def test_output_dtypes_end_to_end(tmp_path: pathlib.Path) -> None:
+    """Multi-dive conversion then write yields the intended on-disk dtypes and fills.
+
+    Exercises the concat path: QC flags must be int8 in the written file (they were
+    re-promoted to float when set_best_dtype ran per dive), and PROFILE_NUMBER keeps its
+    -9999 fill through both set_best_dtype and the compression writer.
+    """
+    source = str(parent_dir / "data/demo_sg005")
+    datasets = readers.load_basestation_files(source, 1, 5)
+    ds, _ = convertOG1.convert_to_OG1(datasets)
+    out = tmp_path / "out.nc"
+
+    assert writers.save_dataset(ds, str(out)) is True
+
+    with netCDF4.Dataset(out) as nc:
+        assert nc.variables["TEMP_QC"].dtype == np.dtype("int8")
+        assert nc.variables["PSAL_QC"].dtype == np.dtype("int8")
+        assert nc.variables["PHASE"].dtype == np.dtype("int8")
+        profile = nc.variables["PROFILE_NUMBER"]
+        assert profile.dtype == np.dtype("int16")
+        assert profile.getncattr("_FillValue") == -9999
+        assert nc.variables["DEPTH"].dtype == np.dtype("float32")
+        assert nc.variables["LATITUDE"].dtype == np.dtype("float64")
