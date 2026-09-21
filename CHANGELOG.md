@@ -10,9 +10,10 @@ semantic versioning.
 
 - Output variable dtypes changed. QC flags are `int8` (were `float32`/`int64`); `PHASE` is
   `int8`; `PROFILE_NUMBER`, `DIVE_NUMBER` and `VBD_MIN_CNTS` are `int16`; `DEPTH` and
-  `DEPTH_Z` are `float32`. `LATITUDE`/`LONGITUDE` stay `float64`. Integer variables carry a
-  `_FillValue`. A reader that assumes the old dtypes, or tests `np.isnan` on a QC flag, must
-  adapt; CF-decoding readers are unaffected.
+  `DEPTH_Z` are `float32`. `LATITUDE`/`LONGITUDE` stay `float64`. Non-QC integer variables
+  carry a `_FillValue`; QC flags use `6` (unsampled) and have no `_FillValue`. A reader that
+  assumes the old dtypes, or tests `np.isnan` on a QC flag, must adapt; CF-decoding readers
+  are unaffected.
 
 ### Added
 

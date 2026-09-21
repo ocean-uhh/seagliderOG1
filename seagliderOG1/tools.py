@@ -665,7 +665,10 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
         dsa[qc_name].values = dsa[qc_name].fillna(6).astype("int8")
         # A flag variable has no missing value (6 = unsampled is itself a flag), so drop
         # any inherited float _FillValue that would be invalid on the int8 result.
+        # Clear both encoding and attrs: set_best_dtype skips QC, so nothing else removes
+        # a _FillValue left in attrs, and xarray rejects _FillValue in attrs on write.
         dsa[qc_name].encoding.pop("_FillValue", None)
+        dsa[qc_name].attrs.pop("_FillValue", None)
         # Seaglider default flag_meanings were prefixed with 'QC_'. Remove this prefix.
         if "flag_meaning" in dsa[qc_name].attrs:
             flag_meaning = dsa[qc_name].attrs["flag_meaning"]
