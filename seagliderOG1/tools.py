@@ -49,7 +49,6 @@ def gather_sensor_info(ds1_base) -> dict:
         for sensor in sensor_names:
             sensor_dict[sensor] = {}
     else:
-
         print(
             "Warning: 'instrument' attribute not found in the dataset. Therefore no sensor information extracted from attributes. "
             "If you have sensor information in the attributes, please add an 'instrument' attribute with the sensor names separated by spaces."
@@ -95,7 +94,6 @@ def gather_sensor_info(ds1_base) -> dict:
         )
 
     for sensor in sensor_dict.keys():
-
         # --- Determine calibcomm variable name --------------------------------
         calibcomm_str = None
         base = ds1_base
@@ -170,7 +168,6 @@ def add_sensor_to_dataset(ds_og1, sensor_dict, firstrun=False) -> xr.Dataset:
     # 1. Create dimensionless sensor variables in the dataset
     # -------------------------------------------------------------------------
     for _, sensor_info in sensor_dict.items():
-
         # Build sensor variable name
         sensor_type = sensor_info["sensor_type"].upper().replace(" ", "_")
         serial = sensor_info["sensor_serial_number"]
@@ -792,7 +789,9 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
             # Respect a sentinel the variable already declares (e.g. PROFILE_NUMBER uses
             # -9999); only derive one from the bit width when none exists.
             existing = da.encoding.get("_FillValue", da.attrs.get("_FillValue"))
-            fill_val = int(existing) if existing is not None else set_fill_value(new_dtype)
+            fill_val = (
+                int(existing) if existing is not None else set_fill_value(new_dtype)
+            )
             # Replace NaN with the fill before casting; np.where handles scalar (0-d) and
             # array variables, and np.isnan is only valid on floating-point source.
             if np.issubdtype(da.dtype, np.floating):
@@ -843,6 +842,13 @@ def set_best_dtype_value(value, var_name: str):
     return converted_value
 
 
+# OG1 canonical serialisation for time variables (CF seconds since the epoch, UTC).
+# Used by the time encoders here and by writers.save_dataset; keep in sync with the time
+# variable units declared in config/OG1_vocab_attrs.yaml.
+OG1_TIME_UNITS = "seconds since 1970-01-01T00:00:00Z"
+OG1_TIME_CALENDAR = "gregorian"
+
+
 def encode_times(ds: xr.Dataset) -> xr.Dataset:
     """Encode time variables with standard units and remove problematic attributes.
 
@@ -861,13 +867,13 @@ def encode_times(ds: xr.Dataset) -> xr.Dataset:
         ds.time.attrs.pop("units")
     if "calendar" in ds.time.attrs.keys():
         ds.time.attrs.pop("calendar")
-    ds["time"].encoding["units"] = "seconds since 1970-01-01T00:00:00Z"
+    ds["time"].encoding["units"] = OG1_TIME_UNITS
     for var_name in list(ds):
         if "time" in var_name.lower() and not var_name == "time":
             for drop_attr in ["units", "calendar", "dtype"]:
                 if drop_attr in ds[var_name].attrs.keys():
                     ds[var_name].attrs.pop(drop_attr)
-            ds[var_name].encoding["units"] = "seconds since 1970-01-01T00:00:00Z"
+            ds[var_name].encoding["units"] = OG1_TIME_UNITS
     return ds
 
 
@@ -895,8 +901,8 @@ def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
                 if drop_attr in ds[var_name].encoding.keys():
                     ds[var_name].encoding.pop(drop_attr)
             if var_name.lower() == "time":
-                ds[var_name].attrs["units"] = "seconds since 1970-01-01T00:00:00Z"
-                ds[var_name].attrs["calendar"] = "gregorian"
+                ds[var_name].attrs["units"] = OG1_TIME_UNITS
+                ds[var_name].attrs["calendar"] = OG1_TIME_CALENDAR
     return ds
 
 
@@ -1033,7 +1039,6 @@ def merge_datasets_along_time(split_ds, dims_to_merge, first_run=False):
     all_dims = set([dim[0] for dim in split_ds.keys() if len(dim) > 0])
     actually_merged_dims = set()
     for dim in dims_to_merge:
-
         # ---1. Extract dataset---
         if (dim,) not in split_ds:
             print(f"Skipping {dim}: not found in split_ds.")
@@ -1325,7 +1330,6 @@ def parse_8_digit_date(date_str):
 
 
 def extract_instrument_info(input_string):
-
     if (
         input_string is None
         or not isinstance(input_string, str)

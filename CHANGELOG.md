@@ -14,6 +14,11 @@ semantic versioning.
   carry a `_FillValue`; QC flags use `6` (unsampled) and have no `_FillValue`. A reader that
   assumes the old dtypes, or tests `np.isnan` on a QC flag, must adapt; CF-decoding readers
   are unaffected.
+- Time variables are written with the OG1-specified units `seconds since
+  1970-01-01T00:00:00Z` (ISO UTC; xarray serialises the zone as `+00:00`) and calendar
+  `gregorian` (OG1 Format v1.0.0), replacing the previous non-conformant `seconds since
+  1970-01-01 00:00:00` / `standard`. The instant is unchanged; a parser that string-matched
+  the old units must adapt.
 
 ### Added
 
@@ -47,3 +52,6 @@ semantic versioning.
   truncated float "raw" variables); named integer variables map to a fixed integer type.
 - `tools.convert_qc_flags` drops the inherited float `_FillValue` from the `int8` result;
   `tools.assign_profile_number` writes `_FillValue` to encoding rather than attrs.
+- `writers.save_dataset` no longer silently overrides `tools.encode_times_og1`: both use one
+  canonical time-units constant (`tools.OG1_TIME_UNITS` / `OG1_TIME_CALENDAR`), so the saved
+  file's TIME units match the OG1 encoder instead of a divergent hard-coded string.
