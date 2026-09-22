@@ -19,6 +19,9 @@ semantic versioning.
   `gregorian` (OG1 Format v1.0.0), replacing the previous non-conformant `seconds since
   1970-01-01 00:00:00` / `standard`. The instant is unchanged; a parser that string-matched
   the old units must adapt.
+- Minimum Python raised to 3.10 (`requires-python = ">=3.10"`). The pinned `numpy 2.2` and
+  `xarray 2025.3` already require 3.10, so `>=3.8` was not installable; users on 3.8/3.9 must
+  stay on an earlier release.
 
 ### Added
 
