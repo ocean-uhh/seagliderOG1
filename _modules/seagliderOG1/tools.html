@@ -137,7 +137,6 @@
         <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_names</span><span class="p">:</span>
             <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">else</span><span class="p">:</span>
-
         <span class="nb">print</span><span class="p">(</span>
             <span class="s2">"Warning: 'instrument' attribute not found in the dataset. Therefore no sensor information extracted from attributes. "</span>
             <span class="s2">"If you have sensor information in the attributes, please add an 'instrument' attribute with the sensor names separated by spaces."</span>
@@ -183,7 +182,6 @@
         <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-
         <span class="c1"># --- Determine calibcomm variable name --------------------------------</span>
         <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">base</span> <span class="o">=</span> <span class="n">ds1_base</span>
@@ -261,7 +259,6 @@
     <span class="c1"># 1. Create dimensionless sensor variables in the dataset</span>
     <span class="c1"># -------------------------------------------------------------------------</span>
     <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">sensor_info</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-
         <span class="c1"># Build sensor variable name</span>
         <span class="n">sensor_type</span> <span class="o">=</span> <span class="n">sensor_info</span><span class="p">[</span><span class="s2">"sensor_type"</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="s2">"_"</span><span class="p">)</span>
         <span class="n">serial</span> <span class="o">=</span> <span class="n">sensor_info</span><span class="p">[</span><span class="s2">"sensor_serial_number"</span><span class="p">]</span>
@@ -922,7 +919,9 @@
             <span class="c1"># Respect a sentinel the variable already declares (e.g. PROFILE_NUMBER uses</span>
             <span class="c1"># -9999); only derive one from the bit width when none exists.</span>
             <span class="n">existing</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"_FillValue"</span><span class="p">,</span> <span class="n">da</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"_FillValue"</span><span class="p">))</span>
-            <span class="n">fill_val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span> <span class="k">if</span> <span class="n">existing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">set_fill_value</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span>
+            <span class="n">fill_val</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span> <span class="k">if</span> <span class="n">existing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">set_fill_value</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span>
+            <span class="p">)</span>
             <span class="c1"># Replace NaN with the fill before casting; np.where handles scalar (0-d) and</span>
             <span class="c1"># array variables, and np.isnan is only valid on floating-point source.</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">da</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
@@ -977,6 +976,13 @@
 
 
 
+<span class="c1"># OG1 canonical serialisation for time variables (CF seconds since the epoch, UTC).</span>
+<span class="c1"># Used by the time encoders here and by writers.save_dataset; keep in sync with the time</span>
+<span class="c1"># variable units declared in config/OG1_vocab_attrs.yaml.</span>
+<span class="n">OG1_TIME_UNITS</span> <span class="o">=</span> <span class="s2">"seconds since 1970-01-01T00:00:00Z"</span>
+<span class="n">OG1_TIME_CALENDAR</span> <span class="o">=</span> <span class="s2">"gregorian"</span>
+
+
 <div class="viewcode-block" id="encode_times">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.encode_times">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">encode_times</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
@@ -997,13 +1003,13 @@
         <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"units"</span><span class="p">)</span>
     <span class="k">if</span> <span class="s2">"calendar"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"calendar"</span><span class="p">)</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"seconds since 1970-01-01T00:00:00Z"</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="n">OG1_TIME_UNITS</span>
     <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
         <span class="k">if</span> <span class="s2">"time"</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">var_name</span> <span class="o">==</span> <span class="s2">"time"</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"units"</span><span class="p">,</span> <span class="s2">"calendar"</span><span class="p">,</span> <span class="s2">"dtype"</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
-            <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"seconds since 1970-01-01T00:00:00Z"</span>
+            <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="n">OG1_TIME_UNITS</span>
     <span class="k">return</span> <span class="n">ds</span></div>
 
 
@@ -1034,8 +1040,8 @@
                 <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"time"</span><span class="p">:</span>
-                <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"seconds since 1970-01-01T00:00:00Z"</span>
-                <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"calendar"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"gregorian"</span>
+                <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="n">OG1_TIME_UNITS</span>
+                <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"calendar"</span><span class="p">]</span> <span class="o">=</span> <span class="n">OG1_TIME_CALENDAR</span>
     <span class="k">return</span> <span class="n">ds</span></div>
 
 
@@ -1178,7 +1184,6 @@
     <span class="n">all_dims</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">split_ds</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span>
     <span class="n">actually_merged_dims</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">dims_to_merge</span><span class="p">:</span>
-
         <span class="c1"># ---1. Extract dataset---</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">dim</span><span class="p">,)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">split_ds</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Skipping </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">: not found in split_ds."</span><span class="p">)</span>
@@ -1485,7 +1490,6 @@
 <div class="viewcode-block" id="extract_instrument_info">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.extract_instrument_info">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">extract_instrument_info</span><span class="p">(</span><span class="n">input_string</span><span class="p">):</span>
-
     <span class="k">if</span> <span class="p">(</span>
         <span class="n">input_string</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_string</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
