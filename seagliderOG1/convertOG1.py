@@ -180,6 +180,13 @@ def convert_to_OG1(
     id = f"{PLATFORM_SERIAL_NUMBER}_{ds_og1.start_date}_delayed"
     ds_og1.attrs["id"] = id
 
+    # Re-fix QC flags the concat re-promoted to float, then optimise dtypes once on the
+    # fully-assembled dataset (coordinates and post-concat variables included).
+    for qc_name in [v for v in ds_og1.variables if v[-2:].lower() == "qc"]:
+        if qc_name[:-3] in ds_og1.variables:
+            ds_og1 = tools.convert_qc_flags(ds_og1, qc_name)
+    ds_og1 = tools.set_best_dtype(ds_og1)
+
     return ds_og1, varlist
 
 
@@ -429,8 +436,8 @@ def standardise_OG10(
         dsa = dsa.set_coords(coordinate_names)
 
     dsa = tools.encode_times_og1(dsa)
-    dsa = tools.set_best_dtype(dsa)
-
+    # dtype optimisation is deferred to convert_to_OG1, once on the concatenated dataset:
+    # running it per dive lets the concat re-promote int8 QC flags back to float.
     return dsa
 
 

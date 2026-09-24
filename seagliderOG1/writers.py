@@ -1,17 +1,37 @@
+"""Write OG1 datasets to compressed NetCDF files."""
+
 import logging
 from numbers import Number
 
 import numpy as np
 import xarray as xr
 
+from seagliderOG1 import tools
+
 _log = logging.getLogger(__name__)
 
+# OG1 serialisation for datetime variables: float64 seconds using the canonical OG1 time
+# units (defined once in tools), so the written file matches encode_times_og1 instead of
+# silently overriding it.
+_TIME_ENCODING = {
+    "units": tools.OG1_TIME_UNITS,
+    "calendar": tools.OG1_TIME_CALENDAR,
+    "dtype": "float64",
+}
 
-def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> None:
-    """Attempts to save the dataset to a NetCDF file.
+# Encoding entries that carry data semantics (missing-value sentinel, packing) and
+# must be kept when an explicit compression encoding replaces a variable's encoding.
+_PRESERVE_ENCODING = ("_FillValue", "missing_value", "scale_factor", "add_offset")
 
-    If a TypeError occurs due to invalid attribute values, converts the invalid
-    attributes to strings and retries the save operation.
+
+def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> bool:
+    """Attempts to save the dataset to a NetCDF file with lossless compression.
+
+    Every non-scalar numeric variable, coordinates included, is written with zlib
+    at level 4 and the shuffle filter. If a TypeError occurs due to invalid
+    attribute values, converts the invalid attributes to strings and retries the
+    save. The input dataset is copied first, so the caller's dataset is not
+    modified.
 
     Parameters
     ----------
@@ -30,39 +50,23 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> None:
     Based on: https://github.com/pydata/xarray/issues/3743
 
     """
+    ds = ds.copy()
     valid_types = (str, Number, np.ndarray, np.number, list, tuple)
 
-    for varname in ds.variables:
-        var = ds[varname]
+    encoding = _compression_encoding(ds)
+    for name, var in ds.variables.items():
         if np.issubdtype(var.dtype, np.datetime64):
-            for key in ["units", "calendar"]:
-                if key in var.attrs:
-                    value = var.attrs.pop(key)
-                    var.encoding[key] = value
-                    _log.info(
-                        f"Moved '{key}' from attrs to encoding for variable '{varname}'."
-                    )
+            # Drop units/calendar from attrs so they cannot conflict with the
+            # explicit time encoding applied on write.
+            var.attrs.pop("units", None)
+            var.attrs.pop("calendar", None)
+            encoding.setdefault(name, {}).update(_TIME_ENCODING)
+
+    def _write() -> None:
+        ds.to_netcdf(output_file, encoding=encoding, format="NETCDF4", engine="netcdf4")
 
     try:
-        time_vars = [
-            name
-            for name in list(ds.data_vars) + list(ds.coords)
-            if np.issubdtype(ds[name].dtype, np.datetime64)
-        ]
-
-        encoding = {
-            name: {
-                "units": "seconds since 1970-01-01 00:00:00",
-                "calendar": "standard",
-                "dtype": "float64",
-            }
-            for name in time_vars
-        }
-
-        ds.to_netcdf(output_file, encoding=encoding, format="NETCDF4")
-        # ds.to_netcdf(output_file, format="NETCDF4")
-        return True
-
+        _write()
     except TypeError as e:
         _log.error(f"TypeError saving dataset: {e.__class__.__name__}: {e}")
 
@@ -75,10 +79,8 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> None:
                     variable.attrs[k] = str(v)
 
         try:
-            ds.to_netcdf(output_file, format="NETCDF4")
-            return True
-
-        except Exception as e:
+            _write()
+        except Exception as e:  # noqa: BLE001  # I/O boundary: last-ditch save attempt
             _log.error(f"Failed to save dataset: {e}")
             datetime_vars = [
                 var for var in ds.variables if ds[var].dtype == "datetime64[ns]"
@@ -89,3 +91,35 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> None:
             ]
             _log.warning(f"Attributes with dtype float64: {float_attrs}")
             return False
+    return True
+
+
+def _compression_encoding(ds: xr.Dataset) -> dict[str, dict]:
+    """Build a per-variable zlib encoding for the compressible variables.
+
+    Returns zlib-at-level-4 plus the shuffle filter for every non-scalar numeric
+    variable, coordinates included. String and scalar variables are omitted: the
+    HDF5 zlib filter does not apply to variable-length strings and cannot chunk a
+    scalar. Because an explicit encoding replaces a variable's own encoding on
+    write, any existing semantic entries (`_FillValue`, packing) are carried over
+    so a missing-value sentinel is not written as an ordinary value.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset to be written.
+
+    Returns
+    -------
+    dict of str to dict
+        Mapping of variable name to its compression encoding.
+
+    """
+    compression = {"zlib": True, "complevel": 4, "shuffle": True}
+    encoding: dict[str, dict] = {}
+    for name, var in ds.variables.items():
+        if var.ndim > 0 and var.dtype.kind not in ("U", "S", "O"):
+            enc = {k: var.encoding[k] for k in _PRESERVE_ENCODING if k in var.encoding}
+            enc.update(compression)
+            encoding[name] = enc
+    return encoding

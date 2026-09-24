@@ -498,7 +498,6 @@ def gather_sensor_info(ds1_base) -> dict:
         for sensor in sensor_names:
             sensor_dict[sensor] = {}
     else:
-
         print(
             "Warning: 'instrument' attribute not found in the dataset. Therefore no sensor information extracted from attributes. "
             "If you have sensor information in the attributes, please add an 'instrument' attribute with the sensor names separated by spaces."
@@ -544,7 +543,6 @@ def gather_sensor_info(ds1_base) -> dict:
         )
 
     for sensor in sensor_dict.keys():
-
         # --- Determine calibcomm variable name --------------------------------
         calibcomm_str = None
         base = ds1_base
@@ -614,7 +612,6 @@ def add_sensor_to_dataset(ds_og1, sensor_dict, OG1_mapping, firstrun=False) -> x
     # 1. Create dimensionless sensor variables in the dataset
     # -------------------------------------------------------------------------
     for _, sensor_info in sensor_dict.items():
-
         # Build sensor variable name
         sensor_type = sensor_info["sensor_type"].upper().replace(" ", "_")
         serial = sensor_info["sensor_serial_number"]
@@ -773,7 +770,8 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
         ds["PROFILE_NUMBER"] = (
             (2 * ds["dive_num_cast"] - 1).fillna(fill_value).astype(int)
         )
-        ds["PROFILE_NUMBER"].attrs["_FillValue"] = fill_value
+        # _FillValue belongs in encoding, not attrs (xarray rejects it in attrs on write).
+        ds["PROFILE_NUMBER"].encoding["_FillValue"] = fill_value
     return ds
 
 
@@ -1100,6 +1098,12 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
         ### Before it had just set all values to 0, which is no change flag
         ### Alternative could be to set to 9 (missing value)
         dsa[qc_name].values = dsa[qc_name].fillna(6).astype("int8")
+        # A flag variable has no missing value (6 = unsampled is itself a flag), so drop
+        # any inherited float _FillValue that would be invalid on the int8 result.
+        # Clear both encoding and attrs: set_best_dtype skips QC, so nothing else removes
+        # a _FillValue left in attrs, and xarray rejects _FillValue in attrs on write.
+        dsa[qc_name].encoding.pop("_FillValue", None)
+        dsa[qc_name].attrs.pop("_FillValue", None)
         # Seaglider default flag_meanings were prefixed with 'QC_'. Remove this prefix.
         if "flag_meaning" in dsa[qc_name].attrs:
             flag_meaning = dsa[qc_name].attrs["flag_meaning"]
@@ -1112,6 +1116,17 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
         # Mention the QC variable in the variable attributes
         dsa[var_name].attrs["ancillary_variables"] = qc_name
     return dsa
+
+
+# Variables that are semantically integer and are stored as the smallest signed integer
+# that holds their range. Named explicitly: a float variable that happens to be
+# integer-valued in one deployment is not an integer variable.
+INTEGER_VARIABLES: dict[str, type] = {
+    "PHASE": np.int8,
+    "PROFILE_NUMBER": np.int16,
+    "DIVE_NUMBER": np.int16,
+    "VBD_MIN_CNTS": np.int16,
+}
 
 
 def find_best_dtype(var_name: str, da: xr.DataArray) -> type:
@@ -1132,23 +1147,27 @@ def find_best_dtype(var_name: str, da: xr.DataArray) -> type:
     Notes
     -----
     - Latitude/longitude variables use double precision
-    - QC variables use int8
+    - QC variables (name ending in ``qc``, case-insensitive) use int8
     - Time variables keep original dtype
-    - Integer variables are downsized based on value range
+    - Named integer variables (``INTEGER_VARIABLES``) use their fixed integer type
+    - Already-integer variables are downsized to the smallest type that holds their range
     - Float64 variables are converted to float32
 
     """
     input_dtype = da.dtype.type
-    if "latitude" in var_name.lower() or "longitude" in var_name.lower():
+    name = var_name.lower()
+    if "latitude" in name or "longitude" in name:
         return np.double
     if var_name[-2:].lower() == "qc":
         return np.int8
-    if "time" in var_name.lower():
+    if "time" in name:
         return input_dtype
-    if var_name[-3:] == "raw" or "int" in str(input_dtype):
-        if np.nanmax(da.values) < 2**16 / 2:
+    if var_name in INTEGER_VARIABLES:
+        return INTEGER_VARIABLES[var_name]
+    if "int" in str(input_dtype):
+        if np.nanmax(da.values) < 2**15:
             return np.int16
-        elif np.nanmax(da.values) < 2**32 / 2:
+        if np.nanmax(da.values) < 2**31:
             return np.int32
     if input_dtype == np.float64:
         return np.float32
@@ -1188,7 +1207,12 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
 
     """
     bytes_in = ds.nbytes
-    for var_name in list(ds):
+    coord_names = list(ds.coords)
+    for var_name in list(ds.variables):
+        if var_name[-2:].lower() == "qc":
+            # QC flags are owned by convert_qc_flags (int8, fill 6, no _FillValue);
+            # never apply the generic bit-width fill (127) to a flag variable.
+            continue
         da = ds[var_name]
         input_dtype = da.dtype.type
         new_dtype = find_best_dtype(var_name, da)
@@ -1198,13 +1222,28 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
         if new_dtype == input_dtype:
             continue
         _log.debug(f"{var_name} input dtype {input_dtype} change to {new_dtype}")
-        da_new = da.astype(new_dtype)
         ds = ds.drop_vars(var_name)
         if "int" in str(new_dtype):
-            fill_val = set_fill_value(new_dtype)
-            da_new[np.isnan(da)] = fill_val
+            # Respect a sentinel the variable already declares (e.g. PROFILE_NUMBER uses
+            # -9999); only derive one from the bit width when none exists.
+            existing = da.encoding.get("_FillValue", da.attrs.get("_FillValue"))
+            fill_val = (
+                int(existing) if existing is not None else set_fill_value(new_dtype)
+            )
+            # Replace NaN with the fill before casting; np.where handles scalar (0-d) and
+            # array variables, and np.isnan is only valid on floating-point source.
+            if np.issubdtype(da.dtype, np.floating):
+                filled = np.where(np.isnan(da.values), fill_val, da.values)
+            else:
+                filled = da.values
+            da_new = da.copy(data=np.asarray(filled).astype(new_dtype))
+            da_new.attrs.pop("_FillValue", None)  # _FillValue lives in encoding only
             da_new.encoding["_FillValue"] = fill_val
+        else:
+            da_new = da.astype(new_dtype)
         ds[var_name] = da_new
+    # drop_vars + reassignment demotes a coordinate to a data variable; restore coords.
+    ds = ds.set_coords([c for c in coord_names if c in ds.variables])
     bytes_out = ds.nbytes
     _log.debug(
         f"Space saved by dtype downgrade: {int(100 * (bytes_in - bytes_out) / bytes_in)} %",
@@ -1241,6 +1280,13 @@ def set_best_dtype_value(value, var_name: str):
     return converted_value
 
 
+# OG1 canonical serialisation for time variables (CF seconds since the epoch, UTC).
+# Used by the time encoders here and by writers.save_dataset; keep in sync with the time
+# variable units declared in config/OG1_vocab_attrs.yaml.
+OG1_TIME_UNITS = "seconds since 1970-01-01T00:00:00Z"
+OG1_TIME_CALENDAR = "gregorian"
+
+
 def encode_times(ds: xr.Dataset) -> xr.Dataset:
     """Encode time variables with standard units and remove problematic attributes.
 
@@ -1259,13 +1305,13 @@ def encode_times(ds: xr.Dataset) -> xr.Dataset:
         ds.time.attrs.pop("units")
     if "calendar" in ds.time.attrs.keys():
         ds.time.attrs.pop("calendar")
-    ds["time"].encoding["units"] = "seconds since 1970-01-01T00:00:00Z"
+    ds["time"].encoding["units"] = OG1_TIME_UNITS
     for var_name in list(ds):
         if "time" in var_name.lower() and not var_name == "time":
             for drop_attr in ["units", "calendar", "dtype"]:
                 if drop_attr in ds[var_name].attrs.keys():
                     ds[var_name].attrs.pop(drop_attr)
-            ds[var_name].encoding["units"] = "seconds since 1970-01-01T00:00:00Z"
+            ds[var_name].encoding["units"] = OG1_TIME_UNITS
     return ds
 
 
@@ -1293,8 +1339,8 @@ def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
                 if drop_attr in ds[var_name].encoding.keys():
                     ds[var_name].encoding.pop(drop_attr)
             if var_name.lower() == "time":
-                ds[var_name].attrs["units"] = "seconds since 1970-01-01T00:00:00Z"
-                ds[var_name].attrs["calendar"] = "gregorian"
+                ds[var_name].attrs["units"] = OG1_TIME_UNITS
+                ds[var_name].attrs["calendar"] = OG1_TIME_CALENDAR
     return ds
 
 
@@ -1431,7 +1477,6 @@ def merge_datasets_along_time(split_ds, dims_to_merge, first_run=False):
     all_dims = set([dim[0] for dim in split_ds.keys() if len(dim) > 0])
     actually_merged_dims = set()
     for dim in dims_to_merge:
-
         # ---1. Extract dataset---
         if (dim,) not in split_ds:
             print(f"Skipping {dim}: not found in split_ds.")
@@ -1724,7 +1769,6 @@ def parse_8_digit_date(date_str):
 
 
 def extract_instrument_info(input_string):
-
     if (
         input_string is None
         or not isinstance(input_string, str)
