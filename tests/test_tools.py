@@ -7,6 +7,7 @@ sys.path.append(str(parent_dir))
 
 import numpy as np
 import xarray as xr
+import pandas as pd
 import gsw
 from seagliderOG1 import tools, readers, convertOG1
 
@@ -18,8 +19,8 @@ def test_convert_units_var():
         "velo1": ("cm/s", "m/s", 100, 1.0),
         "velo2": ("m/s", "cm/s", 1.0, 100),
         "velo3": ("cm s-1", "m s-1", 100, 1.0),
-        "conduct1": ("S/m", "mS/cm", 10, 1.0),
-        "conduct2": ("mS/cm", "S/m", 1.0, 10),
+        "conduct1": ("S/m", "mS/cm", 1.0, 10),
+        "conduct2": ("mS/cm", "S/m", 10, 1.0),
         "pres1": ("dbar", "Pa", 1, 10000),
         "pres2": ("Pa", "dbar", 10000, 1),
         "pres3": ("dbar", "kPa", 1, 10),
@@ -29,7 +30,7 @@ def test_convert_units_var():
         "dist4": ("km", "m", 1, 1000),
         "density1": ("g m-3", "kg m-3", 1000, 1),
         "density2": ("kg m-3", "g m-3", 1, 1000),
-        "temp": ("degrees_Celcius", "Celcius", 1, 1),
+        "temp": ("degrees_Celsius", "Celsius", 1, 1),
     }
     for _, (current_units, new_units, current_value, new_value) in test_pairs.items():
         converted_values, _ = tools.convert_units_var(
@@ -132,3 +133,167 @@ def test_set_best_dtype_restores_depth_coord() -> None:
     out = tools.set_best_dtype(ds)
     assert out["DEPTH"].dtype == np.float32
     assert "DEPTH" in out.coords
+
+
+def test_OG1_name_mapping_sample_dataset():
+    ds1 = readers.load_sample_dataset()
+    split_ds = tools.split_by_unique_dims(ds1)
+
+    assert set(split_ds) == {
+        (),
+        ("gc_event",),
+        ("gps_info",),
+        ("sg_data_point",),
+    }
+
+    ds = split_ds[("sg_data_point",)]
+
+    mapping = tools.OG1_name_mapping(
+        ds=ds,
+        ds1_base=ds1,
+        ctd_dim="sg_data_point",
+    )
+
+    expected_columns = [
+        "original_name",
+        "OG1_name",
+        "instrument",
+        "instrument_type",
+        "original_dimension",
+    ]
+    assert list(mapping.columns) == expected_columns
+
+    # There must be exactly one mapping row for every input variable.
+    expected_variables = set(ds.data_vars) | set(ds.coords)
+    assert set(mapping["original_name"]) == expected_variables
+    assert mapping["original_name"].is_unique
+
+    # Index by original name so the assertions do not depend on row order.
+    actual = mapping.set_index("original_name")
+
+    expected_og1_names = {
+        "temperature_raw": "TEMP_RAW",
+        "temperature": "TEMP",
+        "conductivity_raw": "CNDC_RAW",
+        "conductivity": "CNDC",
+        "ctd_time": "TIME",
+        "ctd_depth": "DEPTH",
+        "temperature_raw_qc": "TEMP_RAW_QC",
+        "temperature_qc": "TEMP_QC",
+        "conductivity_raw_qc": "CNDC_RAW_QC",
+        "conductivity_qc": "CNDC_QC",
+        "vert_speed": "GLIDER_VERT_VELO_MODEL",
+        "time": "TIME2",
+        "theta": "THETA",
+        "speed": "GLIDE_SPEED",
+        "sound_velocity": "SOUND_VELOCITY",
+        "sigma_theta": "SIGTHETA",
+        "sigma_t": "SIGMA_T",
+        "sbe43_results_time": "TIME_DOXY",
+        "sbe43_dissolved_oxygen": "DOXY",
+        "salinity_raw": "PSAL_RAW",
+        "salinity": "PSAL",
+        "pressure": "PRES",
+        "north_displacement": "NORTH_DISPLACEMENT",
+        "horz_speed": "GLIDER_HORZ_VELO_MODEL",
+        "glide_angle": "GLIDE_ANGLE",
+        "eng_wlbb2f_redRef": "BBP700_REF",
+        "eng_wlbb2f_redCount": "BBP700",
+        "eng_wlbb2f_fluorCount": "FLUOCHLA",
+        "eng_wlbb2f_blueRef": "BBP470_REF",
+        "eng_wlbb2f_blueCount": "BBP470",
+        "eng_wlbb2f_VFtemp": "BBP_VFTEMP",
+        "eng_vbdCC": "VBD_CC",
+        "eng_tempFreq": "TEMP_FREQ",
+        "eng_sbe43_O2Freq": "O2_FREQ",
+        "eng_rollCtl": "ROLL_CTL",
+        "eng_rollAng": "ROLL",
+        "eng_pitchCtl": "PITCH_CTL",
+        "eng_pitchAng": "PITCH",
+        "eng_head": "HEADING",
+        "eng_depth": "DEPTH2",
+        "eng_condFreq": "COND_FREQ",
+        "east_displacement": "EAST_DISPLACEMENT",
+        "dissolved_oxygen_sat": "OXYSAT",
+        "depth": "DEPTH3",
+        "buoyancy": "BUOYANCY",
+        "longitude": "LONGITUDE",
+        "latitude": "LATITUDE",
+        "speed_qc": "GLIDE_SPEED_QC",
+        "sbe43_dissolved_oxygen_qc": "DOXY_QC",
+        "salinity_raw_qc": "PSAL_RAW_QC",
+        "salinity_qc": "PSAL_QC",
+    }
+
+    unmapped_variables = {
+        "vert_speed_gsm",
+        "speed_gsm",
+        "north_displacement_gsm",
+        "longitude_gsm",
+        "latitude_gsm",
+        "horz_speed_gsm",
+        "glide_angle_gsm",
+        "eng_elaps_t_0000",
+        "eng_elaps_t",
+        "east_displacement_gsm",
+        "density",
+    }
+
+    assert set(actual.index) == set(expected_og1_names) | unmapped_variables
+
+    for original_name, expected_og1_name in expected_og1_names.items():
+        assert actual.at[original_name, "OG1_name"] == expected_og1_name
+
+    for original_name in unmapped_variables:
+        assert pd.isna(actual.at[original_name, "OG1_name"])
+
+    expected_instruments = {
+        "sbe41": {
+            "temperature_raw",
+            "temperature",
+            "conductivity_raw",
+            "conductivity",
+            "ctd_time",
+            "ctd_depth",
+            "temperature_raw_qc",
+            "temperature_qc",
+            "conductivity_raw_qc",
+            "conductivity_qc",
+            "eng_tempFreq",
+            "eng_condFreq",
+        },
+        "sbe43": {
+            "sbe43_results_time",
+            "sbe43_dissolved_oxygen",
+            "sbe43_dissolved_oxygen_qc",
+            "eng_sbe43_O2Freq",
+        },
+        "wlbb2f": {
+            "eng_wlbb2f_redRef",
+            "eng_wlbb2f_redCount",
+            "eng_wlbb2f_fluorCount",
+            "eng_wlbb2f_blueRef",
+            "eng_wlbb2f_blueCount",
+            "eng_wlbb2f_VFtemp",
+        },
+    }
+
+    for instrument, variable_names in expected_instruments.items():
+        assert set(actual.index[actual["instrument"].eq(instrument)]) == variable_names
+
+    variables_without_instrument = expected_variables - set().union(
+        *expected_instruments.values()
+    )
+    assert actual.loc[list(variables_without_instrument), "instrument"].isna().all()
+
+    # All sample variables originate on the SG data-point dimension.
+    assert actual["original_dimension"].eq("sg_data_point").all()
+
+    # Instrument type must agree for every row assigned to the same instrument.
+    for instrument in expected_instruments:
+        instrument_types = (
+            actual.loc[actual["instrument"].eq(instrument), "instrument_type"]
+            .dropna()
+            .unique()
+        )
+        assert len(instrument_types) <= 1
