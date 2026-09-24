@@ -1,6 +1,7 @@
 """Write OG1 datasets to compressed NetCDF files."""
 
 import logging
+import os
 from numbers import Number
 
 import numpy as np
@@ -19,12 +20,17 @@ _TIME_ENCODING = {
     "dtype": "float64",
 }
 
+
 # Encoding entries that carry data semantics (missing-value sentinel, packing) and
 # must be kept when an explicit compression encoding replaces a variable's encoding.
 _PRESERVE_ENCODING = ("_FillValue", "missing_value", "scale_factor", "add_offset")
 
 
-def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> bool:
+def save_dataset(
+    ds: xr.Dataset,
+    output_file: str = "../test.nc",
+    overwrite: bool = False,
+) -> bool:
     """Attempts to save the dataset to a NetCDF file with lossless compression.
 
     Every non-scalar numeric variable, coordinates included, is written with zlib
@@ -35,22 +41,32 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> bool:
 
     Parameters
     ----------
-    ds : xarray.Dataset
-        The dataset to be saved.
+    ds : xr.Dataset
+        Dataset to save.
     output_file : str, optional
-        The path to the output NetCDF file. Defaults to '../test.nc'.
+        Output NetCDF file.
+    overwrite : bool, optional
+        If True, an existing file will be deleted and replaced.
+        If False, a FileExistsError is raised when the file exists.
 
     Returns
     -------
     bool
         True if the dataset was saved successfully, False otherwise.
-
-    Notes
-    -----
-    Based on: https://github.com/pydata/xarray/issues/3743
-
     """
     ds = ds.copy()
+
+    # Handle existing file
+    if os.path.exists(output_file):
+        if overwrite:
+            print(f"Removing existing file: {output_file}")
+            os.remove(output_file)
+        else:
+            raise FileExistsError(
+                f"Output file '{output_file}' already exists. "
+                "Use overwrite=True to replace it."
+            )
+
     valid_types = (str, Number, np.ndarray, np.number, list, tuple)
 
     encoding = _compression_encoding(ds)
@@ -64,6 +80,7 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> bool:
 
     def _write() -> None:
         ds.to_netcdf(output_file, encoding=encoding, format="NETCDF4", engine="netcdf4")
+        print(f"Dataset successfully saved to {output_file}")
 
     try:
         _write()
@@ -74,7 +91,8 @@ def save_dataset(ds: xr.Dataset, output_file: str = "../test.nc") -> bool:
             for k, v in variable.attrs.items():
                 if not isinstance(v, valid_types) or isinstance(v, bool):
                     _log.warning(
-                        f"For variable '{varname}': Converting attribute '{k}' with value '{v}' to string."
+                        f"For variable '{varname}': "
+                        f"Converting attribute '{k}' with value '{v}' to string."
                     )
                     variable.attrs[k] = str(v)
 
