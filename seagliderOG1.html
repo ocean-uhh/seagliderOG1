@@ -869,7 +869,7 @@ dimension, useful for examining variables of a particular type.</p>
 <p>Write OG1 datasets to compressed NetCDF files.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.writers.save_dataset">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.writers.</span></span><span class="sig-name descname"><span class="pre">save_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'../test.nc'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/seagliderOG1/writers.html#save_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.writers.save_dataset" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.writers.</span></span><span class="sig-name descname"><span class="pre">save_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'../test.nc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/seagliderOG1/writers.html#save_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.writers.save_dataset" title="Link to this definition"></a></dt>
 <dd><p>Attempts to save the dataset to a NetCDF file with lossless compression.</p>
 <p>Every non-scalar numeric variable, coordinates included, is written with zlib
 at level 4 and the shuffle filter. If a TypeError occurs due to invalid
@@ -879,8 +879,10 @@ modified.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The dataset to be saved.</p></li>
-<li><p><strong>output_file</strong> (<em>str</em><em>, </em><em>optional</em>) – The path to the output NetCDF file. Defaults to ‘../test.nc’.</p></li>
+<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset to save.</p></li>
+<li><p><strong>output_file</strong> (<em>str</em><em>, </em><em>optional</em>) – Output NetCDF file.</p></li>
+<li><p><strong>overwrite</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, an existing file will be deleted and replaced.
+If False, a FileExistsError is raised when the file exists.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -890,8 +892,6 @@ modified.</p>
 <dd class="field-odd"><p>bool</p>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<p>Based on: <a class="reference external" href="https://github.com/pydata/xarray/issues/3743">https://github.com/pydata/xarray/issues/3743</a></p>
 </dd></dl>
 
 </section>
