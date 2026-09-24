@@ -1,12 +1,14 @@
 import pathlib
 import sys
 
+import netCDF4
+import numpy as np
+
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
-from seagliderOG1 import readers, tools
-from seagliderOG1 import convertOG1
+from seagliderOG1 import convertOG1, readers, tools, writers
 
 
 def test_process_dataset():
@@ -29,8 +31,11 @@ def test_process_dataset():
     assert sg_cal["mass"].values > 50 and sg_cal["mass"].values < 60
     assert tmp == "$GPS,060608,183207,6124.849,-816.741,13,1.8,12,-8.8"
 
+    # create og1_mapping for standardise_OG10
+    OG1_mapping = tools.OG1_name_mapping(ds=ds, ds1_base=ds1, ctd_dim="sg_data_point")
+
     # Check initial variables are reformatted
-    dsa = convertOG1.standardise_OG10(ds)
+    dsa = convertOG1.standardise_OG10(ds, og1_mapping=OG1_mapping)
     varlist = list(dsa.data_vars)
     coordlist = list(dsa.coords)
     combined_list = varlist + coordlist
@@ -57,3 +62,28 @@ def test_process_dataset():
     meanZ = ds_new["DEPTH_Z"].mean().item()
     meanZpos = ds_new["DEPTH"].mean().item()
     assert abs(meanZ + meanZpos) < 10
+
+
+def test_output_dtypes_end_to_end(tmp_path: pathlib.Path) -> None:
+    """Multi-dive conversion then write yields the intended on-disk dtypes and fills.
+
+    Exercises the concat path: QC flags must be int8 in the written file (they were
+    re-promoted to float when set_best_dtype ran per dive), and PROFILE_NUMBER keeps its
+    -9999 fill through both set_best_dtype and the compression writer.
+    """
+    source = str(parent_dir / "data/demo_sg005")
+    datasets = readers.load_basestation_files(source, 1, 5)
+    ds, _ = convertOG1.convert_to_OG1(datasets)
+    out = tmp_path / "out.nc"
+
+    assert writers.save_dataset(ds, str(out)) is True
+
+    with netCDF4.Dataset(out) as nc:
+        assert nc.variables["TEMP_QC"].dtype == np.dtype("int8")
+        assert nc.variables["PSAL_QC"].dtype == np.dtype("int8")
+        assert nc.variables["PHASE"].dtype == np.dtype("int8")
+        profile = nc.variables["PROFILE_NUMBER"]
+        assert profile.dtype == np.dtype("int16")
+        assert profile.getncattr("_FillValue") == -9999
+        assert nc.variables["DEPTH"].dtype == np.dtype("float32")
+        assert nc.variables["LATITUDE"].dtype == np.dtype("float64")

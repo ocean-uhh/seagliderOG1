@@ -13,6 +13,419 @@ from seagliderOG1 import vocabularies
 _log = logging.getLogger(__name__)
 
 
+# Variables measured directly by the CTD.
+CTD_MEASUREMENT_VARIABLES = {
+    "temperature",
+    "temperature_raw",
+    "conductivity",
+    "conductivity_raw",
+}
+
+# Variables calculated using CTD measurements.
+CTD_CALCULATED_VARIABLES = {
+    "theta",
+    "salinity",
+    "salinity_raw",
+    "sound_velocity",
+    "sigma_theta",
+    "sigma_t",
+    "density",
+    "density_insitu",
+}
+
+# Alternative names used for the same physical instrument.
+INSTRUMENT_ALIASES = {
+    "sbe41": {"sbe41", "sbect"},
+}
+
+
+def OG1_name_mapping(
+    ds: xr.Dataset,
+    ds1_base: xr.Dataset,
+    ctd_dim: str,
+) -> pd.DataFrame:
+    """Create a mapping from original variable names to OG1 variable names.
+
+    The function examines the dataset immediately before OG1 standardization
+    and creates one table row per variable. Each row contains the original
+    variable name, its OG1 name, associated instrument, instrument type, and
+    original dimensions.
+
+    Variables ending in ``_qc`` inherit the instrument association of their
+    corresponding measurement variable. For example,
+    ``ctd_temperature_qc`` inherits the instrument assigned to
+    ``ctd_temperature``.
+
+    Instrument assignment precedence:
+
+    1. QC variables inherit the instrument of their parent measurement.
+    2. Variables beginning with ``ctd_`` or from the CTD variables defined above are
+       assigned to the CTD.
+       When the same OG1 variable is also present on the CTD instrument's
+       ``<instrument>_data_point`` dimension, the ``ctd_data_point`` copy is
+       retained and the instrument-dimension copy is omitted.
+    3. When the CTD uses ``sg_data_point``, temperature and conductivity
+       measurements are assigned to the CTD.
+    4. When ``ctd_pressure`` is available, calculated hydrographic variables
+       are assigned to the CTD.
+    5. The variable's ``instrument`` attribute is checked.
+    6. Dimensions named ``<instrument>_data_point`` are checked.
+    7. The variable name is checked for an instrument name or alias.
+
+    Parameters
+    ----------
+    ds
+        Dataset immediately before calling ``standardise_OG10``.
+    ds1_base
+        Original basestation dataset. It provides original dimensions,
+        variable attributes, and the global ``instrument`` attribute.
+    ctd_dim
+        Dimension used by the CTD data, for example ``ctd_data_point`` or
+        ``sg_data_point``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Mapping table containing ``original_name``, ``OG1_name``,
+        ``instrument``, ``instrument_type``, and ``original_dimension``.
+    """
+    instruments = ds1_base.attrs.get("instrument", "").split()
+    standard_names = vocabularies.standard_names
+    sensor_vocabs = vocabularies.sensor_vocabs
+
+    has_ctd_pressure = (
+        "ctd_pressure" in ds1_base.variables or "ctd_pressure" in ds.variables
+    )
+
+    def variable_exists(variable_name: str) -> bool:
+        """Check whether a variable exists in either dataset."""
+        return variable_name in ds1_base.variables or variable_name in ds.variables
+
+    def get_source(variable_name: str) -> xr.DataArray:
+        """Get a variable from the original dataset when possible."""
+        if variable_name in ds1_base.variables:
+            return ds1_base[variable_name]
+
+        return ds[variable_name]
+
+    def get_qc_parent_name(
+        variable_name: str,
+    ) -> str | None:
+        """Return the measurement name corresponding to a *_qc variable."""
+        if variable_name.lower().endswith("_qc"):
+            return variable_name[:-3]
+
+        return None
+
+    def get_instrument_names(
+        instrument: str,
+    ) -> set[str]:
+        """Get the lowercase instrument name and its aliases."""
+        return INSTRUMENT_ALIASES.get(
+            instrument.lower(),
+            {instrument.lower()},
+        )
+
+    def get_instrument_type(
+        instrument: str | None,
+    ) -> str | None:
+        """Get an instrument's sensor type from the OG1 vocabulary."""
+        if instrument is None:
+            return None
+
+        og1_instrument_name = standard_names.get(instrument)
+
+        if og1_instrument_name is None:
+            return None
+
+        return sensor_vocabs.get(
+            og1_instrument_name,
+            {},
+        ).get("sensor_type")
+
+    def get_ctd_instrument() -> str | None:
+        """Find the instrument identified as the CTD."""
+        for instrument in instruments:
+            instrument_type = get_instrument_type(instrument)
+
+            if isinstance(instrument_type, str) and instrument_type.upper() == "CTD":
+                return instrument
+
+        return None
+
+    ctd_instrument = get_ctd_instrument()
+
+    def is_ctd_associated(
+        variable_name: str,
+        dimensions: set[str] | None = None,
+    ) -> bool:
+        """Determine whether a variable should be assigned to the CTD."""
+        lower_name = variable_name.lower()
+
+        # QC variables inherit the CTD association of their parent variable.
+        qc_parent = get_qc_parent_name(variable_name)
+
+        if qc_parent is not None and variable_exists(qc_parent):
+            parent_dimensions = {
+                dimension.lower() for dimension in get_source(qc_parent).dims
+            }
+
+            return is_ctd_associated(
+                qc_parent,
+                parent_dimensions,
+            )
+
+        if dimensions is None:
+            dimensions = {
+                dimension.lower() for dimension in get_source(variable_name).dims
+            }
+
+        # Explicit CTD name or dimension.
+        # if (lower_name.startswith("ctd_") or "ctd_data_point" in dimensions):
+        if (
+            lower_name.startswith("ctd_")
+            or lower_name in CTD_MEASUREMENT_VARIABLES
+            or has_ctd_pressure
+            and lower_name in CTD_CALCULATED_VARIABLES
+        ):
+            return True
+
+        # Additional rules are only needed when the CTD shares the
+        # generic sg_data_point dimension.
+        if ctd_dim.lower() != "sg_data_point":
+            return False
+
+    def find_instrument(
+        variable_name: str,
+    ) -> str | None:
+        """Find the instrument associated with a variable."""
+        source = get_source(variable_name)
+        lower_name = variable_name.lower()
+
+        # A QC variable inherits the full instrument assignment of its
+        # corresponding measurement variable.
+        qc_parent = get_qc_parent_name(variable_name)
+
+        if qc_parent is not None and variable_exists(qc_parent):
+            return find_instrument(qc_parent)
+
+        dimensions = {dimension.lower() for dimension in source.dims}
+
+        if ctd_instrument is not None and is_ctd_associated(variable_name, dimensions):
+            return ctd_instrument
+
+        # Prefer an explicit instrument attribute.
+        variable_instrument = source.attrs.get("instrument")
+
+        if isinstance(variable_instrument, str):
+            lower_attribute = variable_instrument.lower()
+
+            for instrument in instruments:
+                if lower_attribute in get_instrument_names(instrument):
+                    return instrument
+
+        # Match <instrument>_data_point dimensions.
+        for instrument in instruments:
+            instrument_names = get_instrument_names(instrument)
+
+            if any(f"{name}_data_point" in dimensions for name in instrument_names):
+                return instrument
+
+        # Match instrument names embedded in the variable name.
+        for instrument in instruments:
+            instrument_names = get_instrument_names(instrument)
+
+            if any(
+                lower_name.startswith(f"{name}_") or f"_{name}_" in lower_name
+                for name in instrument_names
+            ):
+                return instrument
+
+        return None
+
+    def get_name_candidates(
+        variable_name: str,
+        instrument: str | None,
+    ) -> list[str]:
+        """Generate vocabulary candidates by removing prefixes."""
+        prefixes = {
+            "eng_",
+            "instrument_",
+            "ctd_",
+        }
+
+        if instrument is not None:
+            prefixes.update(f"{name}_" for name in get_instrument_names(instrument))
+
+        candidates = [variable_name]
+
+        # Iterate over the growing list to support multiple prefixes,
+        # such as eng_<instrument>_<variable>.
+        for candidate in candidates:
+            for prefix in prefixes:
+                if candidate.lower().startswith(prefix):
+                    stripped_name = candidate[len(prefix) :]
+
+                    if stripped_name and stripped_name not in candidates:
+                        candidates.append(stripped_name)
+
+        return candidates
+
+    def find_direct_og1_name(
+        variable_name: str,
+        instrument: str | None,
+    ) -> str | None:
+        """Find an explicit vocabulary match."""
+        for candidate in get_name_candidates(
+            variable_name,
+            instrument,
+        ):
+            og1_name = standard_names.get(candidate)
+
+            if og1_name is not None:
+                return og1_name
+
+        return None
+
+    def get_og1_base_name(
+        variable_name: str,
+        instrument: str | None,
+    ) -> str | None:
+        """Find or derive the OG1 vocabulary name for a variable."""
+        # Prefer an explicit vocabulary entry, including an explicit
+        # entry for the QC variable.
+        og1_name = find_direct_og1_name(
+            variable_name,
+            instrument,
+        )
+
+        if og1_name is not None:
+            return og1_name
+
+        # If no explicit QC entry exists, derive it from the parent
+        # measurement's OG1 name.
+        qc_parent = get_qc_parent_name(variable_name)
+
+        if qc_parent is not None:
+            parent_og1_name = find_direct_og1_name(
+                qc_parent,
+                instrument,
+            )
+
+            if parent_og1_name is not None:
+                return f"{parent_og1_name}_QC"
+
+        return None
+
+    def uses_dimension(
+        variable_name: str,
+        dimension: str,
+    ) -> bool:
+        """Return whether a variable uses a dimension, case-insensitively."""
+        return dimension.lower() in {
+            item.lower() for item in get_source(variable_name).dims
+        }
+
+    def uses_ctd_instrument_dimension(
+        variable_name: str,
+    ) -> bool:
+        """Return whether a variable uses a CTD-instrument dimension."""
+        if ctd_instrument is None:
+            return False
+
+        dimensions = {dimension.lower() for dimension in get_source(variable_name).dims}
+
+        return any(
+            f"{name}_data_point" in dimensions
+            and f"{name}_data_point" != "ctd_data_point"
+            for name in get_instrument_names(ctd_instrument)
+        )
+
+    # dict.fromkeys removes duplicates while preserving order.
+    # QC variables are deliberately retained.
+    variable_names = list(dict.fromkeys(list(ds.data_vars) + list(ds.coords)))
+
+    # Some basestation datasets contain the same CTD measurements twice:
+    # once on the generic ctd_data_point dimension and once on the CTD
+    # instrument's own dimension (for example legato_data_point).  Treat the
+    # generic dimension as authoritative.  Comparing the unsuffixed OG1 names
+    # catches pairs such as ctd_temperature/legato_temperature as well as
+    # their QC variables.
+    preferred_ctd_og1_names = {
+        og1_name
+        for variable_name in variable_names
+        if uses_dimension(variable_name, "ctd_data_point")
+        for og1_name in [get_og1_base_name(variable_name, ctd_instrument)]
+        if og1_name is not None
+    }
+
+    variable_names = [
+        variable_name
+        for variable_name in variable_names
+        if not (
+            not uses_dimension(variable_name, "ctd_data_point")
+            and uses_ctd_instrument_dimension(variable_name)
+            and get_og1_base_name(
+                variable_name,
+                ctd_instrument,
+            )
+            in preferred_ctd_og1_names
+        )
+    ]
+
+    def variable_sort_key(
+        variable_name: str,
+    ) -> tuple[bool, bool]:
+        """Place CTD measurements first and their QC variables second."""
+        source = get_source(variable_name)
+        dimensions = {dimension.lower() for dimension in source.dims}
+
+        is_ctd = is_ctd_associated(
+            variable_name,
+            dimensions,
+        )
+        is_qc = get_qc_parent_name(variable_name) is not None
+
+        return (not is_ctd, is_qc)
+
+    variable_names.sort(key=variable_sort_key)
+
+    mapping = []
+    og1_name_counts: dict[str, int] = {}
+
+    for original_name in variable_names:
+        source = get_source(original_name)
+        instrument = find_instrument(original_name)
+
+        base_og1_name = get_og1_base_name(
+            original_name,
+            instrument,
+        )
+
+        og1_name = None
+
+        if base_og1_name is not None:
+            count = og1_name_counts.get(base_og1_name, 0) + 1
+            og1_name_counts[base_og1_name] = count
+
+            if count == 1:
+                og1_name = base_og1_name
+            else:
+                og1_name = f"{base_og1_name}{count}"
+
+        mapping.append(
+            {
+                "original_name": original_name,
+                "OG1_name": og1_name,
+                "instrument": instrument,
+                "instrument_type": get_instrument_type(instrument),
+                "original_dimension": ", ".join(source.dims),
+            }
+        )
+
+    return pd.DataFrame(mapping)
+
+
 def gather_sensor_info(ds1_base) -> dict:
     """Gathers sensor information from an OG1 base dataset.
 
@@ -49,7 +462,6 @@ def gather_sensor_info(ds1_base) -> dict:
         for sensor in sensor_names:
             sensor_dict[sensor] = {}
     else:
-
         print(
             "Warning: 'instrument' attribute not found in the dataset. Therefore no sensor information extracted from attributes. "
             "If you have sensor information in the attributes, please add an 'instrument' attribute with the sensor names separated by spaces."
@@ -95,7 +507,6 @@ def gather_sensor_info(ds1_base) -> dict:
         )
 
     for sensor in sensor_dict.keys():
-
         # --- Determine calibcomm variable name --------------------------------
         calibcomm_str = None
         base = ds1_base
@@ -135,15 +546,12 @@ def gather_sensor_info(ds1_base) -> dict:
         sensor_dict[sensor]["sensor_serial_number"] = serial_number
         sensor_dict[sensor]["sensor_calibration_date"] = cal_info
 
-    # -------------------------------------------------------------------------
-    # 4. Assign variables to sensors based on naming patterns or dimensions
-    # -------------------------------------------------------------------------
-    sensor_dict = find_variables_for_sensor(ds1_base, sensor_dict)
-
     return sensor_dict
 
 
-def add_sensor_to_dataset(ds_og1, sensor_dict, firstrun=False) -> xr.Dataset:
+def add_sensor_to_dataset(
+    ds_og1, sensor_dict, OG1_mapping, firstrun=False
+) -> xr.Dataset:
     """Adds sensor information from the provided sensor dictionary to the OG1 dataset.
 
     Parameters
@@ -170,7 +578,6 @@ def add_sensor_to_dataset(ds_og1, sensor_dict, firstrun=False) -> xr.Dataset:
     # 1. Create dimensionless sensor variables in the dataset
     # -------------------------------------------------------------------------
     for _, sensor_info in sensor_dict.items():
-
         # Build sensor variable name
         sensor_type = sensor_info["sensor_type"].upper().replace(" ", "_")
         serial = sensor_info["sensor_serial_number"]
@@ -192,9 +599,19 @@ def add_sensor_to_dataset(ds_og1, sensor_dict, firstrun=False) -> xr.Dataset:
             ds_og1[sensor_var_name].attrs[attr] = value
 
     # -------------------------------------------------------------------------
-    # 3. Assign 'sensor' attribute to sensor-specific variables (later update)
-    #    Leave logic untouched for now.
+    # 3. Assign 'sensor' attribute to sensor-specific variables
     # -------------------------------------------------------------------------
+    for _, mapping in OG1_mapping.iterrows():
+        og1_name = str(mapping["OG1_name"])
+        instrument = mapping["instrument"]
+
+        # if the instrument is nan, skip this iteration
+        if og1_name == "nan" or instrument == "nan" or pd.isna(instrument):
+            continue
+
+        sensor_type = sensor_dict[instrument]["sensor_type"].upper().replace(" ", "_")
+        serial = sensor_dict[instrument]["sensor_serial_number"]
+        ds_og1[og1_name].attrs["sensor"] = f"SENSOR_{sensor_type}_{serial}"
 
     return ds_og1
 
@@ -319,7 +736,8 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
         ds["PROFILE_NUMBER"] = (
             (2 * ds["dive_num_cast"] - 1).fillna(fill_value).astype(int)
         )
-        ds["PROFILE_NUMBER"].attrs["_FillValue"] = fill_value
+        # _FillValue belongs in encoding, not attrs (xarray rejects it in attrs on write).
+        ds["PROFILE_NUMBER"].encoding["_FillValue"] = fill_value
     return ds
 
 
@@ -400,44 +818,6 @@ def assign_phase(ds: xr.Dataset) -> xr.Dataset:
 
 def _del_capital_letters(string):
     return "".join([char for char in string if not char.isupper()])
-
-
-def find_variables_for_sensor(ds, sensor_dict):
-    """Finds variables in the dataset that belong to each sensor based on naming patterns or dimensions.
-    For each sensor, looks for variables that either have an 'instrument' attribute matching the sensor name, or have a dimension named '{sensor_name}_data_point'.
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        The dataset to search for variables.
-    sensor_dict : dict
-        Dictionary containing sensor metadata, used to identify sensor names.
-
-    Returns
-    -------
-    dict:
-        Updated sensor_dict with a list of variables associated with each sensor.
-
-    """
-    for sensor_name in sensor_dict.keys():
-        variables = []
-        for var_name in ds.variables:
-            variable = ds[var_name]
-            if (
-                "instrument" in variable.attrs
-                and variable.attrs["instrument"] == sensor_name
-            ):
-                ## only keep the part of the variable name that comes after the sensor name, e.g. 'eng_wlbb2fl_sig695nm' becomes 'sig695nm'
-                # var_name_clean = var_name.replace("eng_", "").replace(f"{sensor_name}_", "").replace("aander","")
-                variables.append(var_name)
-            elif f"{sensor_name}_data_point" in variable.sizes:
-                # var_name_clean = var_name.replace("eng_", "").replace(f"{sensor_name}_", "").replace("aander","")
-                variables.append(var_name)
-        sensor_variables = list(set(variables))  # Remove duplicates
-        # sensor_variables = [standard_names[var] for var in variables if var in standard_names]
-        sensor_dict[sensor_name]["variables"] = sensor_variables
-
-    return sensor_dict
 
 
 ##-----------------------------------------------------------------------------------------------------------
@@ -574,7 +954,7 @@ def reformat_units_str(
         new_unit = unit_format[old_unit]
     else:
         new_unit = old_unit
-    return new_unit
+    return new_unit.strip()  # .casefold()
 
 
 def convert_units_var(
@@ -584,38 +964,60 @@ def convert_units_var(
     unit1_to_unit2: dict = vocabularies.unit1_to_unit2,
     firstrun: bool = False,
 ) -> tuple[np.ndarray, str]:
-    """Convert the units of variables in an xarray Dataset to preferred units.  This is useful, for instance, to convert cm/s to m/s.
+    """Convert variable values from their current unit to a requested unit.
+
+    Unit strings are normalized with :func:`reformat_units_str` before they
+    are compared or used to look up conversion information.
+
+    If the normalized units are identical, the values are returned unchanged.
+    If no conversion is available, the original values and current unit are
+    returned, and an optional warning is logged.
 
     Parameters
     ----------
-    ds (xarray.Dataset): The dataset containing variables to convert.
-    preferred_units (list): A list of strings representing the preferred units.
-    unit1_to_unit2 (dict): A dictionary mapping current units to conversion information.
-    Each key is a unit string, and each value is a dictionary with:
-        - 'factor': The factor to multiply the variable by to convert it.
-        - 'units_name': The new unit name after conversion.
+    var_values
+        Values to convert.
+    current_unit
+        Unit currently associated with ``var_values``.
+    new_unit
+        Requested output unit.
+    unit1_to_unit2
+        Mapping of conversion keys, such as ``"cm/s_to_m/s"``, to conversion
+        information. Each entry must contain a ``"factor"`` value.
+    firstrun
+        If ``True``, log a warning when no conversion information is found.
 
     Returns
     -------
-    xarray.Dataset: The dataset with converted units.
-
+    converted_values
+        Converted values, or the original values if conversion is unnecessary
+        or unavailable.
+    output_unit
+        Normalized output unit. This is the current unit when conversion is
+        unavailable.
     """
     current_unit = reformat_units_str(current_unit)
-    new_unit = reformat_units_str(new_unit)
+    requested_unit = reformat_units_str(new_unit)
 
-    u1_to_u2 = current_unit + "_to_" + new_unit
-    if u1_to_u2 in unit1_to_unit2.keys():
-        conversion_factor = unit1_to_unit2[u1_to_u2]["factor"]
-        new_values = var_values * conversion_factor
-    else:
-        new_values = var_values
-        new_unit = current_unit
-        if firstrun:
-            _log.warning(
-                f"\nNo conversion information found for {current_unit} to {new_unit}"
-            )
-    #        raise ValueError(f"No conversion information found for {current_unit} to {new_unit}")
-    return new_values, new_unit
+    # No conversion is needed when the normalized units are identical.
+    if current_unit == requested_unit:
+        return var_values, current_unit
+
+    conversion_key = f"{current_unit}_to_{requested_unit}"
+    conversion = unit1_to_unit2.get(conversion_key)
+
+    if conversion is not None:
+        converted_values = var_values * conversion["factor"]
+        return converted_values, requested_unit
+
+    if firstrun:
+        _log.warning(
+            "No conversion information found for %r to %r",
+            current_unit,
+            requested_unit,
+        )
+
+    return var_values, current_unit
 
 
 def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
@@ -662,6 +1064,12 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
         ### Before it had just set all values to 0, which is no change flag
         ### Alternative could be to set to 9 (missing value)
         dsa[qc_name].values = dsa[qc_name].fillna(6).astype("int8")
+        # A flag variable has no missing value (6 = unsampled is itself a flag), so drop
+        # any inherited float _FillValue that would be invalid on the int8 result.
+        # Clear both encoding and attrs: set_best_dtype skips QC, so nothing else removes
+        # a _FillValue left in attrs, and xarray rejects _FillValue in attrs on write.
+        dsa[qc_name].encoding.pop("_FillValue", None)
+        dsa[qc_name].attrs.pop("_FillValue", None)
         # Seaglider default flag_meanings were prefixed with 'QC_'. Remove this prefix.
         if "flag_meaning" in dsa[qc_name].attrs:
             flag_meaning = dsa[qc_name].attrs["flag_meaning"]
@@ -674,6 +1082,17 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
         # Mention the QC variable in the variable attributes
         dsa[var_name].attrs["ancillary_variables"] = qc_name
     return dsa
+
+
+# Variables that are semantically integer and are stored as the smallest signed integer
+# that holds their range. Named explicitly: a float variable that happens to be
+# integer-valued in one deployment is not an integer variable.
+INTEGER_VARIABLES: dict[str, type] = {
+    "PHASE": np.int8,
+    "PROFILE_NUMBER": np.int16,
+    "DIVE_NUMBER": np.int16,
+    "VBD_MIN_CNTS": np.int16,
+}
 
 
 def find_best_dtype(var_name: str, da: xr.DataArray) -> type:
@@ -694,23 +1113,27 @@ def find_best_dtype(var_name: str, da: xr.DataArray) -> type:
     Notes
     -----
     - Latitude/longitude variables use double precision
-    - QC variables use int8
+    - QC variables (name ending in ``qc``, case-insensitive) use int8
     - Time variables keep original dtype
-    - Integer variables are downsized based on value range
+    - Named integer variables (``INTEGER_VARIABLES``) use their fixed integer type
+    - Already-integer variables are downsized to the smallest type that holds their range
     - Float64 variables are converted to float32
 
     """
     input_dtype = da.dtype.type
-    if "latitude" in var_name.lower() or "longitude" in var_name.lower():
+    name = var_name.lower()
+    if "latitude" in name or "longitude" in name:
         return np.double
     if var_name[-2:].lower() == "qc":
         return np.int8
-    if "time" in var_name.lower():
+    if "time" in name:
         return input_dtype
-    if var_name[-3:] == "raw" or "int" in str(input_dtype):
-        if np.nanmax(da.values) < 2**16 / 2:
+    if var_name in INTEGER_VARIABLES:
+        return INTEGER_VARIABLES[var_name]
+    if "int" in str(input_dtype):
+        if np.nanmax(da.values) < 2**15:
             return np.int16
-        elif np.nanmax(da.values) < 2**32 / 2:
+        if np.nanmax(da.values) < 2**31:
             return np.int32
     if input_dtype == np.float64:
         return np.float32
@@ -750,7 +1173,12 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
 
     """
     bytes_in = ds.nbytes
-    for var_name in list(ds):
+    coord_names = list(ds.coords)
+    for var_name in list(ds.variables):
+        if var_name[-2:].lower() == "qc":
+            # QC flags are owned by convert_qc_flags (int8, fill 6, no _FillValue);
+            # never apply the generic bit-width fill (127) to a flag variable.
+            continue
         da = ds[var_name]
         input_dtype = da.dtype.type
         new_dtype = find_best_dtype(var_name, da)
@@ -760,13 +1188,28 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
         if new_dtype == input_dtype:
             continue
         _log.debug(f"{var_name} input dtype {input_dtype} change to {new_dtype}")
-        da_new = da.astype(new_dtype)
         ds = ds.drop_vars(var_name)
         if "int" in str(new_dtype):
-            fill_val = set_fill_value(new_dtype)
-            da_new[np.isnan(da)] = fill_val
+            # Respect a sentinel the variable already declares (e.g. PROFILE_NUMBER uses
+            # -9999); only derive one from the bit width when none exists.
+            existing = da.encoding.get("_FillValue", da.attrs.get("_FillValue"))
+            fill_val = (
+                int(existing) if existing is not None else set_fill_value(new_dtype)
+            )
+            # Replace NaN with the fill before casting; np.where handles scalar (0-d) and
+            # array variables, and np.isnan is only valid on floating-point source.
+            if np.issubdtype(da.dtype, np.floating):
+                filled = np.where(np.isnan(da.values), fill_val, da.values)
+            else:
+                filled = da.values
+            da_new = da.copy(data=np.asarray(filled).astype(new_dtype))
+            da_new.attrs.pop("_FillValue", None)  # _FillValue lives in encoding only
             da_new.encoding["_FillValue"] = fill_val
+        else:
+            da_new = da.astype(new_dtype)
         ds[var_name] = da_new
+    # drop_vars + reassignment demotes a coordinate to a data variable; restore coords.
+    ds = ds.set_coords([c for c in coord_names if c in ds.variables])
     bytes_out = ds.nbytes
     _log.debug(
         f"Space saved by dtype downgrade: {int(100 * (bytes_in - bytes_out) / bytes_in)} %",
@@ -803,6 +1246,13 @@ def set_best_dtype_value(value, var_name: str):
     return converted_value
 
 
+# OG1 canonical serialisation for time variables (CF seconds since the epoch, UTC).
+# Used by the time encoders here and by writers.save_dataset; keep in sync with the time
+# variable units declared in config/OG1_vocab_attrs.yaml.
+OG1_TIME_UNITS = "seconds since 1970-01-01T00:00:00Z"
+OG1_TIME_CALENDAR = "gregorian"
+
+
 def encode_times(ds: xr.Dataset) -> xr.Dataset:
     """Encode time variables with standard units and remove problematic attributes.
 
@@ -821,13 +1271,13 @@ def encode_times(ds: xr.Dataset) -> xr.Dataset:
         ds.time.attrs.pop("units")
     if "calendar" in ds.time.attrs.keys():
         ds.time.attrs.pop("calendar")
-    ds["time"].encoding["units"] = "seconds since 1970-01-01T00:00:00Z"
+    ds["time"].encoding["units"] = OG1_TIME_UNITS
     for var_name in list(ds):
         if "time" in var_name.lower() and not var_name == "time":
             for drop_attr in ["units", "calendar", "dtype"]:
                 if drop_attr in ds[var_name].attrs.keys():
                     ds[var_name].attrs.pop(drop_attr)
-            ds[var_name].encoding["units"] = "seconds since 1970-01-01T00:00:00Z"
+            ds[var_name].encoding["units"] = OG1_TIME_UNITS
     return ds
 
 
@@ -855,8 +1305,8 @@ def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
                 if drop_attr in ds[var_name].encoding.keys():
                     ds[var_name].encoding.pop(drop_attr)
             if var_name.lower() == "time":
-                ds[var_name].attrs["units"] = "seconds since 1970-01-01T00:00:00Z"
-                ds[var_name].attrs["calendar"] = "gregorian"
+                ds[var_name].attrs["units"] = OG1_TIME_UNITS
+                ds[var_name].attrs["calendar"] = OG1_TIME_CALENDAR
     return ds
 
 
@@ -993,7 +1443,6 @@ def merge_datasets_along_time(split_ds, dims_to_merge, first_run=False):
     all_dims = set([dim[0] for dim in split_ds.keys() if len(dim) > 0])
     actually_merged_dims = set()
     for dim in dims_to_merge:
-
         # ---1. Extract dataset---
         if (dim,) not in split_ds:
             print(f"Skipping {dim}: not found in split_ds.")
@@ -1033,7 +1482,8 @@ def merge_datasets_along_time(split_ds, dims_to_merge, first_run=False):
         # ---5. Add attribute old_dim to each data variable and coordinate (except the time coordinate)---
         for var in ds.variables:
             if var != "time":
-                ds[var].attrs["old_dim"] = old_dim
+                ds[var].attrs["original_dimension"] = old_dim
+                ds[var].attrs["original_variable_name"] = str(var)
         if first_run:
             print(
                 f"Adding variables with dimension '{dim}' and time variable '{time_var}'."
@@ -1173,10 +1623,10 @@ def extract_hdm_parameters(list_datasets):
         param for param in potential_parameters_OG1 if param not in hdm_variables
     ]
     print(f"The following HDM parameters were found: {found_params}")
-    if not_found_params:
-        print(
-            f"Warning: The following potential HDM parameters were not found in the datasets: {not_found_params}"
-        )
+    # if not_found_params:
+    #    print(
+    #        f"Warning: The following potential HDM parameters were not found in the datasets: {not_found_params}"
+    #    )
 
     # 6. Add dive_number in order to be able to assign dive-based parameters to the correct profiles in the OG1 dataset
     dive_numbers = None
@@ -1230,7 +1680,7 @@ def add_hdm_parameters(ds_OG1, hdm_parameters):
             mapped_array = np.full(ds_updated.N_MEASUREMENTS.shape, np.nan)
 
             # Iterate through dives (each dive = 2 profiles)
-            for dive, dive_val in zip(dive_numbers, values):
+            for dive, dive_val in zip(dive_numbers, values, strict=False):
                 # Find all measurement indices belonging to these two profiles
                 if "DIVE_NUMBER" in ds_updated.data_vars:
                     mask = ds_updated.DIVE_NUMBER == dive
@@ -1285,7 +1735,6 @@ def parse_8_digit_date(date_str):
 
 
 def extract_instrument_info(input_string):
-
     if (
         input_string is None
         or not isinstance(input_string, str)
