@@ -275,7 +275,9 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
     # Use variables with dimension 'sg_data_point'
     # Must be after split_ds
     # map the original variable names to the OG1 variable names, and get the instrument type for each variable
-    OG1_mapping = tools.OG1_name_mapping(ds=merged_ds, ds1_base=ds1_base, ctd_dim=ctd_dim)
+    OG1_mapping = tools.OG1_name_mapping(
+        ds=merged_ds, ds1_base=ds1_base, ctd_dim=ctd_dim
+    )
     ds_new = standardise_OG10(merged_ds, OG1_mapping, firstrun)
 
     # Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)
@@ -310,7 +312,7 @@ def standardise_OG10(
     og1_mapping: pd.DataFrame,
     firstrun: bool = False,
     unit_format: dict[str, str] = vocabularies.unit_str_format,
-    ) -> xr.Dataset:
+) -> xr.Dataset:
     """
     Standardize the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.
 
@@ -336,9 +338,7 @@ def standardise_OG10(
     dsa = xr.Dataset(attrs=ds.attrs.copy())
     newdim = vocabularies.dims_rename_dict["sg_data_point"]
 
-    name_lookup = og1_mapping.set_index(
-        "original_name"
-    )["OG1_name"]
+    name_lookup = og1_mapping.set_index("original_name")["OG1_name"]
 
     unassigned_variables = []
     variables_without_og1_attributes = []
@@ -359,13 +359,16 @@ def standardise_OG10(
         variable_values = ds[original_name].values
 
         # Use OG1 attributes when available. Otherwise, start without them.
-        attributes = vocabularies.vocab_attrs.get(og1_name,{},).copy()
+        attributes = vocabularies.vocab_attrs.get(
+            og1_name,
+            {},
+        ).copy()
 
         if not attributes:
             variables_without_og1_attributes.append(og1_name)
 
         # Convert units only when both source and target units are known.
-        if ("units" in ds[original_name].attrs and "units" in attributes):
+        if "units" in ds[original_name].attrs and "units" in attributes:
             original_unit = tools.reformat_units_var(
                 ds,
                 original_name,
@@ -374,14 +377,12 @@ def standardise_OG10(
             target_unit = attributes["units"]
 
             if original_unit != target_unit:
-                variable_values, converted_unit = (
-                    tools.convert_units_var(
-                        variable_values,
-                        original_unit,
-                        target_unit,
-                        vocabularies.unit1_to_unit2,
-                        firstrun,
-                    )
+                variable_values, converted_unit = tools.convert_units_var(
+                    variable_values,
+                    original_unit,
+                    target_unit,
+                    vocabularies.unit1_to_unit2,
+                    firstrun,
                 )
                 attributes["units"] = converted_unit
 

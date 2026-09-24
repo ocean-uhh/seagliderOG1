@@ -94,16 +94,12 @@ def OG1_name_mapping(
     sensor_vocabs = vocabularies.sensor_vocabs
 
     has_ctd_pressure = (
-        "ctd_pressure" in ds1_base.variables
-        or "ctd_pressure" in ds.variables
+        "ctd_pressure" in ds1_base.variables or "ctd_pressure" in ds.variables
     )
 
     def variable_exists(variable_name: str) -> bool:
         """Check whether a variable exists in either dataset."""
-        return (
-            variable_name in ds1_base.variables
-            or variable_name in ds.variables
-        )
+        return variable_name in ds1_base.variables or variable_name in ds.variables
 
     def get_source(variable_name: str) -> xr.DataArray:
         """Get a variable from the original dataset when possible."""
@@ -152,10 +148,7 @@ def OG1_name_mapping(
         for instrument in instruments:
             instrument_type = get_instrument_type(instrument)
 
-            if (
-                isinstance(instrument_type, str)
-                and instrument_type.upper() == "CTD"
-            ):
+            if isinstance(instrument_type, str) and instrument_type.upper() == "CTD":
                 return instrument
 
         return None
@@ -174,8 +167,7 @@ def OG1_name_mapping(
 
         if qc_parent is not None and variable_exists(qc_parent):
             parent_dimensions = {
-                dimension.lower()
-                for dimension in get_source(qc_parent).dims
+                dimension.lower() for dimension in get_source(qc_parent).dims
             }
 
             return is_ctd_associated(
@@ -185,20 +177,23 @@ def OG1_name_mapping(
 
         if dimensions is None:
             dimensions = {
-                dimension.lower()
-                for dimension in get_source(variable_name).dims
+                dimension.lower() for dimension in get_source(variable_name).dims
             }
 
         # Explicit CTD name or dimension.
-        #if (lower_name.startswith("ctd_") or "ctd_data_point" in dimensions):
-        if (lower_name.startswith("ctd_") or lower_name in CTD_MEASUREMENT_VARIABLES or has_ctd_pressure and lower_name in CTD_CALCULATED_VARIABLES):
+        # if (lower_name.startswith("ctd_") or "ctd_data_point" in dimensions):
+        if (
+            lower_name.startswith("ctd_")
+            or lower_name in CTD_MEASUREMENT_VARIABLES
+            or has_ctd_pressure
+            and lower_name in CTD_CALCULATED_VARIABLES
+        ):
             return True
 
         # Additional rules are only needed when the CTD shares the
         # generic sg_data_point dimension.
         if ctd_dim.lower() != "sg_data_point":
             return False
-
 
     def find_instrument(
         variable_name: str,
@@ -214,15 +209,9 @@ def OG1_name_mapping(
         if qc_parent is not None and variable_exists(qc_parent):
             return find_instrument(qc_parent)
 
-        dimensions = {
-            dimension.lower()
-            for dimension in source.dims
-        }
+        dimensions = {dimension.lower() for dimension in source.dims}
 
-        if (
-            ctd_instrument is not None
-            and is_ctd_associated(variable_name, dimensions)
-        ):
+        if ctd_instrument is not None and is_ctd_associated(variable_name, dimensions):
             return ctd_instrument
 
         # Prefer an explicit instrument attribute.
@@ -239,10 +228,7 @@ def OG1_name_mapping(
         for instrument in instruments:
             instrument_names = get_instrument_names(instrument)
 
-            if any(
-                f"{name}_data_point" in dimensions
-                for name in instrument_names
-            ):
+            if any(f"{name}_data_point" in dimensions for name in instrument_names):
                 return instrument
 
         # Match instrument names embedded in the variable name.
@@ -250,8 +236,7 @@ def OG1_name_mapping(
             instrument_names = get_instrument_names(instrument)
 
             if any(
-                lower_name.startswith(f"{name}_")
-                or f"_{name}_" in lower_name
+                lower_name.startswith(f"{name}_") or f"_{name}_" in lower_name
                 for name in instrument_names
             ):
                 return instrument
@@ -270,10 +255,7 @@ def OG1_name_mapping(
         }
 
         if instrument is not None:
-            prefixes.update(
-                f"{name}_"
-                for name in get_instrument_names(instrument)
-            )
+            prefixes.update(f"{name}_" for name in get_instrument_names(instrument))
 
         candidates = [variable_name]
 
@@ -282,12 +264,9 @@ def OG1_name_mapping(
         for candidate in candidates:
             for prefix in prefixes:
                 if candidate.lower().startswith(prefix):
-                    stripped_name = candidate[len(prefix):]
+                    stripped_name = candidate[len(prefix) :]
 
-                    if (
-                        stripped_name
-                        and stripped_name not in candidates
-                    ):
+                    if stripped_name and stripped_name not in candidates:
                         candidates.append(stripped_name)
 
         return candidates
@@ -344,8 +323,7 @@ def OG1_name_mapping(
     ) -> bool:
         """Return whether a variable uses a dimension, case-insensitively."""
         return dimension.lower() in {
-            item.lower()
-            for item in get_source(variable_name).dims
+            item.lower() for item in get_source(variable_name).dims
         }
 
     def uses_ctd_instrument_dimension(
@@ -355,10 +333,7 @@ def OG1_name_mapping(
         if ctd_instrument is None:
             return False
 
-        dimensions = {
-            dimension.lower()
-            for dimension in get_source(variable_name).dims
-        }
+        dimensions = {dimension.lower() for dimension in get_source(variable_name).dims}
 
         return any(
             f"{name}_data_point" in dimensions
@@ -368,11 +343,7 @@ def OG1_name_mapping(
 
     # dict.fromkeys removes duplicates while preserving order.
     # QC variables are deliberately retained.
-    variable_names = list(
-        dict.fromkeys(
-            list(ds.data_vars) + list(ds.coords)
-        )
-    )
+    variable_names = list(dict.fromkeys(list(ds.data_vars) + list(ds.coords)))
 
     # Some basestation datasets contain the same CTD measurements twice:
     # once on the generic ctd_data_point dimension and once on the CTD
@@ -384,9 +355,7 @@ def OG1_name_mapping(
         og1_name
         for variable_name in variable_names
         if uses_dimension(variable_name, "ctd_data_point")
-        for og1_name in [
-            get_og1_base_name(variable_name, ctd_instrument)
-        ]
+        for og1_name in [get_og1_base_name(variable_name, ctd_instrument)]
         if og1_name is not None
     }
 
@@ -399,7 +368,8 @@ def OG1_name_mapping(
             and get_og1_base_name(
                 variable_name,
                 ctd_instrument,
-            ) in preferred_ctd_og1_names
+            )
+            in preferred_ctd_og1_names
         )
     ]
 
@@ -408,10 +378,7 @@ def OG1_name_mapping(
     ) -> tuple[bool, bool]:
         """Place CTD measurements first and their QC variables second."""
         source = get_source(variable_name)
-        dimensions = {
-            dimension.lower()
-            for dimension in source.dims
-        }
+        dimensions = {dimension.lower() for dimension in source.dims}
 
         is_ctd = is_ctd_associated(
             variable_name,
@@ -451,15 +418,12 @@ def OG1_name_mapping(
                 "original_name": original_name,
                 "OG1_name": og1_name,
                 "instrument": instrument,
-                "instrument_type": get_instrument_type(
-                    instrument
-                ),
+                "instrument_type": get_instrument_type(instrument),
                 "original_dimension": ", ".join(source.dims),
             }
         )
 
     return pd.DataFrame(mapping)
-
 
 
 def gather_sensor_info(ds1_base) -> dict:
@@ -585,7 +549,9 @@ def gather_sensor_info(ds1_base) -> dict:
     return sensor_dict
 
 
-def add_sensor_to_dataset(ds_og1, sensor_dict, OG1_mapping, firstrun=False) -> xr.Dataset:
+def add_sensor_to_dataset(
+    ds_og1, sensor_dict, OG1_mapping, firstrun=False
+) -> xr.Dataset:
     """Adds sensor information from the provided sensor dictionary to the OG1 dataset.
 
     Parameters
@@ -640,7 +606,7 @@ def add_sensor_to_dataset(ds_og1, sensor_dict, OG1_mapping, firstrun=False) -> x
         instrument = mapping["instrument"]
 
         # if the instrument is nan, skip this iteration
-        if og1_name == 'nan' or instrument == 'nan' or pd.isna(instrument):
+        if og1_name == "nan" or instrument == "nan" or pd.isna(instrument):
             continue
 
         sensor_type = sensor_dict[instrument]["sensor_type"].upper().replace(" ", "_")
@@ -988,7 +954,7 @@ def reformat_units_str(
         new_unit = unit_format[old_unit]
     else:
         new_unit = old_unit
-    return new_unit.strip().casefold()
+    return new_unit.strip()  # .casefold()
 
 
 def convert_units_var(
@@ -1657,7 +1623,7 @@ def extract_hdm_parameters(list_datasets):
         param for param in potential_parameters_OG1 if param not in hdm_variables
     ]
     print(f"The following HDM parameters were found: {found_params}")
-    #if not_found_params:
+    # if not_found_params:
     #    print(
     #        f"Warning: The following potential HDM parameters were not found in the datasets: {not_found_params}"
     #    )
@@ -1714,7 +1680,7 @@ def add_hdm_parameters(ds_OG1, hdm_parameters):
             mapped_array = np.full(ds_updated.N_MEASUREMENTS.shape, np.nan)
 
             # Iterate through dives (each dive = 2 profiles)
-            for dive, dive_val in zip(dive_numbers, values):
+            for dive, dive_val in zip(dive_numbers, values, strict=False):
                 # Find all measurement indices belonging to these two profiles
                 if "DIVE_NUMBER" in ds_updated.data_vars:
                     mask = ds_updated.DIVE_NUMBER == dive

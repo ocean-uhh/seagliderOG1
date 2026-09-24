@@ -63,10 +63,10 @@ unit1_to_unit2 = {
     "cm/s_to_m/s": {"current_unit": "cm/s", "new_unit": "m/s", "factor": 0.01},
     "m/s_to_cm/s": {"current_unit": "m/s", "new_unit": "cm/s", "factor": 100},
     "m s-1_to_cm s-1": {"current_unit": "m s-1", "new_unit": "cm s-1", "factor": 100},
-    "S/m_to_mS/cm": {"current_unit": "S/m", "new_unit": "mS/cm", "factor": 0.1},
-    "S m-1_to_mS cm-1": {"current_unit": "S m-1", "new_unit": "mS cm-1", "factor": 0.1},
-    "mS/cm_to_S/m": {"current_unit": "mS/cm", "new_unit": "S/m", "factor": 10},
-    "mS cm-1_to_S m-1": {"current_unit": "mS cm-1", "new_unit": "S m-1", "factor": 10},
+    "S/m_to_mS/cm": {"current_unit": "S/m", "new_unit": "mS/cm", "factor": 10},
+    "S m-1_to_mS cm-1": {"current_unit": "S m-1", "new_unit": "mS cm-1", "factor": 10},
+    "mS/cm_to_S/m": {"current_unit": "mS/cm", "new_unit": "S/m", "factor": 0.1},
+    "mS cm-1_to_S m-1": {"current_unit": "mS cm-1", "new_unit": "S m-1", "factor": 0.1},
     "dbar_to_Pa": {"current_unit": "dbar", "new_unit": "Pa", "factor": 10000},
     "Pa_to_dbar": {"current_unit": "Pa", "new_unit": "dbar", "factor": 0.0001},
     "dbar_to_kPa": {"current_unit": "dbar", "new_unit": "kPa", "factor": 10},
@@ -84,11 +84,15 @@ unit1_to_unit2 = {
     "m_to_km": {"current_unit": "m", "new_unit": "km", "factor": 0.001},
     "cm_to_m": {"current_unit": "cm", "new_unit": "m", "factor": 0.01},
     "km_to_m": {"current_unit": "km", "new_unit": "m", "factor": 1000},
-    "g/m^3_to_kg/m^3": {"current_unit": "g/m3", "new_unit": "kg/m3", "factor": 0.001},
+    "g/m^3_to_kg/m^3": {"current_unit": "g/m^3", "new_unit": "kg/m^3", "factor": 0.001},
     "g m-3_to_kg m-3": {"current_unit": "g m-3", "new_unit": "kg m-3", "factor": 0.001},
-    "kg/m^3_to_g/m^3": {"current_unit": "kg/m3", "new_unit": "g/m3", "factor": 1000},
+    "kg/m^3_to_g/m^3": {"current_unit": "kg/m^3", "new_unit": "g/m^3", "factor": 1000},
     "kg m-3_to_g m-3": {"current_unit": "kg m-3", "new_unit": "g m-3", "factor": 1000},
-    "micrograms/liter_to_mg m-3": {"current_unit": "micrograms/liter", "new_unit": "mg m-3", "factor": 1.0},
+    "micrograms/liter_to_mg m-3": {
+        "current_unit": "micrograms/liter",
+        "new_unit": "mg m-3",
+        "factor": 1.0,
+    },
 }
 
 # Variables to exclude from OG1 output (derived variables, duplicates, etc.)
