@@ -97,6 +97,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">readers</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">utilities</span><span class="p">,</span> <span class="n">vocabularies</span><span class="p">,</span> <span class="n">writers</span>
@@ -142,7 +143,7 @@
     <span class="c1"># But we need to process them first to get the dive number, assign GPS (could be after), ?</span>
     <span class="k">for</span> <span class="n">ds1_base</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Processing datasets"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"dataset"</span><span class="p">):</span>
         <span class="n">varlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">varlist</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span><span class="p">)))</span>
-        <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span> <span class="o">=</span> <span class="n">process_dataset</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
+        <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span><span class="p">,</span> <span class="n">OG1_mapping</span> <span class="o">=</span> <span class="n">process_dataset</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">ds_new</span><span class="p">:</span>
             <span class="n">processed_datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
             <span class="n">firstrun</span> <span class="o">=</span> <span class="kc">False</span>
@@ -157,7 +158,11 @@
     <span class="c1"># Add sensor information to the dataset - can be done on the concatenated data</span>
     <span class="c1"># -----------------------------------------------------------------------------</span>
     <span class="n">sensor_dict</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">gather_sensor_info</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_sensor_to_dataset</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">sensor_dict</span><span class="p">)</span>
+    <span class="c1"># delete old sensor attribute if it exists and add new one</span>
+    <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"sensor"</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">ds_og1</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"sensor"</span><span class="p">]</span>
+    <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_sensor_to_dataset</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">sensor_dict</span><span class="p">,</span> <span class="n">OG1_mapping</span><span class="p">)</span>
 
     <span class="c1"># Apply attributes</span>
     <span class="n">ordered_attributes</span> <span class="o">=</span> <span class="n">update_dataset_attributes</span><span class="p">(</span>
@@ -282,9 +287,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">process_dataset</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
     <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>  <span class="c1"># Processed dataset with renamed variables, assigned attributes, and additional information</span>
     <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>  <span class="c1"># List of warnings related to attribute assignments</span>
-    <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>  <span class="c1"># Dataset containing variables starting with 'sg_cal'</span>
-    <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>  <span class="c1"># Dataset containing other variables not categorized under 'sg_cal' or 'dc_log'</span>
-    <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>  <span class="c1"># Dataset containing variables starting with 'log_'</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>  <span class="c1"># Dataset containing variables starting with 'sg_cal'</span>
 <span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Processes a dataset by performing a series of transformations and extractions.</span>
 
@@ -302,9 +305,7 @@
 <span class="sd">        - ds_new (xarray.Dataset): The processed dataset with renamed variables, assigned attributes,</span>
 <span class="sd">          converted units, and additional information such as GPS info and dive number.</span>
 <span class="sd">        - attr_warnings (list[str]): A list of warnings related to attribute assignments.</span>
-<span class="sd">        - sg_cal (xarray.Dataset): A dataset containing variables starting with 'sg_cal'.</span>
-<span class="sd">        - dc_other (xarray.Dataset): A dataset containing other variables not categorized under 'sg_cal' or 'dc_log'.</span>
-<span class="sd">        - dc_log (xarray.Dataset): A dataset containing variables starting with 'log_'.</span>
+<span class="sd">        - OG1_mapping (pd.DataFrame): A DataFrame containing the mapping of original variable names to OG1 variable names.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
@@ -364,7 +365,11 @@
     <span class="c1"># -------------------------------------------------------------------</span>
     <span class="c1"># Use variables with dimension 'sg_data_point'</span>
     <span class="c1"># Must be after split_ds</span>
-    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">standardise_OG10</span><span class="p">(</span><span class="n">merged_ds</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
+    <span class="c1"># map the original variable names to the OG1 variable names, and get the instrument type for each variable</span>
+    <span class="n">OG1_mapping</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">OG1_name_mapping</span><span class="p">(</span>
+        <span class="n">ds</span><span class="o">=</span><span class="n">merged_ds</span><span class="p">,</span> <span class="n">ds1_base</span><span class="o">=</span><span class="n">ds1_base</span><span class="p">,</span> <span class="n">ctd_dim</span><span class="o">=</span><span class="n">ctd_dim</span>
+    <span class="p">)</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">standardise_OG10</span><span class="p">(</span><span class="n">merged_ds</span><span class="p">,</span> <span class="n">OG1_mapping</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
 
     <span class="c1"># Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)</span>
     <span class="c1"># -----------------------------------------------------------------------</span>
@@ -390,7 +395,7 @@
         <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No variables needed to be removed from the dataset."</span><span class="p">)</span>
 
     <span class="n">attr_warnings</span> <span class="o">=</span> <span class="s2">""</span>
-    <span class="k">return</span> <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span></div>
+    <span class="k">return</span> <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span><span class="p">,</span> <span class="n">OG1_mapping</span></div>
 
 
 
@@ -398,10 +403,12 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.standardise_OG10">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">standardise_OG10</span><span class="p">(</span>
     <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">og1_mapping</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">unit_format</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Standardize the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Standardize the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.</span>
 
 <span class="sd">    Applies OG1 vocabulary for variable names, units, and attributes.</span>
 <span class="sd">    Performs unit conversions and QC flag standardization.</span>
@@ -422,71 +429,107 @@
 <span class="sd">        The standardized dataset in OG1 format.</span>
 
 <span class="sd">    """</span>
-    <span class="n">dsa</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
-    <span class="n">dsa</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span>
-    <span class="n">suffixes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"_qc"</span><span class="p">,</span> <span class="s2">"_raw"</span><span class="p">,</span> <span class="s2">"_raw_qc"</span><span class="p">]</span>
-
-    <span class="c1"># Set new dimension name</span>
+    <span class="n">dsa</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
     <span class="n">newdim</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">dims_rename_dict</span><span class="p">[</span><span class="s2">"sg_data_point"</span><span class="p">]</span>
-    <span class="c1"># Make a list with all variables not in the vocabularies, and log a warning for them at the end of the loop</span>
-    <span class="n">vars_not_in_vocab</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="c1"># Rename variables according to the OG1 vocabulary</span>
-    <span class="k">for</span> <span class="n">orig_varname</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s2">"_qc"</span> <span class="ow">in</span> <span class="n">orig_varname</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+    <span class="n">name_lookup</span> <span class="o">=</span> <span class="n">og1_mapping</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"original_name"</span><span class="p">)[</span><span class="s2">"OG1_name"</span><span class="p">]</span>
+
+    <span class="n">unassigned_variables</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">variables_without_og1_attributes</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">original_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">):</span>
+        <span class="c1"># QC variables are handled with their corresponding root variable.</span>
+        <span class="k">if</span> <span class="n">original_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"_qc"</span><span class="p">):</span>
             <span class="k">continue</span>
-        <span class="k">if</span> <span class="n">orig_varname</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">standard_names</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">OG1_name</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">standard_names</span><span class="p">[</span><span class="n">orig_varname</span><span class="p">]</span>
-            <span class="n">var_values</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">orig_varname</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-            <span class="c1"># Reformat units and convert units if necessary</span>
-            <span class="k">if</span> <span class="s2">"units"</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">orig_varname</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
-                <span class="n">orig_unit</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">reformat_units_var</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">orig_varname</span><span class="p">,</span> <span class="n">unit_format</span><span class="p">)</span>
-                <span class="k">if</span> <span class="s2">"units"</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]:</span>
-                    <span class="n">new_unit</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"units"</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">orig_unit</span> <span class="o">!=</span> <span class="n">new_unit</span><span class="p">:</span>
-                        <span class="n">var_values</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">convert_units_var</span><span class="p">(</span>
-                            <span class="n">var_values</span><span class="p">,</span>
-                            <span class="n">orig_unit</span><span class="p">,</span>
-                            <span class="n">new_unit</span><span class="p">,</span>
-                            <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit1_to_unit2</span><span class="p">,</span>
-                            <span class="n">firstrun</span><span class="p">,</span>
-                        <span class="p">)</span>
-            <span class="n">dsa</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="n">newdim</span><span class="p">],</span> <span class="n">var_values</span><span class="p">,</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">])</span>
-            <span class="c1"># Pass attributes that aren't in standard OG1 vocab_attrs</span>
-            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">orig_varname</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dsa</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">dsa</span><span class="p">[</span><span class="n">OG1_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
-            <span class="c1"># Add QC variables if they exist</span>
-            <span class="k">for</span> <span class="n">suffix</span> <span class="ow">in</span> <span class="n">suffixes</span><span class="p">:</span>
-                <span class="n">variant</span> <span class="o">=</span> <span class="n">orig_varname</span> <span class="o">+</span> <span class="n">suffix</span>
-                <span class="n">variant_OG1</span> <span class="o">=</span> <span class="n">OG1_name</span> <span class="o">+</span> <span class="n">suffix</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
-                <span class="k">if</span> <span class="n">variant</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
-                    <span class="n">dsa</span><span class="p">[</span><span class="n">variant_OG1</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="n">newdim</span><span class="p">],</span> <span class="n">ds</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">ds</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
-                    <span class="c1"># Should only be the root for *_qc variables</span>
-                    <span class="k">if</span> <span class="s2">"_qc"</span> <span class="ow">in</span> <span class="n">variant</span><span class="p">:</span>
-                        <span class="c1"># Convert QC flags to int8 and add attributes</span>
-                        <span class="n">dsa</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">convert_qc_flags</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">variant_OG1</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">dsa</span><span class="p">[</span><span class="n">orig_varname</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="p">[</span><span class="n">newdim</span><span class="p">],</span>
-                <span class="n">ds</span><span class="p">[</span><span class="n">orig_varname</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-                <span class="n">ds</span><span class="p">[</span><span class="n">orig_varname</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span>
+        <span class="n">og1_name</span> <span class="o">=</span> <span class="n">name_lookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">original_name</span><span class="p">)</span>
+
+        <span class="c1"># Only variables without a mapped OG1 name are skipped.</span>
+        <span class="k">if</span> <span class="n">og1_name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">og1_name</span><span class="p">):</span>
+            <span class="n">unassigned_variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">original_name</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="n">og1_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">og1_name</span><span class="p">)</span>
+        <span class="n">variable_values</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">original_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="c1"># Use OG1 attributes when available. Otherwise, start without them.</span>
+        <span class="n">attributes</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="n">og1_name</span><span class="p">,</span>
+            <span class="p">{},</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">attributes</span><span class="p">:</span>
+            <span class="n">variables_without_og1_attributes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">og1_name</span><span class="p">)</span>
+
+        <span class="c1"># Convert units only when both source and target units are known.</span>
+        <span class="k">if</span> <span class="s2">"units"</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">original_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="ow">and</span> <span class="s2">"units"</span> <span class="ow">in</span> <span class="n">attributes</span><span class="p">:</span>
+            <span class="n">original_unit</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">reformat_units_var</span><span class="p">(</span>
+                <span class="n">ds</span><span class="p">,</span>
+                <span class="n">original_name</span><span class="p">,</span>
+                <span class="n">unit_format</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="c1">### Only log a warning for variables that aren't in the vocabularies and aren't in the list of variables to keep or remove</span>
-            <span class="c1">### Removed varaiables will be printed in the log as being removed, so no need to log a warning for them here.</span>
-            <span class="k">if</span> <span class="n">orig_varname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span>
-                <span class="o">*</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vars_as_is</span><span class="p">,</span>
-                <span class="o">*</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vars_to_remove</span><span class="p">,</span>
-            <span class="p">):</span>
-                <span class="n">vars_not_in_vocab</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">orig_varname</span><span class="p">)</span>
+            <span class="n">target_unit</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="n">firstrun</span> <span class="ow">and</span> <span class="n">vars_not_in_vocab</span><span class="p">:</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Variables not in OG1 vocabulary and not removed: </span><span class="si">{</span><span class="n">vars_not_in_vocab</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">if</span> <span class="n">original_unit</span> <span class="o">!=</span> <span class="n">target_unit</span><span class="p">:</span>
+                <span class="n">variable_values</span><span class="p">,</span> <span class="n">converted_unit</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">convert_units_var</span><span class="p">(</span>
+                    <span class="n">variable_values</span><span class="p">,</span>
+                    <span class="n">original_unit</span><span class="p">,</span>
+                    <span class="n">target_unit</span><span class="p">,</span>
+                    <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit1_to_unit2</span><span class="p">,</span>
+                    <span class="n">firstrun</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">attributes</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="n">converted_unit</span>
+
+        <span class="n">dsa</span><span class="p">[</span><span class="n">og1_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[</span><span class="n">newdim</span><span class="p">],</span>
+            <span class="n">variable_values</span><span class="p">,</span>
+            <span class="n">attributes</span><span class="p">,</span>
         <span class="p">)</span>
-    <span class="c1"># Assign coordinates</span>
-    <span class="n">dsa</span> <span class="o">=</span> <span class="n">dsa</span><span class="o">.</span><span class="n">set_coords</span><span class="p">([</span><span class="s2">"LONGITUDE"</span><span class="p">,</span> <span class="s2">"LATITUDE"</span><span class="p">,</span> <span class="s2">"DEPTH"</span><span class="p">,</span> <span class="s2">"TIME"</span><span class="p">])</span>
+
+        <span class="c1"># Retain source attributes not supplied by the OG1 vocabulary.</span>
+        <span class="k">for</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">original_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">dsa</span><span class="p">[</span><span class="n">og1_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">attribute</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Add the associated QC variable when present.</span>
+        <span class="n">original_qc_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2">_qc"</span>
+        <span class="n">og1_qc_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">og1_name</span><span class="si">}</span><span class="s2">_QC"</span>
+
+        <span class="k">if</span> <span class="n">original_qc_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="n">dsa</span><span class="p">[</span><span class="n">og1_qc_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">[</span><span class="n">newdim</span><span class="p">],</span>
+                <span class="n">ds</span><span class="p">[</span><span class="n">original_qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                <span class="n">ds</span><span class="p">[</span><span class="n">original_qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+            <span class="p">)</span>
+
+            <span class="n">dsa</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">convert_qc_flags</span><span class="p">(</span>
+                <span class="n">dsa</span><span class="p">,</span>
+                <span class="n">og1_qc_name</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">unassigned_variables</span><span class="p">:</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">"Variables without an assigned OG1 name: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
+                <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">unassigned_variables</span><span class="p">)),</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"All variables have an assigned OG1 name."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">variables_without_og1_attributes</span><span class="p">:</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">"OG1 variables without vocabulary attributes: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
+                <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables_without_og1_attributes</span><span class="p">)),</span>
+            <span class="p">)</span>
+
+    <span class="n">coordinate_names</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">name</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"LONGITUDE"</span><span class="p">,</span> <span class="s2">"LATITUDE"</span><span class="p">,</span> <span class="s2">"DEPTH"</span><span class="p">,</span> <span class="s2">"TIME"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dsa</span><span class="o">.</span><span class="n">variables</span>
+    <span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">coordinate_names</span><span class="p">:</span>
+        <span class="n">dsa</span> <span class="o">=</span> <span class="n">dsa</span><span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="n">coordinate_names</span><span class="p">)</span>
+
     <span class="n">dsa</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">encode_times_og1</span><span class="p">(</span><span class="n">dsa</span><span class="p">)</span>
     <span class="c1"># dtype optimisation is deferred to convert_to_OG1, once on the concatenated dataset:</span>
     <span class="c1"># running it per dive lets the concat re-promote int8 QC flags back to float.</span>
