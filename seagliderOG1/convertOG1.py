@@ -70,6 +70,10 @@ def convert_to_OG1(
     # Add sensor information to the dataset - can be done on the concatenated data
     # -----------------------------------------------------------------------------
     sensor_dict = tools.gather_sensor_info(list_of_datasets[0])
+    # delete old sensor attribute if it exists and add new one
+    for var in ds_og1.data_vars:
+        if "sensor" in ds_og1[var].attrs:
+            del ds_og1[var].attrs["sensor"]
     ds_og1 = tools.add_sensor_to_dataset(ds_og1, sensor_dict, OG1_mapping)
 
     # Apply attributes

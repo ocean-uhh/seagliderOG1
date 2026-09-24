@@ -46,34 +46,38 @@ def OG1_name_mapping(
 ) -> pd.DataFrame:
     """Create a mapping from original variable names to OG1 variable names.
 
-    The function examines the dataset immediately before OG1 standardization and
-    creates one table row per variable. Each row contains the original variable
-    name, its OG1 name, its associated instrument, the instrument type, and its
+    The function examines the dataset immediately before OG1 standardization
+    and creates one table row per variable. Each row contains the original
+    variable name, its OG1 name, associated instrument, instrument type, and
     original dimensions.
 
-    Instrument assignment is based on the following precedence:
+    Variables ending in ``_qc`` inherit the instrument association of their
+    corresponding measurement variable. For example,
+    ``ctd_temperature_qc`` inherits the instrument assigned to
+    ``ctd_temperature``.
 
-    1. Variables beginning with ``ctd_`` or using ``ctd_data_point`` are
+    Instrument assignment precedence:
+
+    1. QC variables inherit the instrument of their parent measurement.
+    2. Variables beginning with ``ctd_`` or from the CTD variables defined above are
        assigned to the CTD.
-    2. When the CTD uses the generic ``sg_data_point`` dimension, temperature
-       and conductivity measurements are assigned to the CTD.
-    3. When ``ctd_pressure`` is also available, calculated hydrographic
-       variables are assigned to the CTD.
-    4. The variable's ``instrument`` attribute is checked.
-    5. Dimensions named ``<instrument>_data_point`` are checked.
-    6. The variable name is checked for an instrument name or alias.
-
-    Variables beginning with ``ctd_`` are processed first. Consequently, when
-    several original variables map to the same OG1 name, the CTD variable keeps
-    the base name and subsequent variables receive suffixes such as ``2``,
-    ``3``, and ``4``.
+       When the same OG1 variable is also present on the CTD instrument's
+       ``<instrument>_data_point`` dimension, the ``ctd_data_point`` copy is
+       retained and the instrument-dimension copy is omitted.
+    3. When the CTD uses ``sg_data_point``, temperature and conductivity
+       measurements are assigned to the CTD.
+    4. When ``ctd_pressure`` is available, calculated hydrographic variables
+       are assigned to the CTD.
+    5. The variable's ``instrument`` attribute is checked.
+    6. Dimensions named ``<instrument>_data_point`` are checked.
+    7. The variable name is checked for an instrument name or alias.
 
     Parameters
     ----------
     ds
         Dataset immediately before calling ``standardise_OG10``.
     ds1_base
-        Original basestation dataset. It provides the original dimensions,
+        Original basestation dataset. It provides original dimensions,
         variable attributes, and the global ``instrument`` attribute.
     ctd_dim
         Dimension used by the CTD data, for example ``ctd_data_point`` or
@@ -82,7 +86,8 @@ def OG1_name_mapping(
     Returns
     -------
     pandas.DataFrame
-        Mapping table with the following columns:
+        Mapping table containing ``original_name``, ``OG1_name``,
+        ``instrument``, ``instrument_type``, and ``original_dimension``.
     """
     instruments = ds1_base.attrs.get("instrument", "").split()
     standard_names = vocabularies.standard_names
@@ -93,6 +98,13 @@ def OG1_name_mapping(
         or "ctd_pressure" in ds.variables
     )
 
+    def variable_exists(variable_name: str) -> bool:
+        """Check whether a variable exists in either dataset."""
+        return (
+            variable_name in ds1_base.variables
+            or variable_name in ds.variables
+        )
+
     def get_source(variable_name: str) -> xr.DataArray:
         """Get a variable from the original dataset when possible."""
         if variable_name in ds1_base.variables:
@@ -100,8 +112,19 @@ def OG1_name_mapping(
 
         return ds[variable_name]
 
-    def get_instrument_names(instrument: str) -> set[str]:
-        """Get the lowercase name and aliases for an instrument."""
+    def get_qc_parent_name(
+        variable_name: str,
+    ) -> str | None:
+        """Return the measurement name corresponding to a *_qc variable."""
+        if variable_name.lower().endswith("_qc"):
+            return variable_name[:-3]
+
+        return None
+
+    def get_instrument_names(
+        instrument: str,
+    ) -> set[str]:
+        """Get the lowercase instrument name and its aliases."""
         return INSTRUMENT_ALIASES.get(
             instrument.lower(),
             {instrument.lower()},
@@ -115,6 +138,7 @@ def OG1_name_mapping(
             return None
 
         og1_instrument_name = standard_names.get(instrument)
+
         if og1_instrument_name is None:
             return None
 
@@ -140,37 +164,59 @@ def OG1_name_mapping(
 
     def is_ctd_associated(
         variable_name: str,
-        dimensions: set[str],
+        dimensions: set[str] | None = None,
     ) -> bool:
         """Determine whether a variable should be assigned to the CTD."""
         lower_name = variable_name.lower()
 
+        # QC variables inherit the CTD association of their parent variable.
+        qc_parent = get_qc_parent_name(variable_name)
+
+        if qc_parent is not None and variable_exists(qc_parent):
+            parent_dimensions = {
+                dimension.lower()
+                for dimension in get_source(qc_parent).dims
+            }
+
+            return is_ctd_associated(
+                qc_parent,
+                parent_dimensions,
+            )
+
+        if dimensions is None:
+            dimensions = {
+                dimension.lower()
+                for dimension in get_source(variable_name).dims
+            }
+
         # Explicit CTD name or dimension.
-        if (
-            lower_name.startswith("ctd_")
-            or "ctd_data_point" in dimensions
-        ):
+        #if (lower_name.startswith("ctd_") or "ctd_data_point" in dimensions):
+        if (lower_name.startswith("ctd_") or lower_name in CTD_MEASUREMENT_VARIABLES or has_ctd_pressure and lower_name in CTD_CALCULATED_VARIABLES):
             return True
 
-        # The additional rules are only needed when the CTD shares the
-        # generic sg_data_point dimension with other variables.
+        # Additional rules are only needed when the CTD shares the
+        # generic sg_data_point dimension.
         if ctd_dim.lower() != "sg_data_point":
             return False
 
-        if lower_name in CTD_MEASUREMENT_VARIABLES:
-            return True
 
-        return (
-            has_ctd_pressure
-            and lower_name in CTD_CALCULATED_VARIABLES
-        )
-
-    def find_instrument(variable_name: str) -> str | None:
+    def find_instrument(
+        variable_name: str,
+    ) -> str | None:
         """Find the instrument associated with a variable."""
         source = get_source(variable_name)
         lower_name = variable_name.lower()
+
+        # A QC variable inherits the full instrument assignment of its
+        # corresponding measurement variable.
+        qc_parent = get_qc_parent_name(variable_name)
+
+        if qc_parent is not None and variable_exists(qc_parent):
+            return find_instrument(qc_parent)
+
         dimensions = {
-            dimension.lower() for dimension in source.dims
+            dimension.lower()
+            for dimension in source.dims
         }
 
         if (
@@ -216,7 +262,7 @@ def OG1_name_mapping(
         variable_name: str,
         instrument: str | None,
     ) -> list[str]:
-        """Generate possible vocabulary names by removing prefixes."""
+        """Generate vocabulary candidates by removing prefixes."""
         prefixes = {
             "eng_",
             "instrument_",
@@ -231,8 +277,8 @@ def OG1_name_mapping(
 
         candidates = [variable_name]
 
-        # Iterate over the growing list to support multiple prefixes, such as
-        # eng_<instrument>_<variable>.
+        # Iterate over the growing list to support multiple prefixes,
+        # such as eng_<instrument>_<variable>.
         for candidate in candidates:
             for prefix in prefixes:
                 if candidate.lower().startswith(prefix):
@@ -246,11 +292,11 @@ def OG1_name_mapping(
 
         return candidates
 
-    def get_og1_base_name(
+    def find_direct_og1_name(
         variable_name: str,
         instrument: str | None,
     ) -> str | None:
-        """Find the first OG1 vocabulary match for a variable."""
+        """Find an explicit vocabulary match."""
         for candidate in get_name_candidates(
             variable_name,
             instrument,
@@ -262,23 +308,120 @@ def OG1_name_mapping(
 
         return None
 
-    # dict.fromkeys removes possible duplicates while preserving order.
+    def get_og1_base_name(
+        variable_name: str,
+        instrument: str | None,
+    ) -> str | None:
+        """Find or derive the OG1 vocabulary name for a variable."""
+        # Prefer an explicit vocabulary entry, including an explicit
+        # entry for the QC variable.
+        og1_name = find_direct_og1_name(
+            variable_name,
+            instrument,
+        )
+
+        if og1_name is not None:
+            return og1_name
+
+        # If no explicit QC entry exists, derive it from the parent
+        # measurement's OG1 name.
+        qc_parent = get_qc_parent_name(variable_name)
+
+        if qc_parent is not None:
+            parent_og1_name = find_direct_og1_name(
+                qc_parent,
+                instrument,
+            )
+
+            if parent_og1_name is not None:
+                return f"{parent_og1_name}_QC"
+
+        return None
+
+    def uses_dimension(
+        variable_name: str,
+        dimension: str,
+    ) -> bool:
+        """Return whether a variable uses a dimension, case-insensitively."""
+        return dimension.lower() in {
+            item.lower()
+            for item in get_source(variable_name).dims
+        }
+
+    def uses_ctd_instrument_dimension(
+        variable_name: str,
+    ) -> bool:
+        """Return whether a variable uses a CTD-instrument dimension."""
+        if ctd_instrument is None:
+            return False
+
+        dimensions = {
+            dimension.lower()
+            for dimension in get_source(variable_name).dims
+        }
+
+        return any(
+            f"{name}_data_point" in dimensions
+            and f"{name}_data_point" != "ctd_data_point"
+            for name in get_instrument_names(ctd_instrument)
+        )
+
+    # dict.fromkeys removes duplicates while preserving order.
+    # QC variables are deliberately retained.
     variable_names = list(
         dict.fromkeys(
             list(ds.data_vars) + list(ds.coords)
         )
     )
 
+    # Some basestation datasets contain the same CTD measurements twice:
+    # once on the generic ctd_data_point dimension and once on the CTD
+    # instrument's own dimension (for example legato_data_point).  Treat the
+    # generic dimension as authoritative.  Comparing the unsuffixed OG1 names
+    # catches pairs such as ctd_temperature/legato_temperature as well as
+    # their QC variables.
+    preferred_ctd_og1_names = {
+        og1_name
+        for variable_name in variable_names
+        if uses_dimension(variable_name, "ctd_data_point")
+        for og1_name in [
+            get_og1_base_name(variable_name, ctd_instrument)
+        ]
+        if og1_name is not None
+    }
+
     variable_names = [
-        name
-        for name in variable_names
-        if "_qc" not in name.lower()
+        variable_name
+        for variable_name in variable_names
+        if not (
+            not uses_dimension(variable_name, "ctd_data_point")
+            and uses_ctd_instrument_dimension(variable_name)
+            and get_og1_base_name(
+                variable_name,
+                ctd_instrument,
+            ) in preferred_ctd_og1_names
+        )
     ]
 
-    # False sorts before True, placing all ctd_ variables first.
-    variable_names.sort(
-        key=lambda name: not name.lower().startswith("ctd_")
-    )
+    def variable_sort_key(
+        variable_name: str,
+    ) -> tuple[bool, bool]:
+        """Place CTD measurements first and their QC variables second."""
+        source = get_source(variable_name)
+        dimensions = {
+            dimension.lower()
+            for dimension in source.dims
+        }
+
+        is_ctd = is_ctd_associated(
+            variable_name,
+            dimensions,
+        )
+        is_qc = get_qc_parent_name(variable_name) is not None
+
+        return (not is_ctd, is_qc)
+
+    variable_names.sort(key=variable_sort_key)
 
     mapping = []
     og1_name_counts: dict[str, int] = {}
@@ -286,6 +429,7 @@ def OG1_name_mapping(
     for original_name in variable_names:
         source = get_source(original_name)
         instrument = find_instrument(original_name)
+
         base_og1_name = get_og1_base_name(
             original_name,
             instrument,
@@ -315,6 +459,7 @@ def OG1_name_mapping(
         )
 
     return pd.DataFrame(mapping)
+
 
 
 def gather_sensor_info(ds1_base) -> dict:
@@ -491,8 +636,7 @@ def add_sensor_to_dataset(ds_og1, sensor_dict, OG1_mapping, firstrun=False) -> x
             ds_og1[sensor_var_name].attrs[attr] = value
 
     # -------------------------------------------------------------------------
-    # 3. Assign 'sensor' attribute to sensor-specific variables (later update)
-    #    Leave logic untouched for now.
+    # 3. Assign 'sensor' attribute to sensor-specific variables
     # -------------------------------------------------------------------------
     for _, mapping in OG1_mapping.iterrows():
         og1_name = str(mapping["OG1_name"])
@@ -1327,7 +1471,8 @@ def merge_datasets_along_time(split_ds, dims_to_merge, first_run=False):
         # ---5. Add attribute old_dim to each data variable and coordinate (except the time coordinate)---
         for var in ds.variables:
             if var != "time":
-                ds[var].attrs["old_dimension"] = old_dim
+                ds[var].attrs["original_dimension"] = old_dim
+                ds[var].attrs["original_variable_name"] = str(var)
         if first_run:
             print(
                 f"Adding variables with dimension '{dim}' and time variable '{time_var}'."
@@ -1467,10 +1612,10 @@ def extract_hdm_parameters(list_datasets):
         param for param in potential_parameters_OG1 if param not in hdm_variables
     ]
     print(f"The following HDM parameters were found: {found_params}")
-    if not_found_params:
-        print(
-            f"Warning: The following potential HDM parameters were not found in the datasets: {not_found_params}"
-        )
+    #if not_found_params:
+    #    print(
+    #        f"Warning: The following potential HDM parameters were not found in the datasets: {not_found_params}"
+    #    )
 
     # 6. Add dive_number in order to be able to assign dive-based parameters to the correct profiles in the OG1 dataset
     dive_numbers = None
