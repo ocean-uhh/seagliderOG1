@@ -64,12 +64,17 @@ def convert_to_OG1(
                 f"Dataset for dive number {ds1_base.attrs['dive_number']} is empty or invalid."
             )
 
+    if not processed_datasets:
+        raise ValueError(
+            "No valid datasets were processed. Check the input datasets "
+            "and the warnings from coordinate validation.")
+
     ds_og1 = xr.concat(processed_datasets, dim="N_MEASUREMENTS")
     ds_og1 = ds_og1.sortby("TIME")
 
     # Add sensor information to the dataset - can be done on the concatenated data
     # -----------------------------------------------------------------------------
-    sensor_dict = tools.gather_sensor_info(list_of_datasets[0])
+    sensor_dict = tools.gather_sensor_info(list_of_datasets)
     # delete old sensor attribute if it exists and add new one
     for var in ds_og1.data_vars:
         if "sensor" in ds_og1[var].attrs:
@@ -244,7 +249,12 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
     # Check if the dataset has 'LONGITUDE' as a coordinate
     ds1_base = utilities._validate_coords(ds1_base)
     if ds1_base is None or len(ds1_base.variables) == 0:
-        return xr.Dataset(), []
+        return xr.Dataset(), [], pd.DataFrame(columns=["original_name",
+                                                       "OG1_name",
+                                                       "instrument",
+                                                       "instrument_type",
+                                                       "original_dimension",
+                                                       ])
     ## Add default dimension sg_data_point
     dims_to_merge = ["sg_data_point"]
     # add the dimensions that match the instrument names to the list
@@ -303,7 +313,7 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
     elif firstrun:
         _log.info("No variables needed to be removed from the dataset.")
 
-    attr_warnings = ""
+    attr_warnings: list[str] = []
     return ds_new, attr_warnings, OG1_mapping
 
 
