@@ -426,21 +426,23 @@ def OG1_name_mapping(
     return pd.DataFrame(mapping)
 
 
-def gather_sensor_info(ds1_base) -> dict:
-    """Gathers sensor information from an OG1 base dataset.
+def gather_sensor_info(list_of_datasets) -> dict:
+    """Gathers sensor information from a list of OG1 base datasets.
 
     Extracts:
-      - sensor names (from global 'instrument' attribute)
+      - unique sensor names (from global 'instrument' attributes)
       - technical specs (from OG1_sensor_attrs.yaml vocabularies)
       - serial numbers + calibration dates (from calibcomm variables)
-      - variables belonging to each sensor
+
+    Checks calibration information across all datasets. Missing information
+    is reported once per sensor. Conflicting serial numbers or calibration
+    dates are reported, and the first nonempty value is retained.
+    Calibration variables not belonging to any listed sensor are reported.
 
     Parameters
     ----------
-    ds1_base : xarray.Dataset
-        The raw base dataset containing sensor metadata.
-    first_run : bool
-        If True, informational print statements are shown.
+    list_of_datasets : iterable of xarray.Dataset
+        The raw base datasets containing sensor metadata.
 
     Returns
     -------
@@ -448,26 +450,28 @@ def gather_sensor_info(ds1_base) -> dict:
         Dictionary with one key per sensor, each containing metadata.
 
     """
+    datasets = list(list_of_datasets)
+
     # -------------------------------------------------------------------------
-    # 1. Extract sensor names from the 'instrument' global attribute
+    # 1. Extract sensor names from the 'instrument' global attributes
     # -------------------------------------------------------------------------
     sensor_dict = {}
 
-    if "instrument" in ds1_base.attrs:
-        sensor_names = ds1_base.attrs["instrument"].split()
-        # Remove unneeded entries
-        if "magnetometer" in sensor_names:
-            sensor_names.remove("magnetometer")
-        # Initialize dictionary entries
-        for sensor in sensor_names:
-            sensor_dict[sensor] = {}
-    else:
+    for dataset in datasets:
+        instrument = dataset.attrs.get("instrument")
+        if instrument and instrument.strip():
+            sensor_names = instrument.split()
+            # Remove unneeded entries and initialize unique dictionary entries
+            for sensor in sensor_names:
+                if sensor != "magnetometer":
+                    sensor_dict.setdefault(sensor, {})
+
+    if not sensor_dict:
         print(
-            "Warning: 'instrument' attribute not found in the dataset. Therefore no sensor information extracted from attributes. "
-            "If you have sensor information in the attributes, please add an 'instrument' attribute with the sensor names separated by spaces."
-            " For example: ds.attrs['instrument'] = 'sbe41 wlbb2f sbe43'"
+            "Warning: No sensors found in the combined instrument attributes. "
+            "Add sensor names separated by spaces, "
+            "for example: ds.attrs['instrument'] = 'sbe41 wlbb2f sbe43'."
         )
-        return sensor_dict
 
     # -------------------------------------------------------------------------
     # 2. Add technical specifications from OG1 vocabularies
@@ -478,73 +482,135 @@ def gather_sensor_info(ds1_base) -> dict:
     for sensor in sensor_dict.keys():
         if sensor in standard_names:
             new_name = standard_names[sensor]
-            sensor_dict[sensor] = sensor_vocabs[new_name]
+            # Copy so calibration metadata does not modify shared vocabularies.
+            sensor_dict[sensor] = dict(sensor_vocabs[new_name])
             print(
                 f"Adding technical specifications for '{new_name}' "
                 f"(sensor key: '{sensor}') from OG1_sensor_attrs.yaml"
             )
         else:
             print(
-                f"Warning: Sensor '{sensor}' not found in standard names vocabulary. "
-                "No technical specifications added."
+                f"Warning: Sensor '{sensor}' not found in standard names "
+                "vocabulary. No technical specifications added."
             )
 
     # -------------------------------------------------------------------------
     # 3. Extract calibration information (serial number + calibration dates)
     # -------------------------------------------------------------------------
-    def get_if_exists(base, varname):
-        return base[varname] if varname in base.variables else None
+    # Index all calibcomms once to avoid scanning every dataset for each sensor.
+    calibration_records = []
+    records_by_name = {}
+    for dataset_index, base in enumerate(datasets, start=1):
+        for name in base.variables:
+            if name.startswith("sg_cal_calibcomm"):
+                record_index = len(calibration_records)
+                record = (dataset_index, name, base[name])
+                calibration_records.append(record)
+                records_by_name.setdefault(name, []).append((record_index, record))
 
     sensor_nums = len(sensor_dict.keys())
-    available_calibcomm = [
-        v for v in ds1_base.variables if v.startswith("sg_cal_calibcomm")
-    ]
+    available_calibcomm = sorted(records_by_name)
     if len(available_calibcomm) > sensor_nums:
         print(
-            f"Warning: More calibration variables found as stated in instrument attributes!\n"
-            f"The following calibration variables were found: {available_calibcomm}\n"
-            f"But only {sensor_nums} sensors were listed in the instrument attributes: {list(sensor_dict.keys())}"
+            "Warning: More distinct calibration variables found than sensors "
+            "listed in the combined instrument attributes!\n"
+            f"Calibration variables: {available_calibcomm}\n"
+            f"Sensors: {list(sensor_dict)}"
         )
 
-    for sensor in sensor_dict.keys():
-        # --- Determine calibcomm variable name --------------------------------
-        calibcomm_str = None
-        base = ds1_base
+    def is_missing(value):
+        return value is None or str(value).strip().lower() in {
+            "", "none", "nan", "nat", "unknown", "n/a"
+        }
+
+    matched_records = set()
+    for sensor, metadata in sensor_dict.items():
+        # --- Determine calibcomm variable names -------------------------------
         del_caps = _del_capital_letters(sensor)
+        candidate_names = {
+            f"sg_cal_calibcomm_{sensor}",
+            f"sg_cal_calibcomm_{del_caps}",
+        }
+        if metadata.get("sensor_type") == "CTD":
+            candidate_names.add("sg_cal_calibcomm")
+        elif metadata.get("sensor_type") == "Oxygen":
+            candidate_names.update({
+                "sg_cal_calibcomm_optode", "sg_cal_calibcomm_oxygen"
+            })
+        elif metadata.get("sensor_maker") == "WET Labs":
+            candidate_names.add("sg_cal_calibcomm_wetlabs")
 
-        calibcomm_str = None
-        var = get_if_exists(base, f"sg_cal_calibcomm_{sensor}")
-        if var is not None:
-            calibcomm_str = str(var.values.item())
+        observations = {"sensor_serial_number": [], "sensor_calibration_date": []}
+        found_calibration_text = False
+        matching_records = sorted(
+            (
+                entry
+                for name in candidate_names
+                for entry in records_by_name.get(name, ())
+            ),
+            key=lambda entry: entry[0],
+        )
+        # --- Extract serial number + calibration date --------------------------
+        for record_index, (dataset_index, name, variable) in matching_records:
+            matched_records.add(record_index)
+            raw_value = variable.values.item()
+            if isinstance(raw_value, bytes):
+                raw_value = raw_value.decode("utf-8", errors="replace")
+            if is_missing(raw_value):
+                continue
+            found_calibration_text = True
+            serial_number, cal_info = extract_instrument_info(str(raw_value))
+            for field, value in (
+                ("sensor_serial_number", serial_number),
+                ("sensor_calibration_date", cal_info),
+            ):
+                if not is_missing(value):
+                    observations[field].append((value, dataset_index, name))
 
-        elif (var := get_if_exists(base, f"sg_cal_calibcomm_{del_caps}")) is not None:
-            calibcomm_str = str(var.values.item())
+        # --- Check for changes across all matching calibcomms -------------------
+        missing_fields = []
+        for field, entries in observations.items():
+            distinct = {}
+            for value, dataset_index, name in entries:
+                distinct.setdefault(str(value), []).append((dataset_index, name))
+            if len(distinct) > 1:
+                details = "; ".join(
+                    f"{value!r} in {sources}" for value, sources in distinct.items()
+                )
+                print(f"Error: Conflicting {field} for sensor '{sensor}': {details}")
+            if entries:
+                metadata[field] = entries[0][0]
+            else:
+                missing_fields.append(field)
 
-        elif sensor_dict[sensor].get("sensor_type") == "CTD":
-            var = get_if_exists(base, "sg_cal_calibcomm")
-            calibcomm_str = str(var.values.item()) if var is not None else None
-
-        elif sensor_dict[sensor].get("sensor_type") == "Oxygen":
-            var = get_if_exists(base, "sg_cal_calibcomm_optode") or get_if_exists(
-                base, "sg_cal_calibcomm_oxygen"
+        if missing_fields:
+            # Preserve the existing helper's missing-value defaults.
+            default_serial, default_calibration = extract_instrument_info(None)
+            defaults = {
+                "sensor_serial_number": default_serial,
+                "sensor_calibration_date": default_calibration,
+            }
+            for field in missing_fields:
+                metadata[field] = defaults[field]
+            reason = (
+                "No calibration info found" if not found_calibration_text
+                else f"Incomplete calibration info (missing {', '.join(missing_fields)})"
             )
-            calibcomm_str = str(var.values.item()) if var is not None else None
-
-        elif sensor_dict[sensor].get("sensor_maker") == "WET Labs":
-            var = get_if_exists(base, "sg_cal_calibcomm_wetlabs")
-            calibcomm_str = str(var.values.item()) if var is not None else None
-
-        if calibcomm_str is None:
             print(
-                f"Warning: No calibration info found for sensor '{sensor}'. "
+                f"Warning: {reason} for sensor '{sensor}'. "
                 f"Available calibration variables: {available_calibcomm}"
             )
 
-        # --- Extract serial number + calibration date --------------------------
-        serial_number, cal_info = extract_instrument_info(calibcomm_str)
-
-        sensor_dict[sensor]["sensor_serial_number"] = serial_number
-        sensor_dict[sensor]["sensor_calibration_date"] = cal_info
+    # --- Report calibcomms that do not belong to any listed sensor --------------
+    unmatched = {}
+    for record_index, (dataset_index, name, _) in enumerate(calibration_records):
+        if record_index not in matched_records:
+            unmatched.setdefault(name, []).append(dataset_index)
+    for name, dataset_indices in unmatched.items():
+        print(
+            f"Warning: Calibration variable '{name}' in datasets "
+            f"{dataset_indices} does not belong to any listed sensor."
+        )
 
     return sensor_dict
 
