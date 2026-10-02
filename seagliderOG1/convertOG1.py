@@ -67,7 +67,8 @@ def convert_to_OG1(
     if not processed_datasets:
         raise ValueError(
             "No valid datasets were processed. Check the input datasets "
-            "and the warnings from coordinate validation.")
+            "and the warnings from coordinate validation."
+        )
 
     ds_og1 = xr.concat(processed_datasets, dim="N_MEASUREMENTS")
     ds_og1 = ds_og1.sortby("TIME")
@@ -249,12 +250,19 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
     # Check if the dataset has 'LONGITUDE' as a coordinate
     ds1_base = utilities._validate_coords(ds1_base)
     if ds1_base is None or len(ds1_base.variables) == 0:
-        return xr.Dataset(), [], pd.DataFrame(columns=["original_name",
-                                                       "OG1_name",
-                                                       "instrument",
-                                                       "instrument_type",
-                                                       "original_dimension",
-                                                       ])
+        return (
+            xr.Dataset(),
+            [],
+            pd.DataFrame(
+                columns=[
+                    "original_name",
+                    "OG1_name",
+                    "instrument",
+                    "instrument_type",
+                    "original_dimension",
+                ]
+            ),
+        )
     ## Add default dimension sg_data_point
     dims_to_merge = ["sg_data_point"]
     # add the dimensions that match the instrument names to the list

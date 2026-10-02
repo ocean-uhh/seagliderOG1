@@ -520,7 +520,12 @@ def gather_sensor_info(list_of_datasets) -> dict:
 
     def is_missing(value):
         return value is None or str(value).strip().lower() in {
-            "", "none", "nan", "nat", "unknown", "n/a"
+            "",
+            "none",
+            "nan",
+            "nat",
+            "unknown",
+            "n/a",
         }
 
     matched_records = set()
@@ -534,9 +539,9 @@ def gather_sensor_info(list_of_datasets) -> dict:
         if metadata.get("sensor_type") == "CTD":
             candidate_names.add("sg_cal_calibcomm")
         elif metadata.get("sensor_type") == "Oxygen":
-            candidate_names.update({
-                "sg_cal_calibcomm_optode", "sg_cal_calibcomm_oxygen"
-            })
+            candidate_names.update(
+                {"sg_cal_calibcomm_optode", "sg_cal_calibcomm_oxygen"}
+            )
         elif metadata.get("sensor_maker") == "WET Labs":
             candidate_names.add("sg_cal_calibcomm_wetlabs")
 
@@ -593,7 +598,8 @@ def gather_sensor_info(list_of_datasets) -> dict:
             for field in missing_fields:
                 metadata[field] = defaults[field]
             reason = (
-                "No calibration info found" if not found_calibration_text
+                "No calibration info found"
+                if not found_calibration_text
                 else f"Incomplete calibration info (missing {', '.join(missing_fields)})"
             )
             print(
