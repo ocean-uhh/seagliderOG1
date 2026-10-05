@@ -822,7 +822,7 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     This function separates each dive into two profiles: descent (down cast) and
     ascent (up cast) phases. The dive is split at the maximum pressure point,
     with the descent phase getting the dive number and ascent getting dive + 0.5.
-    Profile numbers are then calculated as 2 * dive_num_cast - 1.
+    Profile numbers are then calculated as 2 * DIVE_NUMBER - 1.
 
     Parameters
     ----------
@@ -834,80 +834,35 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     Returns
     -------
     xarray.Dataset
-        Dataset with 'dive_num_cast' and 'PROFILE_NUMBER' variables added.
+        Dataset with 'DIVE_NUMBER' and 'PROFILE_NUMBER' variables added.
 
     Notes
     -----
-    - Requires pressure variable (PRES, ctd_pressure, Pressure, or pres)
-    - Down cast: dive_num_cast = dive number
-    - Up cast: dive_num_cast = dive number + 0.5
-    - Profile numbers: descent = 2*dive-1, ascent = 2*dive
-
+    - Requires pressure variable (PRES)
     """
-    # Remove the variable dive_num_cast if it exists
-    if "dive_num_cast" in ds.variables:
-        ds = ds.drop_vars("dive_num_cast")
 
-    # Initialize the new variable with the same dimensions as dive_num
-    ds["dive_num_cast"] = (
-        ["N_MEASUREMENTS"],
-        np.full(ds.sizes["N_MEASUREMENTS"], np.nan),
+    dive_number = ds1.attrs["dive_number"]
+    ds = add_dive_number(ds, dive_number)
+
+    fill_value = -9999
+    profile_numbers = np.full(
+        ds.sizes["N_MEASUREMENTS"], fill_value, dtype=int
     )
 
-    ds = add_dive_number(ds, ds1.attrs["dive_number"])
+    if profile_numbers.size and not np.isnan(dive_number):
+        pmax_index = int(np.nanargmax(ds["PRES"].values))
 
-    # Iterate over each unique dive_num
-    for dive in np.unique(ds["DIVE_NUMBER"]):
-        # Get the indices for the current dive
-        dive_indices = np.where(ds["DIVE_NUMBER"] == dive)[0]
-        if len(dive_indices) == 0:
-            continue  # Skip if no indices found
+        profile_numbers[: pmax_index + 1] = 2 * dive_number - 1
+        profile_numbers[pmax_index + 1 :] = 2 * dive_number
 
-        # Find the start and end index for the current dive
-        start_index = dive_indices[0]
-        end_index = dive_indices[-1]
-
-        # Check for possible pressure variable names in ds, then ds1
-        possible_press_names = ["PRES", "ctd_pressure", "Pressure", "pres"]
-        press_var = next(
-            (var for var in possible_press_names if var in ds.variables), None
+    ds = ds.assign(
+        PROFILE_NUMBER=xr.DataArray(
+            profile_numbers,
+            dims=["N_MEASUREMENTS"],
         )
+    )
+    ds["PROFILE_NUMBER"].encoding["_FillValue"] = fill_value
 
-        if press_var is None:
-            press_var = next(
-                (var for var in possible_press_names if var in ds1.variables), None
-            )
-
-        if press_var is None:
-            raise ValueError(
-                "No valid pressure variable (PRES or pressure) found in ds or ds1"
-            )
-
-        # Get pressure values from the correct dataset
-        pressure_data = ds[press_var] if press_var in ds.variables else ds1[press_var]
-
-        # Find the maximum pressure value between start_index and end_index
-        pmax = np.nanmax(pressure_data[start_index : end_index + 1].values)
-
-        # Find the index where PRES attains pmax
-        pmax_index = start_index + np.argmax(
-            pressure_data[start_index : end_index + 1].values == pmax
-        )
-        # Assign dive_num to all values up to and including pmax
-        ds["dive_num_cast"][start_index : pmax_index + 1] = dive
-
-        # Assign dive_num + 0.5 to values after pmax
-        ds["dive_num_cast"][pmax_index + 1 : end_index + 1] = dive + 0.5
-        # Remove PROFILE_NUMBER if it exists
-        if "PROFILE_NUMBER" in ds.variables:
-            ds = ds.drop_vars("PROFILE_NUMBER")
-        # Calculate profile number and fill Nan with fill value
-        fill_value = -9999
-        ds["PROFILE_NUMBER"] = (
-            (2 * ds["dive_num_cast"] - 1).fillna(fill_value).astype(int)
-        )
-        # _FillValue belongs in encoding, not attrs (xarray rejects it in attrs on write).
-        ds["PROFILE_NUMBER"].encoding["_FillValue"] = fill_value
     return ds
 
 
