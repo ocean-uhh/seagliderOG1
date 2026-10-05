@@ -44,6 +44,8 @@ def convert_to_OG1(
         - varlist (list of str): A list of variable names from the input datasets.
 
     """
+    print("Start converting raw dataset to OG1 format ...")
+
     if not isinstance(list_of_datasets, list):
         list_of_datasets = [list_of_datasets]
 
@@ -53,9 +55,18 @@ def convert_to_OG1(
     varlist = []
     # This would be faster if we concatenated the basestation files first, and then processed them.
     # But we need to process them first to get the dive number, assign GPS (could be after), ?
+
+    # Find dimensions to merge across all datasets
+    ctd_dim, dims_to_merge = tools._get_merge_dimensions(list_of_datasets)
+
+    # Create a mapping from original variable names to OG1 variable names for all variables across the datasets
+    OG1_mapping = tools.OG1_name_mapping(list_of_datasets, ctd_dim, dims_to_merge)
+
+    #
+
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
         varlist = list(set(varlist + list(ds1_base.variables)))
-        ds_new, attr_warnings, OG1_mapping = process_dataset(ds1_base, firstrun)
+        ds_new, attr_warnings = process_dataset(ds1_base, OG1_mapping, dims_to_merge=dims_to_merge, firstrun=firstrun)
         if ds_new:
             processed_datasets.append(ds_new)
             firstrun = False
@@ -199,7 +210,7 @@ def convert_to_OG1(
 _log = logging.getLogger(__name__)
 
 
-def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
+def process_dataset(ds1_base: xr.Dataset, OG1_mapping: pd.DataFrame, dims_to_merge: list[str], firstrun: bool = False) -> tuple[
     xr.Dataset,  # Processed dataset with renamed variables, assigned attributes, and additional information
     list[str],  # List of warnings related to attribute assignments
     pd.DataFrame,  # Dataset containing variables starting with 'sg_cal'
@@ -210,6 +221,8 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
     ----------
     ds1_base : xarray.Dataset
         The input dataset from a basestation file, containing various attributes and variables.
+    dims_to_merge : list[str]
+        List of dimensions to merge.
     firstrun : bool, optional
         Indicates whether this is the first run of the processing pipeline. Default is False.
 
@@ -253,49 +266,18 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
         return (
             xr.Dataset(),
             [],
-            pd.DataFrame(
-                columns=[
-                    "original_name",
-                    "OG1_name",
-                    "instrument",
-                    "instrument_type",
-                    "original_dimension",
-                ]
-            ),
         )
-    ## Add default dimension sg_data_point
-    dims_to_merge = ["sg_data_point"]
-    # add the dimensions that match the instrument names to the list
-    dims, instruments = (
-        list(ds1_base.sizes),
-        ds1_base.attrs.get("instrument", "").split(),
-    )
-    for instrument in instruments:
-        if instrument + "_data_point" in dims:
-            dims_to_merge.append(instrument + "_data_point")
-        elif instrument == "sbe41" and "sbect_data_point" in dims:
-            dims_to_merge.append("sbect_data_point")
-    ### add the dimension of longitude, as this might be ctd_data_point and different from the instrument data point dimension
-    ### this the dimension that ctd relies on for pressure, depth, longitude, latitude, time
-    ctd_dim = list(ds1_base["longitude"].sizes)[0]
-    ### delete pressure and depth from dataset if pressure_dim not sg_data_point,
-    ### as then both ctd and navigation pressure exists and we only want to keep the ctd pressure, and depth is redundant with pressure
-    if ctd_dim != "sg_data_point":
-        ds1_base = ds1_base.drop_vars(["pressure", "depth"], errors="ignore")
-    dims_to_merge += [ctd_dim]
-    # Remove duplicates
-    dims_to_merge = list(set(dims_to_merge))
     # Split the dataset by unique dimensions
     split_ds = tools.split_by_unique_dims(ds1_base)
+    # only consider dimensions from dims_to_merge that are present in the dataset
+    dims_to_merge = [dim for dim in dims_to_merge if dim in ds1_base.sizes]
     merged_ds = tools.merge_datasets_along_time(split_ds, dims_to_merge, firstrun)
     # Rename variables and attributes to OG1 vocabulary
     # -------------------------------------------------------------------
     # Use variables with dimension 'sg_data_point'
     # Must be after split_ds
     # map the original variable names to the OG1 variable names, and get the instrument type for each variable
-    OG1_mapping = tools.OG1_name_mapping(
-        ds=merged_ds, ds1_base=ds1_base, ctd_dim=ctd_dim
-    )
+
     ds_new = standardise_OG10(merged_ds, OG1_mapping, firstrun)
 
     # Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)
@@ -322,7 +304,7 @@ def process_dataset(ds1_base: xr.Dataset, firstrun: bool = False) -> tuple[
         _log.info("No variables needed to be removed from the dataset.")
 
     attr_warnings: list[str] = []
-    return ds_new, attr_warnings, OG1_mapping
+    return ds_new, attr_warnings
 
 
 def standardise_OG10(

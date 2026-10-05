@@ -30,9 +30,7 @@ ctd_pressure: PRES
 conductivity: CNDC
 trajectory: TRAJECTORY
 dissolved_oxygen: DOXY
-results_time: TIME_DOXY
 dissolved_oxygen: DOXY
-results_time: TIME_DOXY
 dissolved_oxygen_sat: OXYSAT
 O2_sat: OXYSAT
 oxygen_concentration: DOXY
@@ -89,7 +87,6 @@ fluorCount: FLUOCHLA
 ad2cp_pitch: AD2CP_PITCH
 ad2cp_roll: AD2CP_ROLL
 ad2cp_heading: AD2CP_HEADING
-ad2cp_time: AD2CP_TIME
 ad2cp_pressure: AD2CP_PRES
 turbidity: TURB
 cdom: CDOM

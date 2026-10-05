@@ -40,16 +40,19 @@ INSTRUMENT_ALIASES = {
 
 
 def OG1_name_mapping(
-    ds: xr.Dataset,
-    ds1_base: xr.Dataset,
+    list_of_datasets: list[xr.Dataset],
     ctd_dim: str,
+    dims_to_merge: list[str]
 ) -> pd.DataFrame:
     """Create a mapping from original variable names to OG1 variable names.
 
-    The function examines the dataset immediately before OG1 standardization
-    and creates one table row per variable. Each row contains the original
+    The function examines all datasets before OG1 standardization and creates
+    one row per unique variable name using at least one dimension in
+    ``dims_to_merge`` (with ``ctd_dim`` always included). Each row contains the original
     variable name, its OG1 name, associated instrument, instrument type, and
-    original dimensions.
+    original dimensions. Individual time variables are replaced by one
+    ``time`` / ``TIME`` row, whose ``original_dimension`` contains a list of
+    unique time variable names on the dimensions being merged.
 
     Variables ending in ``_qc`` inherit the instrument association of their
     corresponding measurement variable. For example,
@@ -64,24 +67,26 @@ def OG1_name_mapping(
        When the same OG1 variable is also present on the CTD instrument's
        ``<instrument>_data_point`` dimension, the ``ctd_data_point`` copy is
        retained and the instrument-dimension copy is omitted.
-    3. When the CTD uses ``sg_data_point``, temperature and conductivity
-       measurements are assigned to the CTD.
-    4. When ``ctd_pressure`` is available, calculated hydrographic variables
+    3. When ``ctd_pressure`` is available, calculated hydrographic variables
        are assigned to the CTD.
-    5. The variable's ``instrument`` attribute is checked.
-    6. Dimensions named ``<instrument>_data_point`` are checked.
-    7. The variable name is checked for an instrument name or alias.
+    4. The variable's ``instrument`` attribute is checked.
+    5. Dimensions named ``<instrument>_data_point`` are checked.
+    6. The variable name is checked for an instrument name or alias.
 
     Parameters
     ----------
-    ds
-        Dataset immediately before calling ``standardise_OG10``.
-    ds1_base
-        Original basestation dataset. It provides original dimensions,
-        variable attributes, and the global ``instrument`` attribute.
+    list_of_datasets
+        List of datasets immediately before calling ``standardise_OG10``.
     ctd_dim
         Dimension used by the CTD data, for example ``ctd_data_point`` or
         ``sg_data_point``.
+
+    dims_to_merge
+        Dimensions whose variables should be included. A variable is included
+        when any of its dimensions matches; scalars are excluded. If a name
+        occurs more than once, the first eligible occurrence supplies its
+        dimensions and attributes. Instruments are collected from every
+        dataset's global ``instrument`` attribute, preserving first-seen order.
 
     Returns
     -------
@@ -89,24 +94,38 @@ def OG1_name_mapping(
         Mapping table containing ``original_name``, ``OG1_name``,
         ``instrument``, ``instrument_type``, and ``original_dimension``.
     """
-    instruments = ds1_base.attrs.get("instrument", "").split()
+    # Keep one row per name, choosing the first occurrence on a dimension
+    # that will be merged. Retain other variables for QC-parent lookup.
+    merge_dimensions = set(dims_to_merge)
+    merge_dimensions.add(ctd_dim)
+    all_sources: dict[str, xr.DataArray] = {}
+    sources: dict[str, xr.DataArray] = {}
+    instruments: list[str] = []
+
+    for dataset in list_of_datasets:
+        for instrument in dataset.attrs.get("instrument", "").split():
+            if instrument not in instruments:
+                instruments.append(instrument)
+
+        for variable_name in dataset.variables:
+            source = dataset[variable_name]
+            all_sources.setdefault(variable_name, source)
+            if merge_dimensions.intersection(source.dims):
+                sources.setdefault(variable_name, source)
+
     standard_names = vocabularies.standard_names
     sensor_vocabs = vocabularies.sensor_vocabs
-
-    has_ctd_pressure = (
-        "ctd_pressure" in ds1_base.variables or "ctd_pressure" in ds.variables
-    )
+    has_ctd_pressure = "ctd_pressure" in all_sources
 
     def variable_exists(variable_name: str) -> bool:
-        """Check whether a variable exists in either dataset."""
-        return variable_name in ds1_base.variables or variable_name in ds.variables
+        """Check whether a variable exists in any input dataset."""
+        return variable_name in all_sources
 
     def get_source(variable_name: str) -> xr.DataArray:
-        """Get a variable from the original dataset when possible."""
-        if variable_name in ds1_base.variables:
-            return ds1_base[variable_name]
-
-        return ds[variable_name]
+        """Prefer the first occurrence on a dimension being merged."""
+        if variable_name in sources:
+            return sources[variable_name]
+        return all_sources[variable_name]
 
     def get_qc_parent_name(
         variable_name: str,
@@ -190,10 +209,7 @@ def OG1_name_mapping(
         ):
             return True
 
-        # Additional rules are only needed when the CTD shares the
-        # generic sg_data_point dimension.
-        if ctd_dim.lower() != "sg_data_point":
-            return False
+        return False
 
     def find_instrument(
         variable_name: str,
@@ -343,7 +359,7 @@ def OG1_name_mapping(
 
     # dict.fromkeys removes duplicates while preserving order.
     # QC variables are deliberately retained.
-    variable_names = list(dict.fromkeys(list(ds.data_vars) + list(ds.coords)))
+    variable_names = list(sources)
 
     # Some basestation datasets contain the same CTD measurements twice:
     # once on the generic ctd_data_point dimension and once on the CTD
@@ -423,7 +439,31 @@ def OG1_name_mapping(
             }
         )
 
-    return pd.DataFrame(mapping)
+    result = pd.DataFrame(
+        mapping,
+        columns=[
+            "original_name",
+            "OG1_name",
+            "instrument",
+            "instrument_type",
+            "original_dimension",
+        ],
+    )
+
+    # Replace individual time variables with a single "time" variable.
+    time_mask = result["OG1_name"].str.fullmatch(r"TIME[0-9]*", na=False)
+    time_variable_names = result.loc[time_mask, "original_name"].tolist()
+
+    time_row = pd.DataFrame(
+        [{
+            "original_name": "time",
+            "OG1_name": "TIME",
+            "instrument": float("nan"),
+            "instrument_type": float("nan"),
+            "original_dimension": time_variable_names,
+        }]
+    )
+    return pd.concat([result.loc[~time_mask], time_row], ignore_index=True)
 
 
 def gather_sensor_info(list_of_datasets) -> dict:
@@ -686,6 +726,64 @@ def add_sensor_to_dataset(
         ds_og1[og1_name].attrs["sensor"] = f"SENSOR_{sensor_type}_{serial}"
 
     return ds_og1
+
+
+def _get_merge_dimensions(
+    list_of_datasets: list[xr.Dataset],
+) -> tuple[str, list[str]]:
+    """Return the CTD dimension and dimensions to merge across all datasets."""
+    dimensions = {
+        dimension
+        for dataset in list_of_datasets
+        for dimension in dataset.sizes
+    }
+    instruments = list(
+        dict.fromkeys(
+            instrument
+            for dataset in list_of_datasets
+            for instrument in dataset.attrs.get("instrument", "").split()
+        )
+    )
+
+    dims_to_merge = ["sg_data_point"]
+
+    for instrument in instruments:
+        instrument_dim = f"{instrument}_data_point"
+
+        if instrument_dim in dimensions:
+            dims_to_merge.append(instrument_dim)
+        elif instrument == "sbe41" and "sbect_data_point" in dimensions:
+            dims_to_merge.append("sbect_data_point")
+
+    ctd_dimensions = []
+    for dataset in list_of_datasets:
+        if "longitude" not in dataset:
+            continue
+
+        longitude_dims = dataset["longitude"].dims
+        if len(longitude_dims) != 1:
+            raise ValueError(
+                "Expected longitude to have exactly one dimension, "
+                f"got {longitude_dims}."
+            )
+
+        ctd_dimensions.append(longitude_dims[0])
+
+    ctd_dimensions = list(dict.fromkeys(ctd_dimensions))
+
+    if not ctd_dimensions:
+        raise ValueError("No input dataset contains longitude.")
+
+    if len(ctd_dimensions) > 1:
+        raise ValueError(
+            "Longitude uses different CTD dimensions across datasets: "
+            f"{ctd_dimensions}. A single ctd_dim cannot represent them."
+        )
+
+    ctd_dim = ctd_dimensions[0]
+    dims_to_merge.append(ctd_dim)
+
+    return ctd_dim, list(dict.fromkeys(dims_to_merge))
 
 
 def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Dataset:
