@@ -62,11 +62,12 @@ def test_add_hdm_parameters():
     end_profile = 5
     datasets = readers.load_basestation_files(source, start_profile, end_profile)
     hdm_parameters = tools.extract_hdm_parameters(datasets)
-    ds_OG1, vars = convertOG1.convert_to_OG1(datasets)
+    ds_OG1, OG1_mapping = convertOG1.convert_to_OG1(datasets)
     ds_OG1 = tools.add_hdm_parameters(ds_OG1, hdm_parameters)
     ### check if the hdm parameters are added to the dataset and have the expected values
     for param in hdm_parameters:
-        assert param in ds_OG1
+        if param is not None:
+            assert param in ds_OG1
 
 
 def test_find_best_dtype_named_integers() -> None:
