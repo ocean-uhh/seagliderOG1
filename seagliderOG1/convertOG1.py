@@ -44,25 +44,26 @@ def convert_to_OG1(
         - varlist (list of str): A list of variable names from the input datasets.
 
     """
-    print("Start converting raw dataset to OG1 format ...")
+    print(f"Start converting {len(list_of_datasets)} raw datasets to OG1 format ...")
 
     if not isinstance(list_of_datasets, list):
         list_of_datasets = [list_of_datasets]
 
     processed_datasets = []
-    firstrun = True
+    firstrun = False
 
     varlist = []
     # This would be faster if we concatenated the basestation files first, and then processed them.
     # But we need to process them first to get the dive number, assign GPS (could be after), ?
 
     # Find dimensions to merge across all datasets
-    ctd_dim, dims_to_merge = tools._get_merge_dimensions(list_of_datasets)
+    ctd_dim, dims_to_merge, all_dims = tools._get_merge_dimensions(list_of_datasets)
 
     # Create a mapping from original variable names to OG1 variable names for all variables across the datasets
     OG1_mapping = tools.OG1_name_mapping(list_of_datasets, ctd_dim, dims_to_merge)
 
-    #
+    # print the sumary of variables assigned or not assigned to the dataset
+    tools.print_OG1_mapping_summary(OG1_mapping,ctd_dim, dims_to_merge, all_dims)
 
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
         varlist = list(set(varlist + list(ds1_base.variables)))

@@ -381,13 +381,12 @@ def OG1_name_mapping(
         if not (
             not uses_dimension(variable_name, "ctd_data_point")
             and uses_ctd_instrument_dimension(variable_name)
-            and get_og1_base_name(
-                variable_name,
-                ctd_instrument,
-            )
+            and get_og1_base_name(variable_name, ctd_instrument)
             in preferred_ctd_og1_names
+            # Keep time variables for the final combined TIME row.
+            and get_og1_base_name(variable_name, ctd_instrument) != "TIME"
         )
-    ]
+        ]
 
     def variable_sort_key(
         variable_name: str,
@@ -436,6 +435,8 @@ def OG1_name_mapping(
                 "instrument": instrument,
                 "instrument_type": get_instrument_type(instrument),
                 "original_dimension": ", ".join(source.dims),
+                "vocabulary_name": base_og1_name,
+                #"has_vocabulary_attrs": (bool(vocabulary_attrs.get(base_og1_name)) if base_og1_name is not None else False),
             }
         )
 
@@ -452,7 +453,12 @@ def OG1_name_mapping(
 
     # Replace individual time variables with a single "time" variable.
     time_mask = result["OG1_name"].str.fullmatch(r"TIME[0-9]*", na=False)
-    time_variable_names = result.loc[time_mask, "original_name"].tolist()
+
+    time_variable_names = (
+        result.loc[time_mask, "original_dimension"]
+        + " ("
+        + result.loc[time_mask, "original_name"]
+        + ")").tolist()
 
     time_row = pd.DataFrame(
         [{
@@ -463,7 +469,18 @@ def OG1_name_mapping(
             "original_dimension": time_variable_names,
         }]
     )
-    return pd.concat([result.loc[~time_mask], time_row], ignore_index=True)
+    result = pd.concat(
+        [result.loc[~time_mask], time_row],
+        ignore_index=True,
+    )
+
+    result["has_OG1_attributes"] = result["OG1_name"].apply(
+        lambda name: bool(vocabularies.vocab_attrs.get(name, {}))
+        if pd.notna(name)
+        else False
+    )
+
+    return result
 
 
 def gather_sensor_info(list_of_datasets) -> dict:
@@ -731,7 +748,7 @@ def add_sensor_to_dataset(
 def _get_merge_dimensions(
     list_of_datasets: list[xr.Dataset],
 ) -> tuple[str, list[str]]:
-    """Return the CTD dimension and dimensions to merge across all datasets."""
+    """Return the CTD dimension and dimensions to merge across all datasets as well as all dimensions present in the datasets"""
     dimensions = {
         dimension
         for dataset in list_of_datasets
@@ -783,7 +800,70 @@ def _get_merge_dimensions(
     ctd_dim = ctd_dimensions[0]
     dims_to_merge.append(ctd_dim)
 
-    return ctd_dim, list(dict.fromkeys(dims_to_merge))
+    return ctd_dim, list(dict.fromkeys(dims_to_merge)), list(dict.fromkeys(dimensions))
+
+def print_OG1_mapping_summary(
+    OG1_mapping: pd.DataFrame,
+    ctd_dim: str,
+    merge_dims: list[str],
+    all_dims: list[str],
+) -> None:
+    """Print dimensions, mapped variable counts, and vocabulary gaps."""
+    has_og1_name = (
+        OG1_mapping["OG1_name"].notna()
+        & OG1_mapping["OG1_name"].ne("")
+    )
+    time_mask = OG1_mapping["OG1_name"].eq("TIME")
+
+    variables = OG1_mapping.loc[has_og1_name & ~time_mask]
+
+    for entry in OG1_mapping.loc[
+        time_mask, "original_dimension"
+    ].explode():
+        # Each entry has the format "dimension (original_time_name)".
+        dimension, time_name = entry.rsplit(" (", 1)
+        time_name = time_name.removesuffix(")")
+
+        variable_count = variables["original_dimension"].apply(
+            lambda dims: dimension in dims.split(", ")
+        ).sum()
+
+        print(
+            f"Adding dimension '{dimension}' with time variable '{time_name}' "
+            f"and {variable_count} non-time variables."
+        )
+
+    selected_dims = set(merge_dims) | {ctd_dim}
+    unused_dims = [dim for dim in all_dims if dim not in selected_dims]
+
+    print(
+        f"\nThe following dimensions will not be merged into the new dataset: "
+        f"{unused_dims}"
+        "\nIf instrument data is missing, make sure its dimension follows the "
+        "naming convention '<instrument>_data_point'"
+        "\nfrom the ds.attrs['instrument'] list."
+    )
+
+    print(
+        f"\nTotal: {len(variables)} non-time variables "
+        f"+ {int(time_mask.sum())} combined TIME variable."
+    )
+
+    unassigned = OG1_mapping.loc[
+        ~has_og1_name, "original_name"
+    ].tolist()
+
+    print(f"\nVariables without an assigned OG1 name: {unassigned}")
+
+    missing_attrs = OG1_mapping.loc[
+        has_og1_name & ~OG1_mapping["has_OG1_attributes"],
+        "OG1_name",
+    ].tolist()
+
+    if missing_attrs:
+        print(
+            f"OG1 variables without vocabulary attributes: {missing_attrs}"
+        )
 
 
 def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Dataset:
