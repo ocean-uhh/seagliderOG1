@@ -63,11 +63,13 @@ def convert_to_OG1(
     OG1_mapping = tools.OG1_name_mapping(list_of_datasets, ctd_dim, dims_to_merge)
 
     # print the sumary of variables assigned or not assigned to the dataset
-    tools.print_OG1_mapping_summary(OG1_mapping,ctd_dim, dims_to_merge, all_dims)
+    tools.print_OG1_mapping_summary(OG1_mapping, ctd_dim, dims_to_merge, all_dims)
 
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
         varlist = list(set(varlist + list(ds1_base.variables)))
-        ds_new, attr_warnings = process_dataset(ds1_base, OG1_mapping, dims_to_merge=dims_to_merge, firstrun=firstrun)
+        ds_new, attr_warnings = process_dataset(
+            ds1_base, OG1_mapping, dims_to_merge=dims_to_merge, firstrun=firstrun
+        )
         if ds_new:
             processed_datasets.append(ds_new)
             firstrun = False
@@ -205,13 +207,18 @@ def convert_to_OG1(
             ds_og1 = tools.convert_qc_flags(ds_og1, qc_name)
     ds_og1 = tools.set_best_dtype(ds_og1)
 
-    return ds_og1, varlist
+    return ds_og1, OG1_mapping
 
 
 _log = logging.getLogger(__name__)
 
 
-def process_dataset(ds1_base: xr.Dataset, OG1_mapping: pd.DataFrame, dims_to_merge: list[str], firstrun: bool = False) -> tuple[
+def process_dataset(
+    ds1_base: xr.Dataset,
+    OG1_mapping: pd.DataFrame,
+    dims_to_merge: list[str],
+    firstrun: bool = False,
+) -> tuple[
     xr.Dataset,  # Processed dataset with renamed variables, assigned attributes, and additional information
     list[str],  # List of warnings related to attribute assignments
     pd.DataFrame,  # Dataset containing variables starting with 'sg_cal'

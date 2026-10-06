@@ -40,9 +40,7 @@ INSTRUMENT_ALIASES = {
 
 
 def OG1_name_mapping(
-    list_of_datasets: list[xr.Dataset],
-    ctd_dim: str,
-    dims_to_merge: list[str]
+    list_of_datasets: list[xr.Dataset], ctd_dim: str, dims_to_merge: list[str]
 ) -> pd.DataFrame:
     """Create a mapping from original variable names to OG1 variable names.
 
@@ -94,6 +92,7 @@ def OG1_name_mapping(
         Mapping table containing ``original_name``, ``OG1_name``,
         ``instrument``, ``instrument_type``, and ``original_dimension``.
     """
+    list_of_datasets = list(list_of_datasets)
     # Keep one row per name, choosing the first occurrence on a dimension
     # that will be merged. Retain other variables for QC-parent lookup.
     merge_dimensions = set(dims_to_merge)
@@ -386,7 +385,7 @@ def OG1_name_mapping(
             # Keep time variables for the final combined TIME row.
             and get_og1_base_name(variable_name, ctd_instrument) != "TIME"
         )
-        ]
+    ]
 
     def variable_sort_key(
         variable_name: str,
@@ -436,7 +435,6 @@ def OG1_name_mapping(
                 "instrument_type": get_instrument_type(instrument),
                 "original_dimension": ", ".join(source.dims),
                 "vocabulary_name": base_og1_name,
-                #"has_vocabulary_attrs": (bool(vocabulary_attrs.get(base_og1_name)) if base_og1_name is not None else False),
             }
         )
 
@@ -458,16 +456,19 @@ def OG1_name_mapping(
         result.loc[time_mask, "original_dimension"]
         + " ("
         + result.loc[time_mask, "original_name"]
-        + ")").tolist()
+        + ")"
+    ).tolist()
 
     time_row = pd.DataFrame(
-        [{
-            "original_name": "time",
-            "OG1_name": "TIME",
-            "instrument": float("nan"),
-            "instrument_type": float("nan"),
-            "original_dimension": time_variable_names,
-        }]
+        [
+            {
+                "original_name": "time",
+                "OG1_name": "TIME",
+                "instrument": float("nan"),
+                "instrument_type": float("nan"),
+                "original_dimension": time_variable_names,
+            }
+        ]
     )
     result = pd.concat(
         [result.loc[~time_mask], time_row],
@@ -475,9 +476,9 @@ def OG1_name_mapping(
     )
 
     result["has_OG1_attributes"] = result["OG1_name"].apply(
-        lambda name: bool(vocabularies.vocab_attrs.get(name, {}))
-        if pd.notna(name)
-        else False
+        lambda name: (
+            bool(vocabularies.vocab_attrs.get(name, {})) if pd.notna(name) else False
+        )
     )
 
     return result
@@ -749,10 +750,9 @@ def _get_merge_dimensions(
     list_of_datasets: list[xr.Dataset],
 ) -> tuple[str, list[str]]:
     """Return the CTD dimension and dimensions to merge across all datasets as well as all dimensions present in the datasets"""
+    list_of_datasets = list(list_of_datasets)
     dimensions = {
-        dimension
-        for dataset in list_of_datasets
-        for dimension in dataset.sizes
+        dimension for dataset in list_of_datasets for dimension in dataset.sizes
     }
     instruments = list(
         dict.fromkeys(
@@ -802,6 +802,7 @@ def _get_merge_dimensions(
 
     return ctd_dim, list(dict.fromkeys(dims_to_merge)), list(dict.fromkeys(dimensions))
 
+
 def print_OG1_mapping_summary(
     OG1_mapping: pd.DataFrame,
     ctd_dim: str,
@@ -809,24 +810,21 @@ def print_OG1_mapping_summary(
     all_dims: list[str],
 ) -> None:
     """Print dimensions, mapped variable counts, and vocabulary gaps."""
-    has_og1_name = (
-        OG1_mapping["OG1_name"].notna()
-        & OG1_mapping["OG1_name"].ne("")
-    )
+    has_og1_name = OG1_mapping["OG1_name"].notna() & OG1_mapping["OG1_name"].ne("")
     time_mask = OG1_mapping["OG1_name"].eq("TIME")
 
     variables = OG1_mapping.loc[has_og1_name & ~time_mask]
 
-    for entry in OG1_mapping.loc[
-        time_mask, "original_dimension"
-    ].explode():
+    for entry in OG1_mapping.loc[time_mask, "original_dimension"].explode():
         # Each entry has the format "dimension (original_time_name)".
         dimension, time_name = entry.rsplit(" (", 1)
         time_name = time_name.removesuffix(")")
 
-        variable_count = variables["original_dimension"].apply(
-            lambda dims: dimension in dims.split(", ")
-        ).sum()
+        variable_count = (
+            variables["original_dimension"]
+            .apply(lambda dims: dimension in dims.split(", "))
+            .sum()
+        )
 
         print(
             f"Adding dimension '{dimension}' with time variable '{time_name}' "
@@ -849,9 +847,7 @@ def print_OG1_mapping_summary(
         f"+ {int(time_mask.sum())} combined TIME variable."
     )
 
-    unassigned = OG1_mapping.loc[
-        ~has_og1_name, "original_name"
-    ].tolist()
+    unassigned = OG1_mapping.loc[~has_og1_name, "original_name"].tolist()
 
     print(f"\nVariables without an assigned OG1 name: {unassigned}")
 
@@ -861,9 +857,7 @@ def print_OG1_mapping_summary(
     ].tolist()
 
     if missing_attrs:
-        print(
-            f"OG1 variables without vocabulary attributes: {missing_attrs}"
-        )
+        print(f"OG1 variables without vocabulary attributes: {missing_attrs}")
 
 
 def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Dataset:
@@ -925,9 +919,7 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     ds = add_dive_number(ds, dive_number)
 
     fill_value = -9999
-    profile_numbers = np.full(
-        ds.sizes["N_MEASUREMENTS"], fill_value, dtype=int
-    )
+    profile_numbers = np.full(ds.sizes["N_MEASUREMENTS"], fill_value, dtype=int)
 
     if profile_numbers.size and not np.isnan(dive_number):
         pmax_index = int(np.nanargmax(ds["PRES"].values))
