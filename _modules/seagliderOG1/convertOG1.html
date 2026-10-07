@@ -132,18 +132,32 @@
 <span class="sd">        - varlist (list of str): A list of variable names from the input datasets.</span>
 
 <span class="sd">    """</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Start converting </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span><span class="si">}</span><span class="s2"> raw datasets to OG1 format ..."</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">list_of_datasets</span> <span class="o">=</span> <span class="p">[</span><span class="n">list_of_datasets</span><span class="p">]</span>
 
     <span class="n">processed_datasets</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">firstrun</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">firstrun</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="n">varlist</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="c1"># This would be faster if we concatenated the basestation files first, and then processed them.</span>
     <span class="c1"># But we need to process them first to get the dive number, assign GPS (could be after), ?</span>
+
+    <span class="c1"># Find dimensions to merge across all datasets</span>
+    <span class="n">ctd_dim</span><span class="p">,</span> <span class="n">dims_to_merge</span><span class="p">,</span> <span class="n">all_dims</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">_get_merge_dimensions</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
+
+    <span class="c1"># Create a mapping from original variable names to OG1 variable names for all variables across the datasets</span>
+    <span class="n">OG1_mapping</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">OG1_name_mapping</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">ctd_dim</span><span class="p">,</span> <span class="n">dims_to_merge</span><span class="p">)</span>
+
+    <span class="c1"># print the sumary of variables assigned or not assigned to the dataset</span>
+    <span class="n">tools</span><span class="o">.</span><span class="n">print_OG1_mapping_summary</span><span class="p">(</span><span class="n">OG1_mapping</span><span class="p">,</span> <span class="n">ctd_dim</span><span class="p">,</span> <span class="n">dims_to_merge</span><span class="p">,</span> <span class="n">all_dims</span><span class="p">)</span>
+
     <span class="k">for</span> <span class="n">ds1_base</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Processing datasets"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"dataset"</span><span class="p">):</span>
         <span class="n">varlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">varlist</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span><span class="p">)))</span>
-        <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span><span class="p">,</span> <span class="n">OG1_mapping</span> <span class="o">=</span> <span class="n">process_dataset</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
+        <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span> <span class="o">=</span> <span class="n">process_dataset</span><span class="p">(</span>
+            <span class="n">ds1_base</span><span class="p">,</span> <span class="n">OG1_mapping</span><span class="p">,</span> <span class="n">dims_to_merge</span><span class="o">=</span><span class="n">dims_to_merge</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="n">firstrun</span>
+        <span class="p">)</span>
         <span class="k">if</span> <span class="n">ds_new</span><span class="p">:</span>
             <span class="n">processed_datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
             <span class="n">firstrun</span> <span class="o">=</span> <span class="kc">False</span>
@@ -152,12 +166,18 @@
                 <span class="sa">f</span><span class="s2">"Dataset for dive number </span><span class="si">{</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">'dive_number'</span><span class="p">]</span><span class="si">}</span><span class="s2"> is empty or invalid."</span>
             <span class="p">)</span>
 
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">processed_datasets</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"No valid datasets were processed. Check the input datasets "</span>
+            <span class="s2">"and the warnings from coordinate validation."</span>
+        <span class="p">)</span>
+
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">processed_datasets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">)</span>
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span>
 
     <span class="c1"># Add sensor information to the dataset - can be done on the concatenated data</span>
     <span class="c1"># -----------------------------------------------------------------------------</span>
-    <span class="n">sensor_dict</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">gather_sensor_info</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">sensor_dict</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">gather_sensor_info</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
     <span class="c1"># delete old sensor attribute if it exists and add new one</span>
     <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">"sensor"</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
@@ -275,7 +295,7 @@
             <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">convert_qc_flags</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">qc_name</span><span class="p">)</span>
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">set_best_dtype</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">ds_og1</span><span class="p">,</span> <span class="n">varlist</span></div>
+    <span class="k">return</span> <span class="n">ds_og1</span><span class="p">,</span> <span class="n">OG1_mapping</span></div>
 
 
 
@@ -284,7 +304,12 @@
 
 <div class="viewcode-block" id="process_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.process_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">process_dataset</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_dataset</span><span class="p">(</span>
+    <span class="n">ds1_base</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">OG1_mapping</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">dims_to_merge</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
     <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>  <span class="c1"># Processed dataset with renamed variables, assigned attributes, and additional information</span>
     <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>  <span class="c1"># List of warnings related to attribute assignments</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>  <span class="c1"># Dataset containing variables starting with 'sg_cal'</span>
@@ -295,6 +320,8 @@
 <span class="sd">    ----------</span>
 <span class="sd">    ds1_base : xarray.Dataset</span>
 <span class="sd">        The input dataset from a basestation file, containing various attributes and variables.</span>
+<span class="sd">    dims_to_merge : list[str]</span>
+<span class="sd">        List of dimensions to merge.</span>
 <span class="sd">    firstrun : bool, optional</span>
 <span class="sd">        Indicates whether this is the first run of the processing pipeline. Default is False.</span>
 
@@ -335,40 +362,21 @@
     <span class="c1"># Check if the dataset has 'LONGITUDE' as a coordinate</span>
     <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_validate_coords</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">ds1_base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(),</span> <span class="p">[]</span>
-    <span class="c1">## Add default dimension sg_data_point</span>
-    <span class="n">dims_to_merge</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"sg_data_point"</span><span class="p">]</span>
-    <span class="c1"># add the dimensions that match the instrument names to the list</span>
-    <span class="n">dims</span><span class="p">,</span> <span class="n">instruments</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">sizes</span><span class="p">),</span>
-        <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"instrument"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span>
-    <span class="p">)</span>
-    <span class="k">for</span> <span class="n">instrument</span> <span class="ow">in</span> <span class="n">instruments</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">instrument</span> <span class="o">+</span> <span class="s2">"_data_point"</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">:</span>
-            <span class="n">dims_to_merge</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instrument</span> <span class="o">+</span> <span class="s2">"_data_point"</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">instrument</span> <span class="o">==</span> <span class="s2">"sbe41"</span> <span class="ow">and</span> <span class="s2">"sbect_data_point"</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">:</span>
-            <span class="n">dims_to_merge</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"sbect_data_point"</span><span class="p">)</span>
-    <span class="c1">### add the dimension of longitude, as this might be ctd_data_point and different from the instrument data point dimension</span>
-    <span class="c1">### this the dimension that ctd relies on for pressure, depth, longitude, latitude, time</span>
-    <span class="n">ctd_dim</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">[</span><span class="s2">"longitude"</span><span class="p">]</span><span class="o">.</span><span class="n">sizes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="c1">### delete pressure and depth from dataset if pressure_dim not sg_data_point,</span>
-    <span class="c1">### as then both ctd and navigation pressure exists and we only want to keep the ctd pressure, and depth is redundant with pressure</span>
-    <span class="k">if</span> <span class="n">ctd_dim</span> <span class="o">!=</span> <span class="s2">"sg_data_point"</span><span class="p">:</span>
-        <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">([</span><span class="s2">"pressure"</span><span class="p">,</span> <span class="s2">"depth"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">)</span>
-    <span class="n">dims_to_merge</span> <span class="o">+=</span> <span class="p">[</span><span class="n">ctd_dim</span><span class="p">]</span>
-    <span class="c1"># Remove duplicates</span>
-    <span class="n">dims_to_merge</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">dims_to_merge</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(),</span>
+            <span class="p">[],</span>
+        <span class="p">)</span>
     <span class="c1"># Split the dataset by unique dimensions</span>
     <span class="n">split_ds</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">split_by_unique_dims</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
+    <span class="c1"># only consider dimensions from dims_to_merge that are present in the dataset</span>
+    <span class="n">dims_to_merge</span> <span class="o">=</span> <span class="p">[</span><span class="n">dim</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">dims_to_merge</span> <span class="k">if</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">sizes</span><span class="p">]</span>
     <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">merge_datasets_along_time</span><span class="p">(</span><span class="n">split_ds</span><span class="p">,</span> <span class="n">dims_to_merge</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
     <span class="c1"># Rename variables and attributes to OG1 vocabulary</span>
     <span class="c1"># -------------------------------------------------------------------</span>
     <span class="c1"># Use variables with dimension 'sg_data_point'</span>
     <span class="c1"># Must be after split_ds</span>
     <span class="c1"># map the original variable names to the OG1 variable names, and get the instrument type for each variable</span>
-    <span class="n">OG1_mapping</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">OG1_name_mapping</span><span class="p">(</span>
-        <span class="n">ds</span><span class="o">=</span><span class="n">merged_ds</span><span class="p">,</span> <span class="n">ds1_base</span><span class="o">=</span><span class="n">ds1_base</span><span class="p">,</span> <span class="n">ctd_dim</span><span class="o">=</span><span class="n">ctd_dim</span>
-    <span class="p">)</span>
+
     <span class="n">ds_new</span> <span class="o">=</span> <span class="n">standardise_OG10</span><span class="p">(</span><span class="n">merged_ds</span><span class="p">,</span> <span class="n">OG1_mapping</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
 
     <span class="c1"># Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)</span>
@@ -394,8 +402,8 @@
     <span class="k">elif</span> <span class="n">firstrun</span><span class="p">:</span>
         <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No variables needed to be removed from the dataset."</span><span class="p">)</span>
 
-    <span class="n">attr_warnings</span> <span class="o">=</span> <span class="s2">""</span>
-    <span class="k">return</span> <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span><span class="p">,</span> <span class="n">OG1_mapping</span></div>
+    <span class="n">attr_warnings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span></div>
 
 
 

@@ -128,16 +128,17 @@
 <div class="viewcode-block" id="OG1_name_mapping">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.OG1_name_mapping">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">OG1_name_mapping</span><span class="p">(</span>
-    <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
-    <span class="n">ds1_base</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
-    <span class="n">ctd_dim</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">list_of_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span> <span class="n">ctd_dim</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dims_to_merge</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Create a mapping from original variable names to OG1 variable names.</span>
 
-<span class="sd">    The function examines the dataset immediately before OG1 standardization</span>
-<span class="sd">    and creates one table row per variable. Each row contains the original</span>
+<span class="sd">    The function examines all datasets before OG1 standardization and creates</span>
+<span class="sd">    one row per unique variable name using at least one dimension in</span>
+<span class="sd">    ``dims_to_merge`` (with ``ctd_dim`` always included). Each row contains the original</span>
 <span class="sd">    variable name, its OG1 name, associated instrument, instrument type, and</span>
-<span class="sd">    original dimensions.</span>
+<span class="sd">    original dimensions. Individual time variables are replaced by one</span>
+<span class="sd">    ``time`` / ``TIME`` row, whose ``original_dimension`` contains a list of</span>
+<span class="sd">    unique time variable names on the dimensions being merged.</span>
 
 <span class="sd">    Variables ending in ``_qc`` inherit the instrument association of their</span>
 <span class="sd">    corresponding measurement variable. For example,</span>
@@ -152,24 +153,26 @@
 <span class="sd">       When the same OG1 variable is also present on the CTD instrument's</span>
 <span class="sd">       ``&lt;instrument&gt;_data_point`` dimension, the ``ctd_data_point`` copy is</span>
 <span class="sd">       retained and the instrument-dimension copy is omitted.</span>
-<span class="sd">    3. When the CTD uses ``sg_data_point``, temperature and conductivity</span>
-<span class="sd">       measurements are assigned to the CTD.</span>
-<span class="sd">    4. When ``ctd_pressure`` is available, calculated hydrographic variables</span>
+<span class="sd">    3. When ``ctd_pressure`` is available, calculated hydrographic variables</span>
 <span class="sd">       are assigned to the CTD.</span>
-<span class="sd">    5. The variable's ``instrument`` attribute is checked.</span>
-<span class="sd">    6. Dimensions named ``&lt;instrument&gt;_data_point`` are checked.</span>
-<span class="sd">    7. The variable name is checked for an instrument name or alias.</span>
+<span class="sd">    4. The variable's ``instrument`` attribute is checked.</span>
+<span class="sd">    5. Dimensions named ``&lt;instrument&gt;_data_point`` are checked.</span>
+<span class="sd">    6. The variable name is checked for an instrument name or alias.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    ds</span>
-<span class="sd">        Dataset immediately before calling ``standardise_OG10``.</span>
-<span class="sd">    ds1_base</span>
-<span class="sd">        Original basestation dataset. It provides original dimensions,</span>
-<span class="sd">        variable attributes, and the global ``instrument`` attribute.</span>
+<span class="sd">    list_of_datasets</span>
+<span class="sd">        List of datasets immediately before calling ``standardise_OG10``.</span>
 <span class="sd">    ctd_dim</span>
 <span class="sd">        Dimension used by the CTD data, for example ``ctd_data_point`` or</span>
 <span class="sd">        ``sg_data_point``.</span>
+
+<span class="sd">    dims_to_merge</span>
+<span class="sd">        Dimensions whose variables should be included. A variable is included</span>
+<span class="sd">        when any of its dimensions matches; scalars are excluded. If a name</span>
+<span class="sd">        occurs more than once, the first eligible occurrence supplies its</span>
+<span class="sd">        dimensions and attributes. Instruments are collected from every</span>
+<span class="sd">        dataset's global ``instrument`` attribute, preserving first-seen order.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -177,24 +180,39 @@
 <span class="sd">        Mapping table containing ``original_name``, ``OG1_name``,</span>
 <span class="sd">        ``instrument``, ``instrument_type``, and ``original_dimension``.</span>
 <span class="sd">    """</span>
-    <span class="n">instruments</span> <span class="o">=</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"instrument"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="n">list_of_datasets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
+    <span class="c1"># Keep one row per name, choosing the first occurrence on a dimension</span>
+    <span class="c1"># that will be merged. Retain other variables for QC-parent lookup.</span>
+    <span class="n">merge_dimensions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dims_to_merge</span><span class="p">)</span>
+    <span class="n">merge_dimensions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ctd_dim</span><span class="p">)</span>
+    <span class="n">all_sources</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">sources</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">instruments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">list_of_datasets</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">instrument</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"instrument"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">instrument</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">instruments</span><span class="p">:</span>
+                <span class="n">instruments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instrument</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+            <span class="n">all_sources</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">merge_dimensions</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">dims</span><span class="p">):</span>
+                <span class="n">sources</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+
     <span class="n">standard_names</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">standard_names</span>
     <span class="n">sensor_vocabs</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span>
-
-    <span class="n">has_ctd_pressure</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s2">"ctd_pressure"</span> <span class="ow">in</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span> <span class="ow">or</span> <span class="s2">"ctd_pressure"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span>
-    <span class="p">)</span>
+    <span class="n">has_ctd_pressure</span> <span class="o">=</span> <span class="s2">"ctd_pressure"</span> <span class="ow">in</span> <span class="n">all_sources</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">variable_exists</span><span class="p">(</span><span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Check whether a variable exists in either dataset."""</span>
-        <span class="k">return</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span> <span class="ow">or</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span>
+<span class="w">        </span><span class="sd">"""Check whether a variable exists in any input dataset."""</span>
+        <span class="k">return</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">all_sources</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_source</span><span class="p">(</span><span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Get a variable from the original dataset when possible."""</span>
-        <span class="k">if</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">ds1_base</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="n">ds</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+<span class="w">        </span><span class="sd">"""Prefer the first occurrence on a dimension being merged."""</span>
+        <span class="k">if</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sources</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">all_sources</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_qc_parent_name</span><span class="p">(</span>
         <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -278,10 +296,7 @@
         <span class="p">):</span>
             <span class="k">return</span> <span class="kc">True</span>
 
-        <span class="c1"># Additional rules are only needed when the CTD shares the</span>
-        <span class="c1"># generic sg_data_point dimension.</span>
-        <span class="k">if</span> <span class="n">ctd_dim</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"sg_data_point"</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">find_instrument</span><span class="p">(</span>
         <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -431,7 +446,7 @@
 
     <span class="c1"># dict.fromkeys removes duplicates while preserving order.</span>
     <span class="c1"># QC variables are deliberately retained.</span>
-    <span class="n">variable_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)))</span>
+    <span class="n">variable_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sources</span><span class="p">)</span>
 
     <span class="c1"># Some basestation datasets contain the same CTD measurements twice:</span>
     <span class="c1"># once on the generic ctd_data_point dimension and once on the CTD</span>
@@ -453,11 +468,10 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
             <span class="ow">not</span> <span class="n">uses_dimension</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="s2">"ctd_data_point"</span><span class="p">)</span>
             <span class="ow">and</span> <span class="n">uses_ctd_instrument_dimension</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="n">get_og1_base_name</span><span class="p">(</span>
-                <span class="n">variable_name</span><span class="p">,</span>
-                <span class="n">ctd_instrument</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="ow">and</span> <span class="n">get_og1_base_name</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">ctd_instrument</span><span class="p">)</span>
             <span class="ow">in</span> <span class="n">preferred_ctd_og1_names</span>
+            <span class="c1"># Keep time variables for the final combined TIME row.</span>
+            <span class="ow">and</span> <span class="n">get_og1_base_name</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">ctd_instrument</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">"TIME"</span>
         <span class="p">)</span>
     <span class="p">]</span>
 
@@ -508,30 +522,76 @@
                 <span class="s2">"instrument"</span><span class="p">:</span> <span class="n">instrument</span><span class="p">,</span>
                 <span class="s2">"instrument_type"</span><span class="p">:</span> <span class="n">get_instrument_type</span><span class="p">(</span><span class="n">instrument</span><span class="p">),</span>
                 <span class="s2">"original_dimension"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">dims</span><span class="p">),</span>
+                <span class="s2">"vocabulary_name"</span><span class="p">:</span> <span class="n">base_og1_name</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span></div>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="n">mapping</span><span class="p">,</span>
+        <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+            <span class="s2">"original_name"</span><span class="p">,</span>
+            <span class="s2">"OG1_name"</span><span class="p">,</span>
+            <span class="s2">"instrument"</span><span class="p">,</span>
+            <span class="s2">"instrument_type"</span><span class="p">,</span>
+            <span class="s2">"original_dimension"</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Replace individual time variables with a single "time" variable.</span>
+    <span class="n">time_mask</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">"OG1_name"</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="sa">r</span><span class="s2">"TIME[0-9]*"</span><span class="p">,</span> <span class="n">na</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">time_variable_names</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_mask</span><span class="p">,</span> <span class="s2">"original_dimension"</span><span class="p">]</span>
+        <span class="o">+</span> <span class="s2">" ("</span>
+        <span class="o">+</span> <span class="n">result</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_mask</span><span class="p">,</span> <span class="s2">"original_name"</span><span class="p">]</span>
+        <span class="o">+</span> <span class="s2">")"</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="n">time_row</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">"original_name"</span><span class="p">:</span> <span class="s2">"time"</span><span class="p">,</span>
+                <span class="s2">"OG1_name"</span><span class="p">:</span> <span class="s2">"TIME"</span><span class="p">,</span>
+                <span class="s2">"instrument"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span>
+                <span class="s2">"instrument_type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span>
+                <span class="s2">"original_dimension"</span><span class="p">:</span> <span class="n">time_variable_names</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">result</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">time_mask</span><span class="p">],</span> <span class="n">time_row</span><span class="p">],</span>
+        <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">result</span><span class="p">[</span><span class="s2">"has_OG1_attributes"</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">"OG1_name"</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">name</span><span class="p">:</span> <span class="p">(</span>
+            <span class="nb">bool</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{}))</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notna</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
 
 
 
 <div class="viewcode-block" id="gather_sensor_info">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.gather_sensor_info">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">gather_sensor_info</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Gathers sensor information from an OG1 base dataset.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">gather_sensor_info</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Gathers sensor information from a list of OG1 base datasets.</span>
 
 <span class="sd">    Extracts:</span>
-<span class="sd">      - sensor names (from global 'instrument' attribute)</span>
+<span class="sd">      - unique sensor names (from global 'instrument' attributes)</span>
 <span class="sd">      - technical specs (from OG1_sensor_attrs.yaml vocabularies)</span>
 <span class="sd">      - serial numbers + calibration dates (from calibcomm variables)</span>
-<span class="sd">      - variables belonging to each sensor</span>
+
+<span class="sd">    Checks calibration information across all datasets. Missing information</span>
+<span class="sd">    is reported once per sensor. Conflicting serial numbers or calibration</span>
+<span class="sd">    dates are reported, and the first nonempty value is retained.</span>
+<span class="sd">    Calibration variables not belonging to any listed sensor are reported.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    ds1_base : xarray.Dataset</span>
-<span class="sd">        The raw base dataset containing sensor metadata.</span>
-<span class="sd">    first_run : bool</span>
-<span class="sd">        If True, informational print statements are shown.</span>
+<span class="sd">    list_of_datasets : iterable of xarray.Dataset</span>
+<span class="sd">        The raw base datasets containing sensor metadata.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -539,26 +599,28 @@
 <span class="sd">        Dictionary with one key per sensor, each containing metadata.</span>
 
 <span class="sd">    """</span>
+    <span class="n">datasets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
+
     <span class="c1"># -------------------------------------------------------------------------</span>
-    <span class="c1"># 1. Extract sensor names from the 'instrument' global attribute</span>
+    <span class="c1"># 1. Extract sensor names from the 'instrument' global attributes</span>
     <span class="c1"># -------------------------------------------------------------------------</span>
     <span class="n">sensor_dict</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="k">if</span> <span class="s2">"instrument"</span> <span class="ow">in</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
-        <span class="n">sensor_names</span> <span class="o">=</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"instrument"</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-        <span class="c1"># Remove unneeded entries</span>
-        <span class="k">if</span> <span class="s2">"magnetometer"</span> <span class="ow">in</span> <span class="n">sensor_names</span><span class="p">:</span>
-            <span class="n">sensor_names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">"magnetometer"</span><span class="p">)</span>
-        <span class="c1"># Initialize dictionary entries</span>
-        <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_names</span><span class="p">:</span>
-            <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">else</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">datasets</span><span class="p">:</span>
+        <span class="n">instrument</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"instrument"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">instrument</span> <span class="ow">and</span> <span class="n">instrument</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">sensor_names</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="c1"># Remove unneeded entries and initialize unique dictionary entries</span>
+            <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_names</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">sensor</span> <span class="o">!=</span> <span class="s2">"magnetometer"</span><span class="p">:</span>
+                    <span class="n">sensor_dict</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="p">{})</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">sensor_dict</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="s2">"Warning: 'instrument' attribute not found in the dataset. Therefore no sensor information extracted from attributes. "</span>
-            <span class="s2">"If you have sensor information in the attributes, please add an 'instrument' attribute with the sensor names separated by spaces."</span>
-            <span class="s2">" For example: ds.attrs['instrument'] = 'sbe41 wlbb2f sbe43'"</span>
+            <span class="s2">"Warning: No sensors found in the combined instrument attributes. "</span>
+            <span class="s2">"Add sensor names separated by spaces, "</span>
+            <span class="s2">"for example: ds.attrs['instrument'] = 'sbe41 wlbb2f sbe43'."</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">sensor_dict</span>
 
     <span class="c1"># -------------------------------------------------------------------------</span>
     <span class="c1"># 2. Add technical specifications from OG1 vocabularies</span>
@@ -569,73 +631,141 @@
     <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">standard_names</span><span class="p">:</span>
             <span class="n">new_name</span> <span class="o">=</span> <span class="n">standard_names</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span>
-            <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span> <span class="o">=</span> <span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">new_name</span><span class="p">]</span>
+            <span class="c1"># Copy so calibration metadata does not modify shared vocabularies.</span>
+            <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">sensor_vocabs</span><span class="p">[</span><span class="n">new_name</span><span class="p">])</span>
             <span class="nb">print</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"Adding technical specifications for '</span><span class="si">{</span><span class="n">new_name</span><span class="si">}</span><span class="s2">' "</span>
                 <span class="sa">f</span><span class="s2">"(sensor key: '</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">') from OG1_sensor_attrs.yaml"</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Warning: Sensor '</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">' not found in standard names vocabulary. "</span>
-                <span class="s2">"No technical specifications added."</span>
+                <span class="sa">f</span><span class="s2">"Warning: Sensor '</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">' not found in standard names "</span>
+                <span class="s2">"vocabulary. No technical specifications added."</span>
             <span class="p">)</span>
 
     <span class="c1"># -------------------------------------------------------------------------</span>
     <span class="c1"># 3. Extract calibration information (serial number + calibration dates)</span>
     <span class="c1"># -------------------------------------------------------------------------</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">varname</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">base</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="k">if</span> <span class="n">varname</span> <span class="ow">in</span> <span class="n">base</span><span class="o">.</span><span class="n">variables</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="c1"># Index all calibcomms once to avoid scanning every dataset for each sensor.</span>
+    <span class="n">calibration_records</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">records_by_name</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">dataset_index</span><span class="p">,</span> <span class="n">base</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">base</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"sg_cal_calibcomm"</span><span class="p">):</span>
+                <span class="n">record_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">calibration_records</span><span class="p">)</span>
+                <span class="n">record</span> <span class="o">=</span> <span class="p">(</span><span class="n">dataset_index</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">base</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+                <span class="n">calibration_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+                <span class="n">records_by_name</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">record_index</span><span class="p">,</span> <span class="n">record</span><span class="p">))</span>
 
     <span class="n">sensor_nums</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sensor_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-    <span class="n">available_calibcomm</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span> <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"sg_cal_calibcomm"</span><span class="p">)</span>
-    <span class="p">]</span>
+    <span class="n">available_calibcomm</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">records_by_name</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">available_calibcomm</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">sensor_nums</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"Warning: More calibration variables found as stated in instrument attributes!</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"The following calibration variables were found: </span><span class="si">{</span><span class="n">available_calibcomm</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="sa">f</span><span class="s2">"But only </span><span class="si">{</span><span class="n">sensor_nums</span><span class="si">}</span><span class="s2"> sensors were listed in the instrument attributes: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">sensor_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span>
+            <span class="s2">"Warning: More distinct calibration variables found than sensors "</span>
+            <span class="s2">"listed in the combined instrument attributes!</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"Calibration variables: </span><span class="si">{</span><span class="n">available_calibcomm</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"Sensors: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">sensor_dict</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="c1"># --- Determine calibcomm variable name --------------------------------</span>
-        <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">base</span> <span class="o">=</span> <span class="n">ds1_base</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_missing</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">{</span>
+            <span class="s2">""</span><span class="p">,</span>
+            <span class="s2">"none"</span><span class="p">,</span>
+            <span class="s2">"nan"</span><span class="p">,</span>
+            <span class="s2">"nat"</span><span class="p">,</span>
+            <span class="s2">"unknown"</span><span class="p">,</span>
+            <span class="s2">"n/a"</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="n">matched_records</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">sensor</span><span class="p">,</span> <span class="n">metadata</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># --- Determine calibcomm variable names -------------------------------</span>
         <span class="n">del_caps</span> <span class="o">=</span> <span class="n">_del_capital_letters</span><span class="p">(</span><span class="n">sensor</span><span class="p">)</span>
-
-        <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">var</span> <span class="o">=</span> <span class="n">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"sg_cal_calibcomm_</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
-
-        <span class="k">elif</span> <span class="p">(</span><span class="n">var</span> <span class="o">:=</span> <span class="n">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"sg_cal_calibcomm_</span><span class="si">{</span><span class="n">del_caps</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
-
-        <span class="k">elif</span> <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sensor_type"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"CTD"</span><span class="p">:</span>
-            <span class="n">var</span> <span class="o">=</span> <span class="n">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s2">"sg_cal_calibcomm"</span><span class="p">)</span>
-            <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
-
-        <span class="k">elif</span> <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sensor_type"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"Oxygen"</span><span class="p">:</span>
-            <span class="n">var</span> <span class="o">=</span> <span class="n">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s2">"sg_cal_calibcomm_optode"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">get_if_exists</span><span class="p">(</span>
-                <span class="n">base</span><span class="p">,</span> <span class="s2">"sg_cal_calibcomm_oxygen"</span>
+        <span class="n">candidate_names</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="sa">f</span><span class="s2">"sg_cal_calibcomm_</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"sg_cal_calibcomm_</span><span class="si">{</span><span class="n">del_caps</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sensor_type"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"CTD"</span><span class="p">:</span>
+            <span class="n">candidate_names</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"sg_cal_calibcomm"</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sensor_type"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"Oxygen"</span><span class="p">:</span>
+            <span class="n">candidate_names</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">"sg_cal_calibcomm_optode"</span><span class="p">,</span> <span class="s2">"sg_cal_calibcomm_oxygen"</span><span class="p">}</span>
             <span class="p">)</span>
-            <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sensor_maker"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"WET Labs"</span><span class="p">:</span>
+            <span class="n">candidate_names</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"sg_cal_calibcomm_wetlabs"</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sensor_maker"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"WET Labs"</span><span class="p">:</span>
-            <span class="n">var</span> <span class="o">=</span> <span class="n">get_if_exists</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s2">"sg_cal_calibcomm_wetlabs"</span><span class="p">)</span>
-            <span class="n">calibcomm_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">observations</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"sensor_serial_number"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"sensor_calibration_date"</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="n">found_calibration_text</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">matching_records</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">entry</span>
+                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">candidate_names</span>
+                <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">records_by_name</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">())</span>
+            <span class="p">),</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">entry</span><span class="p">:</span> <span class="n">entry</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="c1"># --- Extract serial number + calibration date --------------------------</span>
+        <span class="k">for</span> <span class="n">record_index</span><span class="p">,</span> <span class="p">(</span><span class="n">dataset_index</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">variable</span><span class="p">)</span> <span class="ow">in</span> <span class="n">matching_records</span><span class="p">:</span>
+            <span class="n">matched_records</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">record_index</span><span class="p">)</span>
+            <span class="n">raw_value</span> <span class="o">=</span> <span class="n">variable</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_value</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                <span class="n">raw_value</span> <span class="o">=</span> <span class="n">raw_value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"replace"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_missing</span><span class="p">(</span><span class="n">raw_value</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">found_calibration_text</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">serial_number</span><span class="p">,</span> <span class="n">cal_info</span> <span class="o">=</span> <span class="n">extract_instrument_info</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">raw_value</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span>
+                <span class="p">(</span><span class="s2">"sensor_serial_number"</span><span class="p">,</span> <span class="n">serial_number</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"sensor_calibration_date"</span><span class="p">,</span> <span class="n">cal_info</span><span class="p">),</span>
+            <span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">is_missing</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                    <span class="n">observations</span><span class="p">[</span><span class="n">field</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">value</span><span class="p">,</span> <span class="n">dataset_index</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="n">calibcomm_str</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># --- Check for changes across all matching calibcomms -------------------</span>
+        <span class="n">missing_fields</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">entries</span> <span class="ow">in</span> <span class="n">observations</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">distinct</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">value</span><span class="p">,</span> <span class="n">dataset_index</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+                <span class="n">distinct</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">dataset_index</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">distinct</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">details</span> <span class="o">=</span> <span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> in </span><span class="si">{</span><span class="n">sources</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">value</span><span class="p">,</span> <span class="n">sources</span> <span class="ow">in</span> <span class="n">distinct</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error: Conflicting </span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2"> for sensor '</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">details</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">entries</span><span class="p">:</span>
+                <span class="n">metadata</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">entries</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">missing_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">missing_fields</span><span class="p">:</span>
+            <span class="c1"># Preserve the existing helper's missing-value defaults.</span>
+            <span class="n">default_serial</span><span class="p">,</span> <span class="n">default_calibration</span> <span class="o">=</span> <span class="n">extract_instrument_info</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">"sensor_serial_number"</span><span class="p">:</span> <span class="n">default_serial</span><span class="p">,</span>
+                <span class="s2">"sensor_calibration_date"</span><span class="p">:</span> <span class="n">default_calibration</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">missing_fields</span><span class="p">:</span>
+                <span class="n">metadata</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">"No calibration info found"</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">found_calibration_text</span>
+                <span class="k">else</span> <span class="sa">f</span><span class="s2">"Incomplete calibration info (missing </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing_fields</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span>
+            <span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Warning: No calibration info found for sensor '</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">'. "</span>
+                <span class="sa">f</span><span class="s2">"Warning: </span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2"> for sensor '</span><span class="si">{</span><span class="n">sensor</span><span class="si">}</span><span class="s2">'. "</span>
                 <span class="sa">f</span><span class="s2">"Available calibration variables: </span><span class="si">{</span><span class="n">available_calibcomm</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
-        <span class="c1"># --- Extract serial number + calibration date --------------------------</span>
-        <span class="n">serial_number</span><span class="p">,</span> <span class="n">cal_info</span> <span class="o">=</span> <span class="n">extract_instrument_info</span><span class="p">(</span><span class="n">calibcomm_str</span><span class="p">)</span>
-
-        <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">][</span><span class="s2">"sensor_serial_number"</span><span class="p">]</span> <span class="o">=</span> <span class="n">serial_number</span>
-        <span class="n">sensor_dict</span><span class="p">[</span><span class="n">sensor</span><span class="p">][</span><span class="s2">"sensor_calibration_date"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cal_info</span>
+    <span class="c1"># --- Report calibcomms that do not belong to any listed sensor --------------</span>
+    <span class="n">unmatched</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">record_index</span><span class="p">,</span> <span class="p">(</span><span class="n">dataset_index</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">calibration_records</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">record_index</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">matched_records</span><span class="p">:</span>
+            <span class="n">unmatched</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataset_index</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">dataset_indices</span> <span class="ow">in</span> <span class="n">unmatched</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Warning: Calibration variable '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' in datasets "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">dataset_indices</span><span class="si">}</span><span class="s2"> does not belong to any listed sensor."</span>
+        <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">sensor_dict</span></div>
 
@@ -711,6 +841,123 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_merge_dimensions</span><span class="p">(</span>
+    <span class="n">list_of_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Return the CTD dimension and dimensions to merge across all datasets as well as all dimensions present in the datasets"""</span>
+    <span class="n">list_of_datasets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
+    <span class="n">dimensions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">dimension</span> <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">list_of_datasets</span> <span class="k">for</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">sizes</span>
+    <span class="p">}</span>
+    <span class="n">instruments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+        <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span>
+            <span class="n">instrument</span>
+            <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">list_of_datasets</span>
+            <span class="k">for</span> <span class="n">instrument</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"instrument"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">dims_to_merge</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"sg_data_point"</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">instrument</span> <span class="ow">in</span> <span class="n">instruments</span><span class="p">:</span>
+        <span class="n">instrument_dim</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">_data_point"</span>
+
+        <span class="k">if</span> <span class="n">instrument_dim</span> <span class="ow">in</span> <span class="n">dimensions</span><span class="p">:</span>
+            <span class="n">dims_to_merge</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instrument_dim</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">instrument</span> <span class="o">==</span> <span class="s2">"sbe41"</span> <span class="ow">and</span> <span class="s2">"sbect_data_point"</span> <span class="ow">in</span> <span class="n">dimensions</span><span class="p">:</span>
+            <span class="n">dims_to_merge</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"sbect_data_point"</span><span class="p">)</span>
+
+    <span class="n">ctd_dimensions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">list_of_datasets</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"longitude"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">longitude_dims</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">"longitude"</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">longitude_dims</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Expected longitude to have exactly one dimension, "</span>
+                <span class="sa">f</span><span class="s2">"got </span><span class="si">{</span><span class="n">longitude_dims</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span>
+
+        <span class="n">ctd_dimensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">longitude_dims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">ctd_dimensions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">ctd_dimensions</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ctd_dimensions</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No input dataset contains longitude."</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ctd_dimensions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Longitude uses different CTD dimensions across datasets: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ctd_dimensions</span><span class="si">}</span><span class="s2">. A single ctd_dim cannot represent them."</span>
+        <span class="p">)</span>
+
+    <span class="n">ctd_dim</span> <span class="o">=</span> <span class="n">ctd_dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dims_to_merge</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ctd_dim</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ctd_dim</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">dims_to_merge</span><span class="p">)),</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">dimensions</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="print_OG1_mapping_summary">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.print_OG1_mapping_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">print_OG1_mapping_summary</span><span class="p">(</span>
+    <span class="n">OG1_mapping</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">ctd_dim</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">merge_dims</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">all_dims</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Print dimensions, mapped variable counts, and vocabulary gaps."""</span>
+    <span class="n">has_og1_name</span> <span class="o">=</span> <span class="n">OG1_mapping</span><span class="p">[</span><span class="s2">"OG1_name"</span><span class="p">]</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">OG1_mapping</span><span class="p">[</span><span class="s2">"OG1_name"</span><span class="p">]</span><span class="o">.</span><span class="n">ne</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
+    <span class="n">time_mask</span> <span class="o">=</span> <span class="n">OG1_mapping</span><span class="p">[</span><span class="s2">"OG1_name"</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span>
+
+    <span class="n">variables</span> <span class="o">=</span> <span class="n">OG1_mapping</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">has_og1_name</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">time_mask</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">OG1_mapping</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_mask</span><span class="p">,</span> <span class="s2">"original_dimension"</span><span class="p">]</span><span class="o">.</span><span class="n">explode</span><span class="p">():</span>
+        <span class="c1"># Each entry has the format "dimension (original_time_name)".</span>
+        <span class="n">dimension</span><span class="p">,</span> <span class="n">time_name</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">" ("</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">time_name</span> <span class="o">=</span> <span class="n">time_name</span><span class="o">.</span><span class="n">removesuffix</span><span class="p">(</span><span class="s2">")"</span><span class="p">)</span>
+
+        <span class="n">variable_count</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">variables</span><span class="p">[</span><span class="s2">"original_dimension"</span><span class="p">]</span>
+            <span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">dims</span><span class="p">:</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">dims</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">", "</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Adding dimension '</span><span class="si">{</span><span class="n">dimension</span><span class="si">}</span><span class="s2">' with time variable '</span><span class="si">{</span><span class="n">time_name</span><span class="si">}</span><span class="s2">' "</span>
+            <span class="sa">f</span><span class="s2">"and </span><span class="si">{</span><span class="n">variable_count</span><span class="si">}</span><span class="s2"> non-time variables."</span>
+        <span class="p">)</span>
+
+    <span class="n">selected_dims</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">merge_dims</span><span class="p">)</span> <span class="o">|</span> <span class="p">{</span><span class="n">ctd_dim</span><span class="p">}</span>
+    <span class="n">unused_dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">dim</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">all_dims</span> <span class="k">if</span> <span class="n">dim</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">selected_dims</span><span class="p">]</span>
+
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">The following dimensions will not be merged into the new dataset: "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">unused_dims</span><span class="si">}</span><span class="s2">"</span>
+        <span class="s2">"</span><span class="se">\n</span><span class="s2">If instrument data is missing, make sure its dimension follows the "</span>
+        <span class="s2">"naming convention '&lt;instrument&gt;_data_point'"</span>
+        <span class="s2">"</span><span class="se">\n</span><span class="s2">from the ds.attrs['instrument'] list."</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Total: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span><span class="si">}</span><span class="s2"> non-time variables "</span>
+        <span class="sa">f</span><span class="s2">"+ </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">time_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="si">}</span><span class="s2"> combined TIME variable."</span>
+    <span class="p">)</span>
+
+    <span class="n">unassigned</span> <span class="o">=</span> <span class="n">OG1_mapping</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">has_og1_name</span><span class="p">,</span> <span class="s2">"original_name"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Variables without an assigned OG1 name: </span><span class="si">{</span><span class="n">unassigned</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="n">missing_attrs</span> <span class="o">=</span> <span class="n">OG1_mapping</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+        <span class="n">has_og1_name</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">OG1_mapping</span><span class="p">[</span><span class="s2">"has_OG1_attributes"</span><span class="p">],</span>
+        <span class="s2">"OG1_name"</span><span class="p">,</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">missing_attrs</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"OG1 variables without vocabulary attributes: </span><span class="si">{</span><span class="n">missing_attrs</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="add_dive_number">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_dive_number">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">dive_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
@@ -752,7 +999,7 @@
 <span class="sd">    This function separates each dive into two profiles: descent (down cast) and</span>
 <span class="sd">    ascent (up cast) phases. The dive is split at the maximum pressure point,</span>
 <span class="sd">    with the descent phase getting the dive number and ascent getting dive + 0.5.</span>
-<span class="sd">    Profile numbers are then calculated as 2 * dive_num_cast - 1.</span>
+<span class="sd">    Profile numbers are then calculated as 2 * DIVE_NUMBER - 1.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -764,80 +1011,33 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset</span>
-<span class="sd">        Dataset with 'dive_num_cast' and 'PROFILE_NUMBER' variables added.</span>
+<span class="sd">        Dataset with 'DIVE_NUMBER' and 'PROFILE_NUMBER' variables added.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    - Requires pressure variable (PRES, ctd_pressure, Pressure, or pres)</span>
-<span class="sd">    - Down cast: dive_num_cast = dive number</span>
-<span class="sd">    - Up cast: dive_num_cast = dive number + 0.5</span>
-<span class="sd">    - Profile numbers: descent = 2*dive-1, ascent = 2*dive</span>
-
+<span class="sd">    - Requires pressure variable (PRES)</span>
 <span class="sd">    """</span>
-    <span class="c1"># Remove the variable dive_num_cast if it exists</span>
-    <span class="k">if</span> <span class="s2">"dive_num_cast"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">"dive_num_cast"</span><span class="p">)</span>
 
-    <span class="c1"># Initialize the new variable with the same dimensions as dive_num</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s2">"dive_num_cast"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
+    <span class="n">dive_number</span> <span class="o">=</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dive_number</span><span class="p">)</span>
+
+    <span class="n">fill_value</span> <span class="o">=</span> <span class="o">-</span><span class="mi">9999</span>
+    <span class="n">profile_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">fill_value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">profile_numbers</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">dive_number</span><span class="p">):</span>
+        <span class="n">pmax_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanargmax</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"PRES"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+
+        <span class="n">profile_numbers</span><span class="p">[:</span> <span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dive_number</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">profile_numbers</span><span class="p">[</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dive_number</span>
+
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+        <span class="n">PROFILE_NUMBER</span><span class="o">=</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+            <span class="n">profile_numbers</span><span class="p">,</span>
+            <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
+        <span class="p">)</span>
     <span class="p">)</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"_FillValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_value</span>
 
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">])</span>
-
-    <span class="c1"># Iterate over each unique dive_num</span>
-    <span class="k">for</span> <span class="n">dive</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"DIVE_NUMBER"</span><span class="p">]):</span>
-        <span class="c1"># Get the indices for the current dive</span>
-        <span class="n">dive_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"DIVE_NUMBER"</span><span class="p">]</span> <span class="o">==</span> <span class="n">dive</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dive_indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">continue</span>  <span class="c1"># Skip if no indices found</span>
-
-        <span class="c1"># Find the start and end index for the current dive</span>
-        <span class="n">start_index</span> <span class="o">=</span> <span class="n">dive_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">end_index</span> <span class="o">=</span> <span class="n">dive_indices</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-
-        <span class="c1"># Check for possible pressure variable names in ds, then ds1</span>
-        <span class="n">possible_press_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"PRES"</span><span class="p">,</span> <span class="s2">"ctd_pressure"</span><span class="p">,</span> <span class="s2">"Pressure"</span><span class="p">,</span> <span class="s2">"pres"</span><span class="p">]</span>
-        <span class="n">press_var</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
-            <span class="p">(</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">possible_press_names</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">),</span> <span class="kc">None</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">press_var</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">press_var</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
-                <span class="p">(</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">possible_press_names</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds1</span><span class="o">.</span><span class="n">variables</span><span class="p">),</span> <span class="kc">None</span>
-            <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">press_var</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">"No valid pressure variable (PRES or pressure) found in ds or ds1"</span>
-            <span class="p">)</span>
-
-        <span class="c1"># Get pressure values from the correct dataset</span>
-        <span class="n">pressure_data</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">press_var</span><span class="p">]</span> <span class="k">if</span> <span class="n">press_var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="k">else</span> <span class="n">ds1</span><span class="p">[</span><span class="n">press_var</span><span class="p">]</span>
-
-        <span class="c1"># Find the maximum pressure value between start_index and end_index</span>
-        <span class="n">pmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">pressure_data</span><span class="p">[</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-
-        <span class="c1"># Find the index where PRES attains pmax</span>
-        <span class="n">pmax_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span>
-            <span class="n">pressure_data</span><span class="p">[</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">pmax</span>
-        <span class="p">)</span>
-        <span class="c1"># Assign dive_num to all values up to and including pmax</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s2">"dive_num_cast"</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dive</span>
-
-        <span class="c1"># Assign dive_num + 0.5 to values after pmax</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s2">"dive_num_cast"</span><span class="p">][</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dive</span> <span class="o">+</span> <span class="mf">0.5</span>
-        <span class="c1"># Remove PROFILE_NUMBER if it exists</span>
-        <span class="k">if</span> <span class="s2">"PROFILE_NUMBER"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">)</span>
-        <span class="c1"># Calculate profile number and fill Nan with fill value</span>
-        <span class="n">fill_value</span> <span class="o">=</span> <span class="o">-</span><span class="mi">9999</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"dive_num_cast"</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">fill_value</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="c1"># _FillValue belongs in encoding, not attrs (xarray rejects it in attrs on write).</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"_FillValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_value</span>
     <span class="k">return</span> <span class="n">ds</span></div>
 
 
