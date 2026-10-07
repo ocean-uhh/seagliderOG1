@@ -40,16 +40,17 @@ INSTRUMENT_ALIASES = {
 
 
 def OG1_name_mapping(
-    ds: xr.Dataset,
-    ds1_base: xr.Dataset,
-    ctd_dim: str,
+    list_of_datasets: list[xr.Dataset], ctd_dim: str, dims_to_merge: list[str]
 ) -> pd.DataFrame:
     """Create a mapping from original variable names to OG1 variable names.
 
-    The function examines the dataset immediately before OG1 standardization
-    and creates one table row per variable. Each row contains the original
+    The function examines all datasets before OG1 standardization and creates
+    one row per unique variable name using at least one dimension in
+    ``dims_to_merge`` (with ``ctd_dim`` always included). Each row contains the original
     variable name, its OG1 name, associated instrument, instrument type, and
-    original dimensions.
+    original dimensions. Individual time variables are replaced by one
+    ``time`` / ``TIME`` row, whose ``original_dimension`` contains a list of
+    unique time variable names on the dimensions being merged.
 
     Variables ending in ``_qc`` inherit the instrument association of their
     corresponding measurement variable. For example,
@@ -64,24 +65,26 @@ def OG1_name_mapping(
        When the same OG1 variable is also present on the CTD instrument's
        ``<instrument>_data_point`` dimension, the ``ctd_data_point`` copy is
        retained and the instrument-dimension copy is omitted.
-    3. When the CTD uses ``sg_data_point``, temperature and conductivity
-       measurements are assigned to the CTD.
-    4. When ``ctd_pressure`` is available, calculated hydrographic variables
+    3. When ``ctd_pressure`` is available, calculated hydrographic variables
        are assigned to the CTD.
-    5. The variable's ``instrument`` attribute is checked.
-    6. Dimensions named ``<instrument>_data_point`` are checked.
-    7. The variable name is checked for an instrument name or alias.
+    4. The variable's ``instrument`` attribute is checked.
+    5. Dimensions named ``<instrument>_data_point`` are checked.
+    6. The variable name is checked for an instrument name or alias.
 
     Parameters
     ----------
-    ds
-        Dataset immediately before calling ``standardise_OG10``.
-    ds1_base
-        Original basestation dataset. It provides original dimensions,
-        variable attributes, and the global ``instrument`` attribute.
+    list_of_datasets
+        List of datasets immediately before calling ``standardise_OG10``.
     ctd_dim
         Dimension used by the CTD data, for example ``ctd_data_point`` or
         ``sg_data_point``.
+
+    dims_to_merge
+        Dimensions whose variables should be included. A variable is included
+        when any of its dimensions matches; scalars are excluded. If a name
+        occurs more than once, the first eligible occurrence supplies its
+        dimensions and attributes. Instruments are collected from every
+        dataset's global ``instrument`` attribute, preserving first-seen order.
 
     Returns
     -------
@@ -89,24 +92,39 @@ def OG1_name_mapping(
         Mapping table containing ``original_name``, ``OG1_name``,
         ``instrument``, ``instrument_type``, and ``original_dimension``.
     """
-    instruments = ds1_base.attrs.get("instrument", "").split()
+    list_of_datasets = list(list_of_datasets)
+    # Keep one row per name, choosing the first occurrence on a dimension
+    # that will be merged. Retain other variables for QC-parent lookup.
+    merge_dimensions = set(dims_to_merge)
+    merge_dimensions.add(ctd_dim)
+    all_sources: dict[str, xr.DataArray] = {}
+    sources: dict[str, xr.DataArray] = {}
+    instruments: list[str] = []
+
+    for dataset in list_of_datasets:
+        for instrument in dataset.attrs.get("instrument", "").split():
+            if instrument not in instruments:
+                instruments.append(instrument)
+
+        for variable_name in dataset.variables:
+            source = dataset[variable_name]
+            all_sources.setdefault(variable_name, source)
+            if merge_dimensions.intersection(source.dims):
+                sources.setdefault(variable_name, source)
+
     standard_names = vocabularies.standard_names
     sensor_vocabs = vocabularies.sensor_vocabs
-
-    has_ctd_pressure = (
-        "ctd_pressure" in ds1_base.variables or "ctd_pressure" in ds.variables
-    )
+    has_ctd_pressure = "ctd_pressure" in all_sources
 
     def variable_exists(variable_name: str) -> bool:
-        """Check whether a variable exists in either dataset."""
-        return variable_name in ds1_base.variables or variable_name in ds.variables
+        """Check whether a variable exists in any input dataset."""
+        return variable_name in all_sources
 
     def get_source(variable_name: str) -> xr.DataArray:
-        """Get a variable from the original dataset when possible."""
-        if variable_name in ds1_base.variables:
-            return ds1_base[variable_name]
-
-        return ds[variable_name]
+        """Prefer the first occurrence on a dimension being merged."""
+        if variable_name in sources:
+            return sources[variable_name]
+        return all_sources[variable_name]
 
     def get_qc_parent_name(
         variable_name: str,
@@ -190,10 +208,7 @@ def OG1_name_mapping(
         ):
             return True
 
-        # Additional rules are only needed when the CTD shares the
-        # generic sg_data_point dimension.
-        if ctd_dim.lower() != "sg_data_point":
-            return False
+        return False
 
     def find_instrument(
         variable_name: str,
@@ -343,7 +358,7 @@ def OG1_name_mapping(
 
     # dict.fromkeys removes duplicates while preserving order.
     # QC variables are deliberately retained.
-    variable_names = list(dict.fromkeys(list(ds.data_vars) + list(ds.coords)))
+    variable_names = list(sources)
 
     # Some basestation datasets contain the same CTD measurements twice:
     # once on the generic ctd_data_point dimension and once on the CTD
@@ -365,11 +380,10 @@ def OG1_name_mapping(
         if not (
             not uses_dimension(variable_name, "ctd_data_point")
             and uses_ctd_instrument_dimension(variable_name)
-            and get_og1_base_name(
-                variable_name,
-                ctd_instrument,
-            )
+            and get_og1_base_name(variable_name, ctd_instrument)
             in preferred_ctd_og1_names
+            # Keep time variables for the final combined TIME row.
+            and get_og1_base_name(variable_name, ctd_instrument) != "TIME"
         )
     ]
 
@@ -420,27 +434,73 @@ def OG1_name_mapping(
                 "instrument": instrument,
                 "instrument_type": get_instrument_type(instrument),
                 "original_dimension": ", ".join(source.dims),
+                "vocabulary_name": base_og1_name,
             }
         )
 
-    return pd.DataFrame(mapping)
+    result = pd.DataFrame(
+        mapping,
+        columns=[
+            "original_name",
+            "OG1_name",
+            "instrument",
+            "instrument_type",
+            "original_dimension",
+        ],
+    )
+
+    # Replace individual time variables with a single "time" variable.
+    time_mask = result["OG1_name"].str.fullmatch(r"TIME[0-9]*", na=False)
+
+    time_variable_names = (
+        result.loc[time_mask, "original_dimension"]
+        + " ("
+        + result.loc[time_mask, "original_name"]
+        + ")"
+    ).tolist()
+
+    time_row = pd.DataFrame(
+        [
+            {
+                "original_name": "time",
+                "OG1_name": "TIME",
+                "instrument": float("nan"),
+                "instrument_type": float("nan"),
+                "original_dimension": time_variable_names,
+            }
+        ]
+    )
+    result = pd.concat(
+        [result.loc[~time_mask], time_row],
+        ignore_index=True,
+    )
+
+    result["has_OG1_attributes"] = result["OG1_name"].apply(
+        lambda name: (
+            bool(vocabularies.vocab_attrs.get(name, {})) if pd.notna(name) else False
+        )
+    )
+
+    return result
 
 
-def gather_sensor_info(ds1_base) -> dict:
-    """Gathers sensor information from an OG1 base dataset.
+def gather_sensor_info(list_of_datasets) -> dict:
+    """Gathers sensor information from a list of OG1 base datasets.
 
     Extracts:
-      - sensor names (from global 'instrument' attribute)
+      - unique sensor names (from global 'instrument' attributes)
       - technical specs (from OG1_sensor_attrs.yaml vocabularies)
       - serial numbers + calibration dates (from calibcomm variables)
-      - variables belonging to each sensor
+
+    Checks calibration information across all datasets. Missing information
+    is reported once per sensor. Conflicting serial numbers or calibration
+    dates are reported, and the first nonempty value is retained.
+    Calibration variables not belonging to any listed sensor are reported.
 
     Parameters
     ----------
-    ds1_base : xarray.Dataset
-        The raw base dataset containing sensor metadata.
-    first_run : bool
-        If True, informational print statements are shown.
+    list_of_datasets : iterable of xarray.Dataset
+        The raw base datasets containing sensor metadata.
 
     Returns
     -------
@@ -448,26 +508,28 @@ def gather_sensor_info(ds1_base) -> dict:
         Dictionary with one key per sensor, each containing metadata.
 
     """
+    datasets = list(list_of_datasets)
+
     # -------------------------------------------------------------------------
-    # 1. Extract sensor names from the 'instrument' global attribute
+    # 1. Extract sensor names from the 'instrument' global attributes
     # -------------------------------------------------------------------------
     sensor_dict = {}
 
-    if "instrument" in ds1_base.attrs:
-        sensor_names = ds1_base.attrs["instrument"].split()
-        # Remove unneeded entries
-        if "magnetometer" in sensor_names:
-            sensor_names.remove("magnetometer")
-        # Initialize dictionary entries
-        for sensor in sensor_names:
-            sensor_dict[sensor] = {}
-    else:
+    for dataset in datasets:
+        instrument = dataset.attrs.get("instrument")
+        if instrument and instrument.strip():
+            sensor_names = instrument.split()
+            # Remove unneeded entries and initialize unique dictionary entries
+            for sensor in sensor_names:
+                if sensor != "magnetometer":
+                    sensor_dict.setdefault(sensor, {})
+
+    if not sensor_dict:
         print(
-            "Warning: 'instrument' attribute not found in the dataset. Therefore no sensor information extracted from attributes. "
-            "If you have sensor information in the attributes, please add an 'instrument' attribute with the sensor names separated by spaces."
-            " For example: ds.attrs['instrument'] = 'sbe41 wlbb2f sbe43'"
+            "Warning: No sensors found in the combined instrument attributes. "
+            "Add sensor names separated by spaces, "
+            "for example: ds.attrs['instrument'] = 'sbe41 wlbb2f sbe43'."
         )
-        return sensor_dict
 
     # -------------------------------------------------------------------------
     # 2. Add technical specifications from OG1 vocabularies
@@ -478,73 +540,141 @@ def gather_sensor_info(ds1_base) -> dict:
     for sensor in sensor_dict.keys():
         if sensor in standard_names:
             new_name = standard_names[sensor]
-            sensor_dict[sensor] = sensor_vocabs[new_name]
+            # Copy so calibration metadata does not modify shared vocabularies.
+            sensor_dict[sensor] = dict(sensor_vocabs[new_name])
             print(
                 f"Adding technical specifications for '{new_name}' "
                 f"(sensor key: '{sensor}') from OG1_sensor_attrs.yaml"
             )
         else:
             print(
-                f"Warning: Sensor '{sensor}' not found in standard names vocabulary. "
-                "No technical specifications added."
+                f"Warning: Sensor '{sensor}' not found in standard names "
+                "vocabulary. No technical specifications added."
             )
 
     # -------------------------------------------------------------------------
     # 3. Extract calibration information (serial number + calibration dates)
     # -------------------------------------------------------------------------
-    def get_if_exists(base, varname):
-        return base[varname] if varname in base.variables else None
+    # Index all calibcomms once to avoid scanning every dataset for each sensor.
+    calibration_records = []
+    records_by_name = {}
+    for dataset_index, base in enumerate(datasets, start=1):
+        for name in base.variables:
+            if name.startswith("sg_cal_calibcomm"):
+                record_index = len(calibration_records)
+                record = (dataset_index, name, base[name])
+                calibration_records.append(record)
+                records_by_name.setdefault(name, []).append((record_index, record))
 
     sensor_nums = len(sensor_dict.keys())
-    available_calibcomm = [
-        v for v in ds1_base.variables if v.startswith("sg_cal_calibcomm")
-    ]
+    available_calibcomm = sorted(records_by_name)
     if len(available_calibcomm) > sensor_nums:
         print(
-            f"Warning: More calibration variables found as stated in instrument attributes!\n"
-            f"The following calibration variables were found: {available_calibcomm}\n"
-            f"But only {sensor_nums} sensors were listed in the instrument attributes: {list(sensor_dict.keys())}"
+            "Warning: More distinct calibration variables found than sensors "
+            "listed in the combined instrument attributes!\n"
+            f"Calibration variables: {available_calibcomm}\n"
+            f"Sensors: {list(sensor_dict)}"
         )
 
-    for sensor in sensor_dict.keys():
-        # --- Determine calibcomm variable name --------------------------------
-        calibcomm_str = None
-        base = ds1_base
+    def is_missing(value):
+        return value is None or str(value).strip().lower() in {
+            "",
+            "none",
+            "nan",
+            "nat",
+            "unknown",
+            "n/a",
+        }
+
+    matched_records = set()
+    for sensor, metadata in sensor_dict.items():
+        # --- Determine calibcomm variable names -------------------------------
         del_caps = _del_capital_letters(sensor)
-
-        calibcomm_str = None
-        var = get_if_exists(base, f"sg_cal_calibcomm_{sensor}")
-        if var is not None:
-            calibcomm_str = str(var.values.item())
-
-        elif (var := get_if_exists(base, f"sg_cal_calibcomm_{del_caps}")) is not None:
-            calibcomm_str = str(var.values.item())
-
-        elif sensor_dict[sensor].get("sensor_type") == "CTD":
-            var = get_if_exists(base, "sg_cal_calibcomm")
-            calibcomm_str = str(var.values.item()) if var is not None else None
-
-        elif sensor_dict[sensor].get("sensor_type") == "Oxygen":
-            var = get_if_exists(base, "sg_cal_calibcomm_optode") or get_if_exists(
-                base, "sg_cal_calibcomm_oxygen"
+        candidate_names = {
+            f"sg_cal_calibcomm_{sensor}",
+            f"sg_cal_calibcomm_{del_caps}",
+        }
+        if metadata.get("sensor_type") == "CTD":
+            candidate_names.add("sg_cal_calibcomm")
+        elif metadata.get("sensor_type") == "Oxygen":
+            candidate_names.update(
+                {"sg_cal_calibcomm_optode", "sg_cal_calibcomm_oxygen"}
             )
-            calibcomm_str = str(var.values.item()) if var is not None else None
+        elif metadata.get("sensor_maker") == "WET Labs":
+            candidate_names.add("sg_cal_calibcomm_wetlabs")
 
-        elif sensor_dict[sensor].get("sensor_maker") == "WET Labs":
-            var = get_if_exists(base, "sg_cal_calibcomm_wetlabs")
-            calibcomm_str = str(var.values.item()) if var is not None else None
+        observations = {"sensor_serial_number": [], "sensor_calibration_date": []}
+        found_calibration_text = False
+        matching_records = sorted(
+            (
+                entry
+                for name in candidate_names
+                for entry in records_by_name.get(name, ())
+            ),
+            key=lambda entry: entry[0],
+        )
+        # --- Extract serial number + calibration date --------------------------
+        for record_index, (dataset_index, name, variable) in matching_records:
+            matched_records.add(record_index)
+            raw_value = variable.values.item()
+            if isinstance(raw_value, bytes):
+                raw_value = raw_value.decode("utf-8", errors="replace")
+            if is_missing(raw_value):
+                continue
+            found_calibration_text = True
+            serial_number, cal_info = extract_instrument_info(str(raw_value))
+            for field, value in (
+                ("sensor_serial_number", serial_number),
+                ("sensor_calibration_date", cal_info),
+            ):
+                if not is_missing(value):
+                    observations[field].append((value, dataset_index, name))
 
-        if calibcomm_str is None:
+        # --- Check for changes across all matching calibcomms -------------------
+        missing_fields = []
+        for field, entries in observations.items():
+            distinct = {}
+            for value, dataset_index, name in entries:
+                distinct.setdefault(str(value), []).append((dataset_index, name))
+            if len(distinct) > 1:
+                details = "; ".join(
+                    f"{value!r} in {sources}" for value, sources in distinct.items()
+                )
+                print(f"Error: Conflicting {field} for sensor '{sensor}': {details}")
+            if entries:
+                metadata[field] = entries[0][0]
+            else:
+                missing_fields.append(field)
+
+        if missing_fields:
+            # Preserve the existing helper's missing-value defaults.
+            default_serial, default_calibration = extract_instrument_info(None)
+            defaults = {
+                "sensor_serial_number": default_serial,
+                "sensor_calibration_date": default_calibration,
+            }
+            for field in missing_fields:
+                metadata[field] = defaults[field]
+            reason = (
+                "No calibration info found"
+                if not found_calibration_text
+                else f"Incomplete calibration info (missing {', '.join(missing_fields)})"
+            )
             print(
-                f"Warning: No calibration info found for sensor '{sensor}'. "
+                f"Warning: {reason} for sensor '{sensor}'. "
                 f"Available calibration variables: {available_calibcomm}"
             )
 
-        # --- Extract serial number + calibration date --------------------------
-        serial_number, cal_info = extract_instrument_info(calibcomm_str)
-
-        sensor_dict[sensor]["sensor_serial_number"] = serial_number
-        sensor_dict[sensor]["sensor_calibration_date"] = cal_info
+    # --- Report calibcomms that do not belong to any listed sensor --------------
+    unmatched = {}
+    for record_index, (dataset_index, name, _) in enumerate(calibration_records):
+        if record_index not in matched_records:
+            unmatched.setdefault(name, []).append(dataset_index)
+    for name, dataset_indices in unmatched.items():
+        print(
+            f"Warning: Calibration variable '{name}' in datasets "
+            f"{dataset_indices} does not belong to any listed sensor."
+        )
 
     return sensor_dict
 
@@ -616,6 +746,120 @@ def add_sensor_to_dataset(
     return ds_og1
 
 
+def _get_merge_dimensions(
+    list_of_datasets: list[xr.Dataset],
+) -> tuple[str, list[str]]:
+    """Return the CTD dimension and dimensions to merge across all datasets as well as all dimensions present in the datasets"""
+    list_of_datasets = list(list_of_datasets)
+    dimensions = {
+        dimension for dataset in list_of_datasets for dimension in dataset.sizes
+    }
+    instruments = list(
+        dict.fromkeys(
+            instrument
+            for dataset in list_of_datasets
+            for instrument in dataset.attrs.get("instrument", "").split()
+        )
+    )
+
+    dims_to_merge = ["sg_data_point"]
+
+    for instrument in instruments:
+        instrument_dim = f"{instrument}_data_point"
+
+        if instrument_dim in dimensions:
+            dims_to_merge.append(instrument_dim)
+        elif instrument == "sbe41" and "sbect_data_point" in dimensions:
+            dims_to_merge.append("sbect_data_point")
+
+    ctd_dimensions = []
+    for dataset in list_of_datasets:
+        if "longitude" not in dataset:
+            continue
+
+        longitude_dims = dataset["longitude"].dims
+        if len(longitude_dims) != 1:
+            raise ValueError(
+                "Expected longitude to have exactly one dimension, "
+                f"got {longitude_dims}."
+            )
+
+        ctd_dimensions.append(longitude_dims[0])
+
+    ctd_dimensions = list(dict.fromkeys(ctd_dimensions))
+
+    if not ctd_dimensions:
+        raise ValueError("No input dataset contains longitude.")
+
+    if len(ctd_dimensions) > 1:
+        raise ValueError(
+            "Longitude uses different CTD dimensions across datasets: "
+            f"{ctd_dimensions}. A single ctd_dim cannot represent them."
+        )
+
+    ctd_dim = ctd_dimensions[0]
+    dims_to_merge.append(ctd_dim)
+
+    return ctd_dim, list(dict.fromkeys(dims_to_merge)), list(dict.fromkeys(dimensions))
+
+
+def print_OG1_mapping_summary(
+    OG1_mapping: pd.DataFrame,
+    ctd_dim: str,
+    merge_dims: list[str],
+    all_dims: list[str],
+) -> None:
+    """Print dimensions, mapped variable counts, and vocabulary gaps."""
+    has_og1_name = OG1_mapping["OG1_name"].notna() & OG1_mapping["OG1_name"].ne("")
+    time_mask = OG1_mapping["OG1_name"].eq("TIME")
+
+    variables = OG1_mapping.loc[has_og1_name & ~time_mask]
+
+    for entry in OG1_mapping.loc[time_mask, "original_dimension"].explode():
+        # Each entry has the format "dimension (original_time_name)".
+        dimension, time_name = entry.rsplit(" (", 1)
+        time_name = time_name.removesuffix(")")
+
+        variable_count = (
+            variables["original_dimension"]
+            .apply(lambda dims: dimension in dims.split(", "))
+            .sum()
+        )
+
+        print(
+            f"Adding dimension '{dimension}' with time variable '{time_name}' "
+            f"and {variable_count} non-time variables."
+        )
+
+    selected_dims = set(merge_dims) | {ctd_dim}
+    unused_dims = [dim for dim in all_dims if dim not in selected_dims]
+
+    print(
+        f"\nThe following dimensions will not be merged into the new dataset: "
+        f"{unused_dims}"
+        "\nIf instrument data is missing, make sure its dimension follows the "
+        "naming convention '<instrument>_data_point'"
+        "\nfrom the ds.attrs['instrument'] list."
+    )
+
+    print(
+        f"\nTotal: {len(variables)} non-time variables "
+        f"+ {int(time_mask.sum())} combined TIME variable."
+    )
+
+    unassigned = OG1_mapping.loc[~has_og1_name, "original_name"].tolist()
+
+    print(f"\nVariables without an assigned OG1 name: {unassigned}")
+
+    missing_attrs = OG1_mapping.loc[
+        has_og1_name & ~OG1_mapping["has_OG1_attributes"],
+        "OG1_name",
+    ].tolist()
+
+    if missing_attrs:
+        print(f"OG1 variables without vocabulary attributes: {missing_attrs}")
+
+
 def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Dataset:
     """Add dive number as a variable to the dataset. Assumes present in the basestation attributes.
 
@@ -652,7 +896,7 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     This function separates each dive into two profiles: descent (down cast) and
     ascent (up cast) phases. The dive is split at the maximum pressure point,
     with the descent phase getting the dive number and ascent getting dive + 0.5.
-    Profile numbers are then calculated as 2 * dive_num_cast - 1.
+    Profile numbers are then calculated as 2 * DIVE_NUMBER - 1.
 
     Parameters
     ----------
@@ -664,80 +908,33 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     Returns
     -------
     xarray.Dataset
-        Dataset with 'dive_num_cast' and 'PROFILE_NUMBER' variables added.
+        Dataset with 'DIVE_NUMBER' and 'PROFILE_NUMBER' variables added.
 
     Notes
     -----
-    - Requires pressure variable (PRES, ctd_pressure, Pressure, or pres)
-    - Down cast: dive_num_cast = dive number
-    - Up cast: dive_num_cast = dive number + 0.5
-    - Profile numbers: descent = 2*dive-1, ascent = 2*dive
-
+    - Requires pressure variable (PRES)
     """
-    # Remove the variable dive_num_cast if it exists
-    if "dive_num_cast" in ds.variables:
-        ds = ds.drop_vars("dive_num_cast")
 
-    # Initialize the new variable with the same dimensions as dive_num
-    ds["dive_num_cast"] = (
-        ["N_MEASUREMENTS"],
-        np.full(ds.sizes["N_MEASUREMENTS"], np.nan),
+    dive_number = ds1.attrs["dive_number"]
+    ds = add_dive_number(ds, dive_number)
+
+    fill_value = -9999
+    profile_numbers = np.full(ds.sizes["N_MEASUREMENTS"], fill_value, dtype=int)
+
+    if profile_numbers.size and not np.isnan(dive_number):
+        pmax_index = int(np.nanargmax(ds["PRES"].values))
+
+        profile_numbers[: pmax_index + 1] = 2 * dive_number - 1
+        profile_numbers[pmax_index + 1 :] = 2 * dive_number
+
+    ds = ds.assign(
+        PROFILE_NUMBER=xr.DataArray(
+            profile_numbers,
+            dims=["N_MEASUREMENTS"],
+        )
     )
+    ds["PROFILE_NUMBER"].encoding["_FillValue"] = fill_value
 
-    ds = add_dive_number(ds, ds1.attrs["dive_number"])
-
-    # Iterate over each unique dive_num
-    for dive in np.unique(ds["DIVE_NUMBER"]):
-        # Get the indices for the current dive
-        dive_indices = np.where(ds["DIVE_NUMBER"] == dive)[0]
-        if len(dive_indices) == 0:
-            continue  # Skip if no indices found
-
-        # Find the start and end index for the current dive
-        start_index = dive_indices[0]
-        end_index = dive_indices[-1]
-
-        # Check for possible pressure variable names in ds, then ds1
-        possible_press_names = ["PRES", "ctd_pressure", "Pressure", "pres"]
-        press_var = next(
-            (var for var in possible_press_names if var in ds.variables), None
-        )
-
-        if press_var is None:
-            press_var = next(
-                (var for var in possible_press_names if var in ds1.variables), None
-            )
-
-        if press_var is None:
-            raise ValueError(
-                "No valid pressure variable (PRES or pressure) found in ds or ds1"
-            )
-
-        # Get pressure values from the correct dataset
-        pressure_data = ds[press_var] if press_var in ds.variables else ds1[press_var]
-
-        # Find the maximum pressure value between start_index and end_index
-        pmax = np.nanmax(pressure_data[start_index : end_index + 1].values)
-
-        # Find the index where PRES attains pmax
-        pmax_index = start_index + np.argmax(
-            pressure_data[start_index : end_index + 1].values == pmax
-        )
-        # Assign dive_num to all values up to and including pmax
-        ds["dive_num_cast"][start_index : pmax_index + 1] = dive
-
-        # Assign dive_num + 0.5 to values after pmax
-        ds["dive_num_cast"][pmax_index + 1 : end_index + 1] = dive + 0.5
-        # Remove PROFILE_NUMBER if it exists
-        if "PROFILE_NUMBER" in ds.variables:
-            ds = ds.drop_vars("PROFILE_NUMBER")
-        # Calculate profile number and fill Nan with fill value
-        fill_value = -9999
-        ds["PROFILE_NUMBER"] = (
-            (2 * ds["dive_num_cast"] - 1).fillna(fill_value).astype(int)
-        )
-        # _FillValue belongs in encoding, not attrs (xarray rejects it in attrs on write).
-        ds["PROFILE_NUMBER"].encoding["_FillValue"] = fill_value
     return ds
 
 

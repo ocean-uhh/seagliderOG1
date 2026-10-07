@@ -31,8 +31,12 @@ def test_process_dataset():
     assert sg_cal["mass"].values > 50 and sg_cal["mass"].values < 60
     assert tmp == "$GPS,060608,183207,6124.849,-816.741,13,1.8,12,-8.8"
 
+    ctd_dim, merge_dims, all_dims = tools._get_merge_dimensions([ds1])
+
     # create og1_mapping for standardise_OG10
-    OG1_mapping = tools.OG1_name_mapping(ds=ds, ds1_base=ds1, ctd_dim="sg_data_point")
+    OG1_mapping = tools.OG1_name_mapping(
+        [ds1], ctd_dim=ctd_dim, dims_to_merge=merge_dims
+    )
 
     # Check initial variables are reformatted
     dsa = convertOG1.standardise_OG10(ds, og1_mapping=OG1_mapping)
