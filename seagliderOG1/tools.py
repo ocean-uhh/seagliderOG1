@@ -38,35 +38,31 @@ INSTRUMENT_ALIASES = {
     "sbe41": {"sbe41", "sbect"},
 }
 
-
 def OG1_name_mapping(
-    list_of_datasets: list[xr.Dataset], ctd_dim: str, dims_to_merge: list[str]
+    list_of_datasets: list[xr.Dataset],
 ) -> pd.DataFrame:
     """Create a mapping from original variable names to OG1 variable names.
 
-    The function examines all datasets before OG1 standardization and creates
-    one row per unique variable name using at least one dimension in
-    ``dims_to_merge`` (with ``ctd_dim`` always included). Each row contains the original
-    variable name, its OG1 name, associated instrument, instrument type, and
-    original dimensions. Individual time variables are replaced by one
-    ``time`` / ``TIME`` row, whose ``original_dimension`` contains a list of
-    unique time variable names on the dimensions being merged.
+    Include every unique variable name from all input datasets, including
+    scalars, coordinates, QC variables, and variables without an OG1 mapping.
+    The first occurrence of each name supplies its dimensions and attributes.
 
-    Variables ending in ``_qc`` inherit the instrument association of their
-    corresponding measurement variable. For example,
-    ``ctd_temperature_qc`` inherits the instrument assigned to
-    ``ctd_temperature``.
+    Each row contains the original variable name, its OG1 name (None when
+    unavailable), associated instrument, instrument type, original dimensions,
+    and whether OG1 attributes are available.
+
+    Individual time variables are consolidated into one ``time`` / ``TIME``
+    row. Its ``original_dimension`` lists their dimensions and original names.
+
+    QC variables inherit the instrument association of their corresponding
+    measurement variable.
 
     Instrument assignment precedence:
 
-    1. QC variables inherit the instrument of their parent measurement.
-    2. Variables beginning with ``ctd_`` or from the CTD variables defined above are
+    1. QC variables inherit their parent measurement's instrument.
+    2. CTD measurement variables are assigned to the CTD.
+    3. When ``ctd_pressure`` exists, calculated hydrographic variables are
        assigned to the CTD.
-       When the same OG1 variable is also present on the CTD instrument's
-       ``<instrument>_data_point`` dimension, the ``ctd_data_point`` copy is
-       retained and the instrument-dimension copy is omitted.
-    3. When ``ctd_pressure`` is available, calculated hydrographic variables
-       are assigned to the CTD.
     4. The variable's ``instrument`` attribute is checked.
     5. Dimensions named ``<instrument>_data_point`` are checked.
     6. The variable name is checked for an instrument name or alias.
@@ -74,31 +70,18 @@ def OG1_name_mapping(
     Parameters
     ----------
     list_of_datasets
-        List of datasets immediately before calling ``standardise_OG10``.
-    ctd_dim
-        Dimension used by the CTD data, for example ``ctd_data_point`` or
-        ``sg_data_point``.
-
-    dims_to_merge
-        Dimensions whose variables should be included. A variable is included
-        when any of its dimensions matches; scalars are excluded. If a name
-        occurs more than once, the first eligible occurrence supplies its
-        dimensions and attributes. Instruments are collected from every
-        dataset's global ``instrument`` attribute, preserving first-seen order.
+        Datasets immediately before calling ``standardise_OG10``.
+        Instruments are collected from every dataset's global ``instrument``
+        attribute, preserving first-seen order.
 
     Returns
     -------
     pandas.DataFrame
-        Mapping table containing ``original_name``, ``OG1_name``,
-        ``instrument``, ``instrument_type``, and ``original_dimension``.
+        Columns: ``original_name``, ``OG1_name``, ``instrument``,
+        ``instrument_type``, ``original_dimension``, and
+        ``has_OG1_attributes``.
     """
-    list_of_datasets = list(list_of_datasets)
-    # Keep one row per name, choosing the first occurrence on a dimension
-    # that will be merged. Retain other variables for QC-parent lookup.
-    merge_dimensions = set(dims_to_merge)
-    merge_dimensions.add(ctd_dim)
     all_sources: dict[str, xr.DataArray] = {}
-    sources: dict[str, xr.DataArray] = {}
     instruments: list[str] = []
 
     for dataset in list_of_datasets:
@@ -107,10 +90,7 @@ def OG1_name_mapping(
                 instruments.append(instrument)
 
         for variable_name in dataset.variables:
-            source = dataset[variable_name]
-            all_sources.setdefault(variable_name, source)
-            if merge_dimensions.intersection(source.dims):
-                sources.setdefault(variable_name, source)
+            all_sources.setdefault(variable_name, dataset[variable_name])
 
     standard_names = vocabularies.standard_names
     sensor_vocabs = vocabularies.sensor_vocabs
@@ -121,32 +101,24 @@ def OG1_name_mapping(
         return variable_name in all_sources
 
     def get_source(variable_name: str) -> xr.DataArray:
-        """Prefer the first occurrence on a dimension being merged."""
-        if variable_name in sources:
-            return sources[variable_name]
+        """Get the first occurrence of a variable across input datasets."""
         return all_sources[variable_name]
 
-    def get_qc_parent_name(
-        variable_name: str,
-    ) -> str | None:
+    def get_qc_parent_name(variable_name: str) -> str | None:
         """Return the measurement name corresponding to a *_qc variable."""
         if variable_name.lower().endswith("_qc"):
             return variable_name[:-3]
 
         return None
 
-    def get_instrument_names(
-        instrument: str,
-    ) -> set[str]:
+    def get_instrument_names(instrument: str) -> set[str]:
         """Get the lowercase instrument name and its aliases."""
         return INSTRUMENT_ALIASES.get(
             instrument.lower(),
             {instrument.lower()},
         )
 
-    def get_instrument_type(
-        instrument: str | None,
-    ) -> str | None:
+    def get_instrument_type(instrument: str | None) -> str | None:
         """Get an instrument's sensor type from the OG1 vocabulary."""
         if instrument is None:
             return None
@@ -173,52 +145,30 @@ def OG1_name_mapping(
 
     ctd_instrument = get_ctd_instrument()
 
-    def is_ctd_associated(
-        variable_name: str,
-        dimensions: set[str] | None = None,
-    ) -> bool:
+    def is_ctd_associated(variable_name: str) -> bool:
         """Determine whether a variable should be assigned to the CTD."""
-        lower_name = variable_name.lower()
-
-        # QC variables inherit the CTD association of their parent variable.
         qc_parent = get_qc_parent_name(variable_name)
 
         if qc_parent is not None and variable_exists(qc_parent):
-            parent_dimensions = {
-                dimension.lower() for dimension in get_source(qc_parent).dims
-            }
+            return is_ctd_associated(qc_parent)
 
-            return is_ctd_associated(
-                qc_parent,
-                parent_dimensions,
-            )
+        lower_name = variable_name.lower()
 
-        if dimensions is None:
-            dimensions = {
-                dimension.lower() for dimension in get_source(variable_name).dims
-            }
-
-        # Explicit CTD name or dimension.
-        # if (lower_name.startswith("ctd_") or "ctd_data_point" in dimensions):
-        if (
+        return (
             lower_name.startswith("ctd_")
             or lower_name in CTD_MEASUREMENT_VARIABLES
-            or has_ctd_pressure
-            and lower_name in CTD_CALCULATED_VARIABLES
-        ):
-            return True
+            or (
+                has_ctd_pressure
+                and lower_name in CTD_CALCULATED_VARIABLES
+            )
+        )
 
-        return False
-
-    def find_instrument(
-        variable_name: str,
-    ) -> str | None:
+    def find_instrument(variable_name: str) -> str | None:
         """Find the instrument associated with a variable."""
         source = get_source(variable_name)
         lower_name = variable_name.lower()
 
-        # A QC variable inherits the full instrument assignment of its
-        # corresponding measurement variable.
+        # QC variables inherit their parent measurement's instrument.
         qc_parent = get_qc_parent_name(variable_name)
 
         if qc_parent is not None and variable_exists(qc_parent):
@@ -226,7 +176,7 @@ def OG1_name_mapping(
 
         dimensions = {dimension.lower() for dimension in source.dims}
 
-        if ctd_instrument is not None and is_ctd_associated(variable_name, dimensions):
+        if ctd_instrument is not None and is_ctd_associated(variable_name):
             return ctd_instrument
 
         # Prefer an explicit instrument attribute.
@@ -270,7 +220,9 @@ def OG1_name_mapping(
         }
 
         if instrument is not None:
-            prefixes.update(f"{name}_" for name in get_instrument_names(instrument))
+            prefixes.update(
+                f"{name}_" for name in get_instrument_names(instrument)
+            )
 
         candidates = [variable_name]
 
@@ -279,7 +231,7 @@ def OG1_name_mapping(
         for candidate in candidates:
             for prefix in prefixes:
                 if candidate.lower().startswith(prefix):
-                    stripped_name = candidate[len(prefix) :]
+                    stripped_name = candidate[len(prefix):]
 
                     if stripped_name and stripped_name not in candidates:
                         candidates.append(stripped_name)
@@ -291,10 +243,7 @@ def OG1_name_mapping(
         instrument: str | None,
     ) -> str | None:
         """Find an explicit vocabulary match."""
-        for candidate in get_name_candidates(
-            variable_name,
-            instrument,
-        ):
+        for candidate in get_name_candidates(variable_name, instrument):
             og1_name = standard_names.get(candidate)
 
             if og1_name is not None:
@@ -307,101 +256,32 @@ def OG1_name_mapping(
         instrument: str | None,
     ) -> str | None:
         """Find or derive the OG1 vocabulary name for a variable."""
-        # Prefer an explicit vocabulary entry, including an explicit
-        # entry for the QC variable.
-        og1_name = find_direct_og1_name(
-            variable_name,
-            instrument,
-        )
+        # Prefer an explicit entry, including explicit QC entries.
+        og1_name = find_direct_og1_name(variable_name, instrument)
 
         if og1_name is not None:
             return og1_name
 
-        # If no explicit QC entry exists, derive it from the parent
-        # measurement's OG1 name.
+        # Otherwise, derive a QC name from its parent measurement.
         qc_parent = get_qc_parent_name(variable_name)
 
         if qc_parent is not None:
-            parent_og1_name = find_direct_og1_name(
-                qc_parent,
-                instrument,
-            )
+            parent_og1_name = find_direct_og1_name(qc_parent, instrument)
 
             if parent_og1_name is not None:
                 return f"{parent_og1_name}_QC"
 
         return None
 
-    def uses_dimension(
-        variable_name: str,
-        dimension: str,
-    ) -> bool:
-        """Return whether a variable uses a dimension, case-insensitively."""
-        return dimension.lower() in {
-            item.lower() for item in get_source(variable_name).dims
-        }
-
-    def uses_ctd_instrument_dimension(
-        variable_name: str,
-    ) -> bool:
-        """Return whether a variable uses a CTD-instrument dimension."""
-        if ctd_instrument is None:
-            return False
-
-        dimensions = {dimension.lower() for dimension in get_source(variable_name).dims}
-
-        return any(
-            f"{name}_data_point" in dimensions
-            and f"{name}_data_point" != "ctd_data_point"
-            for name in get_instrument_names(ctd_instrument)
-        )
-
-    # dict.fromkeys removes duplicates while preserving order.
-    # QC variables are deliberately retained.
-    variable_names = list(sources)
-
-    # Some basestation datasets contain the same CTD measurements twice:
-    # once on the generic ctd_data_point dimension and once on the CTD
-    # instrument's own dimension (for example legato_data_point).  Treat the
-    # generic dimension as authoritative.  Comparing the unsuffixed OG1 names
-    # catches pairs such as ctd_temperature/legato_temperature as well as
-    # their QC variables.
-    preferred_ctd_og1_names = {
-        og1_name
-        for variable_name in variable_names
-        if uses_dimension(variable_name, "ctd_data_point")
-        for og1_name in [get_og1_base_name(variable_name, ctd_instrument)]
-        if og1_name is not None
-    }
-
-    variable_names = [
-        variable_name
-        for variable_name in variable_names
-        if not (
-            not uses_dimension(variable_name, "ctd_data_point")
-            and uses_ctd_instrument_dimension(variable_name)
-            and get_og1_base_name(variable_name, ctd_instrument)
-            in preferred_ctd_og1_names
-            # Keep time variables for the final combined TIME row.
-            and get_og1_base_name(variable_name, ctd_instrument) != "TIME"
-        )
-    ]
-
-    def variable_sort_key(
-        variable_name: str,
-    ) -> tuple[bool, bool]:
+    def variable_sort_key(variable_name: str) -> tuple[bool, bool]:
         """Place CTD measurements first and their QC variables second."""
-        source = get_source(variable_name)
-        dimensions = {dimension.lower() for dimension in source.dims}
-
-        is_ctd = is_ctd_associated(
-            variable_name,
-            dimensions,
-        )
+        is_ctd = is_ctd_associated(variable_name)
         is_qc = get_qc_parent_name(variable_name) is not None
 
         return (not is_ctd, is_qc)
 
+    # Include every unique variable; retain CTD copies on other dimensions.
+    variable_names = list(all_sources)
     variable_names.sort(key=variable_sort_key)
 
     mapping = []
@@ -410,11 +290,7 @@ def OG1_name_mapping(
     for original_name in variable_names:
         source = get_source(original_name)
         instrument = find_instrument(original_name)
-
-        base_og1_name = get_og1_base_name(
-            original_name,
-            instrument,
-        )
+        base_og1_name = get_og1_base_name(original_name, instrument)
 
         og1_name = None
 
@@ -422,10 +298,11 @@ def OG1_name_mapping(
             count = og1_name_counts.get(base_og1_name, 0) + 1
             og1_name_counts[base_og1_name] = count
 
-            if count == 1:
-                og1_name = base_og1_name
-            else:
-                og1_name = f"{base_og1_name}{count}"
+            og1_name = (
+                base_og1_name
+                if count == 1
+                else f"{base_og1_name}{count}"
+            )
 
         mapping.append(
             {
@@ -434,7 +311,6 @@ def OG1_name_mapping(
                 "instrument": instrument,
                 "instrument_type": get_instrument_type(instrument),
                 "original_dimension": ", ".join(source.dims),
-                "vocabulary_name": base_og1_name,
             }
         )
 
@@ -449,8 +325,11 @@ def OG1_name_mapping(
         ],
     )
 
-    # Replace individual time variables with a single "time" variable.
-    time_mask = result["OG1_name"].str.fullmatch(r"TIME[0-9]*", na=False)
+    # Replace individual time variables with a single "time" / "TIME" row.
+    time_mask = result["OG1_name"].astype("string").str.fullmatch(
+        r"TIME[0-9]*",
+        na=False,
+    )
 
     time_variable_names = (
         result.loc[time_mask, "original_dimension"]
@@ -470,6 +349,7 @@ def OG1_name_mapping(
             }
         ]
     )
+
     result = pd.concat(
         [result.loc[~time_mask], time_row],
         ignore_index=True,
@@ -477,7 +357,9 @@ def OG1_name_mapping(
 
     result["has_OG1_attributes"] = result["OG1_name"].apply(
         lambda name: (
-            bool(vocabularies.vocab_attrs.get(name, {})) if pd.notna(name) else False
+            bool(vocabularies.vocab_attrs.get(name, {}))
+            if pd.notna(name)
+            else False
         )
     )
 

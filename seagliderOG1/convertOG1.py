@@ -60,7 +60,7 @@ def convert_to_OG1(
     ctd_dim, dims_to_merge, all_dims = tools._get_merge_dimensions(list_of_datasets)
 
     # Create a mapping from original variable names to OG1 variable names for all variables across the datasets
-    OG1_mapping = tools.OG1_name_mapping(list_of_datasets, ctd_dim, dims_to_merge)
+    OG1_mapping = tools.OG1_name_mapping(list_of_datasets)
 
     # print the sumary of variables assigned or not assigned to the dataset
     tools.print_OG1_mapping_summary(OG1_mapping, ctd_dim, dims_to_merge, all_dims)
