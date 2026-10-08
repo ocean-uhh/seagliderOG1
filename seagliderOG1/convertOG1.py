@@ -113,9 +113,7 @@ def convert_to_OG1(
     ds_og1 = tools.add_sensor_to_dataset(ds_og1, sensor_dict, OG1_mapping)
 
     # Apply attributes
-    ordered_attributes = update_dataset_attributes(
-        list_of_datasets[0], contributors
-    )
+    ordered_attributes = update_dataset_attributes(list_of_datasets[0], contributors)
     for key, value in ordered_attributes.items():
         ds_og1.attrs[key] = value
 
@@ -1005,6 +1003,7 @@ def process_and_save_data(
             ds_all = xr.open_dataset(output_file)
             return ds_all
         elif user_input.lower() == "yes":
+            list_datasets = readers.load_basestation_files(input_location)
             ds_all, varlist = convert_to_OG1(list_datasets)
             os.remove(output_file)
             if save:
