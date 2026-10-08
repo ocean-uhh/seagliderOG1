@@ -1156,6 +1156,12 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
     # Must be called *after* var_name has OG1 long_name
     var_name = qc_name[:-3]
     if qc_name in list(dsa):
+        # For scalar log qc's that might change over the mission are stored as json, don't convert to int8
+        if (
+            qc_name in dsa.variables
+            and dsa[qc_name].attrs.get("serialization") == "json"
+        ):
+            return dsa
         # Seaglider default type was a string.  Convert to int8 and take care of NaNs
         # dsa[qc_name].values = dsa[qc_name].values.astype("int8")
         values = dsa[qc_name].values
@@ -1168,7 +1174,9 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
         values = pd.to_numeric(
             np.asarray(values).reshape(-1),
             errors="coerce",
-        ).reshape(original_shape)  # Convert strings to numbers, NaNs stay NaNs
+        ).reshape(
+            original_shape
+        )  # Convert strings to numbers, NaNs stay NaNs
         # Assign back to dataset
         dsa[qc_name].values = values
         ### Set the nan values to 6 (unsampled flag) and convert to int8
@@ -1291,6 +1299,13 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
             # never apply the generic bit-width fill (127) to a flag variable.
             continue
         da = ds[var_name]
+        # Serialized per-dive parameters must remain scalar strings.
+        if da.attrs.get("serialization") == "json":
+            continue
+
+        # Numeric dtype optimization does not apply to text or object variables.
+        if da.dtype.kind in ("U", "S", "O"):
+            continue
         input_dtype = da.dtype.type
         new_dtype = find_best_dtype(var_name, da)
         for att in ["valid_min", "valid_max"]:
@@ -1819,12 +1834,14 @@ def extract_scalar_parameters(
         Parameter values, source attributes, presence and constant flags,
         and dive identifiers.
     """
-    names = list(dict.fromkeys(
-        name
-        for dataset in list_datasets
-        for name, variable in dataset.variables.items()
-        if variable.ndim == 0
-    ))
+    names = list(
+        dict.fromkeys(
+            name
+            for dataset in list_datasets
+            for name, variable in dataset.variables.items()
+            if variable.ndim == 0
+        )
+    )
 
     parameters = {}
 
@@ -1854,10 +1871,7 @@ def extract_scalar_parameters(
                 attributes = variable.attrs.copy()
 
         # Missing occurrences prevent collapsing to a constant.
-        constant = (
-            all(present)
-            and pd.Series(values).nunique(dropna=False) == 1
-        )
+        constant = all(present) and pd.Series(values).nunique(dropna=False) == 1
 
         parameters[name] = {
             "values": values,
@@ -1872,15 +1886,9 @@ def extract_scalar_parameters(
     for dataset in list_datasets:
         if "dive_number" in dataset.attrs:
             dive = dataset.attrs["dive_number"]
-        elif (
-            "dive_number" in dataset.variables
-            and dataset["dive_number"].ndim == 0
-        ):
+        elif "dive_number" in dataset.variables and dataset["dive_number"].ndim == 0:
             dive = dataset["dive_number"].values[()]
-        elif (
-            "trajectory" in dataset.variables
-            and dataset["trajectory"].ndim == 0
-        ):
+        elif "trajectory" in dataset.variables and dataset["trajectory"].ndim == 0:
             dive = dataset["trajectory"].values[()]
         else:
             dive = None
@@ -1892,6 +1900,7 @@ def extract_scalar_parameters(
         "dive_numbers": dive_numbers,
     }
 
+
 def add_scalar_parameters(
     ds_og1: xr.Dataset,
     extracted: dict,
@@ -1899,35 +1908,45 @@ def add_scalar_parameters(
 ) -> tuple[xr.Dataset, pd.DataFrame]:
     """Add extracted scalar parameters and update the OG1 mapping.
 
-    Keep constant parameters scalar. Assign changing or partially missing
-    parameters along ``N_MEASUREMENTS`` using ``DIVE_NUMBER``, with missing
-    values where unavailable.
+    Keep constant parameters as ordinary scalars. Store changing or partially
+    missing parameters as scalar JSON strings with aligned "dives" and "values"
+    lists. Missing values are represented by JSON null.
+
+    No dimensions are added, and no parameters are expanded along
+    N_MEASUREMENTS.
 
     Use existing OG1 mappings or vocabulary names where available; otherwise
-    retain original names. Preserve source attributes and units, and add
-    ``original_name``. No unit conversions are performed.
-
-    Parameters
-    ----------
-    ds_og1 : xarray.Dataset
-        Output dataset. Changing parameters require
-        ``DIVE_NUMBER(N_MEASUREMENTS)``.
-    extracted : dict
-        Parameters and dive identifiers from ``extract_scalar_parameters``.
-    og1_mapping : pandas.DataFrame
-        Existing variable mapping with unique original names.
-
-    Returns
-    -------
-    tuple[xarray.Dataset, pandas.DataFrame]
-        Dataset with assigned parameters and the updated mapping.
+    retain original names. Preserve source metadata except numeric storage and
+    range attributes that do not apply to JSON strings. No unit conversions
+    are performed.
     """
+    import json
+
+    import numpy as np
+
     result = ds_og1.copy()
     mapping = og1_mapping.copy()
-    dive_numbers = extracted["dive_numbers"]
+    dive_numbers = list(extracted["dive_numbers"])
 
     if mapping["original_name"].duplicated().any():
         raise ValueError("The mapping must have unique original names.")
+
+    def json_scalar(value):
+        """Convert a scalar to a JSON-compatible value."""
+        if np.ndim(value) != 0:
+            raise ValueError("Expected a scalar parameter value.")
+
+        if value is None or pd.isna(value):
+            return None
+
+        if isinstance(value, np.generic):
+            value = value.item()
+
+        # NumPy byte strings also become bytes after .item().
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+
+        return value
 
     used_names = {}
 
@@ -1973,50 +1992,81 @@ def add_scalar_parameters(
 
         attributes = parameter["attributes"].copy()
         attributes["original_name"] = original_name
+        values = list(parameter["values"])
+
+        if not values:
+            raise ValueError(f"Parameter '{original_name}' has no extracted values.")
 
         if parameter["constant"]:
             variable = xr.DataArray(
-                parameter["values"][0],
+                values[0],
                 attrs=attributes,
             )
         else:
-            if "DIVE_NUMBER" not in result.variables:
+            if len(values) != len(dive_numbers):
                 raise ValueError(
-                    f"Changing parameter '{original_name}' requires "
-                    "DIVE_NUMBER in the output dataset."
-                )
-
-            if result["DIVE_NUMBER"].dims != ("N_MEASUREMENTS",):
-                raise ValueError(
-                    "DIVE_NUMBER must have dimension N_MEASUREMENTS."
+                    f"Parameter '{original_name}' has {len(values)} values "
+                    f"but {len(dive_numbers)} dive identifiers."
                 )
 
             if any(dive is None or pd.isna(dive) for dive in dive_numbers):
                 raise ValueError(
                     "Every input dataset needs a dive identifier "
-                    "to assign changing scalar parameters."
+                    "to store changing scalar parameters."
                 )
 
             if pd.Index(dive_numbers).has_duplicates:
-                raise ValueError(
-                    "Input dive identifiers must be unique."
+                raise ValueError("Input dive identifiers must be unique.")
+
+            try:
+                payload = {
+                    "dives": [json_scalar(dive) for dive in dive_numbers],
+                    "values": [json_scalar(value) for value in values],
+                }
+                serialized = json.dumps(
+                    payload,
+                    separators=(",", ":"),
+                    allow_nan=False,
                 )
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"Cannot serialize parameter '{original_name}' "
+                    f"as per-dive JSON: {exc}"
+                ) from exc
 
-            values_by_dive = pd.Series(
-                parameter["values"],
-                index=dive_numbers,
+            # These numeric attributes do not apply to the stored string.
+            for key in (
+                "_FillValue",
+                "missing_value",
+                "scale_factor",
+                "add_offset",
+                "valid_min",
+                "valid_max",
+                "valid_range",
+                "actual_range",
+            ):
+                attributes.pop(key, None)
+
+            attributes.update(
+                {
+                    "serialization": "json",
+                    "storage_type": "per_dive_scalar",
+                    "serialization_description": (
+                        'JSON object with aligned "dives" and "values" lists; '
+                        "null indicates a missing value. Units and source "
+                        "metadata describe the decoded values."
+                    ),
+                }
             )
-
-            measurement_dives = result["DIVE_NUMBER"].values
-            assigned_values = values_by_dive.reindex(
-                measurement_dives
-            ).to_numpy()
 
             variable = xr.DataArray(
-                assigned_values,
-                dims=("N_MEASUREMENTS",),
+                serialized,
                 attrs=attributes,
             )
+
+            # Write a NetCDF4 variable-length string, avoiding a character
+            # dimension. The existing writer skips compression for scalars.
+            variable.encoding["dtype"] = str
 
         # Remove an old original-name version when the parameter is renamed.
         if output_name != original_name and original_name in result.variables:
@@ -2026,7 +2076,6 @@ def add_scalar_parameters(
 
         mapping_updates = {
             "OG1_name": output_name if is_mapped else None,
-            # The source variable was scalar, regardless of its output shape.
             "original_dimension": "",
             "has_OG1_attributes": (
                 bool(vocabularies.vocab_attrs.get(output_name, {}))
@@ -2042,12 +2091,16 @@ def add_scalar_parameters(
             mapping = pd.concat(
                 [
                     mapping,
-                    pd.DataFrame([{
-                        "original_name": original_name,
-                        "instrument": None,
-                        "instrument_type": None,
-                        **mapping_updates,
-                    }]),
+                    pd.DataFrame(
+                        [
+                            {
+                                "original_name": original_name,
+                                "instrument": None,
+                                "instrument_type": None,
+                                **mapping_updates,
+                            }
+                        ]
+                    ),
                 ],
                 ignore_index=True,
             )
