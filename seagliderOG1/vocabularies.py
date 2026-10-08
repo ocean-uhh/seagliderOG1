@@ -41,6 +41,15 @@ config_dir = os.path.join(script_dir, "config/")
 # Dimension renaming: maps basestation dimension names to OG1 standard names
 dims_rename_dict = {"sg_data_point": "N_MEASUREMENTS"}
 
+# Base of the NERC W08 contributor-role vocabulary collection.
+ROLE_VOCABULARY_COLLECTION = "http://vocab.nerc.ac.uk/collection/W08/current/"
+
+# Known contributor-role term URIs (from the OG1 example files). A role absent here
+# gets the collection URL above; never guess a CONTxxxx term number.
+ROLE_VOCABULARY = {
+    "PI": "http://vocab.nerc.ac.uk/collection/W08/current/CONT0004/",
+}
+
 # Preferred units for OG1 format - conversion will be attempted if mapping exists
 preferred_units = ["m s-1", "dbar", "S m-1"]
 
