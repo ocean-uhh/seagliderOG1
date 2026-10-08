@@ -3,12 +3,60 @@ import sys
 
 import netCDF4
 import numpy as np
+import xarray as xr
 
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
 from seagliderOG1 import convertOG1, readers, tools, writers
+
+
+def test_resolve_platform_serial_from_file():
+    """Serial comes from platform_id; string fields fall back to UNK; depth omitted."""
+    ds = xr.Dataset(attrs={"platform_id": "SG005"})
+    resolved = convertOG1._resolve_platform(ds, None)
+    assert resolved["PLATFORM_SERIAL_NUMBER"] == "sg005"
+    assert resolved["PLATFORM_MODEL"] == "UNK"
+    assert resolved["WMO_IDENTIFIER"] == "UNK"
+    assert "PLATFORM_DEPTH_RATING" not in resolved  # numeric: omitted, never "UNK"
+    assert "platform_model_vocabulary" not in resolved
+
+
+def test_resolve_platform_config_overrides_and_numeric_depth():
+    """Config values override the file; numeric depth and model vocab are written."""
+    ds = xr.Dataset(attrs={"platform_id": "SG005"})
+    platform = {
+        "PLATFORM_SERIAL_NUMBER": "orca",
+        "PLATFORM_MODEL": "Slocum G3",
+        "PLATFORM_DEPTH_RATING": 1000,
+        "platform_model_vocabulary": "http://vocab.example/model",
+    }
+    resolved = convertOG1._resolve_platform(ds, platform)
+    assert resolved["PLATFORM_SERIAL_NUMBER"] == "orca"
+    assert resolved["PLATFORM_MODEL"] == "Slocum G3"
+    assert resolved["PLATFORM_DEPTH_RATING"] == 1000
+    assert resolved["platform_model_vocabulary"] == "http://vocab.example/model"
+
+
+def test_resolve_platform_missing_serial_raises():
+    """No platform_id and no config serial is a hard error (it names the output)."""
+    try:
+        convertOG1._resolve_platform(xr.Dataset(), None)
+    except ValueError as exc:
+        assert "PLATFORM_SERIAL_NUMBER" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for missing serial")
+
+
+def test_global_attributes_collision_raises():
+    """A global_attributes key that collides with a derived global is an error."""
+    try:
+        convertOG1.convert_to_OG1([], global_attributes={"id": "x"})
+    except ValueError as exc:
+        assert "id" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for derived-global collision")
 
 
 def test_process_dataset():
