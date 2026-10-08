@@ -49,6 +49,52 @@ def test_resolve_platform_missing_serial_raises():
         raise AssertionError("expected ValueError for missing serial")
 
 
+def test_get_contributors_demo_sg005_real_attrs():
+    """demo_sg005: role-less creator kept + warned; PI alias; institution -> EDMO 1434."""
+    import warnings
+
+    ds = xr.Dataset(
+        attrs={
+            "creator_name": "Charlie Eriksen",
+            "creator_email": "eriksen@uw.edu",
+            "contributor_name": "Peter Rhines",
+            "contributor_role": "Principal investigator",
+            "institution": (
+                "School of Oceanography\nUniversity of Washington\n"
+                "Seattle, WA 98195-5351"
+            ),
+        }
+    )
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        attrs = convertOG1.get_contributors(ds)
+    assert attrs["contributor_name"] == "Charlie Eriksen, Peter Rhines"
+    assert attrs["contributor_role"] == ", PI"  # Eriksen role-less; Rhines normalised
+    assert attrs["contributor_email"] == "eriksen@uw.edu, "
+    assert (
+        attrs["contributing_institutions"]
+        == "University of Washington (School of Oceanography)"
+    )
+    assert (
+        attrs["contributing_institutions_vocabulary"]
+        == "https://edmo.seadatanet.org/report/1434"
+    )
+    assert any("no role for contributor" in str(w.message) for w in caught)
+
+
+def test_get_contributors_config_fills_creator_role():
+    """A config person matching the role-less creator gives one slot, email filled."""
+    ds = xr.Dataset(
+        attrs={"creator_name": "Charlie Eriksen", "creator_email": "eriksen@uw.edu"}
+    )
+    attrs = convertOG1.get_contributors(
+        ds, people=[{"name": "Charlie Eriksen", "role": "PI"}]
+    )
+    assert attrs["contributor_name"] == "Charlie Eriksen"
+    assert attrs["contributor_role"] == "PI"
+    assert attrs["contributor_email"] == "eriksen@uw.edu"
+
+
 def test_global_attributes_collision_raises():
     """A global_attributes key that collides with a derived global is an error."""
     try:

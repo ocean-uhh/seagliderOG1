@@ -25,7 +25,7 @@ def test_format_contributors_preserves_aligned_empties():
 
 
 def test_format_contributors_orcid_and_role_vocabulary():
-    """Bare ORCID becomes a URL; PI resolves a term URI; others the collection URL."""
+    """Bare ORCID becomes a URL; each role resolves to its W08 term URI."""
     people = [
         {"name": "Ann", "orcid": "0000-0001-0000-0001", "role": "PI"},
         {"name": "Bo", "orcid": None, "role": "Data scientist"},
@@ -35,7 +35,32 @@ def test_format_contributors_orcid_and_role_vocabulary():
     assert ids == ["https://orcid.org/0000-0001-0000-0001", ""]
     vocabs = contributors.split_aligned(attrs["contributor_role_vocabulary"])
     assert vocabs[0] == "http://vocab.nerc.ac.uk/collection/W08/current/CONT0004/"
-    assert vocabs[1] == "http://vocab.nerc.ac.uk/collection/W08/current/"
+    assert vocabs[1] == "http://vocab.nerc.ac.uk/collection/W08/current/CONT0006/"
+
+
+def test_normalize_role_labels_aliases_and_unknown():
+    """Known labels (any case) and attested aliases normalise; unknown is None."""
+    assert contributors.normalize_role("PI") == "PI"
+    assert contributors.normalize_role("operator") == "Operator"
+    assert contributors.normalize_role("Principal investigator") == "PI"
+    assert contributors.normalize_role("principal investigator") == "PI"
+    assert contributors.normalize_role("") == ""
+    assert contributors.normalize_role("Chief Wrangler") is None
+
+
+def test_format_contributors_normalises_role_label_and_passes_unknown():
+    """A known role is written as its preferred label; an unknown role passes through."""
+    people = [
+        {"name": "Ann", "role": "principal investigator"},
+        {"name": "Bo", "role": "Chief Wrangler"},
+    ]
+    attrs = contributors.format_contributors(people)
+    assert contributors.split_aligned(attrs["contributor_role"]) == [
+        "PI",
+        "Chief Wrangler",
+    ]
+    vocabs = contributors.split_aligned(attrs["contributor_role_vocabulary"])
+    assert vocabs == ["http://vocab.nerc.ac.uk/collection/W08/current/CONT0004/", ""]
 
 
 def test_format_contributors_empty():
@@ -92,3 +117,59 @@ def test_institutions_format_and_parse():
     ]
     roundtrip = contributors.parse_institutions(attrs)
     assert [i["name"] for i in roundtrip] == ["Uni Hamburg", "Second Inst"]
+
+
+def test_consolidate_role_less_merges_into_role_bearing():
+    """A role-less creator merges into a same-name record that has a role."""
+    records = [
+        {"name": "Charlie Eriksen", "email": "eriksen@uw.edu", "role": ""},
+        {"name": "Charlie Eriksen", "email": "", "role": "PI"},
+    ]
+    out = contributors.consolidate(records)
+    assert len(out) == 1
+    assert out[0]["role"] == "PI"
+    assert out[0]["email"] == "eriksen@uw.edu"  # filled from the role-less record
+
+
+def test_consolidate_keeps_distinct_names_and_roles():
+    """Different names stay; same name with two roles stays two."""
+    records = [
+        {"name": "Olle", "role": "Operator"},
+        {"name": "Aleksandra", "role": "Operator"},
+        {"name": "Ann", "role": "PI"},
+        {"name": "Ann", "role": "Data scientist"},
+    ]
+    out = contributors.consolidate(records)
+    assert len(out) == 4
+
+
+def test_enrich_institutions_matches_multiline_basestation_name():
+    """The multi-line basestation institution matches EDMO 1434 to a comma-free name."""
+    raw = "School of Oceanography\nUniversity of Washington\nSeattle, WA 98195-5351"
+    out = contributors.enrich_institutions([{"name": raw, "role": ""}])
+    assert out[0]["name"] == "University of Washington (School of Oceanography)"
+    assert out[0]["id"] == "https://edmo.seadatanet.org/report/1434"
+
+
+def test_enrich_institutions_config_id_wins_and_unknown_warns():
+    """A config id overrides the registry; an unknown name warns with no id."""
+    import warnings
+
+    hit = contributors.enrich_institutions(
+        [
+            {
+                "name": "University of Hamburg (IfM)",
+                "role": "Operator",
+                "id": "https://ror.org/x",
+            }
+        ]
+    )
+    assert hit[0]["id"] == "https://ror.org/x"
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        miss = contributors.enrich_institutions(
+            [{"name": "Nowhere Institute", "role": ""}]
+        )
+    assert miss[0]["id"] == ""
+    assert any("no EDMO id" in str(w.message) for w in caught)

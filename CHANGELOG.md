@@ -34,8 +34,21 @@ semantic versioning.
   only when the config supplies it. A `global_attributes` key colliding with a converter-derived
   global (`id`, `time_coverage_*`, `geospatial_*`, `date_created`) raises.
 
+- Contributor and institution attributes are rebuilt as OG1 positional, comma-aligned lists
+  (`contributor_name`/`_email`/`_id`/`_role`/`_role_vocabulary`, and `contributing_institutions`
+  with its `_role`/`_vocabulary`/`_role_vocabulary`): one slot per person/institution, empty
+  slots kept so the lists stay aligned, one role per slot. Roles normalise to the NERC W08
+  vocabulary. `convert_to_OG1` takes `contributors=` and `institutions=` as lists of records;
+  the former `contrib_to_append` dict is removed (passing a dict raises `TypeError`). Two silent
+  substitutions are removed: a missing contributor role is no longer defaulted to `PI`, and an
+  unrecognised institution is no longer stamped with the School of Oceanography EDMO code
+  (`…/report/1434`) — institutions resolve to their own EDMO id via
+  `config/institution_registry.yml`, or are written with no id and a warning.
+
 ### Added
 
+- `seagliderOG1.contributors` module and `config/institution_registry.yml` (EDMO codes) backing
+  the contributor/institution rebuild above.
 - `seagliderOG1` command-line interface (`cli/` package) with `init` (write a `mission.yaml`;
   `--from DIR` fills the platform block and `source` from the first basestation file) and
   `validate` (check keys, types, `source` and the dive range; `--strict`). `convert_to_OG1`

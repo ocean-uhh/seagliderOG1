@@ -41,13 +41,25 @@ config_dir = os.path.join(script_dir, "config/")
 # Dimension renaming: maps basestation dimension names to OG1 standard names
 dims_rename_dict = {"sg_data_point": "N_MEASUREMENTS"}
 
-# Base of the NERC W08 contributor-role vocabulary collection.
-ROLE_VOCABULARY_COLLECTION = "http://vocab.nerc.ac.uk/collection/W08/current/"
-
-# Known contributor-role term URIs (from the OG1 example files). A role absent here
-# gets the collection URL above; never guess a CONTxxxx term number.
+# NERC W08 "SensorML Contact Section Terms": the controlled vocabulary the OG1 spec
+# cites for contributor_role and contributing_institutions_role (fetched from
+# vocab.nerc.ac.uk 2026-10-08). The seven preferred labels and their term URIs.
+_W08 = "http://vocab.nerc.ac.uk/collection/W08/current/"
 ROLE_VOCABULARY = {
-    "PI": "http://vocab.nerc.ac.uk/collection/W08/current/CONT0004/",
+    "Manufacturer": _W08 + "CONT0001/",
+    "Owner": _W08 + "CONT0002/",
+    "Operator": _W08 + "CONT0003/",
+    "PI": _W08 + "CONT0004/",
+    "Technical Coordinator": _W08 + "CONT0005/",
+    "Data scientist": _W08 + "CONT0006/",
+    "Service Provider": _W08 + "CONT0007/",
+}
+
+# Attested spelling variants seen in real files, mapped to the preferred W08 label.
+# Add an alias only when it appears in a real file (basestation files and the sp041
+# example both write PI as "Principal investigator" with the CONT0004 URI).
+ROLE_ALIASES = {
+    "principal investigator": "PI",
 }
 
 # Preferred units for OG1 format - conversion will be attempted if mapping exists
@@ -242,7 +254,6 @@ order_of_attr = [
     "contributor_role_vocabulary",  # http://vocab.nerc.ac.uk/collection/W08/current/
     "contributor_email",  # name@name.com, name@name.com
     "contributor_id",  # ORCID, ORCID
-    "contributor_role_vocabular",  # http://vocab.nerc.ac.uk/search_nvs/W08/
     "contributing_institutions",  # University of Washington, University of Washington
     "contributing_institutions_vocabulary",  # https://edmo.seadatanet.org/report/544, https://ror.org/012tb2g32
     "contributing_institutions_role",  # PI, Operator

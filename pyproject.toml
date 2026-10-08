@@ -42,7 +42,7 @@ packages = [
 include-package-data = true
 
 [tool.setuptools.package-data]
-seagliderOG1 = ["config/*.yaml"]
+seagliderOG1 = ["config/*.yaml", "config/*.yml"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = [

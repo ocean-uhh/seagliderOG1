@@ -8,6 +8,7 @@ variable renaming, attribute assignments, and dataset standardization.
 import logging
 import os
 import warnings
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 
 import numpy as np
@@ -15,7 +16,7 @@ import xarray as xr
 import pandas as pd
 from tqdm import tqdm
 
-from seagliderOG1 import readers, tools, utilities, vocabularies, writers
+from seagliderOG1 import contributors, readers, tools, utilities, vocabularies, writers
 
 _log = logging.getLogger(__name__)
 
@@ -139,8 +140,8 @@ def _resolve_platform(
 
 def convert_to_OG1(
     list_of_datasets: list[xr.Dataset] | xr.Dataset,
-    contributors: dict[str, str] | None = None,
-    contrib_to_append: dict[str, str] | None = None,
+    contributors: Sequence[dict] | None = None,
+    institutions: Sequence[dict] | None = None,
     platform: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
     mode: str = "delayed",
@@ -155,13 +156,13 @@ def convert_to_OG1(
     ----------
     list_of_datasets : list of xarray.Dataset or xarray.Dataset
         A list of xarray datasets or a single xarray dataset in basestation format.
-    contributors : dict of str, optional
-        Contributor information to write into the output global attributes. When
-        None, contributors come from the basestation files' own attributes; no
-        package default is applied. Default is None.
-    contrib_to_append : dict of str, optional
-        Deprecated alias for ``contributors``; will be removed in a future release.
-        Default is None.
+    contributors : sequence of dict, optional
+        Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)
+        merged with those already on the files. When None, contributors come from
+        the files' own attributes; no package default is applied. Default is None.
+    institutions : sequence of dict, optional
+        Institution records (``name``, ``role`` and optional ``id``) merged with
+        those on the files and resolved against the EDMO registry. Default is None.
     platform : dict of str to object, optional
         Platform fields from the mission config (``PLATFORM_SERIAL_NUMBER``,
         ``PLATFORM_MODEL``, ``PLATFORM_MAKER``, ``PLATFORM_DEPTH_RATING``,
@@ -184,14 +185,13 @@ def convert_to_OG1(
         - varlist (list of str): A list of variable names from the input datasets.
 
     """
-    if contrib_to_append is not None:
-        warnings.warn(
-            "convert_to_OG1(contrib_to_append=...) is deprecated; use contributors=...",
-            DeprecationWarning,
-            stacklevel=2,
+    if isinstance(contributors, Mapping):
+        msg = (
+            "convert_to_OG1(contributors=...) is now a list of records "
+            "[{'name': ..., 'role': ..., 'email': ..., 'orcid': ...}], not a dict "
+            "of OG1 attributes. See CHANGELOG."
         )
-        if contributors is None:
-            contributors = contrib_to_append
+        raise TypeError(msg)
 
     global_attributes = global_attributes or {}
     collisions = _DERIVED_GLOBALS.intersection(global_attributes)
@@ -259,7 +259,9 @@ def convert_to_OG1(
     ds_og1 = tools.add_sensor_to_dataset(ds_og1, sensor_dict, OG1_mapping)
 
     # Apply attributes
-    ordered_attributes = update_dataset_attributes(list_of_datasets[0], contributors)
+    ordered_attributes = update_dataset_attributes(
+        list_of_datasets[0], people=contributors, institutions=institutions
+    )
     for key, value in ordered_attributes.items():
         ds_og1.attrs[key] = value
 
@@ -750,7 +752,9 @@ def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
 ## Editing attributes
 ##-----------------------------------------------------------------------------------------
 def update_dataset_attributes(
-    ds: xr.Dataset, contrib_to_append: dict[str, str] | None
+    ds: xr.Dataset,
+    people: Sequence[dict] | None = None,
+    institutions: Sequence[dict] | None = None,
 ) -> dict[str, str]:
     """Update the attributes of the dataset based on the provided attribute input.
 
@@ -761,8 +765,10 @@ def update_dataset_attributes(
     ----------
     ds : xarray.Dataset
         The input dataset whose attributes need to be updated.
-    contrib_to_append : dict of str or None
-        A dictionary containing additional contributor information to append. Default is None.
+    people : sequence of dict, optional
+        Config contributor records to merge with the dataset's own. Default is None.
+    institutions : sequence of dict, optional
+        Config institution records to merge with the dataset's own. Default is None.
 
     Returns
     -------
@@ -777,7 +783,7 @@ def update_dataset_attributes(
     mandatory_attr = vocabularies.global_attrs["attr_mandatory"]
 
     # Extract creators and contributors and institution, then reformulate strings
-    contrib_attrs = get_contributors(ds, contrib_to_append)
+    contrib_attrs = get_contributors(ds, people=people, institutions=institutions)
 
     # Extract time attributes and reformat basic time strings
     time_attrs = get_time_attributes(ds)
@@ -817,200 +823,95 @@ def update_dataset_attributes(
 
 
 def get_contributors(
-    ds: xr.Dataset, values_to_append: dict[str, str] | None = None
+    ds: xr.Dataset,
+    people: Sequence[dict] | None = None,
+    institutions: Sequence[dict] | None = None,
 ) -> dict[str, str]:
-    """Extract and format contributor information for OG1 attributes.
+    """Build OG1 contributor and institution attributes.
 
-    Processes creator and contributor information from dataset attributes,
-    formats them as comma-separated strings, and handles institution mapping.
+    Contributors and institutions already on the dataset (``creator_*``,
+    ``contributor_*`` and the basestation ``institution`` string) are parsed into
+    records, the mission config's ``people`` and ``institutions`` are appended,
+    duplicates are consolidated on (name, role) with empty-role fill-in,
+    institutions are resolved against the EDMO registry, and everything is
+    formatted once into aligned comma-separated lists. No role or EDMO id is ever
+    invented; gaps are warned.
 
     Parameters
     ----------
     ds : xarray.Dataset
-        Dataset containing original contributor attributes.
-    values_to_append : dict, optional
-        Additional contributor information to append.
+        Dataset carrying the source contributor/institution attributes.
+    people : sequence of dict, optional
+        Config contributor records (``name``, ``role`` and optional ``email``,
+        ``orcid``). Default is None.
+    institutions : sequence of dict, optional
+        Config institution records (``name``, ``role`` and optional ``id``).
+        Default is None.
 
     Returns
     -------
-    dict
-        Dictionary with formatted contributor attribute strings.
+    dict of str to str
+        The ``contributor_*`` and ``contributing_institutions*`` attributes.
 
     """
-
-    # Function to create or append to a list
-    def create_or_append_list(existing_list, new_item):
-        if new_item not in existing_list:
-            new_item = new_item.replace(",", "-")
-            existing_list.append(new_item)
-        return existing_list
-
-    def list_to_comma_separated_string(lst):
-        """Convert a list of strings to a single string with values separated by commas.
-
-        Replace any commas present in list elements with hyphens.
-
-        Parameters
-        ----------
-        lst : list
-            List of strings.
-
-        Returns
-        -------
-        str
-            Comma-separated string with commas in elements replaced by hyphens.
-
-        """
-        return ", ".join([item for item in lst])
-
-    new_attributes = ds.attrs
-
-    # Initialize empty lists for creator/contributor information and institutions if they are not present
-    names = []
-    emails = []
-    roles = []
-    roles_vocab = []
-    insts = []
-    inst_roles = []
-    inst_vocab = []
-    inst_roles_vocab = []
-    # Parse the original attributes into lists
-    if "creator_name" in new_attributes:
-        names = create_or_append_list([], new_attributes["creator_name"])
-        emails = create_or_append_list([], new_attributes.get("creator_email", ""))
-        roles = create_or_append_list([], new_attributes.get("creator_role", "PI"))
-        roles_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "creator_role_vocabulary", "http://vocab.nerc.ac.uk/search_nvs/W08"
-            ),
-        )
-        if "contributor_name" in new_attributes:
-            names = create_or_append_list(names, new_attributes["contributor_name"])
-            emails = create_or_append_list(
-                emails, new_attributes.get("contributor_email", "")
+    config_people = [
+        {
+            "name": person.get("name", ""),
+            "email": person.get("email", "") or "",
+            "id": contributors.normalize_orcid(person.get("orcid")),
+            "role": person.get("role", "") or "",
+        }
+        for person in (people or [])
+    ]
+    merged_people = contributors.consolidate(
+        contributors.parse_contributors(ds.attrs) + config_people
+    )
+    for person in merged_people:
+        if not (person.get("role") or ""):
+            warnings.warn(
+                f"no role for contributor {person.get('name')!r}; set one in the "
+                "mission config (contributors: - name: ... role: ...).",
+                stacklevel=2,
             )
-            roles = create_or_append_list(
-                roles, new_attributes.get("contributor_role", "PI")
-            )
-            roles_vocab = create_or_append_list(
-                roles_vocab,
-                new_attributes.get(
-                    "contributor_role_vocabulary",
-                    "http://vocab.nerc.ac.uk/search_nvs/W08",
-                ),
-            )
-    elif "contributor_name" in new_attributes:
-        names = create_or_append_list([], new_attributes["contributor_name"])
-        emails = create_or_append_list([], new_attributes.get("contributor_email", ""))
-        roles = create_or_append_list([], new_attributes.get("contributor_role", "PI"))
-        roles_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "contributor_role_vocabulary", "http://vocab.nerc.ac.uk/search_nvs/W08"
-            ),
-        )
-    if "contributing_institutions" in new_attributes:
-        insts = create_or_append_list(
-            [], new_attributes.get("contributing_institutions", "")
-        )
-        inst_roles = create_or_append_list(
-            [], new_attributes.get("contributing_institutions_role", "Operator")
-        )
-        inst_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "contributing_institutions_vocabulary",
-                "https://edmo.seadatanet.org/report/1434",
-            ),
-        )
-        inst_roles_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "contributing_institutions_role_vocabulary",
-                "http://vocab.nerc.ac.uk/collection/W08/current/",
-            ),
-        )
-    elif "institution" in new_attributes:
-        insts = create_or_append_list([], new_attributes["institution"])
-        inst_roles = create_or_append_list(
-            [], new_attributes.get("contributing_institutions_role", "PI")
-        )
-        inst_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "contributing_institutions_vocabulary",
-                "https://edmo.seadatanet.org/report/1434",
-            ),
-        )
-        inst_roles_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "contributing_institutions_role_vocabulary",
-                "http://vocab.nerc.ac.uk/collection/W08/current/",
-            ),
+    if not any(
+        contributors.normalize_role(person.get("role")) == "PI"
+        for person in merged_people
+    ):
+        warnings.warn(
+            "no contributor has the role PI; OG1 requires a principal investigator.",
+            stacklevel=2,
         )
 
-    # Rename specific institution if it matches criteria
-    for i, inst in enumerate(insts):
-        if all(
-            keyword in inst for keyword in ["Oceanography", "University", "Washington"]
-        ):
-            insts[i] = "University of Washington - School of Oceanography"
+    file_institutions = contributors.parse_institutions(ds.attrs)
+    if "institution" in ds.attrs:
+        file_institutions = [
+            {"name": ds.attrs["institution"], "role": "", "id": ""},
+            *file_institutions,
+        ]
+    config_institutions = [
+        {
+            "name": institution.get("name", ""),
+            "role": institution.get("role", "") or "",
+            "id": institution.get("id"),
+        }
+        for institution in (institutions or [])
+    ]
+    merged_institutions = contributors.consolidate(
+        contributors.enrich_institutions(file_institutions + config_institutions)
+    )
+    if not any(
+        contributors.normalize_role(institution.get("role")) == "Operator"
+        for institution in merged_institutions
+    ):
+        warnings.warn(
+            "no institution has the role Operator; OG1 requires an operating "
+            "institution.",
+            stacklevel=2,
+        )
 
-    # Pad the lists if they are shorter than names
-    max_length = len(names)
-    emails += [""] * (max_length - len(emails))
-    roles += [""] * (max_length - len(roles))
-    roles_vocab += [""] * (max_length - len(roles_vocab))
-    insts += [""] * (max_length - len(insts))
-    inst_roles += [""] * (max_length - len(inst_roles))
-    inst_vocab += [""] * (max_length - len(inst_vocab))
-    inst_roles_vocab += [""] * (max_length - len(inst_roles_vocab))
-
-    # Append new values to the lists
-    if values_to_append is not None:
-        for key, value in values_to_append.items():
-            if key == "contributor_name":
-                names = create_or_append_list(names, value)
-            elif key == "contributor_email":
-                emails = create_or_append_list(emails, value)
-            elif key == "contributor_role":
-                roles = create_or_append_list(roles, value)
-            elif key == "contributor_role_vocabulary":
-                roles_vocab = create_or_append_list(roles_vocab, value)
-            elif key == "contributing_institutions":
-                insts = create_or_append_list(insts, value)
-            elif key == "contributing_institutions_role":
-                inst_roles = create_or_append_list(inst_roles, value)
-            elif key == "contributing_institutions_vocabulary":
-                inst_vocab = create_or_append_list(inst_vocab, value)
-            elif key == "contributing_institutions_role_vocabulary":
-                inst_roles_vocab = create_or_append_list(inst_roles_vocab, value)
-
-    # Turn the lists into comma-separated strings
-    names_str = list_to_comma_separated_string(names)
-    emails_str = list_to_comma_separated_string(emails)
-    roles_str = list_to_comma_separated_string(roles)
-    roles_vocab_str = list_to_comma_separated_string(roles_vocab)
-
-    insts_str = list_to_comma_separated_string(insts)
-    inst_roles_str = list_to_comma_separated_string(inst_roles)
-    inst_vocab_str = list_to_comma_separated_string(inst_vocab)
-    inst_roles_vocab_str = list_to_comma_separated_string(inst_roles_vocab)
-
-    # Create a dictionary for return
-    attributes_dict = {
-        "contributor_name": names_str,
-        "contributor_email": emails_str,
-        "contributor_role": roles_str,
-        "contributor_role_vocabulary": roles_vocab_str,
-        "contributing_institutions": insts_str,
-        "contributing_institutions_role": inst_roles_str,
-        "contributing_institutions_vocabulary": inst_vocab_str,
-        "contributing_institutions_role_vocabulary": inst_roles_vocab_str,
-    }
-
+    attributes_dict: dict[str, str] = {}
+    attributes_dict.update(contributors.format_contributors(merged_people))
+    attributes_dict.update(contributors.format_institutions(merged_institutions))
     return attributes_dict
 
 
