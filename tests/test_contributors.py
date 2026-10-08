@@ -3,7 +3,7 @@
 from seagliderOG1 import contributors
 
 
-def test_format_contributors_preserves_aligned_empties():
+def test_format_contributors_preserves_aligned_empties() -> None:
     """Three people with a gap keep equal comma counts across every attribute."""
     people = [
         {
@@ -24,7 +24,7 @@ def test_format_contributors_preserves_aligned_empties():
     )  # two Operators stay two
 
 
-def test_format_contributors_orcid_and_role_vocabulary():
+def test_format_contributors_orcid_and_role_vocabulary() -> None:
     """Bare ORCID becomes a URL; each role resolves to its W08 term URI."""
     people = [
         {"name": "Ann", "orcid": "0000-0001-0000-0001", "role": "PI"},
@@ -38,7 +38,7 @@ def test_format_contributors_orcid_and_role_vocabulary():
     assert vocabs[1] == "http://vocab.nerc.ac.uk/collection/W08/current/CONT0006/"
 
 
-def test_normalize_role_labels_aliases_and_unknown():
+def test_normalize_role_labels_aliases_and_unknown() -> None:
     """Known labels (any case) and attested aliases normalise; unknown is None."""
     assert contributors.normalize_role("PI") == "PI"
     assert contributors.normalize_role("operator") == "Operator"
@@ -48,7 +48,7 @@ def test_normalize_role_labels_aliases_and_unknown():
     assert contributors.normalize_role("Chief Wrangler") is None
 
 
-def test_format_contributors_normalises_role_label_and_passes_unknown():
+def test_format_contributors_normalises_role_label_and_passes_unknown() -> None:
     """A known role is written as its preferred label; an unknown role passes through."""
     people = [
         {"name": "Ann", "role": "principal investigator"},
@@ -63,12 +63,12 @@ def test_format_contributors_normalises_role_label_and_passes_unknown():
     assert vocabs == ["http://vocab.nerc.ac.uk/collection/W08/current/CONT0004/", ""]
 
 
-def test_format_contributors_empty():
+def test_format_contributors_empty() -> None:
     """No people yields no attributes."""
     assert contributors.format_contributors([]) == {}
 
 
-def test_parse_then_format_round_trips_names_and_roles():
+def test_parse_then_format_round_trips_names_and_roles() -> None:
     """Parsing aligned attributes and reformatting reproduces names and roles."""
     attrs = {
         "contributor_name": "Ann, Bo, Cy",
@@ -83,21 +83,21 @@ def test_parse_then_format_round_trips_names_and_roles():
     assert out["contributor_email"] == "ann@x.org, , cy@z.org"
 
 
-def test_parse_contributors_drops_trailing_empty_slot():
+def test_parse_contributors_drops_trailing_empty_slot() -> None:
     """A trailing comma (extra empty slot) does not create an extra person."""
     attrs = {"contributor_name": "Ann, Bo, ", "contributor_role": "PI, Operator, "}
     people = contributors.parse_contributors(attrs)
     assert len(people) == 2
 
 
-def test_parse_contributors_creators_first():
+def test_parse_contributors_creators_first() -> None:
     """Creators are parsed before contributors."""
     attrs = {"creator_name": "Ann", "contributor_name": "Bo"}
     people = contributors.parse_contributors(attrs)
     assert [p["name"] for p in people] == ["Ann", "Bo"]
 
 
-def test_institutions_format_and_parse():
+def test_institutions_format_and_parse() -> None:
     """Institutions format and parse as their own aligned list."""
     institutions = [
         {
@@ -119,7 +119,7 @@ def test_institutions_format_and_parse():
     assert [i["name"] for i in roundtrip] == ["Uni Hamburg", "Second Inst"]
 
 
-def test_consolidate_role_less_merges_into_role_bearing():
+def test_consolidate_role_less_merges_into_role_bearing() -> None:
     """A role-less creator merges into a same-name record that has a role."""
     records = [
         {"name": "Charlie Eriksen", "email": "eriksen@uw.edu", "role": ""},
@@ -131,7 +131,7 @@ def test_consolidate_role_less_merges_into_role_bearing():
     assert out[0]["email"] == "eriksen@uw.edu"  # filled from the role-less record
 
 
-def test_consolidate_keeps_distinct_names_and_roles():
+def test_consolidate_keeps_distinct_names_and_roles() -> None:
     """Different names stay; same name with two roles stays two."""
     records = [
         {"name": "Olle", "role": "Operator"},
@@ -143,7 +143,7 @@ def test_consolidate_keeps_distinct_names_and_roles():
     assert len(out) == 4
 
 
-def test_enrich_institutions_matches_multiline_basestation_name():
+def test_enrich_institutions_matches_multiline_basestation_name() -> None:
     """The multi-line basestation institution matches EDMO 1434 to a comma-free name."""
     raw = "School of Oceanography\nUniversity of Washington\nSeattle, WA 98195-5351"
     out = contributors.enrich_institutions([{"name": raw, "role": ""}])
@@ -151,7 +151,7 @@ def test_enrich_institutions_matches_multiline_basestation_name():
     assert out[0]["id"] == "https://edmo.seadatanet.org/report/1434"
 
 
-def test_enrich_institutions_config_id_wins_and_unknown_warns():
+def test_enrich_institutions_config_id_wins_and_unknown_warns() -> None:
     """A config id overrides the registry; an unknown name warns with no id."""
     import warnings
 

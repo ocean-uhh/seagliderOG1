@@ -49,11 +49,23 @@ semantic versioning.
 
 - `seagliderOG1.contributors` module and `config/institution_registry.yml` (EDMO codes) backing
   the contributor/institution rebuild above.
-- `seagliderOG1` command-line interface (`cli/` package) with `init` (write a `mission.yaml`;
-  `--from DIR` fills the platform block and `source` from the first basestation file) and
-  `validate` (check keys, types, `source` and the dive range; `--strict`). `convert_to_OG1`
-  gains a `contributors=` argument (`contrib_to_append=` kept as a deprecated alias), and
-  `OG1_author.yaml` is no longer loaded at import.
+- `seagliderOG1` command-line interface (`cli/` package), run as `seagliderOG1 <verb>`:
+  - `init` — write a commented `mission.yaml`; `--from DIR` fills the platform block and
+    `source` from the first basestation file.
+  - `validate` — check keys, types, `source` and the dive range; roles against the W08
+    vocabulary; require a PI contributor and an Operator institution; `--strict`.
+  - `process` — convert a mission directory, or every `SN/DATE` mission under a root
+    (`--all`/`--mission GLOB`), writing `<output_dir>/<id>.nc`; `--mode`, `--dives`, `-o`,
+    `--force`/`--skip-existing`, `-n`; per-mission summary and exit 1 on any failure.
+  - `inspect FILE` — the file's variables or attributes as a text table (`--attrs`,
+    `--variables`, `--by-dimension DIM`); the HTML inventory page arrives with the planned
+    `seagliderOG1[report]` extra.
+  - `list {roles|institutions|missions}` — the W08 roles, the EDMO institution registry, or
+    the missions discovered under a directory.
+  `convert_to_OG1` gains `contributors=`, `institutions=`, `platform=`, `global_attributes=`
+  and `mode=`. `OG1_author.yaml` is no longer loaded at import (`load_default_contributors`
+  loads it on demand); `readers.discover_missions` and public `readers.validate_filename`/
+  `profnum_from_filename`/`glider_sn_from_filename`.
 - `writers.save_dataset` now writes every non-scalar numeric variable, coordinates
   included, with lossless zlib compression (level 4) and the shuffle filter. String
   and scalar variables are left uncompressed. Output files are smaller and remain

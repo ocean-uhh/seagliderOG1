@@ -3,153 +3,53 @@
 [![Run tests](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml/badge.svg)](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml)
 [![Deploy Documentation](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/docs_deploy.yml/badge.svg)](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/docs_deploy.yml)
 
-This repository converts Seaglider basestation files (`pSSSDDDD*.nc`) into [OG1 format](https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html) for standardized oceanographic glider data.
+seagliderOG1 converts Seaglider basestation files (`pSSSDDDD*.nc`) into [OceanGliders OG1 format](https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html). One mission in, one OG1 file out; the platform, contributor and institution metadata come from a `mission.yaml` you keep with your data, never from defaults inside the package. Based on [votoutils](https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/glider/convert_to_og1.py)' `convert_to_og1`.
 
-Code is based on [votoutils](https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/glider/convert_to_og1.py).
-
-## Installation
-
-### Recommended: Using pip
-
-For most users, pip installation is the simplest approach:
+## Install
 
 ```bash
-# Install from PyPI
 pip install seagliderOG1
-
-# Or install from source
+# or from source
 pip install git+https://github.com/ocean-uhh/seagliderOG1.git
 ```
 
-### Development setup
-
-For contributors and developers:
+## Quick start
 
 ```bash
-# Clone the repository
-git clone https://github.com/ocean-uhh/seagliderOG1.git
-cd seagliderOG1
-
-# Install dependencies and package in development mode
-pip install -r requirements-dev.txt
-pip install -e .
+seagliderOG1 init --from /data/005/20080606 -o sg005.yaml   # template from the first file
+seagliderOG1 validate sg005.yaml                            # config, source, dive range
+seagliderOG1 process  sg005.yaml                            # -> <output_dir>/<id>.nc
 ```
 
-### Alternative: Using conda/micromamba
+For a root of `SN/DATE` mission directories, point `--source` at the root and select with `--all` or `--mission GLOB`; `-n` previews without writing. `mission.yaml` holds the source, output directory, dive range, platform block, and the contributor and institution records; paths in it resolve relative to the file.
 
-If you prefer conda environments:
-
-```bash
-# Using conda
-conda env create -f environment.yml
-conda activate TEST
-
-# Using micromamba (faster)
-micromamba env create -f environment.yml
-micromamba activate TEST
-```
-
-## Package Structure
-
-Scripts within the `seagliderOG1` package are organized by functionality:
-
-- **readers.py** - Reads basestation files (`*.nc`) from server or local directory
-- **writers.py** - Writes OG1 `*.nc` files to output directory (default: `data/`)
-- **plotters.py** - Basic plotting and data visualization functions
-- **convertOG1.py** - Main conversion logic from basestation to OG1 format
-- **vocabularies.py** - Vocabulary translation mappings for OG1 compliance
-- **tools.py** - User-facing utility functions
-- **utilities.py** - Internal helper functions for data processing
-
-## Configuration
-
-The `seagliderOG1/config/` directory contains YAML files that define OG1 format specifications:
-
-- `OG1_global_attrs.yaml` - Global attributes for OG1 format
-- `OG1_var_names.yaml` - Variable name mappings
-- `OG1_sensor_attrs.yaml` - Sensor attribute definitions
-- `OG1_vocab_attrs.yaml` - Vocabulary attribute mappings
-- `OG1_author.yaml` - Author information template
-- `mission_yaml.yaml` - Mission configuration template
-
-## Usage
-
-### Basic conversion
+## Python
 
 ```python
-from seagliderOG1 import convertOG1, readers
+from seagliderOG1 import convertOG1, readers, writers
 
-# Load basestation files
-datasets = readers.load_basestation_files("path/to/basestation/files/")
-
-# Convert to OG1 format
-og1_dataset, variable_list = convertOG1.convert_to_OG1(datasets)
-
-# Save result
-from seagliderOG1 import writers
-writers.save_dataset(og1_dataset, "output_file.nc")
+datasets = readers.load_basestation_files(source, first, last)
+ds, _ = convertOG1.convert_to_OG1(
+    datasets,
+    contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
+    institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],
+)
+writers.save_dataset(ds, out)
 ```
 
-### Examples
+`contributors` and `institutions` are lists of records, one entry per person (or institution) per role; see the CLI reference in the documentation.
 
-See the `notebooks/` directory for detailed examples:
-- `demo.ipynb` - Basic usage demonstration
-- `dev_notebooks/` - Development and troubleshooting notebooks
+## Documentation
 
-## Development
+[Documentation and CLI reference](https://github.com/ocean-uhh/seagliderOG1); the `notebooks/demo.ipynb` notebook is a worked example.
 
-### Running tests
+## Acknowledgements
 
-```bash
-pytest                    # Run all tests
-pytest -v                 # Verbose output
-pytest tests/test_*.py    # Run specific test file
-```
+seagliderOG1 is developed at the University of Hamburg (ocean-uhh) in preparation for the DFG (Deutsche Forschungsgemeinschaft) research infrastructure Swarm of Ocean Gliders (Projektnummer 544335393). It converts Seaglider basestation files into OceanGliders OG1 format, driven by a mission configuration the user owns.
 
-### Code quality
+The work is funded by Voice of the Ocean (VOTO) under the SEA-CODE project (SeaExplorer–Seaglider Cross-platform Open Diagnostics & Evaluation), which builds platform-independent, open-source diagnostics for glider data — with glidertest and seagliderOG1 as its core packages — and supports exchanges between the University of Hamburg and VOTO, and by the DFG through the PycnMix project (Projektnummer 558671572).
 
-```bash
-black .                   # Format code
-ruff check --fix          # Lint and auto-fix
-pre-commit run --all-files # Run all pre-commit hooks
-```
-
-### Building documentation
-
-```bash
-cd docs
-make clean html
-```
-
-## Dependencies
-
-The project uses different dependency files for different use cases:
-
-- **requirements.txt** - Core runtime dependencies (recommended for most users)
-- **requirements-dev.txt** - Additional development tools (testing, documentation, code quality)
-- **environment.yml** - Complete conda/micromamba environment (alternative for conda users)
-
-### Core dependencies
-
-- **xarray** & **netCDF4** - NetCDF file handling and data manipulation
-- **numpy**, **pandas** - Numerical operations and data structures
-- **gsw** - Seawater property calculations (TEOS-10)
-- **matplotlib** - Plotting and visualization
-- **pooch** - Data downloading and caching
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests and ensure they pass
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-## Status
-
-This project is under active development. Collaborations and contributions are welcome!
+seagliderOG1 welcomes contributions from the community. Development was assisted by Claude Code (Anthropic) and GitHub Copilot code review.
 
 ## License
 
