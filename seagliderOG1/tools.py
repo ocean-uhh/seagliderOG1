@@ -1713,7 +1713,7 @@ def merge_datasets_along_time(
 
             description_text = "\n".join(description)
             duplicate_time_descriptions.append(description_text)
-            print(description_text)
+            # print(description_text)
 
         ds = ds.assign_coords(
             time=xr.DataArray(
