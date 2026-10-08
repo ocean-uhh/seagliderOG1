@@ -7,6 +7,7 @@ variable renaming, attribute assignments, and dataset standardization.
 
 import logging
 import os
+import warnings
 from datetime import datetime
 
 import numpy as np
@@ -21,6 +22,7 @@ _log = logging.getLogger(__name__)
 
 def convert_to_OG1(
     list_of_datasets: list[xr.Dataset] | xr.Dataset,
+    contributors: dict[str, str] | None = None,
     contrib_to_append: dict[str, str] | None = None,
 ) -> tuple[xr.Dataset, list[str]]:
     """Convert Seaglider basestation datasets to OG1 format.
@@ -33,8 +35,13 @@ def convert_to_OG1(
     ----------
     list_of_datasets : list of xarray.Dataset or xarray.Dataset
         A list of xarray datasets or a single xarray dataset in basestation format.
+    contributors : dict of str, optional
+        Contributor information to write into the output global attributes. When
+        None, contributors come from the basestation files' own attributes; no
+        package default is applied. Default is None.
     contrib_to_append : dict of str, optional
-        Dictionary containing additional contributor information to append. Default is None.
+        Deprecated alias for ``contributors``; will be removed in a future release.
+        Default is None.
 
     Returns
     -------
@@ -44,6 +51,15 @@ def convert_to_OG1(
         - varlist (list of str): A list of variable names from the input datasets.
 
     """
+    if contrib_to_append is not None:
+        warnings.warn(
+            "convert_to_OG1(contrib_to_append=...) is deprecated; use contributors=...",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if contributors is None:
+            contributors = contrib_to_append
+
     print(f"Start converting {len(list_of_datasets)} raw datasets to OG1 format ...")
 
     if not isinstance(list_of_datasets, list):
@@ -98,7 +114,7 @@ def convert_to_OG1(
 
     # Apply attributes
     ordered_attributes = update_dataset_attributes(
-        list_of_datasets[0], contrib_to_append
+        list_of_datasets[0], contributors
     )
     for key, value in ordered_attributes.items():
         ds_og1.attrs[key] = value

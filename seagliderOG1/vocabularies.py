@@ -17,7 +17,8 @@ Configuration Files:
 - OG1_vocab_attrs.yaml: Variable attribute vocabularies
 - OG1_sensor_attrs.yaml: Sensor attribute definitions
 - OG1_global_attrs.yaml: Global attribute configurations
-- OG1_author.yaml: Default author/contributor information
+- OG1_author.yaml: Example contributor information, loaded on demand via
+  :func:`load_default_contributors` (never at import)
 
 Notes
 -----
@@ -29,6 +30,7 @@ OG1 format requirements without code changes.
 
 import os
 import pathlib
+import warnings
 
 import yaml
 
@@ -149,9 +151,58 @@ with open(config_dir + "OG1_sensor_attrs.yaml", "r") as file:
 # --------------------------------
 # Global Attributes
 # --------------------------------
-# Default contributor/author information to append to datasets
-with open(config_dir + "OG1_author.yaml", "r") as file:
-    contrib_to_append = yaml.safe_load(file)
+
+
+def load_default_contributors() -> dict[str, str]:
+    """Load the example contributor block from ``config/OG1_author.yaml``.
+
+    Not loaded at import: a converted file gains contributor details only when a
+    caller passes them to :func:`seagliderOG1.convertOG1.convert_to_OG1`. The
+    file is an editable example, not a default identity written into every output.
+
+    Returns
+    -------
+    dict of str
+        Contributor attributes read from ``OG1_author.yaml``.
+
+    """
+    with open(config_dir + "OG1_author.yaml", "r") as file:
+        return yaml.safe_load(file)
+
+
+def __getattr__(name: str) -> object:
+    """Resolve the deprecated module attribute ``contrib_to_append`` lazily.
+
+    Preserves ``vocabularies.contrib_to_append`` for existing callers (it returns
+    :func:`load_default_contributors`) while no longer loading the file at import.
+
+    Parameters
+    ----------
+    name : str
+        The attribute being accessed.
+
+    Returns
+    -------
+    object
+        The example contributor block when ``name`` is ``"contrib_to_append"``.
+
+    Raises
+    ------
+    AttributeError
+        For any other attribute name.
+
+    """
+    if name == "contrib_to_append":
+        warnings.warn(
+            "vocabularies.contrib_to_append is deprecated and no longer loaded at import; "
+            "call vocabularies.load_default_contributors() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return load_default_contributors()
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
+
 
 # Preferred order for global attributes in OG1 files
 order_of_attr = [
