@@ -22,9 +22,25 @@ semantic versioning.
 - Minimum Python raised to 3.10 (`requires-python = ">=3.10"`). The pinned `numpy 2.2` and
   `xarray 2025.3` already require 3.10, so `>=3.8` was not installable; users on 3.8/3.9 must
   stay on an earlier release.
+- Platform metadata is no longer silently defaulted. `convert_to_OG1` takes `platform=` and
+  `global_attributes=` from the mission config, config values overriding file-derived ones. A
+  missing `PLATFORM_SERIAL_NUMBER` (no file `platform_id`, none in the config) now raises instead
+  of defaulting to `sg000` — it names the output file and OG1 id. `WMO_IDENTIFIER`,
+  `PLATFORM_MODEL`, `PLATFORM_MAKER`, `GLIDER_FIRMWARE_VERSION` and `LANDSTATION_VERSION` are
+  written as `"UNK"` with a warning when absent, not `0000000` or the hard-coded M1 model.
+  `PLATFORM_DEPTH_RATING` (numeric) is omitted when absent rather than written as a string.
+  `PLATFORM_MAKER`, `PLATFORM_DEPTH_RATING`, `GLIDER_FIRMWARE_VERSION` and `LANDSTATION_VERSION`
+  are new output variables. The hard-coded `platform_model_vocabulary` is dropped and written
+  only when the config supplies it. A `global_attributes` key colliding with a converter-derived
+  global (`id`, `time_coverage_*`, `geospatial_*`, `date_created`) raises.
 
 ### Added
 
+- `seagliderOG1` command-line interface (`cli/` package) with `init` (write a `mission.yaml`;
+  `--from DIR` fills the platform block and `source` from the first basestation file) and
+  `validate` (check keys, types, `source` and the dive range; `--strict`). `convert_to_OG1`
+  gains a `contributors=` argument (`contrib_to_append=` kept as a deprecated alias), and
+  `OG1_author.yaml` is no longer loaded at import.
 - `writers.save_dataset` now writes every non-scalar numeric variable, coordinates
   included, with lossless zlib compression (level 4) and the shuffle filter. String
   and scalar variables are left uncompressed. Output files are smaller and remain

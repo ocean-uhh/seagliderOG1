@@ -124,6 +124,7 @@ def render_template(
         "platform:               # filled from the first file by 'init --from'; edit as needed",
         f"  PLATFORM_SERIAL_NUMBER: {_scalar(plat['PLATFORM_SERIAL_NUMBER'])}   # from platform_id",
         f"  PLATFORM_MODEL: {_scalar(plat['PLATFORM_MODEL'])}",
+        "  platform_model_vocabulary: null   # e.g. https://vocab.nerc.ac.uk/collection/B76/current/B7600024/ (NERC B76; B7600024 = Seaglider)",
         f"  PLATFORM_DEPTH_RATING: {_scalar(plat['PLATFORM_DEPTH_RATING'])}",
         f"  PLATFORM_MAKER: {_scalar(plat['PLATFORM_MAKER'])}",
         f"  GLIDER_FIRMWARE_VERSION: {_scalar(plat['GLIDER_FIRMWARE_VERSION'])}   # from seaglider_software_version",

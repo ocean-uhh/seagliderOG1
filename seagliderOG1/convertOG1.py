@@ -19,11 +19,123 @@ from seagliderOG1 import readers, tools, utilities, vocabularies, writers
 
 _log = logging.getLogger(__name__)
 
+# Global attributes the converter derives from the data; the mission config may
+# not set these (a collision is an error, not a silent override either way).
+_DERIVED_GLOBALS = frozenset(
+    {
+        "id",
+        "time_coverage_start",
+        "time_coverage_end",
+        "geospatial_lat_min",
+        "geospatial_lat_max",
+        "geospatial_lon_min",
+        "geospatial_lon_max",
+        "geospatial_vertical_min",
+        "geospatial_vertical_max",
+        "date_created",
+    }
+)
+
+# String platform fields and whether each has a basestation-file fallback source.
+_PLATFORM_STRING_FIELDS = (
+    ("PLATFORM_MODEL", None),
+    ("PLATFORM_MAKER", None),
+    ("GLIDER_FIRMWARE_VERSION", None),
+    ("LANDSTATION_VERSION", None),
+    ("WMO_IDENTIFIER", "wmo_identifier"),
+)
+
+
+def _resolve_platform(
+    first_ds: xr.Dataset, platform: dict[str, object] | None
+) -> dict[str, object]:
+    """Resolve OG1 platform fields from the config and the first basestation file.
+
+    Config values override file-derived ones. ``PLATFORM_SERIAL_NUMBER`` is the
+    mission identity (it names the output file and OG1 id): if neither the config
+    nor the file supplies it, raise. String fields fall back to ``"UNK"`` with a
+    warning; the numeric ``PLATFORM_DEPTH_RATING`` is omitted when absent rather
+    than written as a string.
+
+    Parameters
+    ----------
+    first_ds : xarray.Dataset
+        The first basestation dataset, read for ``platform_id`` and
+        ``wmo_identifier``.
+    platform : dict of str to object or None
+        The mission config's ``platform`` block; values override the file.
+
+    Returns
+    -------
+    dict of str to object
+        Resolved platform fields to write. ``PLATFORM_DEPTH_RATING`` and
+        ``platform_model_vocabulary`` are present only when supplied.
+
+    Raises
+    ------
+    ValueError
+        If ``PLATFORM_SERIAL_NUMBER`` cannot be determined.
+
+    """
+    platform = platform or {}
+    attrs = first_ds.attrs
+
+    def config_or(field: str, file_value: object | None) -> object | None:
+        value = platform.get(field)
+        if value in (None, "", "None"):
+            value = file_value
+        return None if value in (None, "", "None") else value
+
+    file_serial = str(attrs["platform_id"]).lower() if "platform_id" in attrs else None
+    serial = config_or("PLATFORM_SERIAL_NUMBER", file_serial)
+    if serial is None:
+        msg = (
+            "PLATFORM_SERIAL_NUMBER could not be determined: the basestation file "
+            "has no platform_id and the mission config does not set "
+            "platform.PLATFORM_SERIAL_NUMBER. It names the output file and OG1 id, "
+            "so set it in the config (a serial number or a local nickname per OG1)."
+        )
+        raise ValueError(msg)
+
+    resolved: dict[str, object] = {"PLATFORM_SERIAL_NUMBER": serial}
+
+    for field, file_attr in _PLATFORM_STRING_FIELDS:
+        file_value = str(attrs[file_attr]) if file_attr and file_attr in attrs else None
+        value = config_or(field, file_value)
+        if value is None:
+            warnings.warn(
+                f"{field} not set in the mission config (platform.{field})"
+                + (" or the basestation file" if file_attr else "")
+                + "; writing 'UNK'.",
+                stacklevel=3,
+            )
+            value = "UNK"
+        resolved[field] = value
+
+    depth = platform.get("PLATFORM_DEPTH_RATING")
+    if depth not in (None, "", "None"):
+        resolved["PLATFORM_DEPTH_RATING"] = depth
+    else:
+        warnings.warn(
+            "PLATFORM_DEPTH_RATING not set in the mission config "
+            "(platform.PLATFORM_DEPTH_RATING); it is numeric, so the variable is "
+            "omitted rather than written as 'UNK'.",
+            stacklevel=3,
+        )
+
+    model_vocab = platform.get("platform_model_vocabulary")
+    if model_vocab not in (None, "", "None"):
+        resolved["platform_model_vocabulary"] = model_vocab
+
+    return resolved
+
 
 def convert_to_OG1(
     list_of_datasets: list[xr.Dataset] | xr.Dataset,
     contributors: dict[str, str] | None = None,
     contrib_to_append: dict[str, str] | None = None,
+    platform: dict[str, object] | None = None,
+    global_attributes: dict[str, object] | None = None,
 ) -> tuple[xr.Dataset, list[str]]:
     """Convert Seaglider basestation datasets to OG1 format.
     Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
@@ -42,6 +154,15 @@ def convert_to_OG1(
     contrib_to_append : dict of str, optional
         Deprecated alias for ``contributors``; will be removed in a future release.
         Default is None.
+    platform : dict of str to object, optional
+        Platform fields from the mission config (``PLATFORM_SERIAL_NUMBER``,
+        ``PLATFORM_MODEL``, ``PLATFORM_MAKER``, ``PLATFORM_DEPTH_RATING``,
+        ``GLIDER_FIRMWARE_VERSION``, ``LANDSTATION_VERSION``, ``WMO_IDENTIFIER``,
+        ``platform_model_vocabulary``). Config values override file-derived ones.
+        Default is None.
+    global_attributes : dict of str to object, optional
+        Global attributes written verbatim into the output (nulls skipped). A key
+        that collides with a converter-derived global raises. Default is None.
 
     Returns
     -------
@@ -59,6 +180,15 @@ def convert_to_OG1(
         )
         if contributors is None:
             contributors = contrib_to_append
+
+    global_attributes = global_attributes or {}
+    collisions = _DERIVED_GLOBALS.intersection(global_attributes)
+    if collisions:
+        msg = (
+            "global_attributes may not set converter-derived keys: "
+            f"{sorted(collisions)}. Remove them from the mission config."
+        )
+        raise ValueError(msg)
 
     print(f"Start converting {len(list_of_datasets)} raw datasets to OG1 format ...")
 
@@ -121,29 +251,37 @@ def convert_to_OG1(
     hdm_parameters = tools.extract_hdm_parameters(list_of_datasets)
     ds_og1 = tools.add_hdm_parameters(ds_og1, hdm_parameters)
 
-    # Construct the platform serial number
-    if "platform_id" in ds1_base.attrs:
-        PLATFORM_SERIAL_NUMBER = ds1_base.attrs["platform_id"].lower()
-    else:
-        PLATFORM_SERIAL_NUMBER = "sg000"
-    ds_og1["PLATFORM_SERIAL_NUMBER"] = PLATFORM_SERIAL_NUMBER
+    # Resolve platform fields from the config and the first file (no silent
+    # fallbacks: missing serial raises, other strings warn + "UNK", the numeric
+    # depth rating is omitted rather than written as a string).
+    platform_fields = _resolve_platform(list_of_datasets[0], platform)
+    platform_serial_number = platform_fields["PLATFORM_SERIAL_NUMBER"]
+
+    ds_og1["PLATFORM_SERIAL_NUMBER"] = platform_serial_number
     ds_og1["PLATFORM_SERIAL_NUMBER"].attrs["long_name"] = "glider serial number"
 
     # ---- Added some more mandatory variables from OG1 ----
-    # Construct the platform model
-    PLATFORM_MODEL = "University of Washington Seaglider M1 glider"
-    ds_og1["PLATFORM_MODEL"] = PLATFORM_MODEL
+    ds_og1["PLATFORM_MODEL"] = platform_fields["PLATFORM_MODEL"]
     ds_og1["PLATFORM_MODEL"].attrs["long_name"] = "model of the glider"
-    ds_og1["PLATFORM_MODEL"].attrs[
-        "platform_model_vocabulary"
-    ] = "https://vocab.nerc.ac.uk/collection/B76/current/B7600024/"
+    if "platform_model_vocabulary" in platform_fields:
+        ds_og1["PLATFORM_MODEL"].attrs["platform_model_vocabulary"] = platform_fields[
+            "platform_model_vocabulary"
+        ]
 
-    # WMO identifier
-    if "wmo_identifier" in ds1_base.attrs:
-        wmo_id = ds1_base.attrs["wmo_identifier"]
-    else:
-        wmo_id = "0000000"
-    ds_og1["WMO_IDENTIFIER"] = wmo_id
+    ds_og1["PLATFORM_MAKER"] = platform_fields["PLATFORM_MAKER"]
+    ds_og1["PLATFORM_MAKER"].attrs["long_name"] = "glider manufacturer"
+
+    if "PLATFORM_DEPTH_RATING" in platform_fields:
+        ds_og1["PLATFORM_DEPTH_RATING"] = platform_fields["PLATFORM_DEPTH_RATING"]
+        ds_og1["PLATFORM_DEPTH_RATING"].attrs["long_name"] = "maximum rated depth"
+
+    ds_og1["GLIDER_FIRMWARE_VERSION"] = platform_fields["GLIDER_FIRMWARE_VERSION"]
+    ds_og1["GLIDER_FIRMWARE_VERSION"].attrs["long_name"] = "glider firmware version"
+
+    ds_og1["LANDSTATION_VERSION"] = platform_fields["LANDSTATION_VERSION"]
+    ds_og1["LANDSTATION_VERSION"].attrs["long_name"] = "version of the landstation"
+
+    ds_og1["WMO_IDENTIFIER"] = platform_fields["WMO_IDENTIFIER"]
     ds_og1["WMO_IDENTIFIER"].attrs["long_name"] = "wmo id"
 
     # Trajectory
@@ -211,8 +349,14 @@ def convert_to_OG1(
     ds_og1.attrs["geospatial_vertical_max"] = depth_max
 
     # Construct the unique identifier attribute
-    id = f"{PLATFORM_SERIAL_NUMBER}_{ds_og1.start_date}_delayed"
+    id = f"{platform_serial_number}_{ds_og1.start_date}_delayed"
     ds_og1.attrs["id"] = id
+
+    # Write config global attributes verbatim (nulls skipped). Collisions with
+    # converter-derived keys were already rejected at the top of this function.
+    for key, value in global_attributes.items():
+        if value is not None:
+            ds_og1.attrs[key] = value
 
     # Re-fix QC flags the concat re-promoted to float, then optimise dtypes once on the
     # fully-assembled dataset (coordinates and post-concat variables included).
