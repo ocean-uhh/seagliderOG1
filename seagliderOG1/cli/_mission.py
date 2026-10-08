@@ -23,9 +23,10 @@ KNOWN_KEYS = frozenset(
         "platform",
         "global_attributes",
         "contributors",
+        "institutions",
     }
 )
-REQUIRED_KEYS = ("source", "contributors")
+REQUIRED_KEYS = ("source",)
 VALID_MODES = ("realtime", "delayed")
 
 PLATFORM_DEFAULTS: dict[str, object] = {
@@ -136,56 +137,132 @@ def render_template(
         "  program: null         # (tier: suggested)",
         "  title: null           # (tier: suggested)",
         "",
-        "contributors:           # people credited in the OG1 file; replace this example",
-        "  - name: Jane Doe",
+        "contributors:           # one entry per person per role; replace this example",
+        "  # role is a W08 term: Manufacturer, Owner, Operator, PI, Technical Coordinator,",
+        "  # Data scientist, Service Provider. List a person once per role. At least one PI.",
+        "  - name: Jane Doe       # no commas in a name (commas separate people)",
         "    email: jane@example.org",
-        "    orcid: null",
-        "    roles: [PI]",
-        "    institution: null",
+        "    orcid: null          # bare ORCID or full https://orcid.org/ URL",
+        "    role: PI",
+        "",
+        "institutions:           # at least one with role Operator; resolved via the EDMO registry",
+        "  - name: Your Institution",
+        "    role: Operator",
+        "    id: null             # EDMO/ROR URL; null to resolve by name against the registry",
         "",
     ]
     return "\n".join(lines)
 
 
-def _validate_contributors(contributors: object) -> list[ValidationIssue]:
-    """Check the ``contributors`` block shape.
+def _check_name(name: object, where: str) -> list[ValidationIssue]:
+    """Check a contributor/institution name is a non-empty, comma-free string."""
+    if not isinstance(name, str) or not name.strip():
+        return [ValidationIssue("ERROR", f"{where} needs a non-empty name.", where)]
+    if "," in name:
+        return [
+            ValidationIssue(
+                "ERROR",
+                f"{where} name {name!r} contains a comma; commas separate entries, "
+                "so write the name without one.",
+                where,
+            )
+        ]
+    return []
+
+
+def _check_role(entry: dict, where: str) -> tuple[list[ValidationIssue], str | None]:
+    """Check an entry's role, returning issues and the normalised role (or None)."""
+    from seagliderOG1 import contributors, vocabularies
+
+    issues: list[ValidationIssue] = []
+    role = entry.get("role")
+    if "roles" in entry:
+        roles = entry.get("roles")
+        if isinstance(roles, list) and len(roles) == 1:
+            issues.append(
+                ValidationIssue(
+                    "WARNING",
+                    f"{where} uses roles:; prefer role: with one value.",
+                    where,
+                )
+            )
+            role = role if role is not None else roles[0]
+        else:
+            issues.append(
+                ValidationIssue(
+                    "ERROR",
+                    f"{where} has multiple roles; list the entry once per role with role:.",
+                    where,
+                )
+            )
+    if role in (None, ""):
+        issues.append(ValidationIssue("ERROR", f"{where} needs a role.", where))
+        return issues, None
+    normalized = contributors.normalize_role(role)
+    if normalized is None:
+        allowed = ", ".join(vocabularies.ROLE_VOCABULARY)
+        issues.append(
+            ValidationIssue(
+                "ERROR",
+                f"{where} role {role!r} is not a W08 role (one of: {allowed}).",
+                where,
+            )
+        )
+    return issues, normalized
+
+
+def _validate_people(
+    contributors: object, key: str, required_role: str
+) -> list[ValidationIssue]:
+    """Validate a contributors/institutions block of name+role records.
 
     Parameters
     ----------
     contributors : object
-        The value of the ``contributors`` key.
+        The value of the block (a list of mappings).
+    key : str
+        The config key, for messages (``"contributors"`` or ``"institutions"``).
+    required_role : str
+        A role at least one entry must carry (``"PI"`` or ``"Operator"``).
 
     Returns
     -------
     list of ValidationIssue
-        Problems found; empty if the block is well formed (or absent, which the
-        required-key check handles separately).
+        Problems found.
 
     """
     if contributors in (None, [], ""):
-        return []
-    if not isinstance(contributors, list):
         return [
-            ValidationIssue("ERROR", "contributors must be a list.", "contributors")
+            ValidationIssue(
+                "ERROR",
+                f"{key} must list at least one entry with role {required_role}.",
+                key,
+            )
         ]
+    if not isinstance(contributors, list):
+        return [ValidationIssue("ERROR", f"{key} must be a list.", key)]
     issues: list[ValidationIssue] = []
+    has_required = False
     for index, entry in enumerate(contributors):
-        where = f"contributors[{index}]"
+        where = f"{key}[{index}]"
         if not isinstance(entry, dict):
             issues.append(
                 ValidationIssue("ERROR", f"{where} must be a mapping.", where)
             )
             continue
-        name = entry.get("name")
-        if not isinstance(name, str) or not name.strip():
-            issues.append(
-                ValidationIssue("ERROR", f"{where} needs a non-empty name.", where)
+        issues.extend(_check_name(entry.get("name"), where))
+        role_issues, normalized = _check_role(entry, where)
+        issues.extend(role_issues)
+        if normalized == required_role:
+            has_required = True
+    if not has_required:
+        issues.append(
+            ValidationIssue(
+                "ERROR",
+                f"{key} must include at least one entry with role {required_role}.",
+                key,
             )
-        roles = entry.get("roles")
-        if roles is not None and not isinstance(roles, list):
-            issues.append(
-                ValidationIssue("ERROR", f"{where}.roles must be a list.", where)
-            )
+        )
     return issues
 
 
@@ -339,6 +416,9 @@ def validate_config(
         if key in data and data[key] is not None and not isinstance(data[key], dict):
             issues.append(ValidationIssue("ERROR", f"{key} must be a mapping.", key))
 
-    issues.extend(_validate_contributors(data.get("contributors")))
+    issues.extend(_validate_people(data.get("contributors"), "contributors", "PI"))
+    issues.extend(
+        _validate_people(data.get("institutions"), "institutions", "Operator")
+    )
     issues.extend(_validate_source(data, config_path, strict))
     return issues

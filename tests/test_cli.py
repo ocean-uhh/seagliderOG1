@@ -19,7 +19,8 @@ def _write_config(path: pathlib.Path, **overrides: object) -> pathlib.Path:
         "config_version": 1,
         "source": str(DATA_DIR),
         "output_dir": "./",
-        "contributors": [{"name": "Jane Doe", "roles": ["PI"]}],
+        "contributors": [{"name": "Jane Doe", "role": "PI"}],
+        "institutions": [{"name": "Your Institution", "role": "Operator"}],
     }
     config.update(overrides)
     path.write_text(yaml.safe_dump(config))
@@ -125,6 +126,59 @@ def test_validate_rejects_bad_types(tmp_path: pathlib.Path) -> None:
     )
     bad = {i.key for i in _mission.validate_config(config) if i.level == "ERROR"}
     assert {"mode", "dives", "keep_variables"} <= bad
+
+
+def test_validate_rejects_non_w08_role(tmp_path: pathlib.Path) -> None:
+    """A role outside the W08 vocabulary is an ERROR."""
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        source=str(tmp_path),
+        contributors=[{"name": "Ann", "role": "Chief Wrangler"}],
+    )
+    assert any(
+        i.level == "ERROR" and "W08" in i.message
+        for i in _mission.validate_config(config)
+    )
+
+
+def test_validate_rejects_name_with_comma(tmp_path: pathlib.Path) -> None:
+    """A contributor name containing a comma is an ERROR."""
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        source=str(tmp_path),
+        contributors=[{"name": "Doe, Jane", "role": "PI"}],
+    )
+    assert any(
+        i.level == "ERROR" and "comma" in i.message
+        for i in _mission.validate_config(config)
+    )
+
+
+def test_validate_requires_pi_and_operator(tmp_path: pathlib.Path) -> None:
+    """Missing a PI contributor and an Operator institution are both ERRORs."""
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        source=str(tmp_path),
+        contributors=[{"name": "Ann", "role": "Data scientist"}],
+        institutions=[{"name": "Inst", "role": "Owner"}],
+    )
+    errors = [i.message for i in _mission.validate_config(config) if i.level == "ERROR"]
+    assert any("PI" in message for message in errors)
+    assert any("Operator" in message for message in errors)
+
+
+def test_validate_warns_on_roles_list(tmp_path: pathlib.Path) -> None:
+    """A single-element roles: is a warning (prefer role:), not an error."""
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        source=str(tmp_path),
+        contributors=[{"name": "Ann", "roles": ["PI"]}],
+    )
+    issues = _mission.validate_config(config)
+    assert any(i.level == "WARNING" and "roles:" in i.message for i in issues)
+    assert not any(
+        i.level == "ERROR" and (i.key or "").startswith("contributors") for i in issues
+    )
 
 
 def test_validate_requires_source(tmp_path: pathlib.Path) -> None:
