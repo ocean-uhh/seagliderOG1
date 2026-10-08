@@ -241,6 +241,59 @@ def test_process_failing_mission_exits_one(
     assert cli.main(["process", str(config)]) == 1
 
 
+# --- inspect / list --------------------------------------------------------
+
+
+def test_inspect_variables(capsys: pytest.CaptureFixture[str]) -> None:
+    """Inspect prints a variable table for a basestation file."""
+    sample = DATA_DIR / "p0050001_20080606.nc"
+    assert cli.main(["inspect", str(sample)]) == 0
+    assert "dtype" in capsys.readouterr().out
+
+
+def test_inspect_attrs() -> None:
+    """Inspect --attrs prints the global attributes."""
+    sample = DATA_DIR / "p0050001_20080606.nc"
+    assert cli.main(["inspect", str(sample), "--attrs"]) == 0
+
+
+def test_inspect_missing_file_is_exit_one(tmp_path: pathlib.Path) -> None:
+    """Inspecting a non-existent file exits 1 (a failure, not a usage error)."""
+    assert cli.main(["inspect", str(tmp_path / "nope.nc")]) == 1
+
+
+def test_list_roles(capsys: pytest.CaptureFixture[str]) -> None:
+    """List roles prints the W08 roles with their term URIs."""
+    assert cli.main(["list", "roles"]) == 0
+    out = capsys.readouterr().out
+    assert "PI" in out and "W08/current/CONT0004/" in out
+
+
+def test_list_institutions(capsys: pytest.CaptureFixture[str]) -> None:
+    """List institutions prints the EDMO registry (code and standard name)."""
+    assert cli.main(["list", "institutions"]) == 0
+    out = capsys.readouterr().out
+    assert "1434" in out and "University of Washington (School of Oceanography)" in out
+
+
+def test_list_missions(capsys: pytest.CaptureFixture[str]) -> None:
+    """List missions discovers the missions under a directory."""
+    assert cli.main(["list", "missions", str(DATA_DIR)]) == 0
+    assert "5 dives" in capsys.readouterr().out
+
+
+def test_list_missions_requires_path() -> None:
+    """List missions without a path is a usage error (exit 2)."""
+    assert cli.main(["list", "missions"]) == 2
+
+
+def test_list_rejects_unknown_registry() -> None:
+    """An unknown registry name is a usage error (exit 2)."""
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["list", "nonsense"])
+    assert exc.value.code == 2
+
+
 # --- validate --------------------------------------------------------------
 
 

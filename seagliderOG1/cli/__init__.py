@@ -11,6 +11,8 @@ import argparse
 from collections.abc import Sequence
 
 from seagliderOG1.cli import init as init_cmd
+from seagliderOG1.cli import inspect as inspect_cmd
+from seagliderOG1.cli import list as list_cmd
 from seagliderOG1.cli import process as process_cmd
 from seagliderOG1.cli import validate as validate_cmd
 
@@ -58,7 +60,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(
         dest="command", metavar="<command>", required=True
     )
-    for module in (init_cmd, validate_cmd, process_cmd):
+    for module in (init_cmd, validate_cmd, process_cmd, inspect_cmd, list_cmd):
         module.build_parser(subparsers)
     return parser
 
