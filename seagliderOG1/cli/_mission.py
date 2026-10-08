@@ -59,6 +59,23 @@ class ValidationIssue(NamedTuple):
     key: str | None
 
 
+def load_config(config_path: pathlib.Path) -> dict:
+    """Load a mission configuration file into a dict.
+
+    Parameters
+    ----------
+    config_path : pathlib.Path
+        Path to the ``mission.yaml`` file.
+
+    Returns
+    -------
+    dict
+        The parsed configuration.
+
+    """
+    return yaml.safe_load(config_path.read_text())
+
+
 def _scalar(value: object) -> str:
     """Render a Python value as a YAML scalar for the template.
 
@@ -296,17 +313,15 @@ def _validate_source(
     from seagliderOG1 import readers
 
     try:
-        names = [
-            f for f in readers.list_files(str(src)) if readers.validate_filename(f)
-        ]
+        missions = readers.discover_missions(str(src))
     except ValueError as exc:
         return [ValidationIssue("ERROR", f"source unreadable: {exc}", "source")]
-    if not names:
+    if not missions:
         return [
             ValidationIssue(
                 "ERROR",
-                "no basestation files (pSSSDDDD*.nc) directly in source "
-                "(root-of-missions discovery arrives with 'process').",
+                "no basestation files (pSSSDDDD*.nc) under source "
+                "(a mission directory, or a root of SN/DATE directories).",
                 "source",
             )
         ]
@@ -318,7 +333,12 @@ def _validate_source(
         and all(isinstance(d, int) for d in dives)
     ):
         return []
-    present = sorted(readers.profnum_from_filename(f) for f in names)
+    # The dive-range check applies to a single mission directory; under a root the
+    # range is per mission and is not validated here.
+    single = [mission for mission in missions if mission.date is None]
+    if not single:
+        return []
+    present = single[0].dives
     first, last = dives
     issues: list[ValidationIssue] = []
     if first < present[0] or last > present[-1]:
