@@ -34,12 +34,12 @@ def test_process_dataset():
     ctd_dim, merge_dims, all_dims = tools._get_merge_dimensions([ds1])
 
     # create og1_mapping for standardise_OG10
-    OG1_mapping = tools.OG1_name_mapping(
-        [ds1], ctd_dim=ctd_dim, dims_to_merge=merge_dims
-    )
+    OG1_mapping, time_variables = tools.OG1_name_mapping([ds1])
+
+    merged_ds = tools.merge_datasets_along_time(split_ds, time_variables, firstrun=False)
 
     # Check initial variables are reformatted
-    dsa = convertOG1.standardise_OG10(ds, og1_mapping=OG1_mapping)
+    dsa = convertOG1.standardise_OG10(merged_ds, og1_mapping=OG1_mapping)
     varlist = list(dsa.data_vars)
     coordlist = list(dsa.coords)
     combined_list = varlist + coordlist
