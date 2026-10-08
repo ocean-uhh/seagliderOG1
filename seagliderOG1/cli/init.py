@@ -73,9 +73,7 @@ def _platform_from_file(source: str) -> dict[str, object]:
 
     from seagliderOG1 import readers
 
-    # PR2's public readers.discover_missions will replace this private access.
-    is_basestation = readers._validate_filename  # noqa: SLF001
-    names = [f for f in readers.list_files(source) if is_basestation(f)]
+    names = [f for f in readers.list_files(source) if readers.validate_filename(f)]
     if not names:
         msg = f"no basestation files (pSSSDDDD*.nc) in {source}"
         raise ValueError(msg)

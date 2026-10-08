@@ -218,10 +218,10 @@ def _validate_source(
 
     from seagliderOG1 import readers
 
-    # PR2's public readers.discover_missions will replace this private access.
-    is_basestation = readers._validate_filename  # noqa: SLF001
     try:
-        names = [f for f in readers.list_files(str(src)) if is_basestation(f)]
+        names = [
+            f for f in readers.list_files(str(src)) if readers.validate_filename(f)
+        ]
     except ValueError as exc:
         return [ValidationIssue("ERROR", f"source unreadable: {exc}", "source")]
     if not names:
@@ -241,8 +241,7 @@ def _validate_source(
         and all(isinstance(d, int) for d in dives)
     ):
         return []
-    dive_number = readers._profnum_from_filename  # noqa: SLF001
-    present = sorted(dive_number(f) for f in names)
+    present = sorted(readers.profnum_from_filename(f) for f in names)
     first, last = dives
     issues: list[ValidationIssue] = []
     if first < present[0] or last > present[-1]:

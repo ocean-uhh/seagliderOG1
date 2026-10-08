@@ -36,6 +36,13 @@ _DERIVED_GLOBALS = frozenset(
     }
 )
 
+# OG1 id / filename data-mode suffixes. Per the OG1 format manual's file-naming
+# convention (id = <platform_serial>_<start_date>_<data_mode>): "R" for near
+# real time, "delayed" for delayed mode. The manual defines no separate data-mode
+# attribute, so mode affects only the id (and filename); nothing else is written.
+# Ref: OceanGliders OG-format-user-manual, OG_Format "File naming convention".
+_MODE_SUFFIX = {"delayed": "delayed", "realtime": "R"}
+
 # String platform fields and whether each has a basestation-file fallback source.
 _PLATFORM_STRING_FIELDS = (
     ("PLATFORM_MODEL", None),
@@ -136,6 +143,7 @@ def convert_to_OG1(
     contrib_to_append: dict[str, str] | None = None,
     platform: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
+    mode: str = "delayed",
 ) -> tuple[xr.Dataset, list[str]]:
     """Convert Seaglider basestation datasets to OG1 format.
     Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
@@ -163,6 +171,10 @@ def convert_to_OG1(
     global_attributes : dict of str to object, optional
         Global attributes written verbatim into the output (nulls skipped). A key
         that collides with a converter-derived global raises. Default is None.
+    mode : str, optional
+        Data mode, ``"delayed"`` (default) or ``"realtime"``. Sets the ``id``
+        suffix (``delayed`` or ``R``) and so the output filename, per the OG1
+        manual, which defines no separate data-mode attribute. Default is "delayed".
 
     Returns
     -------
@@ -188,6 +200,10 @@ def convert_to_OG1(
             "global_attributes may not set converter-derived keys: "
             f"{sorted(collisions)}. Remove them from the mission config."
         )
+        raise ValueError(msg)
+
+    if mode not in _MODE_SUFFIX:
+        msg = f"mode must be one of {sorted(_MODE_SUFFIX)}, not {mode!r}."
         raise ValueError(msg)
 
     print(f"Start converting {len(list_of_datasets)} raw datasets to OG1 format ...")
@@ -348,8 +364,9 @@ def convert_to_OG1(
     ds_og1.attrs["geospatial_vertical_min"] = depth_min
     ds_og1.attrs["geospatial_vertical_max"] = depth_max
 
-    # Construct the unique identifier attribute
-    id = f"{platform_serial_number}_{ds_og1.start_date}_delayed"
+    # Construct the unique identifier attribute. The data-mode suffix (delayed/R)
+    # is the only place OG1 records data mode; there is no data-mode attribute.
+    id = f"{platform_serial_number}_{ds_og1.start_date}_{_MODE_SUFFIX[mode]}"
     ds_og1.attrs["id"] = id
 
     # Write config global attributes verbatim (nulls skipped). Collisions with

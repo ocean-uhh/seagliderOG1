@@ -2,6 +2,8 @@ import os
 import pathlib
 import re
 import sys
+import warnings
+from typing import NamedTuple
 
 import requests
 import xarray as xr
@@ -86,7 +88,7 @@ def load_sample_dataset(
         raise KeyError(msg)
 
 
-def _validate_filename(filename: str) -> bool:
+def validate_filename(filename: str) -> bool:
     """Validate if filename matches expected Seaglider basestation patterns.
 
     Validates against two expected patterns:
@@ -111,8 +113,8 @@ def _validate_filename(filename: str) -> bool:
     # pattern 2: p0420100_20100903.nc
     pattern2 = r"^p\d{7}_\d{8}\.nc$"
     if re.match(pattern1, filename) or re.match(pattern2, filename):
-        glider_sn = _glider_sn_from_filename(filename)
-        divenum = _profnum_from_filename(filename)
+        glider_sn = glider_sn_from_filename(filename)
+        divenum = profnum_from_filename(filename)
         if int(glider_sn) > 0 and int(divenum) > 0:
             return True
         else:
@@ -121,7 +123,7 @@ def _validate_filename(filename: str) -> bool:
         return False
 
 
-def _profnum_from_filename(filename: str) -> int:
+def profnum_from_filename(filename: str) -> int:
     """Extract the profile/dive number from a Seaglider filename.
 
     Extracts characters 4-7 (0-indexed) which represent the dive cycle number
@@ -141,7 +143,7 @@ def _profnum_from_filename(filename: str) -> int:
     return int(filename[4:8])
 
 
-def _glider_sn_from_filename(filename: str) -> int:
+def glider_sn_from_filename(filename: str) -> int:
     """Extract the glider serial number from a Seaglider filename.
 
     Extracts characters 1-3 (0-indexed) which represent the 3-digit glider
@@ -159,6 +161,113 @@ def _glider_sn_from_filename(filename: str) -> int:
 
     """
     return int(filename[1:4])
+
+
+class Mission(NamedTuple):
+    """A discovered Seaglider mission (a directory of basestation files).
+
+    Parameters
+    ----------
+    sn : int
+        Glider serial number, from the basestation filenames.
+    date : str or None
+        The ``DATE`` directory name when discovered under a ``SN/DATE`` root,
+        else None for a directory passed directly.
+    path : str
+        The mission directory holding the ``pSSSDDDD*.nc`` files.
+    dives : list of int
+        Sorted dive numbers present in the directory.
+
+    """
+
+    sn: int
+    date: str | None
+    path: str
+    dives: list[int]
+
+
+def _mission_dives(directory: pathlib.Path) -> tuple[int, list[int]] | None:
+    """Return (serial number, sorted dive numbers) for a mission directory.
+
+    Parameters
+    ----------
+    directory : pathlib.Path
+        Directory to inspect for basestation files.
+
+    Returns
+    -------
+    tuple of (int, list of int) or None
+        The glider serial number and sorted dive numbers, or None when the
+        directory holds no basestation files.
+
+    """
+    names = [
+        f.name for f in directory.iterdir() if f.is_file() and validate_filename(f.name)
+    ]
+    if not names:
+        return None
+    return glider_sn_from_filename(names[0]), sorted(
+        profnum_from_filename(name) for name in names
+    )
+
+
+def discover_missions(source: str) -> list[Mission]:
+    """Discover Seaglider missions under a directory.
+
+    A directory holding basestation files (``pSSSDDDD*.nc``) directly is one
+    mission. A directory whose second-level ``SN/DATE`` subdirectories hold such
+    files is a root: one mission per ``SN/DATE`` directory. Discovery is the same
+    rule the CLI and notebooks share.
+
+    Parameters
+    ----------
+    source : str
+        A mission directory, or a root of ``SN/DATE`` mission directories.
+
+    Returns
+    -------
+    list of Mission
+        One entry per mission, sorted by path. Empty when nothing is found.
+
+    Raises
+    ------
+    ValueError
+        If ``source`` is not an existing directory.
+
+    """
+    root = pathlib.Path(source)
+    if not root.is_dir():
+        msg = f"source is not a directory: {source}"
+        raise ValueError(msg)
+
+    # Serial number always comes from the filenames, never the directory name.
+    direct = _mission_dives(root)
+    if direct is not None:
+        return [Mission(sn=direct[0], date=None, path=str(root), dives=direct[1])]
+
+    missions: list[Mission] = []
+    for sn_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+        for date_dir in sorted(p for p in sn_dir.iterdir() if p.is_dir()):
+            found = _mission_dives(date_dir)
+            if found is None:
+                continue
+            file_sn, dives = found
+            # Trust the files; warn when the SN directory name disagrees.
+            if sn_dir.name.isdigit() and int(sn_dir.name) != file_sn:
+                warnings.warn(
+                    f"serial-number directory {sn_dir.name!r} disagrees with the "
+                    f"files' serial number {file_sn} in {date_dir}; using the files'.",
+                    stacklevel=2,
+                )
+            missions.append(
+                Mission(
+                    sn=file_sn,
+                    date=date_dir.name,
+                    path=str(date_dir),
+                    dives=dives,
+                )
+            )
+    return missions
 
 
 def filter_files_by_profile(
@@ -193,14 +302,14 @@ def filter_files_by_profile(
     """
     filtered_files = []
 
-    file_list = [f for f in file_list if _validate_filename(f)]
+    file_list = [f for f in file_list if validate_filename(f)]
 
     #    divenum_values = [int(file[4:8]) for file in file_list]
 
     # This could be refactored: see divenum_values above, and find values between start_profile and end_profil
     for file in file_list:
         # Extract the profile number from the filename now from the beginning
-        profile_number = _profnum_from_filename(file)
+        profile_number = profnum_from_filename(file)
         if start_profile is not None and end_profile is not None:
             if start_profile <= profile_number <= end_profile:
                 filtered_files.append(file)
@@ -235,7 +344,7 @@ def load_first_basestation_file(source: str) -> xr.Dataset:
     """
     file_list = list_files(source)
     filename = file_list[0]
-    start_profile = _profnum_from_filename(filename)
+    start_profile = profnum_from_filename(filename)
     datasets = load_basestation_files(source, start_profile, start_profile)
     return datasets[0]
 
