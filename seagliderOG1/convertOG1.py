@@ -60,15 +60,15 @@ def convert_to_OG1(
     ctd_dim, dims_to_merge, all_dims = tools._get_merge_dimensions(list_of_datasets)
 
     # Create a mapping from original variable names to OG1 variable names for all variables across the datasets
-    OG1_mapping = tools.OG1_name_mapping(list_of_datasets)
+    OG1_mapping, time_variables = tools.OG1_name_mapping(list_of_datasets)
 
     # print the sumary of variables assigned or not assigned to the dataset
-    tools.print_OG1_mapping_summary(OG1_mapping, ctd_dim, dims_to_merge, all_dims)
+    # tools.print_OG1_mapping_summary(OG1_mapping, ctd_dim, dims_to_merge, all_dims)
 
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
         varlist = list(set(varlist + list(ds1_base.variables)))
         ds_new, attr_warnings = process_dataset(
-            ds1_base, OG1_mapping, dims_to_merge=dims_to_merge, firstrun=firstrun
+            ds1_base, OG1_mapping, time_variables, firstrun=firstrun
         )
         if ds_new:
             processed_datasets.append(ds_new)
@@ -216,7 +216,7 @@ _log = logging.getLogger(__name__)
 def process_dataset(
     ds1_base: xr.Dataset,
     OG1_mapping: pd.DataFrame,
-    dims_to_merge: list[str],
+    time_variables: dict[str, list[str]],
     firstrun: bool = False,
 ) -> tuple[
     xr.Dataset,  # Processed dataset with renamed variables, assigned attributes, and additional information
@@ -229,8 +229,8 @@ def process_dataset(
     ----------
     ds1_base : xarray.Dataset
         The input dataset from a basestation file, containing various attributes and variables.
-    dims_to_merge : list[str]
-        List of dimensions to merge.
+    time_variables : dict[str, list[str]]
+        A dictionary mapping dimension names to lists of time variables.
     firstrun : bool, optional
         Indicates whether this is the first run of the processing pipeline. Default is False.
 
@@ -277,9 +277,11 @@ def process_dataset(
         )
     # Split the dataset by unique dimensions
     split_ds = tools.split_by_unique_dims(ds1_base)
-    # only consider dimensions from dims_to_merge that are present in the dataset
-    dims_to_merge = [dim for dim in dims_to_merge if dim in ds1_base.sizes]
-    merged_ds = tools.merge_datasets_along_time(split_ds, dims_to_merge, firstrun)
+
+    # merge the split datasets along the time dimension using the OG1 mapping and specified dimensions to merge
+    merged_ds = tools.merge_datasets_along_time(
+        split_ds, time_variables, firstrun=firstrun
+    )
     # Rename variables and attributes to OG1 vocabulary
     # -------------------------------------------------------------------
     # Use variables with dimension 'sg_data_point'

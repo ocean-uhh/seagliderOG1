@@ -38,9 +38,10 @@ INSTRUMENT_ALIASES = {
     "sbe41": {"sbe41", "sbect"},
 }
 
+
 def OG1_name_mapping(
     list_of_datasets: list[xr.Dataset],
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, dict[str, list[str]]]:
     """Create a mapping from original variable names to OG1 variable names.
 
     Include every unique variable name from all input datasets, including
@@ -82,9 +83,12 @@ def OG1_name_mapping(
         ``has_OG1_attributes``.
     """
     all_sources: dict[str, xr.DataArray] = {}
+    all_dimensions: set[str] = set()
     instruments: list[str] = []
 
     for dataset in list_of_datasets:
+        all_dimensions.update(dataset.dims)
+
         for instrument in dataset.attrs.get("instrument", "").split():
             if instrument not in instruments:
                 instruments.append(instrument)
@@ -157,10 +161,7 @@ def OG1_name_mapping(
         return (
             lower_name.startswith("ctd_")
             or lower_name in CTD_MEASUREMENT_VARIABLES
-            or (
-                has_ctd_pressure
-                and lower_name in CTD_CALCULATED_VARIABLES
-            )
+            or (has_ctd_pressure and lower_name in CTD_CALCULATED_VARIABLES)
         )
 
     def find_instrument(variable_name: str) -> str | None:
@@ -220,9 +221,7 @@ def OG1_name_mapping(
         }
 
         if instrument is not None:
-            prefixes.update(
-                f"{name}_" for name in get_instrument_names(instrument)
-            )
+            prefixes.update(f"{name}_" for name in get_instrument_names(instrument))
 
         candidates = [variable_name]
 
@@ -231,7 +230,7 @@ def OG1_name_mapping(
         for candidate in candidates:
             for prefix in prefixes:
                 if candidate.lower().startswith(prefix):
-                    stripped_name = candidate[len(prefix):]
+                    stripped_name = candidate[len(prefix) :]
 
                     if stripped_name and stripped_name not in candidates:
                         candidates.append(stripped_name)
@@ -298,11 +297,7 @@ def OG1_name_mapping(
             count = og1_name_counts.get(base_og1_name, 0) + 1
             og1_name_counts[base_og1_name] = count
 
-            og1_name = (
-                base_og1_name
-                if count == 1
-                else f"{base_og1_name}{count}"
-            )
+            og1_name = base_og1_name if count == 1 else f"{base_og1_name}{count}"
 
         mapping.append(
             {
@@ -325,18 +320,55 @@ def OG1_name_mapping(
         ],
     )
 
-    # Replace individual time variables with a single "time" / "TIME" row.
-    time_mask = result["OG1_name"].astype("string").str.fullmatch(
-        r"TIME[0-9]*",
-        na=False,
+    # Collect dimensions and their associated time variable names separately.
+    time_mask = (
+        result["OG1_name"]
+        .astype("string")
+        .str.fullmatch(
+            r"TIME[0-9]*",
+            na=False,
+        )
     )
 
-    time_variable_names = (
-        result.loc[time_mask, "original_dimension"]
-        + " ("
-        + result.loc[time_mask, "original_name"]
-        + ")"
-    ).tolist()
+    time_variables: dict[str, list[str]] = {}
+
+    def add_time_variable(dimension: str, variable_name: str) -> None:
+        """Add a time association without duplicates."""
+        names = time_variables.setdefault(dimension, [])
+        if variable_name not in names:
+            names.append(variable_name)
+
+    for variable_name in result.loc[time_mask, "original_name"]:
+        for dimension in get_source(variable_name).dims:
+            add_time_variable(dimension, variable_name)
+
+    # Magnetometer measurements share the sg_data_point time variable(s).
+    if "magnetometer_data_point" in all_dimensions:
+        for variable_name in time_variables.get("sg_data_point", []):
+            add_time_variable("magnetometer_data_point", variable_name)
+
+    # Add explicit associations when both dimension and variable exist.
+    for dimension, variable_name in {
+        "gc_state": "gc_state_secs",
+        "gc_event": "gc_st_secs",
+        "gps_info": "log_gps_time",
+        "auxCompass_data_point": "auxCompass_time",
+        "depth_data_point": "depth_time",
+    }.items():
+        if dimension in all_dimensions and variable_name in all_sources:
+            add_time_variable(dimension, variable_name)
+
+    # Remove all associated time variables, including those without an
+    # OG1 TIME mapping. Replace any existing "time" row below.
+    time_variable_names = {
+        variable_name for names in time_variables.values() for variable_name in names
+    }
+
+    remove_mask = (
+        time_mask
+        | result["original_name"].isin(time_variable_names)
+        | result["original_name"].eq("time")
+    )
 
     time_row = pd.DataFrame(
         [
@@ -345,25 +377,23 @@ def OG1_name_mapping(
                 "OG1_name": "TIME",
                 "instrument": float("nan"),
                 "instrument_type": float("nan"),
-                "original_dimension": time_variable_names,
+                "original_dimension": "",
             }
         ]
     )
 
     result = pd.concat(
-        [result.loc[~time_mask], time_row],
+        [result.loc[~remove_mask], time_row],
         ignore_index=True,
     )
 
     result["has_OG1_attributes"] = result["OG1_name"].apply(
         lambda name: (
-            bool(vocabularies.vocab_attrs.get(name, {}))
-            if pd.notna(name)
-            else False
+            bool(vocabularies.vocab_attrs.get(name, {})) if pd.notna(name) else False
         )
     )
 
-    return result
+    return result, time_variables
 
 
 def gather_sensor_info(list_of_datasets) -> dict:
@@ -1500,95 +1530,232 @@ def merge_parts_of_dataset(
     return merged_ds
 
 
-def merge_datasets_along_time(split_ds, dims_to_merge, first_run=False):
-    """Merge a list of xarray Datasets along their time dimension.
+def merge_datasets_along_time(
+    split_ds: dict[tuple[str, ...], xr.Dataset],
+    time_variables: dict[str, list[str]],
+    firstrun: bool = False,
+) -> xr.Dataset | None:
+    """Merge split datasets onto a shared time axis.
+
+    Merge dimensions listed in ``time_variables``, retaining original
+    variable names. Replace individual time variables with ``time``.
+    OG1 conversion is handled separately by ``standardise_OG10``.
+
+    Always use ``time`` for ``sg_data_point``. Other dimensions use their
+    listed candidates. Time variables must contain datetime64 values and
+    match the dimension's length. Shared time sources are attached by
+    position and must have matching sample order.
+
+    Keep the first duplicate timestamp unchanged and shift subsequent
+    occurrences by 0.5 seconds each. Print adjustments and record their
+    source dimension, time variable, and timestamps in ``time`` attributes.
+    Retained variables receive original name and dimension attributes.
 
     Parameters
     ----------
-    split_ds : dict[(str,), xr.Dataset]
-        Mapping from (dimension,) to Dataset.
+    split_ds : dict[tuple[str, ...], xr.Dataset]
+        Split datasets keyed by dimension, e.g. ``("sg_data_point",)``.
 
-    dims_to_merge : list[str]
-        Dimension names to extract and merge.
+    time_variables : dict[str, list[str]]
+        Dimensions mapped to candidate time variable names.
+
+    first_run : bool, default False
+        Print progress and skipped dimensions. Duplicate timestamp
+        adjustments are always printed.
 
     Returns
     -------
-    xr.Dataset or None
-        A time-aligned merged dataset, or None if no datasets were eligible.
-
+    xarray.Dataset or None
+        Chronologically sorted dataset with coordinate
+        ``time(N_MEASUREMENTS)`` and no ``N_MEASUREMENTS`` coordinate.
+        Return None if no dataset has a usable time source.
     """
     processed_datasets = []
-
-    all_dims = set([dim[0] for dim in split_ds.keys() if len(dim) > 0])
     actually_merged_dims = set()
-    for dim in dims_to_merge:
-        # ---1. Extract dataset---
+    all_dims = {dim for key in split_ds for dim in key}
+    duplicate_time_descriptions = []
+
+    all_time_names = {name for names in time_variables.values() for name in names}
+
+    # Collect shared time sources before modifying datasets.
+    time_sources: dict[str, list[xr.DataArray]] = {}
+
+    for dataset in split_ds.values():
+        for name in all_time_names:
+            if name in dataset.variables:
+                time_sources.setdefault(name, []).append(dataset[name])
+
+    def is_usable_time(source: xr.DataArray, size: int) -> bool:
+        """Check that a time source matches the target dimension."""
+        return (
+            source.ndim == 1
+            and source.size == size
+            and pd.api.types.is_datetime64_dtype(source.dtype)
+        )
+
+    for dim, candidate_names in time_variables.items():
         if (dim,) not in split_ds:
-            print(f"Skipping {dim}: not found in split_ds.")
+            if firstrun:
+                print(f"Skipping '{dim}': not found in split_ds.")
             continue
 
         ds = split_ds[(dim,)].copy()
-        old_dim = list(ds.sizes)[0]
 
-        # ---2. Detect datetime64 variable---
-        time_vars = [v for v in ds.variables if "datetime64" in str(ds[v].dtype)]
-        if not time_vars:
-            if first_run:
-                print(f"Skipping '{dim}': No datetime64 variable found.")
+        if dim not in ds.dims:
+            if firstrun:
+                print(f"Skipping '{dim}': dimension not found in dataset.")
             continue
 
-        ### if more than one time variable is found, takle ctd_time preferibly, otherwise time or the first one. Delete the other time variables.
-        if len(time_vars) > 1:
-            if "ctd_time" in time_vars:
-                time_var = "ctd_time"
-            elif "time" in time_vars:
-                time_var = "time"
-            else:
-                time_var = time_vars[0]
-            for var in time_vars:
-                if var != time_var:
-                    ds = ds.drop_vars(var)
-        else:
-            time_var = time_vars[0]
+        # Never use ctd_time as a fallback for sg_data_point.
+        candidates = (
+            ["time"] if dim == "sg_data_point" else list(dict.fromkeys(candidate_names))
+        )
 
-        # ---3. Rename detected time variable to 'time'---
-        if time_var != "time":
-            ds = ds.rename({time_var: "time"})
+        time_var = None
+        time_source = None
 
-        # ---4. Swap old dimension to time---
-        ds = ds.swap_dims({old_dim: "time"})
+        for name in candidates:
+            # Prefer a time variable on the current dimension.
+            if (
+                name in ds.variables
+                and ds[name].dims == (dim,)
+                and is_usable_time(ds[name], ds.sizes[dim])
+            ):
+                time_var = name
+                time_source = ds[name]
+                break
 
-        # ---5. Add attribute old_dim to each data variable and coordinate (except the time coordinate)---
-        for var in ds.variables:
-            if var != "time":
-                ds[var].attrs["original_dimension"] = old_dim
-                ds[var].attrs["original_variable_name"] = str(var)
-        if first_run:
+            # Shared sources are attached by position.
+            for source in time_sources.get(name, []):
+                if is_usable_time(source, ds.sizes[dim]):
+                    time_var = name
+                    time_source = source
+                    break
+
+            if time_source is not None:
+                break
+
+        if time_source is None:
+            if firstrun:
+                print(
+                    f"Skipping '{dim}': no associated datetime64 time "
+                    "variable with a matching length."
+                )
+            continue
+
+        time_values = time_source.values
+        time_attrs = dict(time_source.attrs)
+
+        # Replace individual time variables with the shared time coordinate.
+        ds = ds.drop_vars([name for name in all_time_names if name in ds.variables])
+
+        if "time" in ds.variables:
+            raise ValueError(
+                f"'{dim}' contains a variable named 'time' that was not "
+                "identified as a time source."
+            )
+
+        # Preserve original names and dimensions without OG1 renaming.
+        for name in ds.variables:
+            ds[name].attrs["original_dimension"] = dim
+            ds[name].attrs["original_variable_name"] = name
+
+        ds = ds.assign_coords(
+            time=xr.DataArray(
+                time_values,
+                dims=(dim,),
+                attrs=time_attrs,
+            )
+        )
+        ds = ds.swap_dims({dim: "time"})
+        ds = ds.sortby("time")
+
+        # Keep the first occurrence; shift subsequent ones by 0.5 s each.
+        original_times = pd.Series(ds["time"].values)
+
+        occurrence = original_times.groupby(
+            original_times,
+            sort=False,
+            dropna=False,
+        ).cumcount()
+
+        adjusted_times = original_times + pd.to_timedelta(occurrence * 0.5, unit="s")
+
+        if adjusted_times[adjusted_times.notna()].duplicated().any():
+            raise ValueError(
+                f"Shifting duplicate timestamps in '{dim}' / '{time_var}' "
+                "by 0.5 seconds creates another timestamp collision."
+            )
+
+        duplicate_mask = original_times.duplicated(keep=False) & original_times.notna()
+
+        if duplicate_mask.any():
+            description = [
+                f"Dimension: {dim} with time variable: {time_var} "
+                "has duplicate time values.",
+                "The following time values occurred multiple times and "
+                "have been assigned to the following new timestamps:",
+            ]
+
+            for timestamp in original_times[duplicate_mask].drop_duplicates():
+                positions = original_times.index[original_times.eq(timestamp)].tolist()
+
+                new_timestamps = [
+                    adjusted_times.iloc[position].isoformat() for position in positions
+                ]
+
+                description.append(
+                    f"  {timestamp.isoformat()} occurred "
+                    f"{len(positions)} times.\n"
+                    "    Assigned timestamps:\n"
+                    + "\n".join(f"      {value}" for value in new_timestamps)
+                )
+
+            description_text = "\n".join(description)
+            duplicate_time_descriptions.append(description_text)
+            print(description_text)
+
+        ds = ds.assign_coords(
+            time=xr.DataArray(
+                adjusted_times.to_numpy(),
+                dims=("time",),
+                attrs=time_attrs,
+            )
+        )
+        ds = ds.sortby("time")
+
+        if firstrun:
             print(
-                f"Adding variables with dimension '{dim}' and time variable '{time_var}'."
+                f"Adding variables with dimension '{dim}' "
+                f"and time variable '{time_var}'."
             )
 
         processed_datasets.append(ds)
         actually_merged_dims.add(dim)
 
     if not processed_datasets:
-        print("No datasets processed. Returning None.")
+        if firstrun:
+            print("No datasets processed. Returning None.")
         return None
 
-    # ---6. Merge along shared time coordinate---
     merged_ds = xr.merge(processed_datasets, join="outer")
+    merged_ds = merged_ds.sortby("time")
 
-    # ---7. Swap to N_MEASUREMENTS (optional)---
+    # Keep lowercase time; create only the N_MEASUREMENTS dimension.
     merged_ds = merged_ds.swap_dims({"time": "N_MEASUREMENTS"})
 
-    merged_ds = merged_ds.sortby("time")
-    if first_run:
-        ## Print what remaining dimensions were not merged into the new dataset
-        print(
-            f"The following dimensions were not merged into the new dataset: {all_dims - actually_merged_dims}"
-            "\nIf instrument data is missing make sure it's dimension follows the naming convention of '<instrument>_data_point'"
-            "\nfrom the ds.attrs['instrument'] list."
-        )
+    merged_ds["time"].attrs["duplicate_timestamp_adjustments"] = (
+        "\n\n".join(duplicate_time_descriptions)
+        if duplicate_time_descriptions
+        else "No duplicate time values were found."
+    )
+    merged_ds["time"].attrs["duplicate_timestamp_adjustment_rule"] = (
+        "First occurrence unchanged; subsequent occurrences shifted "
+        "forward by 0.5 seconds each. No measurements were discarded."
+    )
+
+    if firstrun:
+        print("Dimensions not merged: " f"{sorted(all_dims - actually_merged_dims)}")
 
     return merged_ds
 
