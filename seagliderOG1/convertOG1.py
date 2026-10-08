@@ -104,8 +104,8 @@ def convert_to_OG1(
         ds_og1.attrs[key] = value
 
     ### Add information needed/used for hydrodynamic (flight) model (hdm)
-    hdm_parameters = tools.extract_hdm_parameters(list_of_datasets)
-    ds_og1 = tools.add_hdm_parameters(ds_og1, hdm_parameters)
+    extracted = tools.extract_scalar_parameters(list_of_datasets)
+    ds_og1, OG1_mapping = tools.add_scalar_parameters(ds_og1, extracted, OG1_mapping)
 
     # Construct the platform serial number
     if "platform_id" in ds1_base.attrs:
