@@ -1834,29 +1834,30 @@ def extract_scalar_parameters(
         Parameter values, source attributes, presence and constant flags,
         and dive identifiers.
     """
-    names = list(
-        dict.fromkeys(
-            name
-            for dataset in list_datasets
-            for name, variable in dataset.variables.items()
-            if variable.ndim == 0
-        )
-    )
+    n_datasets = len(list_datasets)
 
+    # Discover scalar names in their original order.
     parameters = {}
 
-    for name in names:
-        values = []
-        present = []
-        attributes = None
+    for dataset in list_datasets:
+        for name, variable in dataset.variables.items():
+            if variable.ndim == 0 and name not in parameters:
+                parameters[name] = {
+                    "values": [float("nan")] * n_datasets,
+                    "present": [False] * n_datasets,
+                    "constant": False,
+                    "attributes": variable.attrs.copy(),
+                }
 
-        for dataset in list_datasets:
-            if name not in dataset.variables:
-                values.append(float("nan"))
-                present.append(False)
+    dive_numbers = []
+
+    # Work directly with Variables, avoiding DataArray construction.
+    for index, dataset in enumerate(list_datasets):
+        variables = dataset.variables
+
+        for name, variable in variables.items():
+            if name not in parameters:
                 continue
-
-            variable = dataset[name]
 
             if variable.ndim != 0:
                 raise ValueError(
@@ -1864,36 +1865,27 @@ def extract_scalar_parameters(
                     "in another."
                 )
 
-            values.append(variable.values[()])
-            present.append(True)
+            parameter = parameters[name]
+            parameter["values"][index] = variable.values[()]
+            parameter["present"][index] = True
 
-            if attributes is None:
-                attributes = variable.attrs.copy()
-
-        # Missing occurrences prevent collapsing to a constant.
-        constant = all(present) and pd.Series(values).nunique(dropna=False) == 1
-
-        parameters[name] = {
-            "values": values,
-            "present": present,
-            "constant": constant,
-            "attributes": attributes or {},
-        }
-
-    # Extract the identifier used to match each dataset to its measurements.
-    dive_numbers = []
-
-    for dataset in list_datasets:
         if "dive_number" in dataset.attrs:
             dive = dataset.attrs["dive_number"]
-        elif "dive_number" in dataset.variables and dataset["dive_number"].ndim == 0:
-            dive = dataset["dive_number"].values[()]
-        elif "trajectory" in dataset.variables and dataset["trajectory"].ndim == 0:
-            dive = dataset["trajectory"].values[()]
+        elif "dive_number" in variables and variables["dive_number"].ndim == 0:
+            dive = variables["dive_number"].values[()]
+        elif "trajectory" in variables and variables["trajectory"].ndim == 0:
+            dive = variables["trajectory"].values[()]
         else:
             dive = None
 
         dive_numbers.append(dive)
+
+    # Keep the original equality/missing-value semantics.
+    for parameter in parameters.values():
+        parameter["constant"] = (
+            all(parameter["present"])
+            and pd.Series(parameter["values"]).nunique(dropna=False) == 1
+        )
 
     return {
         "parameters": parameters,
