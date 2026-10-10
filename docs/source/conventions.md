@@ -284,9 +284,10 @@ Use clear, descriptive commit messages:
 
 ### Adding New Dependencies
 
-- Add to appropriate requirements file:
-  - `requirements.txt` - Runtime dependencies
-  - `requirements-dev.txt` - Development tools
+- Dependencies are declared in `pyproject.toml`; `pip install -e ".[dev]"` installs
+  everything for development:
+  - `[project] dependencies` - runtime dependencies
+  - `[project.optional-dependencies]` `test`, `docs`, `dev` - development tools
 - Use version constraints appropriately
 - Document why new dependencies are needed
 - Prefer established, well-maintained packages

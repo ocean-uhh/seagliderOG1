@@ -24,12 +24,36 @@ classifiers = [
   "Programming Language :: Python :: 3.14"
 ]
 dynamic = [
-  "dependencies",
   "version",
 ]
-urls.documentation = "https://github.com/ocean-uhh/seagliderOG1"
+dependencies = [
+  "numpy>=1.23",
+  "pandas>=2.1",
+  "xarray>=2025.1.1",
+  "netCDF4>=1.6",
+  "gsw>=3.6",
+  "matplotlib>=3.6",
+  "tqdm>=4.65",
+  "requests>=2.31",
+  "beautifulsoup4>=4.12",
+  "PyYAML>=6",
+]
+urls.documentation = "https://ocean-uhh.github.io/seagliderOG1"
 urls.homepage = "https://github.com/ocean-uhh/seagliderOG1"
 urls.repository = "https://github.com/ocean-uhh/seagliderOG1"
+urls."Bug Tracker" = "https://github.com/ocean-uhh/seagliderOG1/issues"
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pytest-cov>=5"]
+docs = [
+  "sphinx>=7.2",
+  "sphinx-rtd-theme>=2.0",
+  "myst-parser>=2.0",
+  "nbsphinx>=0.9",
+  "nbconvert>=7.8",
+  "ipykernel",
+]
+dev = ["seagliderOG1[test,docs]", "ruff>=0.3"]
 
 [project.scripts]
 seagliderOG1 = "seagliderOG1.cli:main"
@@ -43,12 +67,6 @@ include-package-data = true
 
 [tool.setuptools.package-data]
 seagliderOG1 = ["config/*.yaml", "config/*.yml"]
-
-[tool.setuptools.dynamic]
-dependencies = { file = [
-  "requirements.txt",
-] }
-readme = { file = "README.md", content-type = "text/markdown" }
 
 [tool.setuptools_scm]
 write_to = "seagliderOG1/_version.py"

@@ -20,29 +20,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Micromamba
-        uses: mamba-org/setup-micromamba@v2
-        with:
-          environment-file: environment.yml
-          init-shell: bash
-          condarc: |
-            channels:
-              - conda-forge
-            channel_priority: strict
-          cache-environment: true
-
-      - name: Install package (editable)
-        shell: bash -l {0}
-        run: |
-          micromamba run -n TEST python -m pip install --upgrade pip
-          micromamba run -n TEST python -m pip install -e . --no-deps --force-reinstall
-
-      - name: Build documentation
-        shell: bash -l {0}
-        run: |
-          set -e
-          micromamba run -n TEST jupyter nbconvert --to notebook --execute notebooks/demo.ipynb --output=demo-output.ipynb --ExecutePreprocessor.allow_errors=False
-          mv notebooks/*output.ipynb docs/source/
-          pushd docs
-          micromamba run -n TEST make clean html
-          popd
+      - uses: actions/setup-python@v7
+        with: { python-version: "3.11" }
+      - run: sudo apt-get update && sudo apt-get install -y pandoc
+      - run: pip install --upgrade pip && pip install -e ".[docs]"
+      - run: jupyter nbconvert --to notebook --execute notebooks/demo.ipynb --output=demo-output.ipynb --output-dir=docs/source
+      - run: cd docs && make clean html

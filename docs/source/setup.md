@@ -17,32 +17,6 @@ import seagliderOG1
 
 ## Local Development Installation
 
-### Using conda/micromamba
-
-If you prefer conda environments:
-
-```bash
-# Clone the repository
-git clone https://github.com/ocean-uhh/seagliderOG1.git
-cd seagliderOG1
-
-# Create and activate environment
-conda env create -f environment.yml
-conda activate TEST
-
-# Install package in editable mode
-pip install -e .
-```
-
-Using micromamba (faster alternative):
-```bash
-micromamba env create -f environment.yml
-micromamba activate TEST
-pip install -e .
-```
-
-### Using pip and virtual environments
-
 ```bash
 # Clone the repository
 git clone https://github.com/ocean-uhh/seagliderOG1.git
@@ -52,9 +26,18 @@ cd seagliderOG1
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies and package
-pip install -r requirements.txt
-pip install -e .
+# Install the package with the dev extras (dependencies are declared in pyproject.toml)
+pip install -e ".[dev]"
+```
+
+Or with [uv](https://docs.astral.sh/uv/):
+
+```bash
+git clone https://github.com/ocean-uhh/seagliderOG1.git
+cd seagliderOG1
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -e ".[dev]"
 ```
 
 ## Contributing Installation
@@ -70,24 +53,15 @@ For contributors and developers:
    cd seagliderOG1
    ```
 
-3. **Set up environment** (choose one):
-
-   **Option A: Using conda/micromamba**
-   ```bash
-   conda env create -f environment.yml
-   conda activate TEST
-   ```
-
-   **Option B: Using pip**
+3. **Set up a virtual environment**:
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-4. **Install development dependencies**:
+4. **Install the package with the dev extras**:
    ```bash
-   pip install -r requirements-dev.txt
-   pip install -e .
+   pip install -e ".[dev]"
    ```
 
 ### Development Workflow

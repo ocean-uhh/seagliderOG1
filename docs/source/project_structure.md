@@ -61,14 +61,13 @@ seagliderOG1/
 │   │   ├── docs_deploy.yml       # [ci] Build and deploy documents on "merge"
 │   │   ├── pypi.yml              # [ci] Package and release on GitHub.com "release"
 │   │   └── tests.yml             # [ci] Run pytest on tests/test_<name>.py on *pull-request*
+│   ├── dependabot.yml            # [ci] Monthly GitHub Actions version bumps
 │   ├── ISSUE_TEMPLATE.md         # [ci, meta] Template for issues on Github
 │   └── PULL_REQUEST_TEMPLATE.md  # [ci, meta] Template for pull requests on Github
 │
 ├── .gitignore                    # [meta] Exclude build files, logs, data, etc.
-├── requirements.txt              # [meta] Pip requirements
-├── requirements-dev.txt          # [meta] Pip requirements for development (docs, tests, linting)
 ├── .pre-commit-config.yaml       # [style] Instructions for pre-commits to run (linting)
-├── pyproject.toml                # [ci, meta, style] Build system and config linters
+├── pyproject.toml                # [ci, meta, style] Build system, dependencies, and config
 ├── CITATION.cff                  # [meta] So Github can populate the "cite" button
 ├── README.md                     # [meta] Project overview and getting started
 └── LICENSE                       # [meta] Open source license (e.g., MIT as default)
