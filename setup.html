@@ -51,11 +51,7 @@
 <li class="toctree-l1"><a class="reference internal" href="about.html">About seagliderOG1</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#basic-installation-pypi">Basic Installation (PyPI)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#local-development-installation">Local Development Installation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#using-conda-micromamba">Using conda/micromamba</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#using-pip-and-virtual-environments">Using pip and virtual environments</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#local-development-installation">Local Development Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#contributing-installation">Contributing Installation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#setup">Setup</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#development-workflow">Development Workflow</a></li>
@@ -119,30 +115,6 @@
 </section>
 <section id="local-development-installation">
 <h2>Local Development Installation<a class="headerlink" href="#local-development-installation" title="Link to this heading"></a></h2>
-<section id="using-conda-micromamba">
-<h3>Using conda/micromamba<a class="headerlink" href="#using-conda-micromamba" title="Link to this heading"></a></h3>
-<p>If you prefer conda environments:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clone the repository</span>
-git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ocean-uhh/seagliderOG1.git
-<span class="nb">cd</span><span class="w"> </span>seagliderOG1
-
-<span class="c1"># Create and activate environment</span>
-conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
-conda<span class="w"> </span>activate<span class="w"> </span>TEST
-
-<span class="c1"># Install package in editable mode</span>
-pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
-</pre></div>
-</div>
-<p>Using micromamba (faster alternative):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>micromamba<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
-micromamba<span class="w"> </span>activate<span class="w"> </span>TEST
-pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
-</pre></div>
-</div>
-</section>
-<section id="using-pip-and-virtual-environments">
-<h3>Using pip and virtual environments<a class="headerlink" href="#using-pip-and-virtual-environments" title="Link to this heading"></a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clone the repository</span>
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ocean-uhh/seagliderOG1.git
 <span class="nb">cd</span><span class="w"> </span>seagliderOG1
@@ -151,12 +123,18 @@ git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ocean
 python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
 <span class="nb">source</span><span class="w"> </span>venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: venv\Scripts\activate</span>
 
-<span class="c1"># Install dependencies and package</span>
-pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+<span class="c1"># Install the package with the dev extras (dependencies are declared in pyproject.toml)</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev]"</span>
 </pre></div>
 </div>
-</section>
+<p>Or with <a class="reference external" href="https://docs.astral.sh/uv/">uv</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ocean-uhh/seagliderOG1.git
+<span class="nb">cd</span><span class="w"> </span>seagliderOG1
+uv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: .venv\Scripts\activate</span>
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev]"</span>
+</pre></div>
+</div>
 </section>
 <section id="contributing-installation">
 <h2>Contributing Installation<a class="headerlink" href="#contributing-installation" title="Link to this heading"></a></h2>
@@ -171,21 +149,14 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 </pre></div>
 </div>
 </li>
-<li><p><strong>Set up environment</strong> (choose one):</p>
-<p><strong>Option A: Using conda/micromamba</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
-conda<span class="w"> </span>activate<span class="w"> </span>TEST
-</pre></div>
-</div>
-<p><strong>Option B: Using pip</strong></p>
+<li><p><strong>Set up a virtual environment</strong>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
 <span class="nb">source</span><span class="w"> </span>venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: venv\Scripts\activate</span>
 </pre></div>
 </div>
 </li>
-<li><p><strong>Install development dependencies</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
-pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+<li><p><strong>Install the package with the dev extras</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev]"</span>
 </pre></div>
 </div>
 </li>
@@ -200,14 +171,14 @@ pytest<span class="w"> </span>tests/test_*.py<span class="w">    </span><span cl
 </pre></div>
 </div>
 <p><strong>Code quality checks:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>black<span class="w"> </span>.<span class="w">                   </span><span class="c1"># Format code</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ruff<span class="w"> </span>format<span class="w">               </span><span class="c1"># Format code</span>
 ruff<span class="w"> </span>check<span class="w"> </span>--fix<span class="w">          </span><span class="c1"># Lint and auto-fix</span>
-pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files<span class="w"> </span><span class="c1"># Run all pre-commit hooks</span>
 </pre></div>
 </div>
 <p><strong>Before committing:</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w">                    </span><span class="c1"># Ensure tests pass</span>
 ruff<span class="w"> </span>check<span class="w">                </span><span class="c1"># Check for linting issues</span>
+ruff<span class="w"> </span>format<span class="w"> </span>--check<span class="w">       </span><span class="c1"># Check formatting</span>
 </pre></div>
 </div>
 </section>
@@ -215,8 +186,7 @@ ruff<span class="w"> </span>check<span class="w">                </span><span cl
 <h3>Coding Standards<a class="headerlink" href="#coding-standards" title="Link to this heading"></a></h3>
 <p>Please follow the project’s coding conventions documented in <a class="reference internal" href="conventions.html"><span class="std std-doc">conventions.md</span></a>, which covers:</p>
 <ul class="simple">
-<li><p>Code formatting (Black)</p></li>
-<li><p>Linting (Ruff)</p></li>
+<li><p>Code formatting and linting (Ruff)</p></li>
 <li><p>Docstring style (numpy format)</p></li>
 <li><p>Import organization (PEP 8)</p></li>
 <li><p>Testing practices</p></li>

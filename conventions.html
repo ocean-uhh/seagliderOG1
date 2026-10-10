@@ -90,54 +90,40 @@
 <p>This document outlines the coding standards and conventions for the seagliderOG1 project.</p>
 <section id="code-style">
 <h2>Code Style<a class="headerlink" href="#code-style" title="Link to this heading"></a></h2>
-<section id="python-code-formatting">
-<h3>Python Code Formatting<a class="headerlink" href="#python-code-formatting" title="Link to this heading"></a></h3>
-<p>We use <a class="reference external" href="https://black.readthedocs.io/">Black</a> for consistent code formatting:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>black<span class="w"> </span>.
+<section id="python-code-formatting-and-linting">
+<h3>Python Code Formatting and Linting<a class="headerlink" href="#python-code-formatting-and-linting" title="Link to this heading"></a></h3>
+<p>We use <a class="reference external" href="https://docs.astral.sh/ruff/">Ruff</a> for both formatting and linting:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ruff<span class="w"> </span>format<span class="w">        </span><span class="c1"># Format code</span>
+ruff<span class="w"> </span>check<span class="w"> </span>--fix<span class="w">   </span><span class="c1"># Lint and auto-fix where possible</span>
+ruff<span class="w"> </span>check<span class="w">         </span><span class="c1"># Check without fixing</span>
+ruff<span class="w"> </span>format<span class="w"> </span>--check<span class="w"> </span><span class="c1"># Check formatting without rewriting</span>
 </pre></div>
 </div>
 <p><strong>Key formatting rules:</strong></p>
 <ul class="simple">
-<li><p>Line length: 88 characters (Black default)</p></li>
+<li><p>Line length: 88 characters</p></li>
 <li><p>Use double quotes for strings</p></li>
 <li><p>Consistent indentation (4 spaces)</p></li>
 <li><p>Trailing commas in multi-line structures</p></li>
 </ul>
-</section>
-<section id="linting">
-<h3>Linting<a class="headerlink" href="#linting" title="Link to this heading"></a></h3>
-<p>We use <a class="reference external" href="https://docs.astral.sh/ruff/">Ruff</a> for fast Python linting:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ruff<span class="w"> </span>check<span class="w"> </span>--fix<span class="w">  </span><span class="c1"># Auto-fix issues where possible</span>
-ruff<span class="w"> </span>check<span class="w">        </span><span class="c1"># Check without fixing</span>
-</pre></div>
-</div>
 <p><strong>Enabled rule categories:</strong></p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">E</span></code>, <code class="docutils literal notranslate"><span class="pre">W</span></code> - pycodestyle errors and warnings</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">F</span></code> - pyflakes errors</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">D</span></code> - pydocstyle (documentation)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">D</span></code> - pydocstyle (numpy convention), plus <code class="docutils literal notranslate"><span class="pre">D417</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ANN</span></code> - type annotations</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">B</span></code> - flake8-bugbear</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">C90</span></code> - mccabe complexity</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">TRY</span></code> - tryceratops</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">B</span></code>, <code class="docutils literal notranslate"><span class="pre">BLE</span></code> - flake8-bugbear, blind-except</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ARG</span></code> - flake8-arguments</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">SLF</span></code> - flake8-self</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">I</span></code> - import sorting</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">UP</span></code> - pyupgrade</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">C4</span></code>, <code class="docutils literal notranslate"><span class="pre">RET</span></code>, <code class="docutils literal notranslate"><span class="pre">PIE</span></code>, <code class="docutils literal notranslate"><span class="pre">SIM</span></code>, <code class="docutils literal notranslate"><span class="pre">NPY</span></code>, <code class="docutils literal notranslate"><span class="pre">PTH</span></code>, <code class="docutils literal notranslate"><span class="pre">RUF100</span></code></p></li>
 </ul>
 </section>
-<section id="pre-commit-hooks">
-<h3>Pre-commit Hooks<a class="headerlink" href="#pre-commit-hooks" title="Link to this heading"></a></h3>
-<p>Run before every commit:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+<section id="before-committing">
+<h3>Before committing<a class="headerlink" href="#before-committing" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ruff<span class="w"> </span>check<span class="w"> </span>.<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>ruff<span class="w"> </span>format<span class="w"> </span>--check<span class="w"> </span>.<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>pytest
 </pre></div>
 </div>
-<p>This automatically runs:</p>
-<ul class="simple">
-<li><p>Black formatting</p></li>
-<li><p>Ruff linting with auto-fix</p></li>
-<li><p>Codespell for typos</p></li>
-<li><p>Basic file checks (trailing whitespace, end-of-file, YAML validation)</p></li>
-<li><p>pytest tests</p></li>
-</ul>
 </section>
 </section>
 <section id="code-organization">
@@ -399,10 +385,11 @@ ruff<span class="w"> </span>check<span class="w">        </span><span class="c1"
 <section id="adding-new-dependencies">
 <h3>Adding New Dependencies<a class="headerlink" href="#adding-new-dependencies" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p>Add to appropriate requirements file:</p>
+<li><p>Dependencies are declared in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>; <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">&quot;.[dev]&quot;</span></code> installs
+everything for development:</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> - Runtime dependencies</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">requirements-dev.txt</span></code> - Development tools</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[project]</span> <span class="pre">dependencies</span></code> - runtime dependencies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[project.optional-dependencies]</span></code> <code class="docutils literal notranslate"><span class="pre">test</span></code>, <code class="docutils literal notranslate"><span class="pre">docs</span></code>, <code class="docutils literal notranslate"><span class="pre">dev</span></code> - development tools</p></li>
 </ul>
 </li>
 <li><p>Use version constraints appropriately</p></li>
