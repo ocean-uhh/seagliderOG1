@@ -41,7 +41,7 @@ writers.save_dataset(ds, out)
 
 ## Documentation
 
-[Documentation and CLI reference](https://github.com/ocean-uhh/seagliderOG1); the `notebooks/demo.ipynb` notebook is a worked example.
+[Documentation and CLI reference](https://ocean-uhh.github.io/seagliderOG1); the `notebooks/demo.ipynb` notebook is a worked example.
 
 ## Acknowledgements
 
