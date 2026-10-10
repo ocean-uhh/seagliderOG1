@@ -22,9 +22,53 @@ semantic versioning.
 - Minimum Python raised to 3.10 (`requires-python = ">=3.10"`). The pinned `numpy 2.2` and
   `xarray 2025.3` already require 3.10, so `>=3.8` was not installable; users on 3.8/3.9 must
   stay on an earlier release.
+- Platform metadata is no longer silently defaulted. `convert_to_OG1` takes `platform=` and
+  `global_attributes=` from the mission config, config values overriding file-derived ones. A
+  missing `PLATFORM_SERIAL_NUMBER` (no file `platform_id`, none in the config) now raises instead
+  of defaulting to `sg000` — it names the output file and OG1 id. `WMO_IDENTIFIER`,
+  `PLATFORM_MODEL`, `PLATFORM_MAKER`, `GLIDER_FIRMWARE_VERSION` and `LANDSTATION_VERSION` are
+  written as `"UNK"` with a warning when absent, not `0000000` or the hard-coded M1 model.
+  `PLATFORM_DEPTH_RATING` (numeric) is omitted when absent rather than written as a string.
+  `PLATFORM_MAKER`, `PLATFORM_DEPTH_RATING`, `GLIDER_FIRMWARE_VERSION` and `LANDSTATION_VERSION`
+  are new output variables. The hard-coded `platform_model_vocabulary` is dropped and written
+  only when the config supplies it. A `global_attributes` key colliding with a converter-derived
+  global (`id`, `time_coverage_*`, `geospatial_*`, `date_created`) raises.
+
+- Contributor and institution attributes are rebuilt as OG1 positional, comma-aligned lists
+  (`contributor_name`/`_email`/`_id`/`_role`/`_role_vocabulary`, and `contributing_institutions`
+  with its `_role`/`_vocabulary`/`_role_vocabulary`): one slot per person/institution, empty
+  slots kept so the lists stay aligned, one role per slot. Roles normalise to the NERC W08
+  vocabulary. `convert_to_OG1` takes `contributors=` and `institutions=` as lists of records;
+  the former `contrib_to_append` dict is removed (passing a dict raises `TypeError`). Two silent
+  substitutions are removed: a missing contributor role is no longer defaulted to `PI`, and an
+  unrecognised institution is no longer stamped with the School of Oceanography EDMO code
+  (`…/report/1434`) — institutions resolve to their own EDMO id via
+  `config/institution_registry.yml`, or are written with no id and a warning.
 
 ### Added
 
+- `seagliderOG1.contributors` module and `config/institution_registry.yml` (EDMO codes) backing
+  the contributor/institution rebuild above.
+- `seagliderOG1` command-line interface (`cli/` package), run as `seagliderOG1 <verb>`:
+  - `init` — write a commented `mission.yaml`; `--from DIR` fills the platform block and
+    `source` from the first basestation file.
+  - `validate` — check keys, types, `source` and the dive range; roles against the W08
+    vocabulary; require a PI contributor and an Operator institution; `--strict`.
+  - `process` — convert a mission directory, or every `SN/DATE` mission under a root
+    (`--all`/`--mission GLOB`), writing `<output_dir>/<id>.nc`; `--mode`, `--dives`, `-o`,
+    `--force`/`--skip-existing`, `-n`; per-mission summary and exit 1 on any failure.
+  - `inspect FILE` — the file's variables or attributes as a text table (`--attrs`,
+    `--variables`, `--by-dimension DIM`); the HTML inventory page arrives with the planned
+    `seagliderOG1[report]` extra.
+  - `list {roles|institutions|missions}` — the W08 roles, the EDMO institution registry, or
+    the missions discovered under a directory.
+  Exit codes follow the CLI family convention: `0` success, `1` a conversion or validation
+  failure or a missing/unreadable input path, `2` an argparse-level usage error (an unknown
+  flag, a bad `choices` value, or `list missions` with no path).
+  `convert_to_OG1` gains `contributors=`, `institutions=`, `platform=`, `global_attributes=`
+  and `mode=`. `OG1_author.yaml` is no longer loaded at import (`load_default_contributors`
+  loads it on demand); `readers.discover_missions` and public `readers.validate_filename`/
+  `profnum_from_filename`/`glider_sn_from_filename`.
 - `writers.save_dataset` now writes every non-scalar numeric variable, coordinates
   included, with lossless zlib compression (level 4) and the shuffle filter. String
   and scalar variables are left uncompressed. Output files are smaller and remain

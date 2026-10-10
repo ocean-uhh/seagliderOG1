@@ -6,9 +6,33 @@ parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 import gsw
 from seagliderOG1 import tools, readers, convertOG1
+
+
+def test_add_sensor_skips_unmapped_variables():
+    """A mapping row whose OG1_name is None is skipped, not looked up as 'None'."""
+    ds = xr.Dataset({"TEMP": ("N_MEASUREMENTS", [1.0, 2.0])})
+    sensor_dict = {
+        "sbe41": {
+            "sensor_type": "CTD",
+            "sensor_serial_number": "245201",
+            "sensor_model": "Sea-Bird SBE 41 CTD",
+        }
+    }
+    og1_mapping = pd.DataFrame(
+        [
+            {"OG1_name": "TEMP", "instrument": "sbe41"},
+            {"OG1_name": None, "instrument": "sbe41"},
+        ]
+    )
+
+    result = tools.add_sensor_to_dataset(ds, sensor_dict, og1_mapping)
+
+    assert result["TEMP"].attrs["sensor"] == "SENSOR_CTD_245201"
+    assert "SENSOR_CTD_245201" in result.variables
 
 
 def test_convert_units_var():

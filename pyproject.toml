@@ -31,14 +31,18 @@ urls.documentation = "https://github.com/ocean-uhh/seagliderOG1"
 urls.homepage = "https://github.com/ocean-uhh/seagliderOG1"
 urls.repository = "https://github.com/ocean-uhh/seagliderOG1"
 
+[project.scripts]
+seagliderOG1 = "seagliderOG1.cli:main"
+
 [tool.setuptools]
 packages = [
   "seagliderOG1",
+  "seagliderOG1.cli",
 ]
 include-package-data = true
 
 [tool.setuptools.package-data]
-seagliderOG1 = ["config/*.yaml"]
+seagliderOG1 = ["config/*.yaml", "config/*.yml"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = [

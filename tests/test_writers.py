@@ -172,3 +172,14 @@ def test_time_units_canonical(tmp_path: pathlib.Path) -> None:
         assert "1970-01-01T00:00:00" in v.getncattr("units")
         assert v.getncattr("calendar") == "gregorian"
         assert v.dtype == np.dtype("float64")
+
+
+def test_save_dataset_rejects_none_attribute(tmp_path: pathlib.Path) -> None:
+    """A None-valued attribute is refused by name, not written as the literal 'None'."""
+    ds = xr.Dataset({"x": ("n", [1.0, 2.0])}, attrs={"contributor_name": None})
+    try:
+        writers.save_dataset(ds, str(tmp_path / "out.nc"))
+    except ValueError as exc:
+        assert "contributor_name" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for a None attribute")

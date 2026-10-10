@@ -17,7 +17,8 @@ Configuration Files:
 - OG1_vocab_attrs.yaml: Variable attribute vocabularies
 - OG1_sensor_attrs.yaml: Sensor attribute definitions
 - OG1_global_attrs.yaml: Global attribute configurations
-- OG1_author.yaml: Default author/contributor information
+- OG1_author.yaml: Example contributor information, loaded on demand via
+  :func:`load_default_contributors` (never at import)
 
 Notes
 -----
@@ -29,6 +30,9 @@ OG1 format requirements without code changes.
 
 import os
 import pathlib
+import warnings
+from collections.abc import Callable
+from typing import NamedTuple
 
 import yaml
 
@@ -38,6 +42,108 @@ config_dir = os.path.join(script_dir, "config/")
 
 # Dimension renaming: maps basestation dimension names to OG1 standard names
 dims_rename_dict = {"sg_data_point": "N_MEASUREMENTS"}
+
+# NERC W08 "SensorML Contact Section Terms": the controlled vocabulary the OG1 spec
+# cites for contributor_role and contributing_institutions_role (fetched from
+# vocab.nerc.ac.uk 2026-10-08). The seven preferred labels and their term URIs.
+_W08 = "http://vocab.nerc.ac.uk/collection/W08/current/"
+ROLE_VOCABULARY = {
+    "Manufacturer": _W08 + "CONT0001/",
+    "Owner": _W08 + "CONT0002/",
+    "Operator": _W08 + "CONT0003/",
+    "PI": _W08 + "CONT0004/",
+    "Technical Coordinator": _W08 + "CONT0005/",
+    "Data scientist": _W08 + "CONT0006/",
+    "Service Provider": _W08 + "CONT0007/",
+}
+
+# Attested spelling variants seen in real files, mapped to the preferred W08 label.
+# Add an alias only when it appears in a real file (basestation files and the sp041
+# example both write PI as "Principal investigator" with the CONT0004 URI).
+ROLE_ALIASES = {
+    "principal investigator": "PI",
+}
+
+# OG1 data-mode -> filename/id suffix. Mode affects only the id (and filename);
+# nothing else is written. Ref: OceanGliders OG-format-user-manual, "File naming
+# convention".
+MODE_SUFFIX = {"delayed": "delayed", "realtime": "R"}
+
+
+class PlatformField(NamedTuple):
+    """How one OG1 platform field is sourced and written.
+
+    Parameters
+    ----------
+    source : str or None
+        Basestation global attribute the value derives from, or None when the
+        field is config-only (no file fallback).
+    formatter : callable or None
+        Applied to the file value before use; None when there is no file source.
+    required : bool
+        When True, a null in the mission config is a validate ERROR rather than a
+        silent default written into the output.
+    kind : str
+        How ``convert_to_OG1`` writes an unset field: ``"serial"`` names the
+        output and raises when absent, ``"string"`` warns and writes ``"UNK"``,
+        ``"numeric"`` is omitted.
+
+    """
+
+    source: str | None
+    formatter: Callable[[object], str] | None
+    required: bool
+    kind: str
+
+
+# The OG1 platform fields, in template order. This one table is the single source
+# for four views that used to be maintained separately: the init template defaults
+# and the validate required-field check (both in cli/_mission.py), convert_to_OG1's
+# string-field resolution, and the file->field derivation in platform_from_file.
+PLATFORM_FIELDS: dict[str, PlatformField] = {
+    "PLATFORM_SERIAL_NUMBER": PlatformField(
+        "platform_id", lambda value: str(value).lower(), True, "serial"
+    ),
+    "PLATFORM_MODEL": PlatformField(None, None, True, "string"),
+    "PLATFORM_DEPTH_RATING": PlatformField(None, None, True, "numeric"),
+    "PLATFORM_MAKER": PlatformField(None, None, True, "string"),
+    "GLIDER_FIRMWARE_VERSION": PlatformField(
+        "seaglider_software_version",
+        lambda value: f"seaglider {float(value):g}",
+        False,
+        "string",
+    ),
+    "LANDSTATION_VERSION": PlatformField(
+        "base_station_version",
+        lambda value: f"basestation v{float(value):g}",
+        False,
+        "string",
+    ),
+    "WMO_IDENTIFIER": PlatformField("wmo_identifier", str, False, "string"),
+}
+
+
+def platform_from_file(attrs: dict) -> dict:
+    """Derive OG1 platform fields from a basestation file's global attributes.
+
+    Parameters
+    ----------
+    attrs : dict
+        The first basestation file's global attributes.
+
+    Returns
+    -------
+    dict
+        The OG1 platform fields derivable from the file (only those whose source
+        attribute is present).
+
+    """
+    derived = {}
+    for field, spec in PLATFORM_FIELDS.items():
+        if spec.source is not None and spec.source in attrs:
+            derived[field] = spec.formatter(attrs[spec.source])
+    return derived
+
 
 # Preferred units for OG1 format - conversion will be attempted if mapping exists
 preferred_units = ["m s-1", "dbar", "S m-1"]
@@ -149,9 +255,58 @@ with open(config_dir + "OG1_sensor_attrs.yaml", "r") as file:
 # --------------------------------
 # Global Attributes
 # --------------------------------
-# Default contributor/author information to append to datasets
-with open(config_dir + "OG1_author.yaml", "r") as file:
-    contrib_to_append = yaml.safe_load(file)
+
+
+def load_default_contributors() -> dict[str, str]:
+    """Load the example contributor block from ``config/OG1_author.yaml``.
+
+    Not loaded at import: a converted file gains contributor details only when a
+    caller passes them to :func:`seagliderOG1.convertOG1.convert_to_OG1`. The
+    file is an editable example, not a default identity written into every output.
+
+    Returns
+    -------
+    dict of str
+        Contributor attributes read from ``OG1_author.yaml``.
+
+    """
+    with open(config_dir + "OG1_author.yaml", "r") as file:
+        return yaml.safe_load(file)
+
+
+def __getattr__(name: str) -> object:
+    """Resolve the deprecated module attribute ``contrib_to_append`` lazily.
+
+    Preserves ``vocabularies.contrib_to_append`` for existing callers (it returns
+    :func:`load_default_contributors`) while no longer loading the file at import.
+
+    Parameters
+    ----------
+    name : str
+        The attribute being accessed.
+
+    Returns
+    -------
+    object
+        The example contributor block when ``name`` is ``"contrib_to_append"``.
+
+    Raises
+    ------
+    AttributeError
+        For any other attribute name.
+
+    """
+    if name == "contrib_to_append":
+        warnings.warn(
+            "vocabularies.contrib_to_append is deprecated and no longer loaded at import; "
+            "call vocabularies.load_default_contributors() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return load_default_contributors()
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
+
 
 # Preferred order for global attributes in OG1 files
 order_of_attr = [
@@ -182,7 +337,6 @@ order_of_attr = [
     "contributor_role_vocabulary",  # http://vocab.nerc.ac.uk/collection/W08/current/
     "contributor_email",  # name@name.com, name@name.com
     "contributor_id",  # ORCID, ORCID
-    "contributor_role_vocabular",  # http://vocab.nerc.ac.uk/search_nvs/W08/
     "contributing_institutions",  # University of Washington, University of Washington
     "contributing_institutions_vocabulary",  # https://edmo.seadatanet.org/report/544, https://ror.org/012tb2g32
     "contributing_institutions_role",  # PI, Operator

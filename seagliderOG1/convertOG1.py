@@ -7,6 +7,8 @@ variable renaming, attribute assignments, and dataset standardization.
 
 import logging
 import os
+import warnings
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 
 import numpy as np
@@ -14,14 +16,192 @@ import xarray as xr
 import pandas as pd
 from tqdm import tqdm
 
-from seagliderOG1 import readers, tools, utilities, vocabularies, writers
+from seagliderOG1 import contributors, readers, tools, utilities, vocabularies, writers
 
 _log = logging.getLogger(__name__)
+
+# Global attributes the converter derives from the data; the mission config may
+# not set these (a collision is an error, not a silent override either way).
+_DERIVED_GLOBALS = frozenset(
+    {
+        "id",
+        "time_coverage_start",
+        "time_coverage_end",
+        "geospatial_lat_min",
+        "geospatial_lat_max",
+        "geospatial_lon_min",
+        "geospatial_lon_max",
+        "geospatial_vertical_min",
+        "geospatial_vertical_max",
+        "date_created",
+        "start_date",
+    }
+)
+
+# String platform fields, resolved in order config -> file -> "UNK", derived from
+# the one platform table in vocabularies (serial raises when absent, numeric fields
+# are omitted; only the string ones take the "UNK" fallback).
+_PLATFORM_STRING_FIELDS = tuple(
+    field
+    for field, spec in vocabularies.PLATFORM_FIELDS.items()
+    if spec.kind == "string"
+)
+
+
+def _is_empty(value: object) -> bool:
+    """Return True for a missing/placeholder value (None, "" or the string "None")."""
+    return value in (None, "", "None")
+
+
+def _resolve_platform(
+    first_ds: xr.Dataset, platform: dict[str, object] | None
+) -> dict[str, object]:
+    """Resolve OG1 platform fields from the config and the first basestation file.
+
+    Config values override file-derived ones. ``PLATFORM_SERIAL_NUMBER`` is the
+    mission identity (it names the output file and OG1 id): if neither the config
+    nor the file supplies it, raise. String fields fall back to ``"UNK"`` with a
+    warning; the numeric ``PLATFORM_DEPTH_RATING`` is omitted when absent rather
+    than written as a string.
+
+    Parameters
+    ----------
+    first_ds : xarray.Dataset
+        The first basestation dataset, read for ``platform_id`` and
+        ``wmo_identifier``.
+    platform : dict of str to object or None
+        The mission config's ``platform`` block; values override the file.
+
+    Returns
+    -------
+    dict of str to object
+        Resolved platform fields to write. ``PLATFORM_DEPTH_RATING`` and
+        ``platform_model_vocabulary`` are present only when supplied.
+
+    Raises
+    ------
+    ValueError
+        If ``PLATFORM_SERIAL_NUMBER`` cannot be determined.
+
+    """
+    platform = platform or {}
+    file_values = vocabularies.platform_from_file(first_ds.attrs)
+
+    def config_or(field: str) -> object | None:
+        value = platform.get(field)
+        if _is_empty(value):
+            value = file_values.get(field)
+        return None if _is_empty(value) else value
+
+    serial = config_or("PLATFORM_SERIAL_NUMBER")
+    if serial is None:
+        msg = (
+            "PLATFORM_SERIAL_NUMBER could not be determined: the basestation file "
+            "has no platform_id and the mission config does not set "
+            "platform.PLATFORM_SERIAL_NUMBER. It names the output file and OG1 id, "
+            "so set it in the config (a serial number or a local nickname per OG1)."
+        )
+        raise ValueError(msg)
+
+    resolved: dict[str, object] = {"PLATFORM_SERIAL_NUMBER": serial}
+
+    for field in _PLATFORM_STRING_FIELDS:
+        value = config_or(field)
+        if value is None:
+            from_file = vocabularies.PLATFORM_FIELDS[field].source is not None
+            warnings.warn(
+                f"{field} not set in the mission config (platform.{field})"
+                + (" or the basestation file" if from_file else "")
+                + "; writing 'UNK'.",
+                stacklevel=3,
+            )
+            value = "UNK"
+        resolved[field] = value
+
+    depth = platform.get("PLATFORM_DEPTH_RATING")
+    if depth not in (None, "", "None"):
+        resolved["PLATFORM_DEPTH_RATING"] = depth
+    else:
+        warnings.warn(
+            "PLATFORM_DEPTH_RATING not set in the mission config "
+            "(platform.PLATFORM_DEPTH_RATING); it is numeric, so the variable is "
+            "omitted rather than written as 'UNK'.",
+            stacklevel=3,
+        )
+
+    model_vocab = platform.get("platform_model_vocabulary")
+    if model_vocab not in (None, "", "None"):
+        resolved["platform_model_vocabulary"] = model_vocab
+
+    return resolved
+
+
+# OG1-mandatory variables that keep_variables must never drop (plus the PLATFORM_*,
+# SENSOR_* and DEPLOYMENT_* families, matched by prefix below).
+_MANDATORY_OG1_VARS = frozenset(
+    {
+        "TIME",
+        "LATITUDE",
+        "LONGITUDE",
+        "DEPTH",
+        "TRAJECTORY",
+        "WMO_IDENTIFIER",
+        "PROFILE_NUMBER",
+        "PHASE",
+    }
+)
+_MANDATORY_OG1_PREFIXES = ("PLATFORM_", "SENSOR_", "DEPLOYMENT_")
+
+
+def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
+    """Subset the dataset to a science-variable allow-list, keeping OG1 essentials.
+
+    The requested ``keep`` names are retained, plus every OG1-mandatory variable
+    and the ``_QC`` companion of every kept variable. Dropped science variables are
+    warned. Coordinates are retained by xarray.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The converted OG1 dataset.
+    keep : list of str
+        Science variables the user asked to keep.
+
+    Returns
+    -------
+    xarray.Dataset
+        The subset dataset; every OG1-mandatory variable present in ``ds`` survives.
+
+    """
+    requested = set(keep)
+    kept = set()
+    for name in ds.data_vars:
+        mandatory = name in _MANDATORY_OG1_VARS or name.startswith(
+            _MANDATORY_OG1_PREFIXES
+        )
+        qc_parent = name[:-3] if name.endswith("_QC") else None
+        if (
+            name in requested
+            or mandatory
+            or (qc_parent is not None and qc_parent in requested)
+        ):
+            kept.add(name)
+    dropped = sorted(name for name in ds.data_vars if name not in kept)
+    if dropped:
+        warnings.warn(
+            f"keep_variables dropped science variables: {dropped}", stacklevel=2
+        )
+    return ds[sorted(kept)]
 
 
 def convert_to_OG1(
     list_of_datasets: list[xr.Dataset] | xr.Dataset,
-    contrib_to_append: dict[str, str] | None = None,
+    *,
+    contributors: Sequence[dict] | None = None,
+    institutions: Sequence[dict] | None = None,
+    platform: dict[str, object] | None = None,
+    global_attributes: dict[str, object] | None = None,
+    mode: str = "delayed",
 ) -> tuple[xr.Dataset, list[str]]:
     """Convert Seaglider basestation datasets to OG1 format.
     Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
@@ -33,8 +213,26 @@ def convert_to_OG1(
     ----------
     list_of_datasets : list of xarray.Dataset or xarray.Dataset
         A list of xarray datasets or a single xarray dataset in basestation format.
-    contrib_to_append : dict of str, optional
-        Dictionary containing additional contributor information to append. Default is None.
+    contributors : sequence of dict, optional
+        Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)
+        merged with those already on the files. When None, contributors come from
+        the files' own attributes; no package default is applied. Default is None.
+    institutions : sequence of dict, optional
+        Institution records (``name``, ``role`` and optional ``id``) merged with
+        those on the files and resolved against the EDMO registry. Default is None.
+    platform : dict of str to object, optional
+        Platform fields from the mission config (``PLATFORM_SERIAL_NUMBER``,
+        ``PLATFORM_MODEL``, ``PLATFORM_MAKER``, ``PLATFORM_DEPTH_RATING``,
+        ``GLIDER_FIRMWARE_VERSION``, ``LANDSTATION_VERSION``, ``WMO_IDENTIFIER``,
+        ``platform_model_vocabulary``). Config values override file-derived ones.
+        Default is None.
+    global_attributes : dict of str to object, optional
+        Global attributes written verbatim into the output (nulls skipped). A key
+        that collides with a converter-derived global raises. Default is None.
+    mode : str, optional
+        Data mode, ``"delayed"`` (default) or ``"realtime"``. Sets the ``id``
+        suffix (``delayed`` or ``R``) and so the output filename, per the OG1
+        manual, which defines no separate data-mode attribute. Default is "delayed".
 
     Returns
     -------
@@ -44,6 +242,27 @@ def convert_to_OG1(
         - varlist (list of str): A list of variable names from the input datasets.
 
     """
+    if isinstance(contributors, Mapping):
+        msg = (
+            "convert_to_OG1(contributors=...) is now a list of records "
+            "[{'name': ..., 'role': ..., 'email': ..., 'orcid': ...}], not a dict "
+            "of OG1 attributes. See CHANGELOG."
+        )
+        raise TypeError(msg)
+
+    global_attributes = global_attributes or {}
+    collisions = _DERIVED_GLOBALS.intersection(global_attributes)
+    if collisions:
+        msg = (
+            "global_attributes may not set converter-derived keys: "
+            f"{sorted(collisions)}. Remove them from the mission config."
+        )
+        raise ValueError(msg)
+
+    if mode not in vocabularies.MODE_SUFFIX:
+        msg = f"mode must be one of {sorted(vocabularies.MODE_SUFFIX)}, not {mode!r}."
+        raise ValueError(msg)
+
     print(f"Start converting {len(list_of_datasets)} raw datasets to OG1 format ...")
 
     if not isinstance(list_of_datasets, list):
@@ -98,39 +317,49 @@ def convert_to_OG1(
 
     # Apply attributes
     ordered_attributes = update_dataset_attributes(
-        list_of_datasets[0], contrib_to_append
+        list_of_datasets[0], people=contributors, institutions=institutions
     )
     for key, value in ordered_attributes.items():
+        if value is None:
+            warnings.warn(
+                f"{key} is missing; writing an empty string. Set it in the mission "
+                "config to populate it.",
+                stacklevel=2,
+            )
+            value = ""
         ds_og1.attrs[key] = value
 
     ### Add information needed/used for hydrodynamic (flight) model (hdm)
     hdm_parameters = tools.extract_hdm_parameters(list_of_datasets)
     ds_og1 = tools.add_hdm_parameters(ds_og1, hdm_parameters)
 
-    # Construct the platform serial number
-    if "platform_id" in ds1_base.attrs:
-        PLATFORM_SERIAL_NUMBER = ds1_base.attrs["platform_id"].lower()
-    else:
-        PLATFORM_SERIAL_NUMBER = "sg000"
-    ds_og1["PLATFORM_SERIAL_NUMBER"] = PLATFORM_SERIAL_NUMBER
-    ds_og1["PLATFORM_SERIAL_NUMBER"].attrs["long_name"] = "glider serial number"
+    # Resolve platform fields from the config and the first file (no silent
+    # fallbacks: missing serial raises, other strings warn + "UNK", the numeric
+    # depth rating is omitted rather than written as a string).
+    platform_fields = _resolve_platform(list_of_datasets[0], platform)
+    platform_serial_number = platform_fields["PLATFORM_SERIAL_NUMBER"]
 
-    # ---- Added some more mandatory variables from OG1 ----
-    # Construct the platform model
-    PLATFORM_MODEL = "University of Washington Seaglider M1 glider"
-    ds_og1["PLATFORM_MODEL"] = PLATFORM_MODEL
-    ds_og1["PLATFORM_MODEL"].attrs["long_name"] = "model of the glider"
-    ds_og1["PLATFORM_MODEL"].attrs[
-        "platform_model_vocabulary"
-    ] = "https://vocab.nerc.ac.uk/collection/B76/current/B7600024/"
+    # Mandatory OG1 platform string variables and their long_names.
+    platform_long_names = {
+        "PLATFORM_SERIAL_NUMBER": "glider serial number",
+        "PLATFORM_MODEL": "model of the glider",
+        "PLATFORM_MAKER": "glider manufacturer",
+        "GLIDER_FIRMWARE_VERSION": "glider firmware version",
+        "LANDSTATION_VERSION": "version of the landstation",
+        "WMO_IDENTIFIER": "wmo id",
+    }
+    for field, long_name in platform_long_names.items():
+        ds_og1[field] = platform_fields[field]
+        ds_og1[field].attrs["long_name"] = long_name
 
-    # WMO identifier
-    if "wmo_identifier" in ds1_base.attrs:
-        wmo_id = ds1_base.attrs["wmo_identifier"]
-    else:
-        wmo_id = "0000000"
-    ds_og1["WMO_IDENTIFIER"] = wmo_id
-    ds_og1["WMO_IDENTIFIER"].attrs["long_name"] = "wmo id"
+    if "platform_model_vocabulary" in platform_fields:
+        ds_og1["PLATFORM_MODEL"].attrs["platform_model_vocabulary"] = platform_fields[
+            "platform_model_vocabulary"
+        ]
+
+    if "PLATFORM_DEPTH_RATING" in platform_fields:
+        ds_og1["PLATFORM_DEPTH_RATING"] = platform_fields["PLATFORM_DEPTH_RATING"]
+        ds_og1["PLATFORM_DEPTH_RATING"].attrs["long_name"] = "maximum rated depth"
 
     # Trajectory
     ds_og1["TRAJECTORY"] = (
@@ -196,9 +425,16 @@ def convert_to_OG1(
     ds_og1.attrs["geospatial_vertical_min"] = depth_min
     ds_og1.attrs["geospatial_vertical_max"] = depth_max
 
-    # Construct the unique identifier attribute
-    id = f"{PLATFORM_SERIAL_NUMBER}_{ds_og1.start_date}_delayed"
+    # Construct the unique identifier attribute. The data-mode suffix (delayed/R)
+    # is the only place OG1 records data mode; there is no data-mode attribute.
+    id = f"{platform_serial_number}_{ds_og1.start_date}_{vocabularies.MODE_SUFFIX[mode]}"
     ds_og1.attrs["id"] = id
+
+    # Write config global attributes verbatim (nulls skipped). Collisions with
+    # converter-derived keys were already rejected at the top of this function.
+    for key, value in global_attributes.items():
+        if value is not None:
+            ds_og1.attrs[key] = value
 
     # Re-fix QC flags the concat re-promoted to float, then optimise dtypes once on the
     # fully-assembled dataset (coordinates and post-concat variables included).
@@ -575,7 +811,9 @@ def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
 ## Editing attributes
 ##-----------------------------------------------------------------------------------------
 def update_dataset_attributes(
-    ds: xr.Dataset, contrib_to_append: dict[str, str] | None
+    ds: xr.Dataset,
+    people: Sequence[dict] | None = None,
+    institutions: Sequence[dict] | None = None,
 ) -> dict[str, str]:
     """Update the attributes of the dataset based on the provided attribute input.
 
@@ -586,8 +824,10 @@ def update_dataset_attributes(
     ----------
     ds : xarray.Dataset
         The input dataset whose attributes need to be updated.
-    contrib_to_append : dict of str or None
-        A dictionary containing additional contributor information to append. Default is None.
+    people : sequence of dict, optional
+        Config contributor records to merge with the dataset's own. Default is None.
+    institutions : sequence of dict, optional
+        Config institution records to merge with the dataset's own. Default is None.
 
     Returns
     -------
@@ -602,7 +842,7 @@ def update_dataset_attributes(
     mandatory_attr = vocabularies.global_attrs["attr_mandatory"]
 
     # Extract creators and contributors and institution, then reformulate strings
-    contrib_attrs = get_contributors(ds, contrib_to_append)
+    contrib_attrs = get_contributors(ds, people=people, institutions=institutions)
 
     # Extract time attributes and reformat basic time strings
     time_attrs = get_time_attributes(ds)
@@ -642,200 +882,95 @@ def update_dataset_attributes(
 
 
 def get_contributors(
-    ds: xr.Dataset, values_to_append: dict[str, str] | None = None
+    ds: xr.Dataset,
+    people: Sequence[dict] | None = None,
+    institutions: Sequence[dict] | None = None,
 ) -> dict[str, str]:
-    """Extract and format contributor information for OG1 attributes.
+    """Build OG1 contributor and institution attributes.
 
-    Processes creator and contributor information from dataset attributes,
-    formats them as comma-separated strings, and handles institution mapping.
+    Contributors and institutions already on the dataset (``creator_*``,
+    ``contributor_*`` and the basestation ``institution`` string) are parsed into
+    records, the mission config's ``people`` and ``institutions`` are appended,
+    duplicates are consolidated on (name, role) with empty-role fill-in,
+    institutions are resolved against the EDMO registry, and everything is
+    formatted once into aligned comma-separated lists. No role or EDMO id is ever
+    invented; gaps are warned.
 
     Parameters
     ----------
     ds : xarray.Dataset
-        Dataset containing original contributor attributes.
-    values_to_append : dict, optional
-        Additional contributor information to append.
+        Dataset carrying the source contributor/institution attributes.
+    people : sequence of dict, optional
+        Config contributor records (``name``, ``role`` and optional ``email``,
+        ``orcid``). Default is None.
+    institutions : sequence of dict, optional
+        Config institution records (``name``, ``role`` and optional ``id``).
+        Default is None.
 
     Returns
     -------
-    dict
-        Dictionary with formatted contributor attribute strings.
+    dict of str to str
+        The ``contributor_*`` and ``contributing_institutions*`` attributes.
 
     """
-
-    # Function to create or append to a list
-    def create_or_append_list(existing_list, new_item):
-        if new_item not in existing_list:
-            new_item = new_item.replace(",", "-")
-            existing_list.append(new_item)
-        return existing_list
-
-    def list_to_comma_separated_string(lst):
-        """Convert a list of strings to a single string with values separated by commas.
-
-        Replace any commas present in list elements with hyphens.
-
-        Parameters
-        ----------
-        lst : list
-            List of strings.
-
-        Returns
-        -------
-        str
-            Comma-separated string with commas in elements replaced by hyphens.
-
-        """
-        return ", ".join([item for item in lst])
-
-    new_attributes = ds.attrs
-
-    # Initialize empty lists for creator/contributor information and institutions if they are not present
-    names = []
-    emails = []
-    roles = []
-    roles_vocab = []
-    insts = []
-    inst_roles = []
-    inst_vocab = []
-    inst_roles_vocab = []
-    # Parse the original attributes into lists
-    if "creator_name" in new_attributes:
-        names = create_or_append_list([], new_attributes["creator_name"])
-        emails = create_or_append_list([], new_attributes.get("creator_email", ""))
-        roles = create_or_append_list([], new_attributes.get("creator_role", "PI"))
-        roles_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "creator_role_vocabulary", "http://vocab.nerc.ac.uk/search_nvs/W08"
-            ),
-        )
-        if "contributor_name" in new_attributes:
-            names = create_or_append_list(names, new_attributes["contributor_name"])
-            emails = create_or_append_list(
-                emails, new_attributes.get("contributor_email", "")
+    config_people = [
+        {
+            "name": person.get("name", ""),
+            "email": person.get("email", "") or "",
+            "id": contributors.normalize_orcid(person.get("orcid")),
+            "role": person.get("role", "") or "",
+        }
+        for person in (people or [])
+    ]
+    merged_people = contributors.consolidate(
+        contributors.parse_contributors(ds.attrs) + config_people
+    )
+    for person in merged_people:
+        if not (person.get("role") or ""):
+            warnings.warn(
+                f"no role for contributor {person.get('name')!r}; set one in the "
+                "mission config (contributors: - name: ... role: ...).",
+                stacklevel=2,
             )
-            roles = create_or_append_list(
-                roles, new_attributes.get("contributor_role", "PI")
-            )
-            roles_vocab = create_or_append_list(
-                roles_vocab,
-                new_attributes.get(
-                    "contributor_role_vocabulary",
-                    "http://vocab.nerc.ac.uk/search_nvs/W08",
-                ),
-            )
-    elif "contributor_name" in new_attributes:
-        names = create_or_append_list([], new_attributes["contributor_name"])
-        emails = create_or_append_list([], new_attributes.get("contributor_email", ""))
-        roles = create_or_append_list([], new_attributes.get("contributor_role", "PI"))
-        roles_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "contributor_role_vocabulary", "http://vocab.nerc.ac.uk/search_nvs/W08"
-            ),
-        )
-    if "contributing_institutions" in new_attributes:
-        insts = create_or_append_list(
-            [], new_attributes.get("contributing_institutions", "")
-        )
-        inst_roles = create_or_append_list(
-            [], new_attributes.get("contributing_institutions_role", "Operator")
-        )
-        inst_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "contributing_institutions_vocabulary",
-                "https://edmo.seadatanet.org/report/1434",
-            ),
-        )
-        inst_roles_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "contributing_institutions_role_vocabulary",
-                "http://vocab.nerc.ac.uk/collection/W08/current/",
-            ),
-        )
-    elif "institution" in new_attributes:
-        insts = create_or_append_list([], new_attributes["institution"])
-        inst_roles = create_or_append_list(
-            [], new_attributes.get("contributing_institutions_role", "PI")
-        )
-        inst_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "contributing_institutions_vocabulary",
-                "https://edmo.seadatanet.org/report/1434",
-            ),
-        )
-        inst_roles_vocab = create_or_append_list(
-            [],
-            new_attributes.get(
-                "contributing_institutions_role_vocabulary",
-                "http://vocab.nerc.ac.uk/collection/W08/current/",
-            ),
+    if not any(
+        contributors.normalize_role(person.get("role")) == "PI"
+        for person in merged_people
+    ):
+        warnings.warn(
+            "no contributor has the role PI; OG1 requires a principal investigator.",
+            stacklevel=2,
         )
 
-    # Rename specific institution if it matches criteria
-    for i, inst in enumerate(insts):
-        if all(
-            keyword in inst for keyword in ["Oceanography", "University", "Washington"]
-        ):
-            insts[i] = "University of Washington - School of Oceanography"
+    file_institutions = contributors.parse_institutions(ds.attrs)
+    if "institution" in ds.attrs:
+        file_institutions = [
+            {"name": ds.attrs["institution"], "role": "", "id": ""},
+            *file_institutions,
+        ]
+    config_institutions = [
+        {
+            "name": institution.get("name", ""),
+            "role": institution.get("role", "") or "",
+            "id": institution.get("id"),
+        }
+        for institution in (institutions or [])
+    ]
+    merged_institutions = contributors.consolidate(
+        contributors.enrich_institutions(file_institutions + config_institutions)
+    )
+    if not any(
+        contributors.normalize_role(institution.get("role")) == "Operator"
+        for institution in merged_institutions
+    ):
+        warnings.warn(
+            "no institution has the role Operator; OG1 requires an operating "
+            "institution.",
+            stacklevel=2,
+        )
 
-    # Pad the lists if they are shorter than names
-    max_length = len(names)
-    emails += [""] * (max_length - len(emails))
-    roles += [""] * (max_length - len(roles))
-    roles_vocab += [""] * (max_length - len(roles_vocab))
-    insts += [""] * (max_length - len(insts))
-    inst_roles += [""] * (max_length - len(inst_roles))
-    inst_vocab += [""] * (max_length - len(inst_vocab))
-    inst_roles_vocab += [""] * (max_length - len(inst_roles_vocab))
-
-    # Append new values to the lists
-    if values_to_append is not None:
-        for key, value in values_to_append.items():
-            if key == "contributor_name":
-                names = create_or_append_list(names, value)
-            elif key == "contributor_email":
-                emails = create_or_append_list(emails, value)
-            elif key == "contributor_role":
-                roles = create_or_append_list(roles, value)
-            elif key == "contributor_role_vocabulary":
-                roles_vocab = create_or_append_list(roles_vocab, value)
-            elif key == "contributing_institutions":
-                insts = create_or_append_list(insts, value)
-            elif key == "contributing_institutions_role":
-                inst_roles = create_or_append_list(inst_roles, value)
-            elif key == "contributing_institutions_vocabulary":
-                inst_vocab = create_or_append_list(inst_vocab, value)
-            elif key == "contributing_institutions_role_vocabulary":
-                inst_roles_vocab = create_or_append_list(inst_roles_vocab, value)
-
-    # Turn the lists into comma-separated strings
-    names_str = list_to_comma_separated_string(names)
-    emails_str = list_to_comma_separated_string(emails)
-    roles_str = list_to_comma_separated_string(roles)
-    roles_vocab_str = list_to_comma_separated_string(roles_vocab)
-
-    insts_str = list_to_comma_separated_string(insts)
-    inst_roles_str = list_to_comma_separated_string(inst_roles)
-    inst_vocab_str = list_to_comma_separated_string(inst_vocab)
-    inst_roles_vocab_str = list_to_comma_separated_string(inst_roles_vocab)
-
-    # Create a dictionary for return
-    attributes_dict = {
-        "contributor_name": names_str,
-        "contributor_email": emails_str,
-        "contributor_role": roles_str,
-        "contributor_role_vocabulary": roles_vocab_str,
-        "contributing_institutions": insts_str,
-        "contributing_institutions_role": inst_roles_str,
-        "contributing_institutions_vocabulary": inst_vocab_str,
-        "contributing_institutions_role_vocabulary": inst_roles_vocab_str,
-    }
-
+    attributes_dict: dict[str, str] = {}
+    attributes_dict.update(contributors.format_contributors(merged_people))
+    attributes_dict.update(contributors.format_institutions(merged_institutions))
     return attributes_dict
 
 
@@ -989,6 +1124,7 @@ def process_and_save_data(
             ds_all = xr.open_dataset(output_file)
             return ds_all
         elif user_input.lower() == "yes":
+            list_datasets = readers.load_basestation_files(input_location)
             ds_all, varlist = convert_to_OG1(list_datasets)
             os.remove(output_file)
             if save:

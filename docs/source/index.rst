@@ -20,6 +20,7 @@ For recommendations or bug reports, please visit https://github.com/ocean-uhh/se
 
    about
    setup.md
+   cli
    project_structure.md
 
 .. toctree::
