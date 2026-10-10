@@ -40,33 +40,30 @@ INSTRUMENT_ALIASES = {
 
 
 def OG1_name_mapping(
-    list_of_datasets: list[xr.Dataset], ctd_dim: str, dims_to_merge: list[str]
-) -> pd.DataFrame:
+    list_of_datasets: list[xr.Dataset],
+) -> tuple[pd.DataFrame, dict[str, list[str]]]:
     """Create a mapping from original variable names to OG1 variable names.
 
-    The function examines all datasets before OG1 standardization and creates
-    one row per unique variable name using at least one dimension in
-    ``dims_to_merge`` (with ``ctd_dim`` always included). Each row contains the original
-    variable name, its OG1 name, associated instrument, instrument type, and
-    original dimensions. Individual time variables are replaced by one
-    ``time`` / ``TIME`` row, whose ``original_dimension`` contains a list of
-    unique time variable names on the dimensions being merged.
+    Include every unique variable name from all input datasets, including
+    scalars, coordinates, QC variables, and variables without an OG1 mapping.
+    The first occurrence of each name supplies its dimensions and attributes.
 
-    Variables ending in ``_qc`` inherit the instrument association of their
-    corresponding measurement variable. For example,
-    ``ctd_temperature_qc`` inherits the instrument assigned to
-    ``ctd_temperature``.
+    Each row contains the original variable name, its OG1 name (None when
+    unavailable), associated instrument, instrument type, original dimensions,
+    and whether OG1 attributes are available.
+
+    Individual time variables are consolidated into one ``time`` / ``TIME``
+    row. Its ``original_dimension`` lists their dimensions and original names.
+
+    QC variables inherit the instrument association of their corresponding
+    measurement variable.
 
     Instrument assignment precedence:
 
-    1. QC variables inherit the instrument of their parent measurement.
-    2. Variables beginning with ``ctd_`` or from the CTD variables defined above are
+    1. QC variables inherit their parent measurement's instrument.
+    2. CTD measurement variables are assigned to the CTD.
+    3. When ``ctd_pressure`` exists, calculated hydrographic variables are
        assigned to the CTD.
-       When the same OG1 variable is also present on the CTD instrument's
-       ``<instrument>_data_point`` dimension, the ``ctd_data_point`` copy is
-       retained and the instrument-dimension copy is omitted.
-    3. When ``ctd_pressure`` is available, calculated hydrographic variables
-       are assigned to the CTD.
     4. The variable's ``instrument`` attribute is checked.
     5. Dimensions named ``<instrument>_data_point`` are checked.
     6. The variable name is checked for an instrument name or alias.
@@ -74,43 +71,30 @@ def OG1_name_mapping(
     Parameters
     ----------
     list_of_datasets
-        List of datasets immediately before calling ``standardise_OG10``.
-    ctd_dim
-        Dimension used by the CTD data, for example ``ctd_data_point`` or
-        ``sg_data_point``.
-
-    dims_to_merge
-        Dimensions whose variables should be included. A variable is included
-        when any of its dimensions matches; scalars are excluded. If a name
-        occurs more than once, the first eligible occurrence supplies its
-        dimensions and attributes. Instruments are collected from every
-        dataset's global ``instrument`` attribute, preserving first-seen order.
+        Datasets immediately before calling ``standardise_OG10``.
+        Instruments are collected from every dataset's global ``instrument``
+        attribute, preserving first-seen order.
 
     Returns
     -------
     pandas.DataFrame
-        Mapping table containing ``original_name``, ``OG1_name``,
-        ``instrument``, ``instrument_type``, and ``original_dimension``.
+        Columns: ``original_name``, ``OG1_name``, ``instrument``,
+        ``instrument_type``, ``original_dimension``, and
+        ``has_OG1_attributes``.
     """
-    list_of_datasets = list(list_of_datasets)
-    # Keep one row per name, choosing the first occurrence on a dimension
-    # that will be merged. Retain other variables for QC-parent lookup.
-    merge_dimensions = set(dims_to_merge)
-    merge_dimensions.add(ctd_dim)
     all_sources: dict[str, xr.DataArray] = {}
-    sources: dict[str, xr.DataArray] = {}
+    all_dimensions: set[str] = set()
     instruments: list[str] = []
 
     for dataset in list_of_datasets:
+        all_dimensions.update(dataset.dims)
+
         for instrument in dataset.attrs.get("instrument", "").split():
             if instrument not in instruments:
                 instruments.append(instrument)
 
         for variable_name in dataset.variables:
-            source = dataset[variable_name]
-            all_sources.setdefault(variable_name, source)
-            if merge_dimensions.intersection(source.dims):
-                sources.setdefault(variable_name, source)
+            all_sources.setdefault(variable_name, dataset[variable_name])
 
     standard_names = vocabularies.standard_names
     sensor_vocabs = vocabularies.sensor_vocabs
@@ -121,32 +105,24 @@ def OG1_name_mapping(
         return variable_name in all_sources
 
     def get_source(variable_name: str) -> xr.DataArray:
-        """Prefer the first occurrence on a dimension being merged."""
-        if variable_name in sources:
-            return sources[variable_name]
+        """Get the first occurrence of a variable across input datasets."""
         return all_sources[variable_name]
 
-    def get_qc_parent_name(
-        variable_name: str,
-    ) -> str | None:
+    def get_qc_parent_name(variable_name: str) -> str | None:
         """Return the measurement name corresponding to a *_qc variable."""
         if variable_name.lower().endswith("_qc"):
             return variable_name[:-3]
 
         return None
 
-    def get_instrument_names(
-        instrument: str,
-    ) -> set[str]:
+    def get_instrument_names(instrument: str) -> set[str]:
         """Get the lowercase instrument name and its aliases."""
         return INSTRUMENT_ALIASES.get(
             instrument.lower(),
             {instrument.lower()},
         )
 
-    def get_instrument_type(
-        instrument: str | None,
-    ) -> str | None:
+    def get_instrument_type(instrument: str | None) -> str | None:
         """Get an instrument's sensor type from the OG1 vocabulary."""
         if instrument is None:
             return None
@@ -173,52 +149,27 @@ def OG1_name_mapping(
 
     ctd_instrument = get_ctd_instrument()
 
-    def is_ctd_associated(
-        variable_name: str,
-        dimensions: set[str] | None = None,
-    ) -> bool:
+    def is_ctd_associated(variable_name: str) -> bool:
         """Determine whether a variable should be assigned to the CTD."""
-        lower_name = variable_name.lower()
-
-        # QC variables inherit the CTD association of their parent variable.
         qc_parent = get_qc_parent_name(variable_name)
 
         if qc_parent is not None and variable_exists(qc_parent):
-            parent_dimensions = {
-                dimension.lower() for dimension in get_source(qc_parent).dims
-            }
+            return is_ctd_associated(qc_parent)
 
-            return is_ctd_associated(
-                qc_parent,
-                parent_dimensions,
-            )
+        lower_name = variable_name.lower()
 
-        if dimensions is None:
-            dimensions = {
-                dimension.lower() for dimension in get_source(variable_name).dims
-            }
-
-        # Explicit CTD name or dimension.
-        # if (lower_name.startswith("ctd_") or "ctd_data_point" in dimensions):
-        if (
+        return (
             lower_name.startswith("ctd_")
             or lower_name in CTD_MEASUREMENT_VARIABLES
-            or has_ctd_pressure
-            and lower_name in CTD_CALCULATED_VARIABLES
-        ):
-            return True
+            or (has_ctd_pressure and lower_name in CTD_CALCULATED_VARIABLES)
+        )
 
-        return False
-
-    def find_instrument(
-        variable_name: str,
-    ) -> str | None:
+    def find_instrument(variable_name: str) -> str | None:
         """Find the instrument associated with a variable."""
         source = get_source(variable_name)
         lower_name = variable_name.lower()
 
-        # A QC variable inherits the full instrument assignment of its
-        # corresponding measurement variable.
+        # QC variables inherit their parent measurement's instrument.
         qc_parent = get_qc_parent_name(variable_name)
 
         if qc_parent is not None and variable_exists(qc_parent):
@@ -226,7 +177,7 @@ def OG1_name_mapping(
 
         dimensions = {dimension.lower() for dimension in source.dims}
 
-        if ctd_instrument is not None and is_ctd_associated(variable_name, dimensions):
+        if ctd_instrument is not None and is_ctd_associated(variable_name):
             return ctd_instrument
 
         # Prefer an explicit instrument attribute.
@@ -291,10 +242,7 @@ def OG1_name_mapping(
         instrument: str | None,
     ) -> str | None:
         """Find an explicit vocabulary match."""
-        for candidate in get_name_candidates(
-            variable_name,
-            instrument,
-        ):
+        for candidate in get_name_candidates(variable_name, instrument):
             og1_name = standard_names.get(candidate)
 
             if og1_name is not None:
@@ -307,101 +255,32 @@ def OG1_name_mapping(
         instrument: str | None,
     ) -> str | None:
         """Find or derive the OG1 vocabulary name for a variable."""
-        # Prefer an explicit vocabulary entry, including an explicit
-        # entry for the QC variable.
-        og1_name = find_direct_og1_name(
-            variable_name,
-            instrument,
-        )
+        # Prefer an explicit entry, including explicit QC entries.
+        og1_name = find_direct_og1_name(variable_name, instrument)
 
         if og1_name is not None:
             return og1_name
 
-        # If no explicit QC entry exists, derive it from the parent
-        # measurement's OG1 name.
+        # Otherwise, derive a QC name from its parent measurement.
         qc_parent = get_qc_parent_name(variable_name)
 
         if qc_parent is not None:
-            parent_og1_name = find_direct_og1_name(
-                qc_parent,
-                instrument,
-            )
+            parent_og1_name = find_direct_og1_name(qc_parent, instrument)
 
             if parent_og1_name is not None:
                 return f"{parent_og1_name}_QC"
 
         return None
 
-    def uses_dimension(
-        variable_name: str,
-        dimension: str,
-    ) -> bool:
-        """Return whether a variable uses a dimension, case-insensitively."""
-        return dimension.lower() in {
-            item.lower() for item in get_source(variable_name).dims
-        }
-
-    def uses_ctd_instrument_dimension(
-        variable_name: str,
-    ) -> bool:
-        """Return whether a variable uses a CTD-instrument dimension."""
-        if ctd_instrument is None:
-            return False
-
-        dimensions = {dimension.lower() for dimension in get_source(variable_name).dims}
-
-        return any(
-            f"{name}_data_point" in dimensions
-            and f"{name}_data_point" != "ctd_data_point"
-            for name in get_instrument_names(ctd_instrument)
-        )
-
-    # dict.fromkeys removes duplicates while preserving order.
-    # QC variables are deliberately retained.
-    variable_names = list(sources)
-
-    # Some basestation datasets contain the same CTD measurements twice:
-    # once on the generic ctd_data_point dimension and once on the CTD
-    # instrument's own dimension (for example legato_data_point).  Treat the
-    # generic dimension as authoritative.  Comparing the unsuffixed OG1 names
-    # catches pairs such as ctd_temperature/legato_temperature as well as
-    # their QC variables.
-    preferred_ctd_og1_names = {
-        og1_name
-        for variable_name in variable_names
-        if uses_dimension(variable_name, "ctd_data_point")
-        for og1_name in [get_og1_base_name(variable_name, ctd_instrument)]
-        if og1_name is not None
-    }
-
-    variable_names = [
-        variable_name
-        for variable_name in variable_names
-        if not (
-            not uses_dimension(variable_name, "ctd_data_point")
-            and uses_ctd_instrument_dimension(variable_name)
-            and get_og1_base_name(variable_name, ctd_instrument)
-            in preferred_ctd_og1_names
-            # Keep time variables for the final combined TIME row.
-            and get_og1_base_name(variable_name, ctd_instrument) != "TIME"
-        )
-    ]
-
-    def variable_sort_key(
-        variable_name: str,
-    ) -> tuple[bool, bool]:
+    def variable_sort_key(variable_name: str) -> tuple[bool, bool]:
         """Place CTD measurements first and their QC variables second."""
-        source = get_source(variable_name)
-        dimensions = {dimension.lower() for dimension in source.dims}
-
-        is_ctd = is_ctd_associated(
-            variable_name,
-            dimensions,
-        )
+        is_ctd = is_ctd_associated(variable_name)
         is_qc = get_qc_parent_name(variable_name) is not None
 
         return (not is_ctd, is_qc)
 
+    # Include every unique variable; retain CTD copies on other dimensions.
+    variable_names = list(all_sources)
     variable_names.sort(key=variable_sort_key)
 
     mapping = []
@@ -410,11 +289,7 @@ def OG1_name_mapping(
     for original_name in variable_names:
         source = get_source(original_name)
         instrument = find_instrument(original_name)
-
-        base_og1_name = get_og1_base_name(
-            original_name,
-            instrument,
-        )
+        base_og1_name = get_og1_base_name(original_name, instrument)
 
         og1_name = None
 
@@ -422,10 +297,7 @@ def OG1_name_mapping(
             count = og1_name_counts.get(base_og1_name, 0) + 1
             og1_name_counts[base_og1_name] = count
 
-            if count == 1:
-                og1_name = base_og1_name
-            else:
-                og1_name = f"{base_og1_name}{count}"
+            og1_name = base_og1_name if count == 1 else f"{base_og1_name}{count}"
 
         mapping.append(
             {
@@ -434,7 +306,6 @@ def OG1_name_mapping(
                 "instrument": instrument,
                 "instrument_type": get_instrument_type(instrument),
                 "original_dimension": ", ".join(source.dims),
-                "vocabulary_name": base_og1_name,
             }
         )
 
@@ -449,15 +320,55 @@ def OG1_name_mapping(
         ],
     )
 
-    # Replace individual time variables with a single "time" variable.
-    time_mask = result["OG1_name"].str.fullmatch(r"TIME[0-9]*", na=False)
+    # Collect dimensions and their associated time variable names separately.
+    time_mask = (
+        result["OG1_name"]
+        .astype("string")
+        .str.fullmatch(
+            r"TIME[0-9]*",
+            na=False,
+        )
+    )
 
-    time_variable_names = (
-        result.loc[time_mask, "original_dimension"]
-        + " ("
-        + result.loc[time_mask, "original_name"]
-        + ")"
-    ).tolist()
+    time_variables: dict[str, list[str]] = {}
+
+    def add_time_variable(dimension: str, variable_name: str) -> None:
+        """Add a time association without duplicates."""
+        names = time_variables.setdefault(dimension, [])
+        if variable_name not in names:
+            names.append(variable_name)
+
+    for variable_name in result.loc[time_mask, "original_name"]:
+        for dimension in get_source(variable_name).dims:
+            add_time_variable(dimension, variable_name)
+
+    # Magnetometer measurements share the sg_data_point time variable(s).
+    if "magnetometer_data_point" in all_dimensions:
+        for variable_name in time_variables.get("sg_data_point", []):
+            add_time_variable("magnetometer_data_point", variable_name)
+
+    # Add explicit associations when both dimension and variable exist.
+    for dimension, variable_name in {
+        "gc_state": "gc_state_secs",
+        "gc_event": "gc_st_secs",
+        "gps_info": "log_gps_time",
+        "auxCompass_data_point": "auxCompass_time",
+        "depth_data_point": "depth_time",
+    }.items():
+        if dimension in all_dimensions and variable_name in all_sources:
+            add_time_variable(dimension, variable_name)
+
+    # Remove all associated time variables, including those without an
+    # OG1 TIME mapping. Replace any existing "time" row below.
+    time_variable_names = {
+        variable_name for names in time_variables.values() for variable_name in names
+    }
+
+    remove_mask = (
+        time_mask
+        | result["original_name"].isin(time_variable_names)
+        | result["original_name"].eq("time")
+    )
 
     time_row = pd.DataFrame(
         [
@@ -466,12 +377,13 @@ def OG1_name_mapping(
                 "OG1_name": "TIME",
                 "instrument": float("nan"),
                 "instrument_type": float("nan"),
-                "original_dimension": time_variable_names,
+                "original_dimension": "",
             }
         ]
     )
+
     result = pd.concat(
-        [result.loc[~time_mask], time_row],
+        [result.loc[~remove_mask], time_row],
         ignore_index=True,
     )
 
@@ -481,7 +393,7 @@ def OG1_name_mapping(
         )
     )
 
-    return result
+    return result, time_variables
 
 
 def gather_sensor_info(list_of_datasets) -> dict:
@@ -1248,6 +1160,12 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
     # Must be called *after* var_name has OG1 long_name
     var_name = qc_name[:-3]
     if qc_name in list(dsa):
+        # For scalar log qc's that might change over the mission are stored as json, don't convert to int8
+        if (
+            qc_name in dsa.variables
+            and dsa[qc_name].attrs.get("serialization") == "json"
+        ):
+            return dsa
         # Seaglider default type was a string.  Convert to int8 and take care of NaNs
         # dsa[qc_name].values = dsa[qc_name].values.astype("int8")
         values = dsa[qc_name].values
@@ -1256,8 +1174,12 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
             values = values.astype(str)
 
         # Use pandas to handle NaNs safely
+        original_shape = np.asarray(values).shape
         values = pd.to_numeric(
-            values, errors="coerce"
+            np.asarray(values).reshape(-1),
+            errors="coerce",
+        ).reshape(
+            original_shape
         )  # Convert strings to numbers, NaNs stay NaNs
         # Assign back to dataset
         dsa[qc_name].values = values
@@ -1381,6 +1303,13 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
             # never apply the generic bit-width fill (127) to a flag variable.
             continue
         da = ds[var_name]
+        # Serialized per-dive parameters must remain scalar strings.
+        if da.attrs.get("serialization") == "json":
+            continue
+
+        # Numeric dtype optimization does not apply to text or object variables.
+        if da.dtype.kind in ("U", "S", "O"):
+            continue
         input_dtype = da.dtype.type
         new_dtype = find_best_dtype(var_name, da)
         for att in ["valid_min", "valid_max"]:
@@ -1622,95 +1551,232 @@ def merge_parts_of_dataset(
     return merged_ds
 
 
-def merge_datasets_along_time(split_ds, dims_to_merge, first_run=False):
-    """Merge a list of xarray Datasets along their time dimension.
+def merge_datasets_along_time(
+    split_ds: dict[tuple[str, ...], xr.Dataset],
+    time_variables: dict[str, list[str]],
+    firstrun: bool = False,
+) -> xr.Dataset | None:
+    """Merge split datasets onto a shared time axis.
+
+    Merge dimensions listed in ``time_variables``, retaining original
+    variable names. Replace individual time variables with ``time``.
+    OG1 conversion is handled separately by ``standardise_OG10``.
+
+    Always use ``time`` for ``sg_data_point``. Other dimensions use their
+    listed candidates. Time variables must contain datetime64 values and
+    match the dimension's length. Shared time sources are attached by
+    position and must have matching sample order.
+
+    Keep the first duplicate timestamp unchanged and shift subsequent
+    occurrences by 0.5 seconds each. Print adjustments and record their
+    source dimension, time variable, and timestamps in ``time`` attributes.
+    Retained variables receive original name and dimension attributes.
 
     Parameters
     ----------
-    split_ds : dict[(str,), xr.Dataset]
-        Mapping from (dimension,) to Dataset.
+    split_ds : dict[tuple[str, ...], xr.Dataset]
+        Split datasets keyed by dimension, e.g. ``("sg_data_point",)``.
 
-    dims_to_merge : list[str]
-        Dimension names to extract and merge.
+    time_variables : dict[str, list[str]]
+        Dimensions mapped to candidate time variable names.
+
+    first_run : bool, default False
+        Print progress and skipped dimensions. Duplicate timestamp
+        adjustments are always printed.
 
     Returns
     -------
-    xr.Dataset or None
-        A time-aligned merged dataset, or None if no datasets were eligible.
-
+    xarray.Dataset or None
+        Chronologically sorted dataset with coordinate
+        ``time(N_MEASUREMENTS)`` and no ``N_MEASUREMENTS`` coordinate.
+        Return None if no dataset has a usable time source.
     """
     processed_datasets = []
-
-    all_dims = set([dim[0] for dim in split_ds.keys() if len(dim) > 0])
     actually_merged_dims = set()
-    for dim in dims_to_merge:
-        # ---1. Extract dataset---
+    all_dims = {dim for key in split_ds for dim in key}
+    duplicate_time_descriptions = []
+
+    all_time_names = {name for names in time_variables.values() for name in names}
+
+    # Collect shared time sources before modifying datasets.
+    time_sources: dict[str, list[xr.DataArray]] = {}
+
+    for dataset in split_ds.values():
+        for name in all_time_names:
+            if name in dataset.variables:
+                time_sources.setdefault(name, []).append(dataset[name])
+
+    def is_usable_time(source: xr.DataArray, size: int) -> bool:
+        """Check that a time source matches the target dimension."""
+        return (
+            source.ndim == 1
+            and source.size == size
+            and pd.api.types.is_datetime64_dtype(source.dtype)
+        )
+
+    for dim, candidate_names in time_variables.items():
         if (dim,) not in split_ds:
-            print(f"Skipping {dim}: not found in split_ds.")
+            if firstrun:
+                print(f"Skipping '{dim}': not found in split_ds.")
             continue
 
         ds = split_ds[(dim,)].copy()
-        old_dim = list(ds.sizes)[0]
 
-        # ---2. Detect datetime64 variable---
-        time_vars = [v for v in ds.variables if "datetime64" in str(ds[v].dtype)]
-        if not time_vars:
-            if first_run:
-                print(f"Skipping '{dim}': No datetime64 variable found.")
+        if dim not in ds.dims:
+            if firstrun:
+                print(f"Skipping '{dim}': dimension not found in dataset.")
             continue
 
-        ### if more than one time variable is found, takle ctd_time preferibly, otherwise time or the first one. Delete the other time variables.
-        if len(time_vars) > 1:
-            if "ctd_time" in time_vars:
-                time_var = "ctd_time"
-            elif "time" in time_vars:
-                time_var = "time"
-            else:
-                time_var = time_vars[0]
-            for var in time_vars:
-                if var != time_var:
-                    ds = ds.drop_vars(var)
-        else:
-            time_var = time_vars[0]
+        # Never use ctd_time as a fallback for sg_data_point.
+        candidates = (
+            ["time"] if dim == "sg_data_point" else list(dict.fromkeys(candidate_names))
+        )
 
-        # ---3. Rename detected time variable to 'time'---
-        if time_var != "time":
-            ds = ds.rename({time_var: "time"})
+        time_var = None
+        time_source = None
 
-        # ---4. Swap old dimension to time---
-        ds = ds.swap_dims({old_dim: "time"})
+        for name in candidates:
+            # Prefer a time variable on the current dimension.
+            if (
+                name in ds.variables
+                and ds[name].dims == (dim,)
+                and is_usable_time(ds[name], ds.sizes[dim])
+            ):
+                time_var = name
+                time_source = ds[name]
+                break
 
-        # ---5. Add attribute old_dim to each data variable and coordinate (except the time coordinate)---
-        for var in ds.variables:
-            if var != "time":
-                ds[var].attrs["original_dimension"] = old_dim
-                ds[var].attrs["original_variable_name"] = str(var)
-        if first_run:
+            # Shared sources are attached by position.
+            for source in time_sources.get(name, []):
+                if is_usable_time(source, ds.sizes[dim]):
+                    time_var = name
+                    time_source = source
+                    break
+
+            if time_source is not None:
+                break
+
+        if time_source is None:
+            if firstrun:
+                print(
+                    f"Skipping '{dim}': no associated datetime64 time "
+                    "variable with a matching length."
+                )
+            continue
+
+        time_values = time_source.values
+        time_attrs = dict(time_source.attrs)
+
+        # Replace individual time variables with the shared time coordinate.
+        ds = ds.drop_vars([name for name in all_time_names if name in ds.variables])
+
+        if "time" in ds.variables:
+            raise ValueError(
+                f"'{dim}' contains a variable named 'time' that was not "
+                "identified as a time source."
+            )
+
+        # Preserve original names and dimensions without OG1 renaming.
+        for name in ds.variables:
+            ds[name].attrs["original_dimension"] = dim
+            ds[name].attrs["original_variable_name"] = name
+
+        ds = ds.assign_coords(
+            time=xr.DataArray(
+                time_values,
+                dims=(dim,),
+                attrs=time_attrs,
+            )
+        )
+        ds = ds.swap_dims({dim: "time"})
+        ds = ds.sortby("time")
+
+        # Keep the first occurrence; shift subsequent ones by 0.5 s each.
+        original_times = pd.Series(ds["time"].values)
+
+        occurrence = original_times.groupby(
+            original_times,
+            sort=False,
+            dropna=False,
+        ).cumcount()
+
+        adjusted_times = original_times + pd.to_timedelta(occurrence * 0.5, unit="s")
+
+        if adjusted_times[adjusted_times.notna()].duplicated().any():
+            raise ValueError(
+                f"Shifting duplicate timestamps in '{dim}' / '{time_var}' "
+                "by 0.5 seconds creates another timestamp collision."
+            )
+
+        duplicate_mask = original_times.duplicated(keep=False) & original_times.notna()
+
+        if duplicate_mask.any():
+            description = [
+                f"Dimension: {dim} with time variable: {time_var} "
+                "has duplicate time values.",
+                "The following time values occurred multiple times and "
+                "have been assigned to the following new timestamps:",
+            ]
+
+            for timestamp in original_times[duplicate_mask].drop_duplicates():
+                positions = original_times.index[original_times.eq(timestamp)].tolist()
+
+                new_timestamps = [
+                    adjusted_times.iloc[position].isoformat() for position in positions
+                ]
+
+                description.append(
+                    f"  {timestamp.isoformat()} occurred "
+                    f"{len(positions)} times.\n"
+                    "    Assigned timestamps:\n"
+                    + "\n".join(f"      {value}" for value in new_timestamps)
+                )
+
+            description_text = "\n".join(description)
+            duplicate_time_descriptions.append(description_text)
+            # print(description_text)
+
+        ds = ds.assign_coords(
+            time=xr.DataArray(
+                adjusted_times.to_numpy(),
+                dims=("time",),
+                attrs=time_attrs,
+            )
+        )
+        ds = ds.sortby("time")
+
+        if firstrun:
             print(
-                f"Adding variables with dimension '{dim}' and time variable '{time_var}'."
+                f"Adding variables with dimension '{dim}' "
+                f"and time variable '{time_var}'."
             )
 
         processed_datasets.append(ds)
         actually_merged_dims.add(dim)
 
     if not processed_datasets:
-        print("No datasets processed. Returning None.")
+        if firstrun:
+            print("No datasets processed. Returning None.")
         return None
 
-    # ---6. Merge along shared time coordinate---
     merged_ds = xr.merge(processed_datasets, join="outer")
+    merged_ds = merged_ds.sortby("time")
 
-    # ---7. Swap to N_MEASUREMENTS (optional)---
+    # Keep lowercase time; create only the N_MEASUREMENTS dimension.
     merged_ds = merged_ds.swap_dims({"time": "N_MEASUREMENTS"})
 
-    merged_ds = merged_ds.sortby("time")
-    if first_run:
-        ## Print what remaining dimensions were not merged into the new dataset
-        print(
-            f"The following dimensions were not merged into the new dataset: {all_dims - actually_merged_dims}"
-            "\nIf instrument data is missing make sure it's dimension follows the naming convention of '<instrument>_data_point'"
-            "\nfrom the ds.attrs['instrument'] list."
-        )
+    merged_ds["time"].attrs["duplicate_timestamp_adjustments"] = (
+        "\n\n".join(duplicate_time_descriptions)
+        if duplicate_time_descriptions
+        else "No duplicate time values were found."
+    )
+    merged_ds["time"].attrs["duplicate_timestamp_adjustment_rule"] = (
+        "First occurrence unchanged; subsequent occurrences shifted "
+        "forward by 0.5 seconds each. No measurements were discarded."
+    )
+
+    if firstrun:
+        print("Dimensions not merged: " f"{sorted(all_dims - actually_merged_dims)}")
 
     return merged_ds
 
@@ -1751,159 +1817,291 @@ def combine_two_dim_of_dataset(
 standard_names = vocabularies.standard_names
 
 
-def extract_hdm_parameters(list_datasets):
-    """Extracts HDM parameters and their attributes from a list of datasets. If the parameter has the same value across all datasets,
-    it keeps a single value; otherwise, it returns the full list.
+def extract_scalar_parameters(
+    list_datasets: list[xr.Dataset],
+) -> dict:
+    """Extract all scalar variables from a list of datasets.
+
+    Collect each variable's values across datasets and copy attributes from
+    its first occurrence. Mark it constant only when it exists in every
+    dataset and has the same value throughout. Record missing occurrences
+    and extract dive identifiers for later assignment to measurements.
 
     Parameters
     ----------
-    list_datasets (list): List of xarray.Dataset objects.
-    standard_names (dict): Vocabulary mapping internal names to standard names.
+    list_datasets : list[xarray.Dataset]
+        Input datasets containing scalar variables and dive identifiers.
 
     Returns
     -------
-    dict: A nested dictionary where keys are standard names and values contain
-            the 'data' and 'attributes'.
-
+    dict
+        Parameter values, source attributes, presence and constant flags,
+        and dive identifiers.
     """
-    potential_parameters_OG1 = [
-        "VBD_MIN_CNTS",
-        "VBD_CNTS_PER_CC",
-        "VBD_CC_PER_CNTS",
-        "VBD_BIAS",
-        "MASS",
-        "VOLMAX",
-        "C_VBD",
-        "HD_A",
-        "HD_B",
-        "HD_C",
-    ]
-    potential_parameters = [
-        key
-        for key, value in standard_names.items()
-        if value in potential_parameters_OG1
-    ]
-    hdm_variables = {}
+    n_datasets = len(list_datasets)
 
-    for param in potential_parameters:
-        # Determine the key name using standard_names mapping
-        param_key = standard_names.get(param, param)
-        if param_key == param and param not in standard_names:
-            print(
-                f"Warning: '{param}' not found in standard names. Using original name."
+    # Discover scalar names in their original order.
+    parameters = {}
+
+    for dataset in list_datasets:
+        for name, variable in dataset.variables.items():
+            if variable.ndim == 0 and name not in parameters:
+                parameters[name] = {
+                    "values": [float("nan")] * n_datasets,
+                    "present": [False] * n_datasets,
+                    "constant": False,
+                    "attributes": variable.attrs.copy(),
+                }
+
+    dive_numbers = []
+
+    # Work directly with Variables, avoiding DataArray construction.
+    for index, dataset in enumerate(list_datasets):
+        variables = dataset.variables
+
+        for name, variable in variables.items():
+            if name not in parameters:
+                continue
+
+            if variable.ndim != 0:
+                raise ValueError(
+                    f"'{name}' is scalar in one dataset but has dimensions "
+                    "in another."
+                )
+
+            parameter = parameters[name]
+            parameter["values"][index] = variable.values[()]
+            parameter["present"][index] = True
+
+        if "dive_number" in dataset.attrs:
+            dive = dataset.attrs["dive_number"]
+        elif "dive_number" in variables and variables["dive_number"].ndim == 0:
+            dive = variables["dive_number"].values[()]
+        elif "trajectory" in variables and variables["trajectory"].ndim == 0:
+            dive = variables["trajectory"].values[()]
+        else:
+            dive = None
+
+        dive_numbers.append(dive)
+
+    # Keep the original equality/missing-value semantics.
+    for parameter in parameters.values():
+        parameter["constant"] = (
+            all(parameter["present"])
+            and pd.Series(parameter["values"]).nunique(dropna=False) == 1
+        )
+
+    return {
+        "parameters": parameters,
+        "dive_numbers": dive_numbers,
+    }
+
+
+def add_scalar_parameters(
+    ds_og1: xr.Dataset,
+    extracted: dict,
+    og1_mapping: pd.DataFrame,
+) -> tuple[xr.Dataset, pd.DataFrame]:
+    """Add extracted scalar parameters and update the OG1 mapping.
+
+    Keep constant parameters as ordinary scalars. Store changing or partially
+    missing parameters as scalar JSON strings with aligned "dives" and "values"
+    lists. Missing values are represented by JSON null.
+
+    No dimensions are added, and no parameters are expanded along
+    N_MEASUREMENTS.
+
+    Use existing OG1 mappings or vocabulary names where available; otherwise
+    retain original names. Preserve source metadata except numeric storage and
+    range attributes that do not apply to JSON strings. No unit conversions
+    are performed.
+    """
+    import json
+
+    import numpy as np
+
+    result = ds_og1.copy()
+    mapping = og1_mapping.copy()
+    dive_numbers = list(extracted["dive_numbers"])
+
+    if mapping["original_name"].duplicated().any():
+        raise ValueError("The mapping must have unique original names.")
+
+    def json_scalar(value):
+        """Convert a scalar to a JSON-compatible value."""
+        if np.ndim(value) != 0:
+            raise ValueError("Expected a scalar parameter value.")
+
+        if value is None or pd.isna(value):
+            return None
+
+        if isinstance(value, np.generic):
+            value = value.item()
+
+        # NumPy byte strings also become bytes after .item().
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+
+        return value
+
+    used_names = {}
+
+    for original_name, parameter in extracted["parameters"].items():
+        row_mask = mapping["original_name"].eq(original_name)
+
+        # Prefer the existing mapping, including any numbered OG1 names.
+        if row_mask.any():
+            og1_name = mapping.loc[row_mask, "OG1_name"].iloc[0]
+        else:
+            og1_name = None
+
+        if og1_name is None or pd.isna(og1_name):
+            og1_name = vocabularies.standard_names.get(original_name)
+
+        is_mapped = og1_name is not None and pd.notna(og1_name)
+        output_name = str(og1_name) if is_mapped else original_name
+
+        if output_name in used_names:
+            raise ValueError(
+                f"'{original_name}' and '{used_names[output_name]}' "
+                f"both map to '{output_name}'."
             )
 
-        # 1. Check if the parameter exists in the datasets
-        if param not in list_datasets[0].variables:
-            continue
+        used_names[output_name] = original_name
 
-        # 2. Extract values from all datasets
-        all_values = [ds[param].values for ds in list_datasets]
+        # Existing versions of this parameter can be replaced.
+        if output_name in result.variables:
+            known_source = result[output_name].attrs.get(
+                "original_name",
+                result[output_name].attrs.get("original_variable_name"),
+            )
 
-        # 3. Determine if we keep a single value or the full list
-        # We flatten to handle case where .values might be arrays
-        unique_vals = np.unique(np.array(all_values))
+            if (
+                output_name != original_name
+                and known_source != original_name
+                and not row_mask.any()
+            ):
+                raise ValueError(
+                    f"'{output_name}' already exists and cannot safely "
+                    f"be replaced by '{original_name}'."
+                )
 
-        final_value = unique_vals[0] if len(unique_vals) == 1 else all_values
+        attributes = parameter["attributes"].copy()
+        attributes["original_name"] = original_name
+        values = list(parameter["values"])
 
-        if isinstance(final_value, list):
-            final_value = np.array(final_value)
+        if not values:
+            raise ValueError(f"Parameter '{original_name}' has no extracted values.")
 
-        # 4. Store as a dictionary to accommodate both value and attributes and add long_name attribute
-        hdm_variables[param_key] = {
-            "values": final_value,
-            "attributes": list_datasets[0][param].attrs,  # Add long_name attribute
+        if parameter["constant"]:
+            variable = xr.DataArray(
+                values[0],
+                attrs=attributes,
+            )
+        else:
+            if len(values) != len(dive_numbers):
+                raise ValueError(
+                    f"Parameter '{original_name}' has {len(values)} values "
+                    f"but {len(dive_numbers)} dive identifiers."
+                )
+
+            if any(dive is None or pd.isna(dive) for dive in dive_numbers):
+                raise ValueError(
+                    "Every input dataset needs a dive identifier "
+                    "to store changing scalar parameters."
+                )
+
+            if pd.Index(dive_numbers).has_duplicates:
+                raise ValueError("Input dive identifiers must be unique.")
+
+            try:
+                payload = {
+                    "dives": [json_scalar(dive) for dive in dive_numbers],
+                    "values": [json_scalar(value) for value in values],
+                }
+                serialized = json.dumps(
+                    payload,
+                    separators=(",", ":"),
+                    allow_nan=False,
+                )
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"Cannot serialize parameter '{original_name}' "
+                    f"as per-dive JSON: {exc}"
+                ) from exc
+
+            # These numeric attributes do not apply to the stored string.
+            for key in (
+                "_FillValue",
+                "missing_value",
+                "scale_factor",
+                "add_offset",
+                "valid_min",
+                "valid_max",
+                "valid_range",
+                "actual_range",
+            ):
+                attributes.pop(key, None)
+
+            attributes.update(
+                {
+                    "serialization": "json",
+                    "storage_type": "per_dive_scalar",
+                    "serialization_description": (
+                        'JSON object with aligned "dives" and "values" lists; '
+                        "null indicates a missing value. Units and source "
+                        "metadata describe the decoded values."
+                    ),
+                }
+            )
+
+            variable = xr.DataArray(
+                serialized,
+                attrs=attributes,
+            )
+
+            # Write a NetCDF4 variable-length string, avoiding a character
+            # dimension. The existing writer skips compression for scalars.
+            variable.encoding["dtype"] = str
+
+        # Remove an old original-name version when the parameter is renamed.
+        if output_name != original_name and original_name in result.variables:
+            result = result.drop_vars(original_name)
+
+        result[output_name] = variable
+
+        mapping_updates = {
+            "OG1_name": output_name if is_mapped else None,
+            "original_dimension": "",
+            "has_OG1_attributes": (
+                bool(vocabularies.vocab_attrs.get(output_name, {}))
+                if is_mapped
+                else False
+            ),
         }
-        hdm_variables[param_key]["attributes"]["original_name"] = param_key
 
-    # 5. Print what parameters from potential_parameters were found and which couldn't not be found in the datasets
-    found_params = [
-        param for param in potential_parameters_OG1 if param in hdm_variables
-    ]
-    not_found_params = [
-        param for param in potential_parameters_OG1 if param not in hdm_variables
-    ]
-    print(f"The following HDM parameters were found: {found_params}")
-    # if not_found_params:
-    #    print(
-    #        f"Warning: The following potential HDM parameters were not found in the datasets: {not_found_params}"
-    #    )
+        if row_mask.any():
+            for column, value in mapping_updates.items():
+                mapping.loc[row_mask, column] = value
+        else:
+            mapping = pd.concat(
+                [
+                    mapping,
+                    pd.DataFrame(
+                        [
+                            {
+                                "original_name": original_name,
+                                "instrument": None,
+                                "instrument_type": None,
+                                **mapping_updates,
+                            }
+                        ]
+                    ),
+                ],
+                ignore_index=True,
+            )
 
-    # 6. Add dive_number in order to be able to assign dive-based parameters to the correct profiles in the OG1 dataset
-    dive_numbers = None
-    if "dive_number" in list_datasets[0].attrs:
-        dive_numbers = [ds.dive_number.item() for ds in list_datasets]
-    elif "trajectory" in list_datasets[0].data_vars:
-        dive_numbers = [ds["trajectory"].values for ds in list_datasets]
-    if dive_numbers is not None:
-        hdm_variables["DIVE_NUMBER"] = {"values": dive_numbers}
-    else:
-        print(
-            "Warning: 'dive_number' or 'trajectory' not found in datasets. "
-            "Dive-based parameters may not be correctly assigned."
-        )
-    return hdm_variables
-
-
-def add_hdm_parameters(ds_OG1, hdm_parameters):
-    """Add HDM parameters to the OG1 dataset as new variables with their attributes.
-
-    Parameters
-    ----------
-    ds_OG1 (xarray.Dataset): The OG1 dataset to which HDM parameters will be added.
-    hdm_parameters (dict): A dictionary containing HDM parameters and their attributes
-                            in the format {standard_name: {"value": ..., "attributes": {...}}}.
-
-    Returns
-    -------
-    xarray.Dataset: Updated OG1 dataset with HDM parameters added as variables.
-
-    """
-    ds_updated = ds_OG1.copy()
-
-    dive_numbers = hdm_parameters.pop("DIVE_NUMBER", {}).get("values", None)
-
-    for param_name, param_info in hdm_parameters.items():
-        # Using .get() because you used "value" in extract and "values" in your draft
-        values = param_info.get("value") or param_info.get("values")
-        attributes = param_info["attributes"]
-
-        if values is None or np.size(values) == 0:
-            print(f"Warning: Parameter '{param_name}' values are empty. Skipping.")
-            continue
-        # Check if it's a single value (scalar)
-        if dive_numbers is None or np.size(values) == 1:
-            val = np.atleast_1d(values)[0]
-            ds_updated[param_name] = val.item() if hasattr(val, "item") else val
-            ds_updated[param_name].attrs = attributes
-        # Check if it's dive-based (1 value per 2 profiles)
-        elif np.size(values) > 1:
-            mapped_array = np.full(ds_updated.N_MEASUREMENTS.shape, np.nan)
-
-            # Iterate through dives (each dive = 2 profiles)
-            for dive, dive_val in zip(dive_numbers, values, strict=False):
-                # Find all measurement indices belonging to these two profiles
-                if "DIVE_NUMBER" in ds_updated.data_vars:
-                    mask = ds_updated.DIVE_NUMBER == dive
-                elif "PROFILE_NUMBER" in ds_updated.data_vars:
-                    # Logic: Dive 1 = Profiles 1 & 2
-                    mask = (ds_updated.PROFILE_NUMBER == 2 * dive - 1) | (
-                        ds_updated.PROFILE_NUMBER == 2 * dive
-                    )
-                else:
-                    print(
-                        f"Error: No reference dimension for {param_name}. Skipping dive mapping."
-                    )
-                    break
-
-                # Fill the array for those specific measurements
-                mapped_array[mask] = dive_val
-
-            # Add to dataset with the N_MEASUREMENTS dimension
-            ds_updated[param_name] = (("N_MEASUREMENTS",), mapped_array)
-            ds_updated[param_name].attrs = attributes
-
-    return ds_updated
+    return result, mapping
 
 
 def parse_8_digit_date(date_str):

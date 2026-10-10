@@ -1,5 +1,6 @@
 import pathlib
 import sys
+import pandas as pd
 
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
@@ -9,7 +10,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import gsw
-from seagliderOG1 import tools, readers, convertOG1
+from seagliderOG1 import tools, readers, convertOG1, vocabularies
 
 
 def test_add_sensor_skips_unmapped_variables():
@@ -79,19 +80,88 @@ def test_calc_z():
     assert np.array_equal(depth, depth_z)
 
 
-def test_add_hdm_parameters():
+import json
+
+
+def test_add_scalar_parameters():
     source = str(parent_dir / "data/demo_sg005")
-    print("Testing load_basestation_files with source:", source)
-    start_profile = 1
-    end_profile = 5
-    datasets = readers.load_basestation_files(source, start_profile, end_profile)
-    hdm_parameters = tools.extract_hdm_parameters(datasets)
-    ds_OG1, OG1_mapping = convertOG1.convert_to_OG1(datasets)
-    ds_OG1 = tools.add_hdm_parameters(ds_OG1, hdm_parameters)
-    ### check if the hdm parameters are added to the dataset and have the expected values
-    for param in hdm_parameters:
-        if param is not None:
-            assert param in ds_OG1
+    datasets = readers.load_basestation_files(source, 1, 5)
+
+    extracted = tools.extract_scalar_parameters(datasets)
+    ds_og1, mapping = convertOG1.convert_to_OG1(datasets)
+
+    original_sizes = dict(ds_og1.sizes)
+
+    ds_updated, mapping_updated = tools.add_scalar_parameters(
+        ds_og1,
+        extracted,
+        mapping,
+    )
+
+    expected_names = {
+        name
+        for dataset in datasets
+        for name, variable in dataset.variables.items()
+        if variable.ndim == 0
+    }
+
+    assert expected_names
+    assert set(extracted["parameters"]) == expected_names
+    assert dict(ds_updated.sizes) == original_sizes
+
+    def expected_json_value(value):
+        if value is None or pd.isna(value):
+            return None
+        if isinstance(value, np.generic):
+            value = value.item()
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+        return value
+
+    for original_name, parameter in extracted["parameters"].items():
+        rows = mapping_updated.loc[mapping_updated["original_name"].eq(original_name)]
+        assert len(rows) == 1
+
+        og1_name = rows["OG1_name"].iloc[0]
+        output_name = str(og1_name) if pd.notna(og1_name) else original_name
+
+        assert output_name in ds_updated.variables
+        variable = ds_updated[output_name]
+        assert variable.attrs["original_name"] == original_name
+        assert variable.dims == ()
+
+        if parameter["constant"]:
+            xr.testing.assert_equal(
+                variable.reset_coords(drop=True),
+                xr.DataArray(parameter["values"][0], name=output_name),
+            )
+        else:
+            assert variable.attrs["serialization"] == "json"
+            assert variable.dtype.kind in ("U", "S", "O")
+
+            payload = json.loads(variable.item())
+
+            assert set(payload) == {"dives", "values"}
+            assert payload["dives"] == [
+                expected_json_value(dive) for dive in extracted["dive_numbers"]
+            ]
+            assert len(payload["values"]) == len(extracted["dive_numbers"])
+
+            for actual, value, present in zip(
+                payload["values"],
+                parameter["values"],
+                parameter["present"],
+                strict=True,
+            ):
+                expected = expected_json_value(value) if present else None
+                assert actual == expected
+
+            # Conversion must preserve JSON before parameters are reassigned.
+            converted = ds_og1[output_name]
+            assert converted.dims == ()
+            assert converted.attrs["serialization"] == "json"
+            assert converted.dtype.kind in ("U", "S", "O")
+            assert json.loads(converted.item()) == payload
 
 
 def test_find_best_dtype_named_integers() -> None:
@@ -161,20 +231,8 @@ def test_set_best_dtype_restores_depth_coord() -> None:
 
 def test_OG1_name_mapping_sample_dataset():
     ds1 = readers.load_sample_dataset()
-    split_ds = tools.split_by_unique_dims(ds1)
 
-    assert set(split_ds) == {
-        (),
-        ("gc_event",),
-        ("gps_info",),
-        ("sg_data_point",),
-    }
-
-    ds = split_ds[("sg_data_point",)]
-
-    ctd_dim, merge_dims, all_dims = tools._get_merge_dimensions([ds1])
-
-    mapping = tools.OG1_name_mapping([ds1], ctd_dim, merge_dims)
+    mapping, time_variables = tools.OG1_name_mapping([ds1])
 
     expected_columns = [
         "original_name",
@@ -185,15 +243,43 @@ def test_OG1_name_mapping_sample_dataset():
         "has_OG1_attributes",
     ]
     assert list(mapping.columns) == expected_columns
-
-    # There must be exactly one mapping row for every input variable.
-    expected_variables = set(ds.data_vars) | set(ds.coords)
-
-    assert set(mapping["original_name"]) | {"ctd_time"} == expected_variables
     assert mapping["original_name"].is_unique
 
-    # Index by original name so the assertions do not depend on row order.
+    # Time associations are returned separately.
+    assert "time" in time_variables["sg_data_point"]
+    assert "log_gps_time" in time_variables["gps_info"]
+    assert "gc_st_secs" in time_variables["gc_event"]
+
+    for dimension, names in time_variables.items():
+        assert dimension in ds1.dims
+        assert names
+        assert len(names) == len(set(names))
+        assert set(names).issubset(ds1.variables)
+
+    # All input variables are retained except individual time variables,
+    # which are replaced by the single synthetic time row.
+    time_names = {name for names in time_variables.values() for name in names}
+    expected_variables = (set(ds1.variables) - time_names) | {"time"}
+
+    assert set(mapping["original_name"]) == expected_variables
+
+    # Index by original name so assertions do not depend on row order.
     actual = mapping.set_index("original_name")
+
+    assert actual.loc["time", "OG1_name"] == "TIME"
+    assert actual.loc["time", "original_dimension"] == ""
+
+    for name in expected_variables - {"time"}:
+        assert actual.loc[name, "original_dimension"] == ", ".join(ds1[name].dims)
+
+    # Vocabulary availability is reported independently of variable retention.
+    for row in mapping.itertuples(index=False):
+        expected = (
+            bool(vocabularies.vocab_attrs.get(row.OG1_name, {}))
+            if pd.notna(row.OG1_name)
+            else False
+        )
+        assert bool(row.has_OG1_attributes) == expected
 
     ### Taking the following tests out because we'll change some things on the output and this will certainly crash
     # expected_og1_names = {

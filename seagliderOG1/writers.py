@@ -153,4 +153,6 @@ def _compression_encoding(ds: xr.Dataset) -> dict[str, dict]:
             enc = {k: var.encoding[k] for k in _PRESERVE_ENCODING if k in var.encoding}
             enc.update(compression)
             encoding[name] = enc
+            if var.ndim == 1 and var.size > 0:
+                enc["chunksizes"] = (min(var.size, 65_536),)
     return encoding
