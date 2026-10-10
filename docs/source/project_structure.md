@@ -66,7 +66,6 @@ seagliderOG1/
 │   └── PULL_REQUEST_TEMPLATE.md  # [ci, meta] Template for pull requests on Github
 │
 ├── .gitignore                    # [meta] Exclude build files, logs, data, etc.
-├── .pre-commit-config.yaml       # [style] Instructions for pre-commits to run (linting)
 ├── pyproject.toml                # [ci, meta, style] Build system, dependencies, and config
 ├── CITATION.cff                  # [meta] So Github can populate the "cite" button
 ├── README.md                     # [meta] Project overview and getting started
