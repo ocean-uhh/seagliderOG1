@@ -21,3 +21,4 @@ matplotlib>=3.6
 
 # Utilities
 tqdm>=4.65
+PyYAML>=6  # config/registry YAML (mission config, institution registry, OG1 vocabularies)

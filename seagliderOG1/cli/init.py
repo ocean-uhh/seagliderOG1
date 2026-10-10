@@ -71,7 +71,7 @@ def _platform_from_file(source: str) -> dict[str, object]:
 
     import xarray as xr
 
-    from seagliderOG1 import readers
+    from seagliderOG1 import readers, vocabularies
 
     names = [f for f in readers.list_files(source) if readers.validate_filename(f)]
     if not names:
@@ -81,23 +81,10 @@ def _platform_from_file(source: str) -> dict[str, object]:
         os.path.join(source, names[0]), engine="netcdf4", decode_timedelta=False
     )
     try:
-        attrs = ds.attrs
-        platform: dict[str, object] = {}
-        if "platform_id" in attrs:
-            platform["PLATFORM_SERIAL_NUMBER"] = str(attrs["platform_id"]).lower()
-        if "seaglider_software_version" in attrs:
-            platform["GLIDER_FIRMWARE_VERSION"] = (
-                f"seaglider {float(attrs['seaglider_software_version']):g}"
-            )
-        if "base_station_version" in attrs:
-            platform["LANDSTATION_VERSION"] = (
-                f"basestation v{float(attrs['base_station_version']):g}"
-            )
-        if "wmo_identifier" in attrs:
-            platform["WMO_IDENTIFIER"] = str(attrs["wmo_identifier"])
+        # The one file->field mapping lives in vocabularies, shared with the converter.
+        return vocabularies.platform_from_file(ds.attrs)
     finally:
         ds.close()
-    return platform
 
 
 def run(args: argparse.Namespace) -> int:

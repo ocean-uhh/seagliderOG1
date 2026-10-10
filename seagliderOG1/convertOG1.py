@@ -45,13 +45,14 @@ _DERIVED_GLOBALS = frozenset(
 # Ref: OceanGliders OG-format-user-manual, OG_Format "File naming convention".
 _MODE_SUFFIX = {"delayed": "delayed", "realtime": "R"}
 
-# String platform fields and whether each has a basestation-file fallback source.
+# String platform fields, resolved in order config -> file -> "UNK". The file-derived
+# values come from vocabularies.platform_from_file (the one file->field table).
 _PLATFORM_STRING_FIELDS = (
-    ("PLATFORM_MODEL", None),
-    ("PLATFORM_MAKER", None),
-    ("GLIDER_FIRMWARE_VERSION", None),
-    ("LANDSTATION_VERSION", None),
-    ("WMO_IDENTIFIER", "wmo_identifier"),
+    "PLATFORM_MODEL",
+    "PLATFORM_MAKER",
+    "GLIDER_FIRMWARE_VERSION",
+    "LANDSTATION_VERSION",
+    "WMO_IDENTIFIER",
 )
 
 
@@ -87,16 +88,15 @@ def _resolve_platform(
 
     """
     platform = platform or {}
-    attrs = first_ds.attrs
+    file_values = vocabularies.platform_from_file(first_ds.attrs)
 
-    def config_or(field: str, file_value: object | None) -> object | None:
+    def config_or(field: str) -> object | None:
         value = platform.get(field)
         if value in (None, "", "None"):
-            value = file_value
+            value = file_values.get(field)
         return None if value in (None, "", "None") else value
 
-    file_serial = str(attrs["platform_id"]).lower() if "platform_id" in attrs else None
-    serial = config_or("PLATFORM_SERIAL_NUMBER", file_serial)
+    serial = config_or("PLATFORM_SERIAL_NUMBER")
     if serial is None:
         msg = (
             "PLATFORM_SERIAL_NUMBER could not be determined: the basestation file "
@@ -108,13 +108,13 @@ def _resolve_platform(
 
     resolved: dict[str, object] = {"PLATFORM_SERIAL_NUMBER": serial}
 
-    for field, file_attr in _PLATFORM_STRING_FIELDS:
-        file_value = str(attrs[file_attr]) if file_attr and file_attr in attrs else None
-        value = config_or(field, file_value)
+    for field in _PLATFORM_STRING_FIELDS:
+        value = config_or(field)
         if value is None:
+            from_file = field in vocabularies.PLATFORM_FROM_FILE
             warnings.warn(
                 f"{field} not set in the mission config (platform.{field})"
-                + (" or the basestation file" if file_attr else "")
+                + (" or the basestation file" if from_file else "")
                 + "; writing 'UNK'.",
                 stacklevel=3,
             )
@@ -199,6 +199,7 @@ def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
 
 def convert_to_OG1(
     list_of_datasets: list[xr.Dataset] | xr.Dataset,
+    *,
     contributors: Sequence[dict] | None = None,
     institutions: Sequence[dict] | None = None,
     platform: dict[str, object] | None = None,

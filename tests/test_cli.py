@@ -371,6 +371,19 @@ def test_validate_accepts_valid_config(tmp_path: pathlib.Path) -> None:
     assert cli.main(["validate", str(config)]) == 0
 
 
+def test_validate_role_and_roles_together_is_error(tmp_path: pathlib.Path) -> None:
+    """Setting both role: and roles: on one entry is an ERROR (not a silent drop)."""
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        source=str(tmp_path),
+        contributors=[{"name": "Ann", "role": "PI", "roles": ["Operator"]}],
+    )
+    issues = _mission.validate_config(config)
+    assert any(
+        i.level == "ERROR" and "both role: and roles:" in i.message for i in issues
+    )
+
+
 def test_validate_rejects_unknown_key(tmp_path: pathlib.Path) -> None:
     """An unknown top-level key is an ERROR (pure schema check, no real data)."""
     config = _write_config(tmp_path / "mission.yaml", source=str(tmp_path), nonsense=1)

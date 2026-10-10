@@ -233,7 +233,10 @@ def _check_role(entry: dict, where: str) -> tuple[list[ValidationIssue], str | N
         role = roles[0]
 
     if role in (None, ""):
-        return [*warnings_found, ValidationIssue("ERROR", f"{where} needs a role.", where)], None
+        return [
+            *warnings_found,
+            ValidationIssue("ERROR", f"{where} needs a role.", where),
+        ], None
     normalized = contributors.normalize_role(role)
     if normalized is None:
         allowed = ", ".join(vocabularies.ROLE_VOCABULARY)

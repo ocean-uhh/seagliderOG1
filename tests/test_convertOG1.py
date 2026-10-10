@@ -117,6 +117,16 @@ def test_start_date_global_attribute_collision_raises():
         raise AssertionError("expected ValueError for start_date collision")
 
 
+def test_convert_to_OG1_options_are_keyword_only():
+    """A positional second argument is rejected; options must be keyword."""
+    try:
+        convertOG1.convert_to_OG1([], {})
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("expected TypeError for a positional option")
+
+
 def test_apply_keep_variables_retains_mandatory_and_qc():
     """keep_variables keeps the ask plus every mandatory var and the kept var's _QC."""
     import warnings

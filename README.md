@@ -45,11 +45,11 @@ writers.save_dataset(ds, out)
 
 ## Acknowledgements
 
-seagliderOG1 is developed at the University of Hamburg (ocean-uhh) in preparation for the DFG (Deutsche Forschungsgemeinschaft) research infrastructure Swarm of Ocean Gliders (Projektnummer 544335393). It converts Seaglider basestation files into OceanGliders OG1 format, driven by a mission configuration the user owns.
+seagliderOG1 converts Seaglider basestation files into OceanGliders OG1 format, driven by a mission configuration the user owns. It was started at the University of Hamburg (ocean-uhh) in preparation for the DFG (Deutsche Forschungsgemeinschaft) research infrastructure Swarm of Ocean Gliders (Projektnummer 544335393).
 
-The work is funded by Voice of the Ocean (VOTO) under the SEA-CODE project (SeaExplorer–Seaglider Cross-platform Open Diagnostics & Evaluation), which builds platform-independent, open-source diagnostics for glider data — with glidertest and seagliderOG1 as its core packages — and supports exchanges between the University of Hamburg and VOTO, and by the DFG through the PycnMix project (Projektnummer 558671572).
+Initial development was supported by Voice of the Ocean (VOTO) under the SEA-CODE project (SeaExplorer–Seaglider Cross-platform Open Diagnostics & Evaluation), which builds platform-independent, open-source diagnostics for glider data — with glidertest and seagliderOG1 as its core packages — and supports exchanges between the University of Hamburg and VOTO, and, at the University of Hamburg, by the DFG through the PycnMix project (Projektnummer 558671572).
 
-seagliderOG1 welcomes contributions from the community. Development was assisted by Claude Code (Anthropic) and GitHub Copilot code review.
+seagliderOG1 is an open community project and welcomes contributions from any group. Development was assisted by Claude Code (Anthropic) and GitHub Copilot code review.
 
 ## License
 

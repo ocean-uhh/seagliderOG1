@@ -62,6 +62,45 @@ ROLE_ALIASES = {
     "principal investigator": "PI",
 }
 
+# OG1 platform field -> (basestation global attribute it derives from, formatter).
+# The one source of the file->field mapping, used by both the CLI `init --from`
+# and convertOG1._resolve_platform so the two never diverge.
+PLATFORM_FROM_FILE = {
+    "PLATFORM_SERIAL_NUMBER": ("platform_id", lambda value: str(value).lower()),
+    "WMO_IDENTIFIER": ("wmo_identifier", str),
+    "GLIDER_FIRMWARE_VERSION": (
+        "seaglider_software_version",
+        lambda value: f"seaglider {float(value):g}",
+    ),
+    "LANDSTATION_VERSION": (
+        "base_station_version",
+        lambda value: f"basestation v{float(value):g}",
+    ),
+}
+
+
+def platform_from_file(attrs: dict) -> dict:
+    """Derive OG1 platform fields from a basestation file's global attributes.
+
+    Parameters
+    ----------
+    attrs : dict
+        The first basestation file's global attributes.
+
+    Returns
+    -------
+    dict
+        The OG1 platform fields derivable from the file (only those whose source
+        attribute is present).
+
+    """
+    derived = {}
+    for field, (source, formatter) in PLATFORM_FROM_FILE.items():
+        if source in attrs:
+            derived[field] = formatter(attrs[source])
+    return derived
+
+
 # Preferred units for OG1 format - conversion will be attempted if mapping exists
 preferred_units = ["m s-1", "dbar", "S m-1"]
 

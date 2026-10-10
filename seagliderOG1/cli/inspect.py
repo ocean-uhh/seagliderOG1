@@ -72,7 +72,7 @@ def run(args: argparse.Namespace) -> int:
     ----------
     args : argparse.Namespace
         Parsed arguments: ``file``, ``attrs``, ``variables``, ``by_dimension``,
-        ``output_dir``, ``title``.
+        ``output`` and ``title``.
 
     Returns
     -------
@@ -102,10 +102,12 @@ def run(args: argparse.Namespace) -> int:
     # plotters returns a pandas Styler for variable tables; render its frame.
     frame = getattr(table, "data", table)
     print(frame.to_string())
-    # The HTML inventory page comes from glidertest via the [report] extra (PR3).
-    print(
-        "[report] extra not installed; printing variables — "
-        "pip install 'seagliderOG1[report]' for the HTML inventory page",
-        file=sys.stderr,
-    )
+    # The HTML inventory page (-o/--title) comes from glidertest via the [report]
+    # extra; until then, say so when those flags are given rather than ignoring them.
+    if args.output or args.title:
+        print(
+            "[report] extra not installed; printed the text table instead — "
+            "pip install 'seagliderOG1[report]' for the HTML inventory page",
+            file=sys.stderr,
+        )
     return 0
