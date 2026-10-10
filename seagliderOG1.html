@@ -49,6 +49,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="about.html">About seagliderOG1</a></li>
 <li class="toctree-l1"><a class="reference internal" href="setup.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command-line interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
@@ -61,6 +62,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.convertOG1">convertOG1</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convertOG1.add_gps_info_to_dataset"><code class="docutils literal notranslate"><span class="pre">add_gps_info_to_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convertOG1.apply_keep_variables"><code class="docutils literal notranslate"><span class="pre">apply_keep_variables()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convertOG1.convert_to_OG1"><code class="docutils literal notranslate"><span class="pre">convert_to_OG1()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convertOG1.extract_attr_to_keep"><code class="docutils literal notranslate"><span class="pre">extract_attr_to_keep()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convertOG1.extract_attr_to_rename"><code class="docutils literal notranslate"><span class="pre">extract_attr_to_rename()</span></code></a></li>
@@ -73,16 +75,54 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convertOG1.update_dataset_attributes"><code class="docutils literal notranslate"><span class="pre">update_dataset_attributes()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.vocabularies">vocabularies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.vocabularies">vocabularies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.vocabularies.PlatformField"><code class="docutils literal notranslate"><span class="pre">PlatformField</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1.vocabularies.PlatformField.formatter"><code class="docutils literal notranslate"><span class="pre">PlatformField.formatter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1.vocabularies.PlatformField.kind"><code class="docutils literal notranslate"><span class="pre">PlatformField.kind</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1.vocabularies.PlatformField.required"><code class="docutils literal notranslate"><span class="pre">PlatformField.required</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1.vocabularies.PlatformField.source"><code class="docutils literal notranslate"><span class="pre">PlatformField.source</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.vocabularies.load_default_contributors"><code class="docutils literal notranslate"><span class="pre">load_default_contributors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.vocabularies.platform_from_file"><code class="docutils literal notranslate"><span class="pre">platform_from_file()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.contributors">contributors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.consolidate"><code class="docutils literal notranslate"><span class="pre">consolidate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.enrich_institutions"><code class="docutils literal notranslate"><span class="pre">enrich_institutions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.format_contributors"><code class="docutils literal notranslate"><span class="pre">format_contributors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.format_institutions"><code class="docutils literal notranslate"><span class="pre">format_institutions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.load_institution_registry"><code class="docutils literal notranslate"><span class="pre">load_institution_registry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.normalize_orcid"><code class="docutils literal notranslate"><span class="pre">normalize_orcid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.normalize_role"><code class="docutils literal notranslate"><span class="pre">normalize_role()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.parse_contributors"><code class="docutils literal notranslate"><span class="pre">parse_contributors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.parse_institutions"><code class="docutils literal notranslate"><span class="pre">parse_institutions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.registry_institutions"><code class="docutils literal notranslate"><span class="pre">registry_institutions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.role_vocabulary"><code class="docutils literal notranslate"><span class="pre">role_vocabulary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.contributors.split_aligned"><code class="docutils literal notranslate"><span class="pre">split_aligned()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.readers">readers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.Mission"><code class="docutils literal notranslate"><span class="pre">Mission</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1.readers.Mission.date"><code class="docutils literal notranslate"><span class="pre">Mission.date</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1.readers.Mission.dives"><code class="docutils literal notranslate"><span class="pre">Mission.dives</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1.readers.Mission.path"><code class="docutils literal notranslate"><span class="pre">Mission.path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1.readers.Mission.sn"><code class="docutils literal notranslate"><span class="pre">Mission.sn</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.discover_missions"><code class="docutils literal notranslate"><span class="pre">discover_missions()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.filter_files_by_profile"><code class="docutils literal notranslate"><span class="pre">filter_files_by_profile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.glider_sn_from_filename"><code class="docutils literal notranslate"><span class="pre">glider_sn_from_filename()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.is_root"><code class="docutils literal notranslate"><span class="pre">is_root()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.list_files"><code class="docutils literal notranslate"><span class="pre">list_files()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.load_basestation_files"><code class="docutils literal notranslate"><span class="pre">load_basestation_files()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.load_first_basestation_file"><code class="docutils literal notranslate"><span class="pre">load_first_basestation_file()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.load_sample_dataset"><code class="docutils literal notranslate"><span class="pre">load_sample_dataset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.log_repair"><code class="docutils literal notranslate"><span class="pre">log_repair()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.profnum_from_filename"><code class="docutils literal notranslate"><span class="pre">profnum_from_filename()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.repair_netcdf_time_metadata_inplace"><code class="docutils literal notranslate"><span class="pre">repair_netcdf_time_metadata_inplace()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.scan_and_repair_files"><code class="docutils literal notranslate"><span class="pre">scan_and_repair_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.readers.validate_filename"><code class="docutils literal notranslate"><span class="pre">validate_filename()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.plotters">plotters</a><ul>
@@ -198,8 +238,31 @@ LATITUDE_GPS, LONGITUDE_GPS, and TIME_GPS only when GPS information is available
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.convertOG1.apply_keep_variables">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">apply_keep_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#apply_keep_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.apply_keep_variables" title="Link to this definition"></a></dt>
+<dd><p>Subset the dataset to a science-variable allow-list, keeping OG1 essentials.</p>
+<p>The requested <code class="docutils literal notranslate"><span class="pre">keep</span></code> names are retained, plus every OG1-mandatory variable
+and the <code class="docutils literal notranslate"><span class="pre">_QC</span></code> companion of every kept variable. Dropped science variables are
+warned. Coordinates are retained by xarray.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The converted OG1 dataset.</p></li>
+<li><p><strong>keep</strong> (<em>list</em><em> of </em><em>str</em>) – Science variables the user asked to keep.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The subset dataset; every OG1-mandatory variable present in <code class="docutils literal notranslate"><span class="pre">ds</span></code> survives.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.convert_to_OG1">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">convert_to_OG1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_of_datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrib_to_append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#convert_to_OG1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.convert_to_OG1" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">convert_to_OG1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_of_datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">contributors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">institutions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">platform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'delayed'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#convert_to_OG1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.convert_to_OG1" title="Link to this definition"></a></dt>
 <dd><p>Convert Seaglider basestation datasets to OG1 format.
 Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
 concatenates the datasets, sorts by time, and applies attributes. Main conversion function that
@@ -209,7 +272,21 @@ and adds global attributes.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>list_of_datasets</strong> (<em>list</em><em> of </em><em>xarray.Dataset</em><em> or </em><em>xarray.Dataset</em>) – A list of xarray datasets or a single xarray dataset in basestation format.</p></li>
-<li><p><strong>contrib_to_append</strong> (<em>dict</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Dictionary containing additional contributor information to append. Default is None.</p></li>
+<li><p><strong>contributors</strong> (<em>sequence</em><em> of </em><em>dict</em><em>, </em><em>optional</em>) – Contributor records (<code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code> and optional <code class="docutils literal notranslate"><span class="pre">email</span></code>, <code class="docutils literal notranslate"><span class="pre">orcid</span></code>)
+merged with those already on the files. When None, contributors come from
+the files’ own attributes; no package default is applied. Default is None.</p></li>
+<li><p><strong>institutions</strong> (<em>sequence</em><em> of </em><em>dict</em><em>, </em><em>optional</em>) – Institution records (<code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code> and optional <code class="docutils literal notranslate"><span class="pre">id</span></code>) merged with
+those on the files and resolved against the EDMO registry. Default is None.</p></li>
+<li><p><strong>platform</strong> (<em>dict</em><em> of </em><em>str to object</em><em>, </em><em>optional</em>) – Platform fields from the mission config (<code class="docutils literal notranslate"><span class="pre">PLATFORM_SERIAL_NUMBER</span></code>,
+<code class="docutils literal notranslate"><span class="pre">PLATFORM_MODEL</span></code>, <code class="docutils literal notranslate"><span class="pre">PLATFORM_MAKER</span></code>, <code class="docutils literal notranslate"><span class="pre">PLATFORM_DEPTH_RATING</span></code>,
+<code class="docutils literal notranslate"><span class="pre">GLIDER_FIRMWARE_VERSION</span></code>, <code class="docutils literal notranslate"><span class="pre">LANDSTATION_VERSION</span></code>, <code class="docutils literal notranslate"><span class="pre">WMO_IDENTIFIER</span></code>,
+<code class="docutils literal notranslate"><span class="pre">platform_model_vocabulary</span></code>). Config values override file-derived ones.
+Default is None.</p></li>
+<li><p><strong>global_attributes</strong> (<em>dict</em><em> of </em><em>str to object</em><em>, </em><em>optional</em>) – Global attributes written verbatim into the output (nulls skipped). A key
+that collides with a converter-derived global raises. Default is None.</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) – Data mode, <code class="docutils literal notranslate"><span class="pre">&quot;delayed&quot;</span></code> (default) or <code class="docutils literal notranslate"><span class="pre">&quot;realtime&quot;</span></code>. Sets the <code class="docutils literal notranslate"><span class="pre">id</span></code>
+suffix (<code class="docutils literal notranslate"><span class="pre">delayed</span></code> or <code class="docutils literal notranslate"><span class="pre">R</span></code>) and so the output filename, per the OG1
+manual, which defines no separate data-mode attribute. Default is “delayed”.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -306,22 +383,30 @@ and other variables like <cite>magnetic_variation</cite>.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.get_contributors">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">get_contributors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values_to_append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#get_contributors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.get_contributors" title="Link to this definition"></a></dt>
-<dd><p>Extract and format contributor information for OG1 attributes.</p>
-<p>Processes creator and contributor information from dataset attributes,
-formats them as comma-separated strings, and handles institution mapping.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">get_contributors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">people</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">institutions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#get_contributors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.get_contributors" title="Link to this definition"></a></dt>
+<dd><p>Build OG1 contributor and institution attributes.</p>
+<p>Contributors and institutions already on the dataset (<code class="docutils literal notranslate"><span class="pre">creator_*</span></code>,
+<code class="docutils literal notranslate"><span class="pre">contributor_*</span></code> and the basestation <code class="docutils literal notranslate"><span class="pre">institution</span></code> string) are parsed into
+records, the mission config’s <code class="docutils literal notranslate"><span class="pre">people</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> are appended,
+duplicates are consolidated on (name, role) with empty-role fill-in,
+institutions are resolved against the EDMO registry, and everything is
+formatted once into aligned comma-separated lists. No role or EDMO id is ever
+invented; gaps are warned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – Dataset containing original contributor attributes.</p></li>
-<li><p><strong>values_to_append</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional contributor information to append.</p></li>
+<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – Dataset carrying the source contributor/institution attributes.</p></li>
+<li><p><strong>people</strong> (<em>sequence</em><em> of </em><em>dict</em><em>, </em><em>optional</em>) – Config contributor records (<code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code> and optional <code class="docutils literal notranslate"><span class="pre">email</span></code>,
+<code class="docutils literal notranslate"><span class="pre">orcid</span></code>). Default is None.</p></li>
+<li><p><strong>institutions</strong> (<em>sequence</em><em> of </em><em>dict</em><em>, </em><em>optional</em>) – Config institution records (<code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code> and optional <code class="docutils literal notranslate"><span class="pre">id</span></code>).
+Default is None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Dictionary with formatted contributor attribute strings.</p>
+<dd class="field-even"><p>The <code class="docutils literal notranslate"><span class="pre">contributor_*</span></code> and <code class="docutils literal notranslate"><span class="pre">contributing_institutions*</span></code> attributes.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
+<dd class="field-odd"><p>dict of str to str</p>
 </dd>
 </dl>
 </dd></dl>
@@ -469,7 +554,7 @@ Default is vocabularies.unit_str_format.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.update_dataset_attributes">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">update_dataset_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrib_to_append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#update_dataset_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.update_dataset_attributes" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">update_dataset_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">people</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">institutions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#update_dataset_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.update_dataset_attributes" title="Link to this definition"></a></dt>
 <dd><p>Update the attributes of the dataset based on the provided attribute input.</p>
 <p>Processes contributor information, time attributes, and applies OG1
 global attribute vocabulary in the correct order.</p>
@@ -477,7 +562,8 @@ global attribute vocabulary in the correct order.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The input dataset whose attributes need to be updated.</p></li>
-<li><p><strong>contrib_to_append</strong> (<em>dict</em><em> of </em><em>str</em><em> or </em><em>None</em>) – A dictionary containing additional contributor information to append. Default is None.</p></li>
+<li><p><strong>people</strong> (<em>sequence</em><em> of </em><em>dict</em><em>, </em><em>optional</em>) – Config contributor records to merge with the dataset’s own. Default is None.</p></li>
+<li><p><strong>institutions</strong> (<em>sequence</em><em> of </em><em>dict</em><em>, </em><em>optional</em>) – Config institution records to merge with the dataset’s own. Default is None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -508,14 +594,391 @@ throughout the conversion process.</p>
 - OG1_vocab_attrs.yaml: Variable attribute vocabularies
 - OG1_sensor_attrs.yaml: Sensor attribute definitions
 - OG1_global_attrs.yaml: Global attribute configurations
-- OG1_author.yaml: Default author/contributor information</p>
+- OG1_author.yaml: Example contributor information, loaded on demand via</p>
+<blockquote>
+<div><p><a class="reference internal" href="#seagliderOG1.vocabularies.load_default_contributors" title="seagliderOG1.vocabularies.load_default_contributors"><code class="xref py py-func docutils literal notranslate"><span class="pre">load_default_contributors()</span></code></a> (never at import)</p>
+</div></blockquote>
 <p class="rubric">Notes</p>
 <p>This module is primarily data-driven and loads most configuration from YAML files
 in the config/ directory. The YAML-based approach allows easy modification of
 OG1 format requirements without code changes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="seagliderOG1.vocabularies.PlatformField">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">seagliderOG1.vocabularies.</span></span><span class="sig-name descname"><span class="pre">PlatformField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formatter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/vocabularies.html#PlatformField"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.vocabularies.PlatformField" title="Link to this definition"></a></dt>
+<dd><p>How one OG1 platform field is sourced and written.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>str</em><em> or </em><em>None</em>) – Basestation global attribute the value derives from, or None when the
+field is config-only (no file fallback).</p></li>
+<li><p><strong>formatter</strong> (<em>callable</em><em> or </em><em>None</em>) – Applied to the file value before use; None when there is no file source.</p></li>
+<li><p><strong>required</strong> (<em>bool</em>) – When True, a null in the mission config is a validate ERROR rather than a
+silent default written into the output.</p></li>
+<li><p><strong>kind</strong> (<em>str</em>) – How <code class="docutils literal notranslate"><span class="pre">convert_to_OG1</span></code> writes an unset field: <code class="docutils literal notranslate"><span class="pre">&quot;serial&quot;</span></code> names the
+output and raises when absent, <code class="docutils literal notranslate"><span class="pre">&quot;string&quot;</span></code> warns and writes <code class="docutils literal notranslate"><span class="pre">&quot;UNK&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;numeric&quot;</span></code> is omitted.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="seagliderOG1.vocabularies.PlatformField.formatter">
+<span class="sig-name descname"><span class="pre">formatter</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#seagliderOG1.vocabularies.PlatformField.formatter" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="seagliderOG1.vocabularies.PlatformField.kind">
+<span class="sig-name descname"><span class="pre">kind</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#seagliderOG1.vocabularies.PlatformField.kind" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="seagliderOG1.vocabularies.PlatformField.required">
+<span class="sig-name descname"><span class="pre">required</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#seagliderOG1.vocabularies.PlatformField.required" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="seagliderOG1.vocabularies.PlatformField.source">
+<span class="sig-name descname"><span class="pre">source</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#seagliderOG1.vocabularies.PlatformField.source" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.vocabularies.load_default_contributors">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.vocabularies.</span></span><span class="sig-name descname"><span class="pre">load_default_contributors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/vocabularies.html#load_default_contributors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.vocabularies.load_default_contributors" title="Link to this definition"></a></dt>
+<dd><p>Load the example contributor block from <code class="docutils literal notranslate"><span class="pre">config/OG1_author.yaml</span></code>.</p>
+<p>Not loaded at import: a converted file gains contributor details only when a
+caller passes them to <a class="reference internal" href="#seagliderOG1.convertOG1.convert_to_OG1" title="seagliderOG1.convertOG1.convert_to_OG1"><code class="xref py py-func docutils literal notranslate"><span class="pre">seagliderOG1.convertOG1.convert_to_OG1()</span></code></a>. The
+file is an editable example, not a default identity written into every output.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Contributor attributes read from <code class="docutils literal notranslate"><span class="pre">OG1_author.yaml</span></code>.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict of str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.vocabularies.platform_from_file">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.vocabularies.</span></span><span class="sig-name descname"><span class="pre">platform_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/seagliderOG1/vocabularies.html#platform_from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.vocabularies.platform_from_file" title="Link to this definition"></a></dt>
+<dd><p>Derive OG1 platform fields from a basestation file’s global attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>attrs</strong> (<em>dict</em>) – The first basestation file’s global attributes.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The OG1 platform fields derivable from the file (only those whose source
+attribute is present).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-seagliderOG1.contributors">
+<span id="contributors"></span><h2>contributors<a class="headerlink" href="#module-seagliderOG1.contributors" title="Link to this heading"></a></h2>
+<p>Contributor and institution attributes for OG1, as comma-aligned lists.</p>
+<p>OG1 records contributors as parallel comma-separated attributes — <code class="docutils literal notranslate"><span class="pre">contributor_name</span></code>,
+<code class="docutils literal notranslate"><span class="pre">contributor_email</span></code>, <code class="docutils literal notranslate"><span class="pre">contributor_id</span></code>, <code class="docutils literal notranslate"><span class="pre">contributor_role</span></code> and
+<code class="docutils literal notranslate"><span class="pre">contributor_role_vocabulary</span></code> — one slot per person, empty slots preserved so the
+lists stay aligned (three people with one email give <code class="docutils literal notranslate"><span class="pre">&quot;a&#64;x,</span> <span class="pre">,</span> <span class="pre">c&#64;z&quot;</span></code>). Institutions
+are a separate parallel set (<code class="docutils literal notranslate"><span class="pre">contributing_institutions</span></code> and its <code class="docutils literal notranslate"><span class="pre">_role</span></code>,
+<code class="docutils literal notranslate"><span class="pre">_vocabulary</span></code> and <code class="docutils literal notranslate"><span class="pre">_role_vocabulary</span></code>).</p>
+<p>This module parses those attributes into records and formats records back, without
+dropping interior empties, deduping within a field, or rewriting commas inside a
+value. One role per slot: a person with two roles is listed twice.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.consolidate">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">consolidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">records</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Mapping</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#consolidate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.consolidate" title="Link to this definition"></a></dt>
+<dd><p>Merge records on (normalised name, role), filling empty fields.</p>
+<p>Same person/institution with the same role from two sources becomes one slot,
+its empty email/id filled from the duplicate. Two different roles stay two
+slots. A role-less record merges into a same-name record that has a role (in
+either order); a role is never invented and two roles are never combined.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>records</strong> (<em>sequence</em><em> of </em><em>Mapping</em>) – Records with at least <code class="docutils literal notranslate"><span class="pre">name</span></code> and <code class="docutils literal notranslate"><span class="pre">role</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Consolidated records, order preserved by first appearance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of dict of str to str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.enrich_institutions">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">enrich_institutions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">institutions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Mapping</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#enrich_institutions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.enrich_institutions" title="Link to this definition"></a></dt>
+<dd><p>Resolve institution names against the EDMO registry.</p>
+<p>A name (whitespace-collapsed) matched in the registry is written as the
+registry <code class="docutils literal notranslate"><span class="pre">standard_name</span></code> with the EDMO URL; a config <code class="docutils literal notranslate"><span class="pre">id</span></code> wins over the
+registry. An unmatched name is written as given (a comma replaced by a space,
+with a warning) and no EDMO id (also warned); nothing is invented.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>institutions</strong> (<em>sequence</em><em> of </em><em>Mapping</em>) – Records with <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code> and optional <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Records with <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code> and <code class="docutils literal notranslate"><span class="pre">id</span></code> resolved for formatting.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of dict of str to str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.format_contributors">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">format_contributors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">people</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Mapping</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#format_contributors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.format_contributors" title="Link to this definition"></a></dt>
+<dd><p>Format person records into the five aligned <code class="docutils literal notranslate"><span class="pre">contributor_*</span></code> attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>people</strong> (<em>sequence</em><em> of </em><em>Mapping</em>) – Records with <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">email</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code> and either <code class="docutils literal notranslate"><span class="pre">id</span></code> or <code class="docutils literal notranslate"><span class="pre">orcid</span></code>;
+an explicit <code class="docutils literal notranslate"><span class="pre">role_vocabulary</span></code> overrides the role-derived one.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The five <code class="docutils literal notranslate"><span class="pre">contributor_*</span></code> attributes, each a <code class="docutils literal notranslate"><span class="pre">&quot;,</span> <span class="pre">&quot;</span></code>-joined aligned list.
+Empty when <code class="docutils literal notranslate"><span class="pre">people</span></code> is empty.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict of str to str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.format_institutions">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">format_institutions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">institutions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Mapping</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#format_institutions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.format_institutions" title="Link to this definition"></a></dt>
+<dd><p>Format institution records into the four <code class="docutils literal notranslate"><span class="pre">contributing_institutions*</span></code> attrs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>institutions</strong> (<em>sequence</em><em> of </em><em>Mapping</em>) – Records with <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code> and <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The four aligned <code class="docutils literal notranslate"><span class="pre">contributing_institutions*</span></code> attributes; empty when
+<code class="docutils literal notranslate"><span class="pre">institutions</span></code> is empty.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict of str to str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.load_institution_registry">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">load_institution_registry</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#load_institution_registry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.load_institution_registry" title="Link to this definition"></a></dt>
+<dd><p>Build a name lookup from the EDMO institution registry.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Maps each normalised standard name and name variant to its
+<code class="docutils literal notranslate"><span class="pre">(standard_name,</span> <span class="pre">id_url)</span></code>.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict of str to (str, str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.normalize_orcid">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">normalize_orcid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#normalize_orcid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.normalize_orcid" title="Link to this definition"></a></dt>
+<dd><p>Return an ORCID as a full <code class="docutils literal notranslate"><span class="pre">https://orcid.org/…</span></code> URL, or <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> when absent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<em>object</em>) – A bare ORCID, a full ORCID URL, or None/empty.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The normalised URL; an existing <code class="docutils literal notranslate"><span class="pre">http</span></code> value is kept; empty stays <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.normalize_role">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">normalize_role</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#normalize_role"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.normalize_role" title="Link to this definition"></a></dt>
+<dd><p>Return the preferred W08 label for a role.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>role</strong> (<em>str</em>) – The role label as given (any case), a known spelling variant, or empty.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The preferred W08 label; <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> for an empty (role-less) value; <code class="docutils literal notranslate"><span class="pre">None</span></code>
+when the role is not a W08 term or attested alias (caller decides whether
+that is a config error or a file-derived passthrough).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.parse_contributors">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">parse_contributors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#parse_contributors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.parse_contributors" title="Link to this definition"></a></dt>
+<dd><p>Parse <code class="docutils literal notranslate"><span class="pre">creator_*</span></code> then <code class="docutils literal notranslate"><span class="pre">contributor_*</span></code> attributes into person records.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>attrs</strong> (<em>Mapping</em>) – A dataset’s global attributes.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Records with <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">email</span></code>, <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code> and <code class="docutils literal notranslate"><span class="pre">role_vocabulary</span></code>,
+creators first.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of dict of str to str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.parse_institutions">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">parse_institutions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#parse_institutions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.parse_institutions" title="Link to this definition"></a></dt>
+<dd><p>Parse <code class="docutils literal notranslate"><span class="pre">contributing_institutions*</span></code> attributes into institution records.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>attrs</strong> (<em>Mapping</em>) – A dataset’s global attributes.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Records with <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code> and <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of dict of str to str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.registry_institutions">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">registry_institutions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#registry_institutions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.registry_institutions" title="Link to this definition"></a></dt>
+<dd><p>Read the EDMO institution registry, keyed by EDMO code.</p>
+<p>Cached: the registry is a read-only package data file, so the YAML is parsed
+once per process even when every mission in a run resolves institutions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>EDMO code -&gt; registry entry (<code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, <code class="docutils literal notranslate"><span class="pre">name_variants</span></code>, …).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict of str to dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.role_vocabulary">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">role_vocabulary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#role_vocabulary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.role_vocabulary" title="Link to this definition"></a></dt>
+<dd><p>Return the W08 term URI for a contributor or institution role.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>role</strong> (<em>str</em>) – The role label (any case) or a known spelling variant.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The term URI from <code class="xref py py-data docutils literal notranslate"><span class="pre">vocabularies.ROLE_VOCABULARY</span></code>; <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> for an empty
+or unrecognised role (an unrecognised role is never given a URL).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.contributors.split_aligned">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.contributors.</span></span><span class="sig-name descname"><span class="pre">split_aligned</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/contributors.html#split_aligned"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.contributors.split_aligned" title="Link to this definition"></a></dt>
+<dd><p>Split a comma-separated OG1 attribute into stripped parts, keeping empties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<em>object</em>) – The attribute value (string, or None/empty for an absent attribute).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One stripped element per comma-separated slot; <code class="docutils literal notranslate"><span class="pre">[]</span></code> when absent. Interior
+and trailing empties are preserved (<code class="docutils literal notranslate"><span class="pre">&quot;a,</span> <span class="pre">,</span> <span class="pre">c&quot;</span></code> becomes <code class="docutils literal notranslate"><span class="pre">[&quot;a&quot;,</span> <span class="pre">&quot;&quot;,</span> <span class="pre">&quot;c&quot;]</span></code>).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of str</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-seagliderOG1.readers">
 <span id="readers"></span><h2>readers<a class="headerlink" href="#module-seagliderOG1.readers" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="seagliderOG1.readers.Mission">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">Mission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dives</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/readers.html#Mission"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.Mission" title="Link to this definition"></a></dt>
+<dd><p>A discovered Seaglider mission (a directory of basestation files).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sn</strong> (<em>int</em>) – Glider serial number, from the basestation filenames.</p></li>
+<li><p><strong>date</strong> (<em>str</em><em> or </em><em>None</em>) – The <code class="docutils literal notranslate"><span class="pre">DATE</span></code> directory name when discovered under a <code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> root,
+else None for a directory passed directly.</p></li>
+<li><p><strong>path</strong> (<em>str</em>) – The mission directory holding the <code class="docutils literal notranslate"><span class="pre">pSSSDDDD*.nc</span></code> files.</p></li>
+<li><p><strong>dives</strong> (<em>list</em><em> of </em><em>int</em>) – Sorted dive numbers present in the directory.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="seagliderOG1.readers.Mission.date">
+<span class="sig-name descname"><span class="pre">date</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#seagliderOG1.readers.Mission.date" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="seagliderOG1.readers.Mission.dives">
+<span class="sig-name descname"><span class="pre">dives</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#seagliderOG1.readers.Mission.dives" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="seagliderOG1.readers.Mission.path">
+<span class="sig-name descname"><span class="pre">path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#seagliderOG1.readers.Mission.path" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="seagliderOG1.readers.Mission.sn">
+<span class="sig-name descname"><span class="pre">sn</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#seagliderOG1.readers.Mission.sn" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.readers.discover_missions">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">discover_missions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#seagliderOG1.readers.Mission" title="seagliderOG1.readers.Mission"><span class="pre">Mission</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#discover_missions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.discover_missions" title="Link to this definition"></a></dt>
+<dd><p>Discover Seaglider missions under a directory.</p>
+<p>A directory holding basestation files (<code class="docutils literal notranslate"><span class="pre">pSSSDDDD*.nc</span></code>) directly is one
+mission. A directory whose second-level <code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> subdirectories hold such
+files is a root: one mission per <code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> directory. Discovery is the same
+rule the CLI and notebooks share.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>source</strong> (<em>str</em>) – A mission directory, or a root of <code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> mission directories.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One entry per mission, sorted by path. Empty when nothing is found.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of <a class="reference internal" href="#seagliderOG1.readers.Mission" title="seagliderOG1.readers.Mission">Mission</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">source</span></code> is not an existing directory.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.readers.filter_files_by_profile">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">filter_files_by_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#filter_files_by_profile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.filter_files_by_profile" title="Link to this definition"></a></dt>
@@ -538,6 +1001,47 @@ glider serial number and YYYY is the 4-digit dive cycle number.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list of str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.readers.glider_sn_from_filename">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">glider_sn_from_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#glider_sn_from_filename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.glider_sn_from_filename" title="Link to this definition"></a></dt>
+<dd><p>Extract the glider serial number from a Seaglider filename.</p>
+<p>Extracts characters 1-3 (0-indexed) which represent the 3-digit glider
+serial number in filenames like p0420001.nc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – Seaglider filename to parse.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The glider serial number.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.readers.is_root">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">is_root</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">missions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#seagliderOG1.readers.Mission" title="seagliderOG1.readers.Mission"><span class="pre">Mission</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#is_root"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.is_root" title="Link to this definition"></a></dt>
+<dd><p>Return True when <code class="docutils literal notranslate"><span class="pre">missions</span></code> came from a root of <code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> directories.</p>
+<p>A single mission directory yields one mission with <code class="docutils literal notranslate"><span class="pre">date</span></code> None; a root yields
+one per <code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> subdirectory, each with a <code class="docutils literal notranslate"><span class="pre">date</span></code>. The presence of any dated
+mission is therefore the root/single distinction, in one place for the callers
+that branch on it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>missions</strong> (<em>list</em><em> of </em><a class="reference internal" href="#seagliderOG1.readers.Mission" title="seagliderOG1.readers.Mission"><em>Mission</em></a>) – Missions as returned by <a class="reference internal" href="#seagliderOG1.readers.discover_missions" title="seagliderOG1.readers.discover_missions"><code class="xref py py-func docutils literal notranslate"><span class="pre">discover_missions()</span></code></a>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if any mission carries a <code class="docutils literal notranslate"><span class="pre">date</span></code> (a root), False for a single mission
+directory or an empty list.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -570,7 +1074,7 @@ For local sources, lists files in the directory.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.readers.load_basestation_files">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">load_basestation_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#load_basestation_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.load_basestation_files" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">load_basestation_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repair</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#load_basestation_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.load_basestation_files" title="Link to this definition"></a></dt>
 <dd><p>Load multiple Seaglider basestation files with optional profile filtering.</p>
 <p>Main function for loading Seaglider data from either online repositories
 or local directories. Supports filtering by dive/profile number range.</p>
@@ -580,6 +1084,9 @@ or local directories. Supports filtering by dive/profile number range.</p>
 <li><p><strong>source</strong> (<em>str</em>) – Directory path containing Seaglider NetCDF files.</p></li>
 <li><p><strong>start_profile</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum profile number to load.</p></li>
 <li><p><strong>end_profile</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum profile number to load.</p></li>
+<li><p><strong>repair</strong> (<em>bool</em><em>, </em><em>optional</em>) – When True, run <a class="reference internal" href="#seagliderOG1.readers.scan_and_repair_files" title="seagliderOG1.readers.scan_and_repair_files"><code class="xref py py-func docutils literal notranslate"><span class="pre">scan_and_repair_files()</span></code></a> first (it rewrites files with
+inconsistent time metadata in the source tree). Default False: the source
+tree is never modified unless explicitly asked.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -638,6 +1145,25 @@ datasets in the registry. Default is “p0330015_20100906.nc”.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.readers.profnum_from_filename">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">profnum_from_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#profnum_from_filename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.profnum_from_filename" title="Link to this definition"></a></dt>
+<dd><p>Extract the profile/dive number from a Seaglider filename.</p>
+<p>Extracts characters 4-7 (0-indexed) which represent the dive cycle number
+in filenames like p0420001.nc or p0420001_20100903.nc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – Seaglider filename to parse.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The profile/dive number.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.readers.repair_netcdf_time_metadata_inplace">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">repair_netcdf_time_metadata_inplace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repair_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backup</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#repair_netcdf_time_metadata_inplace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.repair_netcdf_time_metadata_inplace" title="Link to this definition"></a></dt>
 <dd><p>Repair variables stored as text but mislabeled as CF time variables.</p>
@@ -659,6 +1185,27 @@ replaces the original file.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.readers.validate_filename">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">validate_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#validate_filename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.validate_filename" title="Link to this definition"></a></dt>
+<dd><p>Validate if filename matches expected Seaglider basestation patterns.</p>
+<p>Validates against two expected patterns:
+1. p1234567.nc (7 digits after ‘p’)
+2. p0420100_20100903.nc (7 digits, underscore, 8 digits)</p>
+<p>Also validates that both glider serial number and profile number are positive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – The filename to validate.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if filename matches expected pattern and has valid numbers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>

@@ -47,6 +47,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../about.html">About seagliderOG1</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../setup.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">Command-line interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
@@ -826,13 +827,17 @@
     <span class="c1"># 3. Assign 'sensor' attribute to sensor-specific variables</span>
     <span class="c1"># -------------------------------------------------------------------------</span>
     <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">mapping</span> <span class="ow">in</span> <span class="n">OG1_mapping</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
-        <span class="n">og1_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="s2">"OG1_name"</span><span class="p">])</span>
+        <span class="n">og1_name</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="s2">"OG1_name"</span><span class="p">]</span>
         <span class="n">instrument</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="s2">"instrument"</span><span class="p">]</span>
 
-        <span class="c1"># if the instrument is nan, skip this iteration</span>
-        <span class="k">if</span> <span class="n">og1_name</span> <span class="o">==</span> <span class="s2">"nan"</span> <span class="ow">or</span> <span class="n">instrument</span> <span class="o">==</span> <span class="s2">"nan"</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">instrument</span><span class="p">):</span>
+        <span class="c1"># Skip rows with no OG1 variable or no instrument. OG1_name is None when</span>
+        <span class="c1"># the original variable has no OG1 mapping; pandas stores that as None or</span>
+        <span class="c1"># NaN, so the old str()=="nan" guard let None through and ds_og1["None"]</span>
+        <span class="c1"># raised KeyError. pd.isna covers both, as elsewhere in this module.</span>
+        <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">og1_name</span><span class="p">)</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">instrument</span><span class="p">):</span>
             <span class="k">continue</span>
 
+        <span class="n">og1_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">og1_name</span><span class="p">)</span>
         <span class="n">sensor_type</span> <span class="o">=</span> <span class="n">sensor_dict</span><span class="p">[</span><span class="n">instrument</span><span class="p">][</span><span class="s2">"sensor_type"</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="s2">"_"</span><span class="p">)</span>
         <span class="n">serial</span> <span class="o">=</span> <span class="n">sensor_dict</span><span class="p">[</span><span class="n">instrument</span><span class="p">][</span><span class="s2">"sensor_serial_number"</span><span class="p">]</span>
         <span class="n">ds_og1</span><span class="p">[</span><span class="n">og1_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"sensor"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"SENSOR_</span><span class="si">{</span><span class="n">sensor_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">serial</span><span class="si">}</span><span class="s2">"</span>

@@ -47,6 +47,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../about.html">About seagliderOG1</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../setup.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">Command-line interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
@@ -143,6 +144,19 @@
 <span class="sd">        True if the dataset was saved successfully, False otherwise.</span>
 <span class="sd">    """</span>
     <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Refuse None-valued attributes by name rather than letting the stringify</span>
+    <span class="c1"># retry below turn them into the literal "None".</span>
+    <span class="n">none_attrs</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">none_attrs</span> <span class="o">+=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">for</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">var</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">none_attrs</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"refusing to write None-valued attribute(s): </span><span class="si">{</span><span class="n">none_attrs</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
     <span class="c1"># Handle existing file</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_file</span><span class="p">):</span>

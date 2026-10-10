@@ -47,6 +47,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../about.html">About seagliderOG1</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../setup.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">Command-line interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
@@ -88,6 +89,8 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
@@ -175,7 +178,9 @@
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_validate_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="validate_filename">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.validate_filename">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Validate if filename matches expected Seaglider basestation patterns.</span>
 
 <span class="sd">    Validates against two expected patterns:</span>
@@ -200,17 +205,20 @@
     <span class="c1"># pattern 2: p0420100_20100903.nc</span>
     <span class="n">pattern2</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"^p\d</span><span class="si">{7}</span><span class="s2">_\d</span><span class="si">{8}</span><span class="s2">\.nc$"</span>
     <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern1</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> <span class="ow">or</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern2</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="n">glider_sn</span> <span class="o">=</span> <span class="n">_glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-        <span class="n">divenum</span> <span class="o">=</span> <span class="n">_profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">glider_sn</span> <span class="o">=</span> <span class="n">glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">divenum</span> <span class="o">=</span> <span class="n">profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">glider_sn</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">divenum</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+
+<div class="viewcode-block" id="profnum_from_filename">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.profnum_from_filename">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Extract the profile/dive number from a Seaglider filename.</span>
 
 <span class="sd">    Extracts characters 4-7 (0-indexed) which represent the dive cycle number</span>
@@ -227,10 +235,13 @@
 <span class="sd">        The profile/dive number.</span>
 
 <span class="sd">    """</span>
-    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">8</span><span class="p">])</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">8</span><span class="p">])</span></div>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+
+<div class="viewcode-block" id="glider_sn_from_filename">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.glider_sn_from_filename">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Extract the glider serial number from a Seaglider filename.</span>
 
 <span class="sd">    Extracts characters 1-3 (0-indexed) which represent the 3-digit glider</span>
@@ -247,7 +258,147 @@
 <span class="sd">        The glider serial number.</span>
 
 <span class="sd">    """</span>
-    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="Mission">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.Mission">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Mission</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A discovered Seaglider mission (a directory of basestation files).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sn : int</span>
+<span class="sd">        Glider serial number, from the basestation filenames.</span>
+<span class="sd">    date : str or None</span>
+<span class="sd">        The ``DATE`` directory name when discovered under a ``SN/DATE`` root,</span>
+<span class="sd">        else None for a directory passed directly.</span>
+<span class="sd">    path : str</span>
+<span class="sd">        The mission directory holding the ``pSSSDDDD*.nc`` files.</span>
+<span class="sd">    dives : list of int</span>
+<span class="sd">        Sorted dive numbers present in the directory.</span>
+
+<span class="sd">    """</span>
+
+    <span class="n">sn</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">dives</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_mission_dives</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return (serial number, sorted dive numbers) for a mission directory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    directory : pathlib.Path</span>
+<span class="sd">        Directory to inspect for basestation files.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple of (int, list of int) or None</span>
+<span class="sd">        The glider serial number and sorted dive numbers, or None when the</span>
+<span class="sd">        directory holds no basestation files.</span>
+
+<span class="sd">    """</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">directory</span><span class="o">.</span><span class="n">iterdir</span><span class="p">()</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">and</span> <span class="n">validate_filename</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">names</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">glider_sn_from_filename</span><span class="p">(</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="n">profnum_from_filename</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="discover_missions">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.discover_missions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">discover_missions</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Mission</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Discover Seaglider missions under a directory.</span>
+
+<span class="sd">    A directory holding basestation files (``pSSSDDDD*.nc``) directly is one</span>
+<span class="sd">    mission. A directory whose second-level ``SN/DATE`` subdirectories hold such</span>
+<span class="sd">    files is a root: one mission per ``SN/DATE`` directory. Discovery is the same</span>
+<span class="sd">    rule the CLI and notebooks share.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    source : str</span>
+<span class="sd">        A mission directory, or a root of ``SN/DATE`` mission directories.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of Mission</span>
+<span class="sd">        One entry per mission, sorted by path. Empty when nothing is found.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``source`` is not an existing directory.</span>
+
+<span class="sd">    """</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">root</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"source is not a directory: </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="c1"># Serial number always comes from the filenames, never the directory name.</span>
+    <span class="n">direct</span> <span class="o">=</span> <span class="n">_mission_dives</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">direct</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">Mission</span><span class="p">(</span><span class="n">sn</span><span class="o">=</span><span class="n">direct</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span><span class="p">),</span> <span class="n">dives</span><span class="o">=</span><span class="n">direct</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+
+    <span class="n">missions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Mission</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">sn_dir</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">iterdir</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()):</span>
+        <span class="k">for</span> <span class="n">date_dir</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">sn_dir</span><span class="o">.</span><span class="n">iterdir</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()):</span>
+            <span class="n">found</span> <span class="o">=</span> <span class="n">_mission_dives</span><span class="p">(</span><span class="n">date_dir</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">found</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">file_sn</span><span class="p">,</span> <span class="n">dives</span> <span class="o">=</span> <span class="n">found</span>
+            <span class="c1"># Trust the files; warn when the SN directory name disagrees.</span>
+            <span class="k">if</span> <span class="n">sn_dir</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">sn_dir</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">!=</span> <span class="n">file_sn</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"serial-number directory </span><span class="si">{</span><span class="n">sn_dir</span><span class="o">.</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> disagrees with the "</span>
+                    <span class="sa">f</span><span class="s2">"files' serial number </span><span class="si">{</span><span class="n">file_sn</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">date_dir</span><span class="si">}</span><span class="s2">; using the files'."</span><span class="p">,</span>
+                    <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">missions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">Mission</span><span class="p">(</span>
+                    <span class="n">sn</span><span class="o">=</span><span class="n">file_sn</span><span class="p">,</span>
+                    <span class="n">date</span><span class="o">=</span><span class="n">date_dir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">date_dir</span><span class="p">),</span>
+                    <span class="n">dives</span><span class="o">=</span><span class="n">dives</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">missions</span></div>
+
+
+
+<div class="viewcode-block" id="is_root">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.is_root">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_root</span><span class="p">(</span><span class="n">missions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Mission</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return True when ``missions`` came from a root of ``SN/DATE`` directories.</span>
+
+<span class="sd">    A single mission directory yields one mission with ``date`` None; a root yields</span>
+<span class="sd">    one per ``SN/DATE`` subdirectory, each with a ``date``. The presence of any dated</span>
+<span class="sd">    mission is therefore the root/single distinction, in one place for the callers</span>
+<span class="sd">    that branch on it.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    missions : list of Mission</span>
+<span class="sd">        Missions as returned by :func:`discover_missions`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        True if any mission carries a ``date`` (a root), False for a single mission</span>
+<span class="sd">        directory or an empty list.</span>
+
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">mission</span><span class="o">.</span><span class="n">date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">mission</span> <span class="ow">in</span> <span class="n">missions</span><span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="filter_files_by_profile">
@@ -284,14 +435,14 @@
 <span class="sd">    """</span>
     <span class="n">filtered_files</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="n">file_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">file_list</span> <span class="k">if</span> <span class="n">_validate_filename</span><span class="p">(</span><span class="n">f</span><span class="p">)]</span>
+    <span class="n">file_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">file_list</span> <span class="k">if</span> <span class="n">validate_filename</span><span class="p">(</span><span class="n">f</span><span class="p">)]</span>
 
     <span class="c1">#    divenum_values = [int(file[4:8]) for file in file_list]</span>
 
     <span class="c1"># This could be refactored: see divenum_values above, and find values between start_profile and end_profil</span>
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">file_list</span><span class="p">:</span>
         <span class="c1"># Extract the profile number from the filename now from the beginning</span>
-        <span class="n">profile_number</span> <span class="o">=</span> <span class="n">_profnum_from_filename</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">profile_number</span> <span class="o">=</span> <span class="n">profnum_from_filename</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">start_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">end_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">start_profile</span> <span class="o">&lt;=</span> <span class="n">profile_number</span> <span class="o">&lt;=</span> <span class="n">end_profile</span><span class="p">:</span>
                 <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
@@ -329,7 +480,7 @@
 <span class="sd">    """</span>
     <span class="n">file_list</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
     <span class="n">filename</span> <span class="o">=</span> <span class="n">file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">start_profile</span> <span class="o">=</span> <span class="n">_profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">start_profile</span> <span class="o">=</span> <span class="n">profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
     <span class="n">datasets</span> <span class="o">=</span> <span class="n">load_basestation_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
 
@@ -338,7 +489,10 @@
 <div class="viewcode-block" id="load_basestation_files">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_basestation_files">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_basestation_files</span><span class="p">(</span>
-    <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">start_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">end_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">repair</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Load multiple Seaglider basestation files with optional profile filtering.</span>
 
@@ -353,6 +507,10 @@
 <span class="sd">        Minimum profile number to load.</span>
 <span class="sd">    end_profile : int, optional</span>
 <span class="sd">        Maximum profile number to load.</span>
+<span class="sd">    repair : bool, optional</span>
+<span class="sd">        When True, run :func:`scan_and_repair_files` first (it rewrites files with</span>
+<span class="sd">        inconsistent time metadata in the source tree). Default False: the source</span>
+<span class="sd">        tree is never modified unless explicitly asked.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -360,8 +518,9 @@
 <span class="sd">        List of loaded basestation datasets, ordered by filename.</span>
 
 <span class="sd">    """</span>
-    <span class="c1">### Scan all basestation files and repair any with inconsistent time metadata before loading</span>
-    <span class="n">scan_and_repair_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">repair</span><span class="p">:</span>
+        <span class="c1"># Rewrites files with inconsistent time metadata in place; opt-in only.</span>
+        <span class="n">scan_and_repair_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">)</span>
 
     <span class="n">file_list</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
     <span class="n">filtered_files</span> <span class="o">=</span> <span class="n">filter_files_by_profile</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">)</span>

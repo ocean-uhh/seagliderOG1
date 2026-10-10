@@ -1,0 +1,176 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Command-line interface &mdash; seagliderOG1 v0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2fea6348"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="What’s in seagliderOG1 project?" href="project_structure.html" />
+    <link rel="prev" title="Installation" href="setup.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About seagliderOG1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Command-line interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#typical-workflow">Typical workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#verbs">Verbs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-mission-configuration">The mission configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">seagliderOG1 demo</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Help and reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/ocean-uhh/seagliderOG1">GitHub Repo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Command-line interface</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/cli.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="command-line-interface">
+<h1>Command-line interface<a class="headerlink" href="#command-line-interface" title="Link to this heading"></a></h1>
+<p>Installing the package provides a <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> command. It converts Seaglider
+basestation files to OG1 using a mission configuration you own (<code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>), so
+platform and contributor metadata belong to the mission rather than to the package.</p>
+<section id="typical-workflow">
+<h2>Typical workflow<a class="headerlink" href="#typical-workflow" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>seagliderOG1<span class="w"> </span>init<span class="w"> </span>--from<span class="w"> </span>/data/005/20080606<span class="w"> </span>-o<span class="w"> </span>sg005.yaml<span class="w">   </span><span class="c1"># template from the first file</span>
+seagliderOG1<span class="w"> </span>validate<span class="w"> </span>sg005.yaml<span class="w">                            </span><span class="c1"># config, source, dive range</span>
+seagliderOG1<span class="w"> </span>process<span class="w">  </span>sg005.yaml<span class="w">                            </span><span class="c1"># -&gt; &lt;output_dir&gt;/&lt;id&gt;.nc</span>
+</pre></div>
+</div>
+</section>
+<section id="verbs">
+<h2>Verbs<a class="headerlink" href="#verbs" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">[--from</span> <span class="pre">DIR]</span> <span class="pre">[-o</span> <span class="pre">PATH]</span> <span class="pre">[--force]</span></code></dt><dd><p>Write a commented <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>. <code class="docutils literal notranslate"><span class="pre">--from</span> <span class="pre">DIR</span></code> fills the <code class="docutils literal notranslate"><span class="pre">platform</span></code> block and
+<code class="docutils literal notranslate"><span class="pre">source</span></code> from the first basestation file in <code class="docutils literal notranslate"><span class="pre">DIR</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">validate</span> <span class="pre">CONFIG</span> <span class="pre">[--strict]</span></code></dt><dd><p>Check the configuration: known keys and types, that <code class="docutils literal notranslate"><span class="pre">source</span></code> exists and holds
+basestation files (a mission directory or a root of <code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> directories), the
+<code class="docutils literal notranslate"><span class="pre">dives</span></code> range, contributor and institution records (names comma-free, roles in the
+NERC W08 vocabulary, at least one <code class="docutils literal notranslate"><span class="pre">PI</span></code> contributor and one <code class="docutils literal notranslate"><span class="pre">Operator</span></code> institution).
+<code class="docutils literal notranslate"><span class="pre">--strict</span></code> also requires every dive in the range to be present. Exit 0 when valid,
+1 on any error.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">CONFIG</span> <span class="pre">[--source</span> <span class="pre">DIR_OR_ROOT]</span> <span class="pre">[--all</span> <span class="pre">|</span> <span class="pre">--mission</span> <span class="pre">GLOB]</span> <span class="pre">[-o</span> <span class="pre">DIR]</span> <span class="pre">[--mode</span> <span class="pre">realtime|delayed]</span> <span class="pre">[--dives</span> <span class="pre">FIRST</span> <span class="pre">LAST]</span> <span class="pre">[--force</span> <span class="pre">|</span> <span class="pre">--skip-existing]</span> <span class="pre">[-n]</span></code></dt><dd><p>Convert the mission(s) and write <code class="docutils literal notranslate"><span class="pre">&lt;output_dir&gt;/&lt;id&gt;.nc</span></code>. <code class="docutils literal notranslate"><span class="pre">--source</span></code> overrides the
+config; a root of <code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> missions needs <code class="docutils literal notranslate"><span class="pre">--all</span></code> or <code class="docutils literal notranslate"><span class="pre">--mission</span> <span class="pre">GLOB</span></code>. <code class="docutils literal notranslate"><span class="pre">--mode</span></code>
+sets the OG1 id data-mode suffix (<code class="docutils literal notranslate"><span class="pre">delayed</span></code> or <code class="docutils literal notranslate"><span class="pre">R</span></code>). Each mission is attempted
+independently; the run prints <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">converted,</span> <span class="pre">N</span> <span class="pre">skipped,</span> <span class="pre">N</span> <span class="pre">failed</span></code> and exits 1 on any
+failure. <code class="docutils literal notranslate"><span class="pre">-n</span></code> previews without writing.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">FILE</span> <span class="pre">[--attrs</span> <span class="pre">|</span> <span class="pre">--variables</span> <span class="pre">|</span> <span class="pre">--by-dimension</span> <span class="pre">DIM]</span></code></dt><dd><p>Print the file’s variables or attributes as a text table (basestation or OG1). An HTML
+inventory page (<code class="docutils literal notranslate"><span class="pre">-o</span></code>/<code class="docutils literal notranslate"><span class="pre">--title</span></code>) arrives with the <code class="docutils literal notranslate"><span class="pre">seagliderOG1[report]</span></code> extra.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">list</span> <span class="pre">{roles</span> <span class="pre">|</span> <span class="pre">institutions</span> <span class="pre">|</span> <span class="pre">missions}</span> <span class="pre">[PATH]</span></code></dt><dd><p>Print a registry: the NERC W08 contributor roles, the EDMO institution registry, or the
+missions discovered under <code class="docutils literal notranslate"><span class="pre">PATH</span></code>.</p>
+</dd>
+</dl>
+</section>
+<section id="the-mission-configuration">
+<h2>The mission configuration<a class="headerlink" href="#the-mission-configuration" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> is a file you keep with your data, not inside the package. <code class="docutils literal notranslate"><span class="pre">init</span></code> writes a
+commented template; the key blocks are <code class="docutils literal notranslate"><span class="pre">source</span></code>, <code class="docutils literal notranslate"><span class="pre">output_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">mode</span></code>, <code class="docutils literal notranslate"><span class="pre">dives</span></code>,
+<code class="docutils literal notranslate"><span class="pre">platform</span></code>, <code class="docutils literal notranslate"><span class="pre">global_attributes</span></code>, <code class="docutils literal notranslate"><span class="pre">contributors</span></code> (one entry per person per role, with a
+W08 <code class="docutils literal notranslate"><span class="pre">role:</span></code>) and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> (at least one with <code class="docutils literal notranslate"><span class="pre">role:</span> <span class="pre">Operator</span></code>). Paths resolve
+relative to the configuration file.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="setup.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="project_structure.html" class="btn btn-neutral float-right" title="What’s in seagliderOG1 project?" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

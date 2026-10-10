@@ -1,0 +1,585 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>seagliderOG1.contributors &mdash; seagliderOG1 v0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2fea6348"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="../../_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../about.html">About seagliderOG1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../setup.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">Command-line interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">seagliderOG1 demo</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Help and reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/ocean-uhh/seagliderOG1">GitHub Repo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">seagliderOG1.contributors</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for seagliderOG1.contributors</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Contributor and institution attributes for OG1, as comma-aligned lists.</span>
+
+<span class="sd">OG1 records contributors as parallel comma-separated attributes — ``contributor_name``,</span>
+<span class="sd">``contributor_email``, ``contributor_id``, ``contributor_role`` and</span>
+<span class="sd">``contributor_role_vocabulary`` — one slot per person, empty slots preserved so the</span>
+<span class="sd">lists stay aligned (three people with one email give ``"a@x, , c@z"``). Institutions</span>
+<span class="sd">are a separate parallel set (``contributing_institutions`` and its ``_role``,</span>
+<span class="sd">``_vocabulary`` and ``_role_vocabulary``).</span>
+
+<span class="sd">This module parses those attributes into records and formats records back, without</span>
+<span class="sd">dropping interior empties, deduping within a field, or rewriting commas inside a</span>
+<span class="sd">value. One role per slot: a person with two roles is listed twice.</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">vocabularies</span>
+
+<span class="n">_ORCID_PREFIX</span> <span class="o">=</span> <span class="s2">"https://orcid.org/"</span>
+<span class="n">_REGISTRY_PATH</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">config_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"institution_registry.yml"</span>
+
+<span class="n">_CONTRIBUTOR_ATTRS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="s2">"name"</span><span class="p">,</span> <span class="s2">"contributor_name"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"email"</span><span class="p">,</span> <span class="s2">"contributor_email"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"contributor_id"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"role"</span><span class="p">,</span> <span class="s2">"contributor_role"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"role_vocabulary"</span><span class="p">,</span> <span class="s2">"contributor_role_vocabulary"</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">_INSTITUTION_ATTRS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="s2">"name"</span><span class="p">,</span> <span class="s2">"contributing_institutions"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"role"</span><span class="p">,</span> <span class="s2">"contributing_institutions_role"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"contributing_institutions_vocabulary"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"role_vocabulary"</span><span class="p">,</span> <span class="s2">"contributing_institutions_role_vocabulary"</span><span class="p">),</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="split_aligned">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.split_aligned">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">split_aligned</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Split a comma-separated OG1 attribute into stripped parts, keeping empties.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : object</span>
+<span class="sd">        The attribute value (string, or None/empty for an absent attribute).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of str</span>
+<span class="sd">        One stripped element per comma-separated slot; ``[]`` when absent. Interior</span>
+<span class="sd">        and trailing empties are preserved (``"a, , c"`` becomes ``["a", "", "c"]``).</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">""</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)]</span></div>
+
+
+
+<div class="viewcode-block" id="normalize_orcid">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.normalize_orcid">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_orcid</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return an ORCID as a full ``https://orcid.org/…`` URL, or ``""`` when absent.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : object</span>
+<span class="sd">        A bare ORCID, a full ORCID URL, or None/empty.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        The normalised URL; an existing ``http`` value is kept; empty stays ``""``.</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"None"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">""</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">text</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"http"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">text</span>
+    <span class="k">return</span> <span class="n">_ORCID_PREFIX</span> <span class="o">+</span> <span class="n">text</span></div>
+
+
+
+<div class="viewcode-block" id="normalize_role">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.normalize_role">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_role</span><span class="p">(</span><span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the preferred W08 label for a role.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    role : str</span>
+<span class="sd">        The role label as given (any case), a known spelling variant, or empty.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str or None</span>
+<span class="sd">        The preferred W08 label; ``""`` for an empty (role-less) value; ``None``</span>
+<span class="sd">        when the role is not a W08 term or attested alias (caller decides whether</span>
+<span class="sd">        that is a config error or a file-derived passthrough).</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">role</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">role</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">return</span> <span class="s2">""</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">role</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">ROLE_VOCABULARY</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">key</span>
+    <span class="n">lowered</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">ROLE_VOCABULARY</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">label</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">lowered</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">label</span>
+    <span class="k">return</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">ROLE_ALIASES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lowered</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_preferred_role</span><span class="p">(</span><span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the preferred label for a known role, else the role unchanged."""</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="n">normalize_role</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">role</span> <span class="k">if</span> <span class="n">normalized</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">normalized</span>
+
+
+<div class="viewcode-block" id="role_vocabulary">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.role_vocabulary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">role_vocabulary</span><span class="p">(</span><span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the W08 term URI for a contributor or institution role.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    role : str</span>
+<span class="sd">        The role label (any case) or a known spelling variant.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        The term URI from :data:`vocabularies.ROLE_VOCABULARY`; ``""`` for an empty</span>
+<span class="sd">        or unrecognised role (an unrecognised role is never given a URL).</span>
+
+<span class="sd">    """</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="n">normalize_role</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">normalized</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">""</span>
+    <span class="k">return</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">ROLE_VOCABULARY</span><span class="p">[</span><span class="n">normalized</span><span class="p">]</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_records_from</span><span class="p">(</span>
+    <span class="n">attrs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Build aligned records from a mapping of comma-separated OG1 attributes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attrs : Mapping</span>
+<span class="sd">        Source attributes.</span>
+<span class="sd">    fields : sequence of (str, str)</span>
+<span class="sd">        Pairs of (record key, attribute name).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of dict of str to str</span>
+<span class="sd">        One record per name slot; trailing empty-name slots are dropped.</span>
+
+<span class="sd">    """</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">split_aligned</span><span class="p">(</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">))</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">}</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">columns</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span>
+    <span class="k">while</span> <span class="n">names</span> <span class="ow">and</span> <span class="n">names</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">""</span><span class="p">:</span>
+        <span class="n">names</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="n">records</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">"name"</span><span class="p">:</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">columns</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="n">record</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">column</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">column</span><span class="p">)</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">records</span>
+
+
+<div class="viewcode-block" id="parse_contributors">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.parse_contributors">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_contributors</span><span class="p">(</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Parse ``creator_*`` then ``contributor_*`` attributes into person records.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attrs : Mapping</span>
+<span class="sd">        A dataset's global attributes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of dict of str to str</span>
+<span class="sd">        Records with ``name``, ``email``, ``id``, ``role`` and ``role_vocabulary``,</span>
+<span class="sd">        creators first.</span>
+
+<span class="sd">    """</span>
+    <span class="n">creator_fields</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">attr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"contributor"</span><span class="p">,</span> <span class="s2">"creator"</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">_CONTRIBUTOR_ATTRS</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_records_from</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="n">creator_fields</span><span class="p">)</span> <span class="o">+</span> <span class="n">_records_from</span><span class="p">(</span>
+        <span class="n">attrs</span><span class="p">,</span> <span class="n">_CONTRIBUTOR_ATTRS</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="format_contributors">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.format_contributors">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">format_contributors</span><span class="p">(</span><span class="n">people</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Mapping</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Format person records into the five aligned ``contributor_*`` attributes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    people : sequence of Mapping</span>
+<span class="sd">        Records with ``name``, ``email``, ``role`` and either ``id`` or ``orcid``;</span>
+<span class="sd">        an explicit ``role_vocabulary`` overrides the role-derived one.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict of str to str</span>
+<span class="sd">        The five ``contributor_*`` attributes, each a ``", "``-joined aligned list.</span>
+<span class="sd">        Empty when ``people`` is empty.</span>
+
+<span class="sd">    """</span>
+    <span class="n">people</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">people</span> <span class="ow">or</span> <span class="p">[])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">people</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">people</span><span class="p">]</span>
+    <span class="n">emails</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"email"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">people</span><span class="p">]</span>
+    <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">normalize_orcid</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"orcid"</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">people</span>
+    <span class="p">]</span>
+    <span class="n">raw_roles</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">people</span><span class="p">]</span>
+    <span class="n">roles</span> <span class="o">=</span> <span class="p">[</span><span class="n">_preferred_role</span><span class="p">(</span><span class="n">role</span><span class="p">)</span> <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">raw_roles</span><span class="p">]</span>
+    <span class="n">vocabs</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role_vocabulary"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="n">role_vocabulary</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">role</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">people</span><span class="p">,</span> <span class="n">raw_roles</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"contributor_name"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">),</span>
+        <span class="s2">"contributor_email"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">emails</span><span class="p">),</span>
+        <span class="s2">"contributor_id"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ids</span><span class="p">),</span>
+        <span class="s2">"contributor_role"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">roles</span><span class="p">),</span>
+        <span class="s2">"contributor_role_vocabulary"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">vocabs</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="parse_institutions">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.parse_institutions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_institutions</span><span class="p">(</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Parse ``contributing_institutions*`` attributes into institution records.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attrs : Mapping</span>
+<span class="sd">        A dataset's global attributes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of dict of str to str</span>
+<span class="sd">        Records with ``name``, ``role`` and ``id``.</span>
+
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">_records_from</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="n">_INSTITUTION_ATTRS</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="format_institutions">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.format_institutions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">format_institutions</span><span class="p">(</span><span class="n">institutions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Mapping</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Format institution records into the four ``contributing_institutions*`` attrs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    institutions : sequence of Mapping</span>
+<span class="sd">        Records with ``name``, ``role`` and ``id``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict of str to str</span>
+<span class="sd">        The four aligned ``contributing_institutions*`` attributes; empty when</span>
+<span class="sd">        ``institutions`` is empty.</span>
+
+<span class="sd">    """</span>
+    <span class="n">institutions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">institutions</span> <span class="ow">or</span> <span class="p">[])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">institutions</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">institutions</span><span class="p">]</span>
+    <span class="n">raw_roles</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">institutions</span><span class="p">]</span>
+    <span class="n">roles</span> <span class="o">=</span> <span class="p">[</span><span class="n">_preferred_role</span><span class="p">(</span><span class="n">role</span><span class="p">)</span> <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">raw_roles</span><span class="p">]</span>
+    <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">""</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">institutions</span>
+    <span class="p">]</span>
+    <span class="n">vocabs</span> <span class="o">=</span> <span class="p">[</span><span class="n">role_vocabulary</span><span class="p">(</span><span class="n">role</span><span class="p">)</span> <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">raw_roles</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"contributing_institutions"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">),</span>
+        <span class="s2">"contributing_institutions_role"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">roles</span><span class="p">),</span>
+        <span class="s2">"contributing_institutions_vocabulary"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ids</span><span class="p">),</span>
+        <span class="s2">"contributing_institutions_role_vocabulary"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">vocabs</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_norm_name</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return a name with whitespace (and newlines) collapsed, stripped, lower-cased."""</span>
+    <span class="k">return</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fill</span><span class="p">(</span><span class="n">target</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Fill empty fields of ``target`` from ``source`` in place."""</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">target</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+
+<div class="viewcode-block" id="consolidate">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.consolidate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">consolidate</span><span class="p">(</span><span class="n">records</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Mapping</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Merge records on (normalised name, role), filling empty fields.</span>
+
+<span class="sd">    Same person/institution with the same role from two sources becomes one slot,</span>
+<span class="sd">    its empty email/id filled from the duplicate. Two different roles stay two</span>
+<span class="sd">    slots. A role-less record merges into a same-name record that has a role (in</span>
+<span class="sd">    either order); a role is never invented and two roles are never combined.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    records : sequence of Mapping</span>
+<span class="sd">        Records with at least ``name`` and ``role``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of dict of str to str</span>
+<span class="sd">        Consolidated records, order preserved by first appearance.</span>
+
+<span class="sd">    """</span>
+    <span class="n">result</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">original</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
+        <span class="c1"># Compare on the preferred role label so a file's "Principal investigator"</span>
+        <span class="c1"># and a config's "PI" are recognised as the same role and merged.</span>
+        <span class="n">record</span><span class="p">[</span><span class="s2">"role"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_preferred_role</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+        <span class="n">name_key</span> <span class="o">=</span> <span class="n">_norm_name</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">))</span>
+        <span class="n">role</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s2">"role"</span><span class="p">]</span>
+        <span class="n">merged</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">existing</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">_norm_name</span><span class="p">(</span><span class="n">existing</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">))</span> <span class="o">!=</span> <span class="n">name_key</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">existing_role</span> <span class="o">=</span> <span class="n">existing</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span>
+            <span class="k">if</span> <span class="n">existing_role</span> <span class="o">==</span> <span class="n">role</span><span class="p">:</span>
+                <span class="n">_fill</span><span class="p">(</span><span class="n">existing</span><span class="p">,</span> <span class="n">record</span><span class="p">)</span>
+                <span class="n">merged</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">role</span> <span class="o">==</span> <span class="s2">""</span> <span class="ow">and</span> <span class="n">existing_role</span> <span class="o">!=</span> <span class="s2">""</span><span class="p">:</span>
+                <span class="n">_fill</span><span class="p">(</span><span class="n">existing</span><span class="p">,</span> <span class="n">record</span><span class="p">)</span>
+                <span class="n">merged</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">role</span> <span class="o">!=</span> <span class="s2">""</span> <span class="ow">and</span> <span class="n">existing_role</span> <span class="o">==</span> <span class="s2">""</span><span class="p">:</span>
+                <span class="n">_fill</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">existing</span><span class="p">)</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">record</span>
+                <span class="n">merged</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">merged</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="registry_institutions">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.registry_institutions">[docs]</a>
+<span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">registry_institutions</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Read the EDMO institution registry, keyed by EDMO code.</span>
+
+<span class="sd">    Cached: the registry is a read-only package data file, so the YAML is parsed</span>
+<span class="sd">    once per process even when every mission in a run resolves institutions.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict of str to dict</span>
+<span class="sd">        EDMO code -&gt; registry entry (``standard_name``, ``name_variants``, …).</span>
+
+<span class="sd">    """</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_REGISTRY_PATH</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"institutions"</span><span class="p">,</span> <span class="p">{})</span></div>
+
+
+
+<div class="viewcode-block" id="load_institution_registry">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.load_institution_registry">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_institution_registry</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Build a name lookup from the EDMO institution registry.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict of str to (str, str)</span>
+<span class="sd">        Maps each normalised standard name and name variant to its</span>
+<span class="sd">        ``(standard_name, id_url)``.</span>
+
+<span class="sd">    """</span>
+    <span class="n">lookup</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">registry_institutions</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">standard</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s2">"standard_name"</span><span class="p">]</span>
+        <span class="n">id_url</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id_url"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="p">[</span><span class="n">standard</span><span class="p">,</span> <span class="o">*</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name_variants"</span><span class="p">,</span> <span class="p">[])]:</span>
+            <span class="n">lookup</span><span class="p">[</span><span class="n">_norm_name</span><span class="p">(</span><span class="n">variant</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span><span class="n">standard</span><span class="p">,</span> <span class="n">id_url</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lookup</span></div>
+
+
+
+<div class="viewcode-block" id="enrich_institutions">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.contributors.enrich_institutions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">enrich_institutions</span><span class="p">(</span><span class="n">institutions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Mapping</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Resolve institution names against the EDMO registry.</span>
+
+<span class="sd">    A name (whitespace-collapsed) matched in the registry is written as the</span>
+<span class="sd">    registry ``standard_name`` with the EDMO URL; a config ``id`` wins over the</span>
+<span class="sd">    registry. An unmatched name is written as given (a comma replaced by a space,</span>
+<span class="sd">    with a warning) and no EDMO id (also warned); nothing is invented.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    institutions : sequence of Mapping</span>
+<span class="sd">        Records with ``name``, ``role`` and optional ``id``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of dict of str to str</span>
+<span class="sd">        Records with ``name``, ``role`` and ``id`` resolved for formatting.</span>
+
+<span class="sd">    """</span>
+    <span class="n">lookup</span> <span class="o">=</span> <span class="n">load_institution_registry</span><span class="p">()</span>
+    <span class="n">enriched</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">institution</span> <span class="ow">in</span> <span class="n">institutions</span><span class="p">:</span>
+        <span class="n">collapsed</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">institution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">role</span> <span class="o">=</span> <span class="n">institution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span>
+        <span class="n">config_id</span> <span class="o">=</span> <span class="n">institution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">)</span>
+        <span class="n">has_config_id</span> <span class="o">=</span> <span class="n">config_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"None"</span><span class="p">)</span>
+        <span class="n">hit</span> <span class="o">=</span> <span class="n">lookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_norm_name</span><span class="p">(</span><span class="n">institution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">hit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">institution_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">config_id</span><span class="p">)</span> <span class="k">if</span> <span class="n">has_config_id</span> <span class="k">else</span> <span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">collapsed</span>
+            <span class="k">if</span> <span class="s2">","</span> <span class="ow">in</span> <span class="n">collapsed</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"institution </span><span class="si">{</span><span class="n">collapsed</span><span class="si">!r}</span><span class="s2"> is not in institution_registry.yml and "</span>
+                    <span class="s2">"contains a comma; writing it with the comma replaced by a space. "</span>
+                    <span class="s2">"Add it to the registry to get an EDMO id."</span><span class="p">,</span>
+                    <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">collapsed</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">" "</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+            <span class="n">institution_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">config_id</span><span class="p">)</span> <span class="k">if</span> <span class="n">has_config_id</span> <span class="k">else</span> <span class="s2">""</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">institution_id</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"no EDMO id for institution </span><span class="si">{</span><span class="n">collapsed</span><span class="si">!r}</span><span class="s2">; add it to "</span>
+                    <span class="s2">"institution_registry.yml or set id: in the config."</span><span class="p">,</span>
+                    <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="n">enriched</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="n">role</span><span class="p">,</span> <span class="s2">"id"</span><span class="p">:</span> <span class="n">institution_id</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">enriched</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -47,6 +47,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="about.html">About seagliderOG1</a></li>
 <li class="toctree-l1"><a class="reference internal" href="setup.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command-line interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
@@ -88,16 +89,21 @@
 <div class="genindex-jumpbox">
  <a href="#A"><strong>A</strong></a>
  | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
  | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
  | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
  
 </div>
 <h2 id="A">A</h2>
@@ -113,6 +119,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.add_sensor_to_dataset">add_sensor_to_dataset() (in module seagliderOG1.tools)</a>
 </li>
+      <li><a href="seagliderOG1.html#seagliderOG1.convertOG1.apply_keep_variables">apply_keep_variables() (in module seagliderOG1.convertOG1)</a>
+</li>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.assign_phase">assign_phase() (in module seagliderOG1.tools)</a>
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.assign_profile_number">assign_profile_number() (in module seagliderOG1.tools)</a>
@@ -127,6 +135,8 @@
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.combine_two_dim_of_dataset">combine_two_dim_of_dataset() (in module seagliderOG1.tools)</a>
 </li>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.consolidate">consolidate() (in module seagliderOG1.contributors)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.convert_qc_flags">convert_qc_flags() (in module seagliderOG1.tools)</a>
@@ -138,12 +148,28 @@
   </ul></td>
 </tr></table>
 
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="seagliderOG1.html#seagliderOG1.readers.Mission.date">date (seagliderOG1.readers.Mission attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="seagliderOG1.html#seagliderOG1.readers.discover_missions">discover_missions() (in module seagliderOG1.readers)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.readers.Mission.dives">dives (seagliderOG1.readers.Mission attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.encode_times">encode_times() (in module seagliderOG1.tools)</a>
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.encode_times_og1">encode_times_og1() (in module seagliderOG1.tools)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.enrich_institutions">enrich_institutions() (in module seagliderOG1.contributors)</a>
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.convertOG1.extract_attr_to_keep">extract_attr_to_keep() (in module seagliderOG1.convertOG1)</a>
 </li>
@@ -165,9 +191,15 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.readers.filter_files_by_profile">filter_files_by_profile() (in module seagliderOG1.readers)</a>
 </li>
+      <li><a href="seagliderOG1.html#seagliderOG1.tools.find_best_dtype">find_best_dtype() (in module seagliderOG1.tools)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="seagliderOG1.html#seagliderOG1.tools.find_best_dtype">find_best_dtype() (in module seagliderOG1.tools)</a>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.format_contributors">format_contributors() (in module seagliderOG1.contributors)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.format_institutions">format_institutions() (in module seagliderOG1.contributors)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.vocabularies.PlatformField.formatter">formatter (seagliderOG1.vocabularies.PlatformField attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -177,11 +209,29 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.gather_sensor_info">gather_sensor_info() (in module seagliderOG1.tools)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.convertOG1.get_contributors">get_contributors() (in module seagliderOG1.convertOG1)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.convertOG1.get_time_attributes">get_time_attributes() (in module seagliderOG1.convertOG1)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.readers.glider_sn_from_filename">glider_sn_from_filename() (in module seagliderOG1.readers)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="seagliderOG1.html#seagliderOG1.readers.is_root">is_root() (in module seagliderOG1.readers)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="seagliderOG1.html#seagliderOG1.vocabularies.PlatformField.kind">kind (seagliderOG1.vocabularies.PlatformField attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -193,9 +243,13 @@
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.readers.load_basestation_files">load_basestation_files() (in module seagliderOG1.readers)</a>
 </li>
+      <li><a href="seagliderOG1.html#seagliderOG1.vocabularies.load_default_contributors">load_default_contributors() (in module seagliderOG1.vocabularies)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.readers.load_first_basestation_file">load_first_basestation_file() (in module seagliderOG1.readers)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.load_institution_registry">load_institution_registry() (in module seagliderOG1.contributors)</a>
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.readers.load_sample_dataset">load_sample_dataset() (in module seagliderOG1.readers)</a>
 </li>
@@ -211,10 +265,14 @@
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.merge_parts_of_dataset">merge_parts_of_dataset() (in module seagliderOG1.tools)</a>
 </li>
+      <li><a href="seagliderOG1.html#seagliderOG1.readers.Mission">Mission (class in seagliderOG1.readers)</a>
+</li>
       <li>
     module
 
       <ul>
+        <li><a href="seagliderOG1.html#module-seagliderOG1.contributors">seagliderOG1.contributors</a>
+</li>
         <li><a href="seagliderOG1.html#module-seagliderOG1.convertOG1">seagliderOG1.convertOG1</a>
 </li>
         <li><a href="seagliderOG1.html#module-seagliderOG1.plotters">seagliderOG1.plotters</a>
@@ -233,6 +291,18 @@
   </ul></td>
 </tr></table>
 
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.normalize_orcid">normalize_orcid() (in module seagliderOG1.contributors)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.normalize_role">normalize_role() (in module seagliderOG1.contributors)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -246,12 +316,22 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.parse_8_digit_date">parse_8_digit_date() (in module seagliderOG1.tools)</a>
 </li>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.parse_contributors">parse_contributors() (in module seagliderOG1.contributors)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.parse_institutions">parse_institutions() (in module seagliderOG1.contributors)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.readers.Mission.path">path (seagliderOG1.readers.Mission attribute)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.vocabularies.platform_from_file">platform_from_file() (in module seagliderOG1.vocabularies)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.vocabularies.PlatformField">PlatformField (class in seagliderOG1.vocabularies)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.plotters.plot_ctd_depth_vs_time">plot_ctd_depth_vs_time() (in module seagliderOG1.plotters)</a>
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.plotters.plot_depth_colored">plot_depth_colored() (in module seagliderOG1.plotters)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.plotters.plot_profile_depth">plot_profile_depth() (in module seagliderOG1.plotters)</a>
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.print_OG1_mapping_summary">print_OG1_mapping_summary() (in module seagliderOG1.tools)</a>
@@ -259,6 +339,8 @@
       <li><a href="seagliderOG1.html#seagliderOG1.convertOG1.process_and_save_data">process_and_save_data() (in module seagliderOG1.convertOG1)</a>
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.convertOG1.process_dataset">process_dataset() (in module seagliderOG1.convertOG1)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.readers.profnum_from_filename">profnum_from_filename() (in module seagliderOG1.readers)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -268,11 +350,17 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.reformat_units_str">reformat_units_str() (in module seagliderOG1.tools)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.reformat_units_var">reformat_units_var() (in module seagliderOG1.tools)</a>
 </li>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.registry_institutions">registry_institutions() (in module seagliderOG1.contributors)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.readers.repair_netcdf_time_metadata_inplace">repair_netcdf_time_metadata_inplace() (in module seagliderOG1.readers)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.vocabularies.PlatformField.required">required (seagliderOG1.vocabularies.PlatformField attribute)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.role_vocabulary">role_vocabulary() (in module seagliderOG1.contributors)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -284,6 +372,13 @@
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.readers.scan_and_repair_files">scan_and_repair_files() (in module seagliderOG1.readers)</a>
 </li>
+      <li>
+    seagliderOG1.contributors
+
+      <ul>
+        <li><a href="seagliderOG1.html#module-seagliderOG1.contributors">module</a>
+</li>
+      </ul></li>
       <li>
     seagliderOG1.convertOG1
 
@@ -319,8 +414,6 @@
         <li><a href="seagliderOG1.html#module-seagliderOG1.utilities">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     seagliderOG1.vocabularies
 
@@ -328,6 +421,8 @@
         <li><a href="seagliderOG1.html#module-seagliderOG1.vocabularies">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     seagliderOG1.writers
 
@@ -349,6 +444,12 @@
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.plotters.show_variables_by_dimension">show_variables_by_dimension() (in module seagliderOG1.plotters)</a>
 </li>
+      <li><a href="seagliderOG1.html#seagliderOG1.readers.Mission.sn">sn (seagliderOG1.readers.Mission attribute)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.vocabularies.PlatformField.source">source (seagliderOG1.vocabularies.PlatformField attribute)</a>
+</li>
+      <li><a href="seagliderOG1.html#seagliderOG1.contributors.split_aligned">split_aligned() (in module seagliderOG1.contributors)</a>
+</li>
       <li><a href="seagliderOG1.html#seagliderOG1.tools.split_by_unique_dims">split_by_unique_dims() (in module seagliderOG1.tools)</a>
 </li>
       <li><a href="seagliderOG1.html#seagliderOG1.convertOG1.standardise_OG10">standardise_OG10() (in module seagliderOG1.convertOG1)</a>
@@ -360,6 +461,14 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="seagliderOG1.html#seagliderOG1.convertOG1.update_dataset_attributes">update_dataset_attributes() (in module seagliderOG1.convertOG1)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="seagliderOG1.html#seagliderOG1.readers.validate_filename">validate_filename() (in module seagliderOG1.readers)</a>
 </li>
   </ul></td>
 </tr></table>

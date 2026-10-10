@@ -47,6 +47,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../about.html">About seagliderOG1</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../setup.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">Command-line interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
@@ -93,6 +94,8 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -100,16 +103,197 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">readers</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">utilities</span><span class="p">,</span> <span class="n">vocabularies</span><span class="p">,</span> <span class="n">writers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">contributors</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">utilities</span><span class="p">,</span> <span class="n">vocabularies</span><span class="p">,</span> <span class="n">writers</span>
 
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Global attributes the converter derives from the data; the mission config may</span>
+<span class="c1"># not set these (a collision is an error, not a silent override either way).</span>
+<span class="n">_DERIVED_GLOBALS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">"id"</span><span class="p">,</span>
+        <span class="s2">"time_coverage_start"</span><span class="p">,</span>
+        <span class="s2">"time_coverage_end"</span><span class="p">,</span>
+        <span class="s2">"geospatial_lat_min"</span><span class="p">,</span>
+        <span class="s2">"geospatial_lat_max"</span><span class="p">,</span>
+        <span class="s2">"geospatial_lon_min"</span><span class="p">,</span>
+        <span class="s2">"geospatial_lon_max"</span><span class="p">,</span>
+        <span class="s2">"geospatial_vertical_min"</span><span class="p">,</span>
+        <span class="s2">"geospatial_vertical_max"</span><span class="p">,</span>
+        <span class="s2">"date_created"</span><span class="p">,</span>
+        <span class="s2">"start_date"</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># String platform fields, resolved in order config -&gt; file -&gt; "UNK", derived from</span>
+<span class="c1"># the one platform table in vocabularies (serial raises when absent, numeric fields</span>
+<span class="c1"># are omitted; only the string ones take the "UNK" fallback).</span>
+<span class="n">_PLATFORM_STRING_FIELDS</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+    <span class="n">field</span>
+    <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">PLATFORM_FIELDS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">"string"</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_empty</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return True for a missing/placeholder value (None, "" or the string "None")."""</span>
+    <span class="k">return</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"None"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_platform</span><span class="p">(</span>
+    <span class="n">first_ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">platform</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Resolve OG1 platform fields from the config and the first basestation file.</span>
+
+<span class="sd">    Config values override file-derived ones. ``PLATFORM_SERIAL_NUMBER`` is the</span>
+<span class="sd">    mission identity (it names the output file and OG1 id): if neither the config</span>
+<span class="sd">    nor the file supplies it, raise. String fields fall back to ``"UNK"`` with a</span>
+<span class="sd">    warning; the numeric ``PLATFORM_DEPTH_RATING`` is omitted when absent rather</span>
+<span class="sd">    than written as a string.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    first_ds : xarray.Dataset</span>
+<span class="sd">        The first basestation dataset, read for ``platform_id`` and</span>
+<span class="sd">        ``wmo_identifier``.</span>
+<span class="sd">    platform : dict of str to object or None</span>
+<span class="sd">        The mission config's ``platform`` block; values override the file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict of str to object</span>
+<span class="sd">        Resolved platform fields to write. ``PLATFORM_DEPTH_RATING`` and</span>
+<span class="sd">        ``platform_model_vocabulary`` are present only when supplied.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``PLATFORM_SERIAL_NUMBER`` cannot be determined.</span>
+
+<span class="sd">    """</span>
+    <span class="n">platform</span> <span class="o">=</span> <span class="n">platform</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">file_values</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">platform_from_file</span><span class="p">(</span><span class="n">first_ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">config_or</span><span class="p">(</span><span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">_is_empty</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">_is_empty</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">else</span> <span class="n">value</span>
+
+    <span class="n">serial</span> <span class="o">=</span> <span class="n">config_or</span><span class="p">(</span><span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">serial</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"PLATFORM_SERIAL_NUMBER could not be determined: the basestation file "</span>
+            <span class="s2">"has no platform_id and the mission config does not set "</span>
+            <span class="s2">"platform.PLATFORM_SERIAL_NUMBER. It names the output file and OG1 id, "</span>
+            <span class="s2">"so set it in the config (a serial number or a local nickname per OG1)."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">resolved</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">:</span> <span class="n">serial</span><span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">_PLATFORM_STRING_FIELDS</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">config_or</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">from_file</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">PLATFORM_FIELDS</span><span class="p">[</span><span class="n">field</span><span class="p">]</span><span class="o">.</span><span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2"> not set in the mission config (platform.</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2">)"</span>
+                <span class="o">+</span> <span class="p">(</span><span class="s2">" or the basestation file"</span> <span class="k">if</span> <span class="n">from_file</span> <span class="k">else</span> <span class="s2">""</span><span class="p">)</span>
+                <span class="o">+</span> <span class="s2">"; writing 'UNK'."</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="s2">"UNK"</span>
+        <span class="n">resolved</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="n">depth</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"PLATFORM_DEPTH_RATING"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">depth</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"None"</span><span class="p">):</span>
+        <span class="n">resolved</span><span class="p">[</span><span class="s2">"PLATFORM_DEPTH_RATING"</span><span class="p">]</span> <span class="o">=</span> <span class="n">depth</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">"PLATFORM_DEPTH_RATING not set in the mission config "</span>
+            <span class="s2">"(platform.PLATFORM_DEPTH_RATING); it is numeric, so the variable is "</span>
+            <span class="s2">"omitted rather than written as 'UNK'."</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">model_vocab</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"platform_model_vocabulary"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">model_vocab</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"None"</span><span class="p">):</span>
+        <span class="n">resolved</span><span class="p">[</span><span class="s2">"platform_model_vocabulary"</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_vocab</span>
+
+    <span class="k">return</span> <span class="n">resolved</span>
+
+
+<span class="c1"># OG1-mandatory variables that keep_variables must never drop (plus the PLATFORM_*,</span>
+<span class="c1"># SENSOR_* and DEPLOYMENT_* families, matched by prefix below).</span>
+<span class="n">_MANDATORY_OG1_VARS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">"TIME"</span><span class="p">,</span>
+        <span class="s2">"LATITUDE"</span><span class="p">,</span>
+        <span class="s2">"LONGITUDE"</span><span class="p">,</span>
+        <span class="s2">"DEPTH"</span><span class="p">,</span>
+        <span class="s2">"TRAJECTORY"</span><span class="p">,</span>
+        <span class="s2">"WMO_IDENTIFIER"</span><span class="p">,</span>
+        <span class="s2">"PROFILE_NUMBER"</span><span class="p">,</span>
+        <span class="s2">"PHASE"</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="n">_MANDATORY_OG1_PREFIXES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"PLATFORM_"</span><span class="p">,</span> <span class="s2">"SENSOR_"</span><span class="p">,</span> <span class="s2">"DEPLOYMENT_"</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="apply_keep_variables">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.apply_keep_variables">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_keep_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">keep</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Subset the dataset to a science-variable allow-list, keeping OG1 essentials.</span>
+
+<span class="sd">    The requested ``keep`` names are retained, plus every OG1-mandatory variable</span>
+<span class="sd">    and the ``_QC`` companion of every kept variable. Dropped science variables are</span>
+<span class="sd">    warned. Coordinates are retained by xarray.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds : xarray.Dataset</span>
+<span class="sd">        The converted OG1 dataset.</span>
+<span class="sd">    keep : list of str</span>
+<span class="sd">        Science variables the user asked to keep.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        The subset dataset; every OG1-mandatory variable present in ``ds`` survives.</span>
+
+<span class="sd">    """</span>
+    <span class="n">requested</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">keep</span><span class="p">)</span>
+    <span class="n">kept</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
+        <span class="n">mandatory</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_MANDATORY_OG1_VARS</span> <span class="ow">or</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span>
+            <span class="n">_MANDATORY_OG1_PREFIXES</span>
+        <span class="p">)</span>
+        <span class="n">qc_parent</span> <span class="o">=</span> <span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"_QC"</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">name</span> <span class="ow">in</span> <span class="n">requested</span>
+            <span class="ow">or</span> <span class="n">mandatory</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="n">qc_parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">qc_parent</span> <span class="ow">in</span> <span class="n">requested</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="n">kept</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">dropped</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kept</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dropped</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"keep_variables dropped science variables: </span><span class="si">{</span><span class="n">dropped</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">ds</span><span class="p">[</span><span class="nb">sorted</span><span class="p">(</span><span class="n">kept</span><span class="p">)]</span></div>
+
 
 
 <div class="viewcode-block" id="convert_to_OG1">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.convert_to_OG1">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_to_OG1</span><span class="p">(</span>
     <span class="n">list_of_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
-    <span class="n">contrib_to_append</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">contributors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">institutions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">platform</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">global_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"delayed"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Convert Seaglider basestation datasets to OG1 format.</span>
 <span class="sd">    Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,</span>
@@ -121,8 +305,26 @@
 <span class="sd">    ----------</span>
 <span class="sd">    list_of_datasets : list of xarray.Dataset or xarray.Dataset</span>
 <span class="sd">        A list of xarray datasets or a single xarray dataset in basestation format.</span>
-<span class="sd">    contrib_to_append : dict of str, optional</span>
-<span class="sd">        Dictionary containing additional contributor information to append. Default is None.</span>
+<span class="sd">    contributors : sequence of dict, optional</span>
+<span class="sd">        Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)</span>
+<span class="sd">        merged with those already on the files. When None, contributors come from</span>
+<span class="sd">        the files' own attributes; no package default is applied. Default is None.</span>
+<span class="sd">    institutions : sequence of dict, optional</span>
+<span class="sd">        Institution records (``name``, ``role`` and optional ``id``) merged with</span>
+<span class="sd">        those on the files and resolved against the EDMO registry. Default is None.</span>
+<span class="sd">    platform : dict of str to object, optional</span>
+<span class="sd">        Platform fields from the mission config (``PLATFORM_SERIAL_NUMBER``,</span>
+<span class="sd">        ``PLATFORM_MODEL``, ``PLATFORM_MAKER``, ``PLATFORM_DEPTH_RATING``,</span>
+<span class="sd">        ``GLIDER_FIRMWARE_VERSION``, ``LANDSTATION_VERSION``, ``WMO_IDENTIFIER``,</span>
+<span class="sd">        ``platform_model_vocabulary``). Config values override file-derived ones.</span>
+<span class="sd">        Default is None.</span>
+<span class="sd">    global_attributes : dict of str to object, optional</span>
+<span class="sd">        Global attributes written verbatim into the output (nulls skipped). A key</span>
+<span class="sd">        that collides with a converter-derived global raises. Default is None.</span>
+<span class="sd">    mode : str, optional</span>
+<span class="sd">        Data mode, ``"delayed"`` (default) or ``"realtime"``. Sets the ``id``</span>
+<span class="sd">        suffix (``delayed`` or ``R``) and so the output filename, per the OG1</span>
+<span class="sd">        manual, which defines no separate data-mode attribute. Default is "delayed".</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -132,6 +334,27 @@
 <span class="sd">        - varlist (list of str): A list of variable names from the input datasets.</span>
 
 <span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">contributors</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"convert_to_OG1(contributors=...) is now a list of records "</span>
+            <span class="s2">"[{'name': ..., 'role': ..., 'email': ..., 'orcid': ...}], not a dict "</span>
+            <span class="s2">"of OG1 attributes. See CHANGELOG."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">global_attributes</span> <span class="o">=</span> <span class="n">global_attributes</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">collisions</span> <span class="o">=</span> <span class="n">_DERIVED_GLOBALS</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">global_attributes</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">collisions</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"global_attributes may not set converter-derived keys: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">collisions</span><span class="p">)</span><span class="si">}</span><span class="s2">. Remove them from the mission config."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">MODE_SUFFIX</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"mode must be one of </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">MODE_SUFFIX</span><span class="p">)</span><span class="si">}</span><span class="s2">, not </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">."</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Start converting </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span><span class="si">}</span><span class="s2"> raw datasets to OG1 format ..."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
@@ -186,39 +409,49 @@
 
     <span class="c1"># Apply attributes</span>
     <span class="n">ordered_attributes</span> <span class="o">=</span> <span class="n">update_dataset_attributes</span><span class="p">(</span>
-        <span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">contrib_to_append</span>
+        <span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">people</span><span class="o">=</span><span class="n">contributors</span><span class="p">,</span> <span class="n">institutions</span><span class="o">=</span><span class="n">institutions</span>
     <span class="p">)</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">ordered_attributes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> is missing; writing an empty string. Set it in the mission "</span>
+                <span class="s2">"config to populate it."</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="s2">""</span>
         <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1">### Add information needed/used for hydrodynamic (flight) model (hdm)</span>
     <span class="n">hdm_parameters</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">extract_hdm_parameters</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_hdm_parameters</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">hdm_parameters</span><span class="p">)</span>
 
-    <span class="c1"># Construct the platform serial number</span>
-    <span class="k">if</span> <span class="s2">"platform_id"</span> <span class="ow">in</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
-        <span class="n">PLATFORM_SERIAL_NUMBER</span> <span class="o">=</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"platform_id"</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">PLATFORM_SERIAL_NUMBER</span> <span class="o">=</span> <span class="s2">"sg000"</span>
-    <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">]</span> <span class="o">=</span> <span class="n">PLATFORM_SERIAL_NUMBER</span>
-    <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"long_name"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"glider serial number"</span>
+    <span class="c1"># Resolve platform fields from the config and the first file (no silent</span>
+    <span class="c1"># fallbacks: missing serial raises, other strings warn + "UNK", the numeric</span>
+    <span class="c1"># depth rating is omitted rather than written as a string).</span>
+    <span class="n">platform_fields</span> <span class="o">=</span> <span class="n">_resolve_platform</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">platform</span><span class="p">)</span>
+    <span class="n">platform_serial_number</span> <span class="o">=</span> <span class="n">platform_fields</span><span class="p">[</span><span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">]</span>
 
-    <span class="c1"># ---- Added some more mandatory variables from OG1 ----</span>
-    <span class="c1"># Construct the platform model</span>
-    <span class="n">PLATFORM_MODEL</span> <span class="o">=</span> <span class="s2">"University of Washington Seaglider M1 glider"</span>
-    <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"PLATFORM_MODEL"</span><span class="p">]</span> <span class="o">=</span> <span class="n">PLATFORM_MODEL</span>
-    <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"PLATFORM_MODEL"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"long_name"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"model of the glider"</span>
-    <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"PLATFORM_MODEL"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span>
-        <span class="s2">"platform_model_vocabulary"</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="s2">"https://vocab.nerc.ac.uk/collection/B76/current/B7600024/"</span>
+    <span class="c1"># Mandatory OG1 platform string variables and their long_names.</span>
+    <span class="n">platform_long_names</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">:</span> <span class="s2">"glider serial number"</span><span class="p">,</span>
+        <span class="s2">"PLATFORM_MODEL"</span><span class="p">:</span> <span class="s2">"model of the glider"</span><span class="p">,</span>
+        <span class="s2">"PLATFORM_MAKER"</span><span class="p">:</span> <span class="s2">"glider manufacturer"</span><span class="p">,</span>
+        <span class="s2">"GLIDER_FIRMWARE_VERSION"</span><span class="p">:</span> <span class="s2">"glider firmware version"</span><span class="p">,</span>
+        <span class="s2">"LANDSTATION_VERSION"</span><span class="p">:</span> <span class="s2">"version of the landstation"</span><span class="p">,</span>
+        <span class="s2">"WMO_IDENTIFIER"</span><span class="p">:</span> <span class="s2">"wmo id"</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">long_name</span> <span class="ow">in</span> <span class="n">platform_long_names</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">ds_og1</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">platform_fields</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+        <span class="n">ds_og1</span><span class="p">[</span><span class="n">field</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"long_name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long_name</span>
 
-    <span class="c1"># WMO identifier</span>
-    <span class="k">if</span> <span class="s2">"wmo_identifier"</span> <span class="ow">in</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
-        <span class="n">wmo_id</span> <span class="o">=</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"wmo_identifier"</span><span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">wmo_id</span> <span class="o">=</span> <span class="s2">"0000000"</span>
-    <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"WMO_IDENTIFIER"</span><span class="p">]</span> <span class="o">=</span> <span class="n">wmo_id</span>
-    <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"WMO_IDENTIFIER"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"long_name"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"wmo id"</span>
+    <span class="k">if</span> <span class="s2">"platform_model_vocabulary"</span> <span class="ow">in</span> <span class="n">platform_fields</span><span class="p">:</span>
+        <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"PLATFORM_MODEL"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"platform_model_vocabulary"</span><span class="p">]</span> <span class="o">=</span> <span class="n">platform_fields</span><span class="p">[</span>
+            <span class="s2">"platform_model_vocabulary"</span>
+        <span class="p">]</span>
+
+    <span class="k">if</span> <span class="s2">"PLATFORM_DEPTH_RATING"</span> <span class="ow">in</span> <span class="n">platform_fields</span><span class="p">:</span>
+        <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"PLATFORM_DEPTH_RATING"</span><span class="p">]</span> <span class="o">=</span> <span class="n">platform_fields</span><span class="p">[</span><span class="s2">"PLATFORM_DEPTH_RATING"</span><span class="p">]</span>
+        <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"PLATFORM_DEPTH_RATING"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"long_name"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"maximum rated depth"</span>
 
     <span class="c1"># Trajectory</span>
     <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"TRAJECTORY"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
@@ -284,9 +517,16 @@
     <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"geospatial_vertical_min"</span><span class="p">]</span> <span class="o">=</span> <span class="n">depth_min</span>
     <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"geospatial_vertical_max"</span><span class="p">]</span> <span class="o">=</span> <span class="n">depth_max</span>
 
-    <span class="c1"># Construct the unique identifier attribute</span>
-    <span class="nb">id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">PLATFORM_SERIAL_NUMBER</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">start_date</span><span class="si">}</span><span class="s2">_delayed"</span>
+    <span class="c1"># Construct the unique identifier attribute. The data-mode suffix (delayed/R)</span>
+    <span class="c1"># is the only place OG1 records data mode; there is no data-mode attribute.</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">platform_serial_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">start_date</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">MODE_SUFFIX</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
     <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">id</span>
+
+    <span class="c1"># Write config global attributes verbatim (nulls skipped). Collisions with</span>
+    <span class="c1"># converter-derived keys were already rejected at the top of this function.</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">global_attributes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1"># Re-fix QC flags the concat re-promoted to float, then optimise dtypes once on the</span>
     <span class="c1"># fully-assembled dataset (coordinates and post-concat variables included).</span>
@@ -678,7 +918,9 @@
 <div class="viewcode-block" id="update_dataset_attributes">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.update_dataset_attributes">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_dataset_attributes</span><span class="p">(</span>
-    <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">people</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">institutions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Update the attributes of the dataset based on the provided attribute input.</span>
 
@@ -689,8 +931,10 @@
 <span class="sd">    ----------</span>
 <span class="sd">    ds : xarray.Dataset</span>
 <span class="sd">        The input dataset whose attributes need to be updated.</span>
-<span class="sd">    contrib_to_append : dict of str or None</span>
-<span class="sd">        A dictionary containing additional contributor information to append. Default is None.</span>
+<span class="sd">    people : sequence of dict, optional</span>
+<span class="sd">        Config contributor records to merge with the dataset's own. Default is None.</span>
+<span class="sd">    institutions : sequence of dict, optional</span>
+<span class="sd">        Config institution records to merge with the dataset's own. Default is None.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -705,7 +949,7 @@
     <span class="n">mandatory_attr</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s2">"attr_mandatory"</span><span class="p">]</span>
 
     <span class="c1"># Extract creators and contributors and institution, then reformulate strings</span>
-    <span class="n">contrib_attrs</span> <span class="o">=</span> <span class="n">get_contributors</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">contrib_to_append</span><span class="p">)</span>
+    <span class="n">contrib_attrs</span> <span class="o">=</span> <span class="n">get_contributors</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">people</span><span class="o">=</span><span class="n">people</span><span class="p">,</span> <span class="n">institutions</span><span class="o">=</span><span class="n">institutions</span><span class="p">)</span>
 
     <span class="c1"># Extract time attributes and reformat basic time strings</span>
     <span class="n">time_attrs</span> <span class="o">=</span> <span class="n">get_time_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
@@ -748,200 +992,95 @@
 <div class="viewcode-block" id="get_contributors">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.get_contributors">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_contributors</span><span class="p">(</span>
-    <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">values_to_append</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">people</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">institutions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Extract and format contributor information for OG1 attributes.</span>
+<span class="w">    </span><span class="sd">"""Build OG1 contributor and institution attributes.</span>
 
-<span class="sd">    Processes creator and contributor information from dataset attributes,</span>
-<span class="sd">    formats them as comma-separated strings, and handles institution mapping.</span>
+<span class="sd">    Contributors and institutions already on the dataset (``creator_*``,</span>
+<span class="sd">    ``contributor_*`` and the basestation ``institution`` string) are parsed into</span>
+<span class="sd">    records, the mission config's ``people`` and ``institutions`` are appended,</span>
+<span class="sd">    duplicates are consolidated on (name, role) with empty-role fill-in,</span>
+<span class="sd">    institutions are resolved against the EDMO registry, and everything is</span>
+<span class="sd">    formatted once into aligned comma-separated lists. No role or EDMO id is ever</span>
+<span class="sd">    invented; gaps are warned.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    ds : xarray.Dataset</span>
-<span class="sd">        Dataset containing original contributor attributes.</span>
-<span class="sd">    values_to_append : dict, optional</span>
-<span class="sd">        Additional contributor information to append.</span>
+<span class="sd">        Dataset carrying the source contributor/institution attributes.</span>
+<span class="sd">    people : sequence of dict, optional</span>
+<span class="sd">        Config contributor records (``name``, ``role`` and optional ``email``,</span>
+<span class="sd">        ``orcid``). Default is None.</span>
+<span class="sd">    institutions : sequence of dict, optional</span>
+<span class="sd">        Config institution records (``name``, ``role`` and optional ``id``).</span>
+<span class="sd">        Default is None.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    dict</span>
-<span class="sd">        Dictionary with formatted contributor attribute strings.</span>
+<span class="sd">    dict of str to str</span>
+<span class="sd">        The ``contributor_*`` and ``contributing_institutions*`` attributes.</span>
 
 <span class="sd">    """</span>
-
-    <span class="c1"># Function to create or append to a list</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">create_or_append_list</span><span class="p">(</span><span class="n">existing_list</span><span class="p">,</span> <span class="n">new_item</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">new_item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_list</span><span class="p">:</span>
-            <span class="n">new_item</span> <span class="o">=</span> <span class="n">new_item</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">)</span>
-            <span class="n">existing_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_item</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">existing_list</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">list_to_comma_separated_string</span><span class="p">(</span><span class="n">lst</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Convert a list of strings to a single string with values separated by commas.</span>
-
-<span class="sd">        Replace any commas present in list elements with hyphens.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        lst : list</span>
-<span class="sd">            List of strings.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        str</span>
-<span class="sd">            Comma-separated string with commas in elements replaced by hyphens.</span>
-
-<span class="sd">        """</span>
-        <span class="k">return</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">])</span>
-
-    <span class="n">new_attributes</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span>
-
-    <span class="c1"># Initialize empty lists for creator/contributor information and institutions if they are not present</span>
-    <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">emails</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">roles</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">roles_vocab</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">insts</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">inst_roles</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">inst_vocab</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">inst_roles_vocab</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="c1"># Parse the original attributes into lists</span>
-    <span class="k">if</span> <span class="s2">"creator_name"</span> <span class="ow">in</span> <span class="n">new_attributes</span><span class="p">:</span>
-        <span class="n">names</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">([],</span> <span class="n">new_attributes</span><span class="p">[</span><span class="s2">"creator_name"</span><span class="p">])</span>
-        <span class="n">emails</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">([],</span> <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"creator_email"</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span>
-        <span class="n">roles</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">([],</span> <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"creator_role"</span><span class="p">,</span> <span class="s2">"PI"</span><span class="p">))</span>
-        <span class="n">roles_vocab</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-            <span class="p">[],</span>
-            <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s2">"creator_role_vocabulary"</span><span class="p">,</span> <span class="s2">"http://vocab.nerc.ac.uk/search_nvs/W08"</span>
-            <span class="p">),</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="s2">"contributor_name"</span> <span class="ow">in</span> <span class="n">new_attributes</span><span class="p">:</span>
-            <span class="n">names</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">new_attributes</span><span class="p">[</span><span class="s2">"contributor_name"</span><span class="p">])</span>
-            <span class="n">emails</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-                <span class="n">emails</span><span class="p">,</span> <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"contributor_email"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="n">config_people</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">"name"</span><span class="p">:</span> <span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+            <span class="s2">"email"</span><span class="p">:</span> <span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"email"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span>
+            <span class="s2">"id"</span><span class="p">:</span> <span class="n">contributors</span><span class="o">.</span><span class="n">normalize_orcid</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"orcid"</span><span class="p">)),</span>
+            <span class="s2">"role"</span><span class="p">:</span> <span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="p">(</span><span class="n">people</span> <span class="ow">or</span> <span class="p">[])</span>
+    <span class="p">]</span>
+    <span class="n">merged_people</span> <span class="o">=</span> <span class="n">contributors</span><span class="o">.</span><span class="n">consolidate</span><span class="p">(</span>
+        <span class="n">contributors</span><span class="o">.</span><span class="n">parse_contributors</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span> <span class="o">+</span> <span class="n">config_people</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">merged_people</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"no role for contributor </span><span class="si">{</span><span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'name'</span><span class="p">)</span><span class="si">!r}</span><span class="s2">; set one in the "</span>
+                <span class="s2">"mission config (contributors: - name: ... role: ...)."</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">roles</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-                <span class="n">roles</span><span class="p">,</span> <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"contributor_role"</span><span class="p">,</span> <span class="s2">"PI"</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="n">roles_vocab</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-                <span class="n">roles_vocab</span><span class="p">,</span>
-                <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                    <span class="s2">"contributor_role_vocabulary"</span><span class="p">,</span>
-                    <span class="s2">"http://vocab.nerc.ac.uk/search_nvs/W08"</span><span class="p">,</span>
-                <span class="p">),</span>
-            <span class="p">)</span>
-    <span class="k">elif</span> <span class="s2">"contributor_name"</span> <span class="ow">in</span> <span class="n">new_attributes</span><span class="p">:</span>
-        <span class="n">names</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">([],</span> <span class="n">new_attributes</span><span class="p">[</span><span class="s2">"contributor_name"</span><span class="p">])</span>
-        <span class="n">emails</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">([],</span> <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"contributor_email"</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span>
-        <span class="n">roles</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">([],</span> <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"contributor_role"</span><span class="p">,</span> <span class="s2">"PI"</span><span class="p">))</span>
-        <span class="n">roles_vocab</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-            <span class="p">[],</span>
-            <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s2">"contributor_role_vocabulary"</span><span class="p">,</span> <span class="s2">"http://vocab.nerc.ac.uk/search_nvs/W08"</span>
-            <span class="p">),</span>
-        <span class="p">)</span>
-    <span class="k">if</span> <span class="s2">"contributing_institutions"</span> <span class="ow">in</span> <span class="n">new_attributes</span><span class="p">:</span>
-        <span class="n">insts</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-            <span class="p">[],</span> <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"contributing_institutions"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="n">inst_roles</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-            <span class="p">[],</span> <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"contributing_institutions_role"</span><span class="p">,</span> <span class="s2">"Operator"</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="n">inst_vocab</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-            <span class="p">[],</span>
-            <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s2">"contributing_institutions_vocabulary"</span><span class="p">,</span>
-                <span class="s2">"https://edmo.seadatanet.org/report/1434"</span><span class="p">,</span>
-            <span class="p">),</span>
-        <span class="p">)</span>
-        <span class="n">inst_roles_vocab</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-            <span class="p">[],</span>
-            <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s2">"contributing_institutions_role_vocabulary"</span><span class="p">,</span>
-                <span class="s2">"http://vocab.nerc.ac.uk/collection/W08/current/"</span><span class="p">,</span>
-            <span class="p">),</span>
-        <span class="p">)</span>
-    <span class="k">elif</span> <span class="s2">"institution"</span> <span class="ow">in</span> <span class="n">new_attributes</span><span class="p">:</span>
-        <span class="n">insts</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">([],</span> <span class="n">new_attributes</span><span class="p">[</span><span class="s2">"institution"</span><span class="p">])</span>
-        <span class="n">inst_roles</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-            <span class="p">[],</span> <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"contributing_institutions_role"</span><span class="p">,</span> <span class="s2">"PI"</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="n">inst_vocab</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-            <span class="p">[],</span>
-            <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s2">"contributing_institutions_vocabulary"</span><span class="p">,</span>
-                <span class="s2">"https://edmo.seadatanet.org/report/1434"</span><span class="p">,</span>
-            <span class="p">),</span>
-        <span class="p">)</span>
-        <span class="n">inst_roles_vocab</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span>
-            <span class="p">[],</span>
-            <span class="n">new_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s2">"contributing_institutions_role_vocabulary"</span><span class="p">,</span>
-                <span class="s2">"http://vocab.nerc.ac.uk/collection/W08/current/"</span><span class="p">,</span>
-            <span class="p">),</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span>
+        <span class="n">contributors</span><span class="o">.</span><span class="n">normalize_role</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">))</span> <span class="o">==</span> <span class="s2">"PI"</span>
+        <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">merged_people</span>
+    <span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">"no contributor has the role PI; OG1 requires a principal investigator."</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="c1"># Rename specific institution if it matches criteria</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">inst</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">insts</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span>
-            <span class="n">keyword</span> <span class="ow">in</span> <span class="n">inst</span> <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"Oceanography"</span><span class="p">,</span> <span class="s2">"University"</span><span class="p">,</span> <span class="s2">"Washington"</span><span class="p">]</span>
-        <span class="p">):</span>
-            <span class="n">insts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"University of Washington - School of Oceanography"</span>
+    <span class="n">file_institutions</span> <span class="o">=</span> <span class="n">contributors</span><span class="o">.</span><span class="n">parse_institutions</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"institution"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+        <span class="n">file_institutions</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"institution"</span><span class="p">],</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"id"</span><span class="p">:</span> <span class="s2">""</span><span class="p">},</span>
+            <span class="o">*</span><span class="n">file_institutions</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="n">config_institutions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">"name"</span><span class="p">:</span> <span class="n">institution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+            <span class="s2">"role"</span><span class="p">:</span> <span class="n">institution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span>
+            <span class="s2">"id"</span><span class="p">:</span> <span class="n">institution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">institution</span> <span class="ow">in</span> <span class="p">(</span><span class="n">institutions</span> <span class="ow">or</span> <span class="p">[])</span>
+    <span class="p">]</span>
+    <span class="n">merged_institutions</span> <span class="o">=</span> <span class="n">contributors</span><span class="o">.</span><span class="n">consolidate</span><span class="p">(</span>
+        <span class="n">contributors</span><span class="o">.</span><span class="n">enrich_institutions</span><span class="p">(</span><span class="n">file_institutions</span> <span class="o">+</span> <span class="n">config_institutions</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span>
+        <span class="n">contributors</span><span class="o">.</span><span class="n">normalize_role</span><span class="p">(</span><span class="n">institution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">))</span> <span class="o">==</span> <span class="s2">"Operator"</span>
+        <span class="k">for</span> <span class="n">institution</span> <span class="ow">in</span> <span class="n">merged_institutions</span>
+    <span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">"no institution has the role Operator; OG1 requires an operating "</span>
+            <span class="s2">"institution."</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
 
-    <span class="c1"># Pad the lists if they are shorter than names</span>
-    <span class="n">max_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
-    <span class="n">emails</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">""</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_length</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">emails</span><span class="p">))</span>
-    <span class="n">roles</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">""</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_length</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">roles</span><span class="p">))</span>
-    <span class="n">roles_vocab</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">""</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_length</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">roles_vocab</span><span class="p">))</span>
-    <span class="n">insts</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">""</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_length</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">insts</span><span class="p">))</span>
-    <span class="n">inst_roles</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">""</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_length</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">inst_roles</span><span class="p">))</span>
-    <span class="n">inst_vocab</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">""</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_length</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">inst_vocab</span><span class="p">))</span>
-    <span class="n">inst_roles_vocab</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">""</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_length</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">inst_roles_vocab</span><span class="p">))</span>
-
-    <span class="c1"># Append new values to the lists</span>
-    <span class="k">if</span> <span class="n">values_to_append</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values_to_append</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"contributor_name"</span><span class="p">:</span>
-                <span class="n">names</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"contributor_email"</span><span class="p">:</span>
-                <span class="n">emails</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span><span class="n">emails</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"contributor_role"</span><span class="p">:</span>
-                <span class="n">roles</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span><span class="n">roles</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"contributor_role_vocabulary"</span><span class="p">:</span>
-                <span class="n">roles_vocab</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span><span class="n">roles_vocab</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"contributing_institutions"</span><span class="p">:</span>
-                <span class="n">insts</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span><span class="n">insts</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"contributing_institutions_role"</span><span class="p">:</span>
-                <span class="n">inst_roles</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span><span class="n">inst_roles</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"contributing_institutions_vocabulary"</span><span class="p">:</span>
-                <span class="n">inst_vocab</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span><span class="n">inst_vocab</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"contributing_institutions_role_vocabulary"</span><span class="p">:</span>
-                <span class="n">inst_roles_vocab</span> <span class="o">=</span> <span class="n">create_or_append_list</span><span class="p">(</span><span class="n">inst_roles_vocab</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-
-    <span class="c1"># Turn the lists into comma-separated strings</span>
-    <span class="n">names_str</span> <span class="o">=</span> <span class="n">list_to_comma_separated_string</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
-    <span class="n">emails_str</span> <span class="o">=</span> <span class="n">list_to_comma_separated_string</span><span class="p">(</span><span class="n">emails</span><span class="p">)</span>
-    <span class="n">roles_str</span> <span class="o">=</span> <span class="n">list_to_comma_separated_string</span><span class="p">(</span><span class="n">roles</span><span class="p">)</span>
-    <span class="n">roles_vocab_str</span> <span class="o">=</span> <span class="n">list_to_comma_separated_string</span><span class="p">(</span><span class="n">roles_vocab</span><span class="p">)</span>
-
-    <span class="n">insts_str</span> <span class="o">=</span> <span class="n">list_to_comma_separated_string</span><span class="p">(</span><span class="n">insts</span><span class="p">)</span>
-    <span class="n">inst_roles_str</span> <span class="o">=</span> <span class="n">list_to_comma_separated_string</span><span class="p">(</span><span class="n">inst_roles</span><span class="p">)</span>
-    <span class="n">inst_vocab_str</span> <span class="o">=</span> <span class="n">list_to_comma_separated_string</span><span class="p">(</span><span class="n">inst_vocab</span><span class="p">)</span>
-    <span class="n">inst_roles_vocab_str</span> <span class="o">=</span> <span class="n">list_to_comma_separated_string</span><span class="p">(</span><span class="n">inst_roles_vocab</span><span class="p">)</span>
-
-    <span class="c1"># Create a dictionary for return</span>
-    <span class="n">attributes_dict</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">"contributor_name"</span><span class="p">:</span> <span class="n">names_str</span><span class="p">,</span>
-        <span class="s2">"contributor_email"</span><span class="p">:</span> <span class="n">emails_str</span><span class="p">,</span>
-        <span class="s2">"contributor_role"</span><span class="p">:</span> <span class="n">roles_str</span><span class="p">,</span>
-        <span class="s2">"contributor_role_vocabulary"</span><span class="p">:</span> <span class="n">roles_vocab_str</span><span class="p">,</span>
-        <span class="s2">"contributing_institutions"</span><span class="p">:</span> <span class="n">insts_str</span><span class="p">,</span>
-        <span class="s2">"contributing_institutions_role"</span><span class="p">:</span> <span class="n">inst_roles_str</span><span class="p">,</span>
-        <span class="s2">"contributing_institutions_vocabulary"</span><span class="p">:</span> <span class="n">inst_vocab_str</span><span class="p">,</span>
-        <span class="s2">"contributing_institutions_role_vocabulary"</span><span class="p">:</span> <span class="n">inst_roles_vocab_str</span><span class="p">,</span>
-    <span class="p">}</span>
-
+    <span class="n">attributes_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">attributes_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">contributors</span><span class="o">.</span><span class="n">format_contributors</span><span class="p">(</span><span class="n">merged_people</span><span class="p">))</span>
+    <span class="n">attributes_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">contributors</span><span class="o">.</span><span class="n">format_institutions</span><span class="p">(</span><span class="n">merged_institutions</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">attributes_dict</span></div>
 
 
@@ -1107,6 +1246,7 @@
             <span class="n">ds_all</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">ds_all</span>
         <span class="k">elif</span> <span class="n">user_input</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"yes"</span><span class="p">:</span>
+            <span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="n">input_location</span><span class="p">)</span>
             <span class="n">ds_all</span><span class="p">,</span> <span class="n">varlist</span> <span class="o">=</span> <span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
             <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">save</span><span class="p">:</span>

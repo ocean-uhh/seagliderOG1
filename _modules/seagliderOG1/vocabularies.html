@@ -1,0 +1,488 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 v0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2fea6348"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="../../_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../about.html">About seagliderOG1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../setup.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">Command-line interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../project_structure.html">What’s in <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> project?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">seagliderOG1 demo</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Help and reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/ocean-uhh/seagliderOG1">GitHub Repo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">seagliderOG1.vocabularies</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for seagliderOG1.vocabularies</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Vocabularies and mappings for OG1 format conversion.</span>
+
+<span class="sd">This module defines the vocabulary mappings, unit conversions, and attribute</span>
+<span class="sd">configurations used to convert Seaglider basestation files to OG1 format.</span>
+<span class="sd">It loads YAML configuration files and defines various dictionaries used</span>
+<span class="sd">throughout the conversion process.</span>
+
+<span class="sd">Key Components:</span>
+<span class="sd">- Variable name mappings from basestation to OG1 format</span>
+<span class="sd">- Unit conversion factors and formatting rules</span>
+<span class="sd">- Global attribute definitions and ordering</span>
+<span class="sd">- Variables to include/exclude during conversion</span>
+<span class="sd">- Dimension renaming mappings</span>
+
+<span class="sd">Configuration Files:</span>
+<span class="sd">- OG1_var_names.yaml: Variable name mappings</span>
+<span class="sd">- OG1_vocab_attrs.yaml: Variable attribute vocabularies</span>
+<span class="sd">- OG1_sensor_attrs.yaml: Sensor attribute definitions</span>
+<span class="sd">- OG1_global_attrs.yaml: Global attribute configurations</span>
+<span class="sd">- OG1_author.yaml: Example contributor information, loaded on demand via</span>
+<span class="sd">  :func:`load_default_contributors` (never at import)</span>
+
+<span class="sd">Notes</span>
+<span class="sd">-----</span>
+<span class="sd">This module is primarily data-driven and loads most configuration from YAML files</span>
+<span class="sd">in the config/ directory. The YAML-based approach allows easy modification of</span>
+<span class="sd">OG1 format requirements without code changes.</span>
+
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+<span class="c1"># Set the directory for yaml files as package directory + 'config/'</span>
+<span class="n">script_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
+<span class="n">config_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">script_dir</span><span class="p">,</span> <span class="s2">"config/"</span><span class="p">)</span>
+
+<span class="c1"># Dimension renaming: maps basestation dimension names to OG1 standard names</span>
+<span class="n">dims_rename_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"sg_data_point"</span><span class="p">:</span> <span class="s2">"N_MEASUREMENTS"</span><span class="p">}</span>
+
+<span class="c1"># NERC W08 "SensorML Contact Section Terms": the controlled vocabulary the OG1 spec</span>
+<span class="c1"># cites for contributor_role and contributing_institutions_role (fetched from</span>
+<span class="c1"># vocab.nerc.ac.uk 2026-10-08). The seven preferred labels and their term URIs.</span>
+<span class="n">_W08</span> <span class="o">=</span> <span class="s2">"http://vocab.nerc.ac.uk/collection/W08/current/"</span>
+<span class="n">ROLE_VOCABULARY</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"Manufacturer"</span><span class="p">:</span> <span class="n">_W08</span> <span class="o">+</span> <span class="s2">"CONT0001/"</span><span class="p">,</span>
+    <span class="s2">"Owner"</span><span class="p">:</span> <span class="n">_W08</span> <span class="o">+</span> <span class="s2">"CONT0002/"</span><span class="p">,</span>
+    <span class="s2">"Operator"</span><span class="p">:</span> <span class="n">_W08</span> <span class="o">+</span> <span class="s2">"CONT0003/"</span><span class="p">,</span>
+    <span class="s2">"PI"</span><span class="p">:</span> <span class="n">_W08</span> <span class="o">+</span> <span class="s2">"CONT0004/"</span><span class="p">,</span>
+    <span class="s2">"Technical Coordinator"</span><span class="p">:</span> <span class="n">_W08</span> <span class="o">+</span> <span class="s2">"CONT0005/"</span><span class="p">,</span>
+    <span class="s2">"Data scientist"</span><span class="p">:</span> <span class="n">_W08</span> <span class="o">+</span> <span class="s2">"CONT0006/"</span><span class="p">,</span>
+    <span class="s2">"Service Provider"</span><span class="p">:</span> <span class="n">_W08</span> <span class="o">+</span> <span class="s2">"CONT0007/"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Attested spelling variants seen in real files, mapped to the preferred W08 label.</span>
+<span class="c1"># Add an alias only when it appears in a real file (basestation files and the sp041</span>
+<span class="c1"># example both write PI as "Principal investigator" with the CONT0004 URI).</span>
+<span class="n">ROLE_ALIASES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"principal investigator"</span><span class="p">:</span> <span class="s2">"PI"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># OG1 data-mode -&gt; filename/id suffix. Mode affects only the id (and filename);</span>
+<span class="c1"># nothing else is written. Ref: OceanGliders OG-format-user-manual, "File naming</span>
+<span class="c1"># convention".</span>
+<span class="n">MODE_SUFFIX</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"delayed"</span><span class="p">:</span> <span class="s2">"delayed"</span><span class="p">,</span> <span class="s2">"realtime"</span><span class="p">:</span> <span class="s2">"R"</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="PlatformField">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.vocabularies.PlatformField">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PlatformField</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""How one OG1 platform field is sourced and written.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    source : str or None</span>
+<span class="sd">        Basestation global attribute the value derives from, or None when the</span>
+<span class="sd">        field is config-only (no file fallback).</span>
+<span class="sd">    formatter : callable or None</span>
+<span class="sd">        Applied to the file value before use; None when there is no file source.</span>
+<span class="sd">    required : bool</span>
+<span class="sd">        When True, a null in the mission config is a validate ERROR rather than a</span>
+<span class="sd">        silent default written into the output.</span>
+<span class="sd">    kind : str</span>
+<span class="sd">        How ``convert_to_OG1`` writes an unset field: ``"serial"`` names the</span>
+<span class="sd">        output and raises when absent, ``"string"`` warns and writes ``"UNK"``,</span>
+<span class="sd">        ``"numeric"`` is omitted.</span>
+
+<span class="sd">    """</span>
+
+    <span class="n">source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">formatter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">object</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+
+<span class="c1"># The OG1 platform fields, in template order. This one table is the single source</span>
+<span class="c1"># for four views that used to be maintained separately: the init template defaults</span>
+<span class="c1"># and the validate required-field check (both in cli/_mission.py), convert_to_OG1's</span>
+<span class="c1"># string-field resolution, and the file-&gt;field derivation in platform_from_file.</span>
+<span class="n">PLATFORM_FIELDS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PlatformField</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span>
+        <span class="s2">"platform_id"</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"serial"</span>
+    <span class="p">),</span>
+    <span class="s2">"PLATFORM_MODEL"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"string"</span><span class="p">),</span>
+    <span class="s2">"PLATFORM_DEPTH_RATING"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"numeric"</span><span class="p">),</span>
+    <span class="s2">"PLATFORM_MAKER"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"string"</span><span class="p">),</span>
+    <span class="s2">"GLIDER_FIRMWARE_VERSION"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span>
+        <span class="s2">"seaglider_software_version"</span><span class="p">,</span>
+        <span class="k">lambda</span> <span class="n">value</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"seaglider </span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"string"</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">"LANDSTATION_VERSION"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span>
+        <span class="s2">"base_station_version"</span><span class="p">,</span>
+        <span class="k">lambda</span> <span class="n">value</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"basestation v</span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"string"</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">"WMO_IDENTIFIER"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span><span class="s2">"wmo_identifier"</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"string"</span><span class="p">),</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="platform_from_file">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.vocabularies.platform_from_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">platform_from_file</span><span class="p">(</span><span class="n">attrs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Derive OG1 platform fields from a basestation file's global attributes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attrs : dict</span>
+<span class="sd">        The first basestation file's global attributes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        The OG1 platform fields derivable from the file (only those whose source</span>
+<span class="sd">        attribute is present).</span>
+
+<span class="sd">    """</span>
+    <span class="n">derived</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">PLATFORM_FIELDS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">spec</span><span class="o">.</span><span class="n">source</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="n">derived</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">formatter</span><span class="p">(</span><span class="n">attrs</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">source</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">derived</span></div>
+
+
+
+<span class="c1"># Preferred units for OG1 format - conversion will be attempted if mapping exists</span>
+<span class="n">preferred_units</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"m s-1"</span><span class="p">,</span> <span class="s2">"dbar"</span><span class="p">,</span> <span class="s2">"S m-1"</span><span class="p">]</span>
+
+<span class="c1"># Unit string standardization: maps various unit representations to preferred format</span>
+<span class="n">unit_str_format</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"m/s"</span><span class="p">:</span> <span class="s2">"m s-1"</span><span class="p">,</span>
+    <span class="s2">"cm/s"</span><span class="p">:</span> <span class="s2">"cm s-1"</span><span class="p">,</span>
+    <span class="s2">"S/m"</span><span class="p">:</span> <span class="s2">"S m-1"</span><span class="p">,</span>
+    <span class="s2">"mS/cm"</span><span class="p">:</span> <span class="s2">"mS cm-1"</span><span class="p">,</span>
+    <span class="s2">"meters"</span><span class="p">:</span> <span class="s2">"m"</span><span class="p">,</span>
+    <span class="s2">"degrees_Celsius"</span><span class="p">:</span> <span class="s2">"Celsius"</span><span class="p">,</span>
+    <span class="s2">"degreesCelsius"</span><span class="p">:</span> <span class="s2">"Celsius"</span><span class="p">,</span>
+    <span class="s2">"g/m^3"</span><span class="p">:</span> <span class="s2">"g m-3"</span><span class="p">,</span>
+    <span class="s2">"kg/m^3"</span><span class="p">:</span> <span class="s2">"kg m-3"</span><span class="p">,</span>
+    <span class="s2">"g/kg"</span><span class="p">:</span> <span class="s2">"g kg-1"</span><span class="p">,</span>
+    <span class="s2">"seconds"</span><span class="p">:</span> <span class="s2">"s"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Unit conversion definitions: each entry defines source unit, target unit, and conversion factor</span>
+<span class="n">unit1_to_unit2</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"cm s-1_to_m s-1"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"cm s-1"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"m s-1"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">},</span>
+    <span class="s2">"cm/s_to_m/s"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"cm/s"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"m/s"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">},</span>
+    <span class="s2">"m/s_to_cm/s"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"m/s"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"cm/s"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
+    <span class="s2">"m s-1_to_cm s-1"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"m s-1"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"cm s-1"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
+    <span class="s2">"S/m_to_mS/cm"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"S/m"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"mS/cm"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
+    <span class="s2">"S m-1_to_mS cm-1"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"S m-1"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"mS cm-1"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
+    <span class="s2">"mS/cm_to_S/m"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"mS/cm"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"S/m"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">},</span>
+    <span class="s2">"mS cm-1_to_S m-1"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"mS cm-1"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"S m-1"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">},</span>
+    <span class="s2">"dbar_to_Pa"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"dbar"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"Pa"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">10000</span><span class="p">},</span>
+    <span class="s2">"Pa_to_dbar"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"Pa"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"dbar"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">},</span>
+    <span class="s2">"dbar_to_kPa"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"dbar"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"kPa"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
+    <span class="s2">"degreesCelsius_to_Celsius"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"degreesCelsius"</span><span class="p">,</span>
+        <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"Celsius"</span><span class="p">,</span>
+        <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">"Celsius_to_degreesCelsius"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"Celsius"</span><span class="p">,</span>
+        <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"degreesCelsius"</span><span class="p">,</span>
+        <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">"m_to_cm"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"m"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"cm"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
+    <span class="s2">"m_to_km"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"m"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"km"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span>
+    <span class="s2">"cm_to_m"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"cm"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"m"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">},</span>
+    <span class="s2">"km_to_m"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"km"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"m"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">1000</span><span class="p">},</span>
+    <span class="s2">"g/m^3_to_kg/m^3"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"g/m^3"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"kg/m^3"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span>
+    <span class="s2">"g m-3_to_kg m-3"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"g m-3"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"kg m-3"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span>
+    <span class="s2">"kg/m^3_to_g/m^3"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"kg/m^3"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"g/m^3"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">1000</span><span class="p">},</span>
+    <span class="s2">"kg m-3_to_g m-3"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"kg m-3"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"g m-3"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">1000</span><span class="p">},</span>
+    <span class="s2">"micrograms/liter_to_mg m-3"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"micrograms/liter"</span><span class="p">,</span>
+        <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"mg m-3"</span><span class="p">,</span>
+        <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="c1"># Variables to exclude from OG1 output (derived variables, duplicates, etc.)</span>
+<span class="n">vars_to_remove</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"dissolved_oxygen_sat"</span><span class="p">,</span>
+    <span class="s2">"depth"</span><span class="p">,</span>
+    <span class="s2">"eng_depth"</span><span class="p">,</span>
+    <span class="s2">"eng_elaps_t"</span><span class="p">,</span>
+    <span class="s2">"eng_elaps_t_0000"</span><span class="p">,</span>
+    <span class="s2">"eng_rec"</span><span class="p">,</span>
+    <span class="s2">"eng_GC_state"</span><span class="p">,</span>
+    <span class="s2">"latitude_gsm"</span><span class="p">,</span>
+    <span class="s2">"longitude_gsm"</span><span class="p">,</span>
+    <span class="s2">"sound_velocity"</span><span class="p">,</span>
+    <span class="s2">"eng_sbect_condFreq"</span><span class="p">,</span>
+    <span class="s2">"eng_sbect_tempFreq"</span><span class="p">,</span>
+    <span class="s2">"glide_angle_gsm"</span><span class="p">,</span>
+    <span class="s2">"horz_speed_gsm"</span><span class="p">,</span>
+    <span class="s2">"north_displacement_gsm"</span><span class="p">,</span>
+    <span class="s2">"east_displacement_gsm"</span><span class="p">,</span>
+    <span class="s2">"polar_heading"</span><span class="p">,</span>
+    <span class="s2">"speed_gsm"</span><span class="p">,</span>
+    <span class="s2">"vert_speed_gsm"</span><span class="p">,</span>
+    <span class="s2">"dive_num_cast"</span><span class="p">,</span>
+    <span class="s2">"density"</span><span class="p">,</span>
+    <span class="s2">"gsw_sigma3"</span><span class="p">,</span>
+    <span class="s2">"gsw_sigma4"</span><span class="p">,</span>
+    <span class="s2">"theta"</span><span class="p">,</span>
+    <span class="c1"># "time",</span>
+<span class="p">]</span>
+
+<span class="c1"># Variables to keep unchanged during conversion (currently empty)</span>
+<span class="n">vars_as_is</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># --------------------------------</span>
+<span class="c1"># Variables + variable attributes</span>
+<span class="c1"># --------------------------------</span>
+<span class="c1"># Variable name mappings: basestation variable name -&gt; OG1 standard name</span>
+<span class="c1"># Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_dir</span> <span class="o">+</span> <span class="s2">"OG1_var_names.yaml"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="n">standard_names</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+<span class="c1"># Variable attribute vocabularies for OG1 format</span>
+<span class="c1"># Reference: http://vocab.nerc.ac.uk/scheme/OG1/current/</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_dir</span> <span class="o">+</span> <span class="s2">"OG1_vocab_attrs.yaml"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="n">vocab_attrs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+<span class="c1"># Sensor attribute vocabularies for OG1 format</span>
+<span class="c1"># Reference: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_dir</span> <span class="o">+</span> <span class="s2">"OG1_sensor_attrs.yaml"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="n">sensor_vocabs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+
+<span class="c1"># --------------------------------</span>
+<span class="c1"># Global Attributes</span>
+<span class="c1"># --------------------------------</span>
+
+
+<div class="viewcode-block" id="load_default_contributors">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.vocabularies.load_default_contributors">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_default_contributors</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Load the example contributor block from ``config/OG1_author.yaml``.</span>
+
+<span class="sd">    Not loaded at import: a converted file gains contributor details only when a</span>
+<span class="sd">    caller passes them to :func:`seagliderOG1.convertOG1.convert_to_OG1`. The</span>
+<span class="sd">    file is an editable example, not a default identity written into every output.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict of str</span>
+<span class="sd">        Contributor attributes read from ``OG1_author.yaml``.</span>
+
+<span class="sd">    """</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_dir</span> <span class="o">+</span> <span class="s2">"OG1_author.yaml"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Resolve the deprecated module attribute ``contrib_to_append`` lazily.</span>
+
+<span class="sd">    Preserves ``vocabularies.contrib_to_append`` for existing callers (it returns</span>
+<span class="sd">    :func:`load_default_contributors`) while no longer loading the file at import.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        The attribute being accessed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    object</span>
+<span class="sd">        The example contributor block when ``name`` is ``"contrib_to_append"``.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    AttributeError</span>
+<span class="sd">        For any other attribute name.</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">"contrib_to_append"</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">"vocabularies.contrib_to_append is deprecated and no longer loaded at import; "</span>
+            <span class="s2">"call vocabularies.load_default_contributors() instead."</span><span class="p">,</span>
+            <span class="ne">DeprecationWarning</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">load_default_contributors</span><span class="p">()</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"module </span><span class="si">{</span><span class="vm">__name__</span><span class="si">!r}</span><span class="s2"> has no attribute </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">"</span>
+    <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+
+<span class="c1"># Preferred order for global attributes in OG1 files</span>
+<span class="n">order_of_attr</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"title"</span><span class="p">,</span>  <span class="c1"># OceanGliders trajectory file</span>
+    <span class="s2">"id"</span><span class="p">,</span>  <span class="c1"># sg015_20040920T000000_delayed</span>
+    <span class="s2">"platform"</span><span class="p">,</span>  <span class="c1"># sub-surface gliders</span>
+    <span class="s2">"platform_vocabulary"</span><span class="p">,</span>  <span class="c1"># https://vocab.nerc.ac.uk/collection/L06/current/27</span>
+    <span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">,</span>  <span class="c1"># sg015 --&gt; This should be a variable, not an attribute</span>
+    <span class="s2">"naming_authority"</span><span class="p">,</span>  <span class="c1"># edu.washington.apl</span>
+    <span class="s2">"institution"</span><span class="p">,</span>  <span class="c1"># University of washington</span>
+    <span class="s2">"internal_mission_identifier"</span><span class="p">,</span>  <span class="c1"># p0150003_20040924</span>
+    <span class="s2">"geospatial_lat_min"</span><span class="p">,</span>  <span class="c1"># decimal degree</span>
+    <span class="s2">"geospatial_lat_max"</span><span class="p">,</span>  <span class="c1"># decimal degree</span>
+    <span class="s2">"geospatial_lon_min"</span><span class="p">,</span>  <span class="c1"># decimal degree</span>
+    <span class="s2">"geospatial_lon_max"</span><span class="p">,</span>  <span class="c1"># decimal degree</span>
+    <span class="s2">"geospatial_vertical_min"</span><span class="p">,</span>  <span class="c1"># meter depth</span>
+    <span class="s2">"geospatial_vertical_max"</span><span class="p">,</span>  <span class="c1"># meter depth</span>
+    <span class="s2">"time_coverage_start"</span><span class="p">,</span>  <span class="c1"># YYYYmmddTTHHMMss</span>
+    <span class="s2">"time_coverage_end"</span><span class="p">,</span>  <span class="c1"># YYYYmmddTTHHMMss</span>
+    <span class="s2">"site"</span><span class="p">,</span>  <span class="c1"># MOOSE_T00</span>
+    <span class="s2">"site_vocabulary"</span><span class="p">,</span>  <span class="c1"># to be defined</span>
+    <span class="s2">"program"</span><span class="p">,</span>  <span class="c1"># MOOSE glider program</span>
+    <span class="s2">"program_vocabulary"</span><span class="p">,</span>  <span class="c1"># to be defined</span>
+    <span class="s2">"project"</span><span class="p">,</span>  <span class="c1"># SAMBA</span>
+    <span class="s2">"network"</span><span class="p">,</span>  <span class="c1"># Southern California Coastal Ocean Observing System (SCCOOS)</span>
+    <span class="s2">"contributor_name"</span><span class="p">,</span>  <span class="c1"># Firstname Lastname, Firstname Lastname</span>
+    <span class="s2">"contributor_role"</span><span class="p">,</span>  <span class="c1"># Principal Investigator, Operator</span>
+    <span class="s2">"contributor_role_vocabulary"</span><span class="p">,</span>  <span class="c1"># http://vocab.nerc.ac.uk/collection/W08/current/</span>
+    <span class="s2">"contributor_email"</span><span class="p">,</span>  <span class="c1"># name@name.com, name@name.com</span>
+    <span class="s2">"contributor_id"</span><span class="p">,</span>  <span class="c1"># ORCID, ORCID</span>
+    <span class="s2">"contributing_institutions"</span><span class="p">,</span>  <span class="c1"># University of Washington, University of Washington</span>
+    <span class="s2">"contributing_institutions_vocabulary"</span><span class="p">,</span>  <span class="c1"># https://edmo.seadatanet.org/report/544, https://ror.org/012tb2g32</span>
+    <span class="s2">"contributing_institutions_role"</span><span class="p">,</span>  <span class="c1"># PI, Operator</span>
+    <span class="s2">"contributing_institutions_role_vocabulary"</span><span class="p">,</span>  <span class="c1"># https://vocab.nerc.ac.uk/collection/W08/current/</span>
+    <span class="s2">"uri"</span><span class="p">,</span>  <span class="c1"># other universal resource identifiers separated by commas</span>
+    <span class="s2">"data_url"</span><span class="p">,</span>  <span class="c1"># url link to where OG1.0 file is hosted</span>
+    <span class="s2">"doi"</span><span class="p">,</span>  <span class="c1"># data doi for OG1</span>
+    <span class="s2">"rtqc_method"</span><span class="p">,</span>  <span class="c1"># No QC applied</span>
+    <span class="s2">"rtqc_method_doi"</span><span class="p">,</span>  <span class="c1"># n/a</span>
+    <span class="s2">"web_link"</span><span class="p">,</span>  <span class="c1"># url for information rleated to glider mission, multiple urls separated by comma</span>
+    <span class="s2">"comment"</span><span class="p">,</span>  <span class="c1"># miscellaneous information</span>
+    <span class="s2">"start_date"</span><span class="p">,</span>  <span class="c1"># datetime of glider deployment YYYYmmddTHHMMss</span>
+    <span class="s2">"date_created"</span><span class="p">,</span>  <span class="c1"># date of creation of this dataset YYYYmmddTHHMMss</span>
+    <span class="s2">"featureType"</span><span class="p">,</span>  <span class="c1"># trajectory</span>
+    <span class="s2">"Conventions"</span><span class="p">,</span>  <span class="c1"># CF-1.10,OG-1.0</span>
+    <span class="s2">"date_modified"</span><span class="p">,</span>  <span class="c1"># date of last modification of this dataset YYYYmmddTHHMMss</span>
+<span class="p">]</span>
+
+<span class="c1"># Global attribute configuration for OG1 conversion</span>
+<span class="c1"># Defines which attributes to keep, rename, or add during conversion</span>
+<span class="c1"># Compatible with base_station_version 2.8, nodc_template_version_v0.9</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_dir</span> <span class="o">+</span> <span class="s2">"OG1_global_attrs.yaml"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="n">global_attrs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
