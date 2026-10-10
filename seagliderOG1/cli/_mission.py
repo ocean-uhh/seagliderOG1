@@ -27,26 +27,10 @@ KNOWN_KEYS = frozenset(
     }
 )
 REQUIRED_KEYS = ("source",)
-VALID_MODES = ("realtime", "delayed")
 
-PLATFORM_DEFAULTS: dict[str, object] = {
-    "PLATFORM_SERIAL_NUMBER": None,
-    "PLATFORM_MODEL": None,
-    "PLATFORM_DEPTH_RATING": None,
-    "PLATFORM_MAKER": None,
-    "GLIDER_FIRMWARE_VERSION": None,
-    "LANDSTATION_VERSION": None,
-    "WMO_IDENTIFIER": None,
-}
-
-# Platform fields a mission config must fill (or supply via ``init --from``): a null
-# here is a validate ERROR rather than a silent default written into the output.
-REQUIRED_PLATFORM_FIELDS = (
-    "PLATFORM_SERIAL_NUMBER",
-    "PLATFORM_MODEL",
-    "PLATFORM_MAKER",
-    "PLATFORM_DEPTH_RATING",
-)
+# The valid data modes, the platform defaults, and the required platform fields all
+# derive from the one platform/mode table in ``vocabularies`` (imported lazily so the
+# parser build and ``--help`` stay free of its import-time YAML reads).
 
 
 class ValidationIssue(NamedTuple):
@@ -81,8 +65,20 @@ def load_config(config_path: pathlib.Path) -> dict:
     dict
         The parsed configuration.
 
+    Raises
+    ------
+    ValueError
+        If the file's YAML root is not a mapping (a list or scalar), which would
+        otherwise pass ``safe_load`` and fail deep in validation or conversion.
+
     """
-    return yaml.safe_load(config_path.read_text())
+    data = yaml.safe_load(config_path.read_text())
+    if not isinstance(data, dict):
+        msg = "configuration root is not a mapping."
+        # Malformed config input, not a programming type error; ValueError matches
+        # readers.discover_missions' bad-input style and validate_config catches it.
+        raise ValueError(msg)  # noqa: TRY004
+    return data
 
 
 def _scalar(value: object) -> str:
@@ -120,8 +116,8 @@ def render_template(
     Parameters
     ----------
     platform : dict of str to object or None, optional
-        Platform values to merge over :data:`PLATFORM_DEFAULTS`. None uses the
-        defaults unchanged.
+        Platform values to merge over the template defaults (every platform field
+        null). None uses the defaults unchanged.
     source : str or None, optional
         Value for the ``source`` key. None leaves it as ``null`` for the user to
         fill; ``init --from DIR`` passes DIR so the template validates as written.
@@ -132,7 +128,9 @@ def render_template(
         The full commented YAML document.
 
     """
-    plat = {**PLATFORM_DEFAULTS, **(platform or {})}
+    from seagliderOG1 import vocabularies
+
+    plat = {**dict.fromkeys(vocabularies.PLATFORM_FIELDS), **(platform or {})}
     lines = [
         "# seagliderOG1 mission configuration.",
         "# Paths are resolved relative to this file. Edit the values, then:",
@@ -388,10 +386,9 @@ def _validate_source(
         return []
     # The dive-range check applies to a single mission directory; under a root the
     # range is per mission and is not validated here.
-    single = [mission for mission in missions if mission.date is None]
-    if not single:
+    if readers.is_root(missions):
         return []
-    present = single[0].dives
+    present = missions[0].dives
     first, last = dives
     issues: list[ValidationIssue] = []
     if first < present[0] or last > present[-1]:
@@ -431,8 +428,13 @@ def _validate_platform(platform: object) -> list[ValidationIssue]:
         return []
     if not isinstance(platform, dict):
         return [ValidationIssue("ERROR", "platform must be a mapping.", "platform")]
+    from seagliderOG1 import vocabularies
+
+    # A null in a required field is a validate ERROR rather than a silent default
+    # written into the output.
+    required = [f for f, spec in vocabularies.PLATFORM_FIELDS.items() if spec.required]
     issues: list[ValidationIssue] = []
-    for field in REQUIRED_PLATFORM_FIELDS:
+    for field in required:
         if platform.get(field) in (None, "", "None"):
             issues.append(
                 ValidationIssue(
@@ -469,9 +471,10 @@ def validate_config(
         All problems found, ERROR and WARNING; empty when the config is valid.
 
     """
-    data = yaml.safe_load(config_path.read_text())
-    if not isinstance(data, dict):
-        return [ValidationIssue("ERROR", "configuration root is not a mapping.", None)]
+    try:
+        data = load_config(config_path)
+    except ValueError as exc:
+        return [ValidationIssue("ERROR", str(exc), None)]
     if source_override is not None:
         data = {**data, "source": source_override}
 
@@ -493,12 +496,15 @@ def validate_config(
             )
         )
 
+    from seagliderOG1 import vocabularies
+
+    valid_modes = tuple(vocabularies.MODE_SUFFIX)
     mode = data.get("mode")
-    if mode is not None and mode not in VALID_MODES:
+    if mode is not None and mode not in valid_modes:
         issues.append(
             ValidationIssue(
                 "ERROR",
-                f"mode must be one of {list(VALID_MODES)}, not {mode!r}.",
+                f"mode must be one of {list(valid_modes)}, not {mode!r}.",
                 "mode",
             )
         )

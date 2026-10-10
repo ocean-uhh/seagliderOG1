@@ -270,6 +270,29 @@ def discover_missions(source: str) -> list[Mission]:
     return missions
 
 
+def is_root(missions: list[Mission]) -> bool:
+    """Return True when ``missions`` came from a root of ``SN/DATE`` directories.
+
+    A single mission directory yields one mission with ``date`` None; a root yields
+    one per ``SN/DATE`` subdirectory, each with a ``date``. The presence of any dated
+    mission is therefore the root/single distinction, in one place for the callers
+    that branch on it.
+
+    Parameters
+    ----------
+    missions : list of Mission
+        Missions as returned by :func:`discover_missions`.
+
+    Returns
+    -------
+    bool
+        True if any mission carries a ``date`` (a root), False for a single mission
+        directory or an empty list.
+
+    """
+    return any(mission.date is not None for mission in missions)
+
+
 def filter_files_by_profile(
     file_list: list[str],
     start_profile: int | None = None,

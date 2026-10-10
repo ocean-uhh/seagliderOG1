@@ -62,13 +62,9 @@ def run(args: argparse.Namespace) -> int:
         return 0
 
     if args.registry == "institutions":
-        import yaml
+        from seagliderOG1 import contributors
 
-        registry_path = (
-            pathlib.Path(vocabularies.config_dir) / "institution_registry.yml"
-        )
-        data = yaml.safe_load(registry_path.read_text())
-        institutions = data.get("institutions", {})
+        institutions = contributors.registry_institutions()
         for code in sorted(
             institutions, key=lambda c: institutions[c].get("standard_name", "")
         ):

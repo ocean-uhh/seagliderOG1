@@ -103,8 +103,9 @@ def _select_missions(
         The selected missions and an error message (or None).
 
     """
-    is_root = any(mission.date is not None for mission in missions)
-    if not is_root:
+    from seagliderOG1 import readers
+
+    if not readers.is_root(missions):
         if args.all or args.mission:
             return [], (
                 "--all/--mission apply to a root of SN/DATE missions, not a single "
@@ -135,8 +136,9 @@ def run(args: argparse.Namespace) -> int:
     Returns
     -------
     int
-        0 when all selected missions convert, 1 on any failure or a resolution
-        error, 2 when the config file is missing.
+        0 when all selected missions convert, 1 on any failure, a resolution error,
+        or a missing config file. Exit 2 is reserved for argparse-level usage errors
+        (see the CLI family convention).
 
     """
     from seagliderOG1 import convertOG1, readers, writers
@@ -144,7 +146,7 @@ def run(args: argparse.Namespace) -> int:
     config_path = pathlib.Path(args.config)
     if not config_path.is_file():
         print(f"error: config not found: {config_path}", file=sys.stderr)
-        return 2
+        return 1
 
     # Validate the effective source (the --source override, if any), not the stale
     # config value, so an override can rescue a config whose own source is missing.

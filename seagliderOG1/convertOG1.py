@@ -38,21 +38,13 @@ _DERIVED_GLOBALS = frozenset(
     }
 )
 
-# OG1 id / filename data-mode suffixes. Per the OG1 format manual's file-naming
-# convention (id = <platform_serial>_<start_date>_<data_mode>): "R" for near
-# real time, "delayed" for delayed mode. The manual defines no separate data-mode
-# attribute, so mode affects only the id (and filename); nothing else is written.
-# Ref: OceanGliders OG-format-user-manual, OG_Format "File naming convention".
-_MODE_SUFFIX = {"delayed": "delayed", "realtime": "R"}
-
-# String platform fields, resolved in order config -> file -> "UNK". The file-derived
-# values come from vocabularies.platform_from_file (the one file->field table).
-_PLATFORM_STRING_FIELDS = (
-    "PLATFORM_MODEL",
-    "PLATFORM_MAKER",
-    "GLIDER_FIRMWARE_VERSION",
-    "LANDSTATION_VERSION",
-    "WMO_IDENTIFIER",
+# String platform fields, resolved in order config -> file -> "UNK", derived from
+# the one platform table in vocabularies (serial raises when absent, numeric fields
+# are omitted; only the string ones take the "UNK" fallback).
+_PLATFORM_STRING_FIELDS = tuple(
+    field
+    for field, spec in vocabularies.PLATFORM_FIELDS.items()
+    if spec.kind == "string"
 )
 
 
@@ -116,7 +108,7 @@ def _resolve_platform(
     for field in _PLATFORM_STRING_FIELDS:
         value = config_or(field)
         if value is None:
-            from_file = field in vocabularies.PLATFORM_FROM_FILE
+            from_file = vocabularies.PLATFORM_FIELDS[field].source is not None
             warnings.warn(
                 f"{field} not set in the mission config (platform.{field})"
                 + (" or the basestation file" if from_file else "")
@@ -267,8 +259,8 @@ def convert_to_OG1(
         )
         raise ValueError(msg)
 
-    if mode not in _MODE_SUFFIX:
-        msg = f"mode must be one of {sorted(_MODE_SUFFIX)}, not {mode!r}."
+    if mode not in vocabularies.MODE_SUFFIX:
+        msg = f"mode must be one of {sorted(vocabularies.MODE_SUFFIX)}, not {mode!r}."
         raise ValueError(msg)
 
     print(f"Start converting {len(list_of_datasets)} raw datasets to OG1 format ...")
@@ -435,7 +427,7 @@ def convert_to_OG1(
 
     # Construct the unique identifier attribute. The data-mode suffix (delayed/R)
     # is the only place OG1 records data mode; there is no data-mode attribute.
-    id = f"{platform_serial_number}_{ds_og1.start_date}_{_MODE_SUFFIX[mode]}"
+    id = f"{platform_serial_number}_{ds_og1.start_date}_{vocabularies.MODE_SUFFIX[mode]}"
     ds_og1.attrs["id"] = id
 
     # Write config global attributes verbatim (nulls skipped). Collisions with

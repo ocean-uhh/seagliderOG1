@@ -31,6 +31,8 @@ OG1 format requirements without code changes.
 import os
 import pathlib
 import warnings
+from collections.abc import Callable
+from typing import NamedTuple
 
 import yaml
 
@@ -62,20 +64,62 @@ ROLE_ALIASES = {
     "principal investigator": "PI",
 }
 
-# OG1 platform field -> (basestation global attribute it derives from, formatter).
-# The one source of the file->field mapping, used by both the CLI `init --from`
-# and convertOG1._resolve_platform so the two never diverge.
-PLATFORM_FROM_FILE = {
-    "PLATFORM_SERIAL_NUMBER": ("platform_id", lambda value: str(value).lower()),
-    "WMO_IDENTIFIER": ("wmo_identifier", str),
-    "GLIDER_FIRMWARE_VERSION": (
+# OG1 data-mode -> filename/id suffix. Mode affects only the id (and filename);
+# nothing else is written. Ref: OceanGliders OG-format-user-manual, "File naming
+# convention".
+MODE_SUFFIX = {"delayed": "delayed", "realtime": "R"}
+
+
+class PlatformField(NamedTuple):
+    """How one OG1 platform field is sourced and written.
+
+    Parameters
+    ----------
+    source : str or None
+        Basestation global attribute the value derives from, or None when the
+        field is config-only (no file fallback).
+    formatter : callable or None
+        Applied to the file value before use; None when there is no file source.
+    required : bool
+        When True, a null in the mission config is a validate ERROR rather than a
+        silent default written into the output.
+    kind : str
+        How ``convert_to_OG1`` writes an unset field: ``"serial"`` names the
+        output and raises when absent, ``"string"`` warns and writes ``"UNK"``,
+        ``"numeric"`` is omitted.
+
+    """
+
+    source: str | None
+    formatter: Callable[[object], str] | None
+    required: bool
+    kind: str
+
+
+# The OG1 platform fields, in template order. This one table is the single source
+# for four views that used to be maintained separately: the init template defaults
+# and the validate required-field check (both in cli/_mission.py), convert_to_OG1's
+# string-field resolution, and the file->field derivation in platform_from_file.
+PLATFORM_FIELDS: dict[str, PlatformField] = {
+    "PLATFORM_SERIAL_NUMBER": PlatformField(
+        "platform_id", lambda value: str(value).lower(), True, "serial"
+    ),
+    "PLATFORM_MODEL": PlatformField(None, None, True, "string"),
+    "PLATFORM_DEPTH_RATING": PlatformField(None, None, True, "numeric"),
+    "PLATFORM_MAKER": PlatformField(None, None, True, "string"),
+    "GLIDER_FIRMWARE_VERSION": PlatformField(
         "seaglider_software_version",
         lambda value: f"seaglider {float(value):g}",
+        False,
+        "string",
     ),
-    "LANDSTATION_VERSION": (
+    "LANDSTATION_VERSION": PlatformField(
         "base_station_version",
         lambda value: f"basestation v{float(value):g}",
+        False,
+        "string",
     ),
+    "WMO_IDENTIFIER": PlatformField("wmo_identifier", str, False, "string"),
 }
 
 
@@ -95,9 +139,9 @@ def platform_from_file(attrs: dict) -> dict:
 
     """
     derived = {}
-    for field, (source, formatter) in PLATFORM_FROM_FILE.items():
-        if source in attrs:
-            derived[field] = formatter(attrs[source])
+    for field, spec in PLATFORM_FIELDS.items():
+        if spec.source is not None and spec.source in attrs:
+            derived[field] = spec.formatter(attrs[spec.source])
     return derived
 
 

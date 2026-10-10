@@ -43,13 +43,14 @@ def run(args: argparse.Namespace) -> int:
     Returns
     -------
     int
-        0 when valid, 1 when any ERROR is found, 2 when the file is missing.
+        0 when valid, 1 when any ERROR is found or the file is missing. Exit 2 is
+        reserved for argparse-level usage errors (see the CLI family convention).
 
     """
     path = pathlib.Path(args.config)
     if not path.is_file():
         print(f"error: config not found: {path}", file=sys.stderr)
-        return 2
+        return 1
 
     issues = _mission.validate_config(path, strict=args.strict)
     if _mission.report_issues(issues):

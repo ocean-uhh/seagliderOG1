@@ -465,9 +465,14 @@ def test_validate_requires_source(tmp_path: pathlib.Path) -> None:
     assert cli.main(["validate", str(path)]) == 1
 
 
-def test_validate_missing_file_is_exit_two(tmp_path: pathlib.Path) -> None:
-    """Validating a non-existent config exits 2."""
-    assert cli.main(["validate", str(tmp_path / "nope.yaml")]) == 2
+def test_validate_missing_file_is_exit_one(tmp_path: pathlib.Path) -> None:
+    """Validating a non-existent config exits 1 (an input failure, not a usage error)."""
+    assert cli.main(["validate", str(tmp_path / "nope.yaml")]) == 1
+
+
+def test_process_missing_config_is_exit_one(tmp_path: pathlib.Path) -> None:
+    """Processing a non-existent config exits 1 (an input failure, not a usage error)."""
+    assert cli.main(["process", str(tmp_path / "nope.yaml")]) == 1
 
 
 def test_validate_dives_out_of_range(tmp_path: pathlib.Path) -> None:
