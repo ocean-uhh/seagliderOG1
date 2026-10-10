@@ -105,6 +105,42 @@ def test_global_attributes_collision_raises():
         raise AssertionError("expected ValueError for derived-global collision")
 
 
+def test_start_date_global_attribute_collision_raises():
+    """start_date is converter-derived (names id/TRAJECTORY); a config override is rejected."""
+    try:
+        convertOG1.convert_to_OG1(
+            [], global_attributes={"start_date": "20080606T000000"}
+        )
+    except ValueError as exc:
+        assert "start_date" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for start_date collision")
+
+
+def test_apply_keep_variables_retains_mandatory_and_qc():
+    """keep_variables keeps the ask plus every mandatory var and the kept var's _QC."""
+    import warnings
+
+    ds = xr.Dataset(
+        {
+            "TEMP": ("N", [1.0, 2.0]),
+            "TEMP_QC": ("N", [1, 1]),
+            "PSAL": ("N", [3.0, 4.0]),
+            "GLIDE_SPEED": ("N", [0.1, 0.2]),
+            "PLATFORM_SERIAL_NUMBER": ((), "sg005"),
+            "WMO_IDENTIFIER": ((), "UNK"),
+        }
+    )
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        out = convertOG1.apply_keep_variables(ds, ["TEMP"])
+    assert "TEMP" in out.variables and "TEMP_QC" in out.variables  # ask + its QC
+    assert "PLATFORM_SERIAL_NUMBER" in out.variables  # mandatory family
+    assert "WMO_IDENTIFIER" in out.variables  # mandatory
+    assert "PSAL" not in out.variables and "GLIDE_SPEED" not in out.variables  # dropped
+    assert any("dropped" in str(w.message) for w in caught)
+
+
 def test_process_dataset():
 
     ds1 = readers.load_sample_dataset()

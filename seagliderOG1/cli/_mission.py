@@ -31,13 +31,22 @@ VALID_MODES = ("realtime", "delayed")
 
 PLATFORM_DEFAULTS: dict[str, object] = {
     "PLATFORM_SERIAL_NUMBER": None,
-    "PLATFORM_MODEL": "University of Washington Seaglider M1 glider",
-    "PLATFORM_DEPTH_RATING": 1000,
-    "PLATFORM_MAKER": "University of Washington School of Oceanography",
+    "PLATFORM_MODEL": None,
+    "PLATFORM_DEPTH_RATING": None,
+    "PLATFORM_MAKER": None,
     "GLIDER_FIRMWARE_VERSION": None,
     "LANDSTATION_VERSION": None,
     "WMO_IDENTIFIER": None,
 }
+
+# Platform fields a mission config must fill (or supply via ``init --from``): a null
+# here is a validate ERROR rather than a silent default written into the output.
+REQUIRED_PLATFORM_FIELDS = (
+    "PLATFORM_SERIAL_NUMBER",
+    "PLATFORM_MODEL",
+    "PLATFORM_MAKER",
+    "PLATFORM_DEPTH_RATING",
+)
 
 
 class ValidationIssue(NamedTuple):
@@ -136,15 +145,15 @@ def render_template(
         "output_dir: ./          # where OG1 files are written",
         "mode: delayed           # realtime | delayed",
         "dives: null             # [first, last] dive numbers; null = all files present",
-        "repair: false           # repair basestation time metadata before loading",
-        "keep_variables: null    # optional list of variables to keep; null = all",
+        "repair: false           # run scan_and_repair on the basestation files (writes the source tree)",
+        "keep_variables: null    # optional list of science variables to keep; null = all",
         "",
-        "platform:               # filled from the first file by 'init --from'; edit as needed",
-        f"  PLATFORM_SERIAL_NUMBER: {_scalar(plat['PLATFORM_SERIAL_NUMBER'])}   # from platform_id",
-        f"  PLATFORM_MODEL: {_scalar(plat['PLATFORM_MODEL'])}",
+        "platform:               # 'init --from' fills these; fill any null before validate",
+        f"  PLATFORM_SERIAL_NUMBER: {_scalar(plat['PLATFORM_SERIAL_NUMBER'])}   # from platform_id; a serial or a local nickname",
+        f"  PLATFORM_MODEL: {_scalar(plat['PLATFORM_MODEL'])}   # e.g. University of Washington Seaglider M1 glider",
         "  platform_model_vocabulary: null   # e.g. https://vocab.nerc.ac.uk/collection/B76/current/B7600024/ (NERC B76; B7600024 = Seaglider)",
-        f"  PLATFORM_DEPTH_RATING: {_scalar(plat['PLATFORM_DEPTH_RATING'])}",
-        f"  PLATFORM_MAKER: {_scalar(plat['PLATFORM_MAKER'])}",
+        f"  PLATFORM_DEPTH_RATING: {_scalar(plat['PLATFORM_DEPTH_RATING'])}   # e.g. 1000 (metres)",
+        f"  PLATFORM_MAKER: {_scalar(plat['PLATFORM_MAKER'])}   # e.g. University of Washington School of Oceanography",
         f"  GLIDER_FIRMWARE_VERSION: {_scalar(plat['GLIDER_FIRMWARE_VERSION'])}   # from seaglider_software_version",
         f"  LANDSTATION_VERSION: {_scalar(plat['LANDSTATION_VERSION'])}   # from base_station_version",
         f"  WMO_IDENTIFIER: {_scalar(plat['WMO_IDENTIFIER'])}   # from wmo_identifier",
@@ -188,44 +197,55 @@ def _check_name(name: object, where: str) -> list[ValidationIssue]:
 
 
 def _check_role(entry: dict, where: str) -> tuple[list[ValidationIssue], str | None]:
-    """Check an entry's role, returning issues and the normalised role (or None)."""
+    """Check an entry's role, returning issues and the normalised role (or None).
+
+    The first error wins per entry (no piling a second error on the same cause).
+    ``role:`` and ``roles:`` together is an error; a single-element ``roles:`` is a
+    warning to prefer ``role:``.
+    """
     from seagliderOG1 import contributors, vocabularies
 
-    issues: list[ValidationIssue] = []
     role = entry.get("role")
-    if "roles" in entry:
-        roles = entry.get("roles")
-        if isinstance(roles, list) and len(roles) == 1:
-            issues.append(
-                ValidationIssue(
-                    "WARNING",
-                    f"{where} uses roles:; prefer role: with one value.",
-                    where,
-                )
+    roles = entry.get("roles")
+    if role is not None and roles is not None:
+        return [
+            ValidationIssue(
+                "ERROR", f"{where} sets both role: and roles:; use one.", where
             )
-            role = role if role is not None else roles[0]
-        else:
-            issues.append(
+        ], None
+
+    warnings_found: list[ValidationIssue] = []
+    if roles is not None:
+        if not isinstance(roles, list) or len(roles) != 1:
+            return [
                 ValidationIssue(
                     "ERROR",
-                    f"{where} has multiple roles; list the entry once per role with role:.",
+                    f"{where} roles: must be a single value; list the entry once per "
+                    "role, or use role:.",
                     where,
                 )
+            ], None
+        warnings_found.append(
+            ValidationIssue(
+                "WARNING", f"{where} uses roles:; prefer role: with one value.", where
             )
+        )
+        role = roles[0]
+
     if role in (None, ""):
-        issues.append(ValidationIssue("ERROR", f"{where} needs a role.", where))
-        return issues, None
+        return [*warnings_found, ValidationIssue("ERROR", f"{where} needs a role.", where)], None
     normalized = contributors.normalize_role(role)
     if normalized is None:
         allowed = ", ".join(vocabularies.ROLE_VOCABULARY)
-        issues.append(
+        return [
+            *warnings_found,
             ValidationIssue(
                 "ERROR",
                 f"{where} role {role!r} is not a W08 role (one of: {allowed}).",
                 where,
-            )
-        )
-    return issues, normalized
+            ),
+        ], None
+    return warnings_found, normalized
 
 
 def _validate_people(
@@ -359,8 +379,43 @@ def _validate_source(
     return issues
 
 
+def _validate_platform(platform: object) -> list[ValidationIssue]:
+    """ERROR on a null required platform field when a platform block is present.
+
+    Parameters
+    ----------
+    platform : object
+        The value of the ``platform`` key.
+
+    Returns
+    -------
+    list of ValidationIssue
+        One ERROR per null required field; empty when the block is absent or
+        every required field is set.
+
+    """
+    if platform in (None, {}, ""):
+        return []
+    if not isinstance(platform, dict):
+        return [ValidationIssue("ERROR", "platform must be a mapping.", "platform")]
+    issues: list[ValidationIssue] = []
+    for field in REQUIRED_PLATFORM_FIELDS:
+        if platform.get(field) in (None, "", "None"):
+            issues.append(
+                ValidationIssue(
+                    "ERROR",
+                    f"platform.{field} is null; fill it (see the template '# e.g.' "
+                    "comments) or run 'init --from DIR'.",
+                    f"platform.{field}",
+                )
+            )
+    return issues
+
+
 def validate_config(
-    config_path: pathlib.Path, strict: bool = False
+    config_path: pathlib.Path,
+    strict: bool = False,
+    source_override: str | None = None,
 ) -> list[ValidationIssue]:
     """Validate a mission configuration file.
 
@@ -371,6 +426,9 @@ def validate_config(
     strict : bool, optional
         When True, also require every dive in the ``dives`` range to be present.
         Default is False.
+    source_override : str or None, optional
+        A command-line ``--source`` that replaces the config's ``source`` for
+        validation, so an override is checked rather than the stale config value.
 
     Returns
     -------
@@ -381,6 +439,8 @@ def validate_config(
     data = yaml.safe_load(config_path.read_text())
     if not isinstance(data, dict):
         return [ValidationIssue("ERROR", "configuration root is not a mapping.", None)]
+    if source_override is not None:
+        data = {**data, "source": source_override}
 
     issues: list[ValidationIssue] = []
     for key in data:
@@ -432,10 +492,18 @@ def validate_config(
                 "ERROR", "keep_variables must be null or a list.", "keep_variables"
             )
         )
-    for key in ("platform", "global_attributes"):
-        if key in data and data[key] is not None and not isinstance(data[key], dict):
-            issues.append(ValidationIssue("ERROR", f"{key} must be a mapping.", key))
+    if (
+        "global_attributes" in data
+        and data["global_attributes"] is not None
+        and not isinstance(data["global_attributes"], dict)
+    ):
+        issues.append(
+            ValidationIssue(
+                "ERROR", "global_attributes must be a mapping.", "global_attributes"
+            )
+        )
 
+    issues.extend(_validate_platform(data.get("platform")))
     issues.extend(_validate_people(data.get("contributors"), "contributors", "PI"))
     issues.extend(
         _validate_people(data.get("institutions"), "institutions", "Operator")

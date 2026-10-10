@@ -316,8 +316,11 @@ def consolidate(records: Sequence[Mapping]) -> list[dict[str, str]]:
     result: list[dict[str, str]] = []
     for original in records:
         record = dict(original)
+        # Compare on the preferred role label so a file's "Principal investigator"
+        # and a config's "PI" are recognised as the same role and merged.
+        record["role"] = _preferred_role(record.get("role") or "")
         name_key = _norm_name(record.get("name"))
-        role = record.get("role") or ""
+        role = record["role"]
         merged = False
         for index, existing in enumerate(result):
             if _norm_name(existing.get("name")) != name_key:

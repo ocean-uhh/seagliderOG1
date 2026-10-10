@@ -170,6 +170,19 @@ def test_discover_missions_warns_on_sn_mismatch(tmp_path):
     assert any("disagrees" in str(w.message) for w in caught)
 
 
+def test_load_basestation_files_repair_is_opt_in(monkeypatch):
+    """scan_and_repair runs only when repair=True; the source tree is untouched otherwise."""
+    calls = []
+    monkeypatch.setattr(
+        readers, "scan_and_repair_files", lambda *a, **k: calls.append(a)
+    )
+    source = str(parent_dir / "data/demo_sg005")
+    readers.load_basestation_files(source, 1, 1)
+    assert calls == []
+    readers.load_basestation_files(source, 1, 1, repair=True)
+    assert len(calls) == 1
+
+
 def test_load_first_basestation_file():
     """Test the load_first_basestation_file function from the readers module.
     This test checks the loading of the first dataset from either an online source

@@ -350,7 +350,10 @@ def load_first_basestation_file(source: str) -> xr.Dataset:
 
 
 def load_basestation_files(
-    source: str, start_profile: int | None = None, end_profile: int | None = None
+    source: str,
+    start_profile: int | None = None,
+    end_profile: int | None = None,
+    repair: bool = False,
 ) -> list[xr.Dataset]:
     """Load multiple Seaglider basestation files with optional profile filtering.
 
@@ -365,6 +368,10 @@ def load_basestation_files(
         Minimum profile number to load.
     end_profile : int, optional
         Maximum profile number to load.
+    repair : bool, optional
+        When True, run :func:`scan_and_repair_files` first (it rewrites files with
+        inconsistent time metadata in the source tree). Default False: the source
+        tree is never modified unless explicitly asked.
 
     Returns
     -------
@@ -372,8 +379,9 @@ def load_basestation_files(
         List of loaded basestation datasets, ordered by filename.
 
     """
-    ### Scan all basestation files and repair any with inconsistent time metadata before loading
-    scan_and_repair_files(source, start_profile, end_profile)
+    if repair:
+        # Rewrites files with inconsistent time metadata in place; opt-in only.
+        scan_and_repair_files(source, start_profile, end_profile)
 
     file_list = list_files(source)
     filtered_files = filter_files_by_profile(file_list, start_profile, end_profile)

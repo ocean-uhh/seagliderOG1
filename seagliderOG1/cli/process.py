@@ -59,6 +59,11 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
         metavar=("FIRST", "LAST"),
         help="dive range to convert (overrides the config dives)",
     )
+    parser.add_argument(
+        "--repair",
+        action="store_true",
+        help="repair basestation time metadata before loading (writes the source tree)",
+    )
     existing = parser.add_mutually_exclusive_group()
     existing.add_argument(
         "--force", action="store_true", help="overwrite an existing output file"
@@ -146,7 +151,9 @@ def run(args: argparse.Namespace) -> int:
         print(f"error: config not found: {config_path}", file=sys.stderr)
         return 2
 
-    issues = _mission.validate_config(config_path)
+    # Validate the effective source (the --source override, if any), not the stale
+    # config value, so an override can rescue a config whose own source is missing.
+    issues = _mission.validate_config(config_path, source_override=args.source)
     for issue in issues:
         stream = sys.stderr if issue.level == "ERROR" else sys.stdout
         where = f" [{issue.key}]" if issue.key else ""
@@ -168,6 +175,7 @@ def run(args: argparse.Namespace) -> int:
     config_dives = config.get("dives")
     dives = tuple(args.dives) if args.dives else config_dives
     first, last = (dives[0], dives[1]) if dives else (None, None)
+    repair = bool(args.repair or config.get("repair", False))
     keep_variables = config.get("keep_variables")
 
     try:
@@ -186,10 +194,30 @@ def run(args: argparse.Namespace) -> int:
         print(f"error: {error}", file=sys.stderr)
         return 1
 
+    # Plan: resolve mission -> dive range -> output target, purely. -n stops here.
+    if args.dry_run:
+        for mission in selected:
+            lo = (
+                first
+                if first is not None
+                else (min(mission.dives) if mission.dives else "?")
+            )
+            hi = (
+                last
+                if last is not None
+                else (max(mission.dives) if mission.dives else "?")
+            )
+            print(f"{mission.path} dives [{lo}, {hi}] -> {output_dir}/<id>.nc")
+        print(f"{len(selected)} would convert, 0 skipped, 0 failed")
+        return 0
+
+    # Act: the exists/--force/--skip-existing checks belong here, not in the plan.
     converted = skipped = failed = 0
     for mission in selected:
         try:
-            datasets = readers.load_basestation_files(mission.path, first, last)
+            datasets = readers.load_basestation_files(
+                mission.path, first, last, repair=repair
+            )
             ds, _ = convertOG1.convert_to_OG1(
                 datasets,
                 contributors=config.get("contributors"),
@@ -199,7 +227,7 @@ def run(args: argparse.Namespace) -> int:
                 mode=mode,
             )
             if keep_variables:
-                ds = ds[[v for v in keep_variables if v in ds.variables]]
+                ds = convertOG1.apply_keep_variables(ds, keep_variables)
             out_path = output_dir / f"{ds.attrs['id']}.nc"
             if out_path.exists():
                 if args.skip_existing:
@@ -213,12 +241,15 @@ def run(args: argparse.Namespace) -> int:
                     )
                     failed += 1
                     continue
-            if args.dry_run:
-                print(f"{mission.path} dives [{first}, {last}] -> {out_path}")
-            else:
-                output_dir.mkdir(parents=True, exist_ok=True)
-                writers.save_dataset(ds, str(out_path), overwrite=args.force)
-                print(f"wrote {out_path}")
+            output_dir.mkdir(parents=True, exist_ok=True)
+            if not writers.save_dataset(ds, str(out_path), overwrite=args.force):
+                print(
+                    f"FAILED {mission.path}: save_dataset could not write {out_path}",
+                    file=sys.stderr,
+                )
+                failed += 1
+                continue
+            print(f"wrote {out_path}")
             converted += 1
         # One mission's failure is reported and the run continues to the next.
         except Exception as exc:  # noqa: BLE001
@@ -227,6 +258,5 @@ def run(args: argparse.Namespace) -> int:
             )
             failed += 1
 
-    verb = "would convert" if args.dry_run else "converted"
-    print(f"{converted} {verb}, {skipped} skipped, {failed} failed")
+    print(f"{converted} converted, {skipped} skipped, {failed} failed")
     return 1 if failed else 0

@@ -131,6 +131,18 @@ def test_consolidate_role_less_merges_into_role_bearing() -> None:
     assert out[0]["email"] == "eriksen@uw.edu"  # filled from the role-less record
 
 
+def test_consolidate_merges_role_aliases() -> None:
+    """A file's 'Principal investigator' and a config 'PI' are the same role → one slot."""
+    records = [
+        {"name": "Ann", "email": "ann@x.org", "role": "Principal investigator"},
+        {"name": "Ann", "email": "", "role": "PI"},
+    ]
+    out = contributors.consolidate(records)
+    assert len(out) == 1
+    assert out[0]["role"] == "PI"
+    assert out[0]["email"] == "ann@x.org"
+
+
 def test_consolidate_keeps_distinct_names_and_roles() -> None:
     """Different names stay; same name with two roles stays two."""
     records = [

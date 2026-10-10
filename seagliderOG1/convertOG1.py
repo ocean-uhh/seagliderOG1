@@ -34,6 +34,7 @@ _DERIVED_GLOBALS = frozenset(
         "geospatial_vertical_min",
         "geospatial_vertical_max",
         "date_created",
+        "start_date",
     }
 )
 
@@ -136,6 +137,64 @@ def _resolve_platform(
         resolved["platform_model_vocabulary"] = model_vocab
 
     return resolved
+
+
+# OG1-mandatory variables that keep_variables must never drop (plus the PLATFORM_*,
+# SENSOR_* and DEPLOYMENT_* families, matched by prefix below).
+_MANDATORY_OG1_VARS = frozenset(
+    {
+        "TIME",
+        "LATITUDE",
+        "LONGITUDE",
+        "DEPTH",
+        "TRAJECTORY",
+        "WMO_IDENTIFIER",
+        "PROFILE_NUMBER",
+        "PHASE",
+    }
+)
+_MANDATORY_OG1_PREFIXES = ("PLATFORM_", "SENSOR_", "DEPLOYMENT_")
+
+
+def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
+    """Subset the dataset to a science-variable allow-list, keeping OG1 essentials.
+
+    The requested ``keep`` names are retained, plus every OG1-mandatory variable
+    and the ``_QC`` companion of every kept variable. Dropped science variables are
+    warned. Coordinates are retained by xarray.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The converted OG1 dataset.
+    keep : list of str
+        Science variables the user asked to keep.
+
+    Returns
+    -------
+    xarray.Dataset
+        The subset dataset; every OG1-mandatory variable present in ``ds`` survives.
+
+    """
+    requested = set(keep)
+    kept = set()
+    for name in ds.data_vars:
+        mandatory = name in _MANDATORY_OG1_VARS or name.startswith(
+            _MANDATORY_OG1_PREFIXES
+        )
+        qc_parent = name[:-3] if name.endswith("_QC") else None
+        if (
+            name in requested
+            or mandatory
+            or (qc_parent is not None and qc_parent in requested)
+        ):
+            kept.add(name)
+    dropped = sorted(name for name in ds.data_vars if name not in kept)
+    if dropped:
+        warnings.warn(
+            f"keep_variables dropped science variables: {dropped}", stacklevel=2
+        )
+    return ds[sorted(kept)]
 
 
 def convert_to_OG1(
@@ -263,6 +322,13 @@ def convert_to_OG1(
         list_of_datasets[0], people=contributors, institutions=institutions
     )
     for key, value in ordered_attributes.items():
+        if value is None:
+            warnings.warn(
+                f"{key} is missing; writing an empty string. Set it in the mission "
+                "config to populate it.",
+                stacklevel=2,
+            )
+            value = ""
         ds_og1.attrs[key] = value
 
     ### Add information needed/used for hydrodynamic (flight) model (hdm)

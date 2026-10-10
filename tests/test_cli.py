@@ -90,11 +90,29 @@ def test_init_from_fills_platform(tmp_path: pathlib.Path) -> None:
     assert str(platform["LANDSTATION_VERSION"]).startswith("basestation")
 
 
-def test_init_from_then_validate_passes(tmp_path: pathlib.Path) -> None:
-    """The documented two-command workflow works: init --from writes a valid config."""
+def test_init_from_fills_source_and_serial(tmp_path: pathlib.Path) -> None:
+    """Init --from fills source and the serial; model/maker/depth are left null to fill."""
     out = tmp_path / "mission.yaml"
     assert cli.main(["init", "--from", str(DATA_DIR), "-o", str(out)]) == 0
-    assert yaml.safe_load(out.read_text())["source"] == str(DATA_DIR.resolve())
+    data = yaml.safe_load(out.read_text())
+    assert data["source"] == str(DATA_DIR.resolve())
+    assert data["platform"]["PLATFORM_SERIAL_NUMBER"] == "sg005"
+    # The UW-specific model/maker/depth are no longer baked in; they stay null.
+    assert data["platform"]["PLATFORM_MODEL"] is None
+
+
+def test_validate_errors_on_null_platform_fields_then_passes(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A template with null platform fields errors; filling them validates."""
+    out = tmp_path / "mission.yaml"
+    assert cli.main(["init", "--from", str(DATA_DIR), "-o", str(out)]) == 0
+    assert cli.main(["validate", str(out)]) == 1  # model/maker/depth still null
+    data = yaml.safe_load(out.read_text())
+    data["platform"]["PLATFORM_MODEL"] = "Seaglider"
+    data["platform"]["PLATFORM_MAKER"] = "University of Washington"
+    data["platform"]["PLATFORM_DEPTH_RATING"] = 1000
+    out.write_text(yaml.safe_dump(data))
     assert cli.main(["validate", str(out)]) == 0
 
 
@@ -239,6 +257,56 @@ def test_process_failing_mission_exits_one(
         output_dir=str(tmp_path / "out"),
     )
     assert cli.main(["process", str(config)]) == 1
+
+
+def test_process_dry_run_ignores_existing_output(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """-n previews and exits 0 even when the output exists (no act-phase check)."""
+    from seagliderOG1 import convertOG1
+
+    monkeypatch.setattr(convertOG1, "convert_to_OG1", _simple_fake_convert)
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "sg005_delayed.nc").write_text("existing")
+    config = _write_config(
+        tmp_path / "mission.yaml", source=str(DATA_DIR), output_dir=str(out)
+    )
+    assert cli.main(["process", str(config), "-n"]) == 0
+
+
+def test_process_save_failure_counts_as_failed(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """save_dataset returning False is a mission failure (exit 1), not silent success."""
+    from seagliderOG1 import convertOG1, writers
+
+    monkeypatch.setattr(convertOG1, "convert_to_OG1", _simple_fake_convert)
+    monkeypatch.setattr(writers, "save_dataset", lambda *_a, **_k: False)
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        source=str(DATA_DIR),
+        output_dir=str(tmp_path / "out"),
+    )
+    assert cli.main(["process", str(config)]) == 1
+
+
+def test_validate_source_override_rescues_missing_config_source(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A --source override is validated, rescuing a config whose own source is missing."""
+    path = tmp_path / "mission.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "contributors": [{"name": "Jane", "role": "PI"}],
+                "institutions": [{"name": "Inst", "role": "Operator"}],
+            }
+        )
+    )
+    assert any(i.key == "source" for i in _mission.validate_config(path))
+    issues = _mission.validate_config(path, source_override=str(DATA_DIR))
+    assert not any(i.key == "source" for i in issues)
 
 
 # --- inspect / list --------------------------------------------------------
