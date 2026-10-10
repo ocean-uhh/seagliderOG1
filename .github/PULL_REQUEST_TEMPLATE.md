@@ -25,7 +25,7 @@ Please describe your changes clearly and concisely.
 
 **Checklist:**
 
-- [ ] I have followed the [coding conventions](docs/source/conventions.md).
+- [ ] I have followed the [coding conventions](CONTRIBUTING.md).
 - [ ] I have updated or added tests to cover my changes.
 - [ ] I have updated the documentation if needed.
 - [ ] I have run `pytest` to check that all tests pass.

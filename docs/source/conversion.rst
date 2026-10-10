@@ -54,8 +54,9 @@ Metadata added
   basestation attributes and written as OG1 sensor variables.
 * **Global attributes**: CF and OG1 global attributes from ``config/OG1_global_attrs.yaml`` and
   the mission configuration.
-* **QC variables**: a ``<NAME>_QC`` companion variable is created for each kept science
-  variable (``convertOG1.py``).
+* **QC variables**: where the basestation input carries a ``<name>_qc`` flag, it is carried
+  through as the OG1 ``<NAME>_QC`` companion of the kept variable; variables with no input flag
+  do not gain one (``convertOG1.py``).
 
 GPS data
 --------

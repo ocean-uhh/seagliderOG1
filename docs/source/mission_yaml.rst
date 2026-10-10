@@ -27,7 +27,9 @@ Keys
      - str
      - *(required)*
      - A mission directory holding ``pSSSDDDD*.nc``, or a root of ``SN/DATE`` directories.
-       The only required key. Checked to exist and to hold basestation files.
+       The only key required at the top level, but ``validate`` also enforces a ``PI``
+       contributor and an ``Operator`` institution (see those rows). Checked to exist and to
+       hold basestation files.
    * - ``output_dir``
      - str
      - ``./``
@@ -39,8 +41,10 @@ Keys
    * - ``dives``
      - list or null
      - ``null``
-     - ``[first, last]`` dive numbers, or ``null`` for all files present. Checked against the
-       files found; ``validate --strict`` also requires no gaps in the range.
+     - ``[first, last]`` dive numbers, or ``null`` for all files present. For a single mission
+       directory, checked against the files found (``validate --strict`` also requires no gaps);
+       for a ``SN/DATE`` root this check is skipped — the range is applied per mission by
+       ``process``.
    * - ``repair``
      - bool
      - ``false``
@@ -57,7 +61,9 @@ Keys
    * - ``global_attributes``
      - mapping or null
      - ``null``
-     - Written verbatim into the OG1 file; add any OG1 global attribute here.
+     - Written into the OG1 file (null values are skipped). You may not set keys the converter
+       derives (``id``, ``time_coverage_start``/``_end``, the ``geospatial_*`` bounds,
+       ``date_created``, ``start_date``); ``process`` raises a ``ValueError`` if you do.
    * - ``contributors``
      - list
      - *(required)*

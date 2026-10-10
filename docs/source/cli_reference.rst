@@ -17,7 +17,7 @@ The same entry point is available as a module:
 
 .. code-block:: console
 
-   $ python -m seagliderOG1 --help
+   $ python -m seagliderOG1.cli --help
 
 See :ref:`mission_yaml` for the configuration file the verbs read and write.
 

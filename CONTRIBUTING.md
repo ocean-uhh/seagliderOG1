@@ -22,7 +22,7 @@ Verify:
 
 ```bash
 seagliderOG1 --help
-python -c "import seagliderOG1; print(seagliderOG1.__version__)"
+python -c "from importlib.metadata import version; print(version('seagliderOG1'))"
 ```
 
 ## Tests
