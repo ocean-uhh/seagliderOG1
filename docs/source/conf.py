@@ -6,6 +6,8 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import datetime
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 
 year = datetime.datetime.now(tz=datetime.timezone.utc).date().year
 
@@ -13,7 +15,11 @@ year = datetime.datetime.now(tz=datetime.timezone.utc).date().year
 project = "seagliderOG1"
 author = "Eleanor Frajka-Williams, Till Moritz"
 copyright = f"{year}, {author}"
-release = "v0.0.1"
+try:
+    release = _pkg_version("seagliderOG1")
+except PackageNotFoundError:
+    release = "0.0.0"
+version = release
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -22,6 +28,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
+    "sphinxarg.ext",
     "nbsphinx",
     "myst_parser",
 ]
@@ -33,8 +40,6 @@ napoleon_include_init_with_doc = False
 napoleon_include_private_with_doc = False
 
 templates_path = ["_templates"]
-exclude_patterns = []
-
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -126,9 +131,9 @@ latex_elements = {
 latex_documents = [
     (
         "index",
-        "ReadtheDocsTemplate.tex",
-        "Read the Docs Template Documentation",
-        "Read the Docs",
+        "seagliderOG1.tex",
+        "seagliderOG1 Documentation",
+        author,
         "manual",
     ),
 ]

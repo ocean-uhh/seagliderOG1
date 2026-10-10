@@ -1,42 +1,48 @@
-.. seagliderOG1 documentation master file, created by
-   sphinx-quickstart on Tue Oct 29 11:30:19 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+seagliderOG1
+============
 
-Welcome to seagliderOG1's documentation!
-======================================
+seagliderOG1 converts Seaglider basestation files (``pSSSDDDD*.nc``) into `OceanGliders OG1
+format <https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html>`_. One
+mission in, one OG1 file out; the platform, contributor and institution metadata come from a
+``mission.yaml`` you keep with your data, never from defaults inside the package.
 
-SeagliderOG1 is a Python package aiming to convert seaglider basestation files into `OG1 format <https://github.com/OceanGlidersCommunity/OG-format-user-manual>`_.  At the moment, it converts variables into standard names, passes attributes and reformats to standard units.  There is some partial functionality to add sensors and attributes including calibration information.
- 
-We provide an example notebook to demonstrate the purpose of the various function and test datasets from Seaglider data in the Labrador Sea.
-
-For recommendations or bug reports, please visit https://github.com/ocean-uhh/seagliderOG1/issues/new
-
-======================================
+For recommendations or bug reports, open an issue at
+https://github.com/ocean-uhh/seagliderOG1/issues/new.
 
 .. toctree::
    :maxdepth: 2
    :caption: Getting started
 
-   about
-   setup.md
-   cli
-   project_structure.md
+   quickstart
 
-.. toctree::
-   :maxdepth: 3
-   :caption: Contents:
-
-   demo-output.ipynb
-   
 .. toctree::
    :maxdepth: 2
-   :caption: Help and reference
+   :caption: Demo
 
-   GitHub Repo <http://github.com/ocean-uhh/seagliderOG1>
+   demo-output.ipynb
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Reference
+
+   cli_reference
+   mission_yaml
+   conversion
+   package_layout
+   changelog
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API
+
    seagliderOG1
-   
-   
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Links
+
+   GitHub repository <https://github.com/ocean-uhh/seagliderOG1>
+
 Indices and tables
 ==================
 
