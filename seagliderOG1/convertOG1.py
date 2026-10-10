@@ -56,6 +56,11 @@ _PLATFORM_STRING_FIELDS = (
 )
 
 
+def _is_empty(value: object) -> bool:
+    """Return True for a missing/placeholder value (None, "" or the string "None")."""
+    return value in (None, "", "None")
+
+
 def _resolve_platform(
     first_ds: xr.Dataset, platform: dict[str, object] | None
 ) -> dict[str, object]:
@@ -92,9 +97,9 @@ def _resolve_platform(
 
     def config_or(field: str) -> object | None:
         value = platform.get(field)
-        if value in (None, "", "None"):
+        if _is_empty(value):
             value = file_values.get(field)
-        return None if value in (None, "", "None") else value
+        return None if _is_empty(value) else value
 
     serial = config_or("PLATFORM_SERIAL_NUMBER")
     if serial is None:
@@ -342,32 +347,27 @@ def convert_to_OG1(
     platform_fields = _resolve_platform(list_of_datasets[0], platform)
     platform_serial_number = platform_fields["PLATFORM_SERIAL_NUMBER"]
 
-    ds_og1["PLATFORM_SERIAL_NUMBER"] = platform_serial_number
-    ds_og1["PLATFORM_SERIAL_NUMBER"].attrs["long_name"] = "glider serial number"
+    # Mandatory OG1 platform string variables and their long_names.
+    platform_long_names = {
+        "PLATFORM_SERIAL_NUMBER": "glider serial number",
+        "PLATFORM_MODEL": "model of the glider",
+        "PLATFORM_MAKER": "glider manufacturer",
+        "GLIDER_FIRMWARE_VERSION": "glider firmware version",
+        "LANDSTATION_VERSION": "version of the landstation",
+        "WMO_IDENTIFIER": "wmo id",
+    }
+    for field, long_name in platform_long_names.items():
+        ds_og1[field] = platform_fields[field]
+        ds_og1[field].attrs["long_name"] = long_name
 
-    # ---- Added some more mandatory variables from OG1 ----
-    ds_og1["PLATFORM_MODEL"] = platform_fields["PLATFORM_MODEL"]
-    ds_og1["PLATFORM_MODEL"].attrs["long_name"] = "model of the glider"
     if "platform_model_vocabulary" in platform_fields:
         ds_og1["PLATFORM_MODEL"].attrs["platform_model_vocabulary"] = platform_fields[
             "platform_model_vocabulary"
         ]
 
-    ds_og1["PLATFORM_MAKER"] = platform_fields["PLATFORM_MAKER"]
-    ds_og1["PLATFORM_MAKER"].attrs["long_name"] = "glider manufacturer"
-
     if "PLATFORM_DEPTH_RATING" in platform_fields:
         ds_og1["PLATFORM_DEPTH_RATING"] = platform_fields["PLATFORM_DEPTH_RATING"]
         ds_og1["PLATFORM_DEPTH_RATING"].attrs["long_name"] = "maximum rated depth"
-
-    ds_og1["GLIDER_FIRMWARE_VERSION"] = platform_fields["GLIDER_FIRMWARE_VERSION"]
-    ds_og1["GLIDER_FIRMWARE_VERSION"].attrs["long_name"] = "glider firmware version"
-
-    ds_og1["LANDSTATION_VERSION"] = platform_fields["LANDSTATION_VERSION"]
-    ds_og1["LANDSTATION_VERSION"].attrs["long_name"] = "version of the landstation"
-
-    ds_og1["WMO_IDENTIFIER"] = platform_fields["WMO_IDENTIFIER"]
-    ds_og1["WMO_IDENTIFIER"].attrs["long_name"] = "wmo id"
 
     # Trajectory
     ds_og1["TRAJECTORY"] = (

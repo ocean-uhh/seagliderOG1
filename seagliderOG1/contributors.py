@@ -12,6 +12,7 @@ dropping interior empties, deduping within a field, or rewriting commas inside a
 value. One role per slot: a person with two roles is listed twice.
 """
 
+import functools
 import pathlib
 import warnings
 from collections.abc import Mapping, Sequence
@@ -344,8 +345,25 @@ def consolidate(records: Sequence[Mapping]) -> list[dict[str, str]]:
     return result
 
 
+@functools.lru_cache(maxsize=1)
+def registry_institutions() -> dict[str, dict]:
+    """Read the EDMO institution registry, keyed by EDMO code.
+
+    Cached: the registry is a read-only package data file, so the YAML is parsed
+    once per process even when every mission in a run resolves institutions.
+
+    Returns
+    -------
+    dict of str to dict
+        EDMO code -> registry entry (``standard_name``, ``name_variants``, …).
+
+    """
+    with open(_REGISTRY_PATH) as file:
+        return yaml.safe_load(file).get("institutions", {})
+
+
 def load_institution_registry() -> dict[str, tuple[str, str]]:
-    """Load the EDMO institution registry into a name lookup.
+    """Build a name lookup from the EDMO institution registry.
 
     Returns
     -------
@@ -354,10 +372,8 @@ def load_institution_registry() -> dict[str, tuple[str, str]]:
         ``(standard_name, id_url)``.
 
     """
-    with open(_REGISTRY_PATH) as file:
-        data = yaml.safe_load(file)
     lookup: dict[str, tuple[str, str]] = {}
-    for entry in data.get("institutions", {}).values():
+    for entry in registry_institutions().values():
         standard = entry["standard_name"]
         id_url = entry.get("id_url", "")
         for variant in [standard, *entry.get("name_variants", [])]:
@@ -391,7 +407,7 @@ def enrich_institutions(institutions: Sequence[Mapping]) -> list[dict[str, str]]
         role = institution.get("role") or ""
         config_id = institution.get("id")
         has_config_id = config_id not in (None, "", "None")
-        hit = lookup.get(collapsed.lower())
+        hit = lookup.get(_norm_name(institution.get("name")))
         if hit is not None:
             name = hit[0]
             institution_id = str(config_id) if has_config_id else hit[1]

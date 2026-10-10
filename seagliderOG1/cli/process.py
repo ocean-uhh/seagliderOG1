@@ -83,11 +83,6 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
     return parser
 
 
-def _relative_mission(mission_path: str, root: pathlib.Path) -> str:
-    """Return a mission's ``SN/DATE`` path relative to the root, for glob matching."""
-    return str(pathlib.Path(mission_path).relative_to(root))
-
-
 def _select_missions(
     missions: list, root: pathlib.Path, args: argparse.Namespace
 ) -> tuple[list, str | None]:
@@ -122,7 +117,7 @@ def _select_missions(
     selected = [
         mission
         for mission in missions
-        if fnmatch.fnmatch(_relative_mission(mission.path, root), glob)
+        if fnmatch.fnmatch(str(pathlib.Path(mission.path).relative_to(root)), glob)
     ]
     if not selected:
         return [], f"--mission {glob!r} matched no missions under {root}"
@@ -154,11 +149,7 @@ def run(args: argparse.Namespace) -> int:
     # Validate the effective source (the --source override, if any), not the stale
     # config value, so an override can rescue a config whose own source is missing.
     issues = _mission.validate_config(config_path, source_override=args.source)
-    for issue in issues:
-        stream = sys.stderr if issue.level == "ERROR" else sys.stdout
-        where = f" [{issue.key}]" if issue.key else ""
-        print(f"{issue.level}{where}: {issue.message}", file=stream)
-    if any(issue.level == "ERROR" for issue in issues):
+    if _mission.report_issues(issues):
         print("configuration invalid; not converting.", file=sys.stderr)
         return 1
 

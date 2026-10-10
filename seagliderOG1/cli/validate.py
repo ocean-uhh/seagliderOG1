@@ -52,14 +52,8 @@ def run(args: argparse.Namespace) -> int:
         return 2
 
     issues = _mission.validate_config(path, strict=args.strict)
-    for issue in issues:
-        where = f" [{issue.key}]" if issue.key else ""
-        stream = sys.stderr if issue.level == "ERROR" else sys.stdout
-        print(f"{issue.level}{where}: {issue.message}", file=stream)
-
-    errors = [i for i in issues if i.level == "ERROR"]
-    if errors:
-        print(f"{len(errors)} error(s); configuration invalid.", file=sys.stderr)
+    if _mission.report_issues(issues):
+        print(f"{path} is invalid.", file=sys.stderr)
         return 1
     print(f"{path} is valid.")
     return 0

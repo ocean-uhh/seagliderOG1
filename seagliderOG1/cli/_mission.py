@@ -180,6 +180,40 @@ def render_template(
     return "\n".join(lines)
 
 
+def _is_dive_pair(dives: object) -> bool:
+    """Return True when ``dives`` is a two-element list of integers."""
+    return (
+        isinstance(dives, list)
+        and len(dives) == 2
+        and all(isinstance(d, int) for d in dives)
+    )
+
+
+def report_issues(issues: list[ValidationIssue]) -> bool:
+    """Print validation issues (ERRORs to stderr, WARNINGs to stdout) and flag errors.
+
+    Parameters
+    ----------
+    issues : list of ValidationIssue
+        The issues to print.
+
+    Returns
+    -------
+    bool
+        True if any issue is an ERROR.
+
+    """
+    import sys
+
+    has_error = False
+    for issue in issues:
+        where = f" [{issue.key}]" if issue.key else ""
+        stream = sys.stderr if issue.level == "ERROR" else sys.stdout
+        print(f"{issue.level}{where}: {issue.message}", file=stream)
+        has_error = has_error or issue.level == "ERROR"
+    return has_error
+
+
 def _check_name(name: object, where: str) -> list[ValidationIssue]:
     """Check a contributor/institution name is a non-empty, comma-free string."""
     if not isinstance(name, str) or not name.strip():
@@ -350,11 +384,7 @@ def _validate_source(
         ]
 
     dives = data.get("dives")
-    if not (
-        isinstance(dives, list)
-        and len(dives) == 2
-        and all(isinstance(d, int) for d in dives)
-    ):
+    if not _is_dive_pair(dives):
         return []
     # The dive-range check applies to a single mission directory; under a root the
     # range is per mission and is not validated here.
@@ -478,11 +508,7 @@ def validate_config(
         )
 
     dives = data.get("dives")
-    if dives is not None and not (
-        isinstance(dives, list)
-        and len(dives) == 2
-        and all(isinstance(d, int) for d in dives)
-    ):
+    if dives is not None and not _is_dive_pair(dives):
         issues.append(
             ValidationIssue(
                 "ERROR", "dives must be null or [first, last] integers.", "dives"
