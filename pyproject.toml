@@ -33,6 +33,7 @@ dependencies = [
   "netCDF4>=1.6",
   "gsw>=3.6",
   "matplotlib>=3.6",
+  "jinja2>=3",  # pandas .style in plotters.show_variables (the `inspect` verb)
   "tqdm>=4.65",
   "requests>=2.31",
   "beautifulsoup4>=4.12",
