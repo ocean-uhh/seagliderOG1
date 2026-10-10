@@ -75,22 +75,21 @@ pytest tests/test_*.py    # Run specific test file
 
 **Code quality checks:**
 ```bash
-black .                   # Format code
+ruff format               # Format code
 ruff check --fix          # Lint and auto-fix
-pre-commit run --all-files # Run all pre-commit hooks
 ```
 
 **Before committing:**
 ```bash
 pytest                    # Ensure tests pass
 ruff check                # Check for linting issues
+ruff format --check       # Check formatting
 ```
 
 ### Coding Standards
 
 Please follow the project's coding conventions documented in [conventions.md](conventions.md), which covers:
-- Code formatting (Black)
-- Linting (Ruff) 
+- Code formatting and linting (Ruff)
 - Docstring style (numpy format)
 - Import organization (PEP 8)
 - Testing practices

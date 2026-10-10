@@ -4,54 +4,39 @@ This document outlines the coding standards and conventions for the seagliderOG1
 
 ## Code Style
 
-### Python Code Formatting
+### Python Code Formatting and Linting
 
-We use [Black](https://black.readthedocs.io/) for consistent code formatting:
+We use [Ruff](https://docs.astral.sh/ruff/) for both formatting and linting:
 
 ```bash
-black .
+ruff format        # Format code
+ruff check --fix   # Lint and auto-fix where possible
+ruff check         # Check without fixing
+ruff format --check # Check formatting without rewriting
 ```
 
 **Key formatting rules:**
-- Line length: 88 characters (Black default)
+- Line length: 88 characters
 - Use double quotes for strings
 - Consistent indentation (4 spaces)
 - Trailing commas in multi-line structures
 
-### Linting
-
-We use [Ruff](https://docs.astral.sh/ruff/) for fast Python linting:
-
-```bash
-ruff check --fix  # Auto-fix issues where possible
-ruff check        # Check without fixing
-```
-
 **Enabled rule categories:**
 - `E`, `W` - pycodestyle errors and warnings
-- `F` - pyflakes errors  
-- `D` - pydocstyle (documentation)
+- `F` - pyflakes errors
+- `D` - pydocstyle (numpy convention), plus `D417`
 - `ANN` - type annotations
-- `B` - flake8-bugbear
-- `C90` - mccabe complexity
-- `TRY` - tryceratops
+- `B`, `BLE` - flake8-bugbear, blind-except
 - `ARG` - flake8-arguments
-- `SLF` - flake8-self
+- `I` - import sorting
+- `UP` - pyupgrade
+- `C4`, `RET`, `PIE`, `SIM`, `NPY`, `PTH`, `RUF100`
 
-### Pre-commit Hooks
-
-Run before every commit:
+### Before committing
 
 ```bash
-pre-commit run --all-files
+ruff check . && ruff format --check . && pytest
 ```
-
-This automatically runs:
-- Black formatting
-- Ruff linting with auto-fix
-- Codespell for typos
-- Basic file checks (trailing whitespace, end-of-file, YAML validation)
-- pytest tests
 
 ## Code Organization
 
