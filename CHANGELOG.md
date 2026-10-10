@@ -78,6 +78,13 @@ semantic versioning.
   reduction, retry path, caller's dataset not mutated, integer `_FillValue` preserved,
   and the failure return.
 
+### Changed
+
+- Dependencies are declared in `pyproject.toml` (`pip install -e ".[dev]"`); `requirements*.txt`
+  and `environment.yml` are removed; `scipy`, `cartopy` and `pooch` are dropped as unused; the
+  ruff configuration is aligned with the family set and `ruff format` replaces `black`;
+  pre-commit is removed; CI gains a coverage gate.
+
 ### Fixed
 
 - `writers.save_dataset` preserves each compressed variable's `_FillValue` (and
