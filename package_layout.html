@@ -1,0 +1,183 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Package layout and defaults &mdash; seagliderOG1 0.0.2.post1.dev63 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=32a15fef"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Changelog" href="changelog.html" />
+    <link rel="prev" title="What the conversion does" href="conversion.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Demo</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">seagliderOG1 demo</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Package layout and defaults</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#modules">Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#built-in-defaults">Built-in defaults</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1">GitHub repository</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Package layout and defaults</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/package_layout.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="package-layout-and-defaults">
+<span id="package-layout"></span><h1>Package layout and defaults<a class="headerlink" href="#package-layout-and-defaults" title="Link to this heading"></a></h1>
+<p>Where the code and the built-in defaults live. The user’s own configuration is a
+<code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> (see <a class="reference internal" href="mission_yaml.html#mission-yaml"><span class="std std-ref">mission.yaml reference</span></a>); everything on this page is internal to the package.</p>
+<section id="modules">
+<h2>Modules<a class="headerlink" href="#modules" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">readers.py</span></code> — read basestation files from a server or a local directory.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">convertOG1.py</span></code> — <code class="docutils literal notranslate"><span class="pre">convert_to_OG1</span></code> orchestrates mapping, standardisation, concat and the
+single post-concat dtype pass.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">writers.py</span></code> — write OG1 files.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tools.py</span></code> — user-facing utilities; <code class="docutils literal notranslate"><span class="pre">utilities.py</span></code> — internal helpers.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vocabularies.py</span></code> — vocabulary and mapping tables (the defaults; see below).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plotters.py</span></code> — plotting. <code class="docutils literal notranslate"><span class="pre">contributors.py</span></code> — contributor/institution record handling.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cli/</span></code> — the <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> command, one module per verb.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">config/*.yaml</span></code> — the OG1 mappings and vocabularies (see below).</p></li>
+</ul>
+</section>
+<section id="built-in-defaults">
+<h2>Built-in defaults<a class="headerlink" href="#built-in-defaults" title="Link to this heading"></a></h2>
+<p>Defaults live in two places, neither of which is user configuration.</p>
+<p>Packaged YAML (<code class="docutils literal notranslate"><span class="pre">seagliderOG1/config/</span></code>), loaded at conversion time:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_var_names.yaml</span></code> — basestation → OG1 variable name mappings.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_vocab_attrs.yaml</span></code> — CF/OG1 variable attributes (<code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, <code class="docutils literal notranslate"><span class="pre">long_name</span></code>,
+<code class="docutils literal notranslate"><span class="pre">units</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_sensor_attrs.yaml</span></code> — sensor metadata.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_global_attrs.yaml</span></code> — global attribute templates (for example <code class="docutils literal notranslate"><span class="pre">featureType</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_author.yaml</span></code> — the example contributor block, loaded on demand by
+<code class="docutils literal notranslate"><span class="pre">vocabularies.load_default_contributors</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">institution_registry.yml</span></code> — EDMO codes for resolving institutions by name.</p></li>
+</ul>
+<p>(<code class="docutils literal notranslate"><span class="pre">config/mission_yaml.yaml</span></code> is an unused legacy template; the <code class="docutils literal notranslate"><span class="pre">init</span></code> verb generates the
+<code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> template in code, not from this file.)</p>
+<p>Tables in <code class="docutils literal notranslate"><span class="pre">vocabularies.py</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dims_rename_dict</span></code> — dimension renaming (<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> → <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MODE_SUFFIX</span></code> — data mode to id suffix (<code class="docutils literal notranslate"><span class="pre">realtime</span></code> → <code class="docutils literal notranslate"><span class="pre">R</span></code>, <code class="docutils literal notranslate"><span class="pre">delayed</span></code> → <code class="docutils literal notranslate"><span class="pre">delayed</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_FIELDS</span></code> — the OG1 platform fields with their source attribute, formatter and
+required flag.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">preferred_units</span></code>, <code class="docutils literal notranslate"><span class="pre">unit_str_format</span></code>, <code class="docutils literal notranslate"><span class="pre">unit1_to_unit2</span></code> — unit standardisation and the
+conversion factors.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vars_to_remove</span></code> — basestation variables dropped from the OG1 output.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ROLE_VOCABULARY</span></code>, <code class="docutils literal notranslate"><span class="pre">ROLE_ALIASES</span></code> — the W08 contributor roles and the accepted aliases.</p></li>
+</ul>
+<p>To change what the conversion writes, edit these — not a copy in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>. The
+<code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> carries only the per-deployment metadata (platform, contributors, institutions,
+source and range).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="conversion.html" class="btn btn-neutral float-left" title="What the conversion does" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="changelog.html" class="btn btn-neutral float-right" title="Changelog" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

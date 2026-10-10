@@ -1,0 +1,381 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev63 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=32a15fef"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="mission.yaml reference" href="mission_yaml.html" />
+    <link rel="prev" title="seagliderOG1 demo" href="demo-output.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Demo</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">seagliderOG1 demo</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">CLI reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#data-mode">Data mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#verbs">Verbs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1-positional-arguments">Positional Arguments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1-named-arguments">Named Arguments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Sub-commands">Sub-commands</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-init">init</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-validate">validate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-process">process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-inspect">inspect</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-list">list</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#exit-status">Exit status</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1">GitHub repository</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CLI reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/cli_reference.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cli-reference">
+<span id="id1"></span><h1>CLI reference<a class="headerlink" href="#cli-reference" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> command converts Seaglider basestation files to OG1 with one subcommand
+per verb. The typical workflow is <code class="docutils literal notranslate"><span class="pre">init</span></code> → <code class="docutils literal notranslate"><span class="pre">validate</span></code> → <code class="docutils literal notranslate"><span class="pre">process</span></code>; <code class="docutils literal notranslate"><span class="pre">inspect</span></code> and
+<code class="docutils literal notranslate"><span class="pre">list</span></code> are read-only helpers.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>seagliderOG1<span class="w"> </span>init<span class="w"> </span>--from<span class="w"> </span>/data/005/20080606<span class="w"> </span>-o<span class="w"> </span>sg005.yaml
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>validate<span class="w"> </span>sg005.yaml
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>process<span class="w">  </span>sg005.yaml
+</pre></div>
+</div>
+<p>The same entry point is available as a module:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python<span class="w"> </span>-m<span class="w"> </span>seagliderOG1.cli<span class="w"> </span>--help
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="mission_yaml.html#mission-yaml"><span class="std std-ref">mission.yaml reference</span></a> for the configuration file the verbs read and write.</p>
+<section id="data-mode">
+<h2>Data mode<a class="headerlink" href="#data-mode" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--mode</span></code> (and the <code class="docutils literal notranslate"><span class="pre">mode</span></code> key in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>) sets the OG1 data mode, which
+determines the data-mode suffix of the output id: <code class="docutils literal notranslate"><span class="pre">realtime</span></code> gives the suffix <code class="docutils literal notranslate"><span class="pre">R</span></code> and
+<code class="docutils literal notranslate"><span class="pre">delayed</span></code> gives <code class="docutils literal notranslate"><span class="pre">delayed</span></code> (<code class="docutils literal notranslate"><span class="pre">vocabularies.MODE_SUFFIX</span></code>).</p>
+</section>
+<section id="verbs">
+<h2>Verbs<a class="headerlink" href="#verbs" title="Link to this heading"></a></h2>
+<p><p>Convert Seaglider basestation files to OG1 format.</p>
+</p>
+<div class="highlight-default notranslate" id="seagliderOG1"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">seagliderOG1</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">version</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">command</span><span class="o">&gt;</span> <span class="o">...</span>
+</pre></div>
+</div>
+<section id="seagliderOG1-positional-arguments">
+<span id="seagliderOG1.cli-build_parser-positional-arguments"></span><h3>Positional Arguments<a class="headerlink" href="#seagliderOG1-positional-arguments" title="Link to this heading"></a></h3>
+<dl class="option-list">
+<dt><kbd>&lt;command&gt;</kbd></dt>
+<dd><p>Possible choices: init, validate, process, inspect, list</p>
+</dd>
+</dl>
+</section>
+<section id="seagliderOG1-named-arguments">
+<span id="seagliderOG1.cli-build_parser-named-arguments"></span><h3>Named Arguments<a class="headerlink" href="#seagliderOG1-named-arguments" title="Link to this heading"></a></h3>
+<dl class="option-list">
+<dt><kbd>--version</kbd></dt>
+<dd><p>show program’s version number and exit</p>
+</dd>
+</dl>
+</section>
+<section id="Sub-commands">
+<h3>Sub-commands<a class="headerlink" href="#Sub-commands" title="Link to this heading"></a></h3>
+<section id="seagliderOG1-init">
+<span id="init"></span><h4>init<a class="headerlink" href="#seagliderOG1-init" title="Link to this heading"></a></h4>
+<p>write a commented mission.yaml template</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">init</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="kn">from</span><span class="w"> </span><span class="nn">DIR</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">OUTPUT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span><span class="p">]</span>
+</pre></div>
+</div>
+<section id="seagliderOG1-init-named-arguments">
+<span id="-named-arguments"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-init-named-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>--from</kbd></dt>
+<dd><p>basestation directory to read the platform block from</p>
+</dd>
+<dt><kbd>-o, --output</kbd></dt>
+<dd><p>output path (default: mission.yaml)</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'mission.yaml'</span></code></p>
+</dd>
+<dt><kbd>--force</kbd></dt>
+<dd><p>overwrite an existing file</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="seagliderOG1-validate">
+<span id="validate"></span><h4>validate<a class="headerlink" href="#seagliderOG1-validate" title="Link to this heading"></a></h4>
+<p>check a mission.yaml for errors</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">validate</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">strict</span><span class="p">]</span> <span class="n">config</span>
+</pre></div>
+</div>
+<section id="seagliderOG1-validate-positional-arguments">
+<span id="-positional-arguments"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-validate-positional-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>config</kbd></dt>
+<dd><p>path to mission.yaml</p>
+</dd>
+</dl>
+</section>
+<section id="seagliderOG1-validate-named-arguments">
+<span id="-named-arguments_repeat1"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-validate-named-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>--strict</kbd></dt>
+<dd><p>also require every dive in the range to be present (no gaps)</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="seagliderOG1-process">
+<span id="process"></span><h4>process<a class="headerlink" href="#seagliderOG1-process" title="Link to this heading"></a></h4>
+<p>convert basestation missions to OG1 files</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">process</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">source</span> <span class="n">DIR_OR_ROOT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">all</span> <span class="o">|</span> <span class="o">--</span><span class="n">mission</span> <span class="n">GLOB</span><span class="p">]</span>
+                     <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">DIR</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">mode</span> <span class="p">{</span><span class="n">realtime</span><span class="p">,</span><span class="n">delayed</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">dives</span> <span class="n">FIRST</span> <span class="n">LAST</span><span class="p">]</span>
+                     <span class="p">[</span><span class="o">--</span><span class="n">repair</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span> <span class="o">|</span> <span class="o">--</span><span class="n">skip</span><span class="o">-</span><span class="n">existing</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">]</span>
+                     <span class="n">config</span>
+</pre></div>
+</div>
+<section id="seagliderOG1-process-positional-arguments">
+<span id="-positional-arguments_repeat1"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-process-positional-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>config</kbd></dt>
+<dd><p>path to mission.yaml</p>
+</dd>
+</dl>
+</section>
+<section id="seagliderOG1-process-named-arguments">
+<span id="-named-arguments_repeat2"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-process-named-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>--source</kbd></dt>
+<dd><p>override the config source (a mission dir or a root of SN/DATE dirs)</p>
+</dd>
+<dt><kbd>--all</kbd></dt>
+<dd><p>convert every SN/DATE mission under a root</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+<dt><kbd>--mission</kbd></dt>
+<dd><p>select missions by SN/DATE glob, e.g. ‘103/<a href="#id1"><span class="problematic" id="id2">*</span></a>’</p>
+</dd>
+<dt><kbd>-o, --output-dir</kbd></dt>
+<dd><p>override the config output_dir</p>
+</dd>
+<dt><kbd>--mode</kbd></dt>
+<dd><p>Possible choices: realtime, delayed</p>
+<p>override the config data mode</p>
+</dd>
+<dt><kbd>--dives</kbd></dt>
+<dd><p>dive range to convert (overrides the config dives)</p>
+</dd>
+<dt><kbd>--repair</kbd></dt>
+<dd><p>repair basestation time metadata before loading (writes the source tree)</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+<dt><kbd>--force</kbd></dt>
+<dd><p>overwrite an existing output file</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+<dt><kbd>--skip-existing</kbd></dt>
+<dd><p>skip a mission whose output file already exists</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+<dt><kbd>-n, --dry-run</kbd></dt>
+<dd><p>print what would be written; write nothing</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="seagliderOG1-inspect">
+<span id="inspect"></span><h4>inspect<a class="headerlink" href="#seagliderOG1-inspect" title="Link to this heading"></a></h4>
+<p>Show the inventory of one basestation or OG1 netCDF file. Writes an HTML inventory page with the seagliderOG1[report] extra; otherwise prints a text table.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">inspect</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">attrs</span> <span class="o">|</span> <span class="o">--</span><span class="n">variables</span> <span class="o">|</span> <span class="o">--</span><span class="n">by</span><span class="o">-</span><span class="n">dimension</span> <span class="n">DIM</span><span class="p">]</span>
+                     <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">HTML</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">title</span> <span class="n">TEXT</span><span class="p">]</span>
+                     <span class="n">file</span>
+</pre></div>
+</div>
+<section id="seagliderOG1-inspect-positional-arguments">
+<span id="-positional-arguments_repeat2"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-inspect-positional-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>file</kbd></dt>
+<dd><p>path to a basestation or OG1 netCDF file</p>
+</dd>
+</dl>
+</section>
+<section id="seagliderOG1-inspect-named-arguments">
+<span id="-named-arguments_repeat3"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-inspect-named-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>--attrs</kbd></dt>
+<dd><p>show global attributes</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+<dt><kbd>--variables</kbd></dt>
+<dd><p>show variables (the default)</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+<dt><kbd>--by-dimension</kbd></dt>
+<dd><p>show only variables on dimension DIM</p>
+</dd>
+<dt><kbd>-o, --output</kbd></dt>
+<dd><p>write the HTML inventory page to this path</p>
+</dd>
+<dt><kbd>--title</kbd></dt>
+<dd><p>title for the inventory page</p>
+</dd>
+</dl>
+</section>
+<dl class="simple">
+<dt>Examples:</dt><dd><p>seagliderOG1 inspect sg005_20080606_delayed.nc              variables as a table
+seagliderOG1 inspect sg005_20080606_delayed.nc –attrs      global attributes
+seagliderOG1 inspect p0050001.nc –by-dimension sg_data_point</p>
+</dd>
+</dl>
+</section>
+<section id="seagliderOG1-list">
+<span id="list"></span><h4>list<a class="headerlink" href="#seagliderOG1-list" title="Link to this heading"></a></h4>
+<p>print a registry: roles, institutions, or missions</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="nb">list</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">{</span><span class="n">roles</span><span class="p">,</span><span class="n">institutions</span><span class="p">,</span><span class="n">missions</span><span class="p">}</span> <span class="p">[</span><span class="n">path</span><span class="p">]</span>
+</pre></div>
+</div>
+<section id="seagliderOG1-list-positional-arguments">
+<span id="-positional-arguments_repeat3"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-list-positional-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>registry</kbd></dt>
+<dd><p>Possible choices: roles, institutions, missions</p>
+<p>which registry to print</p>
+</dd>
+<dt><kbd>path</kbd></dt>
+<dd><p>root or mission directory (required for ‘missions’)</p>
+</dd>
+</dl>
+</section>
+</section>
+</section>
+<p><dl class="simple">
+<dt>typical workflow:</dt><dd><p>seagliderOG1 init –from /data/005/20080606 -o sg005.yaml   template from the first file
+seagliderOG1 validate sg005.yaml                            config, source, dive range
+seagliderOG1 process  sg005.yaml                            -&gt; &lt;output_dir&gt;/&lt;OG1 id&gt;.nc</p>
+</dd>
+</dl>
+</p>
+</section>
+<section id="exit-status">
+<h2>Exit status<a class="headerlink" href="#exit-status" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">0</span></code> — success.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">1</span></code> — a handled error (a missing file, an invalid configuration, a conversion that wrote
+nothing).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">2</span></code> — a usage error (argparse: an unknown flag or a missing argument).</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="demo-output.html" class="btn btn-neutral float-left" title="seagliderOG1 demo" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mission_yaml.html" class="btn btn-neutral float-right" title="mission.yaml reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
