@@ -223,10 +223,10 @@ def test_output_dtypes_end_to_end(tmp_path: pathlib.Path) -> None:
     """
     source = str(parent_dir / "data/demo_sg005")
     datasets = readers.load_basestation_files(source, 1, 5)
-    ds, _ = convertOG1.convert_to_OG1(datasets)
+    ds = convertOG1.convert_to_OG1(datasets)
     out = tmp_path / "out.nc"
 
-    assert writers.save_dataset(ds, str(out)) is True
+    assert writers.save_dataset(ds, str(out)) == out
 
     with netCDF4.Dataset(out) as nc:
         assert nc.variables["TEMP_QC"].dtype == np.dtype("int8")

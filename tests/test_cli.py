@@ -119,13 +119,12 @@ def test_validate_errors_on_null_platform_fields_then_passes(
 # --- process ---------------------------------------------------------------
 
 
-def _simple_fake_convert(_datasets: object, **kwargs: object) -> tuple:
+def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:
     """Stand in for convert_to_OG1: no real conversion, deterministic id from mode."""
     import xarray as xr
 
     suffix = "R" if kwargs.get("mode") == "realtime" else "delayed"
-    ds = xr.Dataset({"x": ("n", [1.0, 2.0])}, attrs={"id": f"sg005_{suffix}"})
-    return ds, None
+    return xr.Dataset({"x": ("n", [1.0, 2.0])}, attrs={"id": f"sg005_{suffix}"})
 
 
 def _build_root(tmp_path: pathlib.Path) -> pathlib.Path:
@@ -209,12 +208,11 @@ def test_process_root_all_converts_each(
 
     counter = {"n": 0}
 
-    def counting_fake(_datasets: object, **_kwargs: object) -> tuple:
+    def counting_fake(_datasets: object, **_kwargs: object) -> object:
         import xarray as xr
 
         counter["n"] += 1
-        ds = xr.Dataset({"x": ("n", [1.0])}, attrs={"id": f"sg005_m{counter['n']}"})
-        return ds, None
+        return xr.Dataset({"x": ("n", [1.0])}, attrs={"id": f"sg005_m{counter['n']}"})
 
     monkeypatch.setattr(convertOG1, "convert_to_OG1", counting_fake)
     root = _build_root(tmp_path / "root")
@@ -278,11 +276,14 @@ def test_process_dry_run_ignores_existing_output(
 def test_process_save_failure_counts_as_failed(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """save_dataset returning False is a mission failure (exit 1), not silent success."""
+    """A save_dataset failure (it raises) is a mission failure (exit 1), not silent success."""
     from seagliderOG1 import convertOG1, writers
 
+    def _raise(*_a: object, **_k: object) -> object:
+        raise OSError("disk full")
+
     monkeypatch.setattr(convertOG1, "convert_to_OG1", _simple_fake_convert)
-    monkeypatch.setattr(writers, "save_dataset", lambda *_a, **_k: False)
+    monkeypatch.setattr(writers, "save_dataset", _raise)
     config = _write_config(
         tmp_path / "mission.yaml",
         source=str(DATA_DIR),

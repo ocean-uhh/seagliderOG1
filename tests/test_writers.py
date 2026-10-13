@@ -5,6 +5,7 @@ import sys
 
 import netCDF4
 import numpy as np
+import pytest
 import xarray as xr
 
 script_dir = pathlib.Path(__file__).parent.absolute()
@@ -32,7 +33,7 @@ def test_compression_applied(tmp_path: pathlib.Path) -> None:
     ds = _load_sample()
     out = tmp_path / "out.nc"
 
-    assert writers.save_dataset(ds, str(out)) is True
+    assert writers.save_dataset(ds, str(out)) == out
 
     with netCDF4.Dataset(out) as nc:
         for name in COMPRESSED_VARS:
@@ -97,7 +98,7 @@ def test_retry_path_stays_compressed(tmp_path: pathlib.Path) -> None:
     out = tmp_path / "out.nc"
     ds["TEMP"].attrs["bad_attr"] = {"not": "serialisable"}
 
-    assert writers.save_dataset(ds, str(out)) is True
+    assert writers.save_dataset(ds, str(out)) == out
 
     with netCDF4.Dataset(out) as nc:
         assert nc.variables["TEMP"].filters()["zlib"] is True
@@ -111,7 +112,7 @@ def test_input_dataset_not_mutated(tmp_path: pathlib.Path) -> None:
     ds["time"].attrs["calendar"] = "standard"
     out = tmp_path / "out.nc"
 
-    assert writers.save_dataset(ds, str(out)) is True
+    assert writers.save_dataset(ds, str(out)) == out
 
     # the caller's dataset is untouched
     assert ds["time"].attrs["units"] == "days since 2000-01-01"
@@ -134,7 +135,7 @@ def test_preserves_integer_fill_value(tmp_path: pathlib.Path) -> None:
     ds["q"].encoding["_FillValue"] = np.int16(-999)
     out = tmp_path / "out.nc"
 
-    assert writers.save_dataset(ds, str(out)) is True
+    assert writers.save_dataset(ds, str(out)) == out
 
     with netCDF4.Dataset(out) as nc:
         assert "_FillValue" in nc.variables["q"].ncattrs()
@@ -142,14 +143,15 @@ def test_preserves_integer_fill_value(tmp_path: pathlib.Path) -> None:
         assert nc.variables["q"].filters()["zlib"] is True
 
 
-def test_returns_false_when_unwriteable(tmp_path: pathlib.Path) -> None:
-    """A bad global attribute the retry cannot fix makes save_dataset return False."""
+def test_raises_when_unwriteable(tmp_path: pathlib.Path) -> None:
+    """A bad global attribute the retry cannot fix makes save_dataset raise."""
     ds = _load_sample()
     out = tmp_path / "out.nc"
     # the retry only stringifies variable attrs, so a bad global attr survives both writes
     ds.attrs["bad_global"] = {"not": "serialisable"}
 
-    assert writers.save_dataset(ds, str(out)) is False
+    with pytest.raises(TypeError):
+        writers.save_dataset(ds, str(out))
 
 
 def test_time_units_canonical(tmp_path: pathlib.Path) -> None:

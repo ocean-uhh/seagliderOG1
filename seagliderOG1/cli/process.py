@@ -211,7 +211,7 @@ def run(args: argparse.Namespace) -> int:
             datasets = readers.load_basestation_files(
                 mission.path, first, last, repair=repair
             )
-            ds, _ = convertOG1.convert_to_OG1(
+            ds = convertOG1.convert_to_OG1(
                 datasets,
                 contributors=config.get("contributors"),
                 institutions=config.get("institutions"),
@@ -235,13 +235,9 @@ def run(args: argparse.Namespace) -> int:
                     failed += 1
                     continue
             output_dir.mkdir(parents=True, exist_ok=True)
-            if not writers.save_dataset(ds, str(out_path), overwrite=args.force):
-                print(
-                    f"FAILED {mission.path}: save_dataset could not write {out_path}",
-                    file=sys.stderr,
-                )
-                failed += 1
-                continue
+            # save_dataset returns the written Path and raises on failure; the
+            # per-mission except below reports it and continues to the next.
+            writers.save_dataset(ds, str(out_path), overwrite=args.force)
             print(f"wrote {out_path}")
             converted += 1
         # One mission's failure is reported and the run continues to the next.

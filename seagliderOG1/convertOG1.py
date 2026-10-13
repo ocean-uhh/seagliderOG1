@@ -195,14 +195,14 @@ def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
 
 
 def convert_to_OG1(
-    list_of_datasets: list[xr.Dataset] | xr.Dataset,
+    list_of_datasets: Sequence[xr.Dataset],
     *,
     contributors: Sequence[dict] | None = None,
     institutions: Sequence[dict] | None = None,
     platform: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
     mode: str = "delayed",
-) -> tuple[xr.Dataset, list[str]]:
+) -> xr.Dataset:
     """Convert Seaglider basestation datasets to OG1 format.
 
     Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
@@ -212,7 +212,7 @@ def convert_to_OG1(
 
     Parameters
     ----------
-    list_of_datasets : list of xarray.Dataset or xarray.Dataset
+    list_of_datasets : sequence of xarray.Dataset
         A list of xarray datasets or a single xarray dataset in basestation format.
     contributors : sequence of dict, optional
         Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)
@@ -237,10 +237,8 @@ def convert_to_OG1(
 
     Returns
     -------
-    tuple of (xarray.Dataset, list of str)
-        A tuple containing:
-        - ds_og1 (xarray.Dataset): The concatenated and processed dataset in OG1 format.
-        - varlist (list of str): A list of variable names from the input datasets.
+    xarray.Dataset
+        The concatenated and processed dataset in OG1 format.
 
     """
     if isinstance(contributors, Mapping):
@@ -266,13 +264,9 @@ def convert_to_OG1(
 
     print(f"Start converting {len(list_of_datasets)} raw datasets to OG1 format ...")
 
-    if not isinstance(list_of_datasets, list):
-        list_of_datasets = [list_of_datasets]
-
     processed_datasets = []
     firstrun = False
 
-    varlist = []
     # This would be faster if we concatenated the basestation files first, and then processed them.
     # But we need to process them first to get the dive number, assign GPS (could be after), ?
 
@@ -286,7 +280,6 @@ def convert_to_OG1(
     # tools.print_OG1_mapping_summary(OG1_mapping, ctd_dim, dims_to_merge, all_dims)
 
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
-        varlist = list(set(varlist + list(ds1_base.variables)))
         ds_new, attr_warnings = process_dataset(
             ds1_base, OG1_mapping, time_variables, firstrun=firstrun
         )
@@ -446,9 +439,8 @@ def convert_to_OG1(
     for qc_name in [v for v in ds_og1.variables if v[-2:].lower() == "qc"]:
         if qc_name[:-3] in ds_og1.variables:
             ds_og1 = tools.convert_qc_flags(ds_og1, qc_name)
-    ds_og1 = tools.set_best_dtype(ds_og1)
 
-    return ds_og1, OG1_mapping
+    return tools.set_best_dtype(ds_og1)
 
 
 _log = logging.getLogger(__name__)
@@ -1151,7 +1143,7 @@ def process_and_save_data(
     ds1_base = readers.load_first_basestation_file(input_location)
 
     # Convert the list of datasets to OG1
-    ds1_og1, varlist = convert_to_OG1(ds1_base)
+    ds1_og1 = convert_to_OG1([ds1_base])
     output_file = str(Path(output_dir) / (ds1_og1.attrs["id"] + ".nc"))
 
     # Check if the file exists and delete it if it does
@@ -1169,7 +1161,7 @@ def process_and_save_data(
             return xr.open_dataset(output_file)
         if user_input.lower() == "yes":
             list_datasets = readers.load_basestation_files(input_location)
-            ds_all, varlist = convert_to_OG1(list_datasets)
+            ds_all = convert_to_OG1(list_datasets)
             Path(output_file).unlink()
             if save:
                 writers.save_dataset(ds_all, output_file)
@@ -1177,15 +1169,10 @@ def process_and_save_data(
         print("Running the directory:", input_location)
         _log.info(f"Running the directory: {input_location}")
         list_datasets = readers.load_basestation_files(input_location)
-        ds_all, varlist = convert_to_OG1(list_datasets)
+        ds_all = convert_to_OG1(list_datasets)
         output_file = str(Path(output_dir) / (ds_all.attrs["id"] + ".nc"))
         if save:
             writers.save_dataset(ds_all, output_file)
-
-        _log.info("===================================================")
-        _log.info("input_var: Variables in original basestation files:")
-        for varname in sorted(varlist):
-            _log.info(f"{varname}")
 
         _log.info("=========================================")
         _log.info("output_var: Variables in OG1 format file:")

@@ -28,9 +28,10 @@ _PRESERVE_ENCODING = ("_FillValue", "missing_value", "scale_factor", "add_offset
 
 def save_dataset(
     ds: xr.Dataset,
-    output_file: str = "../test.nc",
+    output_file: str,
+    *,
     overwrite: bool = False,
-) -> bool:
+) -> Path:
     """Save the dataset to a NetCDF file with lossless compression.
 
     Every non-scalar numeric variable, coordinates included, is written with zlib
@@ -43,16 +44,23 @@ def save_dataset(
     ----------
     ds : xr.Dataset
         Dataset to save.
-    output_file : str, optional
-        Output NetCDF file.
+    output_file : str
+        Output NetCDF file path.
     overwrite : bool, optional
         If True, an existing file will be deleted and replaced.
         If False, a FileExistsError is raised when the file exists.
 
     Returns
     -------
-    bool
-        True if the dataset was saved successfully, False otherwise.
+    pathlib.Path
+        The path written.
+
+    Raises
+    ------
+    FileExistsError
+        If ``output_file`` exists and ``overwrite`` is False.
+    ValueError
+        If the dataset carries a None-valued attribute.
     """
     ds = ds.copy()
 
@@ -112,7 +120,7 @@ def save_dataset(
 
         try:
             _write()
-        except Exception as e:  # noqa: BLE001  # I/O boundary: last-ditch save attempt
+        except Exception as e:  # I/O boundary: last-ditch save attempt
             _log.error(f"Failed to save dataset: {e}")
             datetime_vars = [
                 var for var in ds.variables if ds[var].dtype == "datetime64[ns]"
@@ -122,8 +130,8 @@ def save_dataset(
                 attr for attr in ds.attrs if isinstance(ds.attrs[attr], float)
             ]
             _log.warning(f"Attributes with dtype float64: {float_attrs}")
-            return False
-    return True
+            raise
+    return Path(output_file)
 
 
 def _compression_encoding(ds: xr.Dataset) -> dict[str, dict]:

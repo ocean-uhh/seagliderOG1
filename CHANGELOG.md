@@ -8,6 +8,14 @@ semantic versioning.
 
 ### Breaking changes
 
+- Public API reshaped to the OceanGliders family convention (0.1.0), a clean break with no
+  deprecation shims. Old → new:
+
+  | was | now |
+  |---|---|
+  | `ds, varlist = convert_to_OG1(ds_or_list)` | `ds = convert_to_OG1(sequence_of_datasets)` — returns the Dataset; takes a sequence (wrap a single dataset as `[ds]`) |
+  | `writers.save_dataset(ds, output_file="../test.nc") -> bool` | `writers.save_dataset(ds, output_file, *, overwrite=False) -> pathlib.Path` — no default path; returns the path written; raises `FileExistsError` (or the underlying write error) instead of returning `False` |
+
 - Output variable dtypes changed. QC flags are `int8` (were `float32`/`int64`); `PHASE` is
   `int8`; `PROFILE_NUMBER`, `DIVE_NUMBER` and `VBD_MIN_CNTS` are `int16`; `DEPTH` and
   `DEPTH_Z` are `float32`. `LATITUDE`/`LONGITUDE` stay `float64`. Non-QC integer variables
