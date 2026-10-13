@@ -91,6 +91,9 @@ ignore = [
 [tool.ruff]
 line-length = 88
 target-version = "py311"
+# Developer scratch notebooks (personal paths, exploratory cells) are not package
+# code; the shipped demo notebooks (notebooks/demo.ipynb, run_dataset.ipynb) are linted.
+extend-exclude = ["notebooks/dev_notebooks"]
 
 [tool.ruff.lint]
 # The family set. No preview rules; PL is not selected. D417 (undocumented-argument)
