@@ -18,6 +18,7 @@ semantic versioning.
   | `plotters.plot_*(…)` returned `None` and called `plt.show()` | `plotters.plot_*(…, ax=None) -> (fig, ax)`; no `plt.show()` |
   | `plotters.show_*(path_or_dataset)` | `plotters.show_*(dataset)` — Dataset only (the file-path branch is gone) |
   | `readers.load_sample_dataset()` | `readers.load_sample_basestation()` |
+  | `standardise_OG10`, `tools.OG1_name_mapping`, `print_OG1_mapping_summary`, the `OG1_mapping` argument | `standardise_og1`, `og1_name_mapping`, `print_og1_mapping_summary`, `og1_mapping` — `og1` lower-case in names; `convert_to_OG1` and the package name keep their spelling |
 
 - Output variable dtypes changed. QC flags are `int8` (were `float32`/`int64`); `PHASE` is
   `int8`; `PROFILE_NUMBER`, `DIVE_NUMBER` and `VBD_MIN_CNTS` are `int16`; `DEPTH` and

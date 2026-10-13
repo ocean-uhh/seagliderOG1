@@ -221,10 +221,10 @@ def test_set_best_dtype_restores_depth_coord() -> None:
     assert "DEPTH" in out.coords
 
 
-def test_OG1_name_mapping_sample_dataset():
+def test_og1_name_mapping_sample_dataset():
     ds1 = readers.load_sample_basestation()
 
-    mapping, time_variables = tools.OG1_name_mapping([ds1])
+    mapping, time_variables = tools.og1_name_mapping([ds1])
 
     expected_columns = [
         "original_name",
@@ -232,7 +232,7 @@ def test_OG1_name_mapping_sample_dataset():
         "instrument",
         "instrument_type",
         "original_dimension",
-        "has_OG1_attributes",
+        "has_og1_attributes",
     ]
     assert list(mapping.columns) == expected_columns
     assert mapping["original_name"].is_unique
@@ -271,7 +271,7 @@ def test_OG1_name_mapping_sample_dataset():
             if pd.notna(row.OG1_name)
             else False
         )
-        assert bool(row.has_OG1_attributes) == expected
+        assert bool(row.has_og1_attributes) == expected
 
     ### Taking the following tests out because we'll change some things on the output and this will certainly crash
     # expected_og1_names = {

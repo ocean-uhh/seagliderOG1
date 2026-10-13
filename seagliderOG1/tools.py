@@ -45,7 +45,7 @@ INSTRUMENT_ALIASES = {
 }
 
 
-def OG1_name_mapping(
+def og1_name_mapping(
     list_of_datasets: list[xr.Dataset],
 ) -> tuple[pd.DataFrame, dict[str, list[str]]]:
     """Create a mapping from original variable names to OG1 variable names.
@@ -77,7 +77,7 @@ def OG1_name_mapping(
     Parameters
     ----------
     list_of_datasets
-        Datasets immediately before calling ``standardise_OG10``.
+        Datasets immediately before calling ``standardise_og1``.
         Instruments are collected from every dataset's global ``instrument``
         attribute, preserving first-seen order.
 
@@ -86,7 +86,7 @@ def OG1_name_mapping(
     pandas.DataFrame
         Columns: ``original_name``, ``OG1_name``, ``instrument``,
         ``instrument_type``, ``original_dimension``, and
-        ``has_OG1_attributes``.
+        ``has_og1_attributes``.
     """
     all_sources: dict[str, xr.DataArray] = {}
     all_dimensions: set[str] = set()
@@ -393,7 +393,7 @@ def OG1_name_mapping(
         ignore_index=True,
     )
 
-    result["has_OG1_attributes"] = result["OG1_name"].apply(
+    result["has_og1_attributes"] = result["OG1_name"].apply(
         lambda name: (
             bool(vocabularies.vocab_attrs.get(name, {})) if pd.notna(name) else False
         )
@@ -601,7 +601,7 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
 def add_sensor_to_dataset(
     ds_og1: xr.Dataset,
     sensor_dict: dict,
-    OG1_mapping: pd.DataFrame,
+    og1_mapping: pd.DataFrame,
     firstrun: bool = False,
 ) -> xr.Dataset:
     """Add sensor information from the provided sensor dictionary to the OG1 dataset.
@@ -612,7 +612,7 @@ def add_sensor_to_dataset(
         The OG1 dataset to which sensor information will be added.
     sensor_dict : dict
         A dictionary containing sensor metadata and associated variables.
-    OG1_mapping : pandas.DataFrame
+    og1_mapping : pandas.DataFrame
         Mapping of original to OG1 variable names with associated instruments.
     firstrun : bool, default False
         If ``True``, print each sensor as it is added.
@@ -657,7 +657,7 @@ def add_sensor_to_dataset(
     # -------------------------------------------------------------------------
     # 3. Assign 'sensor' attribute to sensor-specific variables
     # -------------------------------------------------------------------------
-    for _, mapping in OG1_mapping.iterrows():
+    for _, mapping in og1_mapping.iterrows():
         og1_name = mapping["OG1_name"]
         instrument = mapping["instrument"]
 
@@ -739,19 +739,19 @@ def _get_merge_dimensions(
     return ctd_dim, list(dict.fromkeys(dims_to_merge)), list(dict.fromkeys(dimensions))
 
 
-def print_OG1_mapping_summary(
-    OG1_mapping: pd.DataFrame,
+def print_og1_mapping_summary(
+    og1_mapping: pd.DataFrame,
     ctd_dim: str,
     merge_dims: list[str],
     all_dims: list[str],
 ) -> None:
     """Print dimensions, mapped variable counts, and vocabulary gaps."""
-    has_og1_name = OG1_mapping["OG1_name"].notna() & OG1_mapping["OG1_name"].ne("")
-    time_mask = OG1_mapping["OG1_name"].eq("TIME")
+    has_og1_name = og1_mapping["OG1_name"].notna() & og1_mapping["OG1_name"].ne("")
+    time_mask = og1_mapping["OG1_name"].eq("TIME")
 
-    variables = OG1_mapping.loc[has_og1_name & ~time_mask]
+    variables = og1_mapping.loc[has_og1_name & ~time_mask]
 
-    for entry in OG1_mapping.loc[time_mask, "original_dimension"].explode():
+    for entry in og1_mapping.loc[time_mask, "original_dimension"].explode():
         # Each entry has the format "dimension (original_time_name)".
         dimension, time_name = entry.rsplit(" (", 1)
         time_name = time_name.removesuffix(")")
@@ -783,12 +783,12 @@ def print_OG1_mapping_summary(
         f"+ {int(time_mask.sum())} combined TIME variable."
     )
 
-    unassigned = OG1_mapping.loc[~has_og1_name, "original_name"].tolist()
+    unassigned = og1_mapping.loc[~has_og1_name, "original_name"].tolist()
 
     print(f"\nVariables without an assigned OG1 name: {unassigned}")
 
-    missing_attrs = OG1_mapping.loc[
-        has_og1_name & ~OG1_mapping["has_OG1_attributes"],
+    missing_attrs = og1_mapping.loc[
+        has_og1_name & ~og1_mapping["has_og1_attributes"],
         "OG1_name",
     ].tolist()
 
@@ -1586,7 +1586,7 @@ def merge_datasets_along_time(
 
     Merge dimensions listed in ``time_variables``, retaining original
     variable names. Replace individual time variables with ``time``.
-    OG1 conversion is handled separately by ``standardise_OG10``.
+    OG1 conversion is handled separately by ``standardise_og1``.
 
     Always use ``time`` for ``sg_data_point``. Other dimensions use their
     listed candidates. Time variables must contain datetime64 values and
@@ -2097,7 +2097,7 @@ def add_scalar_parameters(
         mapping_updates = {
             "OG1_name": output_name if is_mapped else None,
             "original_dimension": "",
-            "has_OG1_attributes": (
+            "has_og1_attributes": (
                 bool(vocabularies.vocab_attrs.get(output_name, {}))
                 if is_mapped
                 else False

@@ -274,14 +274,14 @@ def convert_to_OG1(
     ctd_dim, dims_to_merge, all_dims = tools._get_merge_dimensions(list_of_datasets)
 
     # Create a mapping from original variable names to OG1 variable names for all variables across the datasets
-    OG1_mapping, time_variables = tools.OG1_name_mapping(list_of_datasets)
+    og1_mapping, time_variables = tools.og1_name_mapping(list_of_datasets)
 
     # print the sumary of variables assigned or not assigned to the dataset
-    # tools.print_OG1_mapping_summary(OG1_mapping, ctd_dim, dims_to_merge, all_dims)
+    # tools.print_og1_mapping_summary(og1_mapping, ctd_dim, dims_to_merge, all_dims)
 
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
         ds_new, attr_warnings = process_dataset(
-            ds1_base, OG1_mapping, time_variables, firstrun=firstrun
+            ds1_base, og1_mapping, time_variables, firstrun=firstrun
         )
         if ds_new:
             processed_datasets.append(ds_new)
@@ -307,7 +307,7 @@ def convert_to_OG1(
     for var in ds_og1.data_vars:
         if "sensor" in ds_og1[var].attrs:
             del ds_og1[var].attrs["sensor"]
-    ds_og1 = tools.add_sensor_to_dataset(ds_og1, sensor_dict, OG1_mapping)
+    ds_og1 = tools.add_sensor_to_dataset(ds_og1, sensor_dict, og1_mapping)
 
     # Apply attributes
     ordered_attributes = update_dataset_attributes(
@@ -327,7 +327,7 @@ def convert_to_OG1(
     print("Collecting scalar parameters to the dataset ...")
     extracted = tools.extract_scalar_parameters(list_of_datasets)
     print("Adding scalar parameters to the dataset ...")
-    ds_og1, OG1_mapping = tools.add_scalar_parameters(ds_og1, extracted, OG1_mapping)
+    ds_og1, og1_mapping = tools.add_scalar_parameters(ds_og1, extracted, og1_mapping)
 
     # Resolve platform fields from the config and the first file (no silent
     # fallbacks: missing serial raises, other strings warn + "UNK", the numeric
@@ -448,7 +448,7 @@ _log = logging.getLogger(__name__)
 
 def process_dataset(
     ds1_base: xr.Dataset,
-    OG1_mapping: pd.DataFrame,
+    og1_mapping: pd.DataFrame,
     time_variables: dict[str, list[str]],
     firstrun: bool = False,
 ) -> tuple[
@@ -462,7 +462,7 @@ def process_dataset(
     ----------
     ds1_base : xarray.Dataset
         The input dataset from a basestation file, containing various attributes and variables.
-    OG1_mapping : pandas.DataFrame
+    og1_mapping : pandas.DataFrame
         Mapping of original basestation variable names to OG1 variable names.
     time_variables : dict[str, list[str]]
         A dictionary mapping dimension names to lists of time variables.
@@ -476,7 +476,7 @@ def process_dataset(
         - ds_new (xarray.Dataset): The processed dataset with renamed variables, assigned attributes,
           converted units, and additional information such as GPS info and dive number.
         - attr_warnings (list[str]): A list of warnings related to attribute assignments.
-        - OG1_mapping (pd.DataFrame): A DataFrame containing the mapping of original variable names to OG1 variable names.
+        - og1_mapping (pd.DataFrame): A DataFrame containing the mapping of original variable names to OG1 variable names.
 
     Notes
     -----
@@ -523,7 +523,7 @@ def process_dataset(
     # Must be after split_ds
     # map the original variable names to the OG1 variable names, and get the instrument type for each variable
 
-    ds_new = standardise_OG10(merged_ds, OG1_mapping, firstrun)
+    ds_new = standardise_og1(merged_ds, og1_mapping, firstrun)
 
     # Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)
     # -----------------------------------------------------------------------
@@ -552,7 +552,7 @@ def process_dataset(
     return ds_new, attr_warnings
 
 
-def standardise_OG10(
+def standardise_og1(
     ds: xr.Dataset,
     og1_mapping: pd.DataFrame,
     firstrun: bool = False,
