@@ -11,6 +11,7 @@ import pandas as pd  # noqa: E402  # import after sys.path bootstrap
 import xarray as xr  # noqa: E402  # import after sys.path bootstrap
 
 from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
+    _pipeline,
     convertOG1,
     readers,
     tools,
@@ -35,7 +36,7 @@ def test_add_sensor_skips_unmapped_variables():
         ]
     )
 
-    result = tools.add_sensor_to_dataset(ds, sensor_dict, og1_mapping)
+    result = _pipeline.add_sensor_to_dataset(ds, sensor_dict, og1_mapping)
 
     assert result["TEMP"].attrs["sensor"] == "SENSOR_CTD_245201"
     assert "SENSOR_CTD_245201" in result.variables
@@ -64,7 +65,7 @@ def test_add_sensor_skips_instrument_absent_from_sensor_dict():
         ]
     )
 
-    result = tools.add_sensor_to_dataset(ds, sensor_dict, og1_mapping)
+    result = _pipeline.add_sensor_to_dataset(ds, sensor_dict, og1_mapping)
 
     assert result["TEMP"].attrs["sensor"] == "SENSOR_CTD_245201"
     assert "sensor" not in result["PRES2"].attrs
@@ -159,29 +160,29 @@ def test_add_scalar_parameters():
 def test_find_best_dtype_named_integers() -> None:
     """Named integer variables map to their fixed integer type."""
     da = xr.DataArray(np.arange(5.0))
-    assert tools.find_best_dtype("PHASE", da) == np.int8
-    assert tools.find_best_dtype("PROFILE_NUMBER", da) == np.int16
-    assert tools.find_best_dtype("VBD_MIN_CNTS", da) == np.int16
+    assert _pipeline.find_best_dtype("PHASE", da) == np.int8
+    assert _pipeline.find_best_dtype("PROFILE_NUMBER", da) == np.int16
+    assert _pipeline.find_best_dtype("VBD_MIN_CNTS", da) == np.int16
 
 
 def test_find_best_dtype_qc_and_latlon() -> None:
     """QC variables become int8 (case-insensitive); lat/lon stay double."""
     da = xr.DataArray(np.arange(3.0))
-    assert tools.find_best_dtype("TEMP_QC", da) == np.int8
-    assert tools.find_best_dtype("temp_qc", da) == np.int8
-    assert tools.find_best_dtype("LATITUDE", da) == np.double
-    assert tools.find_best_dtype("LONGITUDE_GPS", da) == np.double
+    assert _pipeline.find_best_dtype("TEMP_QC", da) == np.int8
+    assert _pipeline.find_best_dtype("temp_qc", da) == np.int8
+    assert _pipeline.find_best_dtype("LATITUDE", da) == np.double
+    assert _pipeline.find_best_dtype("LONGITUDE_GPS", da) == np.double
 
 
 def test_find_best_dtype_raw_not_truncated() -> None:
     """A float variable whose name ends in 'raw' is not cast to int (clause removed)."""
     da = xr.DataArray(np.array([1.5, 2.5, 3.5]))
-    assert tools.find_best_dtype("optics_raw", da) == np.float32
+    assert _pipeline.find_best_dtype("optics_raw", da) == np.float32
 
 
 def test_find_best_dtype_float64_to_float32() -> None:
     """Generic float64 variables downcast to float32."""
-    assert tools.find_best_dtype("TEMP", xr.DataArray(np.arange(3.0))) == np.float32
+    assert _pipeline.find_best_dtype("TEMP", xr.DataArray(np.arange(3.0))) == np.float32
 
 
 def test_set_best_dtype_preserves_existing_fill_value() -> None:
@@ -190,7 +191,7 @@ def test_set_best_dtype_preserves_existing_fill_value() -> None:
         np.array([1, 3, -9999], dtype="int64"), dims="x", name="PROFILE_NUMBER"
     )
     da.encoding["_FillValue"] = -9999
-    ds = tools.set_best_dtype(xr.Dataset({"PROFILE_NUMBER": da}))
+    ds = _pipeline.set_best_dtype(xr.Dataset({"PROFILE_NUMBER": da}))
     assert ds["PROFILE_NUMBER"].dtype == np.int16
     assert ds["PROFILE_NUMBER"].encoding["_FillValue"] == -9999
     assert "_FillValue" not in ds["PROFILE_NUMBER"].attrs
@@ -199,7 +200,7 @@ def test_set_best_dtype_preserves_existing_fill_value() -> None:
 def test_set_best_dtype_skips_qc() -> None:
     """QC flags are left to convert_qc_flags; set_best_dtype adds no bit-width fill."""
     qc = xr.DataArray(np.array([1, 2, 6], dtype="int8"), dims="x", name="TEMP_QC")
-    ds = tools.set_best_dtype(xr.Dataset({"TEMP_QC": qc}))
+    ds = _pipeline.set_best_dtype(xr.Dataset({"TEMP_QC": qc}))
     assert ds["TEMP_QC"].dtype == np.int8
     assert "_FillValue" not in ds["TEMP_QC"].encoding
 
@@ -207,7 +208,7 @@ def test_set_best_dtype_skips_qc() -> None:
 def test_set_best_dtype_scalar_integer() -> None:
     """A scalar integer variable coerces without a 0-d indexing error."""
     ds = xr.Dataset({"VBD_MIN_CNTS": xr.DataArray(np.float64(500.0))})
-    out = tools.set_best_dtype(ds)
+    out = _pipeline.set_best_dtype(ds)
     assert out["VBD_MIN_CNTS"].dtype == np.int16
 
 
@@ -216,7 +217,7 @@ def test_set_best_dtype_restores_depth_coord() -> None:
     ds = xr.Dataset(
         {"DEPTH": xr.DataArray(np.arange(4.0), dims="x", name="DEPTH")}
     ).set_coords("DEPTH")
-    out = tools.set_best_dtype(ds)
+    out = _pipeline.set_best_dtype(ds)
     assert out["DEPTH"].dtype == np.float32
     assert "DEPTH" in out.coords
 
@@ -224,7 +225,7 @@ def test_set_best_dtype_restores_depth_coord() -> None:
 def test_og1_name_mapping_sample_dataset():
     ds1 = readers.load_sample_basestation()
 
-    mapping, time_variables = tools.og1_name_mapping([ds1])
+    mapping, time_variables = _pipeline.og1_name_mapping([ds1])
 
     expected_columns = [
         "original_name",

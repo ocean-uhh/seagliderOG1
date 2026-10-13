@@ -44,9 +44,3 @@ tools
    :members:
    :undoc-members:
 
-utilities
-=========
-.. automodule:: seagliderOG1.utilities
-   :members:
-   :undoc-members:
-

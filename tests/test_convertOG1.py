@@ -10,6 +10,7 @@ parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
 from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
+    _pipeline,
     convertOG1,
     readers,
     tools,
@@ -175,12 +176,12 @@ def test_process_dataset():
     assert sg_cal["mass"].values > 50 and sg_cal["mass"].values < 60
     assert tmp == "$GPS,060608,183207,6124.849,-816.741,13,1.8,12,-8.8"
 
-    ctd_dim, merge_dims, all_dims = tools._get_merge_dimensions([ds1])
+    ctd_dim, merge_dims, all_dims = _pipeline._get_merge_dimensions([ds1])
 
     # create og1_mapping for standardise_og1
-    og1_mapping, time_variables = tools.og1_name_mapping([ds1])
+    og1_mapping, time_variables = _pipeline.og1_name_mapping([ds1])
 
-    merged_ds = tools.merge_datasets_along_time(
+    merged_ds = _pipeline.merge_datasets_along_time(
         split_ds, time_variables, firstrun=False
     )
 

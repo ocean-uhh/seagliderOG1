@@ -16,7 +16,7 @@ import pandas as pd
 import xarray as xr
 from tqdm import tqdm
 
-from seagliderOG1 import contributors, readers, tools, utilities, vocabularies, writers
+from seagliderOG1 import _pipeline, contributors, readers, tools, vocabularies, writers
 
 _log = logging.getLogger(__name__)
 
@@ -271,13 +271,13 @@ def convert_to_OG1(
     # But we need to process them first to get the dive number, assign GPS (could be after), ?
 
     # Find dimensions to merge across all datasets
-    ctd_dim, dims_to_merge, all_dims = tools._get_merge_dimensions(list_of_datasets)
+    ctd_dim, dims_to_merge, all_dims = _pipeline._get_merge_dimensions(list_of_datasets)
 
     # Create a mapping from original variable names to OG1 variable names for all variables across the datasets
-    og1_mapping, time_variables = tools.og1_name_mapping(list_of_datasets)
+    og1_mapping, time_variables = _pipeline.og1_name_mapping(list_of_datasets)
 
     # print the sumary of variables assigned or not assigned to the dataset
-    # tools.print_og1_mapping_summary(og1_mapping, ctd_dim, dims_to_merge, all_dims)
+    # _pipeline.print_og1_mapping_summary(og1_mapping, ctd_dim, dims_to_merge, all_dims)
 
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
         ds_new, attr_warnings = process_dataset(
@@ -302,12 +302,12 @@ def convert_to_OG1(
 
     # Add sensor information to the dataset - can be done on the concatenated data
     # -----------------------------------------------------------------------------
-    sensor_dict = tools.gather_sensor_info(list_of_datasets)
+    sensor_dict = _pipeline.gather_sensor_info(list_of_datasets)
     # delete old sensor attribute if it exists and add new one
     for var in ds_og1.data_vars:
         if "sensor" in ds_og1[var].attrs:
             del ds_og1[var].attrs["sensor"]
-    ds_og1 = tools.add_sensor_to_dataset(ds_og1, sensor_dict, og1_mapping)
+    ds_og1 = _pipeline.add_sensor_to_dataset(ds_og1, sensor_dict, og1_mapping)
 
     # Apply attributes
     ordered_attributes = update_dataset_attributes(
@@ -325,9 +325,11 @@ def convert_to_OG1(
 
     ### Add information needed/used for hydrodynamic (flight) model (hdm)
     print("Collecting scalar parameters to the dataset ...")
-    extracted = tools.extract_scalar_parameters(list_of_datasets)
+    extracted = _pipeline.extract_scalar_parameters(list_of_datasets)
     print("Adding scalar parameters to the dataset ...")
-    ds_og1, og1_mapping = tools.add_scalar_parameters(ds_og1, extracted, og1_mapping)
+    ds_og1, og1_mapping = _pipeline.add_scalar_parameters(
+        ds_og1, extracted, og1_mapping
+    )
 
     # Resolve platform fields from the config and the first file (no silent
     # fallbacks: missing serial raises, other strings warn + "UNK", the numeric
@@ -389,10 +391,10 @@ def convert_to_OG1(
     # Or is there an earlier TIME_GPS timestamp?
     tstart_in_numpy_datetime64 = ds_og1["TIME"][0]
     tend_in_numpy_datetime64 = ds_og1["TIME"][-1]
-    tstart_str = utilities._clean_time_string(
+    tstart_str = _pipeline._clean_time_string(
         np.datetime_as_string(tstart_in_numpy_datetime64, unit="s")
     )
-    tend_str = utilities._clean_time_string(
+    tend_str = _pipeline._clean_time_string(
         np.datetime_as_string(tend_in_numpy_datetime64, unit="s")
     )
     _log.info("Start of mission from TIME[0]: " + tstart_str)
@@ -403,7 +405,7 @@ def convert_to_OG1(
     ds_og1.attrs["time_coverage_end"] = (
         tend_str  # ds_og1.TIME[-1].values.strftime('%Y%m%dT%H%M%S')
     )
-    ds_og1.attrs["date_created"] = utilities._clean_time_string(
+    ds_og1.attrs["date_created"] = _pipeline._clean_time_string(
         ds_og1.attrs["date_created"]
     )
 
@@ -440,7 +442,7 @@ def convert_to_OG1(
         if qc_name[:-3] in ds_og1.variables:
             ds_og1 = tools.convert_qc_flags(ds_og1, qc_name)
 
-    return tools.set_best_dtype(ds_og1)
+    return _pipeline.set_best_dtype(ds_og1)
 
 
 _log = logging.getLogger(__name__)
@@ -504,7 +506,7 @@ def process_dataset(
 
     """
     # Check if the dataset has 'LONGITUDE' as a coordinate
-    ds1_base = utilities._validate_coords(ds1_base)
+    ds1_base = _pipeline._validate_coords(ds1_base)
     if ds1_base is None or len(ds1_base.variables) == 0:
         return (
             xr.Dataset(),
@@ -514,7 +516,7 @@ def process_dataset(
     split_ds = tools.split_by_unique_dims(ds1_base)
 
     # merge the split datasets along the time dimension using the OG1 mapping and specified dimensions to merge
-    merged_ds = tools.merge_datasets_along_time(
+    merged_ds = _pipeline.merge_datasets_along_time(
         split_ds, time_variables, firstrun=firstrun
     )
     # Rename variables and attributes to OG1 vocabulary
@@ -1041,7 +1043,7 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
             if isinstance(val1, (int, float)):
                 val1 = datetime.utcfromtimestamp(val1).strftime("%Y%m%dT%H%M%S")
             if isinstance(val1, str) and ("-" in val1 or ":" in val1):
-                val1 = utilities._clean_time_string(val1)
+                val1 = _pipeline._clean_time_string(val1)
             time_attrs[attr] = val1
     time_attrs["date_modified"] = datetime.now().strftime("%Y%m%dT%H%M%S")
 

@@ -19,6 +19,7 @@ semantic versioning.
   | `plotters.show_*(path_or_dataset)` | `plotters.show_*(dataset)` — Dataset only (the file-path branch is gone) |
   | `readers.load_sample_dataset()` | `readers.load_sample_basestation()` |
   | `standardise_OG10`, `tools.OG1_name_mapping`, `print_OG1_mapping_summary`, the `OG1_mapping` argument | `standardise_og1`, `og1_name_mapping`, `print_og1_mapping_summary`, `og1_mapping` — `og1` lower-case in names; `convert_to_OG1` and the package name keep their spelling |
+  | `tools.<pipeline internals>` (`og1_name_mapping`, `gather_sensor_info`, `add_sensor_to_dataset`, `merge_datasets_along_time`, `extract_scalar_parameters`/`add_scalar_parameters`, `set_best_dtype`, …) and the whole `seagliderOG1.utilities` module | private `seagliderOG1._pipeline` (not part of the public API); `tools` keeps the user-facing utilities (`calc_Z`, `assign_phase`, `convert_units_var`, `convert_qc_flags`, `encode_times_og1`, …) |
 
 - Output variable dtypes changed. QC flags are `int8` (were `float32`/`int64`); `PHASE` is
   `int8`; `PROFILE_NUMBER`, `DIVE_NUMBER` and `VBD_MIN_CNTS` are `int16`; `DEPTH` and
@@ -31,9 +32,9 @@ semantic versioning.
   `gregorian` (OG1 Format v1.0.0), replacing the previous non-conformant `seconds since
   1970-01-01 00:00:00` / `standard`. The instant is unchanged; a parser that string-matched
   the old units must adapt.
-- Minimum Python raised to 3.10 (`requires-python = ">=3.10"`). The pinned `numpy 2.2` and
-  `xarray 2025.3` already require 3.10, so `>=3.8` was not installable; users on 3.8/3.9 must
-  stay on an earlier release.
+- Minimum Python raised to 3.11 (`requires-python = ">=3.11"`). The pinned `numpy 2.2` and
+  `xarray 2025.3` already require a recent Python, so the former `>=3.8` was not installable;
+  users on earlier Python must stay on an earlier release.
 - Platform metadata is no longer silently defaulted. `convert_to_OG1` takes `platform=` and
   `global_attributes=` from the mission config, config values overriding file-derived ones. A
   missing `PLATFORM_SERIAL_NUMBER` (no file `platform_id`, none in the config) now raises instead
