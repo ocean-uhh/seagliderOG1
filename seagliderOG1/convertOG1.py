@@ -6,14 +6,14 @@ variable renaming, attribute assignments, and dataset standardization.
 """
 
 import logging
-import os
 import warnings
 from collections.abc import Mapping, Sequence
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
-import xarray as xr
 import pandas as pd
+import xarray as xr
 from tqdm import tqdm
 
 from seagliderOG1 import contributors, readers, tools, utilities, vocabularies, writers
@@ -204,6 +204,7 @@ def convert_to_OG1(
     mode: str = "delayed",
 ) -> tuple[xr.Dataset, list[str]]:
     """Convert Seaglider basestation datasets to OG1 format.
+
     Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
     concatenates the datasets, sorts by time, and applies attributes. Main conversion function that
     processes basestation datasets, applies OG1 standardization, concatenates multiple datasets,
@@ -429,7 +430,9 @@ def convert_to_OG1(
 
     # Construct the unique identifier attribute. The data-mode suffix (delayed/R)
     # is the only place OG1 records data mode; there is no data-mode attribute.
-    id = f"{platform_serial_number}_{ds_og1.start_date}_{vocabularies.MODE_SUFFIX[mode]}"
+    id = (
+        f"{platform_serial_number}_{ds_og1.start_date}_{vocabularies.MODE_SUFFIX[mode]}"
+    )
     ds_og1.attrs["id"] = id
 
     # Write config global attributes verbatim (nulls skipped). Collisions with
@@ -461,12 +464,14 @@ def process_dataset(
     list[str],  # List of warnings related to attribute assignments
     pd.DataFrame,  # Dataset containing variables starting with 'sg_cal'
 ]:
-    """Processes a dataset by performing a series of transformations and extractions.
+    """Process a dataset by performing a series of transformations and extractions.
 
     Parameters
     ----------
     ds1_base : xarray.Dataset
         The input dataset from a basestation file, containing various attributes and variables.
+    OG1_mapping : pandas.DataFrame
+        Mapping of original basestation variable names to OG1 variable names.
     time_variables : dict[str, list[str]]
         A dictionary mapping dimension names to lists of time variables.
     firstrun : bool, optional
@@ -844,9 +849,7 @@ def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
     datasets.append(ds)
     datasets.append(gps_ds)
     ds_new = xr.concat(datasets, dim=newdim, data_vars="all")
-    ds_new = ds_new.sortby("TIME")
-
-    return ds_new
+    return ds_new.sortby("TIME")
 
 
 ##-----------------------------------------------------------------------------------------
@@ -1149,10 +1152,10 @@ def process_and_save_data(
 
     # Convert the list of datasets to OG1
     ds1_og1, varlist = convert_to_OG1(ds1_base)
-    output_file = os.path.join(output_dir, ds1_og1.attrs["id"] + ".nc")
+    output_file = str(Path(output_dir) / (ds1_og1.attrs["id"] + ".nc"))
 
     # Check if the file exists and delete it if it does
-    if os.path.exists(output_file):
+    if Path(output_file).exists():
         if run_quietly:
             user_input = "no"
         else:
@@ -1163,12 +1166,11 @@ def process_and_save_data(
         if user_input.lower() != "yes":
             print(f"File {output_file} already exists. Exiting the process.")
             _log.warning(f"File {output_file} already exists. Exiting the process.")
-            ds_all = xr.open_dataset(output_file)
-            return ds_all
-        elif user_input.lower() == "yes":
+            return xr.open_dataset(output_file)
+        if user_input.lower() == "yes":
             list_datasets = readers.load_basestation_files(input_location)
             ds_all, varlist = convert_to_OG1(list_datasets)
-            os.remove(output_file)
+            Path(output_file).unlink()
             if save:
                 writers.save_dataset(ds_all, output_file)
     else:
@@ -1176,7 +1178,7 @@ def process_and_save_data(
         _log.info(f"Running the directory: {input_location}")
         list_datasets = readers.load_basestation_files(input_location)
         ds_all, varlist = convert_to_OG1(list_datasets)
-        output_file = os.path.join(output_dir, ds_all.attrs["id"] + ".nc")
+        output_file = str(Path(output_dir) / (ds_all.attrs["id"] + ".nc"))
         if save:
             writers.save_dataset(ds_all, output_file)
 

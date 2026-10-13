@@ -28,7 +28,6 @@ OG1 format requirements without code changes.
 
 """
 
-import os
 import pathlib
 import warnings
 from collections.abc import Callable
@@ -38,7 +37,9 @@ import yaml
 
 # Set the directory for yaml files as package directory + 'config/'
 script_dir = pathlib.Path(__file__).parent.absolute()
-config_dir = os.path.join(script_dir, "config/")
+CONFIG_DIR: pathlib.Path = script_dir / "config"
+# Backward-compatible alias: contributors.py reads vocabularies.config_dir.
+config_dir = CONFIG_DIR
 
 # Dimension renaming: maps basestation dimension names to OG1 standard names
 dims_rename_dict = {"sg_data_point": "N_MEASUREMENTS"}
@@ -238,17 +239,17 @@ vars_as_is = []
 # --------------------------------
 # Variable name mappings: basestation variable name -> OG1 standard name
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
-with open(config_dir + "OG1_var_names.yaml", "r") as file:
+with (CONFIG_DIR / "OG1_var_names.yaml").open() as file:
     standard_names = yaml.safe_load(file)
 
 # Variable attribute vocabularies for OG1 format
 # Reference: http://vocab.nerc.ac.uk/scheme/OG1/current/
-with open(config_dir + "OG1_vocab_attrs.yaml", "r") as file:
+with (CONFIG_DIR / "OG1_vocab_attrs.yaml").open() as file:
     vocab_attrs = yaml.safe_load(file)
 
 # Sensor attribute vocabularies for OG1 format
 # Reference: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/
-with open(config_dir + "OG1_sensor_attrs.yaml", "r") as file:
+with (CONFIG_DIR / "OG1_sensor_attrs.yaml").open() as file:
     sensor_vocabs = yaml.safe_load(file)
 
 
@@ -270,7 +271,7 @@ def load_default_contributors() -> dict[str, str]:
         Contributor attributes read from ``OG1_author.yaml``.
 
     """
-    with open(config_dir + "OG1_author.yaml", "r") as file:
+    with (CONFIG_DIR / "OG1_author.yaml").open() as file:
         return yaml.safe_load(file)
 
 
@@ -358,5 +359,5 @@ order_of_attr = [
 # Global attribute configuration for OG1 conversion
 # Defines which attributes to keep, rename, or add during conversion
 # Compatible with base_station_version 2.8, nodc_template_version_v0.9
-with open(config_dir + "OG1_global_attrs.yaml", "r") as file:
+with (CONFIG_DIR / "OG1_global_attrs.yaml").open() as file:
     global_attrs = yaml.safe_load(file)

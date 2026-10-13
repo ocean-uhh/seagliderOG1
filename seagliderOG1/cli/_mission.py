@@ -77,7 +77,7 @@ def load_config(config_path: pathlib.Path) -> dict:
         msg = "configuration root is not a mapping."
         # Malformed config input, not a programming type error; ValueError matches
         # readers.discover_missions' bad-input style and validate_config catches it.
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
     return data
 
 

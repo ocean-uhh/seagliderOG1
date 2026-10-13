@@ -44,23 +44,16 @@ def show_contents(
 
     """
     if content_type in ["variables", "vars"]:
-        if isinstance(data, str):
+        if isinstance(data, (str, xr.Dataset)):
             return show_variables(data)
-        elif isinstance(data, xr.Dataset):
-            return show_variables(data)
-        else:
-            raise TypeError("Input data must be a file path (str) or an xarray Dataset")
-    elif content_type in ["attributes", "attrs"]:
-        if isinstance(data, str):
+        raise TypeError("Input data must be a file path (str) or an xarray Dataset")
+    if content_type in ["attributes", "attrs"]:
+        if isinstance(data, (str, xr.Dataset)):
             return show_attributes(data)
-        elif isinstance(data, xr.Dataset):
-            return show_attributes(data)
-        else:
-            raise TypeError("Attributes can only be shown for netCDF files (str)")
-    else:
-        raise ValueError(
-            "content_type must be either 'variables' (or 'vars') or 'attributes' (or 'attrs')"
-        )
+        raise TypeError("Attributes can only be shown for netCDF files (str)")
+    raise ValueError(
+        "content_type must be either 'variables' (or 'vars') or 'attributes' (or 'attrs')"
+    )
 
 
 def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
@@ -92,7 +85,7 @@ def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
 
     """
     if isinstance(data, str):
-        print("information is based on file: {}".format(data))
+        print(f"information is based on file: {data}")
         dataset = Dataset(data)
         variables = dataset.variables
     elif isinstance(data, xr.Dataset):
@@ -128,15 +121,13 @@ def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
     dim[dim.str.startswith("str")] = "string"
     vars["dims"] = dim
 
-    vars = (
+    return (
         vars.sort_values(["dims", "name"])
         .reset_index(drop=True)
         .loc[:, ["dims", "name", "units", "comment", "standard_name", "dtype"]]
         .set_index("name")
         .style
     )
-
-    return vars
 
 
 def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
@@ -165,25 +156,20 @@ def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
 
     """
     if isinstance(data, str):
-        print("information is based on file: {}".format(data))
+        print(f"information is based on file: {data}")
         rootgrp = Dataset(data, "r", format="NETCDF4")
-        attributes = rootgrp.ncattrs()
-        get_attr = lambda key: getattr(rootgrp, key)
+        attrs = {key: getattr(rootgrp, key) for key in rootgrp.ncattrs()}
     elif isinstance(data, xr.Dataset):
         print("information is based on xarray Dataset")
-        attributes = data.attrs.keys()
-        get_attr = lambda key: data.attrs[key]
+        attrs = dict(data.attrs)
     else:
         raise TypeError("Input data must be a file path (str) or an xarray Dataset")
 
     info = {}
-    for i, key in enumerate(attributes):
-        dtype = type(get_attr(key)).__name__
-        info[i] = {"Attribute": key, "Value": get_attr(key), "DType": dtype}
+    for i, (key, value) in enumerate(attrs.items()):
+        info[i] = {"Attribute": key, "Value": value, "DType": type(value).__name__}
 
-    attrs = DataFrame(info).T
-
-    return attrs
+    return DataFrame(info).T
 
 
 def show_variables_by_dimension(
@@ -217,7 +203,7 @@ def show_variables_by_dimension(
 
     """
     if isinstance(data, str):
-        print("information is based on file: {}".format(data))
+        print(f"information is based on file: {data}")
         dataset = Dataset(data)
         variables = dataset.variables
     elif isinstance(data, xr.Dataset):
@@ -252,15 +238,13 @@ def show_variables_by_dimension(
     dim[dim.str.startswith("str")] = "string"
     vars["dims"] = dim
 
-    vars = (
+    return (
         vars.sort_values(["dims", "name"])
         .reset_index(drop=True)
         .loc[:, ["dims", "name", "units", "comment"]]
         .set_index("name")
         .style
     )
-
-    return vars
 
 
 ##----------------------------------------------------------------------------
@@ -406,15 +390,8 @@ def plot_depth_colored(
             raise TypeError("Input data must be a pandas DataFrame or xarray Dataset")
 
     # Identify vectors to be plotted
-    if "ctd_time" in data:
-        x_axis = data["ctd_time"]
-    else:
-        x_axis = data["TIME"]
-
-    if "ctd_depth" in data:
-        y_axis = data["ctd_depth"]
-    else:
-        y_axis = data["DEPTH"]
+    x_axis = data["ctd_time"] if "ctd_time" in data else data["TIME"]
+    y_axis = data["ctd_depth"] if "ctd_depth" in data else data["DEPTH"]
 
     if isinstance(data, pd.DataFrame):
         ctd_time = x_axis

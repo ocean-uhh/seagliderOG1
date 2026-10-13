@@ -9,7 +9,12 @@ script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
-from seagliderOG1 import convertOG1, readers, tools, writers
+from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
+    convertOG1,
+    readers,
+    tools,
+    writers,
+)
 
 
 def test_resolve_platform_serial_from_file():
@@ -162,7 +167,6 @@ def test_process_dataset():
     key_dims.sort()
     assert key_dims == [(), ("gc_event",), ("gps_info",), ("sg_data_point",)]
 
-    ds = split_ds[("sg_data_point",)]
     gps_info = split_ds[("gps_info",)]
 
     sg_cal, dc_log, dc_other = convertOG1.extract_variables(split_ds[()])

@@ -1,8 +1,8 @@
 """Write OG1 datasets to compressed NetCDF files."""
 
 import logging
-import os
 from numbers import Number
+from pathlib import Path
 
 import numpy as np
 import xarray as xr
@@ -31,7 +31,7 @@ def save_dataset(
     output_file: str = "../test.nc",
     overwrite: bool = False,
 ) -> bool:
-    """Attempts to save the dataset to a NetCDF file with lossless compression.
+    """Save the dataset to a NetCDF file with lossless compression.
 
     Every non-scalar numeric variable, coordinates included, is written with zlib
     at level 4 and the shuffle filter. If a TypeError occurs due to invalid
@@ -70,10 +70,11 @@ def save_dataset(
         raise ValueError(msg)
 
     # Handle existing file
-    if os.path.exists(output_file):
+    output_path = Path(output_file)
+    if output_path.exists():
         if overwrite:
             print(f"Removing existing file: {output_file}")
-            os.remove(output_file)
+            output_path.unlink()
         else:
             raise FileExistsError(
                 f"Output file '{output_file}' already exists. "

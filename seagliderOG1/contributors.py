@@ -358,7 +358,7 @@ def registry_institutions() -> dict[str, dict]:
         EDMO code -> registry entry (``standard_name``, ``name_variants``, …).
 
     """
-    with open(_REGISTRY_PATH) as file:
+    with _REGISTRY_PATH.open() as file:
         return yaml.safe_load(file).get("institutions", {})
 
 

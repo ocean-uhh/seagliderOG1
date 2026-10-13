@@ -5,9 +5,12 @@ script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
-from seagliderOG1 import utilities
-import xarray as xr
-import numpy as np
+import numpy as np  # noqa: E402  # import after sys.path bootstrap
+import xarray as xr  # noqa: E402  # import after sys.path bootstrap
+
+from seagliderOG1 import utilities  # noqa: E402  # import after sys.path bootstrap
+
+rng = np.random.default_rng(0)
 
 
 def test_validate_coords():
@@ -20,10 +23,10 @@ def test_validate_coords():
     # Create a dummy xarray dataset with correct coordinates
     dataset = xr.Dataset(
         {
-            "ctd_time": ("sg_data_point", np.random.rand(10)),
-            "ctd_depth": ("sg_data_point", np.random.rand(10)),
+            "ctd_time": ("sg_data_point", rng.random(10)),
+            "ctd_depth": ("sg_data_point", rng.random(10)),
         },
-        coords={"longitude": np.random.rand(10), "latitude": np.random.rand(10)},
+        coords={"longitude": rng.random(10), "latitude": rng.random(10)},
     )
     dataset.attrs["id"] = "testID"
 
@@ -46,9 +49,9 @@ def test_validate_dims():
     # Create a dummy xarray dataset with correct coordinates
     dataset = xr.Dataset(
         {
-            "ctd_time": ("N_MEASUREMENTS", np.random.rand(10)),
+            "ctd_time": ("N_MEASUREMENTS", rng.random(10)),
         },
-        coords={"longitude": np.random.rand(10), "latitude": np.random.rand(10)},
+        coords={"longitude": rng.random(10), "latitude": rng.random(10)},
     )
     # Validate dimensions using the _validate_dims function
     valid = utilities._validate_dims(dataset)
@@ -58,9 +61,9 @@ def test_validate_dims():
     # Create a dummy xarray dataset with incorrect dimensions
     dataset_invalid = xr.Dataset(
         {
-            "ctd_time": ("INVALID_DIM", np.random.rand(10)),
+            "ctd_time": ("INVALID_DIM", rng.random(10)),
         },
-        coords={"longitude": np.random.rand(10), "latitude": np.random.rand(10)},
+        coords={"longitude": rng.random(10), "latitude": rng.random(10)},
     )
 
     # Validate dimensions using the _validate_dims function

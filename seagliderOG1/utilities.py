@@ -1,4 +1,8 @@
-# Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/utilities.py
+"""Internal data-processing helpers for coordinate, dimension, and calibration handling.
+
+Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/utilities.py
+"""
+
 import datetime
 import logging
 import re
@@ -11,7 +15,7 @@ _log = logging.getLogger(__name__)
 
 
 def _validate_coords(ds1: xr.Dataset) -> xr.Dataset:
-    """Validates and assigns coordinates to the given xarray Dataset.
+    """Validate and assign coordinates to the given xarray Dataset.
 
     Parameters
     ----------
@@ -70,7 +74,7 @@ def _validate_coords(ds1: xr.Dataset) -> xr.Dataset:
 
 
 def _validate_dims(ds: xr.Dataset, expected_dims: str = "N_MEASUREMENTS") -> bool:
-    """Validates that the dataset has the expected dimension name.
+    """Validate that the dataset has the expected dimension name.
 
     Parameters
     ----------
@@ -90,12 +94,11 @@ def _validate_dims(ds: xr.Dataset, expected_dims: str = "N_MEASUREMENTS") -> boo
         _log.error(f"Dimension name '{dim_name}' is not {expected_dims}.")
         return False
     #        raise ValueError(f"Dimension name '{dim_name}' is not {expected_dims}.")
-    else:
-        return True
+    return True
 
 
 def _parse_calibcomm(calstr: str, firstrun: bool = False) -> tuple[str, str]:
-    """Parses calibration string to extract calibration date and serial number.
+    """Parse calibration string to extract calibration date and serial number.
 
     Parameters
     ----------
@@ -165,7 +168,7 @@ def _parse_calibcomm(calstr: str, firstrun: bool = False) -> tuple[str, str]:
 
 
 def _clean_time_string(time_str: str) -> str:
-    """Cleans time string by removing common separators and timezone indicators.
+    """Clean time string by removing common separators and timezone indicators.
 
     Parameters
     ----------
@@ -182,7 +185,7 @@ def _clean_time_string(time_str: str) -> str:
 
 
 def _clean_anc_vars_list(ancillary_variables_str: str) -> list[str]:
-    """Cleans and splits ancillary variables string into a list.
+    """Clean and split ancillary variables string into a list.
 
     Parameters
     ----------
@@ -197,12 +200,11 @@ def _clean_anc_vars_list(ancillary_variables_str: str) -> list[str]:
     """
     ancillary_variables_str = re.sub(r"(\w)(sg_cal)", r"\1 \2", ancillary_variables_str)
     ancilliary_vars_list = ancillary_variables_str.split()
-    ancilliary_vars_list = [var.replace("sg_cal_", "") for var in ancilliary_vars_list]
-    return ancilliary_vars_list
+    return [var.replace("sg_cal_", "") for var in ancilliary_vars_list]
 
 
 def _assign_calval(sg_cal: xr.Dataset, anc_var_list: list[str]) -> dict:
-    """Assigns calibration values from dataset to a dictionary.
+    """Assign calibration values from dataset to a dictionary.
 
     Parameters
     ----------

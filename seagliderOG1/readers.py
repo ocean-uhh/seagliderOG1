@@ -1,8 +1,16 @@
-import os
+"""Readers module for Seaglider basestation files.
+
+This module provides functions to read Seaglider basestation NetCDF files
+from either online sources or local directories. It does not manipulate
+the data, only loads it into xarray datasets.
+"""
+
 import pathlib
 import re
+import shutil
 import sys
 import warnings
+from datetime import datetime
 from typing import NamedTuple
 
 import requests
@@ -10,19 +18,9 @@ import xarray as xr
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
-from datetime import datetime
-import shutil
-
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
-
-"""Readers module for Seaglider basestation files.
-
-This module provides functions to read Seaglider basestation NetCDF files
-from either online sources or local directories. It does not manipulate
-the data, only loads it into xarray datasets.
-"""
 
 # readers.py: Will only read files.  Not manipulate them.
 
@@ -66,26 +64,26 @@ def load_sample_dataset(
 
     Parameters
     ----------
-    dataset_name : str, optional
-        Name of the sample dataset to load. Must be one of the available
-        datasets in the registry. Default is "p0330015_20100906.nc".
+    file_path : str, optional
+        Path to the sample dataset to load. Default is the demo sg005 dive 1
+        file bundled under ``data/demo_sg005``.
 
     Returns
     -------
     xarray.Dataset
-        The requested sample dataset loaded from the cache.
+        The requested sample dataset loaded from disk.
 
     Raises
     ------
     KeyError
-        If the requested dataset is not available in the registry.
+        If the requested dataset file does not exist.
 
     """
-    if os.path.isfile(file_path):
-        return xr.open_dataset(file_path, decode_timedelta=False)
-    else:
-        msg = f"Requested sample dataset {file_path} not known. Available datasets are: {os.listdir(str(parent_dir / 'data/demo_sg005'))}"
-        raise KeyError(msg)
+    if pathlib.Path(file_path).is_file():
+        return xr.open_dataset(file_path, engine="netcdf4", decode_timedelta=False)
+    available = [p.name for p in (parent_dir / "data/demo_sg005").iterdir()]
+    msg = f"Requested sample dataset {file_path} not known. Available datasets are: {available}"
+    raise KeyError(msg)
 
 
 def validate_filename(filename: str) -> bool:
@@ -115,12 +113,8 @@ def validate_filename(filename: str) -> bool:
     if re.match(pattern1, filename) or re.match(pattern2, filename):
         glider_sn = glider_sn_from_filename(filename)
         divenum = profnum_from_filename(filename)
-        if int(glider_sn) > 0 and int(divenum) > 0:
-            return True
-        else:
-            return False
-    else:
-        return False
+        return int(glider_sn) > 0 and int(divenum) > 0
+    return False
 
 
 def profnum_from_filename(filename: str) -> int:
@@ -413,7 +407,9 @@ def load_basestation_files(
 
     ### Include a tqdm progress bar
     for file in tqdm(filtered_files, desc="Loading datasets", unit="file"):
-        ds = xr.open_dataset(os.path.join(source, file), decode_timedelta=False)
+        ds = xr.open_dataset(
+            pathlib.Path(source) / file, engine="netcdf4", decode_timedelta=False
+        )
 
         datasets.append(ds)
 
@@ -422,8 +418,8 @@ def load_basestation_files(
 
 def list_files(
     source: str,
-    registry_loc: str = "seagliderOG1",
-    registry_name: str = "seaglider_registry.txt",
+    _registry_loc: str = "seagliderOG1",
+    _registry_name: str = "seaglider_registry.txt",
 ) -> list[str]:
     """List NetCDF files from a source (URL or local directory).
 
@@ -434,9 +430,9 @@ def list_files(
     ----------
     source : str
         URL (http/https) or local directory path to scan for files.
-    registry_loc : str, optional
+    _registry_loc : str, optional
         Legacy parameter, not currently used.
-    registry_name : str, optional
+    _registry_name : str, optional
         Legacy parameter, not currently used.
 
     Returns
@@ -450,7 +446,7 @@ def list_files(
         If source is neither a valid URL nor directory path.
 
     """
-    if source.startswith("http://") or source.startswith("https://"):
+    if source.startswith(("http://", "https://")):
         # List all files in the URL directory
         response = requests.get(source)
         response.raise_for_status()  # Raise an error for bad status codes
@@ -463,9 +459,11 @@ def list_files(
             if href and href.endswith(".nc"):
                 file_list.append(href)
 
-    elif os.path.isdir(source):
+    elif pathlib.Path(source).is_dir():
         ### only list files that are nc files
-        file_list = [f for f in os.listdir(source) if f.endswith(".nc")]
+        file_list = [
+            p.name for p in pathlib.Path(source).iterdir() if p.name.endswith(".nc")
+        ]
     else:
         raise ValueError("Source must be a valid URL or directory path.")
 
@@ -499,20 +497,20 @@ def scan_and_repair_files(
     file_list = list_files(source)
     filtered_files = filter_files_by_profile(file_list, start_profile, end_profile)
 
-    fixes_dir = os.path.join(source, "metadata_fixes")
-    os.makedirs(fixes_dir, exist_ok=True)
+    fixes_dir = pathlib.Path(source) / "metadata_fixes"
+    fixes_dir.mkdir(parents=True, exist_ok=True)
 
-    log_path = os.path.join(fixes_dir, "repair_log.txt")
+    log_path = fixes_dir / "repair_log.txt"
 
     for file in tqdm(filtered_files, desc="Scanning files", unit="file"):
-        full_path = os.path.join(source, file)
+        full_path = pathlib.Path(source) / file
 
         try:
             # Good files are left untouched
-            ds = xr.open_dataset(full_path, decode_timedelta=False)
+            ds = xr.open_dataset(full_path, engine="netcdf4", decode_timedelta=False)
             ds.close()
 
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001  # any open failure means the file needs repair; the cause is logged
             print(f"Need repair: {file}")
 
             fixed_vars = repair_netcdf_time_metadata_inplace(
@@ -547,12 +545,12 @@ def log_repair(
     filename: str,
     fixed_vars: list[str],
     error: Exception | str,
-):
+) -> None:
     """Append one repair entry to the log file."""
-    with open(log_path, "a") as f:
+    with pathlib.Path(log_path).open("a") as f:
         f.write(f"{datetime.now().isoformat()} | {filename}\n")
         f.write(f"  Fixed variables: {fixed_vars}\n")
-        f.write(f"  Original error: {str(error)}\n")
+        f.write(f"  Original error: {error!s}\n")
         f.write("\n")
 
 
@@ -570,7 +568,9 @@ def repair_netcdf_time_metadata_inplace(
     repair_dir = pathlib.Path(repair_dir)
     fixed_vars: list[str] = []
 
-    ds = xr.open_dataset(path, decode_times=False, decode_timedelta=False)
+    ds = xr.open_dataset(
+        path, engine="netcdf4", decode_times=False, decode_timedelta=False
+    )
     try:
         for var_name in ds.variables:
             var = ds[var_name]
@@ -603,5 +603,5 @@ def repair_netcdf_time_metadata_inplace(
     finally:
         ds.close()
 
-    os.replace(tmp_path, path)
+    tmp_path.replace(path)
     return fixed_vars
