@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.tools &mdash; seagliderOG1 0.0.2.post1.dev64 documentation</title>
+  <title>seagliderOG1.tools &mdash; seagliderOG1 0.0.2.post1.dev65 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f928cf22"></script>
+      <script src="../../_static/documentation_options.js?v=5d504b3b"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -92,15 +92,21 @@
            <div itemprop="articleBody">
              
   <h1>Source code for seagliderOG1.tools</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span></span><span class="sd">"""User-facing utilities for Seaglider-to-OG1 conversion.</span>
+
+<span class="sd">Sensor metadata extraction, variable-name mapping, QC-flag conversion, dtype</span>
+<span class="sd">coercion, profile and phase numbering, time encoding, and dataset merging.</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dateutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">parser</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">gsw</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dateutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">parser</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">vocabularies</span>
 
@@ -495,7 +501,7 @@
 
 <div class="viewcode-block" id="gather_sensor_info">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.gather_sensor_info">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">gather_sensor_info</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">gather_sensor_info</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Gathers sensor information from a list of OG1 base datasets.</span>
 
 <span class="sd">    Extracts:</span>
@@ -548,7 +554,7 @@
     <span class="n">standard_names</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">standard_names</span>
     <span class="n">sensor_vocabs</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span>
 
-    <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">standard_names</span><span class="p">:</span>
             <span class="n">new_name</span> <span class="o">=</span> <span class="n">standard_names</span><span class="p">[</span><span class="n">sensor</span><span class="p">]</span>
             <span class="c1"># Copy so calibration metadata does not modify shared vocabularies.</span>
@@ -587,7 +593,8 @@
             <span class="sa">f</span><span class="s2">"Sensors: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">sensor_dict</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_missing</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_missing</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Check whether a value counts as a missing calibration entry."""</span>
         <span class="k">return</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">{</span>
             <span class="s2">""</span><span class="p">,</span>
             <span class="s2">"none"</span><span class="p">,</span>
@@ -694,9 +701,12 @@
 <div class="viewcode-block" id="add_sensor_to_dataset">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_sensor_to_dataset">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_sensor_to_dataset</span><span class="p">(</span>
-    <span class="n">ds_og1</span><span class="p">,</span> <span class="n">sensor_dict</span><span class="p">,</span> <span class="n">OG1_mapping</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">ds_og1</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">sensor_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">OG1_mapping</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Adds sensor information from the provided sensor dictionary to the OG1 dataset.</span>
+<span class="w">    </span><span class="sd">"""Add sensor information from the provided sensor dictionary to the OG1 dataset.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -704,6 +714,10 @@
 <span class="sd">        The OG1 dataset to which sensor information will be added.</span>
 <span class="sd">    sensor_dict : dict</span>
 <span class="sd">        A dictionary containing sensor metadata and associated variables.</span>
+<span class="sd">    OG1_mapping : pandas.DataFrame</span>
+<span class="sd">        Mapping of original to OG1 variable names with associated instruments.</span>
+<span class="sd">    firstrun : bool, default False</span>
+<span class="sd">        If ``True``, print each sensor as it is added.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -773,8 +787,8 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_merge_dimensions</span><span class="p">(</span>
     <span class="n">list_of_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">"""Return the CTD dimension and dimensions to merge across all datasets as well as all dimensions present in the datasets"""</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Return the CTD dimension, the dimensions to merge, and all dimensions present."""</span>
     <span class="n">list_of_datasets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
     <span class="n">dimensions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">dimension</span> <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">list_of_datasets</span> <span class="k">for</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">sizes</span>
@@ -849,7 +863,7 @@
 
         <span class="n">variable_count</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">variables</span><span class="p">[</span><span class="s2">"original_dimension"</span><span class="p">]</span>
-            <span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">dims</span><span class="p">:</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">dims</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">", "</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">dims</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="n">dimension</span><span class="p">:</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">dims</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">", "</span><span class="p">))</span>
             <span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="p">)</span>
 
@@ -947,7 +961,6 @@
 <span class="sd">    -----</span>
 <span class="sd">    - Requires pressure variable (PRES)</span>
 <span class="sd">    """</span>
-
     <span class="n">dive_number</span> <span class="o">=</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]</span>
     <span class="n">ds</span> <span class="o">=</span> <span class="n">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dive_number</span><span class="p">)</span>
 
@@ -975,26 +988,32 @@
 <div class="viewcode-block" id="assign_phase">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.assign_phase">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">assign_phase</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""This function adds new variables 'PHASE' and 'PHASE_QC' to the dataset `ds`, which indicate the phase of each measurement. The phase is determined based on the pressure readings ('PRES') for each unique dive number ('dive_num').</span>
+<span class="w">    </span><span class="sd">"""Add 'PHASE' and 'PHASE_QC' variables indicating the phase of each measurement.</span>
 
-<span class="sd">    Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth. Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC.</span>
-<span class="sd">    Assigns phase values to the dataset based on pressure readings.</span>
+<span class="sd">    The phase is determined from the pressure readings ('PRES') for each unique</span>
+<span class="sd">    dive number ('dive_num').</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    ds (xarray.Dataset): The input dataset containing 'dive_num' and 'PRES' variables.</span>
+<span class="sd">    ds : xarray.Dataset</span>
+<span class="sd">        The input dataset containing 'dive_num' and 'PRES' variables.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    xarray.Dataset: The dataset with an additional 'PHASE' variable, where:</span>
-<span class="sd">    xarray.Dataset: The dataset with additional 'PHASE' and 'PHASE_QC' variables, where:</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        The dataset with additional 'PHASE' and 'PHASE_QC' variables, where:</span>
+
 <span class="sd">        - 'PHASE' indicates the phase of each measurement:</span>
-<span class="sd">            - Phase 2 is assigned to measurements up to and including the maximum pressure point.</span>
-<span class="sd">            - Phase 1 is assigned to measurements after the maximum pressure point.</span>
+<span class="sd">            - Phase 2 up to and including the maximum pressure point.</span>
+<span class="sd">            - Phase 1 after the maximum pressure point.</span>
 <span class="sd">        - 'PHASE_QC' is an additional variable with no QC applied.</span>
 
-<span class="sd">    Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth.  Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC</span>
-
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    In this formulation, we are only separating into dives and climbs based on</span>
+<span class="sd">    when the glider is at the maximum depth. Future work needs to separate out</span>
+<span class="sd">    the other phases and generate a PHASE_QC:</span>
+<span class="sd">    https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md</span>
 <span class="sd">    """</span>
     <span class="c1"># Determine the correct keystring for divenum</span>
     <span class="k">if</span> <span class="s2">"dive_number"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
@@ -1050,7 +1069,8 @@
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_del_capital_letters</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_del_capital_letters</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the input string with all uppercase characters removed."""</span>
     <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">char</span> <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">string</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">char</span><span class="o">.</span><span class="n">isupper</span><span class="p">()])</span>
 
 
@@ -1100,7 +1120,7 @@
 <div class="viewcode-block" id="split_by_unique_dims">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.split_by_unique_dims">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">split_by_unique_dims</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Splits an xarray dataset into multiple datasets based on the unique set of dimensions of the variables.</span>
+<span class="w">    </span><span class="sd">"""Split an xarray dataset into datasets grouped by each variable's dimension set.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1128,7 +1148,7 @@
         <span class="n">unique_dims_datasets</span><span class="p">[</span><span class="n">dims</span><span class="p">][</span><span class="n">var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_data</span>
 
     <span class="c1"># Convert the dictionary values to a dictionary of datasets</span>
-    <span class="k">return</span> <span class="p">{</span><span class="n">dims</span><span class="p">:</span> <span class="n">dataset</span> <span class="k">for</span> <span class="n">dims</span><span class="p">,</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">unique_dims_datasets</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">unique_dims_datasets</span><span class="p">)</span></div>
 
 
 
@@ -1167,11 +1187,7 @@
 <span class="sd">    xarray.Dataset: The dataset with renamed units.</span>
 <span class="sd">    """</span>
     <span class="n">old_unit</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">old_unit</span> <span class="ow">in</span> <span class="n">unit_format</span><span class="p">:</span>
-        <span class="n">new_unit</span> <span class="o">=</span> <span class="n">unit_format</span><span class="p">[</span><span class="n">old_unit</span><span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">new_unit</span> <span class="o">=</span> <span class="n">old_unit</span>
-    <span class="k">return</span> <span class="n">new_unit</span></div>
+    <span class="k">return</span> <span class="n">unit_format</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">old_unit</span><span class="p">,</span> <span class="n">old_unit</span><span class="p">)</span></div>
 
 
 
@@ -1195,10 +1211,7 @@
 <span class="sd">        The reformatted unit string, or the original if no mapping exists.</span>
 
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">old_unit</span> <span class="ow">in</span> <span class="n">unit_format</span><span class="p">:</span>
-        <span class="n">new_unit</span> <span class="o">=</span> <span class="n">unit_format</span><span class="p">[</span><span class="n">old_unit</span><span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">new_unit</span> <span class="o">=</span> <span class="n">old_unit</span>
+    <span class="n">new_unit</span> <span class="o">=</span> <span class="n">unit_format</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">old_unit</span><span class="p">,</span> <span class="n">old_unit</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">new_unit</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>  <span class="c1"># .casefold()</span></div>
 
 
@@ -1316,9 +1329,7 @@
         <span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
             <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">,</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
-            <span class="n">original_shape</span>
-        <span class="p">)</span>  <span class="c1"># Convert strings to numbers, NaNs stay NaNs</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">original_shape</span><span class="p">)</span>  <span class="c1"># Convert strings to numbers, NaNs stay NaNs</span>
         <span class="c1"># Assign back to dataset</span>
         <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">values</span>
         <span class="c1">### Set the nan values to 6 (unsampled flag) and convert to int8</span>
@@ -1428,8 +1439,7 @@
 <span class="sd">        The fill value calculated as 2^(bits-1) - 1.</span>
 
 <span class="sd">    """</span>
-    <span class="n">fill_val</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\d+"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-    <span class="k">return</span> <span class="n">fill_val</span></div>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\d+"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span></div>
 
 
 
@@ -1467,7 +1477,7 @@
         <span class="n">input_dtype</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
         <span class="n">new_dtype</span> <span class="o">=</span> <span class="n">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">da</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"valid_min"</span><span class="p">,</span> <span class="s2">"valid_max"</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">da</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">da</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
                 <span class="n">da</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">da</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">att</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">new_dtype</span> <span class="o">==</span> <span class="n">input_dtype</span><span class="p">:</span>
             <span class="k">continue</span>
@@ -1504,13 +1514,15 @@
 
 <div class="viewcode-block" id="set_best_dtype_value">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.set_best_dtype_value">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">set_best_dtype_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">var_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_best_dtype_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">var_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Determine the best data type for a single value based on its variable name and convert it.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    value : any</span>
 <span class="sd">        The input value to convert.</span>
+<span class="sd">    var_name : str</span>
+<span class="sd">        The name of the variable the value belongs to.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1557,15 +1569,15 @@
 <span class="sd">        Dataset with properly encoded time variables.</span>
 
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="s2">"units"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">if</span> <span class="s2">"units"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
         <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"units"</span><span class="p">)</span>
-    <span class="k">if</span> <span class="s2">"calendar"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">if</span> <span class="s2">"calendar"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
         <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"calendar"</span><span class="p">)</span>
     <span class="n">ds</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="n">OG1_TIME_UNITS</span>
     <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s2">"time"</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">var_name</span> <span class="o">==</span> <span class="s2">"time"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"time"</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">and</span> <span class="n">var_name</span> <span class="o">!=</span> <span class="s2">"time"</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"units"</span><span class="p">,</span> <span class="s2">"calendar"</span><span class="p">,</span> <span class="s2">"dtype"</span><span class="p">]:</span>
-                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
                     <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
             <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="n">OG1_TIME_UNITS</span>
     <span class="k">return</span> <span class="n">ds</span></div>
@@ -1589,13 +1601,13 @@
 
 <span class="sd">    """</span>
     <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s2">"axis"</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s2">"axis"</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
             <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"axis"</span><span class="p">)</span>
         <span class="k">if</span> <span class="s2">"time"</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"units"</span><span class="p">,</span> <span class="s2">"calendar"</span><span class="p">,</span> <span class="s2">"dtype"</span><span class="p">]:</span>
-                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
                     <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">:</span>
                     <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"time"</span><span class="p">:</span>
                 <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="n">OG1_TIME_UNITS</span>
@@ -1609,7 +1621,8 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">merge_parts_of_dataset</span><span class="p">(</span>
     <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">dim1</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"sg_data_point"</span><span class="p">,</span> <span class="n">dim2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"ctd_data_point"</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.</span>
+<span class="w">    </span><span class="sd">"""Merge variables from a dataset along two dimensions, ensuring coordinate consistency.</span>
+
 <span class="sd">    The function first separates the dataset into two datasets based on the specified dimensions,</span>
 <span class="sd">    renames the second dimension to match the first, and then concatenates them along the first dimension.</span>
 
@@ -1636,8 +1649,8 @@
 
 <span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_time_var</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Finds the appropriate time variable based on dimension naming conventions."""</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_time_var</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Find the appropriate time variable based on dimension naming conventions."""</span>
         <span class="n">prefix</span> <span class="o">=</span> <span class="n">dim</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"_data_point"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Extract prefix</span>
         <span class="n">time_var</span> <span class="o">=</span> <span class="s2">"time"</span> <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="s2">"sg_data_point"</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_time"</span>
         <span class="k">return</span> <span class="n">time_var</span> <span class="k">if</span> <span class="n">time_var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="k">else</span> <span class="kc">None</span>
@@ -1671,7 +1684,8 @@
     <span class="n">max_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">new_ds1</span><span class="o">.</span><span class="n">sizes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">new_ds2</span><span class="o">.</span><span class="n">sizes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
     <span class="c1"># Pad function to match sizes along dim1</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">pad_ds</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">max_size</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pad_ds</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">max_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Pad a dataset along the primary dimension to the given size with NaN."""</span>
         <span class="c1">### the dataset makes problems if variables are integers,</span>
         <span class="c1">### so we convert to float before padding and back to int after padding</span>
         <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
@@ -1713,8 +1727,7 @@
     <span class="p">)</span>
 
     <span class="c1"># Sort by time and drop NaT values</span>
-    <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">merged_ds</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"time"</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">dim1</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">"time"</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">merged_ds</span></div>
+    <span class="k">return</span> <span class="n">merged_ds</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"time"</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">dim1</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">"time"</span><span class="p">])</span></div>
 
 
 
@@ -1945,7 +1958,7 @@
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"Dimensions not merged: "</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">all_dims</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">actually_merged_dims</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dimensions not merged: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">all_dims</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">actually_merged_dims</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">merged_ds</span></div>
 
@@ -1956,8 +1969,9 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">combine_two_dim_of_dataset</span><span class="p">(</span>
     <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">dim1</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"sg_data_point"</span><span class="p">,</span> <span class="n">dim2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"ctd_data_point"</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Updates the original dataset by removing variables with dim1 and dim2</span>
-<span class="sd">    and adding the merged dataset.</span>
+<span class="w">    </span><span class="sd">"""Replace the dim1 and dim2 variables in the dataset with their merged form.</span>
+
+<span class="sd">    Remove variables along dim1 and dim2 and add the merged dataset.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1981,9 +1995,7 @@
     <span class="n">cleaned_ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="n">vars_to_drop</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">)</span>
     <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">merge_parts_of_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dim1</span><span class="o">=</span><span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span><span class="o">=</span><span class="n">dim2</span><span class="p">)</span>
     <span class="c1"># Merge the cleaned dataset with the merged dataset</span>
-    <span class="n">updated_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">merge</span><span class="p">([</span><span class="n">cleaned_ds</span><span class="p">,</span> <span class="n">merged_ds</span><span class="p">],</span> <span class="n">combine_attrs</span><span class="o">=</span><span class="s2">"drop_conflicts"</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">updated_ds</span></div>
+    <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">merge</span><span class="p">([</span><span class="n">cleaned_ds</span><span class="p">,</span> <span class="n">merged_ds</span><span class="p">],</span> <span class="n">combine_attrs</span><span class="o">=</span><span class="s2">"drop_conflicts"</span><span class="p">)</span></div>
 
 
 
@@ -2040,8 +2052,7 @@
 
             <span class="k">if</span> <span class="n">variable</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' is scalar in one dataset but has dimensions "</span>
-                    <span class="s2">"in another."</span>
+                    <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' is scalar in one dataset but has dimensions in another."</span>
                 <span class="p">)</span>
 
             <span class="n">parameter</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
@@ -2105,7 +2116,7 @@
     <span class="k">if</span> <span class="n">mapping</span><span class="p">[</span><span class="s2">"original_name"</span><span class="p">]</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The mapping must have unique original names."</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">json_scalar</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">json_scalar</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Convert a scalar to a JSON-compatible value."""</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Expected a scalar parameter value."</span><span class="p">)</span>
@@ -2128,10 +2139,7 @@
         <span class="n">row_mask</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="s2">"original_name"</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">original_name</span><span class="p">)</span>
 
         <span class="c1"># Prefer the existing mapping, including any numbered OG1 names.</span>
-        <span class="k">if</span> <span class="n">row_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-            <span class="n">og1_name</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">row_mask</span><span class="p">,</span> <span class="s2">"OG1_name"</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">og1_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">og1_name</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">row_mask</span><span class="p">,</span> <span class="s2">"OG1_name"</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">row_mask</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="n">og1_name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">og1_name</span><span class="p">):</span>
             <span class="n">og1_name</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">standard_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">original_name</span><span class="p">)</span>
@@ -2288,9 +2296,21 @@
 
 <div class="viewcode-block" id="parse_8_digit_date">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.parse_8_digit_date">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">parse_8_digit_date</span><span class="p">(</span><span class="n">date_str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Validates and formats 8-digit strings.</span>
-<span class="sd">    Prioritizes YYYY-MM-DD, then DD-MM-YYYY based on realistic ranges.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_8_digit_date</span><span class="p">(</span><span class="n">date_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Validate and format 8-digit date strings.</span>
+
+<span class="sd">    Prioritize YYYY-MM-DD, then DD-MM-YYYY based on realistic ranges.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    date_str : str</span>
+<span class="sd">        The string from which to extract eight digits forming a date.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str or None</span>
+<span class="sd">        The formatted ``YYYY-MM-DD`` date, ``"Format Error"`` when no valid</span>
+<span class="sd">        date is found, or ``None`` when the string lacks eight digits.</span>
 <span class="sd">    """</span>
     <span class="c1"># Extract only the digits</span>
     <span class="n">d</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\d"</span><span class="p">,</span> <span class="n">date_str</span><span class="p">))</span>
@@ -2320,7 +2340,23 @@
 
 <div class="viewcode-block" id="extract_instrument_info">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.extract_instrument_info">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">extract_instrument_info</span><span class="p">(</span><span class="n">input_string</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_instrument_info</span><span class="p">(</span><span class="n">input_string</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Extract a serial number and calibration date from a calibration string.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_string : str or None</span>
+<span class="sd">        The raw ``calibcomm`` text. ``None`` or empty input yields the</span>
+<span class="sd">        missing-value defaults.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    serial_number : str</span>
+<span class="sd">        Digits-only serial number, or ``"0000"`` when none is found.</span>
+<span class="sd">    cal_info : str</span>
+<span class="sd">        Formatted calibration date, or a status string such as ``"None Found"``</span>
+<span class="sd">        or ``"Format Error"`` when no valid date is parsed.</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="p">(</span>
         <span class="n">input_string</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_string</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
@@ -2345,10 +2381,7 @@
             <span class="k">break</span>
 
     <span class="c1"># Strip letters and dashes, keeping only the numbers</span>
-    <span class="k">if</span> <span class="n">raw_sn</span><span class="p">:</span>
-        <span class="n">serial_number</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\d+"</span><span class="p">,</span> <span class="n">raw_sn</span><span class="p">))</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">serial_number</span> <span class="o">=</span> <span class="s2">"0000"</span>
+    <span class="n">serial_number</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\d+"</span><span class="p">,</span> <span class="n">raw_sn</span><span class="p">))</span> <span class="k">if</span> <span class="n">raw_sn</span> <span class="k">else</span> <span class="s2">"0000"</span>
 
     <span class="c1"># 2. EXTRACT CALIBRATION DATES</span>
     <span class="n">multi_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(\w+):(\d</span><span class="si">{4}</span><span class="s2">-\d</span><span class="si">{2}</span><span class="s2">-\d</span><span class="si">{2}</span><span class="s2">T[\d:]+Z)"</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
@@ -2372,7 +2405,7 @@
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">dt</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">date_candidate</span><span class="p">,</span> <span class="n">fuzzy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dayfirst</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                     <span class="n">cal_info</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">"</span><span class="p">)</span>
-                <span class="k">except</span><span class="p">:</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OverflowError</span><span class="p">):</span>  <span class="c1"># dateutil parse failure</span>
                     <span class="n">cal_info</span> <span class="o">=</span> <span class="s2">"Format Error"</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">cal_info</span> <span class="o">=</span> <span class="s2">"None Found"</span>
@@ -2390,7 +2423,7 @@
                 <span class="c1"># Try parsing with year first</span>
                 <span class="n">dt</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">cal_info</span><span class="p">,</span> <span class="n">fuzzy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">yearfirst</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">cal_info</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">"</span><span class="p">)</span>
-        <span class="k">except</span><span class="p">:</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OverflowError</span><span class="p">):</span>  <span class="c1"># dateutil parse failure</span>
             <span class="k">pass</span>
 
     <span class="k">return</span> <span class="n">serial_number</span><span class="p">,</span> <span class="n">cal_info</span></div>

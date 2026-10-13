@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.writers &mdash; seagliderOG1 0.0.2.post1.dev64 documentation</title>
+  <title>seagliderOG1.writers &mdash; seagliderOG1 0.0.2.post1.dev65 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f928cf22"></script>
+      <script src="../../_static/documentation_options.js?v=5d504b3b"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -95,8 +95,8 @@
 <span></span><span class="sd">"""Write OG1 datasets to compressed NetCDF files."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Number</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
@@ -127,7 +127,7 @@
     <span class="n">output_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"../test.nc"</span><span class="p">,</span>
     <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Attempts to save the dataset to a NetCDF file with lossless compression.</span>
+<span class="w">    </span><span class="sd">"""Save the dataset to a NetCDF file with lossless compression.</span>
 
 <span class="sd">    Every non-scalar numeric variable, coordinates included, is written with zlib</span>
 <span class="sd">    at level 4 and the shuffle filter. If a TypeError occurs due to invalid</span>
@@ -166,10 +166,11 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
     <span class="c1"># Handle existing file</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_file</span><span class="p">):</span>
+    <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">output_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Removing existing file: </span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+            <span class="n">output_path</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"Output file '</span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">' already exists. "</span>

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.readers &mdash; seagliderOG1 0.0.2.post1.dev64 documentation</title>
+  <title>seagliderOG1.readers &mdash; seagliderOG1 0.0.2.post1.dev65 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f928cf22"></script>
+      <script src="../../_static/documentation_options.js?v=5d504b3b"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -92,11 +92,19 @@
            <div itemprop="articleBody">
              
   <h1>Source code for seagliderOG1.readers</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span></span><span class="sd">"""Readers module for Seaglider basestation files.</span>
+
+<span class="sd">This module provides functions to read Seaglider basestation NetCDF files</span>
+<span class="sd">from either online sources or local directories. It does not manipulate</span>
+<span class="sd">the data, only loads it into xarray datasets.</span>
+<span class="sd">"""</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
@@ -104,19 +112,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
-
 <span class="n">script_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
 <span class="n">parent_dir</span> <span class="o">=</span> <span class="n">script_dir</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">parent_dir</span><span class="p">))</span>
-
-<span class="sd">"""Readers module for Seaglider basestation files.</span>
-
-<span class="sd">This module provides functions to read Seaglider basestation NetCDF files</span>
-<span class="sd">from either online sources or local directories. It does not manipulate</span>
-<span class="sd">the data, only loads it into xarray datasets.</span>
-<span class="sd">"""</span>
 
 <span class="c1"># readers.py: Will only read files.  Not manipulate them.</span>
 
@@ -162,26 +160,26 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    dataset_name : str, optional</span>
-<span class="sd">        Name of the sample dataset to load. Must be one of the available</span>
-<span class="sd">        datasets in the registry. Default is "p0330015_20100906.nc".</span>
+<span class="sd">    file_path : str, optional</span>
+<span class="sd">        Path to the sample dataset to load. Default is the demo sg005 dive 1</span>
+<span class="sd">        file bundled under ``data/demo_sg005``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset</span>
-<span class="sd">        The requested sample dataset loaded from the cache.</span>
+<span class="sd">        The requested sample dataset loaded from disk.</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    KeyError</span>
-<span class="sd">        If the requested dataset is not available in the registry.</span>
+<span class="sd">        If the requested dataset file does not exist.</span>
 
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Requested sample dataset </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2"> not known. Available datasets are: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">parent_dir</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s1">'data/demo_sg005'</span><span class="p">))</span><span class="si">}</span><span class="s2">"</span>
-        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+    <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">"netcdf4"</span><span class="p">,</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">available</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="n">parent_dir</span> <span class="o">/</span> <span class="s2">"data/demo_sg005"</span><span class="p">)</span><span class="o">.</span><span class="n">iterdir</span><span class="p">()]</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Requested sample dataset </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2"> not known. Available datasets are: </span><span class="si">{</span><span class="n">available</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
 
 
 
@@ -214,12 +212,8 @@
     <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern1</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> <span class="ow">or</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern2</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="n">glider_sn</span> <span class="o">=</span> <span class="n">glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
         <span class="n">divenum</span> <span class="o">=</span> <span class="n">profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">glider_sn</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">divenum</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">False</span></div>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">glider_sn</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">divenum</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
 
 
 
@@ -536,7 +530,9 @@
 
     <span class="c1">### Include a tqdm progress bar</span>
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">filtered_files</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Loading datasets"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"file"</span><span class="p">):</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">file</span><span class="p">),</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span>
+            <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="o">/</span> <span class="n">file</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">"netcdf4"</span><span class="p">,</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
 
         <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 
@@ -548,8 +544,8 @@
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.list_files">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">list_files</span><span class="p">(</span>
     <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">registry_loc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"seagliderOG1"</span><span class="p">,</span>
-    <span class="n">registry_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"seaglider_registry.txt"</span><span class="p">,</span>
+    <span class="n">_registry_loc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"seagliderOG1"</span><span class="p">,</span>
+    <span class="n">_registry_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"seaglider_registry.txt"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""List NetCDF files from a source (URL or local directory).</span>
 
@@ -560,9 +556,9 @@
 <span class="sd">    ----------</span>
 <span class="sd">    source : str</span>
 <span class="sd">        URL (http/https) or local directory path to scan for files.</span>
-<span class="sd">    registry_loc : str, optional</span>
+<span class="sd">    _registry_loc : str, optional</span>
 <span class="sd">        Legacy parameter, not currently used.</span>
-<span class="sd">    registry_name : str, optional</span>
+<span class="sd">    _registry_name : str, optional</span>
 <span class="sd">        Legacy parameter, not currently used.</span>
 
 <span class="sd">    Returns</span>
@@ -576,7 +572,7 @@
 <span class="sd">        If source is neither a valid URL nor directory path.</span>
 
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"http://"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"https://"</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">"http://"</span><span class="p">,</span> <span class="s2">"https://"</span><span class="p">)):</span>
         <span class="c1"># List all files in the URL directory</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
         <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>  <span class="c1"># Raise an error for bad status codes</span>
@@ -589,9 +585,11 @@
             <span class="k">if</span> <span class="n">href</span> <span class="ow">and</span> <span class="n">href</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".nc"</span><span class="p">):</span>
                 <span class="n">file_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">href</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+    <span class="k">elif</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
         <span class="c1">### only list files that are nc files</span>
-        <span class="n">file_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".nc"</span><span class="p">)]</span>
+        <span class="n">file_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">iterdir</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".nc"</span><span class="p">)</span>
+        <span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Source must be a valid URL or directory path."</span><span class="p">)</span>
 
@@ -628,20 +626,20 @@
     <span class="n">file_list</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
     <span class="n">filtered_files</span> <span class="o">=</span> <span class="n">filter_files_by_profile</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">)</span>
 
-    <span class="n">fixes_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">"metadata_fixes"</span><span class="p">)</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">fixes_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">fixes_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"metadata_fixes"</span>
+    <span class="n">fixes_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">log_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fixes_dir</span><span class="p">,</span> <span class="s2">"repair_log.txt"</span><span class="p">)</span>
+    <span class="n">log_path</span> <span class="o">=</span> <span class="n">fixes_dir</span> <span class="o">/</span> <span class="s2">"repair_log.txt"</span>
 
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">filtered_files</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Scanning files"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"file"</span><span class="p">):</span>
-        <span class="n">full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+        <span class="n">full_path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="o">/</span> <span class="n">file</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Good files are left untouched</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">full_path</span><span class="p">,</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">full_path</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">"netcdf4"</span><span class="p">,</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="n">ds</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>  <span class="c1"># noqa: BLE001  # any open failure means the file needs repair; the cause is logged</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Need repair: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="n">fixed_vars</span> <span class="o">=</span> <span class="n">repair_netcdf_time_metadata_inplace</span><span class="p">(</span>
@@ -679,12 +677,12 @@
     <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">fixed_vars</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
-<span class="p">):</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Append one repair entry to the log file."""</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_path</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">log_path</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Fixed variables: </span><span class="si">{</span><span class="n">fixed_vars</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Original error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Original error: </span><span class="si">{</span><span class="n">error</span><span class="si">!s}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span></div>
 
 
@@ -705,7 +703,9 @@
     <span class="n">repair_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">repair_dir</span><span class="p">)</span>
     <span class="n">fixed_vars</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">decode_times</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span>
+        <span class="n">path</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">"netcdf4"</span><span class="p">,</span> <span class="n">decode_times</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
             <span class="n">var</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
@@ -738,7 +738,7 @@
     <span class="k">finally</span><span class="p">:</span>
         <span class="n">ds</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-    <span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="n">tmp_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">fixed_vars</span></div>
 
 </pre></div>

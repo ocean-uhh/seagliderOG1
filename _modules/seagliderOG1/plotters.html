@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.plotters &mdash; seagliderOG1 0.0.2.post1.dev64 documentation</title>
+  <title>seagliderOG1.plotters &mdash; seagliderOG1 0.0.2.post1.dev65 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f928cf22"></script>
+      <script src="../../_static/documentation_options.js?v=5d504b3b"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -140,23 +140,16 @@
 
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">content_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"variables"</span><span class="p">,</span> <span class="s2">"vars"</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)):</span>
             <span class="k">return</span> <span class="n">show_variables</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">show_variables</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Input data must be a file path (str) or an xarray Dataset"</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">content_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"attributes"</span><span class="p">,</span> <span class="s2">"attrs"</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Input data must be a file path (str) or an xarray Dataset"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">content_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"attributes"</span><span class="p">,</span> <span class="s2">"attrs"</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)):</span>
             <span class="k">return</span> <span class="n">show_attributes</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">show_attributes</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Attributes can only be shown for netCDF files (str)"</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">"content_type must be either 'variables' (or 'vars') or 'attributes' (or 'attrs')"</span>
-        <span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Attributes can only be shown for netCDF files (str)"</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="s2">"content_type must be either 'variables' (or 'vars') or 'attributes' (or 'attrs')"</span>
+    <span class="p">)</span></div>
 
 
 
@@ -191,7 +184,7 @@
 
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"information is based on file: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"information is based on file: </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="n">variables</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">variables</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
@@ -227,15 +220,13 @@
     <span class="n">dim</span><span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"str"</span><span class="p">)]</span> <span class="o">=</span> <span class="s2">"string"</span>
     <span class="nb">vars</span><span class="p">[</span><span class="s2">"dims"</span><span class="p">]</span> <span class="o">=</span> <span class="n">dim</span>
 
-    <span class="nb">vars</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="k">return</span> <span class="p">(</span>
         <span class="nb">vars</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">"dims"</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">])</span>
         <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s2">"dims"</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="s2">"units"</span><span class="p">,</span> <span class="s2">"comment"</span><span class="p">,</span> <span class="s2">"standard_name"</span><span class="p">,</span> <span class="s2">"dtype"</span><span class="p">]]</span>
         <span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span>
         <span class="o">.</span><span class="n">style</span>
-    <span class="p">)</span>
-
-    <span class="k">return</span> <span class="nb">vars</span></div>
+    <span class="p">)</span></div>
 
 
 
@@ -267,25 +258,20 @@
 
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"information is based on file: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"information is based on file: </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">rootgrp</span> <span class="o">=</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"NETCDF4"</span><span class="p">)</span>
-        <span class="n">attributes</span> <span class="o">=</span> <span class="n">rootgrp</span><span class="o">.</span><span class="n">ncattrs</span><span class="p">()</span>
-        <span class="n">get_attr</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">rootgrp</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">rootgrp</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">rootgrp</span><span class="o">.</span><span class="n">ncattrs</span><span class="p">()}</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">"information is based on xarray Dataset"</span><span class="p">)</span>
-        <span class="n">attributes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-        <span class="n">get_attr</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Input data must be a file path (str) or an xarray Dataset"</span><span class="p">)</span>
 
     <span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">attributes</span><span class="p">):</span>
-        <span class="n">dtype</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">get_attr</span><span class="p">(</span><span class="n">key</span><span class="p">))</span><span class="o">.</span><span class="vm">__name__</span>
-        <span class="n">info</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"Attribute"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"Value"</span><span class="p">:</span> <span class="n">get_attr</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="s2">"DType"</span><span class="p">:</span> <span class="n">dtype</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="n">info</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"Attribute"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"Value"</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span> <span class="s2">"DType"</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">}</span>
 
-    <span class="n">attrs</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">info</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
-
-    <span class="k">return</span> <span class="n">attrs</span></div>
+    <span class="k">return</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">info</span><span class="p">)</span><span class="o">.</span><span class="n">T</span></div>
 
 
 
@@ -322,7 +308,7 @@
 
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"information is based on file: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"information is based on file: </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="n">variables</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">variables</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
@@ -357,15 +343,13 @@
     <span class="n">dim</span><span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"str"</span><span class="p">)]</span> <span class="o">=</span> <span class="s2">"string"</span>
     <span class="nb">vars</span><span class="p">[</span><span class="s2">"dims"</span><span class="p">]</span> <span class="o">=</span> <span class="n">dim</span>
 
-    <span class="nb">vars</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="k">return</span> <span class="p">(</span>
         <span class="nb">vars</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">"dims"</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">])</span>
         <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s2">"dims"</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="s2">"units"</span><span class="p">,</span> <span class="s2">"comment"</span><span class="p">]]</span>
         <span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span>
         <span class="o">.</span><span class="n">style</span>
-    <span class="p">)</span>
-
-    <span class="k">return</span> <span class="nb">vars</span></div>
+    <span class="p">)</span></div>
 
 
 
@@ -517,15 +501,8 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Input data must be a pandas DataFrame or xarray Dataset"</span><span class="p">)</span>
 
     <span class="c1"># Identify vectors to be plotted</span>
-    <span class="k">if</span> <span class="s2">"ctd_time"</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-        <span class="n">x_axis</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"ctd_time"</span><span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">x_axis</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"TIME"</span><span class="p">]</span>
-
-    <span class="k">if</span> <span class="s2">"ctd_depth"</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-        <span class="n">y_axis</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"ctd_depth"</span><span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">y_axis</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"DEPTH"</span><span class="p">]</span>
+    <span class="n">x_axis</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"ctd_time"</span><span class="p">]</span> <span class="k">if</span> <span class="s2">"ctd_time"</span> <span class="ow">in</span> <span class="n">data</span> <span class="k">else</span> <span class="n">data</span><span class="p">[</span><span class="s2">"TIME"</span><span class="p">]</span>
+    <span class="n">y_axis</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"ctd_depth"</span><span class="p">]</span> <span class="k">if</span> <span class="s2">"ctd_depth"</span> <span class="ow">in</span> <span class="n">data</span> <span class="k">else</span> <span class="n">data</span><span class="p">[</span><span class="s2">"DEPTH"</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="n">ctd_time</span> <span class="o">=</span> <span class="n">x_axis</span>

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev64 documentation</title>
+  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev65 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f928cf22"></script>
+      <script src="../../_static/documentation_options.js?v=5d504b3b"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -122,7 +122,6 @@
 
 <span class="sd">"""</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
@@ -132,7 +131,9 @@
 
 <span class="c1"># Set the directory for yaml files as package directory + 'config/'</span>
 <span class="n">script_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
-<span class="n">config_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">script_dir</span><span class="p">,</span> <span class="s2">"config/"</span><span class="p">)</span>
+<span class="n">CONFIG_DIR</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">=</span> <span class="n">script_dir</span> <span class="o">/</span> <span class="s2">"config"</span>
+<span class="c1"># Backward-compatible alias: contributors.py reads vocabularies.config_dir.</span>
+<span class="n">config_dir</span> <span class="o">=</span> <span class="n">CONFIG_DIR</span>
 
 <span class="c1"># Dimension renaming: maps basestation dimension names to OG1 standard names</span>
 <span class="n">dims_rename_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"sg_data_point"</span><span class="p">:</span> <span class="s2">"N_MEASUREMENTS"</span><span class="p">}</span>
@@ -338,17 +339,17 @@
 <span class="c1"># --------------------------------</span>
 <span class="c1"># Variable name mappings: basestation variable name -&gt; OG1 standard name</span>
 <span class="c1"># Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_dir</span> <span class="o">+</span> <span class="s2">"OG1_var_names.yaml"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_var_names.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
     <span class="n">standard_names</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
 <span class="c1"># Variable attribute vocabularies for OG1 format</span>
 <span class="c1"># Reference: http://vocab.nerc.ac.uk/scheme/OG1/current/</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_dir</span> <span class="o">+</span> <span class="s2">"OG1_vocab_attrs.yaml"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_vocab_attrs.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
     <span class="n">vocab_attrs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
 <span class="c1"># Sensor attribute vocabularies for OG1 format</span>
 <span class="c1"># Reference: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_dir</span> <span class="o">+</span> <span class="s2">"OG1_sensor_attrs.yaml"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_sensor_attrs.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
     <span class="n">sensor_vocabs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
 
@@ -372,7 +373,7 @@
 <span class="sd">        Contributor attributes read from ``OG1_author.yaml``.</span>
 
 <span class="sd">    """</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_dir</span> <span class="o">+</span> <span class="s2">"OG1_author.yaml"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_author.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span></div>
 
 
@@ -461,7 +462,7 @@
 <span class="c1"># Global attribute configuration for OG1 conversion</span>
 <span class="c1"># Defines which attributes to keep, rename, or add during conversion</span>
 <span class="c1"># Compatible with base_station_version 2.8, nodc_template_version_v0.9</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_dir</span> <span class="o">+</span> <span class="s2">"OG1_global_attrs.yaml"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_global_attrs.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
     <span class="n">global_attrs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 </pre></div>
 

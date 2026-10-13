@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.convertOG1 &mdash; seagliderOG1 0.0.2.post1.dev64 documentation</title>
+  <title>seagliderOG1.convertOG1 &mdash; seagliderOG1 0.0.2.post1.dev65 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f928cf22"></script>
+      <script src="../../_static/documentation_options.js?v=5d504b3b"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -100,14 +100,14 @@
 <span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">contributors</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">utilities</span><span class="p">,</span> <span class="n">vocabularies</span><span class="p">,</span> <span class="n">writers</span>
@@ -303,6 +303,7 @@
     <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"delayed"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Convert Seaglider basestation datasets to OG1 format.</span>
+
 <span class="sd">    Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,</span>
 <span class="sd">    concatenates the datasets, sorts by time, and applies attributes. Main conversion function that</span>
 <span class="sd">    processes basestation datasets, applies OG1 standardization, concatenates multiple datasets,</span>
@@ -528,7 +529,9 @@
 
     <span class="c1"># Construct the unique identifier attribute. The data-mode suffix (delayed/R)</span>
     <span class="c1"># is the only place OG1 records data mode; there is no data-mode attribute.</span>
-    <span class="nb">id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">platform_serial_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">start_date</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">MODE_SUFFIX</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">platform_serial_number</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">start_date</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">MODE_SUFFIX</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span>
     <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">id</span>
 
     <span class="c1"># Write config global attributes verbatim (nulls skipped). Collisions with</span>
@@ -563,12 +566,14 @@
     <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>  <span class="c1"># List of warnings related to attribute assignments</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>  <span class="c1"># Dataset containing variables starting with 'sg_cal'</span>
 <span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Processes a dataset by performing a series of transformations and extractions.</span>
+<span class="w">    </span><span class="sd">"""Process a dataset by performing a series of transformations and extractions.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    ds1_base : xarray.Dataset</span>
 <span class="sd">        The input dataset from a basestation file, containing various attributes and variables.</span>
+<span class="sd">    OG1_mapping : pandas.DataFrame</span>
+<span class="sd">        Mapping of original basestation variable names to OG1 variable names.</span>
 <span class="sd">    time_variables : dict[str, list[str]]</span>
 <span class="sd">        A dictionary mapping dimension names to lists of time variables.</span>
 <span class="sd">    firstrun : bool, optional</span>
@@ -955,9 +960,7 @@
     <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
     <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gps_ds</span><span class="p">)</span>
     <span class="n">ds_new</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">newdim</span><span class="p">,</span> <span class="n">data_vars</span><span class="o">=</span><span class="s2">"all"</span><span class="p">)</span>
-    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">ds_new</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">ds_new</span></div>
+    <span class="k">return</span> <span class="n">ds_new</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span></div>
 
 
 
@@ -1278,10 +1281,10 @@
 
     <span class="c1"># Convert the list of datasets to OG1</span>
     <span class="n">ds1_og1</span><span class="p">,</span> <span class="n">varlist</span> <span class="o">=</span> <span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
-    <span class="n">output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">ds1_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="o">+</span> <span class="s2">".nc"</span><span class="p">)</span>
+    <span class="n">output_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ds1_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="o">+</span> <span class="s2">".nc"</span><span class="p">))</span>
 
     <span class="c1"># Check if the file exists and delete it if it does</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_file</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">run_quietly</span><span class="p">:</span>
             <span class="n">user_input</span> <span class="o">=</span> <span class="s2">"no"</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1292,12 +1295,11 @@
         <span class="k">if</span> <span class="n">user_input</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"yes"</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"File </span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2"> already exists. Exiting the process."</span><span class="p">)</span>
             <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"File </span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2"> already exists. Exiting the process."</span><span class="p">)</span>
-            <span class="n">ds_all</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">ds_all</span>
-        <span class="k">elif</span> <span class="n">user_input</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"yes"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">user_input</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"yes"</span><span class="p">:</span>
             <span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="n">input_location</span><span class="p">)</span>
             <span class="n">ds_all</span><span class="p">,</span> <span class="n">varlist</span> <span class="o">=</span> <span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+            <span class="n">Path</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
                 <span class="n">writers</span><span class="o">.</span><span class="n">save_dataset</span><span class="p">(</span><span class="n">ds_all</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -1305,7 +1307,7 @@
         <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running the directory: </span><span class="si">{</span><span class="n">input_location</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="n">input_location</span><span class="p">)</span>
         <span class="n">ds_all</span><span class="p">,</span> <span class="n">varlist</span> <span class="o">=</span> <span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
-        <span class="n">output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">ds_all</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="o">+</span> <span class="s2">".nc"</span><span class="p">)</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ds_all</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="o">+</span> <span class="s2">".nc"</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
             <span class="n">writers</span><span class="o">.</span><span class="n">save_dataset</span><span class="p">(</span><span class="n">ds_all</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
 
