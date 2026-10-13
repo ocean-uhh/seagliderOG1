@@ -9,7 +9,7 @@ from seagliderOG1 import readers
 
 
 def test_validate_filename():
-    """Test the _validate_filename function from the readers module.
+    """Test the validate_filename function from the readers module.
     This test checks the validation of filenames to ensure they meet the expected
     criteria. It uses a list of valid filenames that should pass the validation
     and a list of invalid filenames that should fail the validation.
@@ -25,7 +25,7 @@ def test_validate_filename():
     - "p1234567.txt"
     - "1234567.nc"
     - "pabcdefg.nc"
-    The test asserts that the _validate_filename function returns True for valid
+    The test asserts that the validate_filename function returns True for valid
     filenames and False for invalid filenames, providing an appropriate error
     message if the assertion fails.
     """
@@ -44,12 +44,12 @@ def test_validate_filename():
 
     for filename in valid_filenames:
         assert (
-            readers._validate_filename(filename) is True
+            readers.validate_filename(filename) is True
         ), f"Expected True for {filename}"
 
     for filename in invalid_filenames:
         assert (
-            readers._validate_filename(filename) is False
+            readers.validate_filename(filename) is False
         ), f"Expected False for {filename}"
 
 
@@ -111,6 +111,76 @@ def test_load_basestation_files():
         datasets[0].latitude.values.mean() > 61
         and datasets[0].latitude.values.mean() < 62
     ), "Unexpected latitude range for first dataset"
+
+
+def test_discover_missions_single_dir():
+    """A directory of basestation files is discovered as one mission."""
+    source = str(parent_dir / "data/demo_sg005")
+    missions = readers.discover_missions(source)
+    assert len(missions) == 1
+    assert missions[0].sn == 5
+    assert missions[0].date is None
+    assert missions[0].dives == [1, 2, 3, 4, 5]
+
+
+def test_discover_missions_root(tmp_path):
+    """A root of SN/DATE directories yields one mission per date directory."""
+    source = parent_dir / "data/demo_sg005"
+    names = [f.name for f in source.iterdir() if readers.validate_filename(f.name)]
+    for date in ("20080606", "20080607"):
+        dest = tmp_path / "005" / date
+        dest.mkdir(parents=True)
+        for name in names:
+            (dest / name).write_bytes((source / name).read_bytes())
+
+    missions = readers.discover_missions(str(tmp_path))
+    assert len(missions) == 2
+    assert {m.date for m in missions} == {"20080606", "20080607"}
+    assert all(m.sn == 5 and m.dives == [1, 2, 3, 4, 5] for m in missions)
+
+
+def test_discover_missions_not_a_directory():
+    """A non-directory source raises ValueError."""
+    try:
+        readers.discover_missions(str(parent_dir / "data/does-not-exist"))
+    except ValueError as exc:
+        assert "not a directory" in str(exc)
+    else:
+        msg = "expected ValueError for a missing directory"
+        raise AssertionError(msg)
+
+
+def test_discover_missions_warns_on_sn_mismatch(tmp_path):
+    """A SN directory disagreeing with the files warns but trusts the files."""
+    import warnings
+
+    source = parent_dir / "data/demo_sg005"
+    names = [f.name for f in source.iterdir() if readers.validate_filename(f.name)]
+    dest = tmp_path / "999" / "20080606"
+    dest.mkdir(parents=True)
+    for name in names:
+        (dest / name).write_bytes((source / name).read_bytes())
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        missions = readers.discover_missions(str(tmp_path))
+
+    assert len(missions) == 1
+    assert missions[0].sn == 5  # from the files, not the "999" directory
+    assert any("disagrees" in str(w.message) for w in caught)
+
+
+def test_load_basestation_files_repair_is_opt_in(monkeypatch):
+    """scan_and_repair runs only when repair=True; the source tree is untouched otherwise."""
+    calls = []
+    monkeypatch.setattr(
+        readers, "scan_and_repair_files", lambda *a, **k: calls.append(a)
+    )
+    source = str(parent_dir / "data/demo_sg005")
+    readers.load_basestation_files(source, 1, 1)
+    assert calls == []
+    readers.load_basestation_files(source, 1, 1, repair=True)
+    assert len(calls) == 1
 
 
 def test_load_first_basestation_file():

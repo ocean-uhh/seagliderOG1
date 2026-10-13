@@ -13,6 +13,12 @@ vocabularies
    :members:
    :undoc-members:
 
+contributors
+============
+.. automodule:: seagliderOG1.contributors
+   :members:
+   :undoc-members:
+
 
 readers
 =======

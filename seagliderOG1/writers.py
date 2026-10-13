@@ -56,6 +56,19 @@ def save_dataset(
     """
     ds = ds.copy()
 
+    # Refuse None-valued attributes by name rather than letting the stringify
+    # retry below turn them into the literal "None".
+    none_attrs = [name for name, value in ds.attrs.items() if value is None]
+    none_attrs += [
+        f"{var_name}:{name}"
+        for var_name, var in ds.variables.items()
+        for name, value in var.attrs.items()
+        if value is None
+    ]
+    if none_attrs:
+        msg = f"refusing to write None-valued attribute(s): {none_attrs}"
+        raise ValueError(msg)
+
     # Handle existing file
     if os.path.exists(output_file):
         if overwrite:

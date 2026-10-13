@@ -1,9 +1,0 @@
-name: TEST
-channels: [conda-forge]
-dependencies:
-  - python=3
-  - pip
-  - pandoc
-  - pip:
-      - -r requirements.txt
-      - -r requirements-dev.txt
