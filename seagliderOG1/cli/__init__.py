@@ -10,6 +10,7 @@ import those inside ``run`` rather than at module load.
 import argparse
 from collections.abc import Sequence
 
+from seagliderOG1 import __version__
 from seagliderOG1.cli import init as init_cmd
 from seagliderOG1.cli import inspect as inspect_cmd
 from seagliderOG1.cli import list as list_cmd
@@ -22,23 +23,6 @@ typical workflow:
   seagliderOG1 validate sg005.yaml                            config, source, dive range
   seagliderOG1 process  sg005.yaml                            -> <output_dir>/<OG1 id>.nc
 """
-
-
-def _version() -> str:
-    """Return the installed package version, or ``"unknown"`` if undetermined.
-
-    Returns
-    -------
-    str
-        The distribution version string.
-
-    """
-    from importlib.metadata import PackageNotFoundError, version
-
-    try:
-        return version("seagliderOG1")
-    except PackageNotFoundError:
-        return "unknown"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -56,7 +40,9 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {_version()}")
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
     subparsers = parser.add_subparsers(
         dest="command", metavar="<command>", required=True
     )
