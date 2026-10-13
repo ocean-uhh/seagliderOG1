@@ -644,13 +644,17 @@ def add_sensor_to_dataset(
     # 3. Assign 'sensor' attribute to sensor-specific variables
     # -------------------------------------------------------------------------
     for _, mapping in OG1_mapping.iterrows():
-        og1_name = str(mapping["OG1_name"])
+        og1_name = mapping["OG1_name"]
         instrument = mapping["instrument"]
 
-        # if the instrument is nan, skip this iteration
-        if og1_name == "nan" or instrument == "nan" or pd.isna(instrument):
+        # Skip rows with no OG1 variable or no instrument. OG1_name is None when
+        # the original variable has no OG1 mapping; pandas stores that as None or
+        # NaN, so the old str()=="nan" guard let None through and ds_og1["None"]
+        # raised KeyError. pd.isna covers both, as elsewhere in this module.
+        if pd.isna(og1_name) or pd.isna(instrument):
             continue
 
+        og1_name = str(og1_name)
         sensor_type = sensor_dict[instrument]["sensor_type"].upper().replace(" ", "_")
         serial = sensor_dict[instrument]["sensor_serial_number"]
         ds_og1[og1_name].attrs["sensor"] = f"SENSOR_{sensor_type}_{serial}"
@@ -1576,7 +1580,7 @@ def merge_datasets_along_time(
     time_variables : dict[str, list[str]]
         Dimensions mapped to candidate time variable names.
 
-    first_run : bool, default False
+    firstrun : bool, default False
         Print progress and skipped dimensions. Duplicate timestamp
         adjustments are always printed.
 
@@ -1984,6 +1988,9 @@ def add_scalar_parameters(
 
         attributes = parameter["attributes"].copy()
         attributes["original_name"] = original_name
+        # Scalars have no source dimension; record the empty string for parity
+        # with merged non-scalar variables, which carry original_dimension.
+        attributes["original_dimension"] = ""
         values = list(parameter["values"])
 
         if not values:
