@@ -78,8 +78,30 @@ semantic versioning.
   reduction, retry path, caller's dataset not mutated, integer `_FillValue` preserved,
   and the failure return.
 
+- Per-dive scalar parameters change representation (#117). A value that is constant for a whole
+  dive but differs between dives (for example the flight-model constants `C_VBD`, `HD_A`/`HD_B`/
+  `HD_C`) has no valid home in OG1, which permits no dimension other than `N_MEASUREMENTS`.
+  Rather than broadcast it across every measurement — which wastes space and implies a
+  per-measurement variation that does not exist — such a parameter is written as a single scalar
+  variable holding a JSON string: a `{"dives": [...], "values": [...]}` object with aligned lists
+  and `null` for a missing dive, tagged `serialization: json` and `storage_type: per_dive_scalar`.
+  The numeric range attributes (`_FillValue`, `valid_min`/`valid_max`, `scale_factor`/`add_offset`)
+  are dropped; units and source metadata describe the decoded values. Scalars constant across all
+  dives (for example `MASS`, `VOLMAX`) are still written as ordinary scalar values. This replaces
+  the previous handling, which expanded these parameters onto `N_MEASUREMENTS` as numeric arrays;
+  code that read them numerically must now decode the JSON.
+
 ### Changed
 
+- Conversion retains basestation variables that were previously dropped (#117). Every scalar
+  variable is carried through with `tools.extract_scalar_parameters` / `add_scalar_parameters`,
+  replacing the earlier hydrodynamic-model-only extraction (`extract_hdm_parameters`); the
+  per-dive representation of varying scalars is described under Breaking changes above. Non-scalar
+  variables are merged onto a shared `time` axis by `tools.merge_datasets_along_time`, keeping
+  their source identity in the `original_name` and `original_dimension` attributes.
+  `tools.OG1_name_mapping` returns the per-dimension time variables separately; the
+  `sg_data_point` time source is the basestation `time` clock, never the science-controller
+  `ctd_time`.
 - Dependencies are declared in `pyproject.toml` (`pip install -e ".[dev]"`); `requirements*.txt`
   and `environment.yml` are removed; `scipy`, `cartopy` and `pooch` are dropped as unused; the
   ruff configuration is aligned with the family set and `ruff format` replaces `black`;

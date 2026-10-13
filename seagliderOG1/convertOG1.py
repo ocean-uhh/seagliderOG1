@@ -279,15 +279,15 @@ def convert_to_OG1(
     ctd_dim, dims_to_merge, all_dims = tools._get_merge_dimensions(list_of_datasets)
 
     # Create a mapping from original variable names to OG1 variable names for all variables across the datasets
-    OG1_mapping = tools.OG1_name_mapping(list_of_datasets, ctd_dim, dims_to_merge)
+    OG1_mapping, time_variables = tools.OG1_name_mapping(list_of_datasets)
 
     # print the sumary of variables assigned or not assigned to the dataset
-    tools.print_OG1_mapping_summary(OG1_mapping, ctd_dim, dims_to_merge, all_dims)
+    # tools.print_OG1_mapping_summary(OG1_mapping, ctd_dim, dims_to_merge, all_dims)
 
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
         varlist = list(set(varlist + list(ds1_base.variables)))
         ds_new, attr_warnings = process_dataset(
-            ds1_base, OG1_mapping, dims_to_merge=dims_to_merge, firstrun=firstrun
+            ds1_base, OG1_mapping, time_variables, firstrun=firstrun
         )
         if ds_new:
             processed_datasets.append(ds_new)
@@ -330,8 +330,10 @@ def convert_to_OG1(
         ds_og1.attrs[key] = value
 
     ### Add information needed/used for hydrodynamic (flight) model (hdm)
-    hdm_parameters = tools.extract_hdm_parameters(list_of_datasets)
-    ds_og1 = tools.add_hdm_parameters(ds_og1, hdm_parameters)
+    print("Collecting scalar parameters to the dataset ...")
+    extracted = tools.extract_scalar_parameters(list_of_datasets)
+    print("Adding scalar parameters to the dataset ...")
+    ds_og1, OG1_mapping = tools.add_scalar_parameters(ds_og1, extracted, OG1_mapping)
 
     # Resolve platform fields from the config and the first file (no silent
     # fallbacks: missing serial raises, other strings warn + "UNK", the numeric
@@ -452,7 +454,7 @@ _log = logging.getLogger(__name__)
 def process_dataset(
     ds1_base: xr.Dataset,
     OG1_mapping: pd.DataFrame,
-    dims_to_merge: list[str],
+    time_variables: dict[str, list[str]],
     firstrun: bool = False,
 ) -> tuple[
     xr.Dataset,  # Processed dataset with renamed variables, assigned attributes, and additional information
@@ -465,8 +467,8 @@ def process_dataset(
     ----------
     ds1_base : xarray.Dataset
         The input dataset from a basestation file, containing various attributes and variables.
-    dims_to_merge : list[str]
-        List of dimensions to merge.
+    time_variables : dict[str, list[str]]
+        A dictionary mapping dimension names to lists of time variables.
     firstrun : bool, optional
         Indicates whether this is the first run of the processing pipeline. Default is False.
 
@@ -513,9 +515,11 @@ def process_dataset(
         )
     # Split the dataset by unique dimensions
     split_ds = tools.split_by_unique_dims(ds1_base)
-    # only consider dimensions from dims_to_merge that are present in the dataset
-    dims_to_merge = [dim for dim in dims_to_merge if dim in ds1_base.sizes]
-    merged_ds = tools.merge_datasets_along_time(split_ds, dims_to_merge, firstrun)
+
+    # merge the split datasets along the time dimension using the OG1 mapping and specified dimensions to merge
+    merged_ds = tools.merge_datasets_along_time(
+        split_ds, time_variables, firstrun=firstrun
+    )
     # Rename variables and attributes to OG1 vocabulary
     # -------------------------------------------------------------------
     # Use variables with dimension 'sg_data_point'
@@ -557,117 +561,154 @@ def standardise_OG10(
     firstrun: bool = False,
     unit_format: dict[str, str] = vocabularies.unit_str_format,
 ) -> xr.Dataset:
-    """
-    Standardize the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.
+    """Standardize a dataset using OG1 names, attributes, and units.
 
-    Applies OG1 vocabulary for variable names, units, and attributes.
-    Performs unit conversions and QC flag standardization.
+    Retain all variables, including QC variables. Variables without an OG1
+    name keep their original names. Preserve source attributes unless
+    replaced by OG1 vocabulary attributes.
+
+    Preserve variable dimensions, renaming ``sg_data_point`` to its OG1
+    dimension name. Retain existing coordinates and mark available OG1
+    longitude, latitude, depth, and time variables as coordinates.
+
+    Convert units when source and target units are available, standardize
+    renamed QC flags, and encode OG1 time.
 
     Parameters
     ----------
     ds : xarray.Dataset
-        The input dataset to be standardized.
-    firstrun : bool, optional
-        Indicates whether this is the first run of the standardization process. Default is False.
-    unit_format : dict of str, optional
-        A dictionary mapping unit strings to their standardized format.
-        Default is vocabularies.unit_str_format.
+        Input dataset.
+    og1_mapping : pandas.DataFrame
+        Mapping containing ``original_name`` and ``OG1_name``.
+    firstrun : bool, default False
+        Enable logging of missing OG1 names and vocabulary attributes.
+    unit_format : dict[str, str], optional
+        Unit spelling replacements. Defaults to
+        ``vocabularies.unit_str_format``.
 
     Returns
     -------
     xarray.Dataset
-        The standardized dataset in OG1 format.
-
+        Standardized dataset retaining variables without OG1 mappings.
     """
-    dsa = xr.Dataset(attrs=ds.attrs.copy())
-    newdim = vocabularies.dims_rename_dict["sg_data_point"]
+    dsa = ds.copy(deep=True)
 
     name_lookup = og1_mapping.set_index("original_name")["OG1_name"]
 
     unassigned_variables = []
     variables_without_og1_attributes = []
+    output_names = {}
+    mapped_variables = set()
 
-    for original_name in list(ds.data_vars) + list(ds.coords):
-        # QC variables are handled with their corresponding root variable.
-        if original_name.lower().endswith("_qc"):
-            continue
-
+    # Determine output names for every variable, including QC variables.
+    for original_name in ds.variables:
         og1_name = name_lookup.get(original_name)
 
-        # Only variables without a mapped OG1 name are skipped.
+        # Derive a QC name from a mapped parent when no explicit entry exists.
+        if (og1_name is None or pd.isna(og1_name)) and original_name.lower().endswith(
+            "_qc"
+        ):
+            parent_name = original_name[:-3]
+            parent_og1_name = name_lookup.get(parent_name)
+
+            if (
+                parent_name in ds.variables
+                and parent_og1_name is not None
+                and pd.notna(parent_og1_name)
+            ):
+                og1_name = f"{parent_og1_name}_QC"
+
         if og1_name is None or pd.isna(og1_name):
+            output_names[original_name] = original_name
             unassigned_variables.append(original_name)
+        else:
+            output_names[original_name] = str(og1_name)
+            mapped_variables.add(original_name)
+
+    # Prevent renaming from overwriting another retained variable.
+    if len(set(output_names.values())) != len(output_names):
+        raise ValueError("OG1 mappings create duplicate output variable names.")
+
+    rename_map = {
+        original_name: output_name
+        for original_name, output_name in output_names.items()
+        if original_name != output_name
+    }
+
+    if rename_map:
+        dsa = dsa.rename_vars(rename_map)
+
+    # Rename dimensions without changing the shapes of their variables.
+    dimension_renames = {
+        dimension: vocabularies.dims_rename_dict[dimension]
+        for dimension in dsa.dims
+        if dimension in vocabularies.dims_rename_dict
+        and vocabularies.dims_rename_dict[dimension] != dimension
+    }
+
+    if dimension_renames:
+        dsa = dsa.rename_dims(dimension_renames)
+
+    for original_name in ds.variables:
+        output_name = output_names[original_name]
+
+        # Unmapped variables retain their values and attributes unchanged.
+        if original_name not in mapped_variables:
             continue
 
-        og1_name = str(og1_name)
-        variable_values = ds[original_name].values
-
-        # Use OG1 attributes when available. Otherwise, start without them.
-        attributes = vocabularies.vocab_attrs.get(
-            og1_name,
+        og1_attributes = vocabularies.vocab_attrs.get(
+            output_name,
             {},
         ).copy()
 
-        if not attributes:
-            variables_without_og1_attributes.append(og1_name)
+        if not og1_attributes:
+            variables_without_og1_attributes.append(output_name)
 
-        # Convert units only when both source and target units are known.
-        if "units" in ds[original_name].attrs and "units" in attributes:
+        # Source attributes provide defaults; OG1 attributes take precedence.
+        attributes = ds[original_name].attrs.copy()
+        attributes.update(og1_attributes)
+
+        if "units" in ds[original_name].attrs and "units" in og1_attributes:
             original_unit = tools.reformat_units_var(
                 ds,
                 original_name,
                 unit_format,
             )
-            target_unit = attributes["units"]
+            target_unit = og1_attributes["units"]
 
             if original_unit != target_unit:
-                variable_values, converted_unit = tools.convert_units_var(
-                    variable_values,
+                converted_values, converted_unit = tools.convert_units_var(
+                    ds[original_name].values,
                     original_unit,
                     target_unit,
                     vocabularies.unit1_to_unit2,
                     firstrun,
                 )
+
+                dsa[output_name].data = converted_values
                 attributes["units"] = converted_unit
 
-        dsa[og1_name] = (
-            [newdim],
-            variable_values,
-            attributes,
-        )
+                # Source encoding may no longer suit the converted values.
+                dsa[output_name].encoding = {}
 
-        # Retain source attributes not supplied by the OG1 vocabulary.
-        for attribute, value in ds[original_name].attrs.items():
-            dsa[og1_name].attrs.setdefault(attribute, value)
+        dsa[output_name].attrs = attributes
 
-        # Add the associated QC variable when present.
-        original_qc_name = f"{original_name}_qc"
-        og1_qc_name = f"{og1_name}_QC"
-
-        if original_qc_name in ds.variables:
-            dsa[og1_qc_name] = (
-                [newdim],
-                ds[original_qc_name].values,
-                ds[original_qc_name].attrs.copy(),
-            )
-
-            dsa = tools.convert_qc_flags(
-                dsa,
-                og1_qc_name,
-            )
+        # Standardize mapped QC variables, including derived QC mappings.
+        if original_name.lower().endswith("_qc") or output_name.upper().endswith("_QC"):
+            dsa = tools.convert_qc_flags(dsa, output_name)
 
     if firstrun:
         if unassigned_variables:
-            _log.warning(
-                "Variables without an assigned OG1 name: %s",
+            _log.info(
+                "Variables retained with their original names: %s",
                 sorted(set(unassigned_variables)),
             )
         else:
             _log.info("All variables have an assigned OG1 name.")
 
         if variables_without_og1_attributes:
-            _log.warning(
-                "OG1 variables without vocabulary attributes: %s",
+            _log.info(
+                "OG1 variables retained without vocabulary attributes: %s",
                 sorted(set(variables_without_og1_attributes)),
             )
 
@@ -680,9 +721,10 @@ def standardise_OG10(
     if coordinate_names:
         dsa = dsa.set_coords(coordinate_names)
 
-    dsa = tools.encode_times_og1(dsa)
-    # dtype optimisation is deferred to convert_to_OG1, once on the concatenated dataset:
-    # running it per dive lets the concat re-promote int8 QC flags back to float.
+    if "TIME" in dsa.variables:
+        dsa = tools.encode_times_og1(dsa)
+
+    # Optimize dtypes after concatenating datasets in convert_to_OG1.
     return dsa
 
 

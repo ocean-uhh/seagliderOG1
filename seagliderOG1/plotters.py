@@ -283,7 +283,7 @@ def plot_profile_depth(data: pd.DataFrame | xr.Dataset) -> None:
     - Automatically reduces the total number of points to less than 100,000 for performance.
     - Inverts y-axis to show depth increasing downward.
     - Formats x-axis with month-day labels and adds year information.
-    - Sets tight y-axis limits rounded to nearest 10 meters.
+    - Sets tight y-axis limits to the exact finite data minimum and maximum.
 
     Raises
     ------
@@ -326,10 +326,8 @@ def plot_profile_depth(data: pd.DataFrame | xr.Dataset) -> None:
     plt.legend()
     plt.grid(True)
 
-    # Set y-axis limits to be tight around the data plotted to the nearest 10 meters
-    y_min = np.floor(ctd_depth.min() / 10) * 10
-    y_max = np.ceil(ctd_depth.max() / 10) * 10
-    plt.ylim([y_min, y_max])
+    # Set y-axis limits tight around the finite data (exact min and max)
+    plt.ylim([np.nanmin(ctd_depth), np.nanmax(ctd_depth)])
     plt.gca().invert_yaxis()
 
     plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter("%b-%d"))
@@ -443,10 +441,8 @@ def plot_depth_colored(
     plt.legend()
     plt.grid(True)
 
-    # Set y-axis limits to be tight around the data plotted to the nearest 10 meters
-    y_min = np.floor(ctd_depth.min() / 10) * 10
-    y_max = np.ceil(ctd_depth.max() / 10) * 10
-    plt.ylim([y_min, y_max])
+    # Set y-axis limits tight around the finite data (exact min and max)
+    plt.ylim([np.nanmin(ctd_depth), np.nanmax(ctd_depth)])
     plt.gca().invert_yaxis()
 
     plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter("%b-%d"))
