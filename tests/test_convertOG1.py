@@ -158,7 +158,7 @@ def test_apply_keep_variables_retains_mandatory_and_qc():
 
 def test_process_dataset():
 
-    ds1 = readers.load_sample_dataset()
+    ds1 = readers.load_sample_basestation()
 
     # test split_ds
     split_ds = tools.split_by_unique_dims(ds1)

@@ -8,24 +8,23 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
-from netCDF4 import Dataset
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from pandas import DataFrame
 
 
 ##------------------------------------------------------------------------------------
 ## Views of the ds or nc file
 ##------------------------------------------------------------------------------------
-def show_contents(
-    data: str | xr.Dataset, content_type: str = "variables"
-) -> pd.DataFrame:
-    """Show contents of an xarray Dataset or a netCDF file.
+def show_contents(data: xr.Dataset, content_type: str = "variables") -> pd.DataFrame:
+    """Show contents of an xarray Dataset.
 
     Wrapper function to display either variables or attributes from the dataset.
 
     Parameters
     ----------
-    data : str or xarray.Dataset
-        The input data, either a file path to a netCDF file or an xarray Dataset.
+    data : xarray.Dataset
+        The dataset to inspect.
     content_type : str, optional
         The type of content to show, either 'variables' (or 'vars') or 'attributes' (or 'attrs').
         Default is 'variables'.
@@ -37,35 +36,29 @@ def show_contents(
 
     Raises
     ------
-    TypeError
-        If input data is not a file path or xarray Dataset.
     ValueError
         If content_type is not 'variables', 'vars', 'attributes', or 'attrs'.
 
     """
     if content_type in ["variables", "vars"]:
-        if isinstance(data, (str, xr.Dataset)):
-            return show_variables(data)
-        raise TypeError("Input data must be a file path (str) or an xarray Dataset")
+        return show_variables(data)
     if content_type in ["attributes", "attrs"]:
-        if isinstance(data, (str, xr.Dataset)):
-            return show_attributes(data)
-        raise TypeError("Attributes can only be shown for netCDF files (str)")
+        return show_attributes(data)
     raise ValueError(
         "content_type must be either 'variables' (or 'vars') or 'attributes' (or 'attrs')"
     )
 
 
-def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
-    """Process an xarray Dataset or netCDF file and extract variable information.
+def show_variables(data: xr.Dataset) -> pd.DataFrame:
+    """Extract variable information from an xarray Dataset.
 
-    Creates a styled DataFrame with comprehensive details about all variables
-    in the dataset, including dimensions, units, comments, and data types.
+    Creates a styled DataFrame with details about all variables in the dataset,
+    including dimensions, units, comments, and data types.
 
     Parameters
     ----------
-    data : str or xarray.Dataset
-        The input data, either a file path to a netCDF file or an xarray Dataset.
+    data : xarray.Dataset
+        The dataset to inspect.
 
     Returns
     -------
@@ -78,41 +71,20 @@ def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
         - standard_name: CF standard name (if available).
         - dtype: Data type of the variable.
 
-    Raises
-    ------
-    TypeError
-        If input data is not a file path or xarray Dataset.
-
     """
-    if isinstance(data, str):
-        print(f"information is based on file: {data}")
-        dataset = Dataset(data)
-        variables = dataset.variables
-    elif isinstance(data, xr.Dataset):
-        print("information is based on xarray Dataset")
-        variables = data.variables
-    else:
-        raise TypeError("Input data must be a file path (str) or an xarray Dataset")
+    variables = data.variables
 
     info = {}
     for i, key in enumerate(variables):
         var = variables[key]
-        if isinstance(data, str):
-            dims = var.dimensions[0] if len(var.dimensions) == 1 else "string"
-            units = "" if not hasattr(var, "units") else var.units
-            comment = "" if not hasattr(var, "comment") else var.comment
-        else:
-            dims = var.dims[0] if len(var.dims) == 1 else "string"
-            units = var.attrs.get("units", "")
-            comment = var.attrs.get("comment", "")
-
+        dims = var.dims[0] if len(var.dims) == 1 else "string"
         info[i] = {
             "name": key,
             "dims": dims,
-            "units": units,
-            "comment": comment,
+            "units": var.attrs.get("units", ""),
+            "comment": var.attrs.get("comment", ""),
             "standard_name": var.attrs.get("standard_name", ""),
-            "dtype": str(var.dtype) if isinstance(data, str) else str(var.data.dtype),
+            "dtype": str(var.data.dtype),
         }
 
     vars = DataFrame(info).T
@@ -130,16 +102,16 @@ def show_variables(data: str | xr.Dataset) -> pd.DataFrame:
     )
 
 
-def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
-    """Process an xarray Dataset or netCDF file and extract global attribute information.
+def show_attributes(data: xr.Dataset) -> pd.DataFrame:
+    """Extract global attribute information from an xarray Dataset.
 
-    Creates a DataFrame with comprehensive details about all global attributes
-    in the dataset, including their values and data types.
+    Creates a DataFrame with details about all global attributes in the dataset,
+    including their values and data types.
 
     Parameters
     ----------
-    data : str or xarray.Dataset
-        The input data, either a file path to a netCDF file or an xarray Dataset.
+    data : xarray.Dataset
+        The dataset to inspect.
 
     Returns
     -------
@@ -149,21 +121,8 @@ def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
         - Value: The value of the attribute.
         - DType: The data type of the attribute value.
 
-    Raises
-    ------
-    TypeError
-        If input data is not a file path or xarray Dataset.
-
     """
-    if isinstance(data, str):
-        print(f"information is based on file: {data}")
-        rootgrp = Dataset(data, "r", format="NETCDF4")
-        attrs = {key: getattr(rootgrp, key) for key in rootgrp.ncattrs()}
-    elif isinstance(data, xr.Dataset):
-        print("information is based on xarray Dataset")
-        attrs = dict(data.attrs)
-    else:
-        raise TypeError("Input data must be a file path (str) or an xarray Dataset")
+    attrs = dict(data.attrs)
 
     info = {}
     for i, (key, value) in enumerate(attrs.items()):
@@ -173,17 +132,17 @@ def show_attributes(data: str | xr.Dataset) -> pd.DataFrame:
 
 
 def show_variables_by_dimension(
-    data: str | xr.Dataset, dimension_name: str = "trajectory"
+    data: xr.Dataset, dimension_name: str = "trajectory"
 ) -> pd.DataFrame:
-    """Process dataset and extract variables filtered by a specific dimension.
+    """Extract variables filtered by a specific dimension.
 
     Creates a styled DataFrame showing only variables that have the specified
     dimension, useful for examining variables of a particular type.
 
     Parameters
     ----------
-    data : str or xarray.Dataset
-        The input data, either a file path to a netCDF file or an xarray Dataset.
+    data : xarray.Dataset
+        The dataset to inspect.
     dimension_name : str, optional
         The name of the dimension to filter variables by. Default is "trajectory".
 
@@ -196,33 +155,15 @@ def show_variables_by_dimension(
         - units: The units of the variable (if available).
         - comment: Any additional comments about the variable (if available).
 
-    Raises
-    ------
-    TypeError
-        If input data is not a file path or xarray Dataset.
-
     """
-    if isinstance(data, str):
-        print(f"information is based on file: {data}")
-        dataset = Dataset(data)
-        variables = dataset.variables
-    elif isinstance(data, xr.Dataset):
-        print("information is based on xarray Dataset")
-        variables = data.variables
-    else:
-        raise TypeError("Input data must be a file path (str) or an xarray Dataset")
+    variables = data.variables
 
     info = {}
     for i, key in enumerate(variables):
         var = variables[key]
-        if isinstance(data, str):
-            dims = var.dimensions[0] if len(var.dimensions) == 1 else "string"
-            units = "" if not hasattr(var, "units") else var.units
-            comment = "" if not hasattr(var, "comment") else var.comment
-        else:
-            dims = var.dims[0] if len(var.dims) == 1 else "string"
-            units = var.attrs.get("units", "")
-            comment = var.attrs.get("comment", "")
+        dims = var.dims[0] if len(var.dims) == 1 else "string"
+        units = var.attrs.get("units", "")
+        comment = var.attrs.get("comment", "")
 
         if dims == dimension_name:
             info[i] = {
@@ -250,7 +191,9 @@ def show_variables_by_dimension(
 ##----------------------------------------------------------------------------
 ## Sawtooth plots
 ##----------------------------------------------------------------------------
-def plot_profile_depth(data: pd.DataFrame | xr.Dataset) -> None:
+def plot_profile_depth(
+    data: pd.DataFrame | xr.Dataset, ax: Axes | None = None
+) -> tuple[Figure, Axes]:
     """Plot profile depth as a function of time.
 
     Creates a time series plot of depth data with automatic point reduction
@@ -261,6 +204,13 @@ def plot_profile_depth(data: pd.DataFrame | xr.Dataset) -> None:
     data : pandas.DataFrame or xarray.Dataset
         The input data containing depth and time variables. Should contain either
         'ctd_depth'/'ctd_time' or 'DEPTH'/'TIME' variables.
+    ax : matplotlib.axes.Axes, optional
+        Axes to draw on. A new figure and axes are created when None.
+
+    Returns
+    -------
+    tuple of (matplotlib.figure.Figure, matplotlib.axes.Axes)
+        The figure and axes drawn on.
 
     Notes
     -----
@@ -303,28 +253,32 @@ def plot_profile_depth(data: pd.DataFrame | xr.Dataset) -> None:
         ctd_time = ctd_time[indices]
         ctd_depth = ctd_depth[indices]
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(ctd_time, ctd_depth, label="Profile Depth")
-    plt.ylabel("Depth")
-    plt.title("Profile Depth as a Function of Time")
-    plt.legend()
-    plt.grid(True)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 6))
+    else:
+        fig = ax.figure
+
+    ax.plot(ctd_time, ctd_depth, label="Profile Depth")
+    ax.set_ylabel("Depth")
+    ax.set_title("Profile Depth as a Function of Time")
+    ax.legend()
+    ax.grid(True)
 
     # Set y-axis limits tight around the finite data (exact min and max)
-    plt.ylim([np.nanmin(ctd_depth), np.nanmax(ctd_depth)])
-    plt.gca().invert_yaxis()
+    ax.set_ylim([np.nanmin(ctd_depth), np.nanmax(ctd_depth)])
+    ax.invert_yaxis()
 
-    plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter("%b-%d"))
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter("%b-%d"))
 
     # Add the year or year range to the xlabel
     start_year = pd.to_datetime(ctd_time.min()).year
     end_year = pd.to_datetime(ctd_time.max()).year
     if start_year == end_year:
-        plt.xlabel(f"Time ({start_year})")
+        ax.set_xlabel(f"Time ({start_year})")
     else:
-        plt.xlabel(f"Time ({start_year}-{end_year})")
+        ax.set_xlabel(f"Time ({start_year}-{end_year})")
 
-    plt.show()
+    return fig, ax
 
 
 def plot_depth_colored(
@@ -332,7 +286,8 @@ def plot_depth_colored(
     color_by: str | None = None,
     start_dive: int | None = None,
     end_dive: int | None = None,
-) -> None:
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
     """Plot depth as a function of time with optional coloring and dive filtering.
 
     Creates a depth time series plot with optional color coding by another variable
@@ -349,6 +304,13 @@ def plot_depth_colored(
         The starting dive number to filter the data. If None, no filtering applied.
     end_dive : int, optional
         The ending dive number to filter the data. If None, no filtering applied.
+    ax : matplotlib.axes.Axes, optional
+        Axes to draw on. A new figure and axes are created when None.
+
+    Returns
+    -------
+    tuple of (matplotlib.figure.Figure, matplotlib.axes.Axes)
+        The figure and axes drawn on.
 
     Notes
     -----
@@ -404,40 +366,47 @@ def plot_depth_colored(
     else:
         raise TypeError("Input data must be a pandas DataFrame or xarray Dataset")
 
-    plt.figure(figsize=(10, 6))
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 6))
+    else:
+        fig = ax.figure
+
     if color_data is not None:
-        sc = plt.scatter(
+        sc = ax.scatter(
             ctd_time, ctd_depth, c=color_data, cmap="viridis", label="Profile Depth"
         )
-        plt.colorbar(sc, label=color_by)
+        fig.colorbar(sc, ax=ax, label=color_by)
     else:
-        plt.plot(ctd_time, ctd_depth, "k", label="Profile Depth")
+        ax.plot(ctd_time, ctd_depth, "k", label="Profile Depth")
 
-    plt.ylabel("Depth")
-    plt.title("Depth as a Function of Time")
-    plt.legend()
-    plt.grid(True)
+    ax.set_ylabel("Depth")
+    ax.set_title("Depth as a Function of Time")
+    ax.legend()
+    ax.grid(True)
 
     # Set y-axis limits tight around the finite data (exact min and max)
-    plt.ylim([np.nanmin(ctd_depth), np.nanmax(ctd_depth)])
-    plt.gca().invert_yaxis()
+    ax.set_ylim([np.nanmin(ctd_depth), np.nanmax(ctd_depth)])
+    ax.invert_yaxis()
 
-    plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter("%b-%d"))
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter("%b-%d"))
 
     # Add the year or year range to the xlabel
     start_year = pd.to_datetime(ctd_time.min()).year
     end_year = pd.to_datetime(ctd_time.max()).year
     if start_year == end_year:
-        plt.xlabel(f"Time ({start_year})")
+        ax.set_xlabel(f"Time ({start_year})")
     else:
-        plt.xlabel(f"Time ({start_year}-{end_year})")
+        ax.set_xlabel(f"Time ({start_year}-{end_year})")
 
-    plt.show()
+    return fig, ax
 
 
 def plot_ctd_depth_vs_time(
-    ds: xr.Dataset, start_traj: int | None = None, end_traj: int | None = None
-) -> None:
+    ds: xr.Dataset,
+    start_traj: int | None = None,
+    end_traj: int | None = None,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
     """Plot CTD depth vs time with GPS fix highlighting.
 
     Creates a depth time series plot with special highlighting of points where
@@ -451,6 +420,13 @@ def plot_ctd_depth_vs_time(
         The starting trajectory number to filter the data. If None, no filtering applied.
     end_traj : int, optional
         The ending trajectory number to filter the data. If None, no filtering applied.
+    ax : matplotlib.axes.Axes, optional
+        Axes to draw on. A new figure and axes are created when None.
+
+    Returns
+    -------
+    tuple of (matplotlib.figure.Figure, matplotlib.axes.Axes)
+        The figure and axes drawn on.
 
     Notes
     -----
@@ -466,23 +442,26 @@ def plot_ctd_depth_vs_time(
             (ds["trajectory"] >= start_traj) & (ds["trajectory"] <= end_traj), drop=True
         )
 
-    plt.figure(figsize=(10, 6))
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 6))
+    else:
+        fig = ax.figure
 
     # Plot ctd_depth against ctd_time using a black line
-    plt.plot(ds["ctd_time"], ds["ctd_depth"], "k.", label="CTD Depth")
+    ax.plot(ds["ctd_time"], ds["ctd_depth"], "k.", label="CTD Depth")
 
     # Plot ctd_depth against ctd_time where gps_lat is non NaN, with a colored red circle
     non_nan_indices = ~np.isnan(ds["gps_lat"])
-    plt.plot(
+    ax.plot(
         ds["ctd_time"][non_nan_indices],
         ds["ctd_depth"][non_nan_indices],
         "ro",
         label="GPS Lat Non-NaN",
     )
 
-    plt.xlabel("CTD Time")
-    plt.ylabel("CTD Depth")
-    plt.legend()
-    plt.title("CTD Depth vs Time")
-    plt.gca().invert_yaxis()  # Invert y-axis to have depth increasing downwards
-    plt.show()
+    ax.set_xlabel("CTD Time")
+    ax.set_ylabel("CTD Depth")
+    ax.legend()
+    ax.set_title("CTD Depth vs Time")
+    ax.invert_yaxis()  # Invert y-axis to have depth increasing downwards
+    return fig, ax

@@ -15,6 +15,9 @@ semantic versioning.
   |---|---|
   | `ds, varlist = convert_to_OG1(ds_or_list)` | `ds = convert_to_OG1(sequence_of_datasets)` — returns the Dataset; takes a sequence (wrap a single dataset as `[ds]`) |
   | `writers.save_dataset(ds, output_file="../test.nc") -> bool` | `writers.save_dataset(ds, output_file, *, overwrite=False) -> pathlib.Path` — no default path; returns the path written; raises `FileExistsError` (or the underlying write error) instead of returning `False` |
+  | `plotters.plot_*(…)` returned `None` and called `plt.show()` | `plotters.plot_*(…, ax=None) -> (fig, ax)`; no `plt.show()` |
+  | `plotters.show_*(path_or_dataset)` | `plotters.show_*(dataset)` — Dataset only (the file-path branch is gone) |
+  | `readers.load_sample_dataset()` | `readers.load_sample_basestation()` |
 
 - Output variable dtypes changed. QC flags are `int8` (were `float32`/`int64`); `PHASE` is
   `int8`; `PROFILE_NUMBER`, `DIVE_NUMBER` and `VBD_MIN_CNTS` are `int16`; `DEPTH` and

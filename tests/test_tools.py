@@ -222,7 +222,7 @@ def test_set_best_dtype_restores_depth_coord() -> None:
 
 
 def test_OG1_name_mapping_sample_dataset():
-    ds1 = readers.load_sample_dataset()
+    ds1 = readers.load_sample_basestation()
 
     mapping, time_variables = tools.OG1_name_mapping([ds1])
 

@@ -57,16 +57,16 @@ data_source_og = pooch.create(
 # Instead of loading from the server, we will load from a local directory for testing and development purposes.
 # The local directory will contain the same files as the server, but we will not use pooch to manage them.
 # Instead, we will just read them directly from the filesystem.
-def load_sample_dataset(
+def load_sample_basestation(
     file_path: str = str(parent_dir / "data/demo_sg005/p0050001_20080606.nc"),
 ) -> xr.Dataset:
-    """Download sample datasets for use with seagliderOG1.
+    """Open a bundled sample Seaglider basestation file.
 
     Parameters
     ----------
     file_path : str, optional
-        Path to the sample dataset to load. Default is the demo sg005 dive 1
-        file bundled under ``data/demo_sg005``.
+        Path to the sample basestation file to load. Default is the demo sg005
+        dive 1 file bundled under ``data/demo_sg005``.
 
     Returns
     -------
