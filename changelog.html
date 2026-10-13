@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev63 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev64 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=32a15fef"></script>
+      <script src="_static/documentation_options.js?v=f928cf22"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -184,11 +184,32 @@ readable by any netCDF4 client.</p></li>
 lossless round-trip, string/scalar variables skipped, time encoding preserved, size
 reduction, retry path, caller’s dataset not mutated, integer <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> preserved,
 and the failure return.</p></li>
+<li><p>Per-dive scalar parameters change representation (#117). A value that is constant for a whole
+dive but differs between dives (for example the flight-model constants <code class="docutils literal notranslate"><span class="pre">C_VBD</span></code>, <code class="docutils literal notranslate"><span class="pre">HD_A</span></code>/<code class="docutils literal notranslate"><span class="pre">HD_B</span></code>/
+<code class="docutils literal notranslate"><span class="pre">HD_C</span></code>) has no valid home in OG1, which permits no dimension other than <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>.
+Rather than broadcast it across every measurement — which wastes space and implies a
+per-measurement variation that does not exist — such a parameter is written as a single scalar
+variable holding a JSON string: a <code class="docutils literal notranslate"><span class="pre">{&quot;dives&quot;:</span> <span class="pre">[...],</span> <span class="pre">&quot;values&quot;:</span> <span class="pre">[...]}</span></code> object with aligned lists
+and <code class="docutils literal notranslate"><span class="pre">null</span></code> for a missing dive, tagged <code class="docutils literal notranslate"><span class="pre">serialization:</span> <span class="pre">json</span></code> and <code class="docutils literal notranslate"><span class="pre">storage_type:</span> <span class="pre">per_dive_scalar</span></code>.
+The numeric range attributes (<code class="docutils literal notranslate"><span class="pre">_FillValue</span></code>, <code class="docutils literal notranslate"><span class="pre">valid_min</span></code>/<code class="docutils literal notranslate"><span class="pre">valid_max</span></code>, <code class="docutils literal notranslate"><span class="pre">scale_factor</span></code>/<code class="docutils literal notranslate"><span class="pre">add_offset</span></code>)
+are dropped; units and source metadata describe the decoded values. Scalars constant across all
+dives (for example <code class="docutils literal notranslate"><span class="pre">MASS</span></code>, <code class="docutils literal notranslate"><span class="pre">VOLMAX</span></code>) are still written as ordinary scalar values. This replaces
+the previous handling, which expanded these parameters onto <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> as numeric arrays;
+code that read them numerically must now decode the JSON.</p></li>
 </ul>
 </section>
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Conversion retains basestation variables that were previously dropped (#117). Every scalar
+variable is carried through with <code class="docutils literal notranslate"><span class="pre">tools.extract_scalar_parameters</span></code> / <code class="docutils literal notranslate"><span class="pre">add_scalar_parameters</span></code>,
+replacing the earlier hydrodynamic-model-only extraction (<code class="docutils literal notranslate"><span class="pre">extract_hdm_parameters</span></code>); the
+per-dive representation of varying scalars is described under Breaking changes above. Non-scalar
+variables are merged onto a shared <code class="docutils literal notranslate"><span class="pre">time</span></code> axis by <code class="docutils literal notranslate"><span class="pre">tools.merge_datasets_along_time</span></code>, keeping
+their source identity in the <code class="docutils literal notranslate"><span class="pre">original_name</span></code> and <code class="docutils literal notranslate"><span class="pre">original_dimension</span></code> attributes.
+<code class="docutils literal notranslate"><span class="pre">tools.OG1_name_mapping</span></code> returns the per-dimension time variables separately; the
+<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> time source is the basestation <code class="docutils literal notranslate"><span class="pre">time</span></code> clock, never the science-controller
+<code class="docutils literal notranslate"><span class="pre">ctd_time</span></code>.</p></li>
 <li><p>Dependencies are declared in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">&quot;.[dev]&quot;</span></code>); <code class="docutils literal notranslate"><span class="pre">requirements*.txt</span></code>
 and <code class="docutils literal notranslate"><span class="pre">environment.yml</span></code> are removed; <code class="docutils literal notranslate"><span class="pre">scipy</span></code>, <code class="docutils literal notranslate"><span class="pre">cartopy</span></code> and <code class="docutils literal notranslate"><span class="pre">pooch</span></code> are dropped as unused; the
 ruff configuration is aligned with the family set and <code class="docutils literal notranslate"><span class="pre">ruff</span> <span class="pre">format</span></code> replaces <code class="docutils literal notranslate"><span class="pre">black</span></code>;

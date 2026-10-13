@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.tools &mdash; seagliderOG1 0.0.2.post1.dev63 documentation</title>
+  <title>seagliderOG1.tools &mdash; seagliderOG1 0.0.2.post1.dev64 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=32a15fef"></script>
+      <script src="../../_static/documentation_options.js?v=f928cf22"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -136,33 +136,30 @@
 <div class="viewcode-block" id="OG1_name_mapping">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.OG1_name_mapping">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">OG1_name_mapping</span><span class="p">(</span>
-    <span class="n">list_of_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span> <span class="n">ctd_dim</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dims_to_merge</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="n">list_of_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]:</span>
 <span class="w">    </span><span class="sd">"""Create a mapping from original variable names to OG1 variable names.</span>
 
-<span class="sd">    The function examines all datasets before OG1 standardization and creates</span>
-<span class="sd">    one row per unique variable name using at least one dimension in</span>
-<span class="sd">    ``dims_to_merge`` (with ``ctd_dim`` always included). Each row contains the original</span>
-<span class="sd">    variable name, its OG1 name, associated instrument, instrument type, and</span>
-<span class="sd">    original dimensions. Individual time variables are replaced by one</span>
-<span class="sd">    ``time`` / ``TIME`` row, whose ``original_dimension`` contains a list of</span>
-<span class="sd">    unique time variable names on the dimensions being merged.</span>
+<span class="sd">    Include every unique variable name from all input datasets, including</span>
+<span class="sd">    scalars, coordinates, QC variables, and variables without an OG1 mapping.</span>
+<span class="sd">    The first occurrence of each name supplies its dimensions and attributes.</span>
 
-<span class="sd">    Variables ending in ``_qc`` inherit the instrument association of their</span>
-<span class="sd">    corresponding measurement variable. For example,</span>
-<span class="sd">    ``ctd_temperature_qc`` inherits the instrument assigned to</span>
-<span class="sd">    ``ctd_temperature``.</span>
+<span class="sd">    Each row contains the original variable name, its OG1 name (None when</span>
+<span class="sd">    unavailable), associated instrument, instrument type, original dimensions,</span>
+<span class="sd">    and whether OG1 attributes are available.</span>
+
+<span class="sd">    Individual time variables are consolidated into one ``time`` / ``TIME``</span>
+<span class="sd">    row. Its ``original_dimension`` lists their dimensions and original names.</span>
+
+<span class="sd">    QC variables inherit the instrument association of their corresponding</span>
+<span class="sd">    measurement variable.</span>
 
 <span class="sd">    Instrument assignment precedence:</span>
 
-<span class="sd">    1. QC variables inherit the instrument of their parent measurement.</span>
-<span class="sd">    2. Variables beginning with ``ctd_`` or from the CTD variables defined above are</span>
+<span class="sd">    1. QC variables inherit their parent measurement's instrument.</span>
+<span class="sd">    2. CTD measurement variables are assigned to the CTD.</span>
+<span class="sd">    3. When ``ctd_pressure`` exists, calculated hydrographic variables are</span>
 <span class="sd">       assigned to the CTD.</span>
-<span class="sd">       When the same OG1 variable is also present on the CTD instrument's</span>
-<span class="sd">       ``&lt;instrument&gt;_data_point`` dimension, the ``ctd_data_point`` copy is</span>
-<span class="sd">       retained and the instrument-dimension copy is omitted.</span>
-<span class="sd">    3. When ``ctd_pressure`` is available, calculated hydrographic variables</span>
-<span class="sd">       are assigned to the CTD.</span>
 <span class="sd">    4. The variable's ``instrument`` attribute is checked.</span>
 <span class="sd">    5. Dimensions named ``&lt;instrument&gt;_data_point`` are checked.</span>
 <span class="sd">    6. The variable name is checked for an instrument name or alias.</span>
@@ -170,43 +167,30 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    list_of_datasets</span>
-<span class="sd">        List of datasets immediately before calling ``standardise_OG10``.</span>
-<span class="sd">    ctd_dim</span>
-<span class="sd">        Dimension used by the CTD data, for example ``ctd_data_point`` or</span>
-<span class="sd">        ``sg_data_point``.</span>
-
-<span class="sd">    dims_to_merge</span>
-<span class="sd">        Dimensions whose variables should be included. A variable is included</span>
-<span class="sd">        when any of its dimensions matches; scalars are excluded. If a name</span>
-<span class="sd">        occurs more than once, the first eligible occurrence supplies its</span>
-<span class="sd">        dimensions and attributes. Instruments are collected from every</span>
-<span class="sd">        dataset's global ``instrument`` attribute, preserving first-seen order.</span>
+<span class="sd">        Datasets immediately before calling ``standardise_OG10``.</span>
+<span class="sd">        Instruments are collected from every dataset's global ``instrument``</span>
+<span class="sd">        attribute, preserving first-seen order.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    pandas.DataFrame</span>
-<span class="sd">        Mapping table containing ``original_name``, ``OG1_name``,</span>
-<span class="sd">        ``instrument``, ``instrument_type``, and ``original_dimension``.</span>
+<span class="sd">        Columns: ``original_name``, ``OG1_name``, ``instrument``,</span>
+<span class="sd">        ``instrument_type``, ``original_dimension``, and</span>
+<span class="sd">        ``has_OG1_attributes``.</span>
 <span class="sd">    """</span>
-    <span class="n">list_of_datasets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
-    <span class="c1"># Keep one row per name, choosing the first occurrence on a dimension</span>
-    <span class="c1"># that will be merged. Retain other variables for QC-parent lookup.</span>
-    <span class="n">merge_dimensions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dims_to_merge</span><span class="p">)</span>
-    <span class="n">merge_dimensions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ctd_dim</span><span class="p">)</span>
     <span class="n">all_sources</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">sources</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">all_dimensions</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="n">instruments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">list_of_datasets</span><span class="p">:</span>
+        <span class="n">all_dimensions</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+
         <span class="k">for</span> <span class="n">instrument</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"instrument"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">instrument</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">instruments</span><span class="p">:</span>
                 <span class="n">instruments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instrument</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-            <span class="n">source</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
-            <span class="n">all_sources</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">merge_dimensions</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">dims</span><span class="p">):</span>
-                <span class="n">sources</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+            <span class="n">all_sources</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">dataset</span><span class="p">[</span><span class="n">variable_name</span><span class="p">])</span>
 
     <span class="n">standard_names</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">standard_names</span>
     <span class="n">sensor_vocabs</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">sensor_vocabs</span>
@@ -217,32 +201,24 @@
         <span class="k">return</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">all_sources</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_source</span><span class="p">(</span><span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Prefer the first occurrence on a dimension being merged."""</span>
-        <span class="k">if</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">sources</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
+<span class="w">        </span><span class="sd">"""Get the first occurrence of a variable across input datasets."""</span>
         <span class="k">return</span> <span class="n">all_sources</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_qc_parent_name</span><span class="p">(</span>
-        <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_qc_parent_name</span><span class="p">(</span><span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Return the measurement name corresponding to a *_qc variable."""</span>
         <span class="k">if</span> <span class="n">variable_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"_qc"</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">variable_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_instrument_names</span><span class="p">(</span>
-        <span class="n">instrument</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_instrument_names</span><span class="p">(</span><span class="n">instrument</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""Get the lowercase instrument name and its aliases."""</span>
         <span class="k">return</span> <span class="n">INSTRUMENT_ALIASES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
             <span class="n">instrument</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
             <span class="p">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">lower</span><span class="p">()},</span>
         <span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_instrument_type</span><span class="p">(</span>
-        <span class="n">instrument</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_instrument_type</span><span class="p">(</span><span class="n">instrument</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Get an instrument's sensor type from the OG1 vocabulary."""</span>
         <span class="k">if</span> <span class="n">instrument</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -269,52 +245,27 @@
 
     <span class="n">ctd_instrument</span> <span class="o">=</span> <span class="n">get_ctd_instrument</span><span class="p">()</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_ctd_associated</span><span class="p">(</span>
-        <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">dimensions</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_ctd_associated</span><span class="p">(</span><span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Determine whether a variable should be assigned to the CTD."""</span>
-        <span class="n">lower_name</span> <span class="o">=</span> <span class="n">variable_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-
-        <span class="c1"># QC variables inherit the CTD association of their parent variable.</span>
         <span class="n">qc_parent</span> <span class="o">=</span> <span class="n">get_qc_parent_name</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">qc_parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">variable_exists</span><span class="p">(</span><span class="n">qc_parent</span><span class="p">):</span>
-            <span class="n">parent_dimensions</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">dimension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">get_source</span><span class="p">(</span><span class="n">qc_parent</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
-            <span class="p">}</span>
+            <span class="k">return</span> <span class="n">is_ctd_associated</span><span class="p">(</span><span class="n">qc_parent</span><span class="p">)</span>
 
-            <span class="k">return</span> <span class="n">is_ctd_associated</span><span class="p">(</span>
-                <span class="n">qc_parent</span><span class="p">,</span>
-                <span class="n">parent_dimensions</span><span class="p">,</span>
-            <span class="p">)</span>
+        <span class="n">lower_name</span> <span class="o">=</span> <span class="n">variable_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="n">dimensions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dimensions</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">dimension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">get_source</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
-            <span class="p">}</span>
-
-        <span class="c1"># Explicit CTD name or dimension.</span>
-        <span class="c1"># if (lower_name.startswith("ctd_") or "ctd_data_point" in dimensions):</span>
-        <span class="k">if</span> <span class="p">(</span>
+        <span class="k">return</span> <span class="p">(</span>
             <span class="n">lower_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"ctd_"</span><span class="p">)</span>
             <span class="ow">or</span> <span class="n">lower_name</span> <span class="ow">in</span> <span class="n">CTD_MEASUREMENT_VARIABLES</span>
-            <span class="ow">or</span> <span class="n">has_ctd_pressure</span>
-            <span class="ow">and</span> <span class="n">lower_name</span> <span class="ow">in</span> <span class="n">CTD_CALCULATED_VARIABLES</span>
-        <span class="p">):</span>
-            <span class="k">return</span> <span class="kc">True</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="n">has_ctd_pressure</span> <span class="ow">and</span> <span class="n">lower_name</span> <span class="ow">in</span> <span class="n">CTD_CALCULATED_VARIABLES</span><span class="p">)</span>
+        <span class="p">)</span>
 
-        <span class="k">return</span> <span class="kc">False</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">find_instrument</span><span class="p">(</span>
-        <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_instrument</span><span class="p">(</span><span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Find the instrument associated with a variable."""</span>
         <span class="n">source</span> <span class="o">=</span> <span class="n">get_source</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span>
         <span class="n">lower_name</span> <span class="o">=</span> <span class="n">variable_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-        <span class="c1"># A QC variable inherits the full instrument assignment of its</span>
-        <span class="c1"># corresponding measurement variable.</span>
+        <span class="c1"># QC variables inherit their parent measurement's instrument.</span>
         <span class="n">qc_parent</span> <span class="o">=</span> <span class="n">get_qc_parent_name</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">qc_parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">variable_exists</span><span class="p">(</span><span class="n">qc_parent</span><span class="p">):</span>
@@ -322,7 +273,7 @@
 
         <span class="n">dimensions</span> <span class="o">=</span> <span class="p">{</span><span class="n">dimension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">dims</span><span class="p">}</span>
 
-        <span class="k">if</span> <span class="n">ctd_instrument</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">is_ctd_associated</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ctd_instrument</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">is_ctd_associated</span><span class="p">(</span><span class="n">variable_name</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">ctd_instrument</span>
 
         <span class="c1"># Prefer an explicit instrument attribute.</span>
@@ -387,10 +338,7 @@
         <span class="n">instrument</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Find an explicit vocabulary match."""</span>
-        <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">get_name_candidates</span><span class="p">(</span>
-            <span class="n">variable_name</span><span class="p">,</span>
-            <span class="n">instrument</span><span class="p">,</span>
-        <span class="p">):</span>
+        <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">get_name_candidates</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">instrument</span><span class="p">):</span>
             <span class="n">og1_name</span> <span class="o">=</span> <span class="n">standard_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">og1_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -403,101 +351,32 @@
         <span class="n">instrument</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Find or derive the OG1 vocabulary name for a variable."""</span>
-        <span class="c1"># Prefer an explicit vocabulary entry, including an explicit</span>
-        <span class="c1"># entry for the QC variable.</span>
-        <span class="n">og1_name</span> <span class="o">=</span> <span class="n">find_direct_og1_name</span><span class="p">(</span>
-            <span class="n">variable_name</span><span class="p">,</span>
-            <span class="n">instrument</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="c1"># Prefer an explicit entry, including explicit QC entries.</span>
+        <span class="n">og1_name</span> <span class="o">=</span> <span class="n">find_direct_og1_name</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">instrument</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">og1_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">og1_name</span>
 
-        <span class="c1"># If no explicit QC entry exists, derive it from the parent</span>
-        <span class="c1"># measurement's OG1 name.</span>
+        <span class="c1"># Otherwise, derive a QC name from its parent measurement.</span>
         <span class="n">qc_parent</span> <span class="o">=</span> <span class="n">get_qc_parent_name</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">qc_parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">parent_og1_name</span> <span class="o">=</span> <span class="n">find_direct_og1_name</span><span class="p">(</span>
-                <span class="n">qc_parent</span><span class="p">,</span>
-                <span class="n">instrument</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="n">parent_og1_name</span> <span class="o">=</span> <span class="n">find_direct_og1_name</span><span class="p">(</span><span class="n">qc_parent</span><span class="p">,</span> <span class="n">instrument</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">parent_og1_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">parent_og1_name</span><span class="si">}</span><span class="s2">_QC"</span>
 
         <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">uses_dimension</span><span class="p">(</span>
-        <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">dimension</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Return whether a variable uses a dimension, case-insensitively."""</span>
-        <span class="k">return</span> <span class="n">dimension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">{</span>
-            <span class="n">item</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">get_source</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
-        <span class="p">}</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">uses_ctd_instrument_dimension</span><span class="p">(</span>
-        <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Return whether a variable uses a CTD-instrument dimension."""</span>
-        <span class="k">if</span> <span class="n">ctd_instrument</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>
-
-        <span class="n">dimensions</span> <span class="o">=</span> <span class="p">{</span><span class="n">dimension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">get_source</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span><span class="p">}</span>
-
-        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_data_point"</span> <span class="ow">in</span> <span class="n">dimensions</span>
-            <span class="ow">and</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_data_point"</span> <span class="o">!=</span> <span class="s2">"ctd_data_point"</span>
-            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">get_instrument_names</span><span class="p">(</span><span class="n">ctd_instrument</span><span class="p">)</span>
-        <span class="p">)</span>
-
-    <span class="c1"># dict.fromkeys removes duplicates while preserving order.</span>
-    <span class="c1"># QC variables are deliberately retained.</span>
-    <span class="n">variable_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sources</span><span class="p">)</span>
-
-    <span class="c1"># Some basestation datasets contain the same CTD measurements twice:</span>
-    <span class="c1"># once on the generic ctd_data_point dimension and once on the CTD</span>
-    <span class="c1"># instrument's own dimension (for example legato_data_point).  Treat the</span>
-    <span class="c1"># generic dimension as authoritative.  Comparing the unsuffixed OG1 names</span>
-    <span class="c1"># catches pairs such as ctd_temperature/legato_temperature as well as</span>
-    <span class="c1"># their QC variables.</span>
-    <span class="n">preferred_ctd_og1_names</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">og1_name</span>
-        <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variable_names</span>
-        <span class="k">if</span> <span class="n">uses_dimension</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="s2">"ctd_data_point"</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">og1_name</span> <span class="ow">in</span> <span class="p">[</span><span class="n">get_og1_base_name</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">ctd_instrument</span><span class="p">)]</span>
-        <span class="k">if</span> <span class="n">og1_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-    <span class="p">}</span>
-
-    <span class="n">variable_names</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">variable_name</span>
-        <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variable_names</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
-            <span class="ow">not</span> <span class="n">uses_dimension</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="s2">"ctd_data_point"</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="n">uses_ctd_instrument_dimension</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="n">get_og1_base_name</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">ctd_instrument</span><span class="p">)</span>
-            <span class="ow">in</span> <span class="n">preferred_ctd_og1_names</span>
-            <span class="c1"># Keep time variables for the final combined TIME row.</span>
-            <span class="ow">and</span> <span class="n">get_og1_base_name</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">ctd_instrument</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">"TIME"</span>
-        <span class="p">)</span>
-    <span class="p">]</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">variable_sort_key</span><span class="p">(</span>
-        <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">variable_sort_key</span><span class="p">(</span><span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""Place CTD measurements first and their QC variables second."""</span>
-        <span class="n">source</span> <span class="o">=</span> <span class="n">get_source</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span>
-        <span class="n">dimensions</span> <span class="o">=</span> <span class="p">{</span><span class="n">dimension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">dims</span><span class="p">}</span>
-
-        <span class="n">is_ctd</span> <span class="o">=</span> <span class="n">is_ctd_associated</span><span class="p">(</span>
-            <span class="n">variable_name</span><span class="p">,</span>
-            <span class="n">dimensions</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="n">is_ctd</span> <span class="o">=</span> <span class="n">is_ctd_associated</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span>
         <span class="n">is_qc</span> <span class="o">=</span> <span class="n">get_qc_parent_name</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
         <span class="k">return</span> <span class="p">(</span><span class="ow">not</span> <span class="n">is_ctd</span><span class="p">,</span> <span class="n">is_qc</span><span class="p">)</span>
 
+    <span class="c1"># Include every unique variable; retain CTD copies on other dimensions.</span>
+    <span class="n">variable_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">all_sources</span><span class="p">)</span>
     <span class="n">variable_names</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">variable_sort_key</span><span class="p">)</span>
 
     <span class="n">mapping</span> <span class="o">=</span> <span class="p">[]</span>
@@ -506,11 +385,7 @@
     <span class="k">for</span> <span class="n">original_name</span> <span class="ow">in</span> <span class="n">variable_names</span><span class="p">:</span>
         <span class="n">source</span> <span class="o">=</span> <span class="n">get_source</span><span class="p">(</span><span class="n">original_name</span><span class="p">)</span>
         <span class="n">instrument</span> <span class="o">=</span> <span class="n">find_instrument</span><span class="p">(</span><span class="n">original_name</span><span class="p">)</span>
-
-        <span class="n">base_og1_name</span> <span class="o">=</span> <span class="n">get_og1_base_name</span><span class="p">(</span>
-            <span class="n">original_name</span><span class="p">,</span>
-            <span class="n">instrument</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="n">base_og1_name</span> <span class="o">=</span> <span class="n">get_og1_base_name</span><span class="p">(</span><span class="n">original_name</span><span class="p">,</span> <span class="n">instrument</span><span class="p">)</span>
 
         <span class="n">og1_name</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -518,10 +393,7 @@
             <span class="n">count</span> <span class="o">=</span> <span class="n">og1_name_counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">base_og1_name</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
             <span class="n">og1_name_counts</span><span class="p">[</span><span class="n">base_og1_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">count</span>
 
-            <span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">og1_name</span> <span class="o">=</span> <span class="n">base_og1_name</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">og1_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">base_og1_name</span><span class="si">}{</span><span class="n">count</span><span class="si">}</span><span class="s2">"</span>
+            <span class="n">og1_name</span> <span class="o">=</span> <span class="n">base_og1_name</span> <span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">base_og1_name</span><span class="si">}{</span><span class="n">count</span><span class="si">}</span><span class="s2">"</span>
 
         <span class="n">mapping</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="p">{</span>
@@ -530,7 +402,6 @@
                 <span class="s2">"instrument"</span><span class="p">:</span> <span class="n">instrument</span><span class="p">,</span>
                 <span class="s2">"instrument_type"</span><span class="p">:</span> <span class="n">get_instrument_type</span><span class="p">(</span><span class="n">instrument</span><span class="p">),</span>
                 <span class="s2">"original_dimension"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">dims</span><span class="p">),</span>
-                <span class="s2">"vocabulary_name"</span><span class="p">:</span> <span class="n">base_og1_name</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">)</span>
 
@@ -545,15 +416,55 @@
         <span class="p">],</span>
     <span class="p">)</span>
 
-    <span class="c1"># Replace individual time variables with a single "time" variable.</span>
-    <span class="n">time_mask</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">"OG1_name"</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="sa">r</span><span class="s2">"TIME[0-9]*"</span><span class="p">,</span> <span class="n">na</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># Collect dimensions and their associated time variable names separately.</span>
+    <span class="n">time_mask</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">"OG1_name"</span><span class="p">]</span>
+        <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"string"</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span>
+            <span class="sa">r</span><span class="s2">"TIME[0-9]*"</span><span class="p">,</span>
+            <span class="n">na</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
 
-    <span class="n">time_variable_names</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">result</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_mask</span><span class="p">,</span> <span class="s2">"original_dimension"</span><span class="p">]</span>
-        <span class="o">+</span> <span class="s2">" ("</span>
-        <span class="o">+</span> <span class="n">result</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_mask</span><span class="p">,</span> <span class="s2">"original_name"</span><span class="p">]</span>
-        <span class="o">+</span> <span class="s2">")"</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">time_variables</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_time_variable</span><span class="p">(</span><span class="n">dimension</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Add a time association without duplicates."""</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">time_variables</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">dimension</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="n">variable_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+            <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_mask</span><span class="p">,</span> <span class="s2">"original_name"</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">get_source</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+            <span class="n">add_time_variable</span><span class="p">(</span><span class="n">dimension</span><span class="p">,</span> <span class="n">variable_name</span><span class="p">)</span>
+
+    <span class="c1"># Magnetometer measurements share the sg_data_point time variable(s).</span>
+    <span class="k">if</span> <span class="s2">"magnetometer_data_point"</span> <span class="ow">in</span> <span class="n">all_dimensions</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">time_variables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sg_data_point"</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="n">add_time_variable</span><span class="p">(</span><span class="s2">"magnetometer_data_point"</span><span class="p">,</span> <span class="n">variable_name</span><span class="p">)</span>
+
+    <span class="c1"># Add explicit associations when both dimension and variable exist.</span>
+    <span class="k">for</span> <span class="n">dimension</span><span class="p">,</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="p">{</span>
+        <span class="s2">"gc_state"</span><span class="p">:</span> <span class="s2">"gc_state_secs"</span><span class="p">,</span>
+        <span class="s2">"gc_event"</span><span class="p">:</span> <span class="s2">"gc_st_secs"</span><span class="p">,</span>
+        <span class="s2">"gps_info"</span><span class="p">:</span> <span class="s2">"log_gps_time"</span><span class="p">,</span>
+        <span class="s2">"auxCompass_data_point"</span><span class="p">:</span> <span class="s2">"auxCompass_time"</span><span class="p">,</span>
+        <span class="s2">"depth_data_point"</span><span class="p">:</span> <span class="s2">"depth_time"</span><span class="p">,</span>
+    <span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">dimension</span> <span class="ow">in</span> <span class="n">all_dimensions</span> <span class="ow">and</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">all_sources</span><span class="p">:</span>
+            <span class="n">add_time_variable</span><span class="p">(</span><span class="n">dimension</span><span class="p">,</span> <span class="n">variable_name</span><span class="p">)</span>
+
+    <span class="c1"># Remove all associated time variables, including those without an</span>
+    <span class="c1"># OG1 TIME mapping. Replace any existing "time" row below.</span>
+    <span class="n">time_variable_names</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">variable_name</span> <span class="k">for</span> <span class="n">names</span> <span class="ow">in</span> <span class="n">time_variables</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">names</span>
+    <span class="p">}</span>
+
+    <span class="n">remove_mask</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">time_mask</span>
+        <span class="o">|</span> <span class="n">result</span><span class="p">[</span><span class="s2">"original_name"</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">time_variable_names</span><span class="p">)</span>
+        <span class="o">|</span> <span class="n">result</span><span class="p">[</span><span class="s2">"original_name"</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s2">"time"</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="n">time_row</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
         <span class="p">[</span>
@@ -562,12 +473,13 @@
                 <span class="s2">"OG1_name"</span><span class="p">:</span> <span class="s2">"TIME"</span><span class="p">,</span>
                 <span class="s2">"instrument"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span>
                 <span class="s2">"instrument_type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span>
-                <span class="s2">"original_dimension"</span><span class="p">:</span> <span class="n">time_variable_names</span><span class="p">,</span>
+                <span class="s2">"original_dimension"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">]</span>
     <span class="p">)</span>
+
     <span class="n">result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
-        <span class="p">[</span><span class="n">result</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">time_mask</span><span class="p">],</span> <span class="n">time_row</span><span class="p">],</span>
+        <span class="p">[</span><span class="n">result</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">remove_mask</span><span class="p">],</span> <span class="n">time_row</span><span class="p">],</span>
         <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -577,7 +489,7 @@
         <span class="p">)</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">result</span></div>
+    <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="n">time_variables</span></div>
 
 
 
@@ -842,6 +754,12 @@
         <span class="c1"># NaN, so the old str()=="nan" guard let None through and ds_og1["None"]</span>
         <span class="c1"># raised KeyError. pd.isna covers both, as elsewhere in this module.</span>
         <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">og1_name</span><span class="p">)</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">instrument</span><span class="p">):</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Some instruments are deliberately absent from sensor_dict (gather_sensor_info</span>
+        <span class="c1"># skips e.g. 'magnetometer'), yet a mapping row can still name them. Skip rather</span>
+        <span class="c1"># than raise KeyError on sensor_dict[instrument].</span>
+        <span class="k">if</span> <span class="n">instrument</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sensor_dict</span><span class="p">:</span>
             <span class="k">continue</span>
 
         <span class="n">og1_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">og1_name</span><span class="p">)</span>
@@ -1380,6 +1298,12 @@
     <span class="c1"># Must be called *after* var_name has OG1 long_name</span>
     <span class="n">var_name</span> <span class="o">=</span> <span class="n">qc_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">qc_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dsa</span><span class="p">):</span>
+        <span class="c1"># For scalar log qc's that might change over the mission are stored as json, don't convert to int8</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">qc_name</span> <span class="ow">in</span> <span class="n">dsa</span><span class="o">.</span><span class="n">variables</span>
+            <span class="ow">and</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"serialization"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"json"</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="n">dsa</span>
         <span class="c1"># Seaglider default type was a string.  Convert to int8 and take care of NaNs</span>
         <span class="c1"># dsa[qc_name].values = dsa[qc_name].values.astype("int8")</span>
         <span class="n">values</span> <span class="o">=</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
@@ -1388,8 +1312,12 @@
             <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 
         <span class="c1"># Use pandas to handle NaNs safely</span>
+        <span class="n">original_shape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span>
-            <span class="n">values</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="n">original_shape</span>
         <span class="p">)</span>  <span class="c1"># Convert strings to numbers, NaNs stay NaNs</span>
         <span class="c1"># Assign back to dataset</span>
         <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">values</span>
@@ -1407,13 +1335,20 @@
         <span class="k">if</span> <span class="s2">"flag_meaning"</span> <span class="ow">in</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
             <span class="n">flag_meaning</span> <span class="o">=</span> <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"flag_meaning"</span><span class="p">]</span>
             <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"flag_meaning"</span><span class="p">]</span> <span class="o">=</span> <span class="n">flag_meaning</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"QC_"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+        <span class="c1"># The parent variable may be absent: an orphan QC, or a numbered name like</span>
+        <span class="c1"># 'TEMP_QC2' whose 'TEMP_' parent does not exist (qc_name[:-3] strips only the</span>
+        <span class="c1"># '_QC' suffix). Guard before dereferencing dsa[var_name].</span>
+        <span class="n">parent_present</span> <span class="o">=</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">dsa</span><span class="o">.</span><span class="n">variables</span>
         <span class="c1"># Add a long_name attribute to the QC variable</span>
         <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"long_name"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">dsa</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"long_name"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="o">+</span> <span class="s2">" quality flag"</span>
+            <span class="p">(</span><span class="n">dsa</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"long_name"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="o">+</span> <span class="s2">" quality flag"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parent_present</span>
+            <span class="k">else</span> <span class="s2">"quality flag"</span>
         <span class="p">)</span>
         <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"standard_name"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"status_flag"</span>
-        <span class="c1"># Mention the QC variable in the variable attributes</span>
-        <span class="n">dsa</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"ancillary_variables"</span><span class="p">]</span> <span class="o">=</span> <span class="n">qc_name</span>
+        <span class="c1"># Mention the QC variable in the parent's attributes, when the parent exists.</span>
+        <span class="k">if</span> <span class="n">parent_present</span><span class="p">:</span>
+            <span class="n">dsa</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"ancillary_variables"</span><span class="p">]</span> <span class="o">=</span> <span class="n">qc_name</span>
     <span class="k">return</span> <span class="n">dsa</span></div>
 
 
@@ -1522,6 +1457,13 @@
             <span class="c1"># never apply the generic bit-width fill (127) to a flag variable.</span>
             <span class="k">continue</span>
         <span class="n">da</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
+        <span class="c1"># Serialized per-dive parameters must remain scalar strings.</span>
+        <span class="k">if</span> <span class="n">da</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"serialization"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"json"</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Numeric dtype optimization does not apply to text or object variables.</span>
+        <span class="k">if</span> <span class="n">da</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"U"</span><span class="p">,</span> <span class="s2">"S"</span><span class="p">,</span> <span class="s2">"O"</span><span class="p">):</span>
+            <span class="k">continue</span>
         <span class="n">input_dtype</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
         <span class="n">new_dtype</span> <span class="o">=</span> <span class="n">find_best_dtype</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">da</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"valid_min"</span><span class="p">,</span> <span class="s2">"valid_max"</span><span class="p">]:</span>
@@ -1778,95 +1720,232 @@
 
 <div class="viewcode-block" id="merge_datasets_along_time">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.merge_datasets_along_time">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">merge_datasets_along_time</span><span class="p">(</span><span class="n">split_ds</span><span class="p">,</span> <span class="n">dims_to_merge</span><span class="p">,</span> <span class="n">first_run</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Merge a list of xarray Datasets along their time dimension.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">merge_datasets_along_time</span><span class="p">(</span>
+    <span class="n">split_ds</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
+    <span class="n">time_variables</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Merge split datasets onto a shared time axis.</span>
+
+<span class="sd">    Merge dimensions listed in ``time_variables``, retaining original</span>
+<span class="sd">    variable names. Replace individual time variables with ``time``.</span>
+<span class="sd">    OG1 conversion is handled separately by ``standardise_OG10``.</span>
+
+<span class="sd">    Always use ``time`` for ``sg_data_point``. Other dimensions use their</span>
+<span class="sd">    listed candidates. Time variables must contain datetime64 values and</span>
+<span class="sd">    match the dimension's length. Shared time sources are attached by</span>
+<span class="sd">    position and must have matching sample order.</span>
+
+<span class="sd">    Keep the first duplicate timestamp unchanged and shift subsequent</span>
+<span class="sd">    occurrences by 0.5 seconds each. Print adjustments and record their</span>
+<span class="sd">    source dimension, time variable, and timestamps in ``time`` attributes.</span>
+<span class="sd">    Retained variables receive original name and dimension attributes.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    split_ds : dict[(str,), xr.Dataset]</span>
-<span class="sd">        Mapping from (dimension,) to Dataset.</span>
+<span class="sd">    split_ds : dict[tuple[str, ...], xr.Dataset]</span>
+<span class="sd">        Split datasets keyed by dimension, e.g. ``("sg_data_point",)``.</span>
 
-<span class="sd">    dims_to_merge : list[str]</span>
-<span class="sd">        Dimension names to extract and merge.</span>
+<span class="sd">    time_variables : dict[str, list[str]]</span>
+<span class="sd">        Dimensions mapped to candidate time variable names.</span>
+
+<span class="sd">    firstrun : bool, default False</span>
+<span class="sd">        Print progress and skipped dimensions. Duplicate timestamp</span>
+<span class="sd">        adjustments are always printed.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    xr.Dataset or None</span>
-<span class="sd">        A time-aligned merged dataset, or None if no datasets were eligible.</span>
-
+<span class="sd">    xarray.Dataset or None</span>
+<span class="sd">        Chronologically sorted dataset with coordinate</span>
+<span class="sd">        ``time(N_MEASUREMENTS)`` and no ``N_MEASUREMENTS`` coordinate.</span>
+<span class="sd">        Return None if no dataset has a usable time source.</span>
 <span class="sd">    """</span>
     <span class="n">processed_datasets</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="n">all_dims</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">split_ds</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span>
     <span class="n">actually_merged_dims</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">dims_to_merge</span><span class="p">:</span>
-        <span class="c1"># ---1. Extract dataset---</span>
+    <span class="n">all_dims</span> <span class="o">=</span> <span class="p">{</span><span class="n">dim</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">split_ds</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">key</span><span class="p">}</span>
+    <span class="n">duplicate_time_descriptions</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">all_time_names</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span> <span class="k">for</span> <span class="n">names</span> <span class="ow">in</span> <span class="n">time_variables</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">}</span>
+
+    <span class="c1"># Collect shared time sources before modifying datasets.</span>
+    <span class="n">time_sources</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">split_ds</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">all_time_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+                <span class="n">time_sources</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_usable_time</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Check that a time source matches the target dimension."""</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">source</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="ow">and</span> <span class="n">source</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">size</span>
+            <span class="ow">and</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_datetime64_dtype</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">candidate_names</span> <span class="ow">in</span> <span class="n">time_variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">dim</span><span class="p">,)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">split_ds</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Skipping </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">: not found in split_ds."</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Skipping '</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">': not found in split_ds."</span><span class="p">)</span>
             <span class="k">continue</span>
 
         <span class="n">ds</span> <span class="o">=</span> <span class="n">split_ds</span><span class="p">[(</span><span class="n">dim</span><span class="p">,)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">old_dim</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="c1"># ---2. Detect datetime64 variable---</span>
-        <span class="n">time_vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="k">if</span> <span class="s2">"datetime64"</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)]</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">time_vars</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">first_run</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Skipping '</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">': No datetime64 variable found."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Skipping '</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">': dimension not found in dataset."</span><span class="p">)</span>
             <span class="k">continue</span>
 
-        <span class="c1">### if more than one time variable is found, takle ctd_time preferibly, otherwise time or the first one. Delete the other time variables.</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_vars</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">"ctd_time"</span> <span class="ow">in</span> <span class="n">time_vars</span><span class="p">:</span>
-                <span class="n">time_var</span> <span class="o">=</span> <span class="s2">"ctd_time"</span>
-            <span class="k">elif</span> <span class="s2">"time"</span> <span class="ow">in</span> <span class="n">time_vars</span><span class="p">:</span>
-                <span class="n">time_var</span> <span class="o">=</span> <span class="s2">"time"</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">time_var</span> <span class="o">=</span> <span class="n">time_vars</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">time_vars</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">var</span> <span class="o">!=</span> <span class="n">time_var</span><span class="p">:</span>
-                    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">time_var</span> <span class="o">=</span> <span class="n">time_vars</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Never use ctd_time as a fallback for sg_data_point.</span>
+        <span class="n">candidates</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[</span><span class="s2">"time"</span><span class="p">]</span> <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="s2">"sg_data_point"</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">candidate_names</span><span class="p">))</span>
+        <span class="p">)</span>
 
-        <span class="c1"># ---3. Rename detected time variable to 'time'---</span>
-        <span class="k">if</span> <span class="n">time_var</span> <span class="o">!=</span> <span class="s2">"time"</span><span class="p">:</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">time_var</span><span class="p">:</span> <span class="s2">"time"</span><span class="p">})</span>
+        <span class="n">time_var</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">time_source</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># ---4. Swap old dimension to time---</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">swap_dims</span><span class="p">({</span><span class="n">old_dim</span><span class="p">:</span> <span class="s2">"time"</span><span class="p">})</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+            <span class="c1"># Prefer a time variable on the current dimension.</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span>
+                <span class="ow">and</span> <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span> <span class="o">==</span> <span class="p">(</span><span class="n">dim</span><span class="p">,)</span>
+                <span class="ow">and</span> <span class="n">is_usable_time</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="n">dim</span><span class="p">])</span>
+            <span class="p">):</span>
+                <span class="n">time_var</span> <span class="o">=</span> <span class="n">name</span>
+                <span class="n">time_source</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                <span class="k">break</span>
 
-        <span class="c1"># ---5. Add attribute old_dim to each data variable and coordinate (except the time coordinate)---</span>
-        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">var</span> <span class="o">!=</span> <span class="s2">"time"</span><span class="p">:</span>
-                <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"original_dimension"</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_dim</span>
-                <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"original_variable_name"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">first_run</span><span class="p">:</span>
+            <span class="c1"># Shared sources are attached by position.</span>
+            <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">time_sources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="k">if</span> <span class="n">is_usable_time</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="n">dim</span><span class="p">]):</span>
+                    <span class="n">time_var</span> <span class="o">=</span> <span class="n">name</span>
+                    <span class="n">time_source</span> <span class="o">=</span> <span class="n">source</span>
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">time_source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">time_source</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Skipping '</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">': no associated datetime64 time "</span>
+                    <span class="s2">"variable with a matching length."</span>
+                <span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="n">time_values</span> <span class="o">=</span> <span class="n">time_source</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">time_attrs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">time_source</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
+
+        <span class="c1"># Replace individual time variables with the shared time coordinate.</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">([</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">all_time_names</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="s2">"time"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">' contains a variable named 'time' that was not "</span>
+                <span class="s2">"identified as a time source."</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Preserve original names and dimensions without OG1 renaming.</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"original_dimension"</span><span class="p">]</span> <span class="o">=</span> <span class="n">dim</span>
+            <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"original_variable_name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">(</span>
+            <span class="n">time</span><span class="o">=</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+                <span class="n">time_values</span><span class="p">,</span>
+                <span class="n">dims</span><span class="o">=</span><span class="p">(</span><span class="n">dim</span><span class="p">,),</span>
+                <span class="n">attrs</span><span class="o">=</span><span class="n">time_attrs</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">swap_dims</span><span class="p">({</span><span class="n">dim</span><span class="p">:</span> <span class="s2">"time"</span><span class="p">})</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"time"</span><span class="p">)</span>
+
+        <span class="c1"># Keep the first occurrence; shift subsequent ones by 0.5 s each.</span>
+        <span class="n">original_times</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+        <span class="n">occurrence</span> <span class="o">=</span> <span class="n">original_times</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+            <span class="n">original_times</span><span class="p">,</span>
+            <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">cumcount</span><span class="p">()</span>
+
+        <span class="n">adjusted_times</span> <span class="o">=</span> <span class="n">original_times</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_timedelta</span><span class="p">(</span><span class="n">occurrence</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"s"</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">adjusted_times</span><span class="p">[</span><span class="n">adjusted_times</span><span class="o">.</span><span class="n">notna</span><span class="p">()]</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Shifting duplicate timestamps in '</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">' / '</span><span class="si">{</span><span class="n">time_var</span><span class="si">}</span><span class="s2">' "</span>
+                <span class="s2">"by 0.5 seconds creates another timestamp collision."</span>
+            <span class="p">)</span>
+
+        <span class="n">duplicate_mask</span> <span class="o">=</span> <span class="n">original_times</span><span class="o">.</span><span class="n">duplicated</span><span class="p">(</span><span class="n">keep</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">original_times</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">duplicate_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="sa">f</span><span class="s2">"Dimension: </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2"> with time variable: </span><span class="si">{</span><span class="n">time_var</span><span class="si">}</span><span class="s2"> "</span>
+                <span class="s2">"has duplicate time values."</span><span class="p">,</span>
+                <span class="s2">"The following time values occurred multiple times and "</span>
+                <span class="s2">"have been assigned to the following new timestamps:"</span><span class="p">,</span>
+            <span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">timestamp</span> <span class="ow">in</span> <span class="n">original_times</span><span class="p">[</span><span class="n">duplicate_mask</span><span class="p">]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">():</span>
+                <span class="n">positions</span> <span class="o">=</span> <span class="n">original_times</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">original_times</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+                <span class="n">new_timestamps</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">adjusted_times</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">position</span><span class="p">]</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">for</span> <span class="n">position</span> <span class="ow">in</span> <span class="n">positions</span>
+                <span class="p">]</span>
+
+                <span class="n">description</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">timestamp</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2"> occurred "</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span><span class="si">}</span><span class="s2"> times.</span><span class="se">\n</span><span class="s2">"</span>
+                    <span class="s2">"    Assigned timestamps:</span><span class="se">\n</span><span class="s2">"</span>
+                    <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"      </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">new_timestamps</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="n">description_text</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>
+            <span class="n">duplicate_time_descriptions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">description_text</span><span class="p">)</span>
+            <span class="c1"># print(description_text)</span>
+
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">(</span>
+            <span class="n">time</span><span class="o">=</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+                <span class="n">adjusted_times</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                <span class="n">dims</span><span class="o">=</span><span class="p">(</span><span class="s2">"time"</span><span class="p">,),</span>
+                <span class="n">attrs</span><span class="o">=</span><span class="n">time_attrs</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"time"</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Adding variables with dimension '</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">' and time variable '</span><span class="si">{</span><span class="n">time_var</span><span class="si">}</span><span class="s2">'."</span>
+                <span class="sa">f</span><span class="s2">"Adding variables with dimension '</span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">' "</span>
+                <span class="sa">f</span><span class="s2">"and time variable '</span><span class="si">{</span><span class="n">time_var</span><span class="si">}</span><span class="s2">'."</span>
             <span class="p">)</span>
 
         <span class="n">processed_datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
         <span class="n">actually_merged_dims</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">processed_datasets</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"No datasets processed. Returning None."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"No datasets processed. Returning None."</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="c1"># ---6. Merge along shared time coordinate---</span>
     <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">processed_datasets</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">"outer"</span><span class="p">)</span>
+    <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">merged_ds</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"time"</span><span class="p">)</span>
 
-    <span class="c1"># ---7. Swap to N_MEASUREMENTS (optional)---</span>
+    <span class="c1"># Keep lowercase time; create only the N_MEASUREMENTS dimension.</span>
     <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">merged_ds</span><span class="o">.</span><span class="n">swap_dims</span><span class="p">({</span><span class="s2">"time"</span><span class="p">:</span> <span class="s2">"N_MEASUREMENTS"</span><span class="p">})</span>
 
-    <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">merged_ds</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"time"</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">first_run</span><span class="p">:</span>
-        <span class="c1">## Print what remaining dimensions were not merged into the new dataset</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"The following dimensions were not merged into the new dataset: </span><span class="si">{</span><span class="n">all_dims</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">actually_merged_dims</span><span class="si">}</span><span class="s2">"</span>
-            <span class="s2">"</span><span class="se">\n</span><span class="s2">If instrument data is missing make sure it's dimension follows the naming convention of '&lt;instrument&gt;_data_point'"</span>
-            <span class="s2">"</span><span class="se">\n</span><span class="s2">from the ds.attrs['instrument'] list."</span>
-        <span class="p">)</span>
+    <span class="n">merged_ds</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"duplicate_timestamp_adjustments"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">duplicate_time_descriptions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">duplicate_time_descriptions</span>
+        <span class="k">else</span> <span class="s2">"No duplicate time values were found."</span>
+    <span class="p">)</span>
+    <span class="n">merged_ds</span><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"duplicate_timestamp_adjustment_rule"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">"First occurrence unchanged; subsequent occurrences shifted "</span>
+        <span class="s2">"forward by 0.5 seconds each. No measurements were discarded."</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Dimensions not merged: "</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">all_dims</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">actually_merged_dims</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">merged_ds</span></div>
 
@@ -1911,164 +1990,299 @@
 <span class="n">standard_names</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">standard_names</span>
 
 
-<div class="viewcode-block" id="extract_hdm_parameters">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.extract_hdm_parameters">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">extract_hdm_parameters</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Extracts HDM parameters and their attributes from a list of datasets. If the parameter has the same value across all datasets,</span>
-<span class="sd">    it keeps a single value; otherwise, it returns the full list.</span>
+<div class="viewcode-block" id="extract_scalar_parameters">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.extract_scalar_parameters">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_scalar_parameters</span><span class="p">(</span>
+    <span class="n">list_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Extract all scalar variables from a list of datasets.</span>
+
+<span class="sd">    Collect each variable's values across datasets and copy attributes from</span>
+<span class="sd">    its first occurrence. Mark it constant only when it exists in every</span>
+<span class="sd">    dataset and has the same value throughout. Record missing occurrences</span>
+<span class="sd">    and extract dive identifiers for later assignment to measurements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    list_datasets (list): List of xarray.Dataset objects.</span>
-<span class="sd">    standard_names (dict): Vocabulary mapping internal names to standard names.</span>
+<span class="sd">    list_datasets : list[xarray.Dataset]</span>
+<span class="sd">        Input datasets containing scalar variables and dive identifiers.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    dict: A nested dictionary where keys are standard names and values contain</span>
-<span class="sd">            the 'data' and 'attributes'.</span>
-
+<span class="sd">    dict</span>
+<span class="sd">        Parameter values, source attributes, presence and constant flags,</span>
+<span class="sd">        and dive identifiers.</span>
 <span class="sd">    """</span>
-    <span class="n">potential_parameters_OG1</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">"VBD_MIN_CNTS"</span><span class="p">,</span>
-        <span class="s2">"VBD_CNTS_PER_CC"</span><span class="p">,</span>
-        <span class="s2">"VBD_CC_PER_CNTS"</span><span class="p">,</span>
-        <span class="s2">"VBD_BIAS"</span><span class="p">,</span>
-        <span class="s2">"MASS"</span><span class="p">,</span>
-        <span class="s2">"VOLMAX"</span><span class="p">,</span>
-        <span class="s2">"C_VBD"</span><span class="p">,</span>
-        <span class="s2">"HD_A"</span><span class="p">,</span>
-        <span class="s2">"HD_B"</span><span class="p">,</span>
-        <span class="s2">"HD_C"</span><span class="p">,</span>
-    <span class="p">]</span>
-    <span class="n">potential_parameters</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">key</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">standard_names</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">potential_parameters_OG1</span>
-    <span class="p">]</span>
-    <span class="n">hdm_variables</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">n_datasets</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">potential_parameters</span><span class="p">:</span>
-        <span class="c1"># Determine the key name using standard_names mapping</span>
-        <span class="n">param_key</span> <span class="o">=</span> <span class="n">standard_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">param_key</span> <span class="o">==</span> <span class="n">param</span> <span class="ow">and</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">standard_names</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Warning: '</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">' not found in standard names. Using original name."</span>
+    <span class="c1"># Discover scalar names in their original order.</span>
+    <span class="n">parameters</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">list_datasets</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">variable</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">"values"</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n_datasets</span><span class="p">,</span>
+                    <span class="s2">"present"</span><span class="p">:</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_datasets</span><span class="p">,</span>
+                    <span class="s2">"constant"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">"attributes"</span><span class="p">:</span> <span class="n">variable</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="p">}</span>
+
+    <span class="n">dive_numbers</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Work directly with Variables, avoiding DataArray construction.</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">):</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">variables</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">variable</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' is scalar in one dataset but has dimensions "</span>
+                    <span class="s2">"in another."</span>
+                <span class="p">)</span>
+
+            <span class="n">parameter</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">parameter</span><span class="p">[</span><span class="s2">"values"</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">variable</span><span class="o">.</span><span class="n">values</span><span class="p">[()]</span>
+            <span class="n">parameter</span><span class="p">[</span><span class="s2">"present"</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="s2">"dive_number"</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+            <span class="n">dive</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s2">"dive_number"</span> <span class="ow">in</span> <span class="n">variables</span> <span class="ow">and</span> <span class="n">variables</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">dive</span> <span class="o">=</span> <span class="n">variables</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[()]</span>
+        <span class="k">elif</span> <span class="s2">"trajectory"</span> <span class="ow">in</span> <span class="n">variables</span> <span class="ow">and</span> <span class="n">variables</span><span class="p">[</span><span class="s2">"trajectory"</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">dive</span> <span class="o">=</span> <span class="n">variables</span><span class="p">[</span><span class="s2">"trajectory"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[()]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dive</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">dive_numbers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dive</span><span class="p">)</span>
+
+    <span class="c1"># Keep the original equality/missing-value semantics.</span>
+    <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">parameter</span><span class="p">[</span><span class="s2">"constant"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">all</span><span class="p">(</span><span class="n">parameter</span><span class="p">[</span><span class="s2">"present"</span><span class="p">])</span>
+            <span class="ow">and</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">parameter</span><span class="p">[</span><span class="s2">"values"</span><span class="p">])</span><span class="o">.</span><span class="n">nunique</span><span class="p">(</span><span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"parameters"</span><span class="p">:</span> <span class="n">parameters</span><span class="p">,</span>
+        <span class="s2">"dive_numbers"</span><span class="p">:</span> <span class="n">dive_numbers</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="add_scalar_parameters">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_scalar_parameters">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_scalar_parameters</span><span class="p">(</span>
+    <span class="n">ds_og1</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+    <span class="n">extracted</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">og1_mapping</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Add extracted scalar parameters and update the OG1 mapping.</span>
+
+<span class="sd">    Keep constant parameters as ordinary scalars. Store changing or partially</span>
+<span class="sd">    missing parameters as scalar JSON strings with aligned "dives" and "values"</span>
+<span class="sd">    lists. Missing values are represented by JSON null.</span>
+
+<span class="sd">    No dimensions are added, and no parameters are expanded along</span>
+<span class="sd">    N_MEASUREMENTS.</span>
+
+<span class="sd">    Use existing OG1 mappings or vocabulary names where available; otherwise</span>
+<span class="sd">    retain original names. Preserve source metadata except numeric storage and</span>
+<span class="sd">    range attributes that do not apply to JSON strings. No unit conversions</span>
+<span class="sd">    are performed.</span>
+<span class="sd">    """</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+    <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="n">og1_mapping</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">dive_numbers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">extracted</span><span class="p">[</span><span class="s2">"dive_numbers"</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">mapping</span><span class="p">[</span><span class="s2">"original_name"</span><span class="p">]</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The mapping must have unique original names."</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">json_scalar</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Convert a scalar to a JSON-compatible value."""</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Expected a scalar parameter value."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="c1"># NumPy byte strings also become bytes after .item().</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="n">used_names</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">original_name</span><span class="p">,</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">extracted</span><span class="p">[</span><span class="s2">"parameters"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">row_mask</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="s2">"original_name"</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">original_name</span><span class="p">)</span>
+
+        <span class="c1"># Prefer the existing mapping, including any numbered OG1 names.</span>
+        <span class="k">if</span> <span class="n">row_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">og1_name</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">row_mask</span><span class="p">,</span> <span class="s2">"OG1_name"</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">og1_name</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">og1_name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">og1_name</span><span class="p">):</span>
+            <span class="n">og1_name</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">standard_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">original_name</span><span class="p">)</span>
+
+        <span class="n">is_mapped</span> <span class="o">=</span> <span class="n">og1_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pd</span><span class="o">.</span><span class="n">notna</span><span class="p">(</span><span class="n">og1_name</span><span class="p">)</span>
+        <span class="n">output_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">og1_name</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_mapped</span> <span class="k">else</span> <span class="n">original_name</span>
+
+        <span class="k">if</span> <span class="n">output_name</span> <span class="ow">in</span> <span class="n">used_names</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2">' and '</span><span class="si">{</span><span class="n">used_names</span><span class="p">[</span><span class="n">output_name</span><span class="p">]</span><span class="si">}</span><span class="s2">' "</span>
+                <span class="sa">f</span><span class="s2">"both map to '</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">'."</span>
             <span class="p">)</span>
 
-        <span class="c1"># 1. Check if the parameter exists in the datasets</span>
-        <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">list_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-            <span class="k">continue</span>
+        <span class="n">used_names</span><span class="p">[</span><span class="n">output_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">original_name</span>
 
-        <span class="c1"># 2. Extract values from all datasets</span>
-        <span class="n">all_values</span> <span class="o">=</span> <span class="p">[</span><span class="n">ds</span><span class="p">[</span><span class="n">param</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">list_datasets</span><span class="p">]</span>
+        <span class="c1"># Existing versions of this parameter can be replaced.</span>
+        <span class="k">if</span> <span class="n">output_name</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="n">known_source</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">output_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">"original_name"</span><span class="p">,</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">output_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"original_variable_name"</span><span class="p">),</span>
+            <span class="p">)</span>
 
-        <span class="c1"># 3. Determine if we keep a single value or the full list</span>
-        <span class="c1"># We flatten to handle case where .values might be arrays</span>
-        <span class="n">unique_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_values</span><span class="p">))</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">output_name</span> <span class="o">!=</span> <span class="n">original_name</span>
+                <span class="ow">and</span> <span class="n">known_source</span> <span class="o">!=</span> <span class="n">original_name</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="n">row_mask</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">' already exists and cannot safely "</span>
+                    <span class="sa">f</span><span class="s2">"be replaced by '</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2">'."</span>
+                <span class="p">)</span>
 
-        <span class="n">final_value</span> <span class="o">=</span> <span class="n">unique_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_vals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">all_values</span>
+        <span class="n">attributes</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="s2">"attributes"</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="s2">"original_name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">original_name</span>
+        <span class="c1"># Scalars have no source dimension; record the empty string for parity</span>
+        <span class="c1"># with merged non-scalar variables, which carry original_dimension.</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="s2">"original_dimension"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">""</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parameter</span><span class="p">[</span><span class="s2">"values"</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">final_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="n">final_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">final_value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Parameter '</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2">' has no extracted values."</span><span class="p">)</span>
 
-        <span class="c1"># 4. Store as a dictionary to accommodate both value and attributes and add long_name attribute</span>
-        <span class="n">hdm_variables</span><span class="p">[</span><span class="n">param_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">"values"</span><span class="p">:</span> <span class="n">final_value</span><span class="p">,</span>
-            <span class="s2">"attributes"</span><span class="p">:</span> <span class="n">list_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">param</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span>  <span class="c1"># Add long_name attribute</span>
+        <span class="k">if</span> <span class="n">parameter</span><span class="p">[</span><span class="s2">"constant"</span><span class="p">]:</span>
+            <span class="n">variable</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+                <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">attrs</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dive_numbers</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Parameter '</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2">' has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="si">}</span><span class="s2"> values "</span>
+                    <span class="sa">f</span><span class="s2">"but </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dive_numbers</span><span class="p">)</span><span class="si">}</span><span class="s2"> dive identifiers."</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">dive</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">dive</span><span class="p">)</span> <span class="k">for</span> <span class="n">dive</span> <span class="ow">in</span> <span class="n">dive_numbers</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"Every input dataset needs a dive identifier "</span>
+                    <span class="s2">"to store changing scalar parameters."</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">dive_numbers</span><span class="p">)</span><span class="o">.</span><span class="n">has_duplicates</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Input dive identifiers must be unique."</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">"dives"</span><span class="p">:</span> <span class="p">[</span><span class="n">json_scalar</span><span class="p">(</span><span class="n">dive</span><span class="p">)</span> <span class="k">for</span> <span class="n">dive</span> <span class="ow">in</span> <span class="n">dive_numbers</span><span class="p">],</span>
+                    <span class="s2">"values"</span><span class="p">:</span> <span class="p">[</span><span class="n">json_scalar</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">],</span>
+                <span class="p">}</span>
+                <span class="n">serialized</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                    <span class="n">payload</span><span class="p">,</span>
+                    <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">":"</span><span class="p">),</span>
+                    <span class="n">allow_nan</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Cannot serialize parameter '</span><span class="si">{</span><span class="n">original_name</span><span class="si">}</span><span class="s2">' "</span>
+                    <span class="sa">f</span><span class="s2">"as per-dive JSON: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">"</span>
+                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+            <span class="c1"># These numeric attributes do not apply to the stored string.</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span>
+                <span class="s2">"_FillValue"</span><span class="p">,</span>
+                <span class="s2">"missing_value"</span><span class="p">,</span>
+                <span class="s2">"scale_factor"</span><span class="p">,</span>
+                <span class="s2">"add_offset"</span><span class="p">,</span>
+                <span class="s2">"valid_min"</span><span class="p">,</span>
+                <span class="s2">"valid_max"</span><span class="p">,</span>
+                <span class="s2">"valid_range"</span><span class="p">,</span>
+                <span class="s2">"actual_range"</span><span class="p">,</span>
+            <span class="p">):</span>
+                <span class="n">attributes</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="n">attributes</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">"serialization"</span><span class="p">:</span> <span class="s2">"json"</span><span class="p">,</span>
+                    <span class="s2">"storage_type"</span><span class="p">:</span> <span class="s2">"per_dive_scalar"</span><span class="p">,</span>
+                    <span class="s2">"serialization_description"</span><span class="p">:</span> <span class="p">(</span>
+                        <span class="s1">'JSON object with aligned "dives" and "values" lists; '</span>
+                        <span class="s2">"null indicates a missing value. Units and source "</span>
+                        <span class="s2">"metadata describe the decoded values."</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+            <span class="n">variable</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+                <span class="n">serialized</span><span class="p">,</span>
+                <span class="n">attrs</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Write a NetCDF4 variable-length string, avoiding a character</span>
+            <span class="c1"># dimension. The existing writer skips compression for scalars.</span>
+            <span class="n">variable</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"dtype"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
+
+        <span class="c1"># Remove an old original-name version when the parameter is renamed.</span>
+        <span class="k">if</span> <span class="n">output_name</span> <span class="o">!=</span> <span class="n">original_name</span> <span class="ow">and</span> <span class="n">original_name</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="n">original_name</span><span class="p">)</span>
+
+        <span class="n">result</span><span class="p">[</span><span class="n">output_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">variable</span>
+
+        <span class="n">mapping_updates</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"OG1_name"</span><span class="p">:</span> <span class="n">output_name</span> <span class="k">if</span> <span class="n">is_mapped</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">"original_dimension"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span>
+            <span class="s2">"has_OG1_attributes"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="nb">bool</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">output_name</span><span class="p">,</span> <span class="p">{}))</span>
+                <span class="k">if</span> <span class="n">is_mapped</span>
+                <span class="k">else</span> <span class="kc">False</span>
+            <span class="p">),</span>
         <span class="p">}</span>
-        <span class="n">hdm_variables</span><span class="p">[</span><span class="n">param_key</span><span class="p">][</span><span class="s2">"attributes"</span><span class="p">][</span><span class="s2">"original_name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">param_key</span>
 
-    <span class="c1"># 5. Print what parameters from potential_parameters were found and which couldn't not be found in the datasets</span>
-    <span class="n">found_params</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">param</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">potential_parameters_OG1</span> <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">hdm_variables</span>
-    <span class="p">]</span>
-    <span class="n">not_found_params</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">param</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">potential_parameters_OG1</span> <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hdm_variables</span>
-    <span class="p">]</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The following HDM parameters were found: </span><span class="si">{</span><span class="n">found_params</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="c1"># if not_found_params:</span>
-    <span class="c1">#    print(</span>
-    <span class="c1">#        f"Warning: The following potential HDM parameters were not found in the datasets: {not_found_params}"</span>
-    <span class="c1">#    )</span>
+        <span class="k">if</span> <span class="n">row_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">mapping_updates</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">mapping</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">row_mask</span><span class="p">,</span> <span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mapping</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">mapping</span><span class="p">,</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="p">{</span>
+                                <span class="s2">"original_name"</span><span class="p">:</span> <span class="n">original_name</span><span class="p">,</span>
+                                <span class="s2">"instrument"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                                <span class="s2">"instrument_type"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                                <span class="o">**</span><span class="n">mapping_updates</span><span class="p">,</span>
+                            <span class="p">}</span>
+                        <span class="p">]</span>
+                    <span class="p">),</span>
+                <span class="p">],</span>
+                <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
 
-    <span class="c1"># 6. Add dive_number in order to be able to assign dive-based parameters to the correct profiles in the OG1 dataset</span>
-    <span class="n">dive_numbers</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="s2">"dive_number"</span> <span class="ow">in</span> <span class="n">list_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
-        <span class="n">dive_numbers</span> <span class="o">=</span> <span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">dive_number</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">list_datasets</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="s2">"trajectory"</span> <span class="ow">in</span> <span class="n">list_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
-        <span class="n">dive_numbers</span> <span class="o">=</span> <span class="p">[</span><span class="n">ds</span><span class="p">[</span><span class="s2">"trajectory"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">list_datasets</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">dive_numbers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">hdm_variables</span><span class="p">[</span><span class="s2">"DIVE_NUMBER"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"values"</span><span class="p">:</span> <span class="n">dive_numbers</span><span class="p">}</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="s2">"Warning: 'dive_number' or 'trajectory' not found in datasets. "</span>
-            <span class="s2">"Dive-based parameters may not be correctly assigned."</span>
-        <span class="p">)</span>
-    <span class="k">return</span> <span class="n">hdm_variables</span></div>
-
-
-
-<div class="viewcode-block" id="add_hdm_parameters">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.add_hdm_parameters">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">add_hdm_parameters</span><span class="p">(</span><span class="n">ds_OG1</span><span class="p">,</span> <span class="n">hdm_parameters</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Add HDM parameters to the OG1 dataset as new variables with their attributes.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    ds_OG1 (xarray.Dataset): The OG1 dataset to which HDM parameters will be added.</span>
-<span class="sd">    hdm_parameters (dict): A dictionary containing HDM parameters and their attributes</span>
-<span class="sd">                            in the format {standard_name: {"value": ..., "attributes": {...}}}.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    xarray.Dataset: Updated OG1 dataset with HDM parameters added as variables.</span>
-
-<span class="sd">    """</span>
-    <span class="n">ds_updated</span> <span class="o">=</span> <span class="n">ds_OG1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-
-    <span class="n">dive_numbers</span> <span class="o">=</span> <span class="n">hdm_parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"DIVE_NUMBER"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"values"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param_info</span> <span class="ow">in</span> <span class="n">hdm_parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="c1"># Using .get() because you used "value" in extract and "values" in your draft</span>
-        <span class="n">values</span> <span class="o">=</span> <span class="n">param_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"value"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">param_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"values"</span><span class="p">)</span>
-        <span class="n">attributes</span> <span class="o">=</span> <span class="n">param_info</span><span class="p">[</span><span class="s2">"attributes"</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">values</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Warning: Parameter '</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">' values are empty. Skipping."</span><span class="p">)</span>
-            <span class="k">continue</span>
-        <span class="c1"># Check if it's a single value (scalar)</span>
-        <span class="k">if</span> <span class="n">dive_numbers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">values</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">ds_updated</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s2">"item"</span><span class="p">)</span> <span class="k">else</span> <span class="n">val</span>
-            <span class="n">ds_updated</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="n">attributes</span>
-        <span class="c1"># Check if it's dive-based (1 value per 2 profiles)</span>
-        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">mapped_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds_updated</span><span class="o">.</span><span class="n">N_MEASUREMENTS</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-
-            <span class="c1"># Iterate through dives (each dive = 2 profiles)</span>
-            <span class="k">for</span> <span class="n">dive</span><span class="p">,</span> <span class="n">dive_val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dive_numbers</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-                <span class="c1"># Find all measurement indices belonging to these two profiles</span>
-                <span class="k">if</span> <span class="s2">"DIVE_NUMBER"</span> <span class="ow">in</span> <span class="n">ds_updated</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
-                    <span class="n">mask</span> <span class="o">=</span> <span class="n">ds_updated</span><span class="o">.</span><span class="n">DIVE_NUMBER</span> <span class="o">==</span> <span class="n">dive</span>
-                <span class="k">elif</span> <span class="s2">"PROFILE_NUMBER"</span> <span class="ow">in</span> <span class="n">ds_updated</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
-                    <span class="c1"># Logic: Dive 1 = Profiles 1 &amp; 2</span>
-                    <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">ds_updated</span><span class="o">.</span><span class="n">PROFILE_NUMBER</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dive</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span>
-                        <span class="n">ds_updated</span><span class="o">.</span><span class="n">PROFILE_NUMBER</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dive</span>
-                    <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"Error: No reference dimension for </span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">. Skipping dive mapping."</span>
-                    <span class="p">)</span>
-                    <span class="k">break</span>
-
-                <span class="c1"># Fill the array for those specific measurements</span>
-                <span class="n">mapped_array</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">dive_val</span>
-
-            <span class="c1"># Add to dataset with the N_MEASUREMENTS dimension</span>
-            <span class="n">ds_updated</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">,),</span> <span class="n">mapped_array</span><span class="p">)</span>
-            <span class="n">ds_updated</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="n">attributes</span>
-
-    <span class="k">return</span> <span class="n">ds_updated</span></div>
+    <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="n">mapping</span></div>
 
 
 

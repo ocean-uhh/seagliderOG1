@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1 API &mdash; seagliderOG1 0.0.2.post1.dev63 documentation</title>
+  <title>seagliderOG1 API &mdash; seagliderOG1 0.0.2.post1.dev64 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=32a15fef"></script>
+      <script src="_static/documentation_options.js?v=f928cf22"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -145,7 +145,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.tools">tools</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.OG1_name_mapping"><code class="docutils literal notranslate"><span class="pre">OG1_name_mapping()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_dive_number"><code class="docutils literal notranslate"><span class="pre">add_dive_number()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_hdm_parameters"><code class="docutils literal notranslate"><span class="pre">add_hdm_parameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_scalar_parameters"><code class="docutils literal notranslate"><span class="pre">add_scalar_parameters()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_sensor_to_dataset"><code class="docutils literal notranslate"><span class="pre">add_sensor_to_dataset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.assign_phase"><code class="docutils literal notranslate"><span class="pre">assign_phase()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.assign_profile_number"><code class="docutils literal notranslate"><span class="pre">assign_profile_number()</span></code></a></li>
@@ -155,8 +155,8 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.convert_units_var"><code class="docutils literal notranslate"><span class="pre">convert_units_var()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.encode_times"><code class="docutils literal notranslate"><span class="pre">encode_times()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.encode_times_og1"><code class="docutils literal notranslate"><span class="pre">encode_times_og1()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.extract_hdm_parameters"><code class="docutils literal notranslate"><span class="pre">extract_hdm_parameters()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.extract_instrument_info"><code class="docutils literal notranslate"><span class="pre">extract_instrument_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.extract_scalar_parameters"><code class="docutils literal notranslate"><span class="pre">extract_scalar_parameters()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.find_best_dtype"><code class="docutils literal notranslate"><span class="pre">find_best_dtype()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.gather_sensor_info"><code class="docutils literal notranslate"><span class="pre">gather_sensor_info()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.merge_datasets_along_time"><code class="docutils literal notranslate"><span class="pre">merge_datasets_along_time()</span></code></a></li>
@@ -464,13 +464,13 @@ will prompt the user to decide whether to overwrite it or not.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.process_dataset">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">process_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds1_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">OG1_mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims_to_merge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#process_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.process_dataset" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">process_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds1_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">OG1_mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#process_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.process_dataset" title="Link to this definition"></a></dt>
 <dd><p>Processes a dataset by performing a series of transformations and extractions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ds1_base</strong> (<em>xarray.Dataset</em>) – The input dataset from a basestation file, containing various attributes and variables.</p></li>
-<li><p><strong>dims_to_merge</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – List of dimensions to merge.</p></li>
+<li><p><strong>time_variables</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>list</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A dictionary mapping dimension names to lists of time variables.</p></li>
 <li><p><strong>firstrun</strong> (<em>bool</em><em>, </em><em>optional</em>) – Indicates whether this is the first run of the processing pipeline. Default is False.</p></li>
 </ul>
 </dd>
@@ -538,20 +538,27 @@ will prompt the user to decide whether to overwrite it or not.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convertOG1.standardise_OG10">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.convertOG1.</span></span><span class="sig-name descname"><span class="pre">standardise_OG10</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">og1_mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{'S/m':</span> <span class="pre">'S</span> <span class="pre">m-1',</span> <span class="pre">'cm/s':</span> <span class="pre">'cm</span> <span class="pre">s-1',</span> <span class="pre">'degreesCelsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'degrees_Celsius':</span> <span class="pre">'Celsius',</span> <span class="pre">'g/kg':</span> <span class="pre">'g</span> <span class="pre">kg-1',</span> <span class="pre">'g/m^3':</span> <span class="pre">'g</span> <span class="pre">m-3',</span> <span class="pre">'kg/m^3':</span> <span class="pre">'kg</span> <span class="pre">m-3',</span> <span class="pre">'m/s':</span> <span class="pre">'m</span> <span class="pre">s-1',</span> <span class="pre">'mS/cm':</span> <span class="pre">'mS</span> <span class="pre">cm-1',</span> <span class="pre">'meters':</span> <span class="pre">'m',</span> <span class="pre">'seconds':</span> <span class="pre">'s'}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/convertOG1.html#standardise_OG10"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convertOG1.standardise_OG10" title="Link to this definition"></a></dt>
-<dd><p>Standardize the dataset to OG1 format by renaming dimensions, variables, and assigning attributes.</p>
-<p>Applies OG1 vocabulary for variable names, units, and attributes.
-Performs unit conversions and QC flag standardization.</p>
+<dd><p>Standardize a dataset using OG1 names, attributes, and units.</p>
+<p>Retain all variables, including QC variables. Variables without an OG1
+name keep their original names. Preserve source attributes unless
+replaced by OG1 vocabulary attributes.</p>
+<p>Preserve variable dimensions, renaming <code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> to its OG1
+dimension name. Retain existing coordinates and mark available OG1
+longitude, latitude, depth, and time variables as coordinates.</p>
+<p>Convert units when source and target units are available, standardize
+renamed QC flags, and encode OG1 time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The input dataset to be standardized.</p></li>
-<li><p><strong>firstrun</strong> (<em>bool</em><em>, </em><em>optional</em>) – Indicates whether this is the first run of the standardization process. Default is False.</p></li>
-<li><p><strong>unit_format</strong> (<em>dict</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – A dictionary mapping unit strings to their standardized format.
-Default is vocabularies.unit_str_format.</p></li>
+<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – Input dataset.</p></li>
+<li><p><strong>og1_mapping</strong> (<em>pandas.DataFrame</em>) – Mapping containing <code class="docutils literal notranslate"><span class="pre">original_name</span></code> and <code class="docutils literal notranslate"><span class="pre">OG1_name</span></code>.</p></li>
+<li><p><strong>firstrun</strong> (<em>bool</em><em>, </em><em>default False</em>) – Enable logging of missing OG1 names and vocabulary attributes.</p></li>
+<li><p><strong>unit_format</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Unit spelling replacements. Defaults to
+<code class="docutils literal notranslate"><span class="pre">vocabularies.unit_str_format</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The standardized dataset in OG1 format.</p>
+<dd class="field-even"><p>Standardized dataset retaining variables without OG1 mappings.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>xarray.Dataset</p>
@@ -1297,7 +1304,7 @@ for large datasets and proper axis formatting.</p>
 <li><p>Automatically reduces the total number of points to less than 100,000 for performance.</p></li>
 <li><p>Inverts y-axis to show depth increasing downward.</p></li>
 <li><p>Formats x-axis with month-day labels and adds year information.</p></li>
-<li><p>Sets tight y-axis limits rounded to nearest 10 meters.</p></li>
+<li><p>Sets tight y-axis limits to the exact finite data minimum and maximum.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
@@ -1455,49 +1462,38 @@ If False, a FileExistsError is raised when the file exists.</p></li>
 <span id="tools"></span><h2>tools<a class="headerlink" href="#module-seagliderOG1.tools" title="Link to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.OG1_name_mapping">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">OG1_name_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_of_datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctd_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims_to_merge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#OG1_name_mapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.OG1_name_mapping" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">OG1_name_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_of_datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#OG1_name_mapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.OG1_name_mapping" title="Link to this definition"></a></dt>
 <dd><p>Create a mapping from original variable names to OG1 variable names.</p>
-<p>The function examines all datasets before OG1 standardization and creates
-one row per unique variable name using at least one dimension in
-<code class="docutils literal notranslate"><span class="pre">dims_to_merge</span></code> (with <code class="docutils literal notranslate"><span class="pre">ctd_dim</span></code> always included). Each row contains the original
-variable name, its OG1 name, associated instrument, instrument type, and
-original dimensions. Individual time variables are replaced by one
-<code class="docutils literal notranslate"><span class="pre">time</span></code> / <code class="docutils literal notranslate"><span class="pre">TIME</span></code> row, whose <code class="docutils literal notranslate"><span class="pre">original_dimension</span></code> contains a list of
-unique time variable names on the dimensions being merged.</p>
-<p>Variables ending in <code class="docutils literal notranslate"><span class="pre">_qc</span></code> inherit the instrument association of their
-corresponding measurement variable. For example,
-<code class="docutils literal notranslate"><span class="pre">ctd_temperature_qc</span></code> inherits the instrument assigned to
-<code class="docutils literal notranslate"><span class="pre">ctd_temperature</span></code>.</p>
+<p>Include every unique variable name from all input datasets, including
+scalars, coordinates, QC variables, and variables without an OG1 mapping.
+The first occurrence of each name supplies its dimensions and attributes.</p>
+<p>Each row contains the original variable name, its OG1 name (None when
+unavailable), associated instrument, instrument type, original dimensions,
+and whether OG1 attributes are available.</p>
+<p>Individual time variables are consolidated into one <code class="docutils literal notranslate"><span class="pre">time</span></code> / <code class="docutils literal notranslate"><span class="pre">TIME</span></code>
+row. Its <code class="docutils literal notranslate"><span class="pre">original_dimension</span></code> lists their dimensions and original names.</p>
+<p>QC variables inherit the instrument association of their corresponding
+measurement variable.</p>
 <p>Instrument assignment precedence:</p>
 <ol class="arabic simple">
-<li><p>QC variables inherit the instrument of their parent measurement.</p></li>
-<li><p>Variables beginning with <code class="docutils literal notranslate"><span class="pre">ctd_</span></code> or from the CTD variables defined above are
-assigned to the CTD.
-When the same OG1 variable is also present on the CTD instrument’s
-<code class="docutils literal notranslate"><span class="pre">&lt;instrument&gt;_data_point</span></code> dimension, the <code class="docutils literal notranslate"><span class="pre">ctd_data_point</span></code> copy is
-retained and the instrument-dimension copy is omitted.</p></li>
-<li><p>When <code class="docutils literal notranslate"><span class="pre">ctd_pressure</span></code> is available, calculated hydrographic variables
-are assigned to the CTD.</p></li>
+<li><p>QC variables inherit their parent measurement’s instrument.</p></li>
+<li><p>CTD measurement variables are assigned to the CTD.</p></li>
+<li><p>When <code class="docutils literal notranslate"><span class="pre">ctd_pressure</span></code> exists, calculated hydrographic variables are
+assigned to the CTD.</p></li>
 <li><p>The variable’s <code class="docutils literal notranslate"><span class="pre">instrument</span></code> attribute is checked.</p></li>
 <li><p>Dimensions named <code class="docutils literal notranslate"><span class="pre">&lt;instrument&gt;_data_point</span></code> are checked.</p></li>
 <li><p>The variable name is checked for an instrument name or alias.</p></li>
 </ol>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>list_of_datasets</strong> – List of datasets immediately before calling <code class="docutils literal notranslate"><span class="pre">standardise_OG10</span></code>.</p></li>
-<li><p><strong>ctd_dim</strong> – Dimension used by the CTD data, for example <code class="docutils literal notranslate"><span class="pre">ctd_data_point</span></code> or
-<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code>.</p></li>
-<li><p><strong>dims_to_merge</strong> – Dimensions whose variables should be included. A variable is included
-when any of its dimensions matches; scalars are excluded. If a name
-occurs more than once, the first eligible occurrence supplies its
-dimensions and attributes. Instruments are collected from every
-dataset’s global <code class="docutils literal notranslate"><span class="pre">instrument</span></code> attribute, preserving first-seen order.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>list_of_datasets</strong> – Datasets immediately before calling <code class="docutils literal notranslate"><span class="pre">standardise_OG10</span></code>.
+Instruments are collected from every dataset’s global <code class="docutils literal notranslate"><span class="pre">instrument</span></code>
+attribute, preserving first-seen order.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Mapping table containing <code class="docutils literal notranslate"><span class="pre">original_name</span></code>, <code class="docutils literal notranslate"><span class="pre">OG1_name</span></code>,
-<code class="docutils literal notranslate"><span class="pre">instrument</span></code>, <code class="docutils literal notranslate"><span class="pre">instrument_type</span></code>, and <code class="docutils literal notranslate"><span class="pre">original_dimension</span></code>.</p>
+<dd class="field-even"><p>Columns: <code class="docutils literal notranslate"><span class="pre">original_name</span></code>, <code class="docutils literal notranslate"><span class="pre">OG1_name</span></code>, <code class="docutils literal notranslate"><span class="pre">instrument</span></code>,
+<code class="docutils literal notranslate"><span class="pre">instrument_type</span></code>, <code class="docutils literal notranslate"><span class="pre">original_dimension</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">has_OG1_attributes</span></code>.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>pandas.DataFrame</p>
@@ -1527,23 +1523,18 @@ dataset’s global <code class="docutils literal notranslate"><span class="pre">
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.tools.add_hdm_parameters">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_hdm_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_OG1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdm_parameters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_hdm_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_hdm_parameters" title="Link to this definition"></a></dt>
-<dd><p>Add HDM parameters to the OG1 dataset as new variables with their attributes.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>(</strong><strong>xarray.Dataset</strong><strong>)</strong> (<em>ds_OG1</em>)</p></li>
-<li><p><strong>(</strong><strong>dict</strong><strong>)</strong> (<em>hdm_parameters</em>) – in the format {standard_name: {“value”: …, “attributes”: {…}}}.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>xarray.Dataset</strong></p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Updated OG1 dataset with HDM parameters added as variables.</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="seagliderOG1.tools.add_scalar_parameters">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_scalar_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_og1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extracted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">og1_mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_scalar_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_scalar_parameters" title="Link to this definition"></a></dt>
+<dd><p>Add extracted scalar parameters and update the OG1 mapping.</p>
+<p>Keep constant parameters as ordinary scalars. Store changing or partially
+missing parameters as scalar JSON strings with aligned “dives” and “values”
+lists. Missing values are represented by JSON null.</p>
+<p>No dimensions are added, and no parameters are expanded along
+N_MEASUREMENTS.</p>
+<p>Use existing OG1 mappings or vocabulary names where available; otherwise
+retain original names. Preserve source metadata except numeric storage and
+range attributes that do not apply to JSON strings. No unit conversions
+are performed.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -1770,30 +1761,31 @@ unavailable.</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.tools.extract_hdm_parameters">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">extract_hdm_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_datasets</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#extract_hdm_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.extract_hdm_parameters" title="Link to this definition"></a></dt>
-<dd><p>Extracts HDM parameters and their attributes from a list of datasets. If the parameter has the same value across all datasets,
-it keeps a single value; otherwise, it returns the full list.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>(</strong><strong>list</strong><strong>)</strong> (<em>list_datasets</em>)</p></li>
-<li><p><strong>(</strong><strong>dict</strong><strong>)</strong> (<em>standard_names</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>dict</strong> – the ‘data’ and ‘attributes’.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A nested dictionary where keys are standard names and values contain</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.extract_instrument_info">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">extract_instrument_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#extract_instrument_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.extract_instrument_info" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.tools.extract_scalar_parameters">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">extract_scalar_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#extract_scalar_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.extract_scalar_parameters" title="Link to this definition"></a></dt>
+<dd><p>Extract all scalar variables from a list of datasets.</p>
+<p>Collect each variable’s values across datasets and copy attributes from
+its first occurrence. Mark it constant only when it exists in every
+dataset and has the same value throughout. Record missing occurrences
+and extract dive identifiers for later assignment to measurements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>list_datasets</strong> (<em>list</em><em>[</em><em>xarray.Dataset</em><em>]</em>) – Input datasets containing scalar variables and dive identifiers.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Parameter values, source attributes, presence and constant flags,
+and dive identifiers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.find_best_dtype">
@@ -1855,20 +1847,35 @@ Calibration variables not belonging to any listed sensor are reported.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.merge_datasets_along_time">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">merge_datasets_along_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split_ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims_to_merge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seagliderOG1/tools.html#merge_datasets_along_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.merge_datasets_along_time" title="Link to this definition"></a></dt>
-<dd><p>Merge a list of xarray Datasets along their time dimension.</p>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">merge_datasets_along_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split_ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstrun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#merge_datasets_along_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.merge_datasets_along_time" title="Link to this definition"></a></dt>
+<dd><p>Merge split datasets onto a shared time axis.</p>
+<p>Merge dimensions listed in <code class="docutils literal notranslate"><span class="pre">time_variables</span></code>, retaining original
+variable names. Replace individual time variables with <code class="docutils literal notranslate"><span class="pre">time</span></code>.
+OG1 conversion is handled separately by <code class="docutils literal notranslate"><span class="pre">standardise_OG10</span></code>.</p>
+<p>Always use <code class="docutils literal notranslate"><span class="pre">time</span></code> for <code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code>. Other dimensions use their
+listed candidates. Time variables must contain datetime64 values and
+match the dimension’s length. Shared time sources are attached by
+position and must have matching sample order.</p>
+<p>Keep the first duplicate timestamp unchanged and shift subsequent
+occurrences by 0.5 seconds each. Print adjustments and record their
+source dimension, time variable, and timestamps in <code class="docutils literal notranslate"><span class="pre">time</span></code> attributes.
+Retained variables receive original name and dimension attributes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>split_ds</strong> (<em>dict</em><em>[</em><em>(</em><em>str</em><em>,</em><em>)</em><em>, </em><em>xr.Dataset</em><em>]</em>) – Mapping from (dimension,) to Dataset.</p></li>
-<li><p><strong>dims_to_merge</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – Dimension names to extract and merge.</p></li>
+<li><p><strong>split_ds</strong> (<em>dict</em><em>[</em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em><em>, </em><em>xr.Dataset</em><em>]</em>) – Split datasets keyed by dimension, e.g. <code class="docutils literal notranslate"><span class="pre">(&quot;sg_data_point&quot;,)</span></code>.</p></li>
+<li><p><strong>time_variables</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>list</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Dimensions mapped to candidate time variable names.</p></li>
+<li><p><strong>firstrun</strong> (<em>bool</em><em>, </em><em>default False</em>) – Print progress and skipped dimensions. Duplicate timestamp
+adjustments are always printed.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A time-aligned merged dataset, or None if no datasets were eligible.</p>
+<dd class="field-even"><p>Chronologically sorted dataset with coordinate
+<code class="docutils literal notranslate"><span class="pre">time(N_MEASUREMENTS)</span></code> and no <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> coordinate.
+Return None if no dataset has a usable time source.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>xr.Dataset or None</p>
+<dd class="field-odd"><p>xarray.Dataset or None</p>
 </dd>
 </dl>
 </dd></dl>
