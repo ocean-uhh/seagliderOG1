@@ -36,6 +36,47 @@ def test_add_sensor_skips_unmapped_variables():
     assert "SENSOR_CTD_245201" in result.variables
 
 
+def test_add_sensor_skips_instrument_absent_from_sensor_dict():
+    """A mapping row naming an instrument not in sensor_dict is skipped, not looked up."""
+    ds = xr.Dataset(
+        {
+            "TEMP": ("N_MEASUREMENTS", [1.0, 2.0]),
+            "PRES2": ("N_MEASUREMENTS", [3.0, 4.0]),
+        }
+    )
+    sensor_dict = {
+        "sbe41": {
+            "sensor_type": "CTD",
+            "sensor_serial_number": "245201",
+            "sensor_model": "Sea-Bird SBE 41 CTD",
+        }
+    }
+    # gather_sensor_info omits 'magnetometer', but the mapping still names it.
+    og1_mapping = pd.DataFrame(
+        [
+            {"OG1_name": "TEMP", "instrument": "sbe41"},
+            {"OG1_name": "PRES2", "instrument": "magnetometer"},
+        ]
+    )
+
+    result = tools.add_sensor_to_dataset(ds, sensor_dict, og1_mapping)
+
+    assert result["TEMP"].attrs["sensor"] == "SENSOR_CTD_245201"
+    assert "sensor" not in result["PRES2"].attrs
+
+
+def test_convert_qc_flags_orphan_parent():
+    """A QC variable whose parent is absent gets a generic long_name, no KeyError."""
+    # 'TEMP_QC2' has no 'TEMP_' parent (qc_name[:-3] strips only the '_QC' suffix).
+    dsa = xr.Dataset({"TEMP_QC2": ("N_MEASUREMENTS", ["1", "1", "2"])})
+
+    result = tools.convert_qc_flags(dsa, "TEMP_QC2")
+
+    assert result["TEMP_QC2"].attrs["long_name"] == "quality flag"
+    assert result["TEMP_QC2"].attrs["standard_name"] == "status_flag"
+    assert result["TEMP_QC2"].dtype == np.int8
+
+
 def test_convert_units_var():
 
     test_pairs = {

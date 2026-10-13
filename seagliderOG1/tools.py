@@ -654,6 +654,12 @@ def add_sensor_to_dataset(
         if pd.isna(og1_name) or pd.isna(instrument):
             continue
 
+        # Some instruments are deliberately absent from sensor_dict (gather_sensor_info
+        # skips e.g. 'magnetometer'), yet a mapping row can still name them. Skip rather
+        # than raise KeyError on sensor_dict[instrument].
+        if instrument not in sensor_dict:
+            continue
+
         og1_name = str(og1_name)
         sensor_type = sensor_dict[instrument]["sensor_type"].upper().replace(" ", "_")
         serial = sensor_dict[instrument]["sensor_serial_number"]
@@ -1197,13 +1203,20 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
         if "flag_meaning" in dsa[qc_name].attrs:
             flag_meaning = dsa[qc_name].attrs["flag_meaning"]
             dsa[qc_name].attrs["flag_meaning"] = flag_meaning.replace("QC_", "")
+        # The parent variable may be absent: an orphan QC, or a numbered name like
+        # 'TEMP_QC2' whose 'TEMP_' parent does not exist (qc_name[:-3] strips only the
+        # '_QC' suffix). Guard before dereferencing dsa[var_name].
+        parent_present = var_name in dsa.variables
         # Add a long_name attribute to the QC variable
         dsa[qc_name].attrs["long_name"] = (
-            dsa[var_name].attrs.get("long_name", "") + " quality flag"
+            (dsa[var_name].attrs.get("long_name", "") + " quality flag")
+            if parent_present
+            else "quality flag"
         )
         dsa[qc_name].attrs["standard_name"] = "status_flag"
-        # Mention the QC variable in the variable attributes
-        dsa[var_name].attrs["ancillary_variables"] = qc_name
+        # Mention the QC variable in the parent's attributes, when the parent exists.
+        if parent_present:
+            dsa[var_name].attrs["ancillary_variables"] = qc_name
     return dsa
 
 
