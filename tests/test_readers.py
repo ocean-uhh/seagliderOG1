@@ -5,7 +5,7 @@ script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
-from seagliderOG1 import readers
+from seagliderOG1 import readers  # noqa: E402  # import after sys.path bootstrap
 
 
 def test_validate_filename():
@@ -43,14 +43,14 @@ def test_validate_filename():
     ]
 
     for filename in valid_filenames:
-        assert (
-            readers.validate_filename(filename) is True
-        ), f"Expected True for {filename}"
+        assert readers.validate_filename(filename) is True, (
+            f"Expected True for {filename}"
+        )
 
     for filename in invalid_filenames:
-        assert (
-            readers.validate_filename(filename) is False
-        ), f"Expected False for {filename}"
+        assert readers.validate_filename(filename) is False, (
+            f"Expected False for {filename}"
+        )
 
 
 def test_filter_filelist_by_profile():
@@ -197,6 +197,6 @@ def test_load_first_basestation_file():
     assert (
         dataset.latitude.values.mean() > 61 and dataset.latitude.values.mean() < 62
     ), "Unexpected latitude range for first dataset"
-    assert (
-        len(dataset.longitude) == 53
-    ), "Unexpected number of longitude values for first dataset"
+    assert len(dataset.longitude) == 53, (
+        "Unexpected number of longitude values for first dataset"
+    )

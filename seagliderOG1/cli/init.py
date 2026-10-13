@@ -67,8 +67,6 @@ def _platform_from_file(source: str) -> dict[str, object]:
         If no basestation file is found in ``source``.
 
     """
-    import os
-
     import xarray as xr
 
     from seagliderOG1 import readers, vocabularies
@@ -78,7 +76,7 @@ def _platform_from_file(source: str) -> dict[str, object]:
         msg = f"no basestation files (pSSSDDDD*.nc) in {source}"
         raise ValueError(msg)
     ds = xr.open_dataset(
-        os.path.join(source, names[0]), engine="netcdf4", decode_timedelta=False
+        pathlib.Path(source) / names[0], engine="netcdf4", decode_timedelta=False
     )
     try:
         # The one file->field mapping lives in vocabularies, shared with the converter.

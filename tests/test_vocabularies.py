@@ -5,7 +5,7 @@ script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
-from seagliderOG1 import vocabularies
+from seagliderOG1 import vocabularies  # noqa: E402  # import after sys.path bootstrap
 
 
 def test_dims_rename_dict():

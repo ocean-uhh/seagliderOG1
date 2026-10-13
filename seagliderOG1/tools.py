@@ -1,12 +1,18 @@
+"""User-facing utilities for Seaglider-to-OG1 conversion.
+
+Sensor metadata extraction, variable-name mapping, QC-flag conversion, dtype
+coercion, profile and phase numbering, time encoding, and dataset merging.
+"""
+
 import logging
 import re
-from dateutil import parser
 from datetime import date
 
 import gsw
 import numpy as np
 import pandas as pd
 import xarray as xr
+from dateutil import parser
 
 from seagliderOG1 import vocabularies
 
@@ -396,7 +402,7 @@ def OG1_name_mapping(
     return result, time_variables
 
 
-def gather_sensor_info(list_of_datasets) -> dict:
+def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
     """Gathers sensor information from a list of OG1 base datasets.
 
     Extracts:
@@ -449,7 +455,7 @@ def gather_sensor_info(list_of_datasets) -> dict:
     standard_names = vocabularies.standard_names
     sensor_vocabs = vocabularies.sensor_vocabs
 
-    for sensor in sensor_dict.keys():
+    for sensor in sensor_dict:
         if sensor in standard_names:
             new_name = standard_names[sensor]
             # Copy so calibration metadata does not modify shared vocabularies.
@@ -488,7 +494,8 @@ def gather_sensor_info(list_of_datasets) -> dict:
             f"Sensors: {list(sensor_dict)}"
         )
 
-    def is_missing(value):
+    def is_missing(value: object) -> bool:
+        """Check whether a value counts as a missing calibration entry."""
         return value is None or str(value).strip().lower() in {
             "",
             "none",
@@ -592,9 +599,12 @@ def gather_sensor_info(list_of_datasets) -> dict:
 
 
 def add_sensor_to_dataset(
-    ds_og1, sensor_dict, OG1_mapping, firstrun=False
+    ds_og1: xr.Dataset,
+    sensor_dict: dict,
+    OG1_mapping: pd.DataFrame,
+    firstrun: bool = False,
 ) -> xr.Dataset:
-    """Adds sensor information from the provided sensor dictionary to the OG1 dataset.
+    """Add sensor information from the provided sensor dictionary to the OG1 dataset.
 
     Parameters
     ----------
@@ -602,6 +612,10 @@ def add_sensor_to_dataset(
         The OG1 dataset to which sensor information will be added.
     sensor_dict : dict
         A dictionary containing sensor metadata and associated variables.
+    OG1_mapping : pandas.DataFrame
+        Mapping of original to OG1 variable names with associated instruments.
+    firstrun : bool, default False
+        If ``True``, print each sensor as it is added.
 
     Returns
     -------
@@ -670,8 +684,8 @@ def add_sensor_to_dataset(
 
 def _get_merge_dimensions(
     list_of_datasets: list[xr.Dataset],
-) -> tuple[str, list[str]]:
-    """Return the CTD dimension and dimensions to merge across all datasets as well as all dimensions present in the datasets"""
+) -> tuple[str, list[str], list[str]]:
+    """Return the CTD dimension, the dimensions to merge, and all dimensions present."""
     list_of_datasets = list(list_of_datasets)
     dimensions = {
         dimension for dataset in list_of_datasets for dimension in dataset.sizes
@@ -744,7 +758,7 @@ def print_OG1_mapping_summary(
 
         variable_count = (
             variables["original_dimension"]
-            .apply(lambda dims: dimension in dims.split(", "))
+            .apply(lambda dims, dimension=dimension: dimension in dims.split(", "))
             .sum()
         )
 
@@ -836,7 +850,6 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     -----
     - Requires pressure variable (PRES)
     """
-
     dive_number = ds1.attrs["dive_number"]
     ds = add_dive_number(ds, dive_number)
 
@@ -861,26 +874,32 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
 
 
 def assign_phase(ds: xr.Dataset) -> xr.Dataset:
-    """This function adds new variables 'PHASE' and 'PHASE_QC' to the dataset `ds`, which indicate the phase of each measurement. The phase is determined based on the pressure readings ('PRES') for each unique dive number ('dive_num').
+    """Add 'PHASE' and 'PHASE_QC' variables indicating the phase of each measurement.
 
-    Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth. Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC.
-    Assigns phase values to the dataset based on pressure readings.
+    The phase is determined from the pressure readings ('PRES') for each unique
+    dive number ('dive_num').
 
     Parameters
     ----------
-    ds (xarray.Dataset): The input dataset containing 'dive_num' and 'PRES' variables.
+    ds : xarray.Dataset
+        The input dataset containing 'dive_num' and 'PRES' variables.
 
     Returns
     -------
-    xarray.Dataset: The dataset with an additional 'PHASE' variable, where:
-    xarray.Dataset: The dataset with additional 'PHASE' and 'PHASE_QC' variables, where:
+    xarray.Dataset
+        The dataset with additional 'PHASE' and 'PHASE_QC' variables, where:
+
         - 'PHASE' indicates the phase of each measurement:
-            - Phase 2 is assigned to measurements up to and including the maximum pressure point.
-            - Phase 1 is assigned to measurements after the maximum pressure point.
+            - Phase 2 up to and including the maximum pressure point.
+            - Phase 1 after the maximum pressure point.
         - 'PHASE_QC' is an additional variable with no QC applied.
 
-    Note: In this formulation, we are only separating into dives and climbs based on when the glider is at the maximum depth.  Future work needs to separate out the other phases: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md and generate a PHASE_QC
-
+    Notes
+    -----
+    In this formulation, we are only separating into dives and climbs based on
+    when the glider is at the maximum depth. Future work needs to separate out
+    the other phases and generate a PHASE_QC:
+    https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md
     """
     # Determine the correct keystring for divenum
     if "dive_number" in ds.variables:
@@ -935,7 +954,8 @@ def assign_phase(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def _del_capital_letters(string):
+def _del_capital_letters(string: str) -> str:
+    """Return the input string with all uppercase characters removed."""
     return "".join([char for char in string if not char.isupper()])
 
 
@@ -980,7 +1000,7 @@ def calc_Z(ds: xr.Dataset) -> xr.Dataset:
 
 
 def split_by_unique_dims(ds: xr.Dataset) -> dict:
-    """Splits an xarray dataset into multiple datasets based on the unique set of dimensions of the variables.
+    """Split an xarray dataset into datasets grouped by each variable's dimension set.
 
     Parameters
     ----------
@@ -1008,7 +1028,7 @@ def split_by_unique_dims(ds: xr.Dataset) -> dict:
         unique_dims_datasets[dims][var_name] = var_data
 
     # Convert the dictionary values to a dictionary of datasets
-    return {dims: dataset for dims, dataset in unique_dims_datasets.items()}
+    return dict(unique_dims_datasets)
 
 
 def reformat_units_var(
@@ -1044,11 +1064,7 @@ def reformat_units_var(
     xarray.Dataset: The dataset with renamed units.
     """
     old_unit = ds[var_name].attrs["units"]
-    if old_unit in unit_format:
-        new_unit = unit_format[old_unit]
-    else:
-        new_unit = old_unit
-    return new_unit
+    return unit_format.get(old_unit, old_unit)
 
 
 def reformat_units_str(
@@ -1069,10 +1085,7 @@ def reformat_units_str(
         The reformatted unit string, or the original if no mapping exists.
 
     """
-    if old_unit in unit_format:
-        new_unit = unit_format[old_unit]
-    else:
-        new_unit = old_unit
+    new_unit = unit_format.get(old_unit, old_unit)
     return new_unit.strip()  # .casefold()
 
 
@@ -1184,9 +1197,7 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
         values = pd.to_numeric(
             np.asarray(values).reshape(-1),
             errors="coerce",
-        ).reshape(
-            original_shape
-        )  # Convert strings to numbers, NaNs stay NaNs
+        ).reshape(original_shape)  # Convert strings to numbers, NaNs stay NaNs
         # Assign back to dataset
         dsa[qc_name].values = values
         ### Set the nan values to 6 (unsampled flag) and convert to int8
@@ -1290,8 +1301,7 @@ def set_fill_value(new_dtype: type) -> int:
         The fill value calculated as 2^(bits-1) - 1.
 
     """
-    fill_val = 2 ** (int(re.findall(r"\d+", str(new_dtype))[0]) - 1) - 1
-    return fill_val
+    return 2 ** (int(re.findall(r"\d+", str(new_dtype))[0]) - 1) - 1
 
 
 def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
@@ -1326,7 +1336,7 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
         input_dtype = da.dtype.type
         new_dtype = find_best_dtype(var_name, da)
         for att in ["valid_min", "valid_max"]:
-            if att in da.attrs.keys():
+            if att in da.attrs:
                 da.attrs[att] = np.array(da.attrs[att]).astype(new_dtype)
         if new_dtype == input_dtype:
             continue
@@ -1360,13 +1370,15 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def set_best_dtype_value(value, var_name: str):
+def set_best_dtype_value(value: object, var_name: str) -> object:
     """Determine the best data type for a single value based on its variable name and convert it.
 
     Parameters
     ----------
     value : any
         The input value to convert.
+    var_name : str
+        The name of the variable the value belongs to.
 
     Returns
     -------
@@ -1410,15 +1422,15 @@ def encode_times(ds: xr.Dataset) -> xr.Dataset:
         Dataset with properly encoded time variables.
 
     """
-    if "units" in ds.time.attrs.keys():
+    if "units" in ds.time.attrs:
         ds.time.attrs.pop("units")
-    if "calendar" in ds.time.attrs.keys():
+    if "calendar" in ds.time.attrs:
         ds.time.attrs.pop("calendar")
     ds["time"].encoding["units"] = OG1_TIME_UNITS
     for var_name in list(ds):
-        if "time" in var_name.lower() and not var_name == "time":
+        if "time" in var_name.lower() and var_name != "time":
             for drop_attr in ["units", "calendar", "dtype"]:
-                if drop_attr in ds[var_name].attrs.keys():
+                if drop_attr in ds[var_name].attrs:
                     ds[var_name].attrs.pop(drop_attr)
             ds[var_name].encoding["units"] = OG1_TIME_UNITS
     return ds
@@ -1439,13 +1451,13 @@ def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
 
     """
     for var_name in ds.variables:
-        if "axis" in ds[var_name].attrs.keys():
+        if "axis" in ds[var_name].attrs:
             ds[var_name].attrs.pop("axis")
         if "time" in var_name.lower():
             for drop_attr in ["units", "calendar", "dtype"]:
-                if drop_attr in ds[var_name].attrs.keys():
+                if drop_attr in ds[var_name].attrs:
                     ds[var_name].attrs.pop(drop_attr)
-                if drop_attr in ds[var_name].encoding.keys():
+                if drop_attr in ds[var_name].encoding:
                     ds[var_name].encoding.pop(drop_attr)
             if var_name.lower() == "time":
                 ds[var_name].attrs["units"] = OG1_TIME_UNITS
@@ -1456,7 +1468,8 @@ def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
 def merge_parts_of_dataset(
     ds: xr.Dataset, dim1: str = "sg_data_point", dim2: str = "ctd_data_point"
 ) -> xr.Dataset:
-    """Merges variables from a dataset along two dimensions, ensuring consistency in coordinates.
+    """Merge variables from a dataset along two dimensions, ensuring coordinate consistency.
+
     The function first separates the dataset into two datasets based on the specified dimensions,
     renames the second dimension to match the first, and then concatenates them along the first dimension.
 
@@ -1483,8 +1496,8 @@ def merge_parts_of_dataset(
 
     """
 
-    def get_time_var(ds, dim):
-        """Finds the appropriate time variable based on dimension naming conventions."""
+    def get_time_var(ds: xr.Dataset, dim: str) -> str | None:
+        """Find the appropriate time variable based on dimension naming conventions."""
         prefix = dim.split("_data_point")[0]  # Extract prefix
         time_var = "time" if dim == "sg_data_point" else f"{prefix}_time"
         return time_var if time_var in ds.variables else None
@@ -1518,7 +1531,8 @@ def merge_parts_of_dataset(
     max_size = max(new_ds1.sizes.get(dim1, 0), new_ds2.sizes.get(dim1, 0))
 
     # Pad function to match sizes along dim1
-    def pad_ds(ds, max_size):
+    def pad_ds(ds: xr.Dataset, max_size: int) -> xr.Dataset:
+        """Pad a dataset along the primary dimension to the given size with NaN."""
         ### the dataset makes problems if variables are integers,
         ### so we convert to float before padding and back to int after padding
         for var in ds.variables:
@@ -1560,8 +1574,7 @@ def merge_parts_of_dataset(
     )
 
     # Sort by time and drop NaT values
-    merged_ds = merged_ds.sortby("time").dropna(dim=dim1, subset=["time"])
-    return merged_ds
+    return merged_ds.sortby("time").dropna(dim=dim1, subset=["time"])
 
 
 def merge_datasets_along_time(
@@ -1789,7 +1802,7 @@ def merge_datasets_along_time(
     )
 
     if firstrun:
-        print("Dimensions not merged: " f"{sorted(all_dims - actually_merged_dims)}")
+        print(f"Dimensions not merged: {sorted(all_dims - actually_merged_dims)}")
 
     return merged_ds
 
@@ -1797,8 +1810,9 @@ def merge_datasets_along_time(
 def combine_two_dim_of_dataset(
     ds: xr.Dataset, dim1: str = "sg_data_point", dim2: str = "ctd_data_point"
 ) -> xr.Dataset:
-    """Updates the original dataset by removing variables with dim1 and dim2
-    and adding the merged dataset.
+    """Replace the dim1 and dim2 variables in the dataset with their merged form.
+
+    Remove variables along dim1 and dim2 and add the merged dataset.
 
     Parameters
     ----------
@@ -1822,9 +1836,7 @@ def combine_two_dim_of_dataset(
     cleaned_ds = ds.drop_vars(vars_to_drop, errors="ignore")
     merged_ds = merge_parts_of_dataset(ds, dim1=dim1, dim2=dim2)
     # Merge the cleaned dataset with the merged dataset
-    updated_ds = xr.merge([cleaned_ds, merged_ds], combine_attrs="drop_conflicts")
-
-    return updated_ds
+    return xr.merge([cleaned_ds, merged_ds], combine_attrs="drop_conflicts")
 
 
 standard_names = vocabularies.standard_names
@@ -1878,8 +1890,7 @@ def extract_scalar_parameters(
 
             if variable.ndim != 0:
                 raise ValueError(
-                    f"'{name}' is scalar in one dataset but has dimensions "
-                    "in another."
+                    f"'{name}' is scalar in one dataset but has dimensions in another."
                 )
 
             parameter = parameters[name]
@@ -1940,7 +1951,7 @@ def add_scalar_parameters(
     if mapping["original_name"].duplicated().any():
         raise ValueError("The mapping must have unique original names.")
 
-    def json_scalar(value):
+    def json_scalar(value: object) -> object:
         """Convert a scalar to a JSON-compatible value."""
         if np.ndim(value) != 0:
             raise ValueError("Expected a scalar parameter value.")
@@ -1963,10 +1974,7 @@ def add_scalar_parameters(
         row_mask = mapping["original_name"].eq(original_name)
 
         # Prefer the existing mapping, including any numbered OG1 names.
-        if row_mask.any():
-            og1_name = mapping.loc[row_mask, "OG1_name"].iloc[0]
-        else:
-            og1_name = None
+        og1_name = mapping.loc[row_mask, "OG1_name"].iloc[0] if row_mask.any() else None
 
         if og1_name is None or pd.isna(og1_name):
             og1_name = vocabularies.standard_names.get(original_name)
@@ -2120,9 +2128,21 @@ def add_scalar_parameters(
     return result, mapping
 
 
-def parse_8_digit_date(date_str):
-    """Validates and formats 8-digit strings.
-    Prioritizes YYYY-MM-DD, then DD-MM-YYYY based on realistic ranges.
+def parse_8_digit_date(date_str: str) -> str | None:
+    """Validate and format 8-digit date strings.
+
+    Prioritize YYYY-MM-DD, then DD-MM-YYYY based on realistic ranges.
+
+    Parameters
+    ----------
+    date_str : str
+        The string from which to extract eight digits forming a date.
+
+    Returns
+    -------
+    str or None
+        The formatted ``YYYY-MM-DD`` date, ``"Format Error"`` when no valid
+        date is found, or ``None`` when the string lacks eight digits.
     """
     # Extract only the digits
     d = "".join(re.findall(r"\d", date_str))
@@ -2149,7 +2169,23 @@ def parse_8_digit_date(date_str):
     return "Format Error"
 
 
-def extract_instrument_info(input_string):
+def extract_instrument_info(input_string: str | None) -> tuple[str, str]:
+    """Extract a serial number and calibration date from a calibration string.
+
+    Parameters
+    ----------
+    input_string : str or None
+        The raw ``calibcomm`` text. ``None`` or empty input yields the
+        missing-value defaults.
+
+    Returns
+    -------
+    serial_number : str
+        Digits-only serial number, or ``"0000"`` when none is found.
+    cal_info : str
+        Formatted calibration date, or a status string such as ``"None Found"``
+        or ``"Format Error"`` when no valid date is parsed.
+    """
     if (
         input_string is None
         or not isinstance(input_string, str)
@@ -2174,10 +2210,7 @@ def extract_instrument_info(input_string):
             break
 
     # Strip letters and dashes, keeping only the numbers
-    if raw_sn:
-        serial_number = "".join(re.findall(r"\d+", raw_sn))
-    else:
-        serial_number = "0000"
+    serial_number = "".join(re.findall(r"\d+", raw_sn)) if raw_sn else "0000"
 
     # 2. EXTRACT CALIBRATION DATES
     multi_match = re.findall(r"(\w+):(\d{4}-\d{2}-\d{2}T[\d:]+Z)", s)
@@ -2201,7 +2234,7 @@ def extract_instrument_info(input_string):
                 try:
                     dt = parser.parse(date_candidate, fuzzy=True, dayfirst=True)
                     cal_info = dt.strftime("%Y-%m-%d")
-                except:
+                except (ValueError, OverflowError):  # dateutil parse failure
                     cal_info = "Format Error"
         else:
             cal_info = "None Found"
@@ -2219,7 +2252,7 @@ def extract_instrument_info(input_string):
                 # Try parsing with year first
                 dt = parser.parse(cal_info, fuzzy=True, yearfirst=True)
                 cal_info = dt.strftime("%Y-%m-%d")
-        except:
+        except (ValueError, OverflowError):  # dateutil parse failure
             pass
 
     return serial_number, cal_info

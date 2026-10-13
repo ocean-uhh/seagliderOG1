@@ -1,16 +1,22 @@
+import json
 import pathlib
 import sys
-import pandas as pd
 
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
-import numpy as np
-import pandas as pd
-import xarray as xr
-import gsw
-from seagliderOG1 import tools, readers, convertOG1, vocabularies
+import gsw  # noqa: E402  # import after sys.path bootstrap
+import numpy as np  # noqa: E402  # import after sys.path bootstrap
+import pandas as pd  # noqa: E402  # import after sys.path bootstrap
+import xarray as xr  # noqa: E402  # import after sys.path bootstrap
+
+from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
+    convertOG1,
+    readers,
+    tools,
+    vocabularies,
+)
 
 
 def test_add_sensor_skips_unmapped_variables():
@@ -119,9 +125,6 @@ def test_calc_z():
     depth_z = tools.calc_Z(dataset)["DEPTH_Z"].values
 
     assert np.array_equal(depth, depth_z)
-
-
-import json
 
 
 def test_add_scalar_parameters():
