@@ -81,7 +81,7 @@ def save_dataset(
     output_path = Path(output_file)
     if output_path.exists():
         if overwrite:
-            print(f"Removing existing file: {output_file}")
+            _log.info("Removing existing file: %s", output_file)
             output_path.unlink()
         else:
             raise FileExistsError(
@@ -102,7 +102,7 @@ def save_dataset(
 
     def _write() -> None:
         ds.to_netcdf(output_file, encoding=encoding, format="NETCDF4", engine="netcdf4")
-        print(f"Dataset successfully saved to {output_file}")
+        _log.info("Dataset successfully saved to %s", output_file)
 
     try:
         _write()

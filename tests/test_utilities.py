@@ -160,7 +160,7 @@ def test_parse_calibcomm():
         "SBE 43F s/n 029 calibration 07May07": ("20070507", "029"),
     }
     for calstring, (caldate1, serialnum1) in test_strings.items():
-        caldate, serialnum = _pipeline._parse_calibcomm(calstring, firstrun=False)
+        caldate, serialnum = _pipeline._parse_calibcomm(calstring)
 
         assert caldate == caldate1
         assert serialnum == serialnum1

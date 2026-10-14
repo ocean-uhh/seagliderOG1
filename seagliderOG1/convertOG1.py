@@ -262,10 +262,11 @@ def convert_to_OG1(
         msg = f"mode must be one of {sorted(vocabularies.MODE_SUFFIX)}, not {mode!r}."
         raise ValueError(msg)
 
-    print(f"Start converting {len(list_of_datasets)} raw datasets to OG1 format ...")
+    _log.info(
+        "Start converting %d raw datasets to OG1 format ...", len(list_of_datasets)
+    )
 
     processed_datasets = []
-    firstrun = False
 
     # This would be faster if we concatenated the basestation files first, and then processed them.
     # But we need to process them first to get the dive number, assign GPS (could be after), ?
@@ -280,12 +281,9 @@ def convert_to_OG1(
     # _pipeline.print_og1_mapping_summary(og1_mapping, ctd_dim, dims_to_merge, all_dims)
 
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
-        ds_new, attr_warnings = process_dataset(
-            ds1_base, og1_mapping, time_variables, firstrun=firstrun
-        )
+        ds_new, attr_warnings = process_dataset(ds1_base, og1_mapping, time_variables)
         if ds_new:
             processed_datasets.append(ds_new)
-            firstrun = False
         else:
             _log.warning(
                 f"Dataset for dive number {ds1_base.attrs['dive_number']} is empty or invalid."
@@ -324,9 +322,9 @@ def convert_to_OG1(
         ds_og1.attrs[key] = value
 
     ### Add information needed/used for hydrodynamic (flight) model (hdm)
-    print("Collecting scalar parameters to the dataset ...")
+    _log.info("Collecting scalar parameters to the dataset ...")
     extracted = _pipeline.extract_scalar_parameters(list_of_datasets)
-    print("Adding scalar parameters to the dataset ...")
+    _log.info("Adding scalar parameters to the dataset ...")
     ds_og1, og1_mapping = _pipeline.add_scalar_parameters(
         ds_og1, extracted, og1_mapping
     )
@@ -452,7 +450,6 @@ def process_dataset(
     ds1_base: xr.Dataset,
     og1_mapping: pd.DataFrame,
     time_variables: dict[str, list[str]],
-    firstrun: bool = False,
 ) -> tuple[
     xr.Dataset,  # Processed dataset with renamed variables, assigned attributes, and additional information
     list[str],  # List of warnings related to attribute assignments
@@ -468,8 +465,6 @@ def process_dataset(
         Mapping of original basestation variable names to OG1 variable names.
     time_variables : dict[str, list[str]]
         A dictionary mapping dimension names to lists of time variables.
-    firstrun : bool, optional
-        Indicates whether this is the first run of the processing pipeline. Default is False.
 
     Returns
     -------
@@ -516,16 +511,14 @@ def process_dataset(
     split_ds = tools.split_by_unique_dims(ds1_base)
 
     # merge the split datasets along the time dimension using the OG1 mapping and specified dimensions to merge
-    merged_ds = _pipeline.merge_datasets_along_time(
-        split_ds, time_variables, firstrun=firstrun
-    )
+    merged_ds = _pipeline.merge_datasets_along_time(split_ds, time_variables)
     # Rename variables and attributes to OG1 vocabulary
     # -------------------------------------------------------------------
     # Use variables with dimension 'sg_data_point'
     # Must be after split_ds
     # map the original variable names to the OG1 variable names, and get the instrument type for each variable
 
-    ds_new = standardise_og1(merged_ds, og1_mapping, firstrun)
+    ds_new = standardise_og1(merged_ds, og1_mapping)
 
     # Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)
     # -----------------------------------------------------------------------
@@ -545,9 +538,9 @@ def process_dataset(
 
     # Drop them
     ds_new = ds_new.drop_vars(vars_present_to_remove)
-    if firstrun and vars_present_to_remove:
+    if vars_present_to_remove:
         _log.warning(f"Variables removed from dataset: {vars_present_to_remove}")
-    elif firstrun:
+    else:
         _log.info("No variables needed to be removed from the dataset.")
 
     attr_warnings: list[str] = []
@@ -557,7 +550,6 @@ def process_dataset(
 def standardise_og1(
     ds: xr.Dataset,
     og1_mapping: pd.DataFrame,
-    firstrun: bool = False,
     unit_format: dict[str, str] = vocabularies.unit_str_format,
 ) -> xr.Dataset:
     """Standardize a dataset using OG1 names, attributes, and units.
@@ -579,8 +571,6 @@ def standardise_og1(
         Input dataset.
     og1_mapping : pandas.DataFrame
         Mapping containing ``original_name`` and ``OG1_name``.
-    firstrun : bool, default False
-        Enable logging of missing OG1 names and vocabulary attributes.
     unit_format : dict[str, str], optional
         Unit spelling replacements. Defaults to
         ``vocabularies.unit_str_format``.
@@ -681,7 +671,6 @@ def standardise_og1(
                     original_unit,
                     target_unit,
                     vocabularies.unit1_to_unit2,
-                    firstrun,
                 )
 
                 dsa[output_name].data = converted_values
@@ -696,20 +685,19 @@ def standardise_og1(
         if original_name.lower().endswith("_qc") or output_name.upper().endswith("_QC"):
             dsa = tools.convert_qc_flags(dsa, output_name)
 
-    if firstrun:
-        if unassigned_variables:
-            _log.info(
-                "Variables retained with their original names: %s",
-                sorted(set(unassigned_variables)),
-            )
-        else:
-            _log.info("All variables have an assigned OG1 name.")
+    if unassigned_variables:
+        _log.debug(
+            "Variables retained with their original names: %s",
+            sorted(set(unassigned_variables)),
+        )
+    else:
+        _log.debug("All variables have an assigned OG1 name.")
 
-        if variables_without_og1_attributes:
-            _log.info(
-                "OG1 variables retained without vocabulary attributes: %s",
-                sorted(set(variables_without_og1_attributes)),
-            )
+    if variables_without_og1_attributes:
+        _log.debug(
+            "OG1 variables retained without vocabulary attributes: %s",
+            sorted(set(variables_without_og1_attributes)),
+        )
 
     coordinate_names = [
         name

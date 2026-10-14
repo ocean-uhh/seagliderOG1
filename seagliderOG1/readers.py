@@ -5,6 +5,7 @@ from either online sources or local directories. It does not manipulate
 the data, only loads it into xarray datasets.
 """
 
+import logging
 import pathlib
 import re
 import shutil
@@ -17,6 +18,8 @@ import requests
 import xarray as xr
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+
+_log = logging.getLogger(__name__)
 
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
@@ -511,7 +514,7 @@ def scan_and_repair_files(
             ds.close()
 
         except Exception as err:  # noqa: BLE001  # any open failure means the file needs repair; the cause is logged
-            print(f"Need repair: {file}")
+            _log.info("Need repair: %s", file)
 
             fixed_vars = repair_netcdf_time_metadata_inplace(
                 full_path,
@@ -521,7 +524,7 @@ def scan_and_repair_files(
 
             if fixed_vars:
                 log_repair(log_path, file, fixed_vars, err)
-                print(f"Repaired {file}: {fixed_vars}")
+                _log.info("Repaired %s: %s", file, fixed_vars)
 
 
 def _repair_folder(source: str | pathlib.Path) -> pathlib.Path:

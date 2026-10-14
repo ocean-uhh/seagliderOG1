@@ -440,10 +440,9 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
                     sensor_dict.setdefault(sensor, {})
 
     if not sensor_dict:
-        print(
-            "Warning: No sensors found in the combined instrument attributes. "
-            "Add sensor names separated by spaces, "
-            "for example: ds.attrs['instrument'] = 'sbe41 wlbb2f sbe43'."
+        _log.warning(
+            "No sensors found in the combined instrument attributes. Add sensor "
+            "names separated by spaces, e.g. ds.attrs['instrument'] = 'sbe41 wlbb2f sbe43'."
         )
 
     # -------------------------------------------------------------------------
@@ -457,14 +456,17 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
             new_name = standard_names[sensor]
             # Copy so calibration metadata does not modify shared vocabularies.
             sensor_dict[sensor] = dict(sensor_vocabs[new_name])
-            print(
-                f"Adding technical specifications for '{new_name}' "
-                f"(sensor key: '{sensor}') from OG1_sensor_attrs.yaml"
+            _log.info(
+                "Adding technical specifications for '%s' (sensor key: '%s') "
+                "from OG1_sensor_attrs.yaml",
+                new_name,
+                sensor,
             )
         else:
-            print(
-                f"Warning: Sensor '{sensor}' not found in standard names "
-                "vocabulary. No technical specifications added."
+            _log.warning(
+                "Sensor '%s' not found in standard names vocabulary; no technical "
+                "specifications added.",
+                sensor,
             )
 
     # -------------------------------------------------------------------------
@@ -484,11 +486,11 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
     sensor_nums = len(sensor_dict.keys())
     available_calibcomm = sorted(records_by_name)
     if len(available_calibcomm) > sensor_nums:
-        print(
-            "Warning: More distinct calibration variables found than sensors "
-            "listed in the combined instrument attributes!\n"
-            f"Calibration variables: {available_calibcomm}\n"
-            f"Sensors: {list(sensor_dict)}"
+        _log.warning(
+            "More distinct calibration variables found than sensors listed in the "
+            "combined instrument attributes. Calibration variables: %s; sensors: %s",
+            available_calibcomm,
+            list(sensor_dict),
         )
 
     def is_missing(value: object) -> bool:
@@ -556,7 +558,9 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
                 details = "; ".join(
                     f"{value!r} in {sources}" for value, sources in distinct.items()
                 )
-                print(f"Error: Conflicting {field} for sensor '{sensor}': {details}")
+                _log.warning(
+                    "Conflicting %s for sensor '%s': %s", field, sensor, details
+                )
             if entries:
                 metadata[field] = entries[0][0]
             else:
@@ -576,9 +580,11 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
                 if not found_calibration_text
                 else f"Incomplete calibration info (missing {', '.join(missing_fields)})"
             )
-            print(
-                f"Warning: {reason} for sensor '{sensor}'. "
-                f"Available calibration variables: {available_calibcomm}"
+            _log.warning(
+                "%s for sensor '%s'. Available calibration variables: %s",
+                reason,
+                sensor,
+                available_calibcomm,
             )
 
     # --- Report calibcomms that do not belong to any listed sensor --------------
@@ -587,9 +593,11 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
         if record_index not in matched_records:
             unmatched.setdefault(name, []).append(dataset_index)
     for name, dataset_indices in unmatched.items():
-        print(
-            f"Warning: Calibration variable '{name}' in datasets "
-            f"{dataset_indices} does not belong to any listed sensor."
+        _log.warning(
+            "Calibration variable '%s' in datasets %s does not belong to any "
+            "listed sensor.",
+            name,
+            dataset_indices,
         )
 
     return sensor_dict
@@ -599,7 +607,6 @@ def add_sensor_to_dataset(
     ds_og1: xr.Dataset,
     sensor_dict: dict,
     og1_mapping: pd.DataFrame,
-    firstrun: bool = False,
 ) -> xr.Dataset:
     """Add sensor information from the provided sensor dictionary to the OG1 dataset.
 
@@ -611,8 +618,6 @@ def add_sensor_to_dataset(
         A dictionary containing sensor metadata and associated variables.
     og1_mapping : pandas.DataFrame
         Mapping of original to OG1 variable names with associated instruments.
-    firstrun : bool, default False
-        If ``True``, print each sensor as it is added.
 
     Returns
     -------
@@ -637,10 +642,10 @@ def add_sensor_to_dataset(
         sensor_var_name = f"SENSOR_{sensor_type}_{serial}"
 
         # Create the variable (dimensionless DataArray)
-        if firstrun:
-            print(
-                f"Adding sensor '{sensor_info['sensor_model']}' to the OG1 dataset with attributes"
-            )
+        _log.debug(
+            "Adding sensor '%s' to the OG1 dataset with attributes",
+            sensor_info["sensor_model"],
+        )
         ds_og1[sensor_var_name] = xr.DataArray(sensor_info["sensor_model"])
 
         # ---------------------------------------------------------------------
@@ -1108,7 +1113,6 @@ def merge_parts_of_dataset(
 def merge_datasets_along_time(
     split_ds: dict[tuple[str, ...], xr.Dataset],
     time_variables: dict[str, list[str]],
-    firstrun: bool = False,
 ) -> xr.Dataset | None:
     """Merge split datasets onto a shared time axis.
 
@@ -1133,10 +1137,6 @@ def merge_datasets_along_time(
 
     time_variables : dict[str, list[str]]
         Dimensions mapped to candidate time variable names.
-
-    firstrun : bool, default False
-        Print progress and skipped dimensions. Duplicate timestamp
-        adjustments are always printed.
 
     Returns
     -------
@@ -1168,17 +1168,25 @@ def merge_datasets_along_time(
             and pd.api.types.is_datetime64_dtype(source.dtype)
         )
 
+    # This loop merges only single-dimension groups (keyed as ``(dim,)``); a variable
+    # group spanning two or more dimensions is not mergeable here and would be dropped.
+    multidim_groups = sorted(key for key in split_ds if len(key) > 1)
+    if multidim_groups:
+        _log.warning(
+            "Multi-dimensional variable groups are not merged onto the time axis and "
+            "are dropped: %s",
+            multidim_groups,
+        )
+
     for dim, candidate_names in time_variables.items():
         if (dim,) not in split_ds:
-            if firstrun:
-                print(f"Skipping '{dim}': not found in split_ds.")
+            _log.debug("Skipping '%s': not found in split_ds.", dim)
             continue
 
         ds = split_ds[(dim,)].copy()
 
         if dim not in ds.dims:
-            if firstrun:
-                print(f"Skipping '{dim}': dimension not found in dataset.")
+            _log.debug("Skipping '%s': dimension not found in dataset.", dim)
             continue
 
         # Never use ctd_time as a fallback for sg_data_point.
@@ -1211,11 +1219,11 @@ def merge_datasets_along_time(
                 break
 
         if time_source is None:
-            if firstrun:
-                print(
-                    f"Skipping '{dim}': no associated datetime64 time "
-                    "variable with a matching length."
-                )
+            _log.debug(
+                "Skipping '%s': no associated datetime64 time variable with a "
+                "matching length.",
+                dim,
+            )
             continue
 
         time_values = time_source.values
@@ -1299,18 +1307,17 @@ def merge_datasets_along_time(
         )
         ds = ds.sortby("time")
 
-        if firstrun:
-            print(
-                f"Adding variables with dimension '{dim}' "
-                f"and time variable '{time_var}'."
-            )
+        _log.debug(
+            "Adding variables with dimension '%s' and time variable '%s'.",
+            dim,
+            time_var,
+        )
 
         processed_datasets.append(ds)
         actually_merged_dims.add(dim)
 
     if not processed_datasets:
-        if firstrun:
-            print("No datasets processed. Returning None.")
+        _log.warning("No datasets could be merged onto a time axis; returning None.")
         return None
 
     merged_ds = xr.merge(processed_datasets, join="outer")
@@ -1329,8 +1336,7 @@ def merge_datasets_along_time(
         "forward by 0.5 seconds each. No measurements were discarded."
     )
 
-    if firstrun:
-        print(f"Dimensions not merged: {sorted(all_dims - actually_merged_dims)}")
+    _log.debug("Dimensions not merged: %s", sorted(all_dims - actually_merged_dims))
 
     return merged_ds
 
@@ -1869,15 +1875,13 @@ def _validate_dims(ds: xr.Dataset, expected_dims: str = "N_MEASUREMENTS") -> boo
     return True
 
 
-def _parse_calibcomm(calstr: str, firstrun: bool = False) -> tuple[str, str]:
+def _parse_calibcomm(calstr: str) -> tuple[str, str]:
     """Parse calibration string to extract calibration date and serial number.
 
     Parameters
     ----------
     calstr
         The calibration string to parse.
-    firstrun, optional
-        Whether to log detailed parsing information. Default is False.
 
     Returns
     -------
@@ -1915,8 +1919,7 @@ def _parse_calibcomm(calstr: str, firstrun: bool = False) -> tuple[str, str]:
                     continue  # Try the next format if parsing fails
             break  # Exit the outer loop if keyword is found
 
-    if firstrun:
-        _log.info(f"     --> produces {cal_date_YYYYmmDD}")
+    _log.debug("     --> produces %s", cal_date_YYYYmmDD)
 
     # Parse for serial number of sensor
     serial_number = "unknown"
@@ -1933,8 +1936,7 @@ def _parse_calibcomm(calstr: str, firstrun: bool = False) -> tuple[str, str]:
 
     if len(calstr) < 5:
         serial_number = calstr
-    if firstrun:
-        _log.info(f"     --> produces serial_number {serial_number}")
+    _log.debug("     --> produces serial_number %s", serial_number)
 
     return cal_date_YYYYmmDD, serial_number
 

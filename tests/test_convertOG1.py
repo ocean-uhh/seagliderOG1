@@ -181,9 +181,7 @@ def test_process_dataset():
     # create og1_mapping for standardise_og1
     og1_mapping, time_variables = _pipeline.og1_name_mapping([ds1])
 
-    merged_ds = _pipeline.merge_datasets_along_time(
-        split_ds, time_variables, firstrun=False
-    )
+    merged_ds = _pipeline.merge_datasets_along_time(split_ds, time_variables)
 
     # Check initial variables are reformatted
     dsa = convertOG1.standardise_og1(merged_ds, og1_mapping=og1_mapping)

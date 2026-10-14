@@ -20,6 +20,7 @@ semantic versioning.
   | `readers.load_sample_dataset()` | `readers.load_sample_basestation()` |
   | `standardise_OG10`, `tools.OG1_name_mapping`, `print_OG1_mapping_summary`, the `OG1_mapping` argument | `standardise_og1`, `og1_name_mapping`, `print_og1_mapping_summary`, `og1_mapping` — `og1` lower-case in names; `convert_to_OG1` and the package name keep their spelling |
   | `tools.<pipeline internals>` (`og1_name_mapping`, `gather_sensor_info`, `add_sensor_to_dataset`, `merge_datasets_along_time`, `extract_scalar_parameters`/`add_scalar_parameters`, `set_best_dtype`, …) and the whole `seagliderOG1.utilities` module | private `seagliderOG1._pipeline` (not part of the public API); `tools` keeps the user-facing utilities (`calc_Z`, `assign_phase`, `convert_units_var`, `convert_qc_flags`, `encode_times_og1`, …) |
+  | `firstrun=` parameters (e.g. `tools.convert_units_var(..., firstrun=...)`) | removed; progress and diagnostics go through `logging.getLogger("seagliderOG1...")` (set the level, e.g. the CLI `-v`) |
 
 - Output variable dtypes changed. QC flags are `int8` (were `float32`/`int64`); `PHASE` is
   `int8`; `PROFILE_NUMBER`, `DIVE_NUMBER` and `VBD_MIN_CNTS` are `int16`; `DEPTH` and

@@ -316,7 +316,6 @@ def convert_units_var(
     current_unit: str,
     new_unit: str,
     unit1_to_unit2: dict = vocabularies.unit1_to_unit2,
-    firstrun: bool = False,
 ) -> tuple[np.ndarray, str]:
     """Convert variable values from their current unit to a requested unit.
 
@@ -338,8 +337,6 @@ def convert_units_var(
     unit1_to_unit2
         Mapping of conversion keys, such as ``"cm/s_to_m/s"``, to conversion
         information. Each entry must contain a ``"factor"`` value.
-    firstrun
-        If ``True``, log a warning when no conversion information is found.
 
     Returns
     -------
@@ -364,12 +361,11 @@ def convert_units_var(
         converted_values = var_values * conversion["factor"]
         return converted_values, requested_unit
 
-    if firstrun:
-        _log.warning(
-            "No conversion information found for %r to %r",
-            current_unit,
-            requested_unit,
-        )
+    _log.warning(
+        "No conversion information found for %r to %r",
+        current_unit,
+        requested_unit,
+    )
 
     return var_values, current_unit
 
