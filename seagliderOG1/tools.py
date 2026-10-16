@@ -16,9 +16,9 @@ from seagliderOG1 import vocabularies
 _log = logging.getLogger(__name__)
 
 __all__ = [
-    "calc_Z",
-    "assign_phase",
-    "assign_profile_number",
+    "add_depth",
+    "add_phase",
+    "add_profile_number",
     "add_dive_number",
     "convert_units_var",
     "reformat_units_var",
@@ -66,7 +66,7 @@ def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Datase
     return ds.assign(DIVE_NUMBER=dive_var)
 
 
-def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
+def add_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     """Assign profile numbers to measurements based on dive phases (down/up casts).
 
     This function separates each dive into two profiles: descent (down cast) and
@@ -113,7 +113,7 @@ def assign_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def assign_phase(ds: xr.Dataset) -> xr.Dataset:
+def add_phase(ds: xr.Dataset) -> xr.Dataset:
     """Add 'PHASE' and 'PHASE_QC' variables indicating the phase of each measurement.
 
     The phase is determined from the pressure readings ('PRES') for each unique
@@ -197,7 +197,7 @@ def assign_phase(ds: xr.Dataset) -> xr.Dataset:
 ##-----------------------------------------------------------------------------------------------------------
 ## Calculations for new variables
 ##-----------------------------------------------------------------------------------------------------------
-def calc_Z(ds: xr.Dataset) -> xr.Dataset:
+def add_depth(ds: xr.Dataset) -> xr.Dataset:
     """Calculate the depth (Z position) of the glider using the gsw library to convert pressure to depth.
 
     Parameters
@@ -468,7 +468,7 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
 
 
 # OG1 canonical serialisation for time variables (CF seconds since the epoch, UTC).
-# Used by the time encoders here and by writers.save_dataset; keep in sync with the time
+# Used by the time encoders here and by writers.write; keep in sync with the time
 # variable units declared in config/OG1_vocab_attrs.yaml.
 OG1_TIME_UNITS = "seconds since 1970-01-01T00:00:00Z"
 OG1_TIME_CALENDAR = "gregorian"

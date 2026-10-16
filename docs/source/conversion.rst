@@ -138,13 +138,13 @@ or from Python:
 
    from seagliderOG1 import convert, readers, writers
 
-   datasets = readers.load_basestation_files(source, first, last)
+   datasets = readers.read_mission(source, first, last)
    ds = convert.to_og1(
        datasets,
        contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
        institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],
    )
-   writers.save_dataset(ds, out)
+   writers.write(ds, out)
 
 The ``contributors`` and ``institutions`` arguments are lists of records, one entry per person
 (or institution) per role; a conversion with no PI warns. See :ref:`cli_reference`.

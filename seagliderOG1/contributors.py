@@ -31,7 +31,7 @@ __all__ = [
     "parse_institutions",
     "format_institutions",
     "consolidate",
-    "registry_institutions",
+    "institution_registry",
     "load_institution_registry",
     "enrich_institutions",
 ]
@@ -361,7 +361,7 @@ def consolidate(records: Sequence[Mapping]) -> list[dict[str, str]]:
 
 
 @functools.lru_cache(maxsize=1)
-def registry_institutions() -> dict[str, dict]:
+def institution_registry() -> dict[str, dict]:
     """Read the EDMO institution registry, keyed by EDMO code.
 
     Cached: the registry is a read-only package data file, so the YAML is parsed
@@ -388,7 +388,7 @@ def load_institution_registry() -> dict[str, tuple[str, str]]:
 
     """
     lookup: dict[str, tuple[str, str]] = {}
-    for entry in registry_institutions().values():
+    for entry in institution_registry().values():
         standard = entry["standard_name"]
         id_url = entry.get("id_url", "")
         for variant in [standard, *entry.get("name_variants", [])]:

@@ -208,9 +208,7 @@ def run(args: argparse.Namespace) -> int:
     converted = skipped = failed = 0
     for mission in selected:
         try:
-            datasets = readers.load_basestation_files(
-                mission.path, first, last, repair=repair
-            )
+            datasets = readers.read_mission(mission.path, first, last, repair=repair)
             ds = convert.to_og1(
                 datasets,
                 contributors=config.get("contributors"),
@@ -220,7 +218,7 @@ def run(args: argparse.Namespace) -> int:
                 mode=mode,
             )
             if keep_variables:
-                ds = convert.apply_keep_variables(ds, keep_variables)
+                ds = convert.keep_variables(ds, keep_variables)
             out_path = output_dir / f"{ds.attrs['id']}.nc"
             if out_path.exists():
                 if args.skip_existing:
@@ -235,9 +233,9 @@ def run(args: argparse.Namespace) -> int:
                     failed += 1
                     continue
             output_dir.mkdir(parents=True, exist_ok=True)
-            # save_dataset returns the written Path and raises on failure; the
+            # write returns the written Path and raises on failure; the
             # per-mission except below reports it and continues to the next.
-            writers.save_dataset(ds, str(out_path), overwrite=args.force)
+            writers.write(ds, str(out_path), overwrite=args.force)
             print(f"wrote {out_path}")
             converted += 1
         # One mission's failure is reported and the run continues to the next.

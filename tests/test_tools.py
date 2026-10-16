@@ -122,7 +122,7 @@ def test_calc_z():
         },
     )
     depth = gsw.z_from_p(dataset["PRES"], dataset["LATITUDE"]).values
-    depth_z = tools.calc_Z(dataset)["DEPTH_Z"].values
+    depth_z = tools.add_depth(dataset)["DEPTH_Z"].values
 
     assert np.array_equal(depth, depth_z)
 
@@ -135,7 +135,7 @@ def test_add_scalar_parameters():
     only what a user observes from the public converter — that no scalar is dropped.
     """
     source = str(parent_dir / "data/demo_sg005")
-    datasets = readers.load_basestation_files(source, 1, 5)
+    datasets = readers.read_mission(source, 1, 5)
 
     expected_names = {
         name

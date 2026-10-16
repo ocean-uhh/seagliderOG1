@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from seagliderOG1 import _pipeline, contributors, tools, vocabularies
 
-__all__ = ["to_og1", "name_mapping", "apply_keep_variables"]
+__all__ = ["to_og1", "name_mapping", "keep_variables"]
 
 _log = logging.getLogger(__name__)
 
@@ -154,10 +154,10 @@ _MANDATORY_OG1_VARS = frozenset(
 _MANDATORY_OG1_PREFIXES = ("PLATFORM_", "SENSOR_", "DEPLOYMENT_")
 
 
-def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
+def keep_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
     """Subset the dataset to a science-variable allow-list, keeping OG1 essentials.
 
-    The requested ``keep`` names are retained, plus every OG1-mandatory variable
+    The requested ``names`` are retained, plus every OG1-mandatory variable
     and the ``_QC`` companion of every kept variable. Dropped science variables are
     warned. Coordinates are retained by xarray.
 
@@ -165,7 +165,7 @@ def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
     ----------
     ds : xarray.Dataset
         The converted OG1 dataset.
-    keep : list of str
+    names : list of str
         Science variables the user asked to keep.
 
     Returns
@@ -174,7 +174,7 @@ def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
         The subset dataset; every OG1-mandatory variable present in ``ds`` survives.
 
     """
-    requested = set(keep)
+    requested = set(names)
     kept = set()
     for name in ds.data_vars:
         mandatory = name in _MANDATORY_OG1_VARS or name.startswith(
@@ -572,11 +572,11 @@ def process_dataset(
     ds_gps = split_ds[("gps_info",)]
     ds_new = add_gps_info_to_dataset(ds_new, ds_gps)
     # Add the profile number (odd for dives, even for get_sgscents)
-    ds_new = tools.assign_profile_number(ds_new, ds1_base)
+    ds_new = tools.add_profile_number(ds_new, ds1_base)
     # Assign the phase of the dive (must be after adding divenum)
-    ds_new = tools.assign_phase(ds_new)
+    ds_new = tools.add_phase(ds_new)
     # Assign DEPTH_Z to the dataset where positive is up.
-    ds_new = tools.calc_Z(ds_new)
+    ds_new = tools.add_depth(ds_new)
 
     vars_to_remove = vocabularies.vars_to_remove
     vars_present_to_remove = [var for var in vars_to_remove if var in ds_new.variables]

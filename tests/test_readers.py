@@ -93,18 +93,18 @@ def test_filter_filelist_by_profile():
 
 
 def test_load_basestation_files():
-    """Test the load_basestation_files function from the readers module.
+    """Test the read_mission function from the readers module.
     This test checks the loading of datasets from either an online source or a local
     directory, optionally filtering by profile range. It uses a sample dataset and
-    the expected result after loading the dataset. The test asserts that the load_basestation_files
+    the expected result after loading the dataset. The test asserts that the read_mission
     function returns the correct dataset, providing an appropriate error message if the
     assertion fails.
     """
     source = str(parent_dir / "data/demo_sg005")
-    print("Testing load_basestation_files with source:", source)
+    print("Testing read_mission with source:", source)
     start_profile = 1
     end_profile = 5
-    datasets = readers.load_basestation_files(source, start_profile, end_profile)
+    datasets = readers.read_mission(source, start_profile, end_profile)
     assert len(datasets) == 5, "Unexpected number of datasets loaded"
     assert datasets[-1].dive_number == 5, "Unexpected profile number for last dataset"
     assert (
@@ -173,26 +173,24 @@ def test_discover_missions_warns_on_sn_mismatch(tmp_path):
 def test_load_basestation_files_repair_is_opt_in(monkeypatch):
     """scan_and_repair runs only when repair=True; the source tree is untouched otherwise."""
     calls = []
-    monkeypatch.setattr(
-        readers, "scan_and_repair_files", lambda *a, **k: calls.append(a)
-    )
+    monkeypatch.setattr(readers, "repair_files", lambda *a, **k: calls.append(a))
     source = str(parent_dir / "data/demo_sg005")
-    readers.load_basestation_files(source, 1, 1)
+    readers.read_mission(source, 1, 1)
     assert calls == []
-    readers.load_basestation_files(source, 1, 1, repair=True)
+    readers.read_mission(source, 1, 1, repair=True)
     assert len(calls) == 1
 
 
 def test_load_first_basestation_file():
-    """Test the load_first_basestation_file function from the readers module.
+    """Test the read_file function from the readers module.
     This test checks the loading of the first dataset from either an online source
     or a local directory. It uses a sample dataset and the expected result after
-    loading the dataset. The test asserts that the load_first_basestation_file
+    loading the dataset. The test asserts that the read_file
     function returns the correct dataset, providing an appropriate error message
     if the assertion fails.
     """
     source = str(parent_dir / "data/demo_sg005")
-    dataset = readers.load_first_basestation_file(source)
+    dataset = readers.read_file(source)
     assert dataset.dive_number == 1, "Unexpected profile number for first dataset"
     assert (
         dataset.latitude.values.mean() > 61 and dataset.latitude.values.mean() < 62

@@ -133,7 +133,7 @@ def test_to_og1_options_are_keyword_only():
 
 def test_name_mapping_returns_the_mapping_table():
     """name_mapping returns the basestation->OG1 table; a bare Dataset is rejected."""
-    datasets = readers.load_basestation_files(str(parent_dir / "data/demo_sg005"), 1, 1)
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
     mapping = convert.name_mapping(datasets)
     assert list(mapping.columns) == [
         "original_name",
@@ -170,7 +170,7 @@ def test_apply_keep_variables_retains_mandatory_and_qc():
     )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        out = convert.apply_keep_variables(ds, ["TEMP"])
+        out = convert.keep_variables(ds, ["TEMP"])
     assert "TEMP" in out.variables and "TEMP_QC" in out.variables  # ask + its QC
     assert "PLATFORM_SERIAL_NUMBER" in out.variables  # mandatory family
     assert "WMO_IDENTIFIER" in out.variables  # mandatory
@@ -224,11 +224,11 @@ def test_process_dataset():
     assert "LATITUDE_GPS" in list(ds_new.variables)
     assert "LONGITUDE_GPS" in list(ds_new.variables)
 
-    ds_new = tools.assign_profile_number(ds_new, ds1)
+    ds_new = tools.add_profile_number(ds_new, ds1)
     assert "PROFILE_NUMBER" in list(ds_new.variables)
     assert ds_new["PROFILE_NUMBER"].values.max() == 2 * ds1.attrs["dive_number"]
 
-    ds_new = tools.calc_Z(ds_new)
+    ds_new = tools.add_depth(ds_new)
     meanZ = ds_new["DEPTH_Z"].mean().item()
     meanZpos = ds_new["DEPTH"].mean().item()
     assert abs(meanZ + meanZpos) < 10
@@ -242,11 +242,11 @@ def test_output_dtypes_end_to_end(tmp_path: pathlib.Path) -> None:
     -9999 fill through both set_best_dtype and the compression writer.
     """
     source = str(parent_dir / "data/demo_sg005")
-    datasets = readers.load_basestation_files(source, 1, 5)
+    datasets = readers.read_mission(source, 1, 5)
     ds = convert.to_og1(datasets)
     out = tmp_path / "out.nc"
 
-    assert writers.save_dataset(ds, str(out)) == out
+    assert writers.write(ds, str(out)) == out
 
     with netCDF4.Dataset(out) as nc:
         assert nc.variables["TEMP_QC"].dtype == np.dtype("int8")

@@ -64,7 +64,7 @@ def run(args: argparse.Namespace) -> int:
     if args.registry == "institutions":
         from seagliderOG1 import contributors
 
-        institutions = contributors.registry_institutions()
+        institutions = contributors.institution_registry()
         for code in sorted(
             institutions, key=lambda c: institutions[c].get("standard_name", "")
         ):

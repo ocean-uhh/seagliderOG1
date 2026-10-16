@@ -289,14 +289,14 @@ def test_process_dry_run_ignores_existing_output(
 def test_process_save_failure_counts_as_failed(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A save_dataset failure (it raises) is a mission failure (exit 1), not silent success."""
+    """A write failure (it raises) is a mission failure (exit 1), not silent success."""
     from seagliderOG1 import convert, writers
 
     def _raise(*_a: object, **_k: object) -> object:
         raise OSError("disk full")
 
     monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
-    monkeypatch.setattr(writers, "save_dataset", _raise)
+    monkeypatch.setattr(writers, "write", _raise)
     config = _write_config(
         tmp_path / "mission.yaml",
         source=str(DATA_DIR),

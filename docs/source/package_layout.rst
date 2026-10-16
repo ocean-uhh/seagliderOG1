@@ -32,8 +32,6 @@ Packaged YAML (``seagliderOG1/config/``), loaded at conversion time:
   ``units``).
 * ``OG1_sensor_attrs.yaml`` — sensor metadata.
 * ``OG1_global_attrs.yaml`` — global attribute templates (for example ``featureType``).
-* ``OG1_author.yaml`` — the example contributor block, loaded on demand by
-  ``vocabularies.load_default_contributors``.
 * ``institution_registry.yml`` — EDMO codes for resolving institutions by name.
 
 (``config/mission_yaml.yaml`` is an unused legacy template; the ``init`` verb generates the

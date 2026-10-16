@@ -28,13 +28,13 @@ For a root of `SN/DATE` mission directories, point `--source` at the root and se
 ```python
 from seagliderOG1 import convert, readers, writers
 
-datasets = readers.load_basestation_files(source, first, last)
+datasets = readers.read_mission(source, first, last)
 ds = convert.to_og1(
     datasets,
     contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
     institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],
 )
-writers.save_dataset(ds, out)
+writers.write(ds, out)
 ```
 
 `contributors` and `institutions` are lists of records, one entry per person (or institution) per role; see the CLI reference in the documentation.

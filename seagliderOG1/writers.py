@@ -11,7 +11,7 @@ from seagliderOG1 import tools
 
 _log = logging.getLogger(__name__)
 
-__all__ = ["save_dataset"]
+__all__ = ["write"]
 
 # OG1 serialisation for datetime variables: float64 seconds using the canonical OG1 time
 # units (defined once in tools), so the written file matches encode_times_og1 instead of
@@ -28,9 +28,9 @@ _TIME_ENCODING = {
 _PRESERVE_ENCODING = ("_FillValue", "missing_value", "scale_factor", "add_offset")
 
 
-def save_dataset(
+def write(
     ds: xr.Dataset,
-    output_file: str,
+    path: str | Path,
     *,
     overwrite: bool = False,
 ) -> Path:
@@ -46,7 +46,7 @@ def save_dataset(
     ----------
     ds : xr.Dataset
         Dataset to save.
-    output_file : str
+    path : str
         Output NetCDF file path.
     overwrite : bool, optional
         If True, an existing file will be deleted and replaced.
@@ -60,7 +60,7 @@ def save_dataset(
     Raises
     ------
     FileExistsError
-        If ``output_file`` exists and ``overwrite`` is False.
+        If ``path`` exists and ``overwrite`` is False.
     ValueError
         If the dataset carries a None-valued attribute.
     """
@@ -80,14 +80,14 @@ def save_dataset(
         raise ValueError(msg)
 
     # Handle existing file
-    output_path = Path(output_file)
+    output_path = Path(path)
     if output_path.exists():
         if overwrite:
-            _log.info("Removing existing file: %s", output_file)
+            _log.info("Removing existing file: %s", path)
             output_path.unlink()
         else:
             raise FileExistsError(
-                f"Output file '{output_file}' already exists. "
+                f"Output file '{path}' already exists. "
                 "Use overwrite=True to replace it."
             )
 
@@ -103,8 +103,8 @@ def save_dataset(
             encoding.setdefault(name, {}).update(_TIME_ENCODING)
 
     def _write() -> None:
-        ds.to_netcdf(output_file, encoding=encoding, format="NETCDF4", engine="netcdf4")
-        _log.info("Dataset successfully saved to %s", output_file)
+        ds.to_netcdf(path, encoding=encoding, format="NETCDF4", engine="netcdf4")
+        _log.info("Dataset successfully saved to %s", path)
 
     try:
         _write()
@@ -133,7 +133,7 @@ def save_dataset(
             ]
             _log.warning(f"Attributes with dtype float64: {float_attrs}")
             raise
-    return Path(output_file)
+    return Path(path)
 
 
 def _compression_encoding(ds: xr.Dataset) -> dict[str, dict]:
