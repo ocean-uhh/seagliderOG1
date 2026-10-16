@@ -11,6 +11,8 @@ from seagliderOG1 import tools
 
 _log = logging.getLogger(__name__)
 
+__all__ = ["save_dataset"]
+
 # OG1 serialisation for datetime variables: float64 seconds using the canonical OG1 time
 # units (defined once in tools), so the written file matches encode_times_og1 instead of
 # silently overriding it.

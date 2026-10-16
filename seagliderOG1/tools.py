@@ -15,6 +15,19 @@ from seagliderOG1 import vocabularies
 
 _log = logging.getLogger(__name__)
 
+__all__ = [
+    "calc_Z",
+    "assign_phase",
+    "assign_profile_number",
+    "add_dive_number",
+    "convert_units_var",
+    "reformat_units_var",
+    "reformat_units_str",
+    "convert_qc_flags",
+    "encode_times_og1",
+    "split_by_unique_dims",
+]
+
 
 # Variables measured directly by the CTD.
 
@@ -374,7 +387,7 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
     """Convert QC flag variables to proper integer format and update attributes.
 
     This function converts QC flag variables from string format to int8,
-    handles NaN values appropriately, removes 'QC_' prefixes from flag meanings,
+    handles NaN values appropriately, removes ``QC_`` prefixes from flag meanings,
     and adds proper metadata including long_name and standard_name.
 
     Parameters

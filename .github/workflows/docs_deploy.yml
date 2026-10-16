@@ -24,7 +24,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y pandoc
       - run: pip install --upgrade pip && pip install -e ".[docs]"
       - run: jupyter nbconvert --to notebook --execute notebooks/demo.ipynb --output=demo-output.ipynb --output-dir=docs/source
-      - run: cd docs && make clean html
+      - run: cd docs && make clean html SPHINXOPTS="-W"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

@@ -18,6 +18,8 @@ from tqdm import tqdm
 
 from seagliderOG1 import _pipeline, contributors, readers, tools, vocabularies, writers
 
+__all__ = ["convert_to_OG1", "apply_keep_variables"]
+
 _log = logging.getLogger(__name__)
 
 # Global attributes the converter derives from the data; the mission config may

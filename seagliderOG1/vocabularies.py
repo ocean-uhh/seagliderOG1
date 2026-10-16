@@ -6,6 +6,7 @@ It loads YAML configuration files and defines various dictionaries used
 throughout the conversion process.
 
 Key Components:
+
 - Variable name mappings from basestation to OG1 format
 - Unit conversion factors and formatting rules
 - Global attribute definitions and ordering
@@ -13,6 +14,7 @@ Key Components:
 - Dimension renaming mappings
 
 Configuration Files:
+
 - OG1_var_names.yaml: Variable name mappings
 - OG1_vocab_attrs.yaml: Variable attribute vocabularies
 - OG1_sensor_attrs.yaml: Sensor attribute definitions

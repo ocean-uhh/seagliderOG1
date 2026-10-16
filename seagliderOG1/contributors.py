@@ -21,6 +21,21 @@ import yaml
 
 from seagliderOG1 import vocabularies
 
+__all__ = [
+    "split_aligned",
+    "normalize_orcid",
+    "normalize_role",
+    "role_vocabulary",
+    "parse_contributors",
+    "format_contributors",
+    "parse_institutions",
+    "format_institutions",
+    "consolidate",
+    "registry_institutions",
+    "load_institution_registry",
+    "enrich_institutions",
+]
+
 _ORCID_PREFIX = "https://orcid.org/"
 _REGISTRY_PATH = pathlib.Path(vocabularies.config_dir) / "institution_registry.yml"
 

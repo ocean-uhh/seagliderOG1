@@ -12,6 +12,16 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from pandas import DataFrame
 
+__all__ = [
+    "show_contents",
+    "show_variables",
+    "show_attributes",
+    "show_variables_by_dimension",
+    "plot_profile_depth",
+    "plot_depth_colored",
+    "plot_ctd_depth_vs_time",
+]
+
 
 ##------------------------------------------------------------------------------------
 ## Views of the ds or nc file
