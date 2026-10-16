@@ -93,5 +93,10 @@ def test_vocabulary_strings_have_no_edge_whitespace():
         "OG1_sensor_attrs.yaml",
         "OG1_global_attrs.yaml",
     ):
-        walk(yaml.safe_load((vocabularies.CONFIG_DIR / name).read_text()), name)
+        walk(
+            yaml.safe_load(
+                (vocabularies.CONFIG_DIR / name).read_text(encoding="utf-8")
+            ),
+            name,
+        )
     assert not offenders, offenders

@@ -56,19 +56,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     for module in (init_cmd, validate_cmd, process_cmd, inspect_cmd, list_cmd):
         module.build_parser(subparsers)
+    # Accept -v/--verbose after the verb (``seagliderOG1 process cfg -v``), not only
+    # before it; SUPPRESS default so a verb-level -v never clobbers a top-level one.
+    for sub in subparsers.choices.values():
+        sub.add_argument(
+            "-v",
+            "--verbose",
+            action="count",
+            default=argparse.SUPPRESS,
+            help=argparse.SUPPRESS,
+        )
     return parser
 
 
 def _configure_logging(verbose: int) -> None:
-    """Route library diagnostics to stderr at a level set by ``-v``.
+    """Route the package's own diagnostics to stderr at a level set by ``-v``.
 
     Parameters
     ----------
     verbose : int
-        Count of ``-v`` flags: 0 leaves the default (``WARNING`` and above), 1
-        shows ``INFO`` progress, 2 or more shows ``DEBUG``. Only library
-        ``logging`` output is affected; command results stay on stdout via
-        ``print``. ``force=True`` so a repeated ``main`` call reconfigures.
+        Count of ``-v`` flags: 0 leaves the ``seagliderOG1`` logger at
+        ``WARNING``, 1 shows ``INFO`` progress, 2 or more shows ``DEBUG``. Only
+        the package's own ``logging`` output is affected — the root logger (and
+        so third-party libraries) is left alone, and command results stay on
+        stdout via ``print``.
 
     """
     level = logging.WARNING
@@ -76,7 +87,16 @@ def _configure_logging(verbose: int) -> None:
         level = logging.DEBUG
     elif verbose == 1:
         level = logging.INFO
-    logging.basicConfig(level=level, format="%(levelname)s: %(message)s", force=True)
+    logger = logging.getLogger("seagliderOG1")
+    logger.setLevel(level)
+    # Rebuild the one stderr handler each call so it binds to the current
+    # sys.stderr (test capture) and does not accumulate on repeated main() calls.
+    for existing in logger.handlers[:]:
+        logger.removeHandler(existing)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+    logger.addHandler(handler)
+    logger.propagate = False
 
 
 def main(argv: Sequence[str] | None = None) -> int:

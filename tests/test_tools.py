@@ -101,7 +101,7 @@ def test_convert_units_var():
         "dist4": ("km", "m", 1, 1000),
         "density1": ("g m-3", "kg m-3", 1000, 1),
         "density2": ("kg m-3", "g m-3", 1, 1000),
-        "temp": ("degrees_Celsius", "Celsius", 1, 1),
+        "temp": ("degrees_Celsius", "degree_Celsius", 1, 1),
     }
     for _, (current_units, new_units, current_value, new_value) in test_pairs.items():
         converted_values, _ = tools.convert_units_var(

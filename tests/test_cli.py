@@ -131,6 +131,10 @@ def test_process_v_flag_controls_library_logging(
     assert cli.main(["-v", "process", str(cfg), "-o", str(tmp_path / "loud")]) == 0
     assert "Start converting" in capsys.readouterr().err
 
+    # -v is accepted after the verb too, not only before it.
+    assert cli.main(["process", str(cfg), "-o", str(tmp_path / "loud2"), "-v"]) == 0
+    assert "Start converting" in capsys.readouterr().err
+
 
 def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:
     """Stand in for to_og1: no real conversion, deterministic id from mode."""

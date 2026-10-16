@@ -34,7 +34,7 @@ def write(
     *,
     overwrite: bool = False,
 ) -> Path:
-    """Save the dataset to a NetCDF file with lossless compression.
+    """Write the dataset to a NetCDF file with lossless compression.
 
     Every non-scalar numeric variable, coordinates included, is written with zlib
     at level 4 and the shuffle filter. If a TypeError occurs due to invalid
@@ -46,7 +46,7 @@ def write(
     ----------
     ds : xr.Dataset
         Dataset to save.
-    path : str
+    path : str or pathlib.Path
         Output NetCDF file path.
     overwrite : bool, optional
         If True, an existing file will be deleted and replaced.

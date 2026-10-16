@@ -214,7 +214,10 @@ def to_og1(
     Parameters
     ----------
     list_of_datasets : sequence of xarray.Dataset
-        A list of xarray datasets in basestation format.
+        A list of xarray datasets in basestation format, expected in dive (time)
+        order: ``start_date``, ``TRAJECTORY`` and the output ``id`` are taken from
+        the first dataset, so out-of-order input can disagree with
+        ``time_coverage_start``.
     contributors : sequence of dict, optional
         Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)
         merged with those already on the files. When None, contributors come from
@@ -285,7 +288,7 @@ def to_og1(
 
     # Warn when a dimension group is dropped rather than merged, so a missing
     # instrument is visible; name_mapping() returns the full basestation -> OG1 table.
-    skipped_dims = [d for d in all_dims if d not in (set(dims_to_merge) | {ctd_dim})]
+    skipped_dims = [d for d in all_dims if d not in set(dims_to_merge)]
     if skipped_dims:
         _log.warning(
             "Dimensions not merged into the OG1 dataset: %s. If instrument data "
@@ -1070,8 +1073,9 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
     """
     time_attrs = {}
     # time_coverage_start/end are recomputed authoritatively in to_og1 from the
-    # concatenated TIME; the values cleaned here seed the start_date fallback and
-    # are overwritten there.
+    # concatenated TIME. time_coverage_start also seeds the start_date fallback
+    # below, so it is needed here; the per-dive time_coverage_end is overwritten
+    # there and otherwise unused.
     time_attr_list = [
         "time_coverage_start",
         "time_coverage_end",

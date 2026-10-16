@@ -178,16 +178,6 @@ unit1_to_unit2 = {
     "dbar_to_Pa": {"current_unit": "dbar", "new_unit": "Pa", "factor": 10000},
     "Pa_to_dbar": {"current_unit": "Pa", "new_unit": "dbar", "factor": 0.0001},
     "dbar_to_kPa": {"current_unit": "dbar", "new_unit": "kPa", "factor": 10},
-    "degreesCelsius_to_Celsius": {
-        "current_unit": "degreesCelsius",
-        "new_unit": "Celsius",
-        "factor": 1,
-    },
-    "Celsius_to_degreesCelsius": {
-        "current_unit": "Celsius",
-        "new_unit": "degreesCelsius",
-        "factor": 1,
-    },
     "m_to_cm": {"current_unit": "m", "new_unit": "cm", "factor": 100},
     "m_to_km": {"current_unit": "m", "new_unit": "km", "factor": 0.001},
     "cm_to_m": {"current_unit": "cm", "new_unit": "m", "factor": 0.01},
