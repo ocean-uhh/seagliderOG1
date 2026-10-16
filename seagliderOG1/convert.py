@@ -8,7 +8,7 @@ variable renaming, attribute assignments, and dataset standardization.
 import logging
 import warnings
 from collections.abc import Mapping, Sequence
-from datetime import datetime
+from datetime import UTC, datetime
 
 import numpy as np
 import pandas as pd
@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from seagliderOG1 import _pipeline, contributors, tools, vocabularies
 
-__all__ = ["to_og1", "apply_keep_variables"]
+__all__ = ["to_og1", "name_mapping", "apply_keep_variables"]
 
 _log = logging.getLogger(__name__)
 
@@ -280,12 +280,24 @@ def to_og1(
 
     # Create a mapping from original variable names to OG1 variable names for all variables across the datasets
     og1_mapping, time_variables = _pipeline.og1_name_mapping(list_of_datasets)
+    # Build the original->OG1 name lookup once; it is loop-invariant across dives.
+    name_lookup = og1_mapping.set_index("original_name")["OG1_name"]
 
-    # print the sumary of variables assigned or not assigned to the dataset
-    # _pipeline.print_og1_mapping_summary(og1_mapping, ctd_dim, dims_to_merge, all_dims)
+    # Warn when a dimension group is dropped rather than merged, so a missing
+    # instrument is visible; name_mapping() returns the full basestation -> OG1 table.
+    skipped_dims = [d for d in all_dims if d not in (set(dims_to_merge) | {ctd_dim})]
+    if skipped_dims:
+        _log.warning(
+            "Dimensions not merged into the OG1 dataset: %s. If instrument data "
+            "is missing, its dimension must be named '<instrument>_data_point' "
+            "(from ds.attrs['instrument']).",
+            skipped_dims,
+        )
 
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
-        ds_new, attr_warnings = process_dataset(ds1_base, og1_mapping, time_variables)
+        ds_new, attr_warnings = process_dataset(
+            ds1_base, og1_mapping, time_variables, name_lookup=name_lookup
+        )
         if ds_new:
             processed_datasets.append(ds_new)
         else:
@@ -447,10 +459,38 @@ def to_og1(
     return _pipeline.set_best_dtype(ds_og1)
 
 
+def name_mapping(list_of_datasets: Sequence[xr.Dataset]) -> pd.DataFrame:
+    """Return the basestation-to-OG1 variable-name mapping for the given datasets.
+
+    The table ``to_og1`` builds internally: one row per unique input variable
+    with its OG1 name (empty when unmapped), instrument, dimensions and whether
+    OG1 vocabulary attributes were found. Shows which basestation variables carry
+    through to OG1 and which are dropped, without running a conversion.
+
+    Parameters
+    ----------
+    list_of_datasets : sequence of xarray.Dataset
+        Basestation datasets, as passed to :func:`to_og1`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``original_name``, ``OG1_name``, ``instrument``,
+        ``instrument_type``, ``original_dimension`` and ``has_og1_attributes``.
+
+    """
+    if isinstance(list_of_datasets, xr.Dataset):
+        msg = "name_mapping takes a sequence of datasets; pass a sequence, e.g. [ds]."
+        raise TypeError(msg)
+    mapping, _ = _pipeline.og1_name_mapping(list(list_of_datasets))
+    return mapping
+
+
 def process_dataset(
     ds1_base: xr.Dataset,
     og1_mapping: pd.DataFrame,
     time_variables: dict[str, list[str]],
+    name_lookup: pd.Series | None = None,
 ) -> tuple[
     xr.Dataset,  # Processed dataset with renamed variables, assigned attributes, and additional information
     list[str],  # List of warnings related to attribute assignments
@@ -466,6 +506,10 @@ def process_dataset(
         Mapping of original basestation variable names to OG1 variable names.
     time_variables : dict[str, list[str]]
         A dictionary mapping dimension names to lists of time variables.
+    name_lookup : pandas.Series or None, optional
+        Precomputed ``original_name`` -> ``OG1_name`` lookup. Built from
+        ``og1_mapping`` when None; :func:`to_og1` passes it in so it is not
+        rebuilt per dive. Default is None.
 
     Returns
     -------
@@ -519,7 +563,7 @@ def process_dataset(
     # Must be after split_ds
     # map the original variable names to the OG1 variable names, and get the instrument type for each variable
 
-    ds_new = standardise_og1(merged_ds, og1_mapping)
+    ds_new = standardise_og1(merged_ds, og1_mapping, name_lookup=name_lookup)
 
     # Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)
     # -----------------------------------------------------------------------
@@ -552,6 +596,7 @@ def standardise_og1(
     ds: xr.Dataset,
     og1_mapping: pd.DataFrame,
     unit_format: dict[str, str] = vocabularies.unit_str_format,
+    name_lookup: pd.Series | None = None,
 ) -> xr.Dataset:
     """Standardize a dataset using OG1 names, attributes, and units.
 
@@ -572,6 +617,9 @@ def standardise_og1(
         Input dataset.
     og1_mapping : pandas.DataFrame
         Mapping containing ``original_name`` and ``OG1_name``.
+    name_lookup : pandas.Series or None, optional
+        Precomputed ``original_name`` -> ``OG1_name`` lookup. Built from
+        ``og1_mapping`` when None. Default is None.
     unit_format : dict[str, str], optional
         Unit spelling replacements. Defaults to
         ``vocabularies.unit_str_format``.
@@ -583,7 +631,8 @@ def standardise_og1(
     """
     dsa = ds.copy(deep=True)
 
-    name_lookup = og1_mapping.set_index("original_name")["OG1_name"]
+    if name_lookup is None:
+        name_lookup = og1_mapping.set_index("original_name")["OG1_name"]
 
     unassigned_variables = []
     variables_without_og1_attributes = []
@@ -1020,6 +1069,9 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
 
     """
     time_attrs = {}
+    # time_coverage_start/end are recomputed authoritatively in to_og1 from the
+    # concatenated TIME; the values cleaned here seed the start_date fallback and
+    # are overwritten there.
     time_attr_list = [
         "time_coverage_start",
         "time_coverage_end",
@@ -1030,7 +1082,7 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
         if attr in ds.attrs:
             val1 = ds.attrs[attr]
             if isinstance(val1, (int, float)):
-                val1 = datetime.utcfromtimestamp(val1).strftime("%Y%m%dT%H%M%S")
+                val1 = datetime.fromtimestamp(val1, tz=UTC).strftime("%Y%m%dT%H%M%S")
             if isinstance(val1, str) and ("-" in val1 or ":" in val1):
                 val1 = _pipeline._clean_time_string(val1)
             time_attrs[attr] = val1

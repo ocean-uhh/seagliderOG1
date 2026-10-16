@@ -5,7 +5,6 @@ name mapping, sensor/scalar extraction, dimension merge, dtype coercion, and the
 validation/parsing helpers. Public, user-facing utilities live in :mod:`seagliderOG1.tools`.
 """
 
-import datetime
 import logging
 import re
 from datetime import date
@@ -16,7 +15,6 @@ import xarray as xr
 from dateutil import parser
 
 from seagliderOG1 import vocabularies
-from seagliderOG1.tools import OG1_TIME_UNITS
 
 _log = logging.getLogger(__name__)
 
@@ -741,63 +739,6 @@ def _get_merge_dimensions(
     return ctd_dim, list(dict.fromkeys(dims_to_merge)), list(dict.fromkeys(dimensions))
 
 
-def print_og1_mapping_summary(
-    og1_mapping: pd.DataFrame,
-    ctd_dim: str,
-    merge_dims: list[str],
-    all_dims: list[str],
-) -> None:
-    """Print dimensions, mapped variable counts, and vocabulary gaps."""
-    has_og1_name = og1_mapping["OG1_name"].notna() & og1_mapping["OG1_name"].ne("")
-    time_mask = og1_mapping["OG1_name"].eq("TIME")
-
-    variables = og1_mapping.loc[has_og1_name & ~time_mask]
-
-    for entry in og1_mapping.loc[time_mask, "original_dimension"].explode():
-        # Each entry has the format "dimension (original_time_name)".
-        dimension, time_name = entry.rsplit(" (", 1)
-        time_name = time_name.removesuffix(")")
-
-        variable_count = (
-            variables["original_dimension"]
-            .apply(lambda dims, dimension=dimension: dimension in dims.split(", "))
-            .sum()
-        )
-
-        print(
-            f"Adding dimension '{dimension}' with time variable '{time_name}' "
-            f"and {variable_count} non-time variables."
-        )
-
-    selected_dims = set(merge_dims) | {ctd_dim}
-    unused_dims = [dim for dim in all_dims if dim not in selected_dims]
-
-    print(
-        f"\nThe following dimensions will not be merged into the new dataset: "
-        f"{unused_dims}"
-        "\nIf instrument data is missing, make sure its dimension follows the "
-        "naming convention '<instrument>_data_point'"
-        "\nfrom the ds.attrs['instrument'] list."
-    )
-
-    print(
-        f"\nTotal: {len(variables)} non-time variables "
-        f"+ {int(time_mask.sum())} combined TIME variable."
-    )
-
-    unassigned = og1_mapping.loc[~has_og1_name, "original_name"].tolist()
-
-    print(f"\nVariables without an assigned OG1 name: {unassigned}")
-
-    missing_attrs = og1_mapping.loc[
-        has_og1_name & ~og1_mapping["has_og1_attributes"],
-        "OG1_name",
-    ].tolist()
-
-    if missing_attrs:
-        print(f"OG1 variables without vocabulary attributes: {missing_attrs}")
-
-
 def _del_capital_letters(string: str) -> str:
     """Return the input string with all uppercase characters removed."""
     return "".join([char for char in string if not char.isupper()])
@@ -937,177 +878,6 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
         f"Space saved by dtype downgrade: {int(100 * (bytes_in - bytes_out) / bytes_in)} %",
     )
     return ds
-
-
-def set_best_dtype_value(value: object, var_name: str) -> object:
-    """Determine the best data type for a single value based on its variable name and convert it.
-
-    Parameters
-    ----------
-    value : any
-        The input value to convert.
-    var_name : str
-        The name of the variable the value belongs to.
-
-    Returns
-    -------
-    converted_value : any
-        The value converted to the best data type.
-
-    """
-    input_dtype = type(value)
-    new_dtype = find_best_dtype(var_name, xr.DataArray(value))
-
-    if new_dtype == input_dtype:
-        return value
-
-    converted_value = np.array(value).astype(new_dtype)
-
-    if "int" in str(new_dtype) and np.isnan(value):
-        fill_val = set_fill_value(new_dtype)
-        converted_value = fill_val
-
-    return converted_value
-
-
-def encode_times(ds: xr.Dataset) -> xr.Dataset:
-    """Encode time variables with standard units and remove problematic attributes.
-
-    Parameters
-    ----------
-    ds
-        Dataset containing time variables to encode.
-
-    Returns
-    -------
-    xarray.Dataset
-        Dataset with properly encoded time variables.
-
-    """
-    if "units" in ds.time.attrs:
-        ds.time.attrs.pop("units")
-    if "calendar" in ds.time.attrs:
-        ds.time.attrs.pop("calendar")
-    ds["time"].encoding["units"] = OG1_TIME_UNITS
-    for var_name in list(ds):
-        if "time" in var_name.lower() and var_name != "time":
-            for drop_attr in ["units", "calendar", "dtype"]:
-                if drop_attr in ds[var_name].attrs:
-                    ds[var_name].attrs.pop(drop_attr)
-            ds[var_name].encoding["units"] = OG1_TIME_UNITS
-    return ds
-
-
-def merge_parts_of_dataset(
-    ds: xr.Dataset, dim1: str = "sg_data_point", dim2: str = "ctd_data_point"
-) -> xr.Dataset:
-    """Merge variables from a dataset along two dimensions, ensuring coordinate consistency.
-
-    The function first separates the dataset into two datasets based on the specified dimensions,
-    renames the second dimension to match the first, and then concatenates them along the first dimension.
-
-    Missing time values are filled with NaN, and the final dataset is sorted by time.
-
-
-    Parameters
-    ----------
-    ds: xarray.Dataset
-        The input dataset containing both dimensions.
-    dim1: str
-        Primary dimension name (e.g., 'sg_data_point').
-    dim2: str
-        Secondary dimension name to be merged into dim1 (e.g., 'ctd_data_point').
-
-    Returns
-    -------
-    merged_ds: xarray.Dataset
-        A merged dataset sorted by time.
-
-    Notes
-    -----
-    Original author: Till Moritz
-
-    """
-
-    def get_time_var(ds: xr.Dataset, dim: str) -> str | None:
-        """Find the appropriate time variable based on dimension naming conventions."""
-        prefix = dim.split("_data_point")[0]  # Extract prefix
-        time_var = "time" if dim == "sg_data_point" else f"{prefix}_time"
-        return time_var if time_var in ds.variables else None
-
-    # Extract variables for each dimension
-    vars1 = {var: ds[var] for var in ds.variables if dim1 in ds[var].sizes}
-    vars2 = {var: ds[var] for var in ds.variables if dim2 in ds[var].sizes}
-
-    # Create separate datasets
-    new_ds1, new_ds2 = xr.Dataset(vars1), xr.Dataset(vars2)
-
-    # Rename time variables to 'time' if present
-    time_var1, time_var2 = get_time_var(ds, dim1), get_time_var(ds, dim2)
-    if time_var1:
-        new_ds1 = new_ds1.rename({time_var1: "time"})
-    if time_var2:
-        new_ds2 = new_ds2.rename({time_var2: "time"})
-    # Ensure "time" is a coordinate
-    new_ds1 = new_ds1.set_coords("time") if "time" in new_ds1 else new_ds1
-    new_ds2 = new_ds2.set_coords("time") if "time" in new_ds2 else new_ds2
-
-    # Rename dim2 to dim1 for consistency
-    new_ds2 = new_ds2.rename({dim2: dim1})
-
-    # Add original dimension as attribute
-    for new_ds, original_dim in [(new_ds1, dim1), (new_ds2, dim2)]:
-        for var in new_ds.variables:
-            new_ds[var].attrs["dimension_info"] = f"Original dimension: {original_dim}"
-
-    # Find max size for primary dimension
-    max_size = max(new_ds1.sizes.get(dim1, 0), new_ds2.sizes.get(dim1, 0))
-
-    # Pad function to match sizes along dim1
-    def pad_ds(ds: xr.Dataset, max_size: int) -> xr.Dataset:
-        """Pad a dataset along the primary dimension to the given size with NaN."""
-        ### the dataset makes problems if variables are integers,
-        ### so we convert to float before padding and back to int after padding
-        for var in ds.variables:
-            if "int" in str(ds[var].dtype):
-                ds[var] = ds[var].astype(float)
-
-        pad_size = max_size - ds.sizes.get(dim1, 0)
-        if pad_size > 0:
-            ds = ds.pad({dim1: (0, pad_size)}, constant_values=np.nan)
-        return ds
-
-    new_ds1, new_ds2 = pad_ds(new_ds1, max_size), pad_ds(new_ds2, max_size)
-
-    # Get all unique coordinates across both datasets
-    all_coords = set(new_ds1.coords) | set(new_ds2.coords)
-
-    # Ensure both datasets contain the same coordinates, filling missing ones with NaN
-    for coord in all_coords:
-        if coord not in new_ds1:
-            new_shape = (
-                (new_ds1.sizes[dim1],)
-                if dim1 in new_ds1.sizes
-                else (len(new_ds1["time"]),)
-            )
-            new_ds1[coord] = xr.DataArray(np.full(new_shape, np.nan), dims=dim1)
-            new_ds1 = new_ds1.set_coords(coord)
-        if coord not in new_ds2:
-            new_shape = (
-                (new_ds2.sizes[dim1],)
-                if dim1 in new_ds2.sizes
-                else (len(new_ds2["time"]),)
-            )
-            new_ds2[coord] = xr.DataArray(np.full(new_shape, np.nan), dims=dim1)
-            new_ds2 = new_ds2.set_coords(coord)
-
-    # Concatenate along dim1. Missing values will be filled with NaN.
-    merged_ds = xr.concat(
-        [new_ds1, new_ds2], dim=dim1, join="inner", combine_attrs="drop_conflicts"
-    )
-
-    # Sort by time and drop NaT values
-    return merged_ds.sortby("time").dropna(dim=dim1, subset=["time"])
 
 
 def merge_datasets_along_time(
@@ -1339,41 +1109,6 @@ def merge_datasets_along_time(
     _log.debug("Dimensions not merged: %s", sorted(all_dims - actually_merged_dims))
 
     return merged_ds
-
-
-def combine_two_dim_of_dataset(
-    ds: xr.Dataset, dim1: str = "sg_data_point", dim2: str = "ctd_data_point"
-) -> xr.Dataset:
-    """Replace the dim1 and dim2 variables in the dataset with their merged form.
-
-    Remove variables along dim1 and dim2 and add the merged dataset.
-
-    Parameters
-    ----------
-    ds
-        The original dataset.
-    dim1, optional
-        First dimension to be removed. Default is 'sg_data_point'.
-    dim2, optional
-        Second dimension to be removed. Default is 'ctd_data_point'.
-
-    Returns
-    -------
-    xarray.Dataset
-        The updated dataset with merged variables.
-
-    """
-    # Drop all variables that have dim1 or dim2
-    vars_to_drop = [
-        var for var in ds.variables if dim1 in ds[var].sizes or dim2 in ds[var].sizes
-    ]
-    cleaned_ds = ds.drop_vars(vars_to_drop, errors="ignore")
-    merged_ds = merge_parts_of_dataset(ds, dim1=dim1, dim2=dim2)
-    # Merge the cleaned dataset with the merged dataset
-    return xr.merge([cleaned_ds, merged_ds], combine_attrs="drop_conflicts")
-
-
-standard_names = vocabularies.standard_names
 
 
 def extract_scalar_parameters(
@@ -1875,72 +1610,6 @@ def _validate_dims(ds: xr.Dataset, expected_dims: str = "N_MEASUREMENTS") -> boo
     return True
 
 
-def _parse_calibcomm(calstr: str) -> tuple[str, str]:
-    """Parse calibration string to extract calibration date and serial number.
-
-    Parameters
-    ----------
-    calstr
-        The calibration string to parse.
-
-    Returns
-    -------
-    tuple[str, str]
-        A tuple containing (calibration_date, serial_number).
-        Date format is YYYYMMDD, or 'Unknown' if not found.
-
-    """
-    # Parse for calibration date
-    cal_date = calstr
-    cal_date_before_keyword = cal_date
-    cal_date_YYYYmmDD = "Unknown"
-    formats = [
-        "%d%b%y",
-        "%d-%b-%y",
-        "%m/%d/%y",
-        "%b/%d/%y",
-        "%b-%d-%y",
-        "%b%d%y",
-        "%d%b%y",
-        "%d%B%y",
-    ]
-    for keyword in ["calibration", "calibrated"]:
-        if keyword in cal_date:
-            cal_date_before_keyword = cal_date.split(keyword)[0].strip()
-            cal_date = cal_date.split(keyword)[-1].strip()
-            cal_date = cal_date.replace(" ", "")
-            for fmt in formats:
-                try:
-                    cal_date_YYYYmmDD = datetime.datetime.strptime(
-                        cal_date, fmt
-                    ).strftime("%Y%m%d")
-                    break  # Exit the loop if parsing is successful
-                except ValueError:
-                    continue  # Try the next format if parsing fails
-            break  # Exit the outer loop if keyword is found
-
-    _log.debug("     --> produces %s", cal_date_YYYYmmDD)
-
-    # Parse for serial number of sensor
-    serial_number = "unknown"
-    for keyword in ["s/n", "S/N", "SN", "SBE#", "SBE"]:
-        if keyword in cal_date_before_keyword:
-            serial_match = cal_date_before_keyword.split(keyword)[-1].strip()
-            serial_number = (
-                serial_match.replace(keyword, "")
-                .replace("/", "")
-                .replace(",", "")
-                .strip()
-            )
-            break  # Exit the outer loop if keyword is found
-
-    if len(calstr) < 5:
-        serial_number = calstr
-    _log.debug("     --> produces serial_number %s", serial_number)
-
-    return cal_date_YYYYmmDD, serial_number
-
-
 def _clean_time_string(time_str: str) -> str:
     """Clean time string by removing common separators and timezone indicators.
 
@@ -1956,50 +1625,3 @@ def _clean_time_string(time_str: str) -> str:
 
     """
     return time_str.replace("_", "").replace(":", "").rstrip("Z").replace("-", "")
-
-
-def _clean_anc_vars_list(ancillary_variables_str: str) -> list[str]:
-    """Clean and split ancillary variables string into a list.
-
-    Parameters
-    ----------
-    ancillary_variables_str
-        Space or concatenated string of ancillary variable names.
-
-    Returns
-    -------
-    list[str]
-        List of cleaned variable names with 'sg_cal_' prefix removed.
-
-    """
-    ancillary_variables_str = re.sub(r"(\w)(sg_cal)", r"\1 \2", ancillary_variables_str)
-    ancilliary_vars_list = ancillary_variables_str.split()
-    return [var.replace("sg_cal_", "") for var in ancilliary_vars_list]
-
-
-def _assign_calval(sg_cal: xr.Dataset, anc_var_list: list[str]) -> dict:
-    """Assign calibration values from dataset to a dictionary.
-
-    Parameters
-    ----------
-    sg_cal
-        Dataset containing calibration variables.
-    anc_var_list
-        List of ancillary variable names to extract.
-
-    Returns
-    -------
-    dict
-        Dictionary mapping variable names to their values.
-        Missing variables are assigned 'Unknown'.
-
-    """
-    calval = {}
-    for anc_var in anc_var_list:
-        # Check if anc_var exists in sg_cal which was not the case in Robs dataset
-        if anc_var in sg_cal:
-            var_value = sg_cal[anc_var].values.item()
-            calval[anc_var] = var_value
-        else:
-            calval[anc_var] = "Unknown"
-    return calval

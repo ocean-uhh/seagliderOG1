@@ -131,6 +131,29 @@ def test_to_og1_options_are_keyword_only():
         raise AssertionError("expected TypeError for a positional option")
 
 
+def test_name_mapping_returns_the_mapping_table():
+    """name_mapping returns the basestation->OG1 table; a bare Dataset is rejected."""
+    datasets = readers.load_basestation_files(str(parent_dir / "data/demo_sg005"), 1, 1)
+    mapping = convert.name_mapping(datasets)
+    assert list(mapping.columns) == [
+        "original_name",
+        "OG1_name",
+        "instrument",
+        "instrument_type",
+        "original_dimension",
+        "has_og1_attributes",
+    ]
+    assert len(mapping) > 0
+    assert "TIME" in set(mapping["OG1_name"])
+
+    try:
+        convert.name_mapping(datasets[0])
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("expected TypeError for a bare Dataset")
+
+
 def test_apply_keep_variables_retains_mandatory_and_qc():
     """keep_variables keeps the ask plus every mandatory var and the kept var's _QC."""
     import warnings

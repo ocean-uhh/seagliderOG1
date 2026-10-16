@@ -86,6 +86,8 @@ semantic versioning.
   and `mode=`. `OG1_author.yaml` is no longer loaded at import (`load_default_contributors`
   loads it on demand); `readers.discover_missions` and public `readers.validate_filename`/
   `profnum_from_filename`/`glider_sn_from_filename`.
+- `convert.name_mapping(datasets)` returns the basestation→OG1 variable-mapping table — the
+  data the old `convert_to_OG1` returned as its second tuple element, now an explicit function.
 - `writers.save_dataset` now writes every non-scalar numeric variable, coordinates
   included, with lossless zlib compression (level 4) and the shuffle filter. String
   and scalar variables are left uncompressed. Output files are smaller and remain
@@ -134,7 +136,6 @@ semantic versioning.
 - `writers.save_dataset` reuses one encoding on the retry path, so a file written after
   a `TypeError` fallback keeps its time encoding and compression instead of being
   written unencoded.
-- `writers.save_dataset` return annotation corrected from `None` to `bool`.
 - Dtype optimisation now runs once on the concatenated dataset (in `convert.to_og1`) instead
   of per dive, so `int8` QC flags are no longer re-promoted to `float32` by the concat.
 - `tools.set_best_dtype` now visits coordinates (so `DEPTH` becomes `float32`) and restores

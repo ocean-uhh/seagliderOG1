@@ -13,7 +13,8 @@ Modules
 * ``convert.py`` — ``to_og1`` orchestrates mapping, standardisation, concat and the
   single post-concat dtype pass.
 * ``writers.py`` — write OG1 files.
-* ``tools.py`` — user-facing utilities; ``utilities.py`` — internal helpers.
+* ``tools.py`` — user-facing utilities (the conversion internals and validation
+  helpers live in a private module).
 * ``vocabularies.py`` — vocabulary and mapping tables (the defaults; see below).
 * ``plotters.py`` — plotting. ``contributors.py`` — contributor/institution record handling.
 * ``cli/`` — the ``seagliderOG1`` command, one module per verb.

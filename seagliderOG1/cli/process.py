@@ -44,7 +44,7 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
     selection.add_argument(
         "--mission",
         metavar="GLOB",
-        help="select missions by SN/DATE glob, e.g. '103/*'",
+        help="select missions by SN/DATE glob, e.g. 103/*",
     )
     parser.add_argument(
         "-o", "--output-dir", metavar="DIR", help="override the config output_dir"
