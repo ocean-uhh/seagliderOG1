@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Package layout and defaults &mdash; seagliderOG1 0.0.2.post1.dev65 documentation</title>
+  <title>Package layout and defaults &mdash; seagliderOG1 0.0.2.post1.dev66 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=5d504b3b"></script>
+      <script src="_static/documentation_options.js?v=6aa8c151"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -106,10 +106,11 @@
 <h2>Modules<a class="headerlink" href="#modules" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">readers.py</span></code> — read basestation files from a server or a local directory.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">convertOG1.py</span></code> — <code class="docutils literal notranslate"><span class="pre">convert_to_OG1</span></code> orchestrates mapping, standardisation, concat and the
+<li><p><code class="docutils literal notranslate"><span class="pre">convert.py</span></code> — <code class="docutils literal notranslate"><span class="pre">to_og1</span></code> orchestrates mapping, standardisation, concat and the
 single post-concat dtype pass.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">writers.py</span></code> — write OG1 files.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tools.py</span></code> — user-facing utilities; <code class="docutils literal notranslate"><span class="pre">utilities.py</span></code> — internal helpers.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tools.py</span></code> — user-facing utilities (the conversion internals and validation
+helpers live in a private module).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">vocabularies.py</span></code> — vocabulary and mapping tables (the defaults; see below).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">plotters.py</span></code> — plotting. <code class="docutils literal notranslate"><span class="pre">contributors.py</span></code> — contributor/institution record handling.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">cli/</span></code> — the <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> command, one module per verb.</p></li>
@@ -126,12 +127,8 @@ single post-concat dtype pass.</p></li>
 <code class="docutils literal notranslate"><span class="pre">units</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">OG1_sensor_attrs.yaml</span></code> — sensor metadata.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">OG1_global_attrs.yaml</span></code> — global attribute templates (for example <code class="docutils literal notranslate"><span class="pre">featureType</span></code>).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_author.yaml</span></code> — the example contributor block, loaded on demand by
-<code class="docutils literal notranslate"><span class="pre">vocabularies.load_default_contributors</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">institution_registry.yml</span></code> — EDMO codes for resolving institutions by name.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">institution_registry.yaml</span></code> — EDMO codes for resolving institutions by name.</p></li>
 </ul>
-<p>(<code class="docutils literal notranslate"><span class="pre">config/mission_yaml.yaml</span></code> is an unused legacy template; the <code class="docutils literal notranslate"><span class="pre">init</span></code> verb generates the
-<code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> template in code, not from this file.)</p>
 <p>Tables in <code class="docutils literal notranslate"><span class="pre">vocabularies.py</span></code>:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">dims_rename_dict</span></code> — dimension renaming (<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> → <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>).</p></li>

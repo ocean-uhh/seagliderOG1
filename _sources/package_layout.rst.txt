@@ -10,10 +10,11 @@ Modules
 -------
 
 * ``readers.py`` — read basestation files from a server or a local directory.
-* ``convertOG1.py`` — ``convert_to_OG1`` orchestrates mapping, standardisation, concat and the
+* ``convert.py`` — ``to_og1`` orchestrates mapping, standardisation, concat and the
   single post-concat dtype pass.
 * ``writers.py`` — write OG1 files.
-* ``tools.py`` — user-facing utilities; ``utilities.py`` — internal helpers.
+* ``tools.py`` — user-facing utilities (the conversion internals and validation
+  helpers live in a private module).
 * ``vocabularies.py`` — vocabulary and mapping tables (the defaults; see below).
 * ``plotters.py`` — plotting. ``contributors.py`` — contributor/institution record handling.
 * ``cli/`` — the ``seagliderOG1`` command, one module per verb.
@@ -31,12 +32,7 @@ Packaged YAML (``seagliderOG1/config/``), loaded at conversion time:
   ``units``).
 * ``OG1_sensor_attrs.yaml`` — sensor metadata.
 * ``OG1_global_attrs.yaml`` — global attribute templates (for example ``featureType``).
-* ``OG1_author.yaml`` — the example contributor block, loaded on demand by
-  ``vocabularies.load_default_contributors``.
-* ``institution_registry.yml`` — EDMO codes for resolving institutions by name.
-
-(``config/mission_yaml.yaml`` is an unused legacy template; the ``init`` verb generates the
-``mission.yaml`` template in code, not from this file.)
+* ``institution_registry.yaml`` — EDMO codes for resolving institutions by name.
 
 Tables in ``vocabularies.py``:
 

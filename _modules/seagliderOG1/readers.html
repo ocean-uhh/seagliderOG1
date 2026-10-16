@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.readers &mdash; seagliderOG1 0.0.2.post1.dev65 documentation</title>
+  <title>seagliderOG1.readers &mdash; seagliderOG1 0.0.2.post1.dev66 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=5d504b3b"></script>
+      <script src="../../_static/documentation_options.js?v=6aa8c151"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -99,6 +99,7 @@
 <span class="sd">the data, only loads it into xarray datasets.</span>
 <span class="sd">"""</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
@@ -111,6 +112,17 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"load_sample_basestation"</span><span class="p">,</span>
+    <span class="s2">"read_mission"</span><span class="p">,</span>
+    <span class="s2">"read_file"</span><span class="p">,</span>
+    <span class="s2">"discover_missions"</span><span class="p">,</span>
+    <span class="s2">"validate_filename"</span><span class="p">,</span>
+    <span class="s2">"repair_files"</span><span class="p">,</span>
+<span class="p">]</span>
 
 <span class="n">script_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
 <span class="n">parent_dir</span> <span class="o">=</span> <span class="n">script_dir</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -151,18 +163,18 @@
 <span class="c1"># Instead of loading from the server, we will load from a local directory for testing and development purposes.</span>
 <span class="c1"># The local directory will contain the same files as the server, but we will not use pooch to manage them.</span>
 <span class="c1"># Instead, we will just read them directly from the filesystem.</span>
-<div class="viewcode-block" id="load_sample_dataset">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_sample_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_sample_dataset</span><span class="p">(</span>
+<div class="viewcode-block" id="load_sample_basestation">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_sample_basestation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_sample_basestation</span><span class="p">(</span>
     <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">parent_dir</span> <span class="o">/</span> <span class="s2">"data/demo_sg005/p0050001_20080606.nc"</span><span class="p">),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Download sample datasets for use with seagliderOG1.</span>
+<span class="w">    </span><span class="sd">"""Open a bundled sample Seaglider basestation file.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    file_path : str, optional</span>
-<span class="sd">        Path to the sample dataset to load. Default is the demo sg005 dive 1</span>
-<span class="sd">        file bundled under ``data/demo_sg005``.</span>
+<span class="sd">        Path to the sample basestation file to load. Default is the demo sg005</span>
+<span class="sd">        dive 1 file bundled under ``data/demo_sg005``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -210,16 +222,14 @@
     <span class="c1"># pattern 2: p0420100_20100903.nc</span>
     <span class="n">pattern2</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"^p\d</span><span class="si">{7}</span><span class="s2">_\d</span><span class="si">{8}</span><span class="s2">\.nc$"</span>
     <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern1</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> <span class="ow">or</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern2</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="n">glider_sn</span> <span class="o">=</span> <span class="n">glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-        <span class="n">divenum</span> <span class="o">=</span> <span class="n">profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">glider_sn</span> <span class="o">=</span> <span class="n">serial_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">divenum</span> <span class="o">=</span> <span class="n">profile_number_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">glider_sn</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">divenum</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
     <span class="k">return</span> <span class="kc">False</span></div>
 
 
 
-<div class="viewcode-block" id="profnum_from_filename">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.profnum_from_filename">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">profile_number_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Extract the profile/dive number from a Seaglider filename.</span>
 
 <span class="sd">    Extracts characters 4-7 (0-indexed) which represent the dive cycle number</span>
@@ -236,13 +246,10 @@
 <span class="sd">        The profile/dive number.</span>
 
 <span class="sd">    """</span>
-    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">8</span><span class="p">])</span></div>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">8</span><span class="p">])</span>
 
 
-
-<div class="viewcode-block" id="glider_sn_from_filename">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.glider_sn_from_filename">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">glider_sn_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">serial_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Extract the glider serial number from a Seaglider filename.</span>
 
 <span class="sd">    Extracts characters 1-3 (0-indexed) which represent the 3-digit glider</span>
@@ -259,12 +266,9 @@
 <span class="sd">        The glider serial number.</span>
 
 <span class="sd">    """</span>
-    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span></div>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">filename</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
 
 
-
-<div class="viewcode-block" id="Mission">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.Mission">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Mission</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""A discovered Seaglider mission (a directory of basestation files).</span>
 
@@ -285,8 +289,7 @@
     <span class="n">sn</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">dives</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span></div>
-
+    <span class="n">dives</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_mission_dives</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
@@ -309,8 +312,8 @@
     <span class="p">]</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">names</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
-    <span class="k">return</span> <span class="n">glider_sn_from_filename</span><span class="p">(</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">sorted</span><span class="p">(</span>
-        <span class="n">profnum_from_filename</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span>
+    <span class="k">return</span> <span class="n">serial_from_filename</span><span class="p">(</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="n">profile_number_from_filename</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span>
     <span class="p">)</span>
 
 
@@ -376,8 +379,6 @@
 
 
 
-<div class="viewcode-block" id="is_root">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.is_root">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_root</span><span class="p">(</span><span class="n">missions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Mission</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Return True when ``missions`` came from a root of ``SN/DATE`` directories.</span>
 
@@ -398,12 +399,9 @@
 <span class="sd">        directory or an empty list.</span>
 
 <span class="sd">    """</span>
-    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">mission</span><span class="o">.</span><span class="n">date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">mission</span> <span class="ow">in</span> <span class="n">missions</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">mission</span><span class="o">.</span><span class="n">date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">mission</span> <span class="ow">in</span> <span class="n">missions</span><span class="p">)</span>
 
 
-
-<div class="viewcode-block" id="filter_files_by_profile">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.filter_files_by_profile">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">filter_files_by_profile</span><span class="p">(</span>
     <span class="n">file_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">start_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -443,7 +441,7 @@
     <span class="c1"># This could be refactored: see divenum_values above, and find values between start_profile and end_profil</span>
     <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">file_list</span><span class="p">:</span>
         <span class="c1"># Extract the profile number from the filename now from the beginning</span>
-        <span class="n">profile_number</span> <span class="o">=</span> <span class="n">profnum_from_filename</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">profile_number</span> <span class="o">=</span> <span class="n">profile_number_from_filename</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">start_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">end_profile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">start_profile</span> <span class="o">&lt;=</span> <span class="n">profile_number</span> <span class="o">&lt;=</span> <span class="n">end_profile</span><span class="p">:</span>
                 <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
@@ -456,13 +454,12 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">filtered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">filtered_files</span></div>
+    <span class="k">return</span> <span class="n">filtered_files</span>
 
 
-
-<div class="viewcode-block" id="load_first_basestation_file">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_first_basestation_file">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_first_basestation_file</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<div class="viewcode-block" id="read_file">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.read_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_file</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Load the first (alphabetically) basestation file from a source.</span>
 
 <span class="sd">    Useful for quick examination of data structure and metadata from</span>
@@ -481,18 +478,19 @@
 <span class="sd">    """</span>
     <span class="n">file_list</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
     <span class="n">filename</span> <span class="o">=</span> <span class="n">file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">start_profile</span> <span class="o">=</span> <span class="n">profnum_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-    <span class="n">datasets</span> <span class="o">=</span> <span class="n">load_basestation_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">)</span>
+    <span class="n">start_profile</span> <span class="o">=</span> <span class="n">profile_number_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">datasets</span> <span class="o">=</span> <span class="n">read_mission</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
 
 
 
-<div class="viewcode-block" id="load_basestation_files">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.load_basestation_files">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_basestation_files</span><span class="p">(</span>
+<div class="viewcode-block" id="read_mission">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.read_mission">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_mission</span><span class="p">(</span>
     <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">start_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">end_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
     <span class="n">repair</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Load multiple Seaglider basestation files with optional profile filtering.</span>
@@ -509,7 +507,7 @@
 <span class="sd">    end_profile : int, optional</span>
 <span class="sd">        Maximum profile number to load.</span>
 <span class="sd">    repair : bool, optional</span>
-<span class="sd">        When True, run :func:`scan_and_repair_files` first (it rewrites files with</span>
+<span class="sd">        When True, run :func:`repair_files` first (it rewrites files with</span>
 <span class="sd">        inconsistent time metadata in the source tree). Default False: the source</span>
 <span class="sd">        tree is never modified unless explicitly asked.</span>
 
@@ -521,7 +519,7 @@
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">repair</span><span class="p">:</span>
         <span class="c1"># Rewrites files with inconsistent time metadata in place; opt-in only.</span>
-        <span class="n">scan_and_repair_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">)</span>
+        <span class="n">repair_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">)</span>
 
     <span class="n">file_list</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
     <span class="n">filtered_files</span> <span class="o">=</span> <span class="n">filter_files_by_profile</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">start_profile</span><span class="p">,</span> <span class="n">end_profile</span><span class="p">)</span>
@@ -540,8 +538,6 @@
 
 
 
-<div class="viewcode-block" id="list_files">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.list_files">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">list_files</span><span class="p">(</span>
     <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">_registry_loc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"seagliderOG1"</span><span class="p">,</span>
@@ -596,13 +592,12 @@
     <span class="c1"># Sort alphabetically</span>
     <span class="n">file_list</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
 
-    <span class="k">return</span> <span class="n">file_list</span></div>
+    <span class="k">return</span> <span class="n">file_list</span>
 
 
-
-<div class="viewcode-block" id="scan_and_repair_files">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.scan_and_repair_files">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">scan_and_repair_files</span><span class="p">(</span>
+<div class="viewcode-block" id="repair_files">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.repair_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">repair_files</span><span class="p">(</span>
     <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">start_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">end_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -640,9 +635,9 @@
             <span class="n">ds</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>  <span class="c1"># noqa: BLE001  # any open failure means the file needs repair; the cause is logged</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Need repair: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Need repair: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
 
-            <span class="n">fixed_vars</span> <span class="o">=</span> <span class="n">repair_netcdf_time_metadata_inplace</span><span class="p">(</span>
+            <span class="n">fixed_vars</span> <span class="o">=</span> <span class="n">repair_time_metadata</span><span class="p">(</span>
                 <span class="n">full_path</span><span class="p">,</span>
                 <span class="n">repair_dir</span><span class="o">=</span><span class="n">fixes_dir</span><span class="p">,</span>
                 <span class="n">backup</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -650,7 +645,7 @@
 
             <span class="k">if</span> <span class="n">fixed_vars</span><span class="p">:</span>
                 <span class="n">log_repair</span><span class="p">(</span><span class="n">log_path</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">fixed_vars</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Repaired </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">fixed_vars</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+                <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Repaired </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">fixed_vars</span><span class="p">)</span></div>
 
 
 
@@ -670,8 +665,6 @@
     <span class="k">return</span> <span class="n">repair_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">stem</span><span class="si">}</span><span class="s2">_original</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">"</span>
 
 
-<div class="viewcode-block" id="log_repair">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.log_repair">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">log_repair</span><span class="p">(</span>
     <span class="n">log_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -683,13 +676,10 @@
         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Fixed variables: </span><span class="si">{</span><span class="n">fixed_vars</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Original error: </span><span class="si">{</span><span class="n">error</span><span class="si">!s}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span></div>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
 
 
-
-<div class="viewcode-block" id="repair_netcdf_time_metadata_inplace">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.readers.repair_netcdf_time_metadata_inplace">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">repair_netcdf_time_metadata_inplace</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">repair_time_metadata</span><span class="p">(</span>
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span>
     <span class="n">repair_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span>
     <span class="n">backup</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -739,8 +729,7 @@
         <span class="n">ds</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="n">tmp_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">fixed_vars</span></div>
-
+    <span class="k">return</span> <span class="n">fixed_vars</span>
 </pre></div>
 
            </div>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev65 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev66 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=5d504b3b"></script>
+      <script src="_static/documentation_options.js?v=6aa8c151"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -159,7 +159,7 @@ basestation attributes and written as OG1 sensor variables.</p></li>
 the mission configuration.</p></li>
 <li><p><strong>QC variables</strong>: where the basestation input carries a <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_qc</span></code> flag, it is carried
 through as the OG1 <code class="docutils literal notranslate"><span class="pre">&lt;NAME&gt;_QC</span></code> companion of the kept variable; variables with no input flag
-do not gain one (<code class="docutils literal notranslate"><span class="pre">convertOG1.py</span></code>).</p></li>
+do not gain one (<code class="docutils literal notranslate"><span class="pre">convert.py</span></code>).</p></li>
 </ul>
 </section>
 <section id="gps-data">
@@ -193,7 +193,7 @@ mappings:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">OG1_vocab_attrs.yaml</span></code> — CF variable attributes;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">OG1_sensor_attrs.yaml</span></code> — sensor metadata;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">OG1_global_attrs.yaml</span></code> — global attribute templates;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">institution_registry.yml</span></code> — EDMO codes for resolving institutions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">institution_registry.yaml</span></code> — EDMO codes for resolving institutions.</p></li>
 </ul>
 </section>
 <section id="og1-compliance">
@@ -231,15 +231,15 @@ against the format, use <a class="reference external" href="https://github.com/O
 </pre></div>
 </div>
 <p>or from Python:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">convertOG1</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">writers</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">writers</span>
 
-<span class="n">datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">)</span>
-<span class="n">ds</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">convertOG1</span><span class="o">.</span><span class="n">convert_to_OG1</span><span class="p">(</span>
+<span class="n">datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">read_mission</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">)</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">convert</span><span class="o">.</span><span class="n">to_og1</span><span class="p">(</span>
     <span class="n">datasets</span><span class="p">,</span>
     <span class="n">contributors</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"Jane Doe"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"PI"</span><span class="p">,</span> <span class="s2">"email"</span><span class="p">:</span> <span class="s2">"jane@example.org"</span><span class="p">}],</span>
     <span class="n">institutions</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"University of Hamburg (IfM)"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"Operator"</span><span class="p">}],</span>
 <span class="p">)</span>
-<span class="n">writers</span><span class="o">.</span><span class="n">save_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+<span class="n">writers</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">contributors</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> arguments are lists of records, one entry per person

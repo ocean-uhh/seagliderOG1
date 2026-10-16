@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.convertOG1 &mdash; seagliderOG1 0.0.2.post1.dev65 documentation</title>
+  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev66 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=5d504b3b"></script>
+      <script src="../../_static/documentation_options.js?v=6aa8c151"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -82,7 +82,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">seagliderOG1.convertOG1</li>
+      <li class="breadcrumb-item active">seagliderOG1.convert</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -91,7 +91,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for seagliderOG1.convertOG1</h1><div class="highlight"><pre>
+  <h1>Source code for seagliderOG1.convert</h1><div class="highlight"><pre>
 <span></span><span class="sd">"""Convert Seaglider basestation files to OG1 format.</span>
 
 <span class="sd">This module provides the core functionality for converting Seaglider basestation</span>
@@ -102,15 +102,16 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">UTC</span><span class="p">,</span> <span class="n">datetime</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">contributors</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">utilities</span><span class="p">,</span> <span class="n">vocabularies</span><span class="p">,</span> <span class="n">writers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">_pipeline</span><span class="p">,</span> <span class="n">contributors</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">vocabularies</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"to_og1"</span><span class="p">,</span> <span class="s2">"name_mapping"</span><span class="p">,</span> <span class="s2">"keep_variables"</span><span class="p">]</span>
 
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -247,12 +248,12 @@
 <span class="n">_MANDATORY_OG1_PREFIXES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"PLATFORM_"</span><span class="p">,</span> <span class="s2">"SENSOR_"</span><span class="p">,</span> <span class="s2">"DEPLOYMENT_"</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="apply_keep_variables">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.apply_keep_variables">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">apply_keep_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">keep</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<div class="viewcode-block" id="keep_variables">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.keep_variables">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">keep_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Subset the dataset to a science-variable allow-list, keeping OG1 essentials.</span>
 
-<span class="sd">    The requested ``keep`` names are retained, plus every OG1-mandatory variable</span>
+<span class="sd">    The requested ``names`` are retained, plus every OG1-mandatory variable</span>
 <span class="sd">    and the ``_QC`` companion of every kept variable. Dropped science variables are</span>
 <span class="sd">    warned. Coordinates are retained by xarray.</span>
 
@@ -260,7 +261,7 @@
 <span class="sd">    ----------</span>
 <span class="sd">    ds : xarray.Dataset</span>
 <span class="sd">        The converted OG1 dataset.</span>
-<span class="sd">    keep : list of str</span>
+<span class="sd">    names : list of str</span>
 <span class="sd">        Science variables the user asked to keep.</span>
 
 <span class="sd">    Returns</span>
@@ -269,7 +270,7 @@
 <span class="sd">        The subset dataset; every OG1-mandatory variable present in ``ds`` survives.</span>
 
 <span class="sd">    """</span>
-    <span class="n">requested</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">keep</span><span class="p">)</span>
+    <span class="n">requested</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
     <span class="n">kept</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
         <span class="n">mandatory</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_MANDATORY_OG1_VARS</span> <span class="ow">or</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span>
@@ -291,28 +292,31 @@
 
 
 
-<div class="viewcode-block" id="convert_to_OG1">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.convert_to_OG1">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convert_to_OG1</span><span class="p">(</span>
-    <span class="n">list_of_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+<div class="viewcode-block" id="to_og1">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.to_og1">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_og1</span><span class="p">(</span>
+    <span class="n">list_of_datasets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">contributors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">institutions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">platform</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">global_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"delayed"</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Convert Seaglider basestation datasets to OG1 format.</span>
 
-<span class="sd">    Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,</span>
+<span class="sd">    Processes a list of xarray datasets, converts them to OG1 format,</span>
 <span class="sd">    concatenates the datasets, sorts by time, and applies attributes. Main conversion function that</span>
 <span class="sd">    processes basestation datasets, applies OG1 standardization, concatenates multiple datasets,</span>
 <span class="sd">    and adds global attributes.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    list_of_datasets : list of xarray.Dataset or xarray.Dataset</span>
-<span class="sd">        A list of xarray datasets or a single xarray dataset in basestation format.</span>
+<span class="sd">    list_of_datasets : sequence of xarray.Dataset</span>
+<span class="sd">        A list of xarray datasets in basestation format, expected in dive (time)</span>
+<span class="sd">        order: ``start_date``, ``TRAJECTORY`` and the output ``id`` are taken from</span>
+<span class="sd">        the first dataset, so out-of-order input can disagree with</span>
+<span class="sd">        ``time_coverage_start``.</span>
 <span class="sd">    contributors : sequence of dict, optional</span>
 <span class="sd">        Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)</span>
 <span class="sd">        merged with those already on the files. When None, contributors come from</span>
@@ -336,15 +340,16 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    tuple of (xarray.Dataset, list of str)</span>
-<span class="sd">        A tuple containing:</span>
-<span class="sd">        - ds_og1 (xarray.Dataset): The concatenated and processed dataset in OG1 format.</span>
-<span class="sd">        - varlist (list of str): A list of variable names from the input datasets.</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        The concatenated and processed dataset in OG1 format.</span>
 
 <span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">"to_og1 takes a sequence of datasets; pass a sequence, e.g. [ds]."</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">contributors</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">"convert_to_OG1(contributors=...) is now a list of records "</span>
+            <span class="s2">"to_og1(contributors=...) is now a list of records "</span>
             <span class="s2">"[{'name': ..., 'role': ..., 'email': ..., 'orcid': ...}], not a dict "</span>
             <span class="s2">"of OG1 attributes. See CHANGELOG."</span>
         <span class="p">)</span>
@@ -363,35 +368,40 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"mode must be one of </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">MODE_SUFFIX</span><span class="p">)</span><span class="si">}</span><span class="s2">, not </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">."</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Start converting </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span><span class="si">}</span><span class="s2"> raw datasets to OG1 format ..."</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="n">list_of_datasets</span> <span class="o">=</span> <span class="p">[</span><span class="n">list_of_datasets</span><span class="p">]</span>
+    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">"Start converting </span><span class="si">%d</span><span class="s2"> raw datasets to OG1 format ..."</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="n">processed_datasets</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">firstrun</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="n">varlist</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="c1"># This would be faster if we concatenated the basestation files first, and then processed them.</span>
     <span class="c1"># But we need to process them first to get the dive number, assign GPS (could be after), ?</span>
 
     <span class="c1"># Find dimensions to merge across all datasets</span>
-    <span class="n">ctd_dim</span><span class="p">,</span> <span class="n">dims_to_merge</span><span class="p">,</span> <span class="n">all_dims</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">_get_merge_dimensions</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
+    <span class="n">ctd_dim</span><span class="p">,</span> <span class="n">dims_to_merge</span><span class="p">,</span> <span class="n">all_dims</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">_get_merge_dimensions</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
 
     <span class="c1"># Create a mapping from original variable names to OG1 variable names for all variables across the datasets</span>
-    <span class="n">OG1_mapping</span><span class="p">,</span> <span class="n">time_variables</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">OG1_name_mapping</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
+    <span class="n">og1_mapping</span><span class="p">,</span> <span class="n">time_variables</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">og1_name_mapping</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
+    <span class="c1"># Build the original-&gt;OG1 name lookup once; it is loop-invariant across dives.</span>
+    <span class="n">name_lookup</span> <span class="o">=</span> <span class="n">og1_mapping</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"original_name"</span><span class="p">)[</span><span class="s2">"OG1_name"</span><span class="p">]</span>
 
-    <span class="c1"># print the sumary of variables assigned or not assigned to the dataset</span>
-    <span class="c1"># tools.print_OG1_mapping_summary(OG1_mapping, ctd_dim, dims_to_merge, all_dims)</span>
+    <span class="c1"># Warn when a dimension group is dropped rather than merged, so a missing</span>
+    <span class="c1"># instrument is visible; name_mapping() returns the full basestation -&gt; OG1 table.</span>
+    <span class="n">skipped_dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">all_dims</span> <span class="k">if</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">dims_to_merge</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">skipped_dims</span><span class="p">:</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">"Dimensions not merged into the OG1 dataset: </span><span class="si">%s</span><span class="s2">. If instrument data "</span>
+            <span class="s2">"is missing, its dimension must be named '&lt;instrument&gt;_data_point' "</span>
+            <span class="s2">"(from ds.attrs['instrument'])."</span><span class="p">,</span>
+            <span class="n">skipped_dims</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">ds1_base</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Processing datasets"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"dataset"</span><span class="p">):</span>
-        <span class="n">varlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">varlist</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span><span class="p">)))</span>
         <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span> <span class="o">=</span> <span class="n">process_dataset</span><span class="p">(</span>
-            <span class="n">ds1_base</span><span class="p">,</span> <span class="n">OG1_mapping</span><span class="p">,</span> <span class="n">time_variables</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="n">firstrun</span>
+            <span class="n">ds1_base</span><span class="p">,</span> <span class="n">og1_mapping</span><span class="p">,</span> <span class="n">time_variables</span><span class="p">,</span> <span class="n">name_lookup</span><span class="o">=</span><span class="n">name_lookup</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">ds_new</span><span class="p">:</span>
             <span class="n">processed_datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
-            <span class="n">firstrun</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"Dataset for dive number </span><span class="si">{</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">'dive_number'</span><span class="p">]</span><span class="si">}</span><span class="s2"> is empty or invalid."</span>
@@ -408,12 +418,12 @@
 
     <span class="c1"># Add sensor information to the dataset - can be done on the concatenated data</span>
     <span class="c1"># -----------------------------------------------------------------------------</span>
-    <span class="n">sensor_dict</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">gather_sensor_info</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
+    <span class="n">sensor_dict</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">gather_sensor_info</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
     <span class="c1"># delete old sensor attribute if it exists and add new one</span>
     <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">"sensor"</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
             <span class="k">del</span> <span class="n">ds_og1</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"sensor"</span><span class="p">]</span>
-    <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_sensor_to_dataset</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">sensor_dict</span><span class="p">,</span> <span class="n">OG1_mapping</span><span class="p">)</span>
+    <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">add_sensor_to_dataset</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">sensor_dict</span><span class="p">,</span> <span class="n">og1_mapping</span><span class="p">)</span>
 
     <span class="c1"># Apply attributes</span>
     <span class="n">ordered_attributes</span> <span class="o">=</span> <span class="n">update_dataset_attributes</span><span class="p">(</span>
@@ -430,10 +440,12 @@
         <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="c1">### Add information needed/used for hydrodynamic (flight) model (hdm)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Collecting scalar parameters to the dataset ..."</span><span class="p">)</span>
-    <span class="n">extracted</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">extract_scalar_parameters</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Adding scalar parameters to the dataset ..."</span><span class="p">)</span>
-    <span class="n">ds_og1</span><span class="p">,</span> <span class="n">OG1_mapping</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_scalar_parameters</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">extracted</span><span class="p">,</span> <span class="n">OG1_mapping</span><span class="p">)</span>
+    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Collecting scalar parameters to the dataset ..."</span><span class="p">)</span>
+    <span class="n">extracted</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">extract_scalar_parameters</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
+    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Adding scalar parameters to the dataset ..."</span><span class="p">)</span>
+    <span class="n">ds_og1</span><span class="p">,</span> <span class="n">og1_mapping</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">add_scalar_parameters</span><span class="p">(</span>
+        <span class="n">ds_og1</span><span class="p">,</span> <span class="n">extracted</span><span class="p">,</span> <span class="n">og1_mapping</span>
+    <span class="p">)</span>
 
     <span class="c1"># Resolve platform fields from the config and the first file (no silent</span>
     <span class="c1"># fallbacks: missing serial raises, other strings warn + "UNK", the numeric</span>
@@ -495,10 +507,10 @@
     <span class="c1"># Or is there an earlier TIME_GPS timestamp?</span>
     <span class="n">tstart_in_numpy_datetime64</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"TIME"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">tend_in_numpy_datetime64</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"TIME"</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">tstart_str</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_time_string</span><span class="p">(</span>
+    <span class="n">tstart_str</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">_clean_time_string</span><span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">datetime_as_string</span><span class="p">(</span><span class="n">tstart_in_numpy_datetime64</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"s"</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">tend_str</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_time_string</span><span class="p">(</span>
+    <span class="n">tend_str</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">_clean_time_string</span><span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">datetime_as_string</span><span class="p">(</span><span class="n">tend_in_numpy_datetime64</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"s"</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Start of mission from TIME[0]: "</span> <span class="o">+</span> <span class="n">tstart_str</span><span class="p">)</span>
@@ -509,7 +521,7 @@
     <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"time_coverage_end"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">tend_str</span>  <span class="c1"># ds_og1.TIME[-1].values.strftime('%Y%m%dT%H%M%S')</span>
     <span class="p">)</span>
-    <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"date_created"</span><span class="p">]</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_time_string</span><span class="p">(</span>
+    <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"date_created"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">_clean_time_string</span><span class="p">(</span>
         <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"date_created"</span><span class="p">]</span>
     <span class="p">)</span>
 
@@ -545,22 +557,46 @@
     <span class="k">for</span> <span class="n">qc_name</span> <span class="ow">in</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">variables</span> <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"qc"</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">qc_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
             <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">convert_qc_flags</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">qc_name</span><span class="p">)</span>
-    <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">set_best_dtype</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">ds_og1</span><span class="p">,</span> <span class="n">OG1_mapping</span></div>
-
+    <span class="k">return</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">set_best_dtype</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">)</span></div>
 
 
-<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="name_mapping">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.name_mapping">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">name_mapping</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the basestation-to-OG1 variable-name mapping for the given datasets.</span>
+
+<span class="sd">    The table ``to_og1`` builds internally: one row per unique input variable</span>
+<span class="sd">    with its OG1 name (empty when unmapped), instrument, dimensions and whether</span>
+<span class="sd">    OG1 vocabulary attributes were found. Shows which basestation variables carry</span>
+<span class="sd">    through to OG1 and which are dropped, without running a conversion.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    list_of_datasets : sequence of xarray.Dataset</span>
+<span class="sd">        Basestation datasets, as passed to :func:`to_og1`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        Columns ``original_name``, ``OG1_name``, ``instrument``,</span>
+<span class="sd">        ``instrument_type``, ``original_dimension`` and ``has_og1_attributes``.</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">"name_mapping takes a sequence of datasets; pass a sequence, e.g. [ds]."</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="n">mapping</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">og1_name_mapping</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">mapping</span></div>
 
 
-<div class="viewcode-block" id="process_dataset">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.process_dataset">[docs]</a>
+
 <span class="k">def</span><span class="w"> </span><span class="nf">process_dataset</span><span class="p">(</span>
     <span class="n">ds1_base</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
-    <span class="n">OG1_mapping</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">og1_mapping</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">time_variables</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
-    <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">name_lookup</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
     <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>  <span class="c1"># Processed dataset with renamed variables, assigned attributes, and additional information</span>
     <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>  <span class="c1"># List of warnings related to attribute assignments</span>
@@ -572,12 +608,14 @@
 <span class="sd">    ----------</span>
 <span class="sd">    ds1_base : xarray.Dataset</span>
 <span class="sd">        The input dataset from a basestation file, containing various attributes and variables.</span>
-<span class="sd">    OG1_mapping : pandas.DataFrame</span>
+<span class="sd">    og1_mapping : pandas.DataFrame</span>
 <span class="sd">        Mapping of original basestation variable names to OG1 variable names.</span>
 <span class="sd">    time_variables : dict[str, list[str]]</span>
 <span class="sd">        A dictionary mapping dimension names to lists of time variables.</span>
-<span class="sd">    firstrun : bool, optional</span>
-<span class="sd">        Indicates whether this is the first run of the processing pipeline. Default is False.</span>
+<span class="sd">    name_lookup : pandas.Series or None, optional</span>
+<span class="sd">        Precomputed ``original_name`` -&gt; ``OG1_name`` lookup. Built from</span>
+<span class="sd">        ``og1_mapping`` when None; :func:`to_og1` passes it in so it is not</span>
+<span class="sd">        rebuilt per dive. Default is None.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -586,7 +624,7 @@
 <span class="sd">        - ds_new (xarray.Dataset): The processed dataset with renamed variables, assigned attributes,</span>
 <span class="sd">          converted units, and additional information such as GPS info and dive number.</span>
 <span class="sd">        - attr_warnings (list[str]): A list of warnings related to attribute assignments.</span>
-<span class="sd">        - OG1_mapping (pd.DataFrame): A DataFrame containing the mapping of original variable names to OG1 variable names.</span>
+<span class="sd">        - og1_mapping (pd.DataFrame): A DataFrame containing the mapping of original variable names to OG1 variable names.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
@@ -614,7 +652,7 @@
 
 <span class="sd">    """</span>
     <span class="c1"># Check if the dataset has 'LONGITUDE' as a coordinate</span>
-    <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_validate_coords</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
+    <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">_validate_coords</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">ds1_base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(),</span>
@@ -624,16 +662,14 @@
     <span class="n">split_ds</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">split_by_unique_dims</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
 
     <span class="c1"># merge the split datasets along the time dimension using the OG1 mapping and specified dimensions to merge</span>
-    <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">merge_datasets_along_time</span><span class="p">(</span>
-        <span class="n">split_ds</span><span class="p">,</span> <span class="n">time_variables</span><span class="p">,</span> <span class="n">firstrun</span><span class="o">=</span><span class="n">firstrun</span>
-    <span class="p">)</span>
+    <span class="n">merged_ds</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">merge_datasets_along_time</span><span class="p">(</span><span class="n">split_ds</span><span class="p">,</span> <span class="n">time_variables</span><span class="p">)</span>
     <span class="c1"># Rename variables and attributes to OG1 vocabulary</span>
     <span class="c1"># -------------------------------------------------------------------</span>
     <span class="c1"># Use variables with dimension 'sg_data_point'</span>
     <span class="c1"># Must be after split_ds</span>
     <span class="c1"># map the original variable names to the OG1 variable names, and get the instrument type for each variable</span>
 
-    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">standardise_OG10</span><span class="p">(</span><span class="n">merged_ds</span><span class="p">,</span> <span class="n">OG1_mapping</span><span class="p">,</span> <span class="n">firstrun</span><span class="p">)</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">standardise_og1</span><span class="p">(</span><span class="n">merged_ds</span><span class="p">,</span> <span class="n">og1_mapping</span><span class="p">,</span> <span class="n">name_lookup</span><span class="o">=</span><span class="n">name_lookup</span><span class="p">)</span>
 
     <span class="c1"># Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)</span>
     <span class="c1"># -----------------------------------------------------------------------</span>
@@ -642,34 +678,31 @@
     <span class="n">ds_gps</span> <span class="o">=</span> <span class="n">split_ds</span><span class="p">[(</span><span class="s2">"gps_info"</span><span class="p">,)]</span>
     <span class="n">ds_new</span> <span class="o">=</span> <span class="n">add_gps_info_to_dataset</span><span class="p">(</span><span class="n">ds_new</span><span class="p">,</span> <span class="n">ds_gps</span><span class="p">)</span>
     <span class="c1"># Add the profile number (odd for dives, even for get_sgscents)</span>
-    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">assign_profile_number</span><span class="p">(</span><span class="n">ds_new</span><span class="p">,</span> <span class="n">ds1_base</span><span class="p">)</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_profile_number</span><span class="p">(</span><span class="n">ds_new</span><span class="p">,</span> <span class="n">ds1_base</span><span class="p">)</span>
     <span class="c1"># Assign the phase of the dive (must be after adding divenum)</span>
-    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">assign_phase</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_phase</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
     <span class="c1"># Assign DEPTH_Z to the dataset where positive is up.</span>
-    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">calc_Z</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_depth</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
 
     <span class="n">vars_to_remove</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vars_to_remove</span>
     <span class="n">vars_present_to_remove</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">vars_to_remove</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds_new</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
 
     <span class="c1"># Drop them</span>
     <span class="n">ds_new</span> <span class="o">=</span> <span class="n">ds_new</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="n">vars_present_to_remove</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">firstrun</span> <span class="ow">and</span> <span class="n">vars_present_to_remove</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">vars_present_to_remove</span><span class="p">:</span>
         <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Variables removed from dataset: </span><span class="si">{</span><span class="n">vars_present_to_remove</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">firstrun</span><span class="p">:</span>
+    <span class="k">else</span><span class="p">:</span>
         <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No variables needed to be removed from the dataset."</span><span class="p">)</span>
 
     <span class="n">attr_warnings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">return</span> <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span></div>
+    <span class="k">return</span> <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span>
 
 
-
-<div class="viewcode-block" id="standardise_OG10">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.standardise_OG10">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">standardise_OG10</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">standardise_og1</span><span class="p">(</span>
     <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
     <span class="n">og1_mapping</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">firstrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">unit_format</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span><span class="p">,</span>
+    <span class="n">name_lookup</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Standardize a dataset using OG1 names, attributes, and units.</span>
 
@@ -690,8 +723,9 @@
 <span class="sd">        Input dataset.</span>
 <span class="sd">    og1_mapping : pandas.DataFrame</span>
 <span class="sd">        Mapping containing ``original_name`` and ``OG1_name``.</span>
-<span class="sd">    firstrun : bool, default False</span>
-<span class="sd">        Enable logging of missing OG1 names and vocabulary attributes.</span>
+<span class="sd">    name_lookup : pandas.Series or None, optional</span>
+<span class="sd">        Precomputed ``original_name`` -&gt; ``OG1_name`` lookup. Built from</span>
+<span class="sd">        ``og1_mapping`` when None. Default is None.</span>
 <span class="sd">    unit_format : dict[str, str], optional</span>
 <span class="sd">        Unit spelling replacements. Defaults to</span>
 <span class="sd">        ``vocabularies.unit_str_format``.</span>
@@ -703,7 +737,8 @@
 <span class="sd">    """</span>
     <span class="n">dsa</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">name_lookup</span> <span class="o">=</span> <span class="n">og1_mapping</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"original_name"</span><span class="p">)[</span><span class="s2">"OG1_name"</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">name_lookup</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">name_lookup</span> <span class="o">=</span> <span class="n">og1_mapping</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"original_name"</span><span class="p">)[</span><span class="s2">"OG1_name"</span><span class="p">]</span>
 
     <span class="n">unassigned_variables</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">variables_without_og1_attributes</span> <span class="o">=</span> <span class="p">[]</span>
@@ -792,7 +827,6 @@
                     <span class="n">original_unit</span><span class="p">,</span>
                     <span class="n">target_unit</span><span class="p">,</span>
                     <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit1_to_unit2</span><span class="p">,</span>
-                    <span class="n">firstrun</span><span class="p">,</span>
                 <span class="p">)</span>
 
                 <span class="n">dsa</span><span class="p">[</span><span class="n">output_name</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">converted_values</span>
@@ -807,20 +841,19 @@
         <span class="k">if</span> <span class="n">original_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"_qc"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">output_name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"_QC"</span><span class="p">):</span>
             <span class="n">dsa</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">convert_qc_flags</span><span class="p">(</span><span class="n">dsa</span><span class="p">,</span> <span class="n">output_name</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">firstrun</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">unassigned_variables</span><span class="p">:</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="s2">"Variables retained with their original names: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
-                <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">unassigned_variables</span><span class="p">)),</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"All variables have an assigned OG1 name."</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unassigned_variables</span><span class="p">:</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">"Variables retained with their original names: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">unassigned_variables</span><span class="p">)),</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"All variables have an assigned OG1 name."</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">variables_without_og1_attributes</span><span class="p">:</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="s2">"OG1 variables retained without vocabulary attributes: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
-                <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables_without_og1_attributes</span><span class="p">)),</span>
-            <span class="p">)</span>
+    <span class="k">if</span> <span class="n">variables_without_og1_attributes</span><span class="p">:</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">"OG1 variables retained without vocabulary attributes: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables_without_og1_attributes</span><span class="p">)),</span>
+        <span class="p">)</span>
 
     <span class="n">coordinate_names</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">name</span>
@@ -834,13 +867,10 @@
     <span class="k">if</span> <span class="s2">"TIME"</span> <span class="ow">in</span> <span class="n">dsa</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="n">dsa</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">encode_times_og1</span><span class="p">(</span><span class="n">dsa</span><span class="p">)</span>
 
-    <span class="c1"># Optimize dtypes after concatenating datasets in convert_to_OG1.</span>
-    <span class="k">return</span> <span class="n">dsa</span></div>
+    <span class="c1"># Optimize dtypes after concatenating datasets in to_og1.</span>
+    <span class="k">return</span> <span class="n">dsa</span>
 
 
-
-<div class="viewcode-block" id="extract_variables">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.extract_variables">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">extract_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Split variables from the basestation file that have no dimensions into categorized datasets.</span>
 
@@ -885,12 +915,9 @@
     <span class="n">dc_other</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">divecycle_other</span><span class="p">)</span>
     <span class="n">dc_log</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">dc_log_vars</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">sg_cal</span><span class="p">,</span> <span class="n">dc_log</span><span class="p">,</span> <span class="n">dc_other</span></div>
+    <span class="k">return</span> <span class="n">sg_cal</span><span class="p">,</span> <span class="n">dc_log</span><span class="p">,</span> <span class="n">dc_other</span>
 
 
-
-<div class="viewcode-block" id="add_gps_info_to_dataset">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.add_gps_info_to_dataset">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_gps_info_to_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">gps_ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Add GPS information (LATITUDE_GPS, LONGITUDE_GPS, TIME_GPS) to the dataset.</span>
 
@@ -960,15 +987,12 @@
     <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
     <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gps_ds</span><span class="p">)</span>
     <span class="n">ds_new</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">newdim</span><span class="p">,</span> <span class="n">data_vars</span><span class="o">=</span><span class="s2">"all"</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">ds_new</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span></div>
-
+    <span class="k">return</span> <span class="n">ds_new</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span>
 
 
 <span class="c1">##-----------------------------------------------------------------------------------------</span>
 <span class="c1">## Editing attributes</span>
 <span class="c1">##-----------------------------------------------------------------------------------------</span>
-<div class="viewcode-block" id="update_dataset_attributes">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.update_dataset_attributes">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_dataset_attributes</span><span class="p">(</span>
     <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
     <span class="n">people</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1037,12 +1061,9 @@
         <span class="k">if</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ordered_attributes</span><span class="p">:</span>
             <span class="n">ordered_attributes</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_attributes</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">ordered_attributes</span></div>
+    <span class="k">return</span> <span class="n">ordered_attributes</span>
 
 
-
-<div class="viewcode-block" id="get_contributors">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.get_contributors">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_contributors</span><span class="p">(</span>
     <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
     <span class="n">people</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1079,7 +1100,7 @@
         <span class="p">{</span>
             <span class="s2">"name"</span><span class="p">:</span> <span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
             <span class="s2">"email"</span><span class="p">:</span> <span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"email"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span>
-            <span class="s2">"id"</span><span class="p">:</span> <span class="n">contributors</span><span class="o">.</span><span class="n">normalize_orcid</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"orcid"</span><span class="p">)),</span>
+            <span class="s2">"id"</span><span class="p">:</span> <span class="n">contributors</span><span class="o">.</span><span class="n">canonical_orcid</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"orcid"</span><span class="p">)),</span>
             <span class="s2">"role"</span><span class="p">:</span> <span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="p">(</span><span class="n">people</span> <span class="ow">or</span> <span class="p">[])</span>
@@ -1095,7 +1116,7 @@
                 <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
             <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span>
-        <span class="n">contributors</span><span class="o">.</span><span class="n">normalize_role</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">))</span> <span class="o">==</span> <span class="s2">"PI"</span>
+        <span class="n">contributors</span><span class="o">.</span><span class="n">canonical_role</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">))</span> <span class="o">==</span> <span class="s2">"PI"</span>
         <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">merged_people</span>
     <span class="p">):</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
@@ -1121,7 +1142,7 @@
         <span class="n">contributors</span><span class="o">.</span><span class="n">enrich_institutions</span><span class="p">(</span><span class="n">file_institutions</span> <span class="o">+</span> <span class="n">config_institutions</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span>
-        <span class="n">contributors</span><span class="o">.</span><span class="n">normalize_role</span><span class="p">(</span><span class="n">institution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">))</span> <span class="o">==</span> <span class="s2">"Operator"</span>
+        <span class="n">contributors</span><span class="o">.</span><span class="n">canonical_role</span><span class="p">(</span><span class="n">institution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"role"</span><span class="p">))</span> <span class="o">==</span> <span class="s2">"Operator"</span>
         <span class="k">for</span> <span class="n">institution</span> <span class="ow">in</span> <span class="n">merged_institutions</span>
     <span class="p">):</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
@@ -1133,12 +1154,9 @@
     <span class="n">attributes_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">attributes_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">contributors</span><span class="o">.</span><span class="n">format_contributors</span><span class="p">(</span><span class="n">merged_people</span><span class="p">))</span>
     <span class="n">attributes_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">contributors</span><span class="o">.</span><span class="n">format_institutions</span><span class="p">(</span><span class="n">merged_institutions</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">attributes_dict</span></div>
+    <span class="k">return</span> <span class="n">attributes_dict</span>
 
 
-
-<div class="viewcode-block" id="get_time_attributes">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.get_time_attributes">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_time_attributes</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Extract and clean time-related attributes from the dataset.</span>
 
@@ -1157,6 +1175,10 @@
 
 <span class="sd">    """</span>
     <span class="n">time_attrs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># time_coverage_start/end are recomputed authoritatively in to_og1 from the</span>
+    <span class="c1"># concatenated TIME. time_coverage_start also seeds the start_date fallback</span>
+    <span class="c1"># below, so it is needed here; the per-dive time_coverage_end is overwritten</span>
+    <span class="c1"># there and otherwise unused.</span>
     <span class="n">time_attr_list</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s2">"time_coverage_start"</span><span class="p">,</span>
         <span class="s2">"time_coverage_end"</span><span class="p">,</span>
@@ -1167,9 +1189,9 @@
         <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
             <span class="n">val1</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
-                <span class="n">val1</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span><span class="n">val1</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">T%H%M%S"</span><span class="p">)</span>
+                <span class="n">val1</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">tz</span><span class="o">=</span><span class="n">UTC</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">T%H%M%S"</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">"-"</span> <span class="ow">in</span> <span class="n">val1</span> <span class="ow">or</span> <span class="s2">":"</span> <span class="ow">in</span> <span class="n">val1</span><span class="p">):</span>
-                <span class="n">val1</span> <span class="o">=</span> <span class="n">utilities</span><span class="o">.</span><span class="n">_clean_time_string</span><span class="p">(</span><span class="n">val1</span><span class="p">)</span>
+                <span class="n">val1</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">_clean_time_string</span><span class="p">(</span><span class="n">val1</span><span class="p">)</span>
             <span class="n">time_attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">val1</span>
     <span class="n">time_attrs</span><span class="p">[</span><span class="s2">"date_modified"</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">T%H%M%S"</span><span class="p">)</span>
 
@@ -1179,12 +1201,9 @@
     <span class="k">if</span> <span class="s2">"start_date"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">time_attrs</span><span class="p">:</span>
         <span class="n">time_attrs</span><span class="p">[</span><span class="s2">"start_date"</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_attrs</span><span class="p">[</span><span class="s2">"time_coverage_start"</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">time_attrs</span></div>
+    <span class="k">return</span> <span class="n">time_attrs</span>
 
 
-
-<div class="viewcode-block" id="extract_attr_to_keep">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.extract_attr_to_keep">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">extract_attr_to_keep</span><span class="p">(</span>
     <span class="n">ds1</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">attr_as_is</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s2">"attr_as_is"</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
@@ -1210,12 +1229,9 @@
         <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
             <span class="n">retained_attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">retained_attrs</span></div>
+    <span class="k">return</span> <span class="n">retained_attrs</span>
 
 
-
-<div class="viewcode-block" id="extract_attr_to_rename">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.extract_attr_to_rename">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">extract_attr_to_rename</span><span class="p">(</span>
     <span class="n">ds1</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
     <span class="n">attr_to_rename</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">global_attrs</span><span class="p">[</span><span class="s2">"attr_to_rename"</span><span class="p">],</span>
@@ -1241,88 +1257,7 @@
         <span class="k">if</span> <span class="n">old_attr</span> <span class="ow">in</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
             <span class="n">renamed_attrs</span><span class="p">[</span><span class="n">new_attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">old_attr</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">renamed_attrs</span></div>
-
-
-
-<div class="viewcode-block" id="process_and_save_data">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convertOG1.process_and_save_data">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">process_and_save_data</span><span class="p">(</span>
-    <span class="n">input_location</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"."</span><span class="p">,</span>
-    <span class="n">run_quietly</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Process and save data from the specified input location.</span>
-
-<span class="sd">    This function loads and concatenates datasets from the server, converts them to OG1 format,</span>
-<span class="sd">    and saves the resulting dataset to a NetCDF file. If the file already exists, the function</span>
-<span class="sd">    will prompt the user to decide whether to overwrite it or not.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    input_location : str</span>
-<span class="sd">        The location of the input data to be processed.</span>
-<span class="sd">    save : bool, optional</span>
-<span class="sd">        Whether to save the processed dataset to a file. Default is False.</span>
-<span class="sd">    output_dir : str, optional</span>
-<span class="sd">        The directory where the output file will be saved. Default is '.'.</span>
-<span class="sd">    run_quietly : bool, optional</span>
-<span class="sd">        If True, suppresses user prompts and assumes 'no' for overwriting files. Default is True.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    xarray.Dataset</span>
-<span class="sd">        The processed dataset.</span>
-
-<span class="sd">    """</span>
-    <span class="c1"># Load and concatenate all datasets from the server</span>
-    <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_first_basestation_file</span><span class="p">(</span><span class="n">input_location</span><span class="p">)</span>
-
-    <span class="c1"># Convert the list of datasets to OG1</span>
-    <span class="n">ds1_og1</span><span class="p">,</span> <span class="n">varlist</span> <span class="o">=</span> <span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
-    <span class="n">output_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ds1_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="o">+</span> <span class="s2">".nc"</span><span class="p">))</span>
-
-    <span class="c1"># Check if the file exists and delete it if it does</span>
-    <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">run_quietly</span><span class="p">:</span>
-            <span class="n">user_input</span> <span class="o">=</span> <span class="s2">"no"</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">user_input</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"File </span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2"> already exists. Do you want to re-run and overwrite it? (yes/no): "</span>
-            <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">user_input</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"yes"</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"File </span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2"> already exists. Exiting the process."</span><span class="p">)</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"File </span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2"> already exists. Exiting the process."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">user_input</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"yes"</span><span class="p">:</span>
-            <span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="n">input_location</span><span class="p">)</span>
-            <span class="n">ds_all</span><span class="p">,</span> <span class="n">varlist</span> <span class="o">=</span> <span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
-            <span class="n">Path</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
-                <span class="n">writers</span><span class="o">.</span><span class="n">save_dataset</span><span class="p">(</span><span class="n">ds_all</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"Running the directory:"</span><span class="p">,</span> <span class="n">input_location</span><span class="p">)</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running the directory: </span><span class="si">{</span><span class="n">input_location</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="n">list_datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">load_basestation_files</span><span class="p">(</span><span class="n">input_location</span><span class="p">)</span>
-        <span class="n">ds_all</span><span class="p">,</span> <span class="n">varlist</span> <span class="o">=</span> <span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
-        <span class="n">output_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ds_all</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="o">+</span> <span class="s2">".nc"</span><span class="p">))</span>
-        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
-            <span class="n">writers</span><span class="o">.</span><span class="n">save_dataset</span><span class="p">(</span><span class="n">ds_all</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
-
-        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"==================================================="</span><span class="p">)</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"input_var: Variables in original basestation files:"</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">varname</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">varlist</span><span class="p">):</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">varname</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"========================================="</span><span class="p">)</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"output_var: Variables in OG1 format file:"</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">varname</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">ds_all</span><span class="o">.</span><span class="n">variables</span><span class="p">):</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">varname</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">ds_all</span></div>
-
+    <span class="k">return</span> <span class="n">renamed_attrs</span>
 </pre></div>
 
            </div>

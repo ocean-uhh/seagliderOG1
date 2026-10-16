@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev65 documentation</title>
+  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev66 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=5d504b3b"></script>
+      <script src="_static/documentation_options.js?v=6aa8c151"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -157,7 +157,7 @@ for a <code class="docutils literal notranslate"><span class="pre">SN/DATE</span
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">repair</span></code></p></td>
 <td><p>bool</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p></td>
-<td><p>Run <code class="docutils literal notranslate"><span class="pre">scan_and_repair</span></code> on the basestation files before loading (writes the source tree).</p></td>
+<td><p>Run <code class="docutils literal notranslate"><span class="pre">repair_files</span></code> on the basestation files before loading (writes the source tree).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">keep_variables</span></code></p></td>
 <td><p>list or null</p></td>
@@ -222,7 +222,7 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
 <span class="nt">output_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./</span><span class="w">          </span><span class="c1"># where OG1 files are written</span>
 <span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">delayed</span><span class="w">           </span><span class="c1"># realtime | delayed</span>
 <span class="nt">dives</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">             </span><span class="c1"># [first, last] dive numbers; null = all files present</span>
-<span class="nt">repair</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">           </span><span class="c1"># run scan_and_repair on the basestation files (writes the source tree)</span>
+<span class="nt">repair</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">           </span><span class="c1"># run repair_files on the basestation files (writes the source tree)</span>
 <span class="nt">keep_variables</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">    </span><span class="c1"># optional list of science variables to keep; null = all</span>
 
 <span class="nt">platform</span><span class="p">:</span><span class="w">               </span><span class="c1"># 'init --from' fills these; fill any null before validate</span>
