@@ -1,9 +1,9 @@
 :mod:`seagliderOG1 API`
 -----------------------
 
-convertOG1
-==========
-.. automodule:: seagliderOG1.convertOG1
+convert
+=======
+.. automodule:: seagliderOG1.convert
    :members:
    :undoc-members:
 

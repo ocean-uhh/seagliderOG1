@@ -56,7 +56,7 @@ Metadata added
   the mission configuration.
 * **QC variables**: where the basestation input carries a ``<name>_qc`` flag, it is carried
   through as the OG1 ``<NAME>_QC`` companion of the kept variable; variables with no input flag
-  do not gain one (``convertOG1.py``).
+  do not gain one (``convert.py``).
 
 GPS data
 --------
@@ -136,10 +136,10 @@ or from Python:
 
 .. code-block:: python
 
-   from seagliderOG1 import convertOG1, readers, writers
+   from seagliderOG1 import convert, readers, writers
 
    datasets = readers.load_basestation_files(source, first, last)
-   ds, _ = convertOG1.convert_to_OG1(
+   ds = convert.to_og1(
        datasets,
        contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
        institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],

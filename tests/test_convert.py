@@ -11,7 +11,7 @@ sys.path.append(str(parent_dir))
 
 from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
     _pipeline,
-    convertOG1,
+    convert,
     readers,
     tools,
     writers,
@@ -21,7 +21,7 @@ from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
 def test_resolve_platform_serial_from_file():
     """Serial comes from platform_id; string fields fall back to UNK; depth omitted."""
     ds = xr.Dataset(attrs={"platform_id": "SG005"})
-    resolved = convertOG1._resolve_platform(ds, None)
+    resolved = convert._resolve_platform(ds, None)
     assert resolved["PLATFORM_SERIAL_NUMBER"] == "sg005"
     assert resolved["PLATFORM_MODEL"] == "UNK"
     assert resolved["WMO_IDENTIFIER"] == "UNK"
@@ -38,7 +38,7 @@ def test_resolve_platform_config_overrides_and_numeric_depth():
         "PLATFORM_DEPTH_RATING": 1000,
         "platform_model_vocabulary": "http://vocab.example/model",
     }
-    resolved = convertOG1._resolve_platform(ds, platform)
+    resolved = convert._resolve_platform(ds, platform)
     assert resolved["PLATFORM_SERIAL_NUMBER"] == "orca"
     assert resolved["PLATFORM_MODEL"] == "Slocum G3"
     assert resolved["PLATFORM_DEPTH_RATING"] == 1000
@@ -48,7 +48,7 @@ def test_resolve_platform_config_overrides_and_numeric_depth():
 def test_resolve_platform_missing_serial_raises():
     """No platform_id and no config serial is a hard error (it names the output)."""
     try:
-        convertOG1._resolve_platform(xr.Dataset(), None)
+        convert._resolve_platform(xr.Dataset(), None)
     except ValueError as exc:
         assert "PLATFORM_SERIAL_NUMBER" in str(exc)
     else:
@@ -73,7 +73,7 @@ def test_get_contributors_demo_sg005_real_attrs():
     )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        attrs = convertOG1.get_contributors(ds)
+        attrs = convert.get_contributors(ds)
     assert attrs["contributor_name"] == "Charlie Eriksen, Peter Rhines"
     assert attrs["contributor_role"] == ", PI"  # Eriksen role-less; Rhines normalised
     assert attrs["contributor_email"] == "eriksen@uw.edu, "
@@ -93,7 +93,7 @@ def test_get_contributors_config_fills_creator_role():
     ds = xr.Dataset(
         attrs={"creator_name": "Charlie Eriksen", "creator_email": "eriksen@uw.edu"}
     )
-    attrs = convertOG1.get_contributors(
+    attrs = convert.get_contributors(
         ds, people=[{"name": "Charlie Eriksen", "role": "PI"}]
     )
     assert attrs["contributor_name"] == "Charlie Eriksen"
@@ -104,7 +104,7 @@ def test_get_contributors_config_fills_creator_role():
 def test_global_attributes_collision_raises():
     """A global_attributes key that collides with a derived global is an error."""
     try:
-        convertOG1.convert_to_OG1([], global_attributes={"id": "x"})
+        convert.to_og1([], global_attributes={"id": "x"})
     except ValueError as exc:
         assert "id" in str(exc)
     else:
@@ -114,19 +114,17 @@ def test_global_attributes_collision_raises():
 def test_start_date_global_attribute_collision_raises():
     """start_date is converter-derived (names id/TRAJECTORY); a config override is rejected."""
     try:
-        convertOG1.convert_to_OG1(
-            [], global_attributes={"start_date": "20080606T000000"}
-        )
+        convert.to_og1([], global_attributes={"start_date": "20080606T000000"})
     except ValueError as exc:
         assert "start_date" in str(exc)
     else:
         raise AssertionError("expected ValueError for start_date collision")
 
 
-def test_convert_to_OG1_options_are_keyword_only():
+def test_to_og1_options_are_keyword_only():
     """A positional second argument is rejected; options must be keyword."""
     try:
-        convertOG1.convert_to_OG1([], {})
+        convert.to_og1([], {})
     except TypeError:
         pass
     else:
@@ -149,7 +147,7 @@ def test_apply_keep_variables_retains_mandatory_and_qc():
     )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        out = convertOG1.apply_keep_variables(ds, ["TEMP"])
+        out = convert.apply_keep_variables(ds, ["TEMP"])
     assert "TEMP" in out.variables and "TEMP_QC" in out.variables  # ask + its QC
     assert "PLATFORM_SERIAL_NUMBER" in out.variables  # mandatory family
     assert "WMO_IDENTIFIER" in out.variables  # mandatory
@@ -170,7 +168,7 @@ def test_process_dataset():
 
     gps_info = split_ds[("gps_info",)]
 
-    sg_cal, dc_log, dc_other = convertOG1.extract_variables(split_ds[()])
+    sg_cal, dc_log, dc_other = convert.extract_variables(split_ds[()])
     tmp = dc_log.log_GPS.values.tobytes().decode("utf-8")
 
     assert sg_cal["mass"].values > 50 and sg_cal["mass"].values < 60
@@ -184,7 +182,7 @@ def test_process_dataset():
     merged_ds = _pipeline.merge_datasets_along_time(split_ds, time_variables)
 
     # Check initial variables are reformatted
-    dsa = convertOG1.standardise_og1(merged_ds, og1_mapping=og1_mapping)
+    dsa = convert.standardise_og1(merged_ds, og1_mapping=og1_mapping)
     varlist = list(dsa.data_vars)
     coordlist = list(dsa.coords)
     combined_list = varlist + coordlist
@@ -199,7 +197,7 @@ def test_process_dataset():
     for var in og1_varlist:
         assert var in combined_list
 
-    ds_new = convertOG1.add_gps_info_to_dataset(dsa, gps_info)
+    ds_new = convert.add_gps_info_to_dataset(dsa, gps_info)
     assert "LATITUDE_GPS" in list(ds_new.variables)
     assert "LONGITUDE_GPS" in list(ds_new.variables)
 
@@ -222,7 +220,7 @@ def test_output_dtypes_end_to_end(tmp_path: pathlib.Path) -> None:
     """
     source = str(parent_dir / "data/demo_sg005")
     datasets = readers.load_basestation_files(source, 1, 5)
-    ds = convertOG1.convert_to_OG1(datasets)
+    ds = convert.to_og1(datasets)
     out = tmp_path / "out.nc"
 
     assert writers.save_dataset(ds, str(out)) == out

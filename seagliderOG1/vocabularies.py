@@ -87,7 +87,7 @@ class PlatformField(NamedTuple):
         When True, a null in the mission config is a validate ERROR rather than a
         silent default written into the output.
     kind : str
-        How ``convert_to_OG1`` writes an unset field: ``"serial"`` names the
+        How ``to_og1`` writes an unset field: ``"serial"`` names the
         output and raises when absent, ``"string"`` warns and writes ``"UNK"``,
         ``"numeric"`` is omitted.
 
@@ -101,7 +101,7 @@ class PlatformField(NamedTuple):
 
 # The OG1 platform fields, in template order. This one table is the single source
 # for four views that used to be maintained separately: the init template defaults
-# and the validate required-field check (both in cli/_mission.py), convert_to_OG1's
+# and the validate required-field check (both in cli/_mission.py), to_og1's
 # string-field resolution, and the file->field derivation in platform_from_file.
 PLATFORM_FIELDS: dict[str, PlatformField] = {
     "PLATFORM_SERIAL_NUMBER": PlatformField(
@@ -264,7 +264,7 @@ def load_default_contributors() -> dict[str, str]:
     """Load the example contributor block from ``config/OG1_author.yaml``.
 
     Not loaded at import: a converted file gains contributor details only when a
-    caller passes them to :func:`seagliderOG1.convertOG1.convert_to_OG1`. The
+    caller passes them to :func:`seagliderOG1.convert.to_og1`. The
     file is an editable example, not a default identity written into every output.
 
     Returns

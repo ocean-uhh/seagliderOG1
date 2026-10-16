@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from seagliderOG1 import _pipeline, contributors, readers, tools, vocabularies, writers
 
-__all__ = ["convert_to_OG1", "apply_keep_variables"]
+__all__ = ["to_og1", "apply_keep_variables"]
 
 _log = logging.getLogger(__name__)
 
@@ -196,7 +196,7 @@ def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
     return ds[sorted(kept)]
 
 
-def convert_to_OG1(
+def to_og1(
     list_of_datasets: Sequence[xr.Dataset],
     *,
     contributors: Sequence[dict] | None = None,
@@ -207,7 +207,7 @@ def convert_to_OG1(
 ) -> xr.Dataset:
     """Convert Seaglider basestation datasets to OG1 format.
 
-    Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
+    Processes a list of xarray datasets, converts them to OG1 format,
     concatenates the datasets, sorts by time, and applies attributes. Main conversion function that
     processes basestation datasets, applies OG1 standardization, concatenates multiple datasets,
     and adds global attributes.
@@ -215,7 +215,7 @@ def convert_to_OG1(
     Parameters
     ----------
     list_of_datasets : sequence of xarray.Dataset
-        A list of xarray datasets or a single xarray dataset in basestation format.
+        A list of xarray datasets in basestation format.
     contributors : sequence of dict, optional
         Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)
         merged with those already on the files. When None, contributors come from
@@ -245,7 +245,7 @@ def convert_to_OG1(
     """
     if isinstance(contributors, Mapping):
         msg = (
-            "convert_to_OG1(contributors=...) is now a list of records "
+            "to_og1(contributors=...) is now a list of records "
             "[{'name': ..., 'role': ..., 'email': ..., 'orcid': ...}], not a dict "
             "of OG1 attributes. See CHANGELOG."
         )
@@ -713,7 +713,7 @@ def standardise_og1(
     if "TIME" in dsa.variables:
         dsa = tools.encode_times_og1(dsa)
 
-    # Optimize dtypes after concatenating datasets in convert_to_OG1.
+    # Optimize dtypes after concatenating datasets in to_og1.
     return dsa
 
 
@@ -1135,7 +1135,7 @@ def process_and_save_data(
     ds1_base = readers.load_first_basestation_file(input_location)
 
     # Convert the list of datasets to OG1
-    ds1_og1 = convert_to_OG1([ds1_base])
+    ds1_og1 = to_og1([ds1_base])
     output_file = str(Path(output_dir) / (ds1_og1.attrs["id"] + ".nc"))
 
     # Check if the file exists and delete it if it does
@@ -1153,7 +1153,7 @@ def process_and_save_data(
             return xr.open_dataset(output_file)
         if user_input.lower() == "yes":
             list_datasets = readers.load_basestation_files(input_location)
-            ds_all = convert_to_OG1(list_datasets)
+            ds_all = to_og1(list_datasets)
             Path(output_file).unlink()
             if save:
                 writers.save_dataset(ds_all, output_file)
@@ -1161,7 +1161,7 @@ def process_and_save_data(
         print("Running the directory:", input_location)
         _log.info(f"Running the directory: {input_location}")
         list_datasets = readers.load_basestation_files(input_location)
-        ds_all = convert_to_OG1(list_datasets)
+        ds_all = to_og1(list_datasets)
         output_file = str(Path(output_dir) / (ds_all.attrs["id"] + ".nc"))
         if save:
             writers.save_dataset(ds_all, output_file)

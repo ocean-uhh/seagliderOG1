@@ -120,7 +120,7 @@ def test_validate_errors_on_null_platform_fields_then_passes(
 
 
 def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:
-    """Stand in for convert_to_OG1: no real conversion, deterministic id from mode."""
+    """Stand in for to_og1: no real conversion, deterministic id from mode."""
     import xarray as xr
 
     suffix = "R" if kwargs.get("mode") == "realtime" else "delayed"
@@ -142,9 +142,9 @@ def test_process_writes_output(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Process converts the mission and writes <id>.nc under the output dir."""
-    from seagliderOG1 import convertOG1
+    from seagliderOG1 import convert
 
-    monkeypatch.setattr(convertOG1, "convert_to_OG1", _simple_fake_convert)
+    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
         tmp_path / "mission.yaml", source=str(DATA_DIR), output_dir=str(out)
@@ -157,9 +157,9 @@ def test_process_dry_run_writes_nothing(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """-n prints the target path but writes no file."""
-    from seagliderOG1 import convertOG1
+    from seagliderOG1 import convert
 
-    monkeypatch.setattr(convertOG1, "convert_to_OG1", _simple_fake_convert)
+    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
         tmp_path / "mission.yaml", source=str(DATA_DIR), output_dir=str(out)
@@ -172,9 +172,9 @@ def test_process_mode_realtime_sets_suffix(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """--mode realtime names the output with the R data-mode suffix."""
-    from seagliderOG1 import convertOG1
+    from seagliderOG1 import convert
 
-    monkeypatch.setattr(convertOG1, "convert_to_OG1", _simple_fake_convert)
+    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
         tmp_path / "mission.yaml", source=str(DATA_DIR), output_dir=str(out)
@@ -187,9 +187,9 @@ def test_process_existing_output_refused_then_force_and_skip(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """An existing output is refused by default, overwritten with --force, skipped with --skip-existing."""
-    from seagliderOG1 import convertOG1
+    from seagliderOG1 import convert
 
-    monkeypatch.setattr(convertOG1, "convert_to_OG1", _simple_fake_convert)
+    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
         tmp_path / "mission.yaml", source=str(DATA_DIR), output_dir=str(out)
@@ -204,7 +204,7 @@ def test_process_root_all_converts_each(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A root with --all converts every SN/DATE mission (distinct ids per mission)."""
-    from seagliderOG1 import convertOG1
+    from seagliderOG1 import convert
 
     counter = {"n": 0}
 
@@ -214,7 +214,7 @@ def test_process_root_all_converts_each(
         counter["n"] += 1
         return xr.Dataset({"x": ("n", [1.0])}, attrs={"id": f"sg005_m{counter['n']}"})
 
-    monkeypatch.setattr(convertOG1, "convert_to_OG1", counting_fake)
+    monkeypatch.setattr(convert, "to_og1", counting_fake)
     root = _build_root(tmp_path / "root")
     out = tmp_path / "out"
     config = _write_config(
@@ -228,9 +228,9 @@ def test_process_root_requires_selection(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A root without --all/--mission is an error."""
-    from seagliderOG1 import convertOG1
+    from seagliderOG1 import convert
 
-    monkeypatch.setattr(convertOG1, "convert_to_OG1", _simple_fake_convert)
+    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     root = _build_root(tmp_path / "root")
     config = _write_config(
         tmp_path / "mission.yaml", source=str(root), output_dir=str(tmp_path / "out")
@@ -242,13 +242,13 @@ def test_process_failing_mission_exits_one(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A mission that raises is counted as failed and the run exits 1."""
-    from seagliderOG1 import convertOG1
+    from seagliderOG1 import convert
 
     def failing(_datasets: object, **_kwargs: object) -> tuple:
         msg = "boom"
         raise ValueError(msg)
 
-    monkeypatch.setattr(convertOG1, "convert_to_OG1", failing)
+    monkeypatch.setattr(convert, "to_og1", failing)
     config = _write_config(
         tmp_path / "mission.yaml",
         source=str(DATA_DIR),
@@ -261,9 +261,9 @@ def test_process_dry_run_ignores_existing_output(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """-n previews and exits 0 even when the output exists (no act-phase check)."""
-    from seagliderOG1 import convertOG1
+    from seagliderOG1 import convert
 
-    monkeypatch.setattr(convertOG1, "convert_to_OG1", _simple_fake_convert)
+    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     out = tmp_path / "out"
     out.mkdir()
     (out / "sg005_delayed.nc").write_text("existing")
@@ -277,12 +277,12 @@ def test_process_save_failure_counts_as_failed(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A save_dataset failure (it raises) is a mission failure (exit 1), not silent success."""
-    from seagliderOG1 import convertOG1, writers
+    from seagliderOG1 import convert, writers
 
     def _raise(*_a: object, **_k: object) -> object:
         raise OSError("disk full")
 
-    monkeypatch.setattr(convertOG1, "convert_to_OG1", _simple_fake_convert)
+    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     monkeypatch.setattr(writers, "save_dataset", _raise)
     config = _write_config(
         tmp_path / "mission.yaml",

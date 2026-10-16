@@ -12,7 +12,7 @@ import xarray as xr  # noqa: E402  # import after sys.path bootstrap
 
 from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
     _pipeline,
-    convertOG1,
+    convert,
     readers,
     tools,
     vocabularies,
@@ -145,7 +145,7 @@ def test_add_scalar_parameters():
     }
     assert expected_names
 
-    ds_og1 = convertOG1.convert_to_OG1(datasets)
+    ds_og1 = convert.to_og1(datasets)
 
     # Each retained scalar carries its source name in ``original_name``, so retention is
     # observable regardless of the OG1 rename applied to the variable.

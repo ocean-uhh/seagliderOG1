@@ -141,7 +141,7 @@ def run(args: argparse.Namespace) -> int:
         (see the CLI family convention).
 
     """
-    from seagliderOG1 import convertOG1, readers, writers
+    from seagliderOG1 import convert, readers, writers
 
     config_path = pathlib.Path(args.config)
     if not config_path.is_file():
@@ -211,7 +211,7 @@ def run(args: argparse.Namespace) -> int:
             datasets = readers.load_basestation_files(
                 mission.path, first, last, repair=repair
             )
-            ds = convertOG1.convert_to_OG1(
+            ds = convert.to_og1(
                 datasets,
                 contributors=config.get("contributors"),
                 institutions=config.get("institutions"),
@@ -220,7 +220,7 @@ def run(args: argparse.Namespace) -> int:
                 mode=mode,
             )
             if keep_variables:
-                ds = convertOG1.apply_keep_variables(ds, keep_variables)
+                ds = convert.apply_keep_variables(ds, keep_variables)
             out_path = output_dir / f"{ds.attrs['id']}.nc"
             if out_path.exists():
                 if args.skip_existing:

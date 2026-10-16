@@ -13,12 +13,13 @@ semantic versioning.
 
   | was | now |
   |---|---|
-  | `ds, varlist = convert_to_OG1(ds_or_list)` | `ds = convert_to_OG1(sequence_of_datasets)` — returns the Dataset; takes a sequence (wrap a single dataset as `[ds]`) |
+  | `ds, varlist = convert_to_OG1(ds_or_list)` | `ds = convert.to_og1(sequence_of_datasets)` — returns the Dataset; takes a sequence (wrap a single dataset as `[ds]`) |
+  | `from seagliderOG1 import convertOG1` → `convertOG1.convert_to_OG1(...)` | `from seagliderOG1 import convert` → `convert.to_og1(...)` — module `convertOG1.py` renamed to `convert.py`; function `convert_to_OG1` to `to_og1`, addressed as `convert.to_og1()` |
   | `writers.save_dataset(ds, output_file="../test.nc") -> bool` | `writers.save_dataset(ds, output_file, *, overwrite=False) -> pathlib.Path` — no default path; returns the path written; raises `FileExistsError` (or the underlying write error) instead of returning `False` |
   | `plotters.plot_*(…)` returned `None` and called `plt.show()` | `plotters.plot_*(…, ax=None) -> (fig, ax)`; no `plt.show()` |
   | `plotters.show_*(path_or_dataset)` | `plotters.show_*(dataset)` — Dataset only (the file-path branch is gone) |
   | `readers.load_sample_dataset()` | `readers.load_sample_basestation()` |
-  | `standardise_OG10`, `tools.OG1_name_mapping`, `print_OG1_mapping_summary`, the `OG1_mapping` argument | `standardise_og1`, `og1_name_mapping`, `print_og1_mapping_summary`, `og1_mapping` — `og1` lower-case in names; `convert_to_OG1` and the package name keep their spelling |
+  | `standardise_OG10`, `tools.OG1_name_mapping`, `print_OG1_mapping_summary`, the `OG1_mapping` argument | `standardise_og1`, `og1_name_mapping`, `print_og1_mapping_summary`, `og1_mapping` — `og1` lower-case in names; the package name keeps its spelling |
   | `tools.<pipeline internals>` (`og1_name_mapping`, `gather_sensor_info`, `add_sensor_to_dataset`, `merge_datasets_along_time`, `extract_scalar_parameters`/`add_scalar_parameters`, `set_best_dtype`, …) and the whole `seagliderOG1.utilities` module | private `seagliderOG1._pipeline` (not part of the public API); `tools` keeps the user-facing utilities (`calc_Z`, `assign_phase`, `convert_units_var`, `convert_qc_flags`, `encode_times_og1`, …) |
   | `firstrun=` parameters (e.g. `tools.convert_units_var(..., firstrun=...)`) | removed; progress and diagnostics go through `logging.getLogger("seagliderOG1...")` (set the level, e.g. the CLI `-v`) |
 
@@ -36,7 +37,7 @@ semantic versioning.
 - Minimum Python raised to 3.11 (`requires-python = ">=3.11"`). The pinned `numpy 2.2` and
   `xarray 2025.3` already require a recent Python, so the former `>=3.8` was not installable;
   users on earlier Python must stay on an earlier release.
-- Platform metadata is no longer silently defaulted. `convert_to_OG1` takes `platform=` and
+- Platform metadata is no longer silently defaulted. `convert.to_og1` takes `platform=` and
   `global_attributes=` from the mission config, config values overriding file-derived ones. A
   missing `PLATFORM_SERIAL_NUMBER` (no file `platform_id`, none in the config) now raises instead
   of defaulting to `sg000` — it names the output file and OG1 id. `WMO_IDENTIFIER`,
@@ -52,7 +53,7 @@ semantic versioning.
   (`contributor_name`/`_email`/`_id`/`_role`/`_role_vocabulary`, and `contributing_institutions`
   with its `_role`/`_vocabulary`/`_role_vocabulary`): one slot per person/institution, empty
   slots kept so the lists stay aligned, one role per slot. Roles normalise to the NERC W08
-  vocabulary. `convert_to_OG1` takes `contributors=` and `institutions=` as lists of records;
+  vocabulary. `convert.to_og1` takes `contributors=` and `institutions=` as lists of records;
   the former `contrib_to_append` dict is removed (passing a dict raises `TypeError`). Two silent
   substitutions are removed: a missing contributor role is no longer defaulted to `PI`, and an
   unrecognised institution is no longer stamped with the School of Oceanography EDMO code
@@ -79,7 +80,7 @@ semantic versioning.
   Exit codes follow the CLI family convention: `0` success, `1` a conversion or validation
   failure or a missing/unreadable input path, `2` an argparse-level usage error (an unknown
   flag, a bad `choices` value, or `list missions` with no path).
-  `convert_to_OG1` gains `contributors=`, `institutions=`, `platform=`, `global_attributes=`
+  `convert.to_og1` gains `contributors=`, `institutions=`, `platform=`, `global_attributes=`
   and `mode=`. `OG1_author.yaml` is no longer loaded at import (`load_default_contributors`
   loads it on demand); `readers.discover_missions` and public `readers.validate_filename`/
   `profnum_from_filename`/`glider_sn_from_filename`.
@@ -132,7 +133,7 @@ semantic versioning.
   a `TypeError` fallback keeps its time encoding and compression instead of being
   written unencoded.
 - `writers.save_dataset` return annotation corrected from `None` to `bool`.
-- Dtype optimisation now runs once on the concatenated dataset (in `convert_to_OG1`) instead
+- Dtype optimisation now runs once on the concatenated dataset (in `convert.to_og1`) instead
   of per dive, so `int8` QC flags are no longer re-promoted to `float32` by the concat.
 - `tools.set_best_dtype` now visits coordinates (so `DEPTH` becomes `float32`) and restores
   coordinate status after coercion; it respects an existing `_FillValue` sentinel (e.g.

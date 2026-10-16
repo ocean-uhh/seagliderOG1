@@ -1,6 +1,6 @@
 """Private conversion pipeline for Seaglider-to-OG1 (not part of the public API).
 
-Internals used by :mod:`seagliderOG1.convertOG1` and :mod:`seagliderOG1.writers`: the OG1
+Internals used by :mod:`seagliderOG1.convert` and :mod:`seagliderOG1.writers`: the OG1
 name mapping, sensor/scalar extraction, dimension merge, dtype coercion, and the basestation
 validation/parsing helpers. Public, user-facing utilities live in :mod:`seagliderOG1.tools`.
 """

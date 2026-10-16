@@ -11,7 +11,7 @@ sys.path.append(str(parent_dir))
 
 PUBLIC_MODULES = [
     "readers",
-    "convertOG1",
+    "convert",
     "writers",
     "tools",
     "plotters",

@@ -26,10 +26,10 @@ For a root of `SN/DATE` mission directories, point `--source` at the root and se
 ## Python
 
 ```python
-from seagliderOG1 import convertOG1, readers, writers
+from seagliderOG1 import convert, readers, writers
 
 datasets = readers.load_basestation_files(source, first, last)
-ds, _ = convertOG1.convert_to_OG1(
+ds = convert.to_og1(
     datasets,
     contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
     institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],

@@ -10,7 +10,7 @@ Modules
 -------
 
 * ``readers.py`` — read basestation files from a server or a local directory.
-* ``convertOG1.py`` — ``convert_to_OG1`` orchestrates mapping, standardisation, concat and the
+* ``convert.py`` — ``to_og1`` orchestrates mapping, standardisation, concat and the
   single post-concat dtype pass.
 * ``writers.py`` — write OG1 files.
 * ``tools.py`` — user-facing utilities; ``utilities.py`` — internal helpers.
