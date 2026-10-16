@@ -57,23 +57,9 @@ rule and a reason.
 ## Docstrings
 
 Numpy-style docstrings on every public module, class and function, with full type information,
-ending with a period. Example:
-
-```python
-def convert_to_OG1(datasets, contributors=None, institutions=None):
-    """Convert basestation datasets to an OG1 dataset.
-
-    Parameters
-    ----------
-    datasets : list of xarray.Dataset or xarray.Dataset
-        Basestation datasets for one mission.
-
-    Returns
-    -------
-    tuple of (xarray.Dataset, list of str)
-        The OG1 dataset and the list of input variable names.
-    """
-```
+ending with a period; the `pyproject.toml` ruff config enforces this (`convention = "numpy"`,
+`D417`). Any public function in `seagliderOG1/` is a worked example — match the one nearest what
+you are writing.
 
 ## Modules and defaults
 

@@ -119,6 +119,19 @@ def test_validate_errors_on_null_platform_fields_then_passes(
 # --- process ---------------------------------------------------------------
 
 
+def test_process_v_flag_controls_library_logging(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """``-v`` surfaces the library's INFO progress on stderr; without it, stderr stays quiet."""
+    cfg = _write_config(tmp_path / "mission.yaml")
+
+    assert cli.main(["process", str(cfg), "-o", str(tmp_path / "quiet")]) == 0
+    assert "Start converting" not in capsys.readouterr().err
+
+    assert cli.main(["-v", "process", str(cfg), "-o", str(tmp_path / "loud")]) == 0
+    assert "Start converting" in capsys.readouterr().err
+
+
 def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:
     """Stand in for to_og1: no real conversion, deterministic id from mode."""
     import xarray as xr

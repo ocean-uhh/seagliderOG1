@@ -9,14 +9,13 @@ import logging
 import warnings
 from collections.abc import Mapping, Sequence
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from tqdm import tqdm
 
-from seagliderOG1 import _pipeline, contributors, readers, tools, vocabularies, writers
+from seagliderOG1 import _pipeline, contributors, tools, vocabularies
 
 __all__ = ["to_og1", "apply_keep_variables"]
 
@@ -243,6 +242,9 @@ def to_og1(
         The concatenated and processed dataset in OG1 format.
 
     """
+    if isinstance(list_of_datasets, xr.Dataset):
+        msg = "to_og1 takes a sequence of datasets; pass a sequence, e.g. [ds]."
+        raise TypeError(msg)
     if isinstance(contributors, Mapping):
         msg = (
             "to_og1(contributors=...) is now a list of records "
@@ -443,9 +445,6 @@ def to_og1(
             ds_og1 = tools.convert_qc_flags(ds_og1, qc_name)
 
     return _pipeline.set_best_dtype(ds_og1)
-
-
-_log = logging.getLogger(__name__)
 
 
 def process_dataset(
@@ -1100,75 +1099,3 @@ def extract_attr_to_rename(
             renamed_attrs[new_attr] = ds1.attrs[old_attr]
 
     return renamed_attrs
-
-
-def process_and_save_data(
-    input_location: str,
-    save: bool = False,
-    output_dir: str = ".",
-    run_quietly: bool = True,
-) -> xr.Dataset:
-    """Process and save data from the specified input location.
-
-    This function loads and concatenates datasets from the server, converts them to OG1 format,
-    and saves the resulting dataset to a NetCDF file. If the file already exists, the function
-    will prompt the user to decide whether to overwrite it or not.
-
-    Parameters
-    ----------
-    input_location : str
-        The location of the input data to be processed.
-    save : bool, optional
-        Whether to save the processed dataset to a file. Default is False.
-    output_dir : str, optional
-        The directory where the output file will be saved. Default is '.'.
-    run_quietly : bool, optional
-        If True, suppresses user prompts and assumes 'no' for overwriting files. Default is True.
-
-    Returns
-    -------
-    xarray.Dataset
-        The processed dataset.
-
-    """
-    # Load and concatenate all datasets from the server
-    ds1_base = readers.load_first_basestation_file(input_location)
-
-    # Convert the list of datasets to OG1
-    ds1_og1 = to_og1([ds1_base])
-    output_file = str(Path(output_dir) / (ds1_og1.attrs["id"] + ".nc"))
-
-    # Check if the file exists and delete it if it does
-    if Path(output_file).exists():
-        if run_quietly:
-            user_input = "no"
-        else:
-            user_input = input(
-                f"File {output_file} already exists. Do you want to re-run and overwrite it? (yes/no): "
-            )
-
-        if user_input.lower() != "yes":
-            print(f"File {output_file} already exists. Exiting the process.")
-            _log.warning(f"File {output_file} already exists. Exiting the process.")
-            return xr.open_dataset(output_file)
-        if user_input.lower() == "yes":
-            list_datasets = readers.load_basestation_files(input_location)
-            ds_all = to_og1(list_datasets)
-            Path(output_file).unlink()
-            if save:
-                writers.save_dataset(ds_all, output_file)
-    else:
-        print("Running the directory:", input_location)
-        _log.info(f"Running the directory: {input_location}")
-        list_datasets = readers.load_basestation_files(input_location)
-        ds_all = to_og1(list_datasets)
-        output_file = str(Path(output_dir) / (ds_all.attrs["id"] + ".nc"))
-        if save:
-            writers.save_dataset(ds_all, output_file)
-
-        _log.info("=========================================")
-        _log.info("output_var: Variables in OG1 format file:")
-        for varname in sorted(ds_all.variables):
-            _log.info(f"{varname}")
-
-    return ds_all

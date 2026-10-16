@@ -80,6 +80,8 @@ semantic versioning.
   Exit codes follow the CLI family convention: `0` success, `1` a conversion or validation
   failure or a missing/unreadable input path, `2` an argparse-level usage error (an unknown
   flag, a bad `choices` value, or `list missions` with no path).
+  A global `-v`/`--verbose` flag routes library diagnostics to stderr (`-v` INFO progress,
+  `-vv` debug); command results stay on stdout.
   `convert.to_og1` gains `contributors=`, `institutions=`, `platform=`, `global_attributes=`
   and `mode=`. `OG1_author.yaml` is no longer loaded at import (`load_default_contributors`
   loads it on demand); `readers.discover_missions` and public `readers.validate_filename`/

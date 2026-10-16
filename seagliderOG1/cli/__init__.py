@@ -8,6 +8,7 @@ import those inside ``run`` rather than at module load.
 """
 
 import argparse
+import logging
 from collections.abc import Sequence
 
 from seagliderOG1 import __version__
@@ -43,12 +44,39 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}"
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="library diagnostics to stderr: -v for progress (INFO), -vv for debug",
+    )
     subparsers = parser.add_subparsers(
         dest="command", metavar="<command>", required=True
     )
     for module in (init_cmd, validate_cmd, process_cmd, inspect_cmd, list_cmd):
         module.build_parser(subparsers)
     return parser
+
+
+def _configure_logging(verbose: int) -> None:
+    """Route library diagnostics to stderr at a level set by ``-v``.
+
+    Parameters
+    ----------
+    verbose : int
+        Count of ``-v`` flags: 0 leaves the default (``WARNING`` and above), 1
+        shows ``INFO`` progress, 2 or more shows ``DEBUG``. Only library
+        ``logging`` output is affected; command results stay on stdout via
+        ``print``. ``force=True`` so a repeated ``main`` call reconfigures.
+
+    """
+    level = logging.WARNING
+    if verbose >= 2:
+        level = logging.DEBUG
+    elif verbose == 1:
+        level = logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s", force=True)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -67,4 +95,5 @@ def main(argv: Sequence[str] | None = None) -> int:
     """
     parser = build_parser()
     args = parser.parse_args(argv)
+    _configure_logging(args.verbose)
     return args.func(args)
