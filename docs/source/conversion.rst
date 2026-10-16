@@ -56,7 +56,7 @@ Metadata added
   the mission configuration.
 * **QC variables**: where the basestation input carries a ``<name>_qc`` flag, it is carried
   through as the OG1 ``<NAME>_QC`` companion of the kept variable; variables with no input flag
-  do not gain one (``convertOG1.py``).
+  do not gain one (``convert.py``).
 
 GPS data
 --------
@@ -90,7 +90,7 @@ mappings:
 * ``OG1_vocab_attrs.yaml`` — CF variable attributes;
 * ``OG1_sensor_attrs.yaml`` — sensor metadata;
 * ``OG1_global_attrs.yaml`` — global attribute templates;
-* ``institution_registry.yml`` — EDMO codes for resolving institutions.
+* ``institution_registry.yaml`` — EDMO codes for resolving institutions.
 
 OG1 compliance
 --------------
@@ -136,15 +136,15 @@ or from Python:
 
 .. code-block:: python
 
-   from seagliderOG1 import convertOG1, readers, writers
+   from seagliderOG1 import convert, readers, writers
 
-   datasets = readers.load_basestation_files(source, first, last)
-   ds, _ = convertOG1.convert_to_OG1(
+   datasets = readers.read_mission(source, first, last)
+   ds = convert.to_og1(
        datasets,
        contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
        institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],
    )
-   writers.save_dataset(ds, out)
+   writers.write(ds, out)
 
 The ``contributors`` and ``institutions`` arguments are lists of records, one entry per person
 (or institution) per role; a conversion with no PI warns. See :ref:`cli_reference`.

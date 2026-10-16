@@ -48,7 +48,7 @@ Keys
    * - ``repair``
      - bool
      - ``false``
-     - Run ``scan_and_repair`` on the basestation files before loading (writes the source tree).
+     - Run ``repair_files`` on the basestation files before loading (writes the source tree).
    * - ``keep_variables``
      - list or null
      - ``null``
@@ -111,7 +111,7 @@ The template ``init`` writes (fill the nulls before ``validate``):
    output_dir: ./          # where OG1 files are written
    mode: delayed           # realtime | delayed
    dives: null             # [first, last] dive numbers; null = all files present
-   repair: false           # run scan_and_repair on the basestation files (writes the source tree)
+   repair: false           # run repair_files on the basestation files (writes the source tree)
    keep_variables: null    # optional list of science variables to keep; null = all
 
    platform:               # 'init --from' fills these; fill any null before validate

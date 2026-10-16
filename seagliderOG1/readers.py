@@ -5,6 +5,7 @@ from either online sources or local directories. It does not manipulate
 the data, only loads it into xarray datasets.
 """
 
+import logging
 import pathlib
 import re
 import shutil
@@ -17,6 +18,17 @@ import requests
 import xarray as xr
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+
+_log = logging.getLogger(__name__)
+
+__all__ = [
+    "load_sample_basestation",
+    "read_mission",
+    "read_file",
+    "discover_missions",
+    "validate_filename",
+    "repair_files",
+]
 
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
@@ -57,16 +69,16 @@ data_source_og = pooch.create(
 # Instead of loading from the server, we will load from a local directory for testing and development purposes.
 # The local directory will contain the same files as the server, but we will not use pooch to manage them.
 # Instead, we will just read them directly from the filesystem.
-def load_sample_dataset(
+def load_sample_basestation(
     file_path: str = str(parent_dir / "data/demo_sg005/p0050001_20080606.nc"),
 ) -> xr.Dataset:
-    """Download sample datasets for use with seagliderOG1.
+    """Open a bundled sample Seaglider basestation file.
 
     Parameters
     ----------
     file_path : str, optional
-        Path to the sample dataset to load. Default is the demo sg005 dive 1
-        file bundled under ``data/demo_sg005``.
+        Path to the sample basestation file to load. Default is the demo sg005
+        dive 1 file bundled under ``data/demo_sg005``.
 
     Returns
     -------
@@ -111,13 +123,13 @@ def validate_filename(filename: str) -> bool:
     # pattern 2: p0420100_20100903.nc
     pattern2 = r"^p\d{7}_\d{8}\.nc$"
     if re.match(pattern1, filename) or re.match(pattern2, filename):
-        glider_sn = glider_sn_from_filename(filename)
-        divenum = profnum_from_filename(filename)
+        glider_sn = serial_from_filename(filename)
+        divenum = profile_number_from_filename(filename)
         return int(glider_sn) > 0 and int(divenum) > 0
     return False
 
 
-def profnum_from_filename(filename: str) -> int:
+def profile_number_from_filename(filename: str) -> int:
     """Extract the profile/dive number from a Seaglider filename.
 
     Extracts characters 4-7 (0-indexed) which represent the dive cycle number
@@ -137,7 +149,7 @@ def profnum_from_filename(filename: str) -> int:
     return int(filename[4:8])
 
 
-def glider_sn_from_filename(filename: str) -> int:
+def serial_from_filename(filename: str) -> int:
     """Extract the glider serial number from a Seaglider filename.
 
     Extracts characters 1-3 (0-indexed) which represent the 3-digit glider
@@ -200,8 +212,8 @@ def _mission_dives(directory: pathlib.Path) -> tuple[int, list[int]] | None:
     ]
     if not names:
         return None
-    return glider_sn_from_filename(names[0]), sorted(
-        profnum_from_filename(name) for name in names
+    return serial_from_filename(names[0]), sorted(
+        profile_number_from_filename(name) for name in names
     )
 
 
@@ -326,7 +338,7 @@ def filter_files_by_profile(
     # This could be refactored: see divenum_values above, and find values between start_profile and end_profil
     for file in file_list:
         # Extract the profile number from the filename now from the beginning
-        profile_number = profnum_from_filename(file)
+        profile_number = profile_number_from_filename(file)
         if start_profile is not None and end_profile is not None:
             if start_profile <= profile_number <= end_profile:
                 filtered_files.append(file)
@@ -342,7 +354,7 @@ def filter_files_by_profile(
     return filtered_files
 
 
-def load_first_basestation_file(source: str) -> xr.Dataset:
+def read_file(source: str) -> xr.Dataset:
     """Load the first (alphabetically) basestation file from a source.
 
     Useful for quick examination of data structure and metadata from
@@ -361,15 +373,16 @@ def load_first_basestation_file(source: str) -> xr.Dataset:
     """
     file_list = list_files(source)
     filename = file_list[0]
-    start_profile = profnum_from_filename(filename)
-    datasets = load_basestation_files(source, start_profile, start_profile)
+    start_profile = profile_number_from_filename(filename)
+    datasets = read_mission(source, start_profile, start_profile)
     return datasets[0]
 
 
-def load_basestation_files(
+def read_mission(
     source: str,
     start_profile: int | None = None,
     end_profile: int | None = None,
+    *,
     repair: bool = False,
 ) -> list[xr.Dataset]:
     """Load multiple Seaglider basestation files with optional profile filtering.
@@ -386,7 +399,7 @@ def load_basestation_files(
     end_profile : int, optional
         Maximum profile number to load.
     repair : bool, optional
-        When True, run :func:`scan_and_repair_files` first (it rewrites files with
+        When True, run :func:`repair_files` first (it rewrites files with
         inconsistent time metadata in the source tree). Default False: the source
         tree is never modified unless explicitly asked.
 
@@ -398,7 +411,7 @@ def load_basestation_files(
     """
     if repair:
         # Rewrites files with inconsistent time metadata in place; opt-in only.
-        scan_and_repair_files(source, start_profile, end_profile)
+        repair_files(source, start_profile, end_profile)
 
     file_list = list_files(source)
     filtered_files = filter_files_by_profile(file_list, start_profile, end_profile)
@@ -473,7 +486,7 @@ def list_files(
     return file_list
 
 
-def scan_and_repair_files(
+def repair_files(
     source: str,
     start_profile: int | None = None,
     end_profile: int | None = None,
@@ -511,9 +524,9 @@ def scan_and_repair_files(
             ds.close()
 
         except Exception as err:  # noqa: BLE001  # any open failure means the file needs repair; the cause is logged
-            print(f"Need repair: {file}")
+            _log.info("Need repair: %s", file)
 
-            fixed_vars = repair_netcdf_time_metadata_inplace(
+            fixed_vars = repair_time_metadata(
                 full_path,
                 repair_dir=fixes_dir,
                 backup=True,
@@ -521,7 +534,7 @@ def scan_and_repair_files(
 
             if fixed_vars:
                 log_repair(log_path, file, fixed_vars, err)
-                print(f"Repaired {file}: {fixed_vars}")
+                _log.info("Repaired %s: %s", file, fixed_vars)
 
 
 def _repair_folder(source: str | pathlib.Path) -> pathlib.Path:
@@ -554,7 +567,7 @@ def log_repair(
         f.write("\n")
 
 
-def repair_netcdf_time_metadata_inplace(
+def repair_time_metadata(
     path: str | pathlib.Path,
     repair_dir: str | pathlib.Path,
     backup: bool = True,

@@ -8,15 +8,16 @@ variable renaming, attribute assignments, and dataset standardization.
 import logging
 import warnings
 from collections.abc import Mapping, Sequence
-from datetime import datetime
-from pathlib import Path
+from datetime import UTC, datetime
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from tqdm import tqdm
 
-from seagliderOG1 import contributors, readers, tools, utilities, vocabularies, writers
+from seagliderOG1 import _pipeline, contributors, tools, vocabularies
+
+__all__ = ["to_og1", "name_mapping", "keep_variables"]
 
 _log = logging.getLogger(__name__)
 
@@ -153,10 +154,10 @@ _MANDATORY_OG1_VARS = frozenset(
 _MANDATORY_OG1_PREFIXES = ("PLATFORM_", "SENSOR_", "DEPLOYMENT_")
 
 
-def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
+def keep_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
     """Subset the dataset to a science-variable allow-list, keeping OG1 essentials.
 
-    The requested ``keep`` names are retained, plus every OG1-mandatory variable
+    The requested ``names`` are retained, plus every OG1-mandatory variable
     and the ``_QC`` companion of every kept variable. Dropped science variables are
     warned. Coordinates are retained by xarray.
 
@@ -164,7 +165,7 @@ def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
     ----------
     ds : xarray.Dataset
         The converted OG1 dataset.
-    keep : list of str
+    names : list of str
         Science variables the user asked to keep.
 
     Returns
@@ -173,7 +174,7 @@ def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
         The subset dataset; every OG1-mandatory variable present in ``ds`` survives.
 
     """
-    requested = set(keep)
+    requested = set(names)
     kept = set()
     for name in ds.data_vars:
         mandatory = name in _MANDATORY_OG1_VARS or name.startswith(
@@ -194,26 +195,29 @@ def apply_keep_variables(ds: xr.Dataset, keep: list[str]) -> xr.Dataset:
     return ds[sorted(kept)]
 
 
-def convert_to_OG1(
-    list_of_datasets: list[xr.Dataset] | xr.Dataset,
+def to_og1(
+    list_of_datasets: Sequence[xr.Dataset],
     *,
     contributors: Sequence[dict] | None = None,
     institutions: Sequence[dict] | None = None,
     platform: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
     mode: str = "delayed",
-) -> tuple[xr.Dataset, list[str]]:
+) -> xr.Dataset:
     """Convert Seaglider basestation datasets to OG1 format.
 
-    Processes a list of xarray datasets or a single xarray dataset, converts them to OG1 format,
+    Processes a list of xarray datasets, converts them to OG1 format,
     concatenates the datasets, sorts by time, and applies attributes. Main conversion function that
     processes basestation datasets, applies OG1 standardization, concatenates multiple datasets,
     and adds global attributes.
 
     Parameters
     ----------
-    list_of_datasets : list of xarray.Dataset or xarray.Dataset
-        A list of xarray datasets or a single xarray dataset in basestation format.
+    list_of_datasets : sequence of xarray.Dataset
+        A list of xarray datasets in basestation format, expected in dive (time)
+        order: ``start_date``, ``TRAJECTORY`` and the output ``id`` are taken from
+        the first dataset, so out-of-order input can disagree with
+        ``time_coverage_start``.
     contributors : sequence of dict, optional
         Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)
         merged with those already on the files. When None, contributors come from
@@ -237,15 +241,16 @@ def convert_to_OG1(
 
     Returns
     -------
-    tuple of (xarray.Dataset, list of str)
-        A tuple containing:
-        - ds_og1 (xarray.Dataset): The concatenated and processed dataset in OG1 format.
-        - varlist (list of str): A list of variable names from the input datasets.
+    xarray.Dataset
+        The concatenated and processed dataset in OG1 format.
 
     """
+    if isinstance(list_of_datasets, xr.Dataset):
+        msg = "to_og1 takes a sequence of datasets; pass a sequence, e.g. [ds]."
+        raise TypeError(msg)
     if isinstance(contributors, Mapping):
         msg = (
-            "convert_to_OG1(contributors=...) is now a list of records "
+            "to_og1(contributors=...) is now a list of records "
             "[{'name': ..., 'role': ..., 'email': ..., 'orcid': ...}], not a dict "
             "of OG1 attributes. See CHANGELOG."
         )
@@ -264,35 +269,40 @@ def convert_to_OG1(
         msg = f"mode must be one of {sorted(vocabularies.MODE_SUFFIX)}, not {mode!r}."
         raise ValueError(msg)
 
-    print(f"Start converting {len(list_of_datasets)} raw datasets to OG1 format ...")
-
-    if not isinstance(list_of_datasets, list):
-        list_of_datasets = [list_of_datasets]
+    _log.info(
+        "Start converting %d raw datasets to OG1 format ...", len(list_of_datasets)
+    )
 
     processed_datasets = []
-    firstrun = False
 
-    varlist = []
     # This would be faster if we concatenated the basestation files first, and then processed them.
     # But we need to process them first to get the dive number, assign GPS (could be after), ?
 
     # Find dimensions to merge across all datasets
-    ctd_dim, dims_to_merge, all_dims = tools._get_merge_dimensions(list_of_datasets)
+    ctd_dim, dims_to_merge, all_dims = _pipeline._get_merge_dimensions(list_of_datasets)
 
     # Create a mapping from original variable names to OG1 variable names for all variables across the datasets
-    OG1_mapping, time_variables = tools.OG1_name_mapping(list_of_datasets)
+    og1_mapping, time_variables = _pipeline.og1_name_mapping(list_of_datasets)
+    # Build the original->OG1 name lookup once; it is loop-invariant across dives.
+    name_lookup = og1_mapping.set_index("original_name")["OG1_name"]
 
-    # print the sumary of variables assigned or not assigned to the dataset
-    # tools.print_OG1_mapping_summary(OG1_mapping, ctd_dim, dims_to_merge, all_dims)
+    # Warn when a dimension group is dropped rather than merged, so a missing
+    # instrument is visible; name_mapping() returns the full basestation -> OG1 table.
+    skipped_dims = [d for d in all_dims if d not in set(dims_to_merge)]
+    if skipped_dims:
+        _log.warning(
+            "Dimensions not merged into the OG1 dataset: %s. If instrument data "
+            "is missing, its dimension must be named '<instrument>_data_point' "
+            "(from ds.attrs['instrument']).",
+            skipped_dims,
+        )
 
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
-        varlist = list(set(varlist + list(ds1_base.variables)))
         ds_new, attr_warnings = process_dataset(
-            ds1_base, OG1_mapping, time_variables, firstrun=firstrun
+            ds1_base, og1_mapping, time_variables, name_lookup=name_lookup
         )
         if ds_new:
             processed_datasets.append(ds_new)
-            firstrun = False
         else:
             _log.warning(
                 f"Dataset for dive number {ds1_base.attrs['dive_number']} is empty or invalid."
@@ -309,12 +319,12 @@ def convert_to_OG1(
 
     # Add sensor information to the dataset - can be done on the concatenated data
     # -----------------------------------------------------------------------------
-    sensor_dict = tools.gather_sensor_info(list_of_datasets)
+    sensor_dict = _pipeline.gather_sensor_info(list_of_datasets)
     # delete old sensor attribute if it exists and add new one
     for var in ds_og1.data_vars:
         if "sensor" in ds_og1[var].attrs:
             del ds_og1[var].attrs["sensor"]
-    ds_og1 = tools.add_sensor_to_dataset(ds_og1, sensor_dict, OG1_mapping)
+    ds_og1 = _pipeline.add_sensor_to_dataset(ds_og1, sensor_dict, og1_mapping)
 
     # Apply attributes
     ordered_attributes = update_dataset_attributes(
@@ -331,10 +341,12 @@ def convert_to_OG1(
         ds_og1.attrs[key] = value
 
     ### Add information needed/used for hydrodynamic (flight) model (hdm)
-    print("Collecting scalar parameters to the dataset ...")
-    extracted = tools.extract_scalar_parameters(list_of_datasets)
-    print("Adding scalar parameters to the dataset ...")
-    ds_og1, OG1_mapping = tools.add_scalar_parameters(ds_og1, extracted, OG1_mapping)
+    _log.info("Collecting scalar parameters to the dataset ...")
+    extracted = _pipeline.extract_scalar_parameters(list_of_datasets)
+    _log.info("Adding scalar parameters to the dataset ...")
+    ds_og1, og1_mapping = _pipeline.add_scalar_parameters(
+        ds_og1, extracted, og1_mapping
+    )
 
     # Resolve platform fields from the config and the first file (no silent
     # fallbacks: missing serial raises, other strings warn + "UNK", the numeric
@@ -396,10 +408,10 @@ def convert_to_OG1(
     # Or is there an earlier TIME_GPS timestamp?
     tstart_in_numpy_datetime64 = ds_og1["TIME"][0]
     tend_in_numpy_datetime64 = ds_og1["TIME"][-1]
-    tstart_str = utilities._clean_time_string(
+    tstart_str = _pipeline._clean_time_string(
         np.datetime_as_string(tstart_in_numpy_datetime64, unit="s")
     )
-    tend_str = utilities._clean_time_string(
+    tend_str = _pipeline._clean_time_string(
         np.datetime_as_string(tend_in_numpy_datetime64, unit="s")
     )
     _log.info("Start of mission from TIME[0]: " + tstart_str)
@@ -410,7 +422,7 @@ def convert_to_OG1(
     ds_og1.attrs["time_coverage_end"] = (
         tend_str  # ds_og1.TIME[-1].values.strftime('%Y%m%dT%H%M%S')
     )
-    ds_og1.attrs["date_created"] = utilities._clean_time_string(
+    ds_og1.attrs["date_created"] = _pipeline._clean_time_string(
         ds_og1.attrs["date_created"]
     )
 
@@ -446,19 +458,42 @@ def convert_to_OG1(
     for qc_name in [v for v in ds_og1.variables if v[-2:].lower() == "qc"]:
         if qc_name[:-3] in ds_og1.variables:
             ds_og1 = tools.convert_qc_flags(ds_og1, qc_name)
-    ds_og1 = tools.set_best_dtype(ds_og1)
 
-    return ds_og1, OG1_mapping
+    return _pipeline.set_best_dtype(ds_og1)
 
 
-_log = logging.getLogger(__name__)
+def name_mapping(list_of_datasets: Sequence[xr.Dataset]) -> pd.DataFrame:
+    """Return the basestation-to-OG1 variable-name mapping for the given datasets.
+
+    The table ``to_og1`` builds internally: one row per unique input variable
+    with its OG1 name (empty when unmapped), instrument, dimensions and whether
+    OG1 vocabulary attributes were found. Shows which basestation variables carry
+    through to OG1 and which are dropped, without running a conversion.
+
+    Parameters
+    ----------
+    list_of_datasets : sequence of xarray.Dataset
+        Basestation datasets, as passed to :func:`to_og1`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``original_name``, ``OG1_name``, ``instrument``,
+        ``instrument_type``, ``original_dimension`` and ``has_og1_attributes``.
+
+    """
+    if isinstance(list_of_datasets, xr.Dataset):
+        msg = "name_mapping takes a sequence of datasets; pass a sequence, e.g. [ds]."
+        raise TypeError(msg)
+    mapping, _ = _pipeline.og1_name_mapping(list(list_of_datasets))
+    return mapping
 
 
 def process_dataset(
     ds1_base: xr.Dataset,
-    OG1_mapping: pd.DataFrame,
+    og1_mapping: pd.DataFrame,
     time_variables: dict[str, list[str]],
-    firstrun: bool = False,
+    name_lookup: pd.Series | None = None,
 ) -> tuple[
     xr.Dataset,  # Processed dataset with renamed variables, assigned attributes, and additional information
     list[str],  # List of warnings related to attribute assignments
@@ -470,12 +505,14 @@ def process_dataset(
     ----------
     ds1_base : xarray.Dataset
         The input dataset from a basestation file, containing various attributes and variables.
-    OG1_mapping : pandas.DataFrame
+    og1_mapping : pandas.DataFrame
         Mapping of original basestation variable names to OG1 variable names.
     time_variables : dict[str, list[str]]
         A dictionary mapping dimension names to lists of time variables.
-    firstrun : bool, optional
-        Indicates whether this is the first run of the processing pipeline. Default is False.
+    name_lookup : pandas.Series or None, optional
+        Precomputed ``original_name`` -> ``OG1_name`` lookup. Built from
+        ``og1_mapping`` when None; :func:`to_og1` passes it in so it is not
+        rebuilt per dive. Default is None.
 
     Returns
     -------
@@ -484,7 +521,7 @@ def process_dataset(
         - ds_new (xarray.Dataset): The processed dataset with renamed variables, assigned attributes,
           converted units, and additional information such as GPS info and dive number.
         - attr_warnings (list[str]): A list of warnings related to attribute assignments.
-        - OG1_mapping (pd.DataFrame): A DataFrame containing the mapping of original variable names to OG1 variable names.
+        - og1_mapping (pd.DataFrame): A DataFrame containing the mapping of original variable names to OG1 variable names.
 
     Notes
     -----
@@ -512,7 +549,7 @@ def process_dataset(
 
     """
     # Check if the dataset has 'LONGITUDE' as a coordinate
-    ds1_base = utilities._validate_coords(ds1_base)
+    ds1_base = _pipeline._validate_coords(ds1_base)
     if ds1_base is None or len(ds1_base.variables) == 0:
         return (
             xr.Dataset(),
@@ -522,16 +559,14 @@ def process_dataset(
     split_ds = tools.split_by_unique_dims(ds1_base)
 
     # merge the split datasets along the time dimension using the OG1 mapping and specified dimensions to merge
-    merged_ds = tools.merge_datasets_along_time(
-        split_ds, time_variables, firstrun=firstrun
-    )
+    merged_ds = _pipeline.merge_datasets_along_time(split_ds, time_variables)
     # Rename variables and attributes to OG1 vocabulary
     # -------------------------------------------------------------------
     # Use variables with dimension 'sg_data_point'
     # Must be after split_ds
     # map the original variable names to the OG1 variable names, and get the instrument type for each variable
 
-    ds_new = standardise_OG10(merged_ds, OG1_mapping, firstrun)
+    ds_new = standardise_og1(merged_ds, og1_mapping, name_lookup=name_lookup)
 
     # Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)
     # -----------------------------------------------------------------------
@@ -540,31 +575,31 @@ def process_dataset(
     ds_gps = split_ds[("gps_info",)]
     ds_new = add_gps_info_to_dataset(ds_new, ds_gps)
     # Add the profile number (odd for dives, even for get_sgscents)
-    ds_new = tools.assign_profile_number(ds_new, ds1_base)
+    ds_new = tools.add_profile_number(ds_new, ds1_base)
     # Assign the phase of the dive (must be after adding divenum)
-    ds_new = tools.assign_phase(ds_new)
+    ds_new = tools.add_phase(ds_new)
     # Assign DEPTH_Z to the dataset where positive is up.
-    ds_new = tools.calc_Z(ds_new)
+    ds_new = tools.add_depth(ds_new)
 
     vars_to_remove = vocabularies.vars_to_remove
     vars_present_to_remove = [var for var in vars_to_remove if var in ds_new.variables]
 
     # Drop them
     ds_new = ds_new.drop_vars(vars_present_to_remove)
-    if firstrun and vars_present_to_remove:
+    if vars_present_to_remove:
         _log.warning(f"Variables removed from dataset: {vars_present_to_remove}")
-    elif firstrun:
+    else:
         _log.info("No variables needed to be removed from the dataset.")
 
     attr_warnings: list[str] = []
     return ds_new, attr_warnings
 
 
-def standardise_OG10(
+def standardise_og1(
     ds: xr.Dataset,
     og1_mapping: pd.DataFrame,
-    firstrun: bool = False,
     unit_format: dict[str, str] = vocabularies.unit_str_format,
+    name_lookup: pd.Series | None = None,
 ) -> xr.Dataset:
     """Standardize a dataset using OG1 names, attributes, and units.
 
@@ -585,8 +620,9 @@ def standardise_OG10(
         Input dataset.
     og1_mapping : pandas.DataFrame
         Mapping containing ``original_name`` and ``OG1_name``.
-    firstrun : bool, default False
-        Enable logging of missing OG1 names and vocabulary attributes.
+    name_lookup : pandas.Series or None, optional
+        Precomputed ``original_name`` -> ``OG1_name`` lookup. Built from
+        ``og1_mapping`` when None. Default is None.
     unit_format : dict[str, str], optional
         Unit spelling replacements. Defaults to
         ``vocabularies.unit_str_format``.
@@ -598,7 +634,8 @@ def standardise_OG10(
     """
     dsa = ds.copy(deep=True)
 
-    name_lookup = og1_mapping.set_index("original_name")["OG1_name"]
+    if name_lookup is None:
+        name_lookup = og1_mapping.set_index("original_name")["OG1_name"]
 
     unassigned_variables = []
     variables_without_og1_attributes = []
@@ -687,7 +724,6 @@ def standardise_OG10(
                     original_unit,
                     target_unit,
                     vocabularies.unit1_to_unit2,
-                    firstrun,
                 )
 
                 dsa[output_name].data = converted_values
@@ -702,20 +738,19 @@ def standardise_OG10(
         if original_name.lower().endswith("_qc") or output_name.upper().endswith("_QC"):
             dsa = tools.convert_qc_flags(dsa, output_name)
 
-    if firstrun:
-        if unassigned_variables:
-            _log.info(
-                "Variables retained with their original names: %s",
-                sorted(set(unassigned_variables)),
-            )
-        else:
-            _log.info("All variables have an assigned OG1 name.")
+    if unassigned_variables:
+        _log.debug(
+            "Variables retained with their original names: %s",
+            sorted(set(unassigned_variables)),
+        )
+    else:
+        _log.debug("All variables have an assigned OG1 name.")
 
-        if variables_without_og1_attributes:
-            _log.info(
-                "OG1 variables retained without vocabulary attributes: %s",
-                sorted(set(variables_without_og1_attributes)),
-            )
+    if variables_without_og1_attributes:
+        _log.debug(
+            "OG1 variables retained without vocabulary attributes: %s",
+            sorted(set(variables_without_og1_attributes)),
+        )
 
     coordinate_names = [
         name
@@ -729,7 +764,7 @@ def standardise_OG10(
     if "TIME" in dsa.variables:
         dsa = tools.encode_times_og1(dsa)
 
-    # Optimize dtypes after concatenating datasets in convert_to_OG1.
+    # Optimize dtypes after concatenating datasets in to_og1.
     return dsa
 
 
@@ -962,7 +997,7 @@ def get_contributors(
         {
             "name": person.get("name", ""),
             "email": person.get("email", "") or "",
-            "id": contributors.normalize_orcid(person.get("orcid")),
+            "id": contributors.canonical_orcid(person.get("orcid")),
             "role": person.get("role", "") or "",
         }
         for person in (people or [])
@@ -978,7 +1013,7 @@ def get_contributors(
                 stacklevel=2,
             )
     if not any(
-        contributors.normalize_role(person.get("role")) == "PI"
+        contributors.canonical_role(person.get("role")) == "PI"
         for person in merged_people
     ):
         warnings.warn(
@@ -1004,7 +1039,7 @@ def get_contributors(
         contributors.enrich_institutions(file_institutions + config_institutions)
     )
     if not any(
-        contributors.normalize_role(institution.get("role")) == "Operator"
+        contributors.canonical_role(institution.get("role")) == "Operator"
         for institution in merged_institutions
     ):
         warnings.warn(
@@ -1037,6 +1072,10 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
 
     """
     time_attrs = {}
+    # time_coverage_start/end are recomputed authoritatively in to_og1 from the
+    # concatenated TIME. time_coverage_start also seeds the start_date fallback
+    # below, so it is needed here; the per-dive time_coverage_end is overwritten
+    # there and otherwise unused.
     time_attr_list = [
         "time_coverage_start",
         "time_coverage_end",
@@ -1047,9 +1086,9 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
         if attr in ds.attrs:
             val1 = ds.attrs[attr]
             if isinstance(val1, (int, float)):
-                val1 = datetime.utcfromtimestamp(val1).strftime("%Y%m%dT%H%M%S")
+                val1 = datetime.fromtimestamp(val1, tz=UTC).strftime("%Y%m%dT%H%M%S")
             if isinstance(val1, str) and ("-" in val1 or ":" in val1):
-                val1 = utilities._clean_time_string(val1)
+                val1 = _pipeline._clean_time_string(val1)
             time_attrs[attr] = val1
     time_attrs["date_modified"] = datetime.now().strftime("%Y%m%dT%H%M%S")
 
@@ -1116,80 +1155,3 @@ def extract_attr_to_rename(
             renamed_attrs[new_attr] = ds1.attrs[old_attr]
 
     return renamed_attrs
-
-
-def process_and_save_data(
-    input_location: str,
-    save: bool = False,
-    output_dir: str = ".",
-    run_quietly: bool = True,
-) -> xr.Dataset:
-    """Process and save data from the specified input location.
-
-    This function loads and concatenates datasets from the server, converts them to OG1 format,
-    and saves the resulting dataset to a NetCDF file. If the file already exists, the function
-    will prompt the user to decide whether to overwrite it or not.
-
-    Parameters
-    ----------
-    input_location : str
-        The location of the input data to be processed.
-    save : bool, optional
-        Whether to save the processed dataset to a file. Default is False.
-    output_dir : str, optional
-        The directory where the output file will be saved. Default is '.'.
-    run_quietly : bool, optional
-        If True, suppresses user prompts and assumes 'no' for overwriting files. Default is True.
-
-    Returns
-    -------
-    xarray.Dataset
-        The processed dataset.
-
-    """
-    # Load and concatenate all datasets from the server
-    ds1_base = readers.load_first_basestation_file(input_location)
-
-    # Convert the list of datasets to OG1
-    ds1_og1, varlist = convert_to_OG1(ds1_base)
-    output_file = str(Path(output_dir) / (ds1_og1.attrs["id"] + ".nc"))
-
-    # Check if the file exists and delete it if it does
-    if Path(output_file).exists():
-        if run_quietly:
-            user_input = "no"
-        else:
-            user_input = input(
-                f"File {output_file} already exists. Do you want to re-run and overwrite it? (yes/no): "
-            )
-
-        if user_input.lower() != "yes":
-            print(f"File {output_file} already exists. Exiting the process.")
-            _log.warning(f"File {output_file} already exists. Exiting the process.")
-            return xr.open_dataset(output_file)
-        if user_input.lower() == "yes":
-            list_datasets = readers.load_basestation_files(input_location)
-            ds_all, varlist = convert_to_OG1(list_datasets)
-            Path(output_file).unlink()
-            if save:
-                writers.save_dataset(ds_all, output_file)
-    else:
-        print("Running the directory:", input_location)
-        _log.info(f"Running the directory: {input_location}")
-        list_datasets = readers.load_basestation_files(input_location)
-        ds_all, varlist = convert_to_OG1(list_datasets)
-        output_file = str(Path(output_dir) / (ds_all.attrs["id"] + ".nc"))
-        if save:
-            writers.save_dataset(ds_all, output_file)
-
-        _log.info("===================================================")
-        _log.info("input_var: Variables in original basestation files:")
-        for varname in sorted(varlist):
-            _log.info(f"{varname}")
-
-        _log.info("=========================================")
-        _log.info("output_var: Variables in OG1 format file:")
-        for varname in sorted(ds_all.variables):
-            _log.info(f"{varname}")
-
-    return ds_all

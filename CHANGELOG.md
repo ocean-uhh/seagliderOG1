@@ -8,6 +8,32 @@ semantic versioning.
 
 ### Breaking changes
 
+- Public API reshaped to the OceanGliders family convention (0.1.0), a clean break with no
+  deprecation shims. Old → new:
+
+  | was | now |
+  |---|---|
+  | `ds, varlist = convert_to_OG1(ds_or_list)` | `ds = convert.to_og1(sequence_of_datasets)` — returns the Dataset; takes a sequence (wrap a single dataset as `[ds]`) |
+  | `from seagliderOG1 import convertOG1` → `convertOG1.convert_to_OG1(...)` | `from seagliderOG1 import convert` → `convert.to_og1(...)` — module `convertOG1.py` renamed to `convert.py`; function `convert_to_OG1` to `to_og1`, addressed as `convert.to_og1()` |
+  | `writers.save_dataset(ds, output_file="../test.nc") -> bool` | `writers.write(ds, path, *, overwrite=False) -> pathlib.Path` — renamed; `path: str \| Path`, no default; returns the path written; raises `FileExistsError` (or the underlying write error) instead of returning `False` |
+  | `plotters.plot_*(…)` returned `None` and called `plt.show()` | `plotters.plot_*(…, ax=None) -> (fig, ax)`; no `plt.show()` |
+  | `plotters.show_*(path_or_dataset)` | `plotters.show_*(dataset)` — Dataset only (the file-path branch is gone) |
+  | `readers.load_sample_dataset()` | `readers.load_sample_basestation()` |
+  | `standardise_OG10`, `tools.OG1_name_mapping`, `print_OG1_mapping_summary`, the `OG1_mapping` argument | `standardise_og1`, `og1_name_mapping`, `print_og1_mapping_summary`, `og1_mapping` — `og1` lower-case in names; the package name keeps its spelling |
+  | `tools.<pipeline internals>` (`og1_name_mapping`, `gather_sensor_info`, `add_sensor_to_dataset`, `merge_datasets_along_time`, `extract_scalar_parameters`/`add_scalar_parameters`, `set_best_dtype`, …) and the whole `seagliderOG1.utilities` module | private `seagliderOG1._pipeline` (not part of the public API); `tools` keeps the user-facing utilities (`add_depth`, `add_phase`, `convert_units_var`, `convert_qc_flags`, `encode_times_og1`, …) |
+  | `firstrun=` parameters (e.g. `tools.convert_units_var(..., firstrun=...)`) | removed; progress and diagnostics go through `logging.getLogger("seagliderOG1...")` (set the level, e.g. the CLI `-v`) |
+  | `readers.load_basestation_files(dir, first, last, repair=)` | `readers.read_mission(path, first=None, last=None, *, repair=False)` |
+  | `readers.load_first_basestation_file` | `readers.read_file` |
+  | `readers.scan_and_repair_files` | `readers.repair_files` |
+  | `readers.profnum_from_filename` / `readers.glider_sn_from_filename` | `readers.profile_number_from_filename` / `readers.serial_from_filename` |
+  | `readers.repair_netcdf_time_metadata_inplace` | `readers.repair_time_metadata` |
+  | `convert.apply_keep_variables(ds, keep)` | `convert.keep_variables(ds, names)` |
+  | `tools.calc_Z` / `tools.assign_phase` / `tools.assign_profile_number` | `tools.add_depth` / `tools.add_phase` / `tools.add_profile_number` |
+  | `contributors.registry_institutions()` | `contributors.institution_registry()` |
+  | `vocabularies.load_default_contributors`, `vocabularies.contrib_to_append`, `config/OG1_author.yaml` | removed — contributors come from `mission.yaml`; no packaged default-identity block |
+  | `contributors.normalize_orcid` / `contributors.normalize_role` | `contributors.canonical_orcid` / `contributors.canonical_role` — public names carry no British/American-variant word |
+  | `TEMP`/`TEMP_RAW`/`TEMP_OXYGEN` output `units: Celsius` | `units: degree_Celsius` — CF spelling (udunits-equivalent; values unchanged) |
+
 - Output variable dtypes changed. QC flags are `int8` (were `float32`/`int64`); `PHASE` is
   `int8`; `PROFILE_NUMBER`, `DIVE_NUMBER` and `VBD_MIN_CNTS` are `int16`; `DEPTH` and
   `DEPTH_Z` are `float32`. `LATITUDE`/`LONGITUDE` stay `float64`. Non-QC integer variables
@@ -19,10 +45,10 @@ semantic versioning.
   `gregorian` (OG1 Format v1.0.0), replacing the previous non-conformant `seconds since
   1970-01-01 00:00:00` / `standard`. The instant is unchanged; a parser that string-matched
   the old units must adapt.
-- Minimum Python raised to 3.10 (`requires-python = ">=3.10"`). The pinned `numpy 2.2` and
-  `xarray 2025.3` already require 3.10, so `>=3.8` was not installable; users on 3.8/3.9 must
-  stay on an earlier release.
-- Platform metadata is no longer silently defaulted. `convert_to_OG1` takes `platform=` and
+- Minimum Python raised to 3.11 (`requires-python = ">=3.11"`). The pinned `numpy 2.2` and
+  `xarray 2025.3` already require a recent Python, so the former `>=3.8` was not installable;
+  users on earlier Python must stay on an earlier release.
+- Platform metadata is no longer silently defaulted. `convert.to_og1` takes `platform=` and
   `global_attributes=` from the mission config, config values overriding file-derived ones. A
   missing `PLATFORM_SERIAL_NUMBER` (no file `platform_id`, none in the config) now raises instead
   of defaulting to `sg000` — it names the output file and OG1 id. `WMO_IDENTIFIER`,
@@ -38,16 +64,16 @@ semantic versioning.
   (`contributor_name`/`_email`/`_id`/`_role`/`_role_vocabulary`, and `contributing_institutions`
   with its `_role`/`_vocabulary`/`_role_vocabulary`): one slot per person/institution, empty
   slots kept so the lists stay aligned, one role per slot. Roles normalise to the NERC W08
-  vocabulary. `convert_to_OG1` takes `contributors=` and `institutions=` as lists of records;
+  vocabulary. `convert.to_og1` takes `contributors=` and `institutions=` as lists of records;
   the former `contrib_to_append` dict is removed (passing a dict raises `TypeError`). Two silent
   substitutions are removed: a missing contributor role is no longer defaulted to `PI`, and an
   unrecognised institution is no longer stamped with the School of Oceanography EDMO code
   (`…/report/1434`) — institutions resolve to their own EDMO id via
-  `config/institution_registry.yml`, or are written with no id and a warning.
+  `config/institution_registry.yaml`, or are written with no id and a warning.
 
 ### Added
 
-- `seagliderOG1.contributors` module and `config/institution_registry.yml` (EDMO codes) backing
+- `seagliderOG1.contributors` module and `config/institution_registry.yaml` (EDMO codes) backing
   the contributor/institution rebuild above.
 - `seagliderOG1` command-line interface (`cli/` package), run as `seagliderOG1 <verb>`:
   - `init` — write a commented `mission.yaml`; `--from DIR` fills the platform block and
@@ -65,11 +91,15 @@ semantic versioning.
   Exit codes follow the CLI family convention: `0` success, `1` a conversion or validation
   failure or a missing/unreadable input path, `2` an argparse-level usage error (an unknown
   flag, a bad `choices` value, or `list missions` with no path).
-  `convert_to_OG1` gains `contributors=`, `institutions=`, `platform=`, `global_attributes=`
+  A global `-v`/`--verbose` flag routes library diagnostics to stderr (`-v` INFO progress,
+  `-vv` debug); command results stay on stdout.
+  `convert.to_og1` gains `contributors=`, `institutions=`, `platform=`, `global_attributes=`
   and `mode=`. `OG1_author.yaml` is no longer loaded at import (`load_default_contributors`
   loads it on demand); `readers.discover_missions` and public `readers.validate_filename`/
   `profnum_from_filename`/`glider_sn_from_filename`.
-- `writers.save_dataset` now writes every non-scalar numeric variable, coordinates
+- `convert.name_mapping(datasets)` returns the basestation→OG1 variable-mapping table — the
+  data the old `convert_to_OG1` returned as its second tuple element, now an explicit function.
+- `writers.write` now writes every non-scalar numeric variable, coordinates
   included, with lossless zlib compression (level 4) and the shuffle filter. String
   and scalar variables are left uncompressed. Output files are smaller and remain
   readable by any netCDF4 client.
@@ -109,16 +139,18 @@ semantic versioning.
 
 ### Fixed
 
-- `writers.save_dataset` preserves each compressed variable's `_FillValue` (and
+- Trailing/leading whitespace stripped from vocabulary `long_name` strings (`TEMP*`, `ICES_CODE`,
+  the WET Labs sensors) that were written verbatim into output attributes; a test guards against
+  edge whitespace in the vocabulary YAMLs.
+- `writers.write` preserves each compressed variable's `_FillValue` (and
   `scale_factor`/`add_offset`) when applying compression, so an integer missing-value
   sentinel is not written as an ordinary value.
-- `writers.save_dataset` no longer mutates the caller's dataset: it copies the input
+- `writers.write` no longer mutates the caller's dataset: it copies the input
   before clearing conflicting time attributes and stringifying attributes.
-- `writers.save_dataset` reuses one encoding on the retry path, so a file written after
+- `writers.write` reuses one encoding on the retry path, so a file written after
   a `TypeError` fallback keeps its time encoding and compression instead of being
   written unencoded.
-- `writers.save_dataset` return annotation corrected from `None` to `bool`.
-- Dtype optimisation now runs once on the concatenated dataset (in `convert_to_OG1`) instead
+- Dtype optimisation now runs once on the concatenated dataset (in `convert.to_og1`) instead
   of per dive, so `int8` QC flags are no longer re-promoted to `float32` by the concat.
 - `tools.set_best_dtype` now visits coordinates (so `DEPTH` becomes `float32`) and restores
   coordinate status after coercion; it respects an existing `_FillValue` sentinel (e.g.
@@ -128,6 +160,6 @@ semantic versioning.
   truncated float "raw" variables); named integer variables map to a fixed integer type.
 - `tools.convert_qc_flags` drops the inherited float `_FillValue` from the `int8` result;
   `tools.assign_profile_number` writes `_FillValue` to encoding rather than attrs.
-- `writers.save_dataset` no longer silently overrides `tools.encode_times_og1`: both use one
+- `writers.write` no longer silently overrides `tools.encode_times_og1`: both use one
   canonical time-units constant (`tools.OG1_TIME_UNITS` / `OG1_TIME_CALENDAR`), so the saved
   file's TIME units match the OG1 encoder instead of a divergent hard-coded string.

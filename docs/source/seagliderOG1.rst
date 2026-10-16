@@ -1,52 +1,47 @@
 :mod:`seagliderOG1 API`
 -----------------------
 
-convertOG1
-==========
-.. automodule:: seagliderOG1.convertOG1
+At a glance, in pipeline order:
+
+- ``readers.read_mission`` — read a mission's basestation files into a list of datasets.
+- ``convert.to_og1`` — convert that list into one OG1 dataset.
+- ``convert.keep_variables`` — optionally subset to a science-variable allow-list.
+- ``writers.write`` — write the OG1 dataset to netCDF.
+- ``tools.add_depth`` / ``add_phase`` / ``add_profile_number`` — add derived variables.
+- ``plotters.plot_*`` / ``plotters.show_*`` — quick-look figures and text tables.
+- ``vocabularies`` and ``contributors`` — the metadata vocabularies and contributor/institution records.
+
+convert
+=======
+.. automodule:: seagliderOG1.convert
    :members:
-   :undoc-members:
 
 vocabularies
 ============
 .. automodule:: seagliderOG1.vocabularies
    :members:
-   :undoc-members:
 
 contributors
 ============
 .. automodule:: seagliderOG1.contributors
    :members:
-   :undoc-members:
-
 
 readers
 =======
 .. automodule:: seagliderOG1.readers
    :members:
-   :undoc-members:
 
 plotters
 ========
 .. automodule:: seagliderOG1.plotters
    :members:
-   :undoc-members:
 
 writers
 =======
 .. automodule:: seagliderOG1.writers
    :members:
-   :undoc-members:
 
 tools
 =====
 .. automodule:: seagliderOG1.tools
    :members:
-   :undoc-members:
-
-utilities
-=========
-.. automodule:: seagliderOG1.utilities
-   :members:
-   :undoc-members:
-

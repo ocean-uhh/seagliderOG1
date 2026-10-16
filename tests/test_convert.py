@@ -10,7 +10,8 @@ parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
 from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
-    convertOG1,
+    _pipeline,
+    convert,
     readers,
     tools,
     writers,
@@ -20,7 +21,7 @@ from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
 def test_resolve_platform_serial_from_file():
     """Serial comes from platform_id; string fields fall back to UNK; depth omitted."""
     ds = xr.Dataset(attrs={"platform_id": "SG005"})
-    resolved = convertOG1._resolve_platform(ds, None)
+    resolved = convert._resolve_platform(ds, None)
     assert resolved["PLATFORM_SERIAL_NUMBER"] == "sg005"
     assert resolved["PLATFORM_MODEL"] == "UNK"
     assert resolved["WMO_IDENTIFIER"] == "UNK"
@@ -37,7 +38,7 @@ def test_resolve_platform_config_overrides_and_numeric_depth():
         "PLATFORM_DEPTH_RATING": 1000,
         "platform_model_vocabulary": "http://vocab.example/model",
     }
-    resolved = convertOG1._resolve_platform(ds, platform)
+    resolved = convert._resolve_platform(ds, platform)
     assert resolved["PLATFORM_SERIAL_NUMBER"] == "orca"
     assert resolved["PLATFORM_MODEL"] == "Slocum G3"
     assert resolved["PLATFORM_DEPTH_RATING"] == 1000
@@ -47,7 +48,7 @@ def test_resolve_platform_config_overrides_and_numeric_depth():
 def test_resolve_platform_missing_serial_raises():
     """No platform_id and no config serial is a hard error (it names the output)."""
     try:
-        convertOG1._resolve_platform(xr.Dataset(), None)
+        convert._resolve_platform(xr.Dataset(), None)
     except ValueError as exc:
         assert "PLATFORM_SERIAL_NUMBER" in str(exc)
     else:
@@ -72,7 +73,7 @@ def test_get_contributors_demo_sg005_real_attrs():
     )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        attrs = convertOG1.get_contributors(ds)
+        attrs = convert.get_contributors(ds)
     assert attrs["contributor_name"] == "Charlie Eriksen, Peter Rhines"
     assert attrs["contributor_role"] == ", PI"  # Eriksen role-less; Rhines normalised
     assert attrs["contributor_email"] == "eriksen@uw.edu, "
@@ -92,7 +93,7 @@ def test_get_contributors_config_fills_creator_role():
     ds = xr.Dataset(
         attrs={"creator_name": "Charlie Eriksen", "creator_email": "eriksen@uw.edu"}
     )
-    attrs = convertOG1.get_contributors(
+    attrs = convert.get_contributors(
         ds, people=[{"name": "Charlie Eriksen", "role": "PI"}]
     )
     assert attrs["contributor_name"] == "Charlie Eriksen"
@@ -103,7 +104,7 @@ def test_get_contributors_config_fills_creator_role():
 def test_global_attributes_collision_raises():
     """A global_attributes key that collides with a derived global is an error."""
     try:
-        convertOG1.convert_to_OG1([], global_attributes={"id": "x"})
+        convert.to_og1([], global_attributes={"id": "x"})
     except ValueError as exc:
         assert "id" in str(exc)
     else:
@@ -113,26 +114,47 @@ def test_global_attributes_collision_raises():
 def test_start_date_global_attribute_collision_raises():
     """start_date is converter-derived (names id/TRAJECTORY); a config override is rejected."""
     try:
-        convertOG1.convert_to_OG1(
-            [], global_attributes={"start_date": "20080606T000000"}
-        )
+        convert.to_og1([], global_attributes={"start_date": "20080606T000000"})
     except ValueError as exc:
         assert "start_date" in str(exc)
     else:
         raise AssertionError("expected ValueError for start_date collision")
 
 
-def test_convert_to_OG1_options_are_keyword_only():
+def test_to_og1_options_are_keyword_only():
     """A positional second argument is rejected; options must be keyword."""
     try:
-        convertOG1.convert_to_OG1([], {})
+        convert.to_og1([], {})
     except TypeError:
         pass
     else:
         raise AssertionError("expected TypeError for a positional option")
 
 
-def test_apply_keep_variables_retains_mandatory_and_qc():
+def test_name_mapping_returns_the_mapping_table():
+    """name_mapping returns the basestation->OG1 table; a bare Dataset is rejected."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    mapping = convert.name_mapping(datasets)
+    assert list(mapping.columns) == [
+        "original_name",
+        "OG1_name",
+        "instrument",
+        "instrument_type",
+        "original_dimension",
+        "has_og1_attributes",
+    ]
+    assert len(mapping) > 0
+    assert "TIME" in set(mapping["OG1_name"])
+
+    try:
+        convert.name_mapping(datasets[0])
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("expected TypeError for a bare Dataset")
+
+
+def test_keep_variables_retains_mandatory_and_qc():
     """keep_variables keeps the ask plus every mandatory var and the kept var's _QC."""
     import warnings
 
@@ -148,7 +170,7 @@ def test_apply_keep_variables_retains_mandatory_and_qc():
     )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        out = convertOG1.apply_keep_variables(ds, ["TEMP"])
+        out = convert.keep_variables(ds, ["TEMP"])
     assert "TEMP" in out.variables and "TEMP_QC" in out.variables  # ask + its QC
     assert "PLATFORM_SERIAL_NUMBER" in out.variables  # mandatory family
     assert "WMO_IDENTIFIER" in out.variables  # mandatory
@@ -158,7 +180,7 @@ def test_apply_keep_variables_retains_mandatory_and_qc():
 
 def test_process_dataset():
 
-    ds1 = readers.load_sample_dataset()
+    ds1 = readers.load_sample_basestation()
 
     # test split_ds
     split_ds = tools.split_by_unique_dims(ds1)
@@ -169,23 +191,21 @@ def test_process_dataset():
 
     gps_info = split_ds[("gps_info",)]
 
-    sg_cal, dc_log, dc_other = convertOG1.extract_variables(split_ds[()])
+    sg_cal, dc_log, dc_other = convert.extract_variables(split_ds[()])
     tmp = dc_log.log_GPS.values.tobytes().decode("utf-8")
 
     assert sg_cal["mass"].values > 50 and sg_cal["mass"].values < 60
     assert tmp == "$GPS,060608,183207,6124.849,-816.741,13,1.8,12,-8.8"
 
-    ctd_dim, merge_dims, all_dims = tools._get_merge_dimensions([ds1])
+    ctd_dim, merge_dims, all_dims = _pipeline._get_merge_dimensions([ds1])
 
-    # create og1_mapping for standardise_OG10
-    OG1_mapping, time_variables = tools.OG1_name_mapping([ds1])
+    # create og1_mapping for standardise_og1
+    og1_mapping, time_variables = _pipeline.og1_name_mapping([ds1])
 
-    merged_ds = tools.merge_datasets_along_time(
-        split_ds, time_variables, firstrun=False
-    )
+    merged_ds = _pipeline.merge_datasets_along_time(split_ds, time_variables)
 
     # Check initial variables are reformatted
-    dsa = convertOG1.standardise_OG10(merged_ds, og1_mapping=OG1_mapping)
+    dsa = convert.standardise_og1(merged_ds, og1_mapping=og1_mapping)
     varlist = list(dsa.data_vars)
     coordlist = list(dsa.coords)
     combined_list = varlist + coordlist
@@ -200,15 +220,15 @@ def test_process_dataset():
     for var in og1_varlist:
         assert var in combined_list
 
-    ds_new = convertOG1.add_gps_info_to_dataset(dsa, gps_info)
+    ds_new = convert.add_gps_info_to_dataset(dsa, gps_info)
     assert "LATITUDE_GPS" in list(ds_new.variables)
     assert "LONGITUDE_GPS" in list(ds_new.variables)
 
-    ds_new = tools.assign_profile_number(ds_new, ds1)
+    ds_new = tools.add_profile_number(ds_new, ds1)
     assert "PROFILE_NUMBER" in list(ds_new.variables)
     assert ds_new["PROFILE_NUMBER"].values.max() == 2 * ds1.attrs["dive_number"]
 
-    ds_new = tools.calc_Z(ds_new)
+    ds_new = tools.add_depth(ds_new)
     meanZ = ds_new["DEPTH_Z"].mean().item()
     meanZpos = ds_new["DEPTH"].mean().item()
     assert abs(meanZ + meanZpos) < 10
@@ -222,11 +242,11 @@ def test_output_dtypes_end_to_end(tmp_path: pathlib.Path) -> None:
     -9999 fill through both set_best_dtype and the compression writer.
     """
     source = str(parent_dir / "data/demo_sg005")
-    datasets = readers.load_basestation_files(source, 1, 5)
-    ds, _ = convertOG1.convert_to_OG1(datasets)
+    datasets = readers.read_mission(source, 1, 5)
+    ds = convert.to_og1(datasets)
     out = tmp_path / "out.nc"
 
-    assert writers.save_dataset(ds, str(out)) is True
+    assert writers.write(ds, str(out)) == out
 
     with netCDF4.Dataset(out) as nc:
         assert nc.variables["TEMP_QC"].dtype == np.dtype("int8")

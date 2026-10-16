@@ -8,8 +8,10 @@ import those inside ``run`` rather than at module load.
 """
 
 import argparse
+import logging
 from collections.abc import Sequence
 
+from seagliderOG1 import __version__
 from seagliderOG1.cli import init as init_cmd
 from seagliderOG1.cli import inspect as inspect_cmd
 from seagliderOG1.cli import list as list_cmd
@@ -22,23 +24,6 @@ typical workflow:
   seagliderOG1 validate sg005.yaml                            config, source, dive range
   seagliderOG1 process  sg005.yaml                            -> <output_dir>/<OG1 id>.nc
 """
-
-
-def _version() -> str:
-    """Return the installed package version, or ``"unknown"`` if undetermined.
-
-    Returns
-    -------
-    str
-        The distribution version string.
-
-    """
-    from importlib.metadata import PackageNotFoundError, version
-
-    try:
-        return version("seagliderOG1")
-    except PackageNotFoundError:
-        return "unknown"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -56,13 +41,62 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {_version()}")
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="library diagnostics to stderr: -v for progress (INFO), -vv for debug",
+    )
     subparsers = parser.add_subparsers(
         dest="command", metavar="<command>", required=True
     )
     for module in (init_cmd, validate_cmd, process_cmd, inspect_cmd, list_cmd):
         module.build_parser(subparsers)
+    # Accept -v/--verbose after the verb (``seagliderOG1 process cfg -v``), not only
+    # before it; SUPPRESS default so a verb-level -v never clobbers a top-level one.
+    for sub in subparsers.choices.values():
+        sub.add_argument(
+            "-v",
+            "--verbose",
+            action="count",
+            default=argparse.SUPPRESS,
+            help=argparse.SUPPRESS,
+        )
     return parser
+
+
+def _configure_logging(verbose: int) -> None:
+    """Route the package's own diagnostics to stderr at a level set by ``-v``.
+
+    Parameters
+    ----------
+    verbose : int
+        Count of ``-v`` flags: 0 leaves the ``seagliderOG1`` logger at
+        ``WARNING``, 1 shows ``INFO`` progress, 2 or more shows ``DEBUG``. Only
+        the package's own ``logging`` output is affected — the root logger (and
+        so third-party libraries) is left alone, and command results stay on
+        stdout via ``print``.
+
+    """
+    level = logging.WARNING
+    if verbose >= 2:
+        level = logging.DEBUG
+    elif verbose == 1:
+        level = logging.INFO
+    logger = logging.getLogger("seagliderOG1")
+    logger.setLevel(level)
+    # Rebuild the one stderr handler each call so it binds to the current
+    # sys.stderr (test capture) and does not accumulate on repeated main() calls.
+    for existing in logger.handlers[:]:
+        logger.removeHandler(existing)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+    logger.addHandler(handler)
+    logger.propagate = False
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -81,4 +115,5 @@ def main(argv: Sequence[str] | None = None) -> int:
     """
     parser = build_parser()
     args = parser.parse_args(argv)
+    _configure_logging(args.verbose)
     return args.func(args)

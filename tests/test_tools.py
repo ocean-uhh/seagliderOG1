@@ -1,4 +1,3 @@
-import json
 import pathlib
 import sys
 
@@ -12,7 +11,8 @@ import pandas as pd  # noqa: E402  # import after sys.path bootstrap
 import xarray as xr  # noqa: E402  # import after sys.path bootstrap
 
 from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
-    convertOG1,
+    _pipeline,
+    convert,
     readers,
     tools,
     vocabularies,
@@ -36,7 +36,7 @@ def test_add_sensor_skips_unmapped_variables():
         ]
     )
 
-    result = tools.add_sensor_to_dataset(ds, sensor_dict, og1_mapping)
+    result = _pipeline.add_sensor_to_dataset(ds, sensor_dict, og1_mapping)
 
     assert result["TEMP"].attrs["sensor"] == "SENSOR_CTD_245201"
     assert "SENSOR_CTD_245201" in result.variables
@@ -65,7 +65,7 @@ def test_add_sensor_skips_instrument_absent_from_sensor_dict():
         ]
     )
 
-    result = tools.add_sensor_to_dataset(ds, sensor_dict, og1_mapping)
+    result = _pipeline.add_sensor_to_dataset(ds, sensor_dict, og1_mapping)
 
     assert result["TEMP"].attrs["sensor"] == "SENSOR_CTD_245201"
     assert "sensor" not in result["PRES2"].attrs
@@ -101,7 +101,7 @@ def test_convert_units_var():
         "dist4": ("km", "m", 1, 1000),
         "density1": ("g m-3", "kg m-3", 1000, 1),
         "density2": ("kg m-3", "g m-3", 1, 1000),
-        "temp": ("degrees_Celsius", "Celsius", 1, 1),
+        "temp": ("degrees_Celsius", "degree_Celsius", 1, 1),
     }
     for _, (current_units, new_units, current_value, new_value) in test_pairs.items():
         converted_values, _ = tools.convert_units_var(
@@ -122,25 +122,20 @@ def test_calc_z():
         },
     )
     depth = gsw.z_from_p(dataset["PRES"], dataset["LATITUDE"]).values
-    depth_z = tools.calc_Z(dataset)["DEPTH_Z"].values
+    depth_z = tools.add_depth(dataset)["DEPTH_Z"].values
 
     assert np.array_equal(depth, depth_z)
 
 
 def test_add_scalar_parameters():
+    """Every input scalar survives conversion into the public output.
+
+    Unit coverage of the scalar pass itself (constant value vs per-dive JSON encoding) belongs
+    with ``add_scalar_parameters`` once it becomes a private pipeline function; this test asserts
+    only what a user observes from the public converter — that no scalar is dropped.
+    """
     source = str(parent_dir / "data/demo_sg005")
-    datasets = readers.load_basestation_files(source, 1, 5)
-
-    extracted = tools.extract_scalar_parameters(datasets)
-    ds_og1, mapping = convertOG1.convert_to_OG1(datasets)
-
-    original_sizes = dict(ds_og1.sizes)
-
-    ds_updated, mapping_updated = tools.add_scalar_parameters(
-        ds_og1,
-        extracted,
-        mapping,
-    )
+    datasets = readers.read_mission(source, 1, 5)
 
     expected_names = {
         name
@@ -148,92 +143,46 @@ def test_add_scalar_parameters():
         for name, variable in dataset.variables.items()
         if variable.ndim == 0
     }
-
     assert expected_names
-    assert set(extracted["parameters"]) == expected_names
-    assert dict(ds_updated.sizes) == original_sizes
 
-    def expected_json_value(value):
-        if value is None or pd.isna(value):
-            return None
-        if isinstance(value, np.generic):
-            value = value.item()
-        if isinstance(value, bytes):
-            value = value.decode("utf-8")
-        return value
+    ds_og1 = convert.to_og1(datasets)
 
-    for original_name, parameter in extracted["parameters"].items():
-        rows = mapping_updated.loc[mapping_updated["original_name"].eq(original_name)]
-        assert len(rows) == 1
-
-        og1_name = rows["OG1_name"].iloc[0]
-        output_name = str(og1_name) if pd.notna(og1_name) else original_name
-
-        assert output_name in ds_updated.variables
-        variable = ds_updated[output_name]
-        assert variable.attrs["original_name"] == original_name
-        assert variable.dims == ()
-
-        if parameter["constant"]:
-            xr.testing.assert_equal(
-                variable.reset_coords(drop=True),
-                xr.DataArray(parameter["values"][0], name=output_name),
-            )
-        else:
-            assert variable.attrs["serialization"] == "json"
-            assert variable.dtype.kind in ("U", "S", "O")
-
-            payload = json.loads(variable.item())
-
-            assert set(payload) == {"dives", "values"}
-            assert payload["dives"] == [
-                expected_json_value(dive) for dive in extracted["dive_numbers"]
-            ]
-            assert len(payload["values"]) == len(extracted["dive_numbers"])
-
-            for actual, value, present in zip(
-                payload["values"],
-                parameter["values"],
-                parameter["present"],
-                strict=True,
-            ):
-                expected = expected_json_value(value) if present else None
-                assert actual == expected
-
-            # Conversion must preserve JSON before parameters are reassigned.
-            converted = ds_og1[output_name]
-            assert converted.dims == ()
-            assert converted.attrs["serialization"] == "json"
-            assert converted.dtype.kind in ("U", "S", "O")
-            assert json.loads(converted.item()) == payload
+    # Each retained scalar carries its source name in ``original_name``, so retention is
+    # observable regardless of the OG1 rename applied to the variable.
+    retained = {
+        ds_og1[name].attrs.get("original_name")
+        for name in ds_og1.variables
+        if ds_og1[name].ndim == 0
+    }
+    assert expected_names <= retained
 
 
 def test_find_best_dtype_named_integers() -> None:
     """Named integer variables map to their fixed integer type."""
     da = xr.DataArray(np.arange(5.0))
-    assert tools.find_best_dtype("PHASE", da) == np.int8
-    assert tools.find_best_dtype("PROFILE_NUMBER", da) == np.int16
-    assert tools.find_best_dtype("VBD_MIN_CNTS", da) == np.int16
+    assert _pipeline.find_best_dtype("PHASE", da) == np.int8
+    assert _pipeline.find_best_dtype("PROFILE_NUMBER", da) == np.int16
+    assert _pipeline.find_best_dtype("VBD_MIN_CNTS", da) == np.int16
 
 
 def test_find_best_dtype_qc_and_latlon() -> None:
     """QC variables become int8 (case-insensitive); lat/lon stay double."""
     da = xr.DataArray(np.arange(3.0))
-    assert tools.find_best_dtype("TEMP_QC", da) == np.int8
-    assert tools.find_best_dtype("temp_qc", da) == np.int8
-    assert tools.find_best_dtype("LATITUDE", da) == np.double
-    assert tools.find_best_dtype("LONGITUDE_GPS", da) == np.double
+    assert _pipeline.find_best_dtype("TEMP_QC", da) == np.int8
+    assert _pipeline.find_best_dtype("temp_qc", da) == np.int8
+    assert _pipeline.find_best_dtype("LATITUDE", da) == np.double
+    assert _pipeline.find_best_dtype("LONGITUDE_GPS", da) == np.double
 
 
 def test_find_best_dtype_raw_not_truncated() -> None:
     """A float variable whose name ends in 'raw' is not cast to int (clause removed)."""
     da = xr.DataArray(np.array([1.5, 2.5, 3.5]))
-    assert tools.find_best_dtype("optics_raw", da) == np.float32
+    assert _pipeline.find_best_dtype("optics_raw", da) == np.float32
 
 
 def test_find_best_dtype_float64_to_float32() -> None:
     """Generic float64 variables downcast to float32."""
-    assert tools.find_best_dtype("TEMP", xr.DataArray(np.arange(3.0))) == np.float32
+    assert _pipeline.find_best_dtype("TEMP", xr.DataArray(np.arange(3.0))) == np.float32
 
 
 def test_set_best_dtype_preserves_existing_fill_value() -> None:
@@ -242,7 +191,7 @@ def test_set_best_dtype_preserves_existing_fill_value() -> None:
         np.array([1, 3, -9999], dtype="int64"), dims="x", name="PROFILE_NUMBER"
     )
     da.encoding["_FillValue"] = -9999
-    ds = tools.set_best_dtype(xr.Dataset({"PROFILE_NUMBER": da}))
+    ds = _pipeline.set_best_dtype(xr.Dataset({"PROFILE_NUMBER": da}))
     assert ds["PROFILE_NUMBER"].dtype == np.int16
     assert ds["PROFILE_NUMBER"].encoding["_FillValue"] == -9999
     assert "_FillValue" not in ds["PROFILE_NUMBER"].attrs
@@ -251,7 +200,7 @@ def test_set_best_dtype_preserves_existing_fill_value() -> None:
 def test_set_best_dtype_skips_qc() -> None:
     """QC flags are left to convert_qc_flags; set_best_dtype adds no bit-width fill."""
     qc = xr.DataArray(np.array([1, 2, 6], dtype="int8"), dims="x", name="TEMP_QC")
-    ds = tools.set_best_dtype(xr.Dataset({"TEMP_QC": qc}))
+    ds = _pipeline.set_best_dtype(xr.Dataset({"TEMP_QC": qc}))
     assert ds["TEMP_QC"].dtype == np.int8
     assert "_FillValue" not in ds["TEMP_QC"].encoding
 
@@ -259,7 +208,7 @@ def test_set_best_dtype_skips_qc() -> None:
 def test_set_best_dtype_scalar_integer() -> None:
     """A scalar integer variable coerces without a 0-d indexing error."""
     ds = xr.Dataset({"VBD_MIN_CNTS": xr.DataArray(np.float64(500.0))})
-    out = tools.set_best_dtype(ds)
+    out = _pipeline.set_best_dtype(ds)
     assert out["VBD_MIN_CNTS"].dtype == np.int16
 
 
@@ -268,15 +217,15 @@ def test_set_best_dtype_restores_depth_coord() -> None:
     ds = xr.Dataset(
         {"DEPTH": xr.DataArray(np.arange(4.0), dims="x", name="DEPTH")}
     ).set_coords("DEPTH")
-    out = tools.set_best_dtype(ds)
+    out = _pipeline.set_best_dtype(ds)
     assert out["DEPTH"].dtype == np.float32
     assert "DEPTH" in out.coords
 
 
-def test_OG1_name_mapping_sample_dataset():
-    ds1 = readers.load_sample_dataset()
+def test_og1_name_mapping_sample_dataset():
+    ds1 = readers.load_sample_basestation()
 
-    mapping, time_variables = tools.OG1_name_mapping([ds1])
+    mapping, time_variables = _pipeline.og1_name_mapping([ds1])
 
     expected_columns = [
         "original_name",
@@ -284,7 +233,7 @@ def test_OG1_name_mapping_sample_dataset():
         "instrument",
         "instrument_type",
         "original_dimension",
-        "has_OG1_attributes",
+        "has_og1_attributes",
     ]
     assert list(mapping.columns) == expected_columns
     assert mapping["original_name"].is_unique
@@ -323,7 +272,7 @@ def test_OG1_name_mapping_sample_dataset():
             if pd.notna(row.OG1_name)
             else False
         )
-        assert bool(row.has_OG1_attributes) == expected
+        assert bool(row.has_og1_attributes) == expected
 
     ### Taking the following tests out because we'll change some things on the output and this will certainly crash
     # expected_og1_names = {

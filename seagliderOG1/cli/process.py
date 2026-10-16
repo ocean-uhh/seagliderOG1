@@ -44,7 +44,7 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
     selection.add_argument(
         "--mission",
         metavar="GLOB",
-        help="select missions by SN/DATE glob, e.g. '103/*'",
+        help="select missions by SN/DATE glob, e.g. 103/*",
     )
     parser.add_argument(
         "-o", "--output-dir", metavar="DIR", help="override the config output_dir"
@@ -141,7 +141,7 @@ def run(args: argparse.Namespace) -> int:
         (see the CLI family convention).
 
     """
-    from seagliderOG1 import convertOG1, readers, writers
+    from seagliderOG1 import convert, readers, writers
 
     config_path = pathlib.Path(args.config)
     if not config_path.is_file():
@@ -208,10 +208,8 @@ def run(args: argparse.Namespace) -> int:
     converted = skipped = failed = 0
     for mission in selected:
         try:
-            datasets = readers.load_basestation_files(
-                mission.path, first, last, repair=repair
-            )
-            ds, _ = convertOG1.convert_to_OG1(
+            datasets = readers.read_mission(mission.path, first, last, repair=repair)
+            ds = convert.to_og1(
                 datasets,
                 contributors=config.get("contributors"),
                 institutions=config.get("institutions"),
@@ -220,7 +218,7 @@ def run(args: argparse.Namespace) -> int:
                 mode=mode,
             )
             if keep_variables:
-                ds = convertOG1.apply_keep_variables(ds, keep_variables)
+                ds = convert.keep_variables(ds, keep_variables)
             out_path = output_dir / f"{ds.attrs['id']}.nc"
             if out_path.exists():
                 if args.skip_existing:
@@ -235,13 +233,9 @@ def run(args: argparse.Namespace) -> int:
                     failed += 1
                     continue
             output_dir.mkdir(parents=True, exist_ok=True)
-            if not writers.save_dataset(ds, str(out_path), overwrite=args.force):
-                print(
-                    f"FAILED {mission.path}: save_dataset could not write {out_path}",
-                    file=sys.stderr,
-                )
-                failed += 1
-                continue
+            # write returns the written Path and raises on failure; the
+            # per-mission except below reports it and continues to the next.
+            writers.write(ds, str(out_path), overwrite=args.force)
             print(f"wrote {out_path}")
             converted += 1
         # One mission's failure is reported and the run continues to the next.

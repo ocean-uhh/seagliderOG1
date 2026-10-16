@@ -22,8 +22,8 @@ def test_unit_str_format():
     assert vocabularies.unit_str_format["S/m"] == "S m-1"
     assert vocabularies.unit_str_format["mS/cm"] == "mS cm-1"
     assert vocabularies.unit_str_format["meters"] == "m"
-    assert vocabularies.unit_str_format["degrees_Celsius"] == "Celsius"
-    assert vocabularies.unit_str_format["degreesCelsius"] == "Celsius"
+    assert vocabularies.unit_str_format["degrees_Celsius"] == "degree_Celsius"
+    assert vocabularies.unit_str_format["degreesCelsius"] == "degree_Celsius"
     assert vocabularies.unit_str_format["g/m^3"] == "g m-3"
     assert vocabularies.unit_str_format["kg/m^3"] == "kg m-3"
 
@@ -69,3 +69,34 @@ def test_sensor_vocabs():
     assert (
         vocabularies.sensor_vocabs["Seabird SBE43F"]["long_name"] == "Sea-Bird SBE 43F"
     )
+
+
+def test_vocabulary_strings_have_no_edge_whitespace():
+    """No vocabulary string starts or ends with whitespace (written verbatim to output)."""
+    import yaml
+
+    offenders = []
+
+    def walk(node, path):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                walk(value, f"{path}.{key}")
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                walk(value, f"{path}[{i}]")
+        elif isinstance(node, str) and node != node.strip():
+            offenders.append(f"{path}: {node!r}")
+
+    for name in (
+        "OG1_vocab_attrs.yaml",
+        "OG1_var_names.yaml",
+        "OG1_sensor_attrs.yaml",
+        "OG1_global_attrs.yaml",
+    ):
+        walk(
+            yaml.safe_load(
+                (vocabularies.CONFIG_DIR / name).read_text(encoding="utf-8")
+            ),
+            name,
+        )
+    assert not offenders, offenders

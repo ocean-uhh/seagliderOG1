@@ -218,7 +218,7 @@ Wetlabs FLBBCD:
   sensor_type: fluorometer
   sensor_type_vocabulary: https://vocab.nerc.ac.uk/collection/L05/current/113/
 Wetlabs FLBBPC:
-  long_name: ' WET Labs ECO FLBBPC'
+  long_name: 'WET Labs ECO FLBBPC'
   sensor_maker: WET Labs
   sensor_maker_vocabulary: https://vocab.nerc.ac.uk/collection/L35/current/MAN0026/
   sensor_model: WET Labs {Sea-Bird WETLabs} ECO Puck Triplet FLBBPC scattering fluorescence sensor
@@ -234,7 +234,7 @@ Wetlabs FLBBPE:
   sensor_type: fluorometer
   sensor_type_vocabulary: https://vocab.nerc.ac.uk/collection/L05/current/113/
 Wetlabs FLNTU:
-  long_name: ' WET Labs ECO FLNTU'
+  long_name: 'WET Labs ECO FLNTU'
   sensor_maker: WET Labs
   sensor_maker_vocabulary: https://vocab.nerc.ac.uk/collection/L35/current/MAN0026/
   sensor_model: WET Labs {Sea-Bird WETLabs} ECO FLNTU combined fluorometer and turbidity sensor

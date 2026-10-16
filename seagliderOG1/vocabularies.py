@@ -6,6 +6,7 @@ It loads YAML configuration files and defines various dictionaries used
 throughout the conversion process.
 
 Key Components:
+
 - Variable name mappings from basestation to OG1 format
 - Unit conversion factors and formatting rules
 - Global attribute definitions and ordering
@@ -13,12 +14,11 @@ Key Components:
 - Dimension renaming mappings
 
 Configuration Files:
+
 - OG1_var_names.yaml: Variable name mappings
 - OG1_vocab_attrs.yaml: Variable attribute vocabularies
 - OG1_sensor_attrs.yaml: Sensor attribute definitions
 - OG1_global_attrs.yaml: Global attribute configurations
-- OG1_author.yaml: Example contributor information, loaded on demand via
-  :func:`load_default_contributors` (never at import)
 
 Notes
 -----
@@ -29,11 +29,12 @@ OG1 format requirements without code changes.
 """
 
 import pathlib
-import warnings
 from collections.abc import Callable
 from typing import NamedTuple
 
 import yaml
+
+__all__ = ["PlatformField", "platform_from_file"]
 
 # Set the directory for yaml files as package directory + 'config/'
 script_dir = pathlib.Path(__file__).parent.absolute()
@@ -85,7 +86,7 @@ class PlatformField(NamedTuple):
         When True, a null in the mission config is a validate ERROR rather than a
         silent default written into the output.
     kind : str
-        How ``convert_to_OG1`` writes an unset field: ``"serial"`` names the
+        How ``to_og1`` writes an unset field: ``"serial"`` names the
         output and raises when absent, ``"string"`` warns and writes ``"UNK"``,
         ``"numeric"`` is omitted.
 
@@ -99,7 +100,7 @@ class PlatformField(NamedTuple):
 
 # The OG1 platform fields, in template order. This one table is the single source
 # for four views that used to be maintained separately: the init template defaults
-# and the validate required-field check (both in cli/_mission.py), convert_to_OG1's
+# and the validate required-field check (both in cli/_mission.py), to_og1's
 # string-field resolution, and the file->field derivation in platform_from_file.
 PLATFORM_FIELDS: dict[str, PlatformField] = {
     "PLATFORM_SERIAL_NUMBER": PlatformField(
@@ -156,8 +157,8 @@ unit_str_format = {
     "S/m": "S m-1",
     "mS/cm": "mS cm-1",
     "meters": "m",
-    "degrees_Celsius": "Celsius",
-    "degreesCelsius": "Celsius",
+    "degrees_Celsius": "degree_Celsius",
+    "degreesCelsius": "degree_Celsius",
     "g/m^3": "g m-3",
     "kg/m^3": "kg m-3",
     "g/kg": "g kg-1",
@@ -177,16 +178,6 @@ unit1_to_unit2 = {
     "dbar_to_Pa": {"current_unit": "dbar", "new_unit": "Pa", "factor": 10000},
     "Pa_to_dbar": {"current_unit": "Pa", "new_unit": "dbar", "factor": 0.0001},
     "dbar_to_kPa": {"current_unit": "dbar", "new_unit": "kPa", "factor": 10},
-    "degreesCelsius_to_Celsius": {
-        "current_unit": "degreesCelsius",
-        "new_unit": "Celsius",
-        "factor": 1,
-    },
-    "Celsius_to_degreesCelsius": {
-        "current_unit": "Celsius",
-        "new_unit": "degreesCelsius",
-        "factor": 1,
-    },
     "m_to_cm": {"current_unit": "m", "new_unit": "cm", "factor": 100},
     "m_to_km": {"current_unit": "m", "new_unit": "km", "factor": 0.001},
     "cm_to_m": {"current_unit": "cm", "new_unit": "m", "factor": 0.01},
@@ -256,57 +247,6 @@ with (CONFIG_DIR / "OG1_sensor_attrs.yaml").open() as file:
 # --------------------------------
 # Global Attributes
 # --------------------------------
-
-
-def load_default_contributors() -> dict[str, str]:
-    """Load the example contributor block from ``config/OG1_author.yaml``.
-
-    Not loaded at import: a converted file gains contributor details only when a
-    caller passes them to :func:`seagliderOG1.convertOG1.convert_to_OG1`. The
-    file is an editable example, not a default identity written into every output.
-
-    Returns
-    -------
-    dict of str
-        Contributor attributes read from ``OG1_author.yaml``.
-
-    """
-    with (CONFIG_DIR / "OG1_author.yaml").open() as file:
-        return yaml.safe_load(file)
-
-
-def __getattr__(name: str) -> object:
-    """Resolve the deprecated module attribute ``contrib_to_append`` lazily.
-
-    Preserves ``vocabularies.contrib_to_append`` for existing callers (it returns
-    :func:`load_default_contributors`) while no longer loading the file at import.
-
-    Parameters
-    ----------
-    name : str
-        The attribute being accessed.
-
-    Returns
-    -------
-    object
-        The example contributor block when ``name`` is ``"contrib_to_append"``.
-
-    Raises
-    ------
-    AttributeError
-        For any other attribute name.
-
-    """
-    if name == "contrib_to_append":
-        warnings.warn(
-            "vocabularies.contrib_to_append is deprecated and no longer loaded at import; "
-            "call vocabularies.load_default_contributors() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return load_default_contributors()
-    msg = f"module {__name__!r} has no attribute {name!r}"
-    raise AttributeError(msg)
 
 
 # Preferred order for global attributes in OG1 files

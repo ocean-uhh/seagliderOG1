@@ -38,14 +38,14 @@ def test_format_contributors_orcid_and_role_vocabulary() -> None:
     assert vocabs[1] == "http://vocab.nerc.ac.uk/collection/W08/current/CONT0006/"
 
 
-def test_normalize_role_labels_aliases_and_unknown() -> None:
+def test_canonical_role_labels_aliases_and_unknown() -> None:
     """Known labels (any case) and attested aliases normalise; unknown is None."""
-    assert contributors.normalize_role("PI") == "PI"
-    assert contributors.normalize_role("operator") == "Operator"
-    assert contributors.normalize_role("Principal investigator") == "PI"
-    assert contributors.normalize_role("principal investigator") == "PI"
-    assert contributors.normalize_role("") == ""
-    assert contributors.normalize_role("Chief Wrangler") is None
+    assert contributors.canonical_role("PI") == "PI"
+    assert contributors.canonical_role("operator") == "Operator"
+    assert contributors.canonical_role("Principal investigator") == "PI"
+    assert contributors.canonical_role("principal investigator") == "PI"
+    assert contributors.canonical_role("") == ""
+    assert contributors.canonical_role("Chief Wrangler") is None
 
 
 def test_format_contributors_normalises_role_label_and_passes_unknown() -> None:

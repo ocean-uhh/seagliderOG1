@@ -5,6 +5,7 @@ import sys
 
 import netCDF4
 import numpy as np
+import pytest
 import xarray as xr
 
 script_dir = pathlib.Path(__file__).parent.absolute()
@@ -32,7 +33,7 @@ def test_compression_applied(tmp_path: pathlib.Path) -> None:
     ds = _load_sample()
     out = tmp_path / "out.nc"
 
-    assert writers.save_dataset(ds, str(out)) is True
+    assert writers.write(ds, str(out)) == out
 
     with netCDF4.Dataset(out) as nc:
         for name in COMPRESSED_VARS:
@@ -46,7 +47,7 @@ def test_roundtrip_lossless(tmp_path: pathlib.Path) -> None:
     """Named numeric values are bit-identical after a compressed write/read."""
     ds = _load_sample()
     out = tmp_path / "out.nc"
-    writers.save_dataset(ds, str(out))
+    writers.write(ds, str(out))
 
     with xr.open_dataset(out, engine="netcdf4") as reloaded:
         for name in COMPRESSED_VARS:
@@ -61,7 +62,7 @@ def test_string_and_scalar_left_uncompressed(tmp_path: pathlib.Path) -> None:
     """A string variable and a scalar variable carry no zlib filter."""
     ds = _load_sample()
     out = tmp_path / "out.nc"
-    writers.save_dataset(ds, str(out))
+    writers.write(ds, str(out))
 
     with netCDF4.Dataset(out) as nc:
         assert nc.variables[STRING_VAR].filters()["zlib"] is False
@@ -72,7 +73,7 @@ def test_time_encoding_preserved(tmp_path: pathlib.Path) -> None:
     """Datetime variables survive the compressed write and decode back to datetime."""
     ds = _load_sample()
     out = tmp_path / "out.nc"
-    writers.save_dataset(ds, str(out))
+    writers.write(ds, str(out))
 
     with xr.open_dataset(out, engine="netcdf4") as reloaded:
         assert np.issubdtype(reloaded["TIME"].dtype, np.datetime64)
@@ -85,7 +86,7 @@ def test_smaller_than_uncompressed(tmp_path: pathlib.Path) -> None:
     compressed = tmp_path / "compressed.nc"
     plain = tmp_path / "plain.nc"
 
-    writers.save_dataset(ds, str(compressed))
+    writers.write(ds, str(compressed))
     ds.to_netcdf(plain, format="NETCDF4", engine="netcdf4")
 
     assert compressed.stat().st_size < plain.stat().st_size
@@ -97,21 +98,21 @@ def test_retry_path_stays_compressed(tmp_path: pathlib.Path) -> None:
     out = tmp_path / "out.nc"
     ds["TEMP"].attrs["bad_attr"] = {"not": "serialisable"}
 
-    assert writers.save_dataset(ds, str(out)) is True
+    assert writers.write(ds, str(out)) == out
 
     with netCDF4.Dataset(out) as nc:
         assert nc.variables["TEMP"].filters()["zlib"] is True
 
 
 def test_input_dataset_not_mutated(tmp_path: pathlib.Path) -> None:
-    """save_dataset writes correct time encoding without mutating the caller's dataset."""
+    """write writes correct time encoding without mutating the caller's dataset."""
     times = np.array(["2020-01-01", "2020-01-02", "2020-01-03"], dtype="datetime64[ns]")
     ds = xr.Dataset({"x": ("time", np.arange(3.0))}, coords={"time": ("time", times)})
     ds["time"].attrs["units"] = "days since 2000-01-01"
     ds["time"].attrs["calendar"] = "standard"
     out = tmp_path / "out.nc"
 
-    assert writers.save_dataset(ds, str(out)) is True
+    assert writers.write(ds, str(out)) == out
 
     # the caller's dataset is untouched
     assert ds["time"].attrs["units"] == "days since 2000-01-01"
@@ -134,7 +135,7 @@ def test_preserves_integer_fill_value(tmp_path: pathlib.Path) -> None:
     ds["q"].encoding["_FillValue"] = np.int16(-999)
     out = tmp_path / "out.nc"
 
-    assert writers.save_dataset(ds, str(out)) is True
+    assert writers.write(ds, str(out)) == out
 
     with netCDF4.Dataset(out) as nc:
         assert "_FillValue" in nc.variables["q"].ncattrs()
@@ -142,14 +143,15 @@ def test_preserves_integer_fill_value(tmp_path: pathlib.Path) -> None:
         assert nc.variables["q"].filters()["zlib"] is True
 
 
-def test_returns_false_when_unwriteable(tmp_path: pathlib.Path) -> None:
-    """A bad global attribute the retry cannot fix makes save_dataset return False."""
+def test_raises_when_unwriteable(tmp_path: pathlib.Path) -> None:
+    """A bad global attribute the retry cannot fix makes write raise."""
     ds = _load_sample()
     out = tmp_path / "out.nc"
     # the retry only stringifies variable attrs, so a bad global attr survives both writes
     ds.attrs["bad_global"] = {"not": "serialisable"}
 
-    assert writers.save_dataset(ds, str(out)) is False
+    with pytest.raises(TypeError):
+        writers.write(ds, str(out))
 
 
 def test_time_units_canonical(tmp_path: pathlib.Path) -> None:
@@ -161,7 +163,7 @@ def test_time_units_canonical(tmp_path: pathlib.Path) -> None:
     times = np.array(["2020-01-01", "2020-01-02", "2020-01-03"], dtype="datetime64[ns]")
     ds = xr.Dataset({"x": ("time", np.arange(3.0))}, coords={"time": ("time", times)})
     out = tmp_path / "out.nc"
-    writers.save_dataset(ds, str(out))
+    writers.write(ds, str(out))
 
     assert tools.OG1_TIME_UNITS == "seconds since 1970-01-01T00:00:00Z"
     with netCDF4.Dataset(out) as nc:
@@ -174,11 +176,11 @@ def test_time_units_canonical(tmp_path: pathlib.Path) -> None:
         assert v.dtype == np.dtype("float64")
 
 
-def test_save_dataset_rejects_none_attribute(tmp_path: pathlib.Path) -> None:
+def test_write_rejects_none_attribute(tmp_path: pathlib.Path) -> None:
     """A None-valued attribute is refused by name, not written as the literal 'None'."""
     ds = xr.Dataset({"x": ("n", [1.0, 2.0])}, attrs={"contributor_name": None})
     try:
-        writers.save_dataset(ds, str(tmp_path / "out.nc"))
+        writers.write(ds, str(tmp_path / "out.nc"))
     except ValueError as exc:
         assert "contributor_name" in str(exc)
     else:
