@@ -32,10 +32,7 @@ Packaged YAML (``seagliderOG1/config/``), loaded at conversion time:
   ``units``).
 * ``OG1_sensor_attrs.yaml`` — sensor metadata.
 * ``OG1_global_attrs.yaml`` — global attribute templates (for example ``featureType``).
-* ``institution_registry.yml`` — EDMO codes for resolving institutions by name.
-
-(``config/mission_yaml.yaml`` is an unused legacy template; the ``init`` verb generates the
-``mission.yaml`` template in code, not from this file.)
+* ``institution_registry.yaml`` — EDMO codes for resolving institutions by name.
 
 Tables in ``vocabularies.py``:
 

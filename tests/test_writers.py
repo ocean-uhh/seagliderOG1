@@ -176,7 +176,7 @@ def test_time_units_canonical(tmp_path: pathlib.Path) -> None:
         assert v.dtype == np.dtype("float64")
 
 
-def test_save_dataset_rejects_none_attribute(tmp_path: pathlib.Path) -> None:
+def test_write_rejects_none_attribute(tmp_path: pathlib.Path) -> None:
     """A None-valued attribute is refused by name, not written as the literal 'None'."""
     ds = xr.Dataset({"x": ("n", [1.0, 2.0])}, attrs={"contributor_name": None})
     try:

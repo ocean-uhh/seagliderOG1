@@ -143,7 +143,7 @@ def render_template(
         "output_dir: ./          # where OG1 files are written",
         "mode: delayed           # realtime | delayed",
         "dives: null             # [first, last] dive numbers; null = all files present",
-        "repair: false           # run scan_and_repair on the basestation files (writes the source tree)",
+        "repair: false           # run repair_files on the basestation files (writes the source tree)",
         "keep_variables: null    # optional list of science variables to keep; null = all",
         "",
         "platform:               # 'init --from' fills these; fill any null before validate",
@@ -269,7 +269,7 @@ def _check_role(entry: dict, where: str) -> tuple[list[ValidationIssue], str | N
             *warnings_found,
             ValidationIssue("ERROR", f"{where} needs a role.", where),
         ], None
-    normalized = contributors.normalize_role(role)
+    normalized = contributors.canonical_role(role)
     if normalized is None:
         allowed = ", ".join(vocabularies.ROLE_VOCABULARY)
         return [

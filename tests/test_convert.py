@@ -154,7 +154,7 @@ def test_name_mapping_returns_the_mapping_table():
         raise AssertionError("expected TypeError for a bare Dataset")
 
 
-def test_apply_keep_variables_retains_mandatory_and_qc():
+def test_keep_variables_retains_mandatory_and_qc():
     """keep_variables keeps the ask plus every mandatory var and the kept var's _QC."""
     import warnings
 

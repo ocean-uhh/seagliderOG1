@@ -90,7 +90,7 @@ mappings:
 * ``OG1_vocab_attrs.yaml`` — CF variable attributes;
 * ``OG1_sensor_attrs.yaml`` — sensor metadata;
 * ``OG1_global_attrs.yaml`` — global attribute templates;
-* ``institution_registry.yml`` — EDMO codes for resolving institutions.
+* ``institution_registry.yaml`` — EDMO codes for resolving institutions.
 
 OG1 compliance
 --------------

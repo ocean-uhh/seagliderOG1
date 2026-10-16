@@ -31,6 +31,8 @@ semantic versioning.
   | `tools.calc_Z` / `tools.assign_phase` / `tools.assign_profile_number` | `tools.add_depth` / `tools.add_phase` / `tools.add_profile_number` |
   | `contributors.registry_institutions()` | `contributors.institution_registry()` |
   | `vocabularies.load_default_contributors`, `vocabularies.contrib_to_append`, `config/OG1_author.yaml` | removed — contributors come from `mission.yaml`; no packaged default-identity block |
+  | `contributors.normalize_orcid` / `contributors.normalize_role` | `contributors.canonical_orcid` / `contributors.canonical_role` — public names carry no British/American-variant word |
+  | `TEMP`/`TEMP_RAW`/`TEMP_OXYGEN` output `units: Celsius` | `units: degree_Celsius` — CF spelling (udunits-equivalent; values unchanged) |
 
 - Output variable dtypes changed. QC flags are `int8` (were `float32`/`int64`); `PHASE` is
   `int8`; `PROFILE_NUMBER`, `DIVE_NUMBER` and `VBD_MIN_CNTS` are `int16`; `DEPTH` and
@@ -67,11 +69,11 @@ semantic versioning.
   substitutions are removed: a missing contributor role is no longer defaulted to `PI`, and an
   unrecognised institution is no longer stamped with the School of Oceanography EDMO code
   (`…/report/1434`) — institutions resolve to their own EDMO id via
-  `config/institution_registry.yml`, or are written with no id and a warning.
+  `config/institution_registry.yaml`, or are written with no id and a warning.
 
 ### Added
 
-- `seagliderOG1.contributors` module and `config/institution_registry.yml` (EDMO codes) backing
+- `seagliderOG1.contributors` module and `config/institution_registry.yaml` (EDMO codes) backing
   the contributor/institution rebuild above.
 - `seagliderOG1` command-line interface (`cli/` package), run as `seagliderOG1 <verb>`:
   - `init` — write a commented `mission.yaml`; `--from DIR` fills the platform block and
@@ -97,7 +99,7 @@ semantic versioning.
   `profnum_from_filename`/`glider_sn_from_filename`.
 - `convert.name_mapping(datasets)` returns the basestation→OG1 variable-mapping table — the
   data the old `convert_to_OG1` returned as its second tuple element, now an explicit function.
-- `writers.save_dataset` now writes every non-scalar numeric variable, coordinates
+- `writers.write` now writes every non-scalar numeric variable, coordinates
   included, with lossless zlib compression (level 4) and the shuffle filter. String
   and scalar variables are left uncompressed. Output files are smaller and remain
   readable by any netCDF4 client.
@@ -137,12 +139,15 @@ semantic versioning.
 
 ### Fixed
 
-- `writers.save_dataset` preserves each compressed variable's `_FillValue` (and
+- Trailing/leading whitespace stripped from vocabulary `long_name` strings (`TEMP*`, `ICES_CODE`,
+  the WET Labs sensors) that were written verbatim into output attributes; a test guards against
+  edge whitespace in the vocabulary YAMLs.
+- `writers.write` preserves each compressed variable's `_FillValue` (and
   `scale_factor`/`add_offset`) when applying compression, so an integer missing-value
   sentinel is not written as an ordinary value.
-- `writers.save_dataset` no longer mutates the caller's dataset: it copies the input
+- `writers.write` no longer mutates the caller's dataset: it copies the input
   before clearing conflicting time attributes and stringifying attributes.
-- `writers.save_dataset` reuses one encoding on the retry path, so a file written after
+- `writers.write` reuses one encoding on the retry path, so a file written after
   a `TypeError` fallback keeps its time encoding and compression instead of being
   written unencoded.
 - Dtype optimisation now runs once on the concatenated dataset (in `convert.to_og1`) instead
@@ -155,6 +160,6 @@ semantic versioning.
   truncated float "raw" variables); named integer variables map to a fixed integer type.
 - `tools.convert_qc_flags` drops the inherited float `_FillValue` from the `int8` result;
   `tools.assign_profile_number` writes `_FillValue` to encoding rather than attrs.
-- `writers.save_dataset` no longer silently overrides `tools.encode_times_og1`: both use one
+- `writers.write` no longer silently overrides `tools.encode_times_og1`: both use one
   canonical time-units constant (`tools.OG1_TIME_UNITS` / `OG1_TIME_CALENDAR`), so the saved
   file's TIME units match the OG1 encoder instead of a divergent hard-coded string.

@@ -994,7 +994,7 @@ def get_contributors(
         {
             "name": person.get("name", ""),
             "email": person.get("email", "") or "",
-            "id": contributors.normalize_orcid(person.get("orcid")),
+            "id": contributors.canonical_orcid(person.get("orcid")),
             "role": person.get("role", "") or "",
         }
         for person in (people or [])
@@ -1010,7 +1010,7 @@ def get_contributors(
                 stacklevel=2,
             )
     if not any(
-        contributors.normalize_role(person.get("role")) == "PI"
+        contributors.canonical_role(person.get("role")) == "PI"
         for person in merged_people
     ):
         warnings.warn(
@@ -1036,7 +1036,7 @@ def get_contributors(
         contributors.enrich_institutions(file_institutions + config_institutions)
     )
     if not any(
-        contributors.normalize_role(institution.get("role")) == "Operator"
+        contributors.canonical_role(institution.get("role")) == "Operator"
         for institution in merged_institutions
     ):
         warnings.warn(

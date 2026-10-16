@@ -92,7 +92,7 @@ def test_filter_filelist_by_profile():
     ), "Unexpected result for filter_files_by_profile"
 
 
-def test_load_basestation_files():
+def test_read_mission():
     """Test the read_mission function from the readers module.
     This test checks the loading of datasets from either an online source or a local
     directory, optionally filtering by profile range. It uses a sample dataset and
@@ -170,8 +170,8 @@ def test_discover_missions_warns_on_sn_mismatch(tmp_path):
     assert any("disagrees" in str(w.message) for w in caught)
 
 
-def test_load_basestation_files_repair_is_opt_in(monkeypatch):
-    """scan_and_repair runs only when repair=True; the source tree is untouched otherwise."""
+def test_read_mission_repair_is_opt_in(monkeypatch):
+    """repair_files runs only when repair=True; the source tree is untouched otherwise."""
     calls = []
     monkeypatch.setattr(readers, "repair_files", lambda *a, **k: calls.append(a))
     source = str(parent_dir / "data/demo_sg005")
@@ -181,7 +181,7 @@ def test_load_basestation_files_repair_is_opt_in(monkeypatch):
     assert len(calls) == 1
 
 
-def test_load_first_basestation_file():
+def test_read_file():
     """Test the read_file function from the readers module.
     This test checks the loading of the first dataset from either an online source
     or a local directory. It uses a sample dataset and the expected result after

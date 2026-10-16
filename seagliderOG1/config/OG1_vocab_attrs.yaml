@@ -11,7 +11,7 @@ PLATFORM_DEPTH_RATING:
   long_name: depth limit in meters of the glider for this mission
   convention: positive value expected - e.g., 100m depth = 100
 ICES_CODE:
-  long_name: 'ICES platform code of the glider '
+  long_name: 'ICES platform code of the glider'
   ices_code_vocabulary: https://vocab.ices.dk/?codeguid=690d82e2 -b4e2-4e30-9772-7499c66144c6
 PLATFORM_MAKER:
   long_name: glider manufacturer
@@ -301,18 +301,18 @@ SA:
   valid_min: 0
   uri: https://vocab.nerc.ac.uk/collection/OG1/current/SA/
 TEMP:
-  long_name: 'Temperature of the water body by CTD '
+  long_name: 'Temperature of the water body by CTD'
   observation_type: measured
   standard_name: sea_water_temperature
-  units: Celsius
+  units: degree_Celsius
   valid_max: 42
   valid_min: -5
   uri: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
 TEMP_RAW:
-  long_name: 'Temperature of the water body by CTD '
+  long_name: 'Temperature of the water body by CTD'
   observation_type: measured
   standard_name: sea_water_temperature
-  units: Celsius
+  units: degree_Celsius
   valid_max: 42
   valid_min: -5
   uri: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
@@ -322,7 +322,7 @@ THETA:
   observation_type: calculated
   sources: salinity temperature pressure
   standard_name: sea_water_potential_temperature
-  units: Celsius
+  units: degree_Celsius
   valid_max: 42
   valid_min: -5
   uri: https://vocab.nerc.ac.uk/collection/OG1/current/THETA/
@@ -414,7 +414,7 @@ BBP470:
 #    Downloaded from https://oceanobservatories.org/wp-content/uploads/2015/10/1341-00540_Data_Product_SPEC_FLUBSCT_OOI.pdf
 BBP_VFTEMP: ### eng_wlbb2f_VFtemp
   long_name: Raw temperature from backscatter sensor
-  units: Celsius
+  units: degree_Celsius
   observation_type: observed
 TEMP_FREQ: ### eng_tempFreq
   long_name: What is this variable?
@@ -482,11 +482,11 @@ AD2CP_HEADING:
   uri: https://vocab.nerc.ac.uk/collection/P02/current/HEADING/
   comment: measured by AD2CP
 TEMP_OXYGEN:
-  long_name: 'Temperature of the water body by CTD '
+  long_name: 'Temperature of the water body by CTD'
   observation_type: measured
   standard_name: sea_water_temperature
   comment: measured by oxygen optode
-  units: Celsius
+  units: degree_Celsius
   valid_max: 42
   valid_min: -5
   uri: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
@@ -566,7 +566,7 @@ PRESSURE_AIR:
   uri: http://vocab.nerc.ac.uk/collection/P01/current/CAPBZZ01/
 TEMP_AIR:
   long_name: Temperature of the atmosphere by dry bulb thermometer
-  units: Celsius
+  units: degree_Celsius
   sensor: sensor_meteorology
   uri: http://vocab.nerc.ac.uk/collection/P01/current/CDTASS01/
 WIND_SPEED:

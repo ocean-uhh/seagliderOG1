@@ -23,8 +23,8 @@ from seagliderOG1 import vocabularies
 
 __all__ = [
     "split_aligned",
-    "normalize_orcid",
-    "normalize_role",
+    "canonical_orcid",
+    "canonical_role",
     "role_vocabulary",
     "parse_contributors",
     "format_contributors",
@@ -37,7 +37,7 @@ __all__ = [
 ]
 
 _ORCID_PREFIX = "https://orcid.org/"
-_REGISTRY_PATH = pathlib.Path(vocabularies.config_dir) / "institution_registry.yml"
+_REGISTRY_PATH = pathlib.Path(vocabularies.config_dir) / "institution_registry.yaml"
 
 _CONTRIBUTOR_ATTRS = (
     ("name", "contributor_name"),
@@ -74,7 +74,7 @@ def split_aligned(value: object) -> list[str]:
     return [part.strip() for part in str(value).split(",")]
 
 
-def normalize_orcid(value: object) -> str:
+def canonical_orcid(value: object) -> str:
     """Return an ORCID as a full ``https://orcid.org/…`` URL, or ``""`` when absent.
 
     Parameters
@@ -96,7 +96,7 @@ def normalize_orcid(value: object) -> str:
     return _ORCID_PREFIX + text
 
 
-def normalize_role(role: str) -> str | None:
+def canonical_role(role: str) -> str | None:
     """Return the preferred W08 label for a role.
 
     Parameters
@@ -126,7 +126,7 @@ def normalize_role(role: str) -> str | None:
 
 def _preferred_role(role: str) -> str:
     """Return the preferred label for a known role, else the role unchanged."""
-    normalized = normalize_role(role)
+    normalized = canonical_role(role)
     return role if normalized is None else normalized
 
 
@@ -145,7 +145,7 @@ def role_vocabulary(role: str) -> str:
         or unrecognised role (an unrecognised role is never given a URL).
 
     """
-    normalized = normalize_role(role)
+    normalized = canonical_role(role)
     if not normalized:
         return ""
     return vocabularies.ROLE_VOCABULARY[normalized]
@@ -230,7 +230,7 @@ def format_contributors(people: Sequence[Mapping]) -> dict[str, str]:
     names = [str(p.get("name") or "") for p in people]
     emails = [str(p.get("email") or "") for p in people]
     ids = [
-        normalize_orcid(p.get("id") if p.get("id") is not None else p.get("orcid"))
+        canonical_orcid(p.get("id") if p.get("id") is not None else p.get("orcid"))
         for p in people
     ]
     raw_roles = [str(p.get("role") or "") for p in people]
@@ -430,7 +430,7 @@ def enrich_institutions(institutions: Sequence[Mapping]) -> list[dict[str, str]]
             name = collapsed
             if "," in collapsed:
                 warnings.warn(
-                    f"institution {collapsed!r} is not in institution_registry.yml and "
+                    f"institution {collapsed!r} is not in institution_registry.yaml and "
                     "contains a comma; writing it with the comma replaced by a space. "
                     "Add it to the registry to get an EDMO id.",
                     stacklevel=2,
@@ -440,7 +440,7 @@ def enrich_institutions(institutions: Sequence[Mapping]) -> list[dict[str, str]]
             if not institution_id:
                 warnings.warn(
                     f"no EDMO id for institution {collapsed!r}; add it to "
-                    "institution_registry.yml or set id: in the config.",
+                    "institution_registry.yaml or set id: in the config.",
                     stacklevel=2,
                 )
         enriched.append({"name": name, "role": role, "id": institution_id})
