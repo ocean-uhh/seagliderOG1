@@ -71,6 +71,22 @@ semantic versioning.
   (`…/report/1434`) — institutions resolve to their own EDMO id via
   `config/institution_registry.yaml`, or are written with no id and a warning.
 
+- Mission configuration is `config_version: 2` (adds the `deployment:` block and the optional
+  platform variables below). A `config_version: 1` file still converts; `init` writes version 2.
+- A missing OG1-mandatory global attribute is no longer written as a placeholder. The old
+  `attr_mandatory` fill table (which wrote the literal `null`, and `contributer_email:
+  null@null.com` into a misspelt key) is removed; a null or empty attribute is simply not
+  written, and `convert.to_og1` raises `seagliderOG1.exceptions.MetadataError` if a mandatory
+  global is absent after all metadata sources are merged. A mission config that relied on the
+  fabricated `null@null.com` contributor email must set a real `contributor_email`.
+- `global_attributes` may no longer set a key that has a structured home in the new `deployment:`
+  block (`id`, `program`, `license`, `doi`, ...); move it under `deployment:`. `id` is no longer
+  rejected as a converter-derived collision — it is derived by default but may be set in
+  `deployment:` (overriding the derived value with a warning).
+- Output global `featureType` is `trajectory` (was `trajectoryProfile`) and `Conventions` is
+  `CF-1.10, ACDD-1.3, OG-1.0` (was `CF-1.10,OG-1.0`), matching the OG1 manual's fixed value and
+  example files. A reader that string-matched the old values must adapt.
+
 ### Added
 
 - `seagliderOG1.contributors` module and `config/institution_registry.yaml` (EDMO codes) backing
@@ -99,6 +115,20 @@ semantic versioning.
   `profnum_from_filename`/`glider_sn_from_filename`.
 - `convert.name_mapping(datasets)` returns the basestation→OG1 variable-mapping table — the
   data the old `convert_to_OG1` returned as its second tuple element, now an explicit function.
+- `deployment:` block in `mission.yaml` and `convert.to_og1(deployment=...)`: the OG1
+  deployment-identity globals (`id`, `program`, `program_vocabulary`, `network`, `site`,
+  `site_vocabulary`, `project`, `comment`, `license`, `acknowledgment`, `doi`, `data_url`), one
+  key per global, written when set and skipped when null. `init` writes the block with each
+  key's requirement tier as a comment.
+- Optional platform variables in the `platform:` block, written only when set:
+  `PLATFORM_NAME`, `TELECOM_TYPE`, `TRACKING_SYSTEM`, `BATTERY_TYPE`, `BATTERY_PACK` (each with
+  its OG1 long_name and, where defined, its controlled-vocabulary attribute), and
+  `platform_maker_vocabulary` on `PLATFORM_MAKER` (mirroring `platform_model_vocabulary`).
+- `required:` block in `config/OG1_global_attrs.yaml`: the OG1 global-attribute requirement
+  tiers (mandatory / highly desirable / suggested) transcribed from the OG1 manual (v1.0.0),
+  with the source URL and verification date in the file header; read as
+  `vocabularies.REQUIRED_GLOBALS`. `validate` reports an unknown `deployment:` key.
+- `seagliderOG1.exceptions` module with `MetadataError` (raised by `convert.to_og1`).
 - `writers.write` now writes every non-scalar numeric variable, coordinates
   included, with lossless zlib compression (level 4) and the shuffle filter. String
   and scalar variables are left uncompressed. Output files are smaller and remain
@@ -139,6 +169,21 @@ semantic versioning.
 
 ### Fixed
 
+- `start_date`, `TRAJECTORY` and the output `id` are seeded from the earliest measurement time
+  (the time-sorted concatenation), not from whichever dataset was first in the input sequence, so
+  they agree with `time_coverage_start` regardless of input order.
+- A null or wholly-empty global attribute is never written (not as an empty string, not as the
+  word `null`); a multi-value string with an empty slot (e.g. a role-less first contributor's
+  `", PI"`) is kept. This removes the previous `""`-with-warning behaviour and the
+  `contributing_institutions_role: ""` that a role-less institution produced.
+- `date_created` is now always the conversion time (ACDD: the creation date of this OG1 file),
+  was copied from the basestation file when present and `""` otherwise. A basestation creation
+  date, when carried through in a later release, will go to `history`, not `date_created`.
+- Output global attribute `featureType` is now `trajectory` (was `trajectoryProfile`), the fixed
+  value the OG1 manual gives and the value the manual's own example files carry; and `Conventions`
+  is `CF-1.10, ACDD-1.3, OG-1.0` (was `CF-1.10,OG-1.0`), declaring the ACDD discovery attributes
+  the output already writes and spacing the list as the manual shows it
+  (`config/OG1_global_attrs.yaml`).
 - Trailing/leading whitespace stripped from vocabulary `long_name` strings (`TEMP*`, `ICES_CODE`,
   the WET Labs sensors) that were written verbatim into output attributes; a test guards against
   edge whitespace in the vocabulary YAMLs.

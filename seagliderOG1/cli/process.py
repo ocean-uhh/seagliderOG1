@@ -214,6 +214,7 @@ def run(args: argparse.Namespace) -> int:
                 contributors=config.get("contributors"),
                 institutions=config.get("institutions"),
                 platform=config.get("platform"),
+                deployment=config.get("deployment"),
                 global_attributes=config.get("global_attributes"),
                 mode=mode,
             )

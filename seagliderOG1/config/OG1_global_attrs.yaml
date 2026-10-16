@@ -2,8 +2,8 @@ attr_to_add:
   title: OceanGliders trajectory file
   platform: sub-surface gliders
   platform_vocabulary: https://vocab.nerc.ac.uk/collection/L06/current/27
-  featureType: trajectoryProfile
-  Conventions: CF-1.10,OG-1.0
+  featureType: trajectory
+  Conventions: CF-1.10, ACDD-1.3, OG-1.0
   rtqc_method: No QC applied
   rtqc_method_doi: n/a
 #  doi: ''
@@ -39,20 +39,57 @@ attr_to_var:
   landstation_version: base_station_version
   glider_firmware_version: seaglider_software_version
 
-attr_mandatory:
-  title: null
-  platform: null
-  platform_vocabulary: null
-  id: null
-  contributor_name: null
-  contributor_role: null
-  contributer_email: null@null.com
-  contributor_role_vocabulary: null
-  contributing_institutions: null
-  contributing_institutions_role: null
-  contributing_institutions_role_vocabulary: null
-  rtqc_method: null
-  start_date: null
-  date_created: null
-  featureType: null
-  Conventions: null
+# OG1 global-attribute requirement tiers, transcribed from the OG1 format manual.
+# source: https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format-v1.0.0.html
+# version: OG1.0 (tagged release v1.0.0)
+# verified: 2026-10-16 against github.com/OceanGlidersCommunity/OG-format-user-manual OG_Format.adoc
+#
+# This block is not a fill table: a missing value is never written as a placeholder.
+# The tier drives the mission.yaml template comments, the validate warnings, and the
+# docs tier column. The per-attribute tag is the source that fills the attribute:
+#   derived  - computed by to_og1 from the data, or kept from the basestation file
+#   constant - a package value in attr_to_add above
+#   config   - supplied by the user in mission.yaml (deployment / contributors /
+#              institutions / global_attributes)
+# The tag is a static approximation; the per-file partition actually written is the
+# conversion_attribute_sources global (see convert.py). The mandatory set is all
+# derived or constant, so no mandatory global comes from the user; the PI and Operator
+# requirements are enforced separately by validate's contributor/institution checks.
+required:
+  mandatory:
+    title: constant
+    platform: constant
+    platform_vocabulary: constant
+    id: derived
+    rtqc_method: constant
+    start_date: derived
+    date_created: derived
+    featureType: constant
+    Conventions: constant
+  highly_desirable:
+    naming_authority: derived
+    institution: derived
+    internal_mission_identifier: config
+    time_coverage_start: derived
+    time_coverage_end: derived
+    site: config
+    site_vocabulary: config
+    program: config
+    program_vocabulary: config
+    contributor_id: config
+    contributing_institutions_vocabulary: config
+    data_url: config
+    doi: config
+    rtqc_method_doi: constant
+  suggested:
+    geospatial_lat_min: derived
+    geospatial_lat_max: derived
+    geospatial_lon_min: derived
+    geospatial_lon_max: derived
+    geospatial_vertical_min: derived
+    geospatial_vertical_max: derived
+    project: config
+    network: config
+    uri: config
+    web_link: config
+    comment: derived

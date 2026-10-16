@@ -116,6 +116,30 @@ def test_validate_errors_on_null_platform_fields_then_passes(
     assert cli.main(["validate", str(out)]) == 0
 
 
+def test_validate_rejects_unknown_deployment_key(tmp_path: pathlib.Path) -> None:
+    """A typo'd deployment key errors; known keys validate."""
+    cfg = _write_config(
+        tmp_path / "mission.yaml", deployment={"program": "X", "nonsense": "y"}
+    )
+    assert cli.main(["validate", str(cfg)]) == 1
+
+
+def test_validate_accepts_known_deployment_keys(tmp_path: pathlib.Path) -> None:
+    """A deployment block with only OG1 identity globals validates."""
+    cfg = _write_config(
+        tmp_path / "mission.yaml",
+        deployment={"program": "MOOSE", "license": "CC-BY-4.0"},
+    )
+    assert cli.main(["validate", str(cfg)]) == 0
+
+
+def test_validate_warns_on_unset_highly_desirable_global() -> None:
+    """A null highly-desirable deployment global is a WARNING, not an ERROR."""
+    issues = _mission._validate_highly_desirable({"deployment": {"program": None}})
+    assert any(i.key == "program" for i in issues)
+    assert all(i.level == "WARNING" for i in issues)  # advisory only, never ERROR
+
+
 # --- process ---------------------------------------------------------------
 
 

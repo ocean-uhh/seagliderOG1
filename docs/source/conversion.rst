@@ -101,7 +101,7 @@ Output files target:
 * `CF Conventions <http://cfconventions.org/>`_ (version 1.10)
 * `ACDD Conventions <https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery>`_
 
-The output carries ``featureType: trajectoryProfile`` (``config/OG1_global_attrs.yaml``).
+The output carries ``featureType: trajectory`` (``config/OG1_global_attrs.yaml``).
 
 Validation
 ----------

@@ -16,16 +16,17 @@ import xarray as xr
 from tqdm import tqdm
 
 from seagliderOG1 import _pipeline, contributors, tools, vocabularies
+from seagliderOG1.exceptions import MetadataError
 
 __all__ = ["to_og1", "name_mapping", "keep_variables"]
 
 _log = logging.getLogger(__name__)
 
 # Global attributes the converter derives from the data; the mission config may
-# not set these (a collision is an error, not a silent override either way).
+# not set these through global_attributes (a collision is an error). ``id`` is not
+# here: it is derived by default but may be overridden via the deployment: block.
 _DERIVED_GLOBALS = frozenset(
     {
-        "id",
         "time_coverage_start",
         "time_coverage_end",
         "geospatial_lat_min",
@@ -39,6 +40,13 @@ _DERIVED_GLOBALS = frozenset(
     }
 )
 
+# OG1 deployment-identity globals the mission config sets through the structured
+# deployment: block (vocabularies.DEPLOYMENT_GLOBALS). A global_attributes key
+# duplicating one of these is refused: the escape hatch is for everything else. ``id``
+# and ``comment`` also have a converter-derived default, so a deployment value for
+# them overrides with a warning naming both; the rest are config-only.
+_DEPLOYMENT_GLOBALS = vocabularies.DEPLOYMENT_GLOBALS
+
 # String platform fields, resolved in order config -> file -> "UNK", derived from
 # the one platform table in vocabularies (serial raises when absent, numeric fields
 # are omitted; only the string ones take the "UNK" fallback).
@@ -47,6 +55,37 @@ _PLATFORM_STRING_FIELDS = tuple(
     for field, spec in vocabularies.PLATFORM_FIELDS.items()
     if spec.kind == "string"
 )
+
+# Config-only platform variables written only when the user supplies them (null is
+# omitted, never "UNK"). Each entry is (long_name, vocabulary-attribute-name or None,
+# default vocabulary URL or None), transcribed from the OG1 manual's platform-variable
+# table (OG1.0, v1.0.0). PLATFORM_MAKER's own vocabulary attribute is handled with
+# platform_model_vocabulary, not here.
+_VOCAB_BASE = (
+    "https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/"
+    "vocabularyCollection"
+)
+OPTIONAL_PLATFORM_VARS: dict[str, tuple[str, str | None, str | None]] = {
+    "PLATFORM_NAME": ("Local or nickname of the glider", None, None),
+    "TELECOM_TYPE": (
+        "types of telecommunication systems used by the glider, multiple telecom "
+        "type are separated by a comma",
+        "telecom_type_vocabulary",
+        f"{_VOCAB_BASE}/telecom_type.md",
+    ),
+    "TRACKING_SYSTEM": (
+        "type of tracking systems used by the glider, multiple tracking system are "
+        "separated by a comma",
+        "tracking_system_vocabulary",
+        f"{_VOCAB_BASE}/tracking_system.md",
+    ),
+    "BATTERY_TYPE": (
+        "type of the battery",
+        "battery_type_vocabulary",
+        f"{_VOCAB_BASE}/battery_type.md",
+    ),
+    "BATTERY_PACK": ("battery packaging", None, None),
+}
 
 
 def _is_empty(value: object) -> bool:
@@ -130,9 +169,16 @@ def _resolve_platform(
             stacklevel=3,
         )
 
-    model_vocab = platform.get("platform_model_vocabulary")
-    if model_vocab not in (None, "", "None"):
-        resolved["platform_model_vocabulary"] = model_vocab
+    for field in ("platform_model_vocabulary", "platform_maker_vocabulary"):
+        vocab = platform.get(field)
+        if vocab not in (None, "", "None"):
+            resolved[field] = vocab
+
+    # Optional platform variables: written only when the user supplies them.
+    for field in OPTIONAL_PLATFORM_VARS:
+        value = platform.get(field)
+        if value not in (None, "", "None"):
+            resolved[field] = value
 
     return resolved
 
@@ -195,12 +241,101 @@ def keep_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
     return ds[sorted(kept)]
 
 
+# Values that read as "nothing was supplied" when a global attribute is checked:
+# None, the empty string, and the placeholder strings the old attr_mandatory fill
+# used to write. A global holding one of these is treated as unset.
+_PLACEHOLDER_GLOBALS = frozenset({"", "None", "null", "null@null.com"})
+
+
+def _global_is_unset(value: object) -> bool:
+    """Return True when a global-attribute value is missing or a placeholder."""
+    return value is None or (
+        isinstance(value, str) and value.strip() in _PLACEHOLDER_GLOBALS
+    )
+
+
+def _apply_deployment(ds_og1: xr.Dataset, deployment: Mapping[str, object]) -> None:
+    """Write the deployment: block globals, overriding a derived value with a warning.
+
+    Mission config takes precedence over a converter-derived global, so a deployment
+    value that differs from one already on the dataset (``id`` and ``comment`` are the
+    two with a derived default) is applied, with a warning naming both values. Null
+    and placeholder values are skipped. Called after the derived globals are set.
+
+    Parameters
+    ----------
+    ds_og1 : xarray.Dataset
+        The assembled OG1 dataset, modified in place.
+    deployment : collections.abc.Mapping
+        The mission config ``deployment`` block.
+
+    """
+    for key, value in deployment.items():
+        if _global_is_unset(value):
+            continue
+        existing = ds_og1.attrs.get(key)
+        if existing is not None and str(existing) != str(value):
+            warnings.warn(
+                f"deployment.{key} overrides the converter value {existing!r} with "
+                f"{value!r}.",
+                stacklevel=2,
+            )
+        ds_og1.attrs[key] = value
+
+
+def _check_required_globals(attrs: Mapping[str, object]) -> None:
+    """Fail loud on a missing mandatory global; log missing highly-desirable ones.
+
+    Runs after the three metadata sources are merged. Every OG1-mandatory global is
+    a package constant or derived from the data (none come from the user), so a gap
+    is a converter regression, not a config omission, and raises ``MetadataError``.
+    Highly-desirable globals the user did not supply are reported at INFO, not raised:
+    seagliderOG1 lets a user specify OG1 metadata but does not enforce the format;
+    the external ``cc-plugin-og`` checker is where completeness is judged.
+
+    Parameters
+    ----------
+    attrs : collections.abc.Mapping
+        The assembled global attributes of the converted dataset.
+
+    Raises
+    ------
+    MetadataError
+        If any mandatory global attribute is missing or a placeholder.
+
+    """
+    gaps = [
+        name
+        for name in vocabularies.REQUIRED_GLOBALS["mandatory"]
+        if _global_is_unset(attrs.get(name))
+    ]
+    if gaps:
+        msg = (
+            f"OG1-mandatory global attributes missing after conversion: {gaps}. "
+            "These are all package constants or derived from the data, so this is a "
+            "converter problem rather than a mission-config omission."
+        )
+        raise MetadataError(msg)
+    unset_desirable = [
+        name
+        for name in vocabularies.REQUIRED_GLOBALS["highly_desirable"]
+        if _global_is_unset(attrs.get(name))
+    ]
+    if unset_desirable:
+        _log.info(
+            "OG1 highly-desirable global attributes are unset: %s. Set them in the "
+            "mission config to improve discoverability.",
+            unset_desirable,
+        )
+
+
 def to_og1(
     list_of_datasets: Sequence[xr.Dataset],
     *,
     contributors: Sequence[dict] | None = None,
     institutions: Sequence[dict] | None = None,
     platform: dict[str, object] | None = None,
+    deployment: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
     mode: str = "delayed",
 ) -> xr.Dataset:
@@ -214,10 +349,10 @@ def to_og1(
     Parameters
     ----------
     list_of_datasets : sequence of xarray.Dataset
-        A list of xarray datasets in basestation format, expected in dive (time)
-        order: ``start_date``, ``TRAJECTORY`` and the output ``id`` are taken from
-        the first dataset, so out-of-order input can disagree with
-        ``time_coverage_start``.
+        A list of xarray datasets in basestation format. The datasets are
+        concatenated and sorted by time, so the input order does not matter:
+        ``start_date``, ``TRAJECTORY`` and the output ``id`` are seeded from the
+        earliest measurement time and so always agree with ``time_coverage_start``.
     contributors : sequence of dict, optional
         Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)
         merged with those already on the files. When None, contributors come from
@@ -231,9 +366,15 @@ def to_og1(
         ``GLIDER_FIRMWARE_VERSION``, ``LANDSTATION_VERSION``, ``WMO_IDENTIFIER``,
         ``platform_model_vocabulary``). Config values override file-derived ones.
         Default is None.
+    deployment : dict of str to object, optional
+        The deployment-identity globals from the mission config ``deployment`` block
+        (``id``, ``program``, ``license``, ``doi``, ``site``, ...). Written as global
+        attributes; a value for ``id`` or ``comment`` overrides the converter-derived
+        default with a warning. Nulls skipped. Default is None.
     global_attributes : dict of str to object, optional
         Global attributes written verbatim into the output (nulls skipped). A key
-        that collides with a converter-derived global raises. Default is None.
+        that collides with a converter-derived global, or with a key that has a
+        structured home in ``deployment``, raises. Default is None.
     mode : str, optional
         Data mode, ``"delayed"`` (default) or ``"realtime"``. Sets the ``id``
         suffix (``delayed`` or ``R``) and so the output filename, per the OG1
@@ -243,6 +384,16 @@ def to_og1(
     -------
     xarray.Dataset
         The concatenated and processed dataset in OG1 format.
+
+    Raises
+    ------
+    MetadataError
+        If an OG1-mandatory global attribute is absent after all metadata sources
+        are merged (a converter problem: the mandatory set is derived or constant).
+    ValueError
+        If ``global_attributes`` sets a converter-derived or deployment-home key, if
+        ``deployment`` has an unknown key, if no datasets are valid, or if ``mode`` is
+        not ``"delayed"``/``"realtime"``.
 
     """
     if isinstance(list_of_datasets, xr.Dataset):
@@ -257,11 +408,27 @@ def to_og1(
         raise TypeError(msg)
 
     global_attributes = global_attributes or {}
+    deployment = deployment or {}
     collisions = _DERIVED_GLOBALS.intersection(global_attributes)
     if collisions:
         msg = (
             "global_attributes may not set converter-derived keys: "
             f"{sorted(collisions)}. Remove them from the mission config."
+        )
+        raise ValueError(msg)
+    structured = set(_DEPLOYMENT_GLOBALS).intersection(global_attributes)
+    if structured:
+        msg = (
+            "global_attributes may not set keys that have a structured home in the "
+            f"deployment: block: {sorted(structured)}. Move them under deployment:."
+        )
+        raise ValueError(msg)
+    unknown_deployment = set(deployment) - set(_DEPLOYMENT_GLOBALS)
+    if unknown_deployment:
+        msg = (
+            f"deployment: has unknown keys: {sorted(unknown_deployment)}. Allowed "
+            f"keys are {list(_DEPLOYMENT_GLOBALS)}; put anything else under "
+            "global_attributes:."
         )
         raise ValueError(msg)
 
@@ -331,14 +498,21 @@ def to_og1(
         list_of_datasets[0], people=contributors, institutions=institutions
     )
     for key, value in ordered_attributes.items():
-        if value is None:
-            warnings.warn(
-                f"{key} is missing; writing an empty string. Set it in the mission "
-                "config to populate it.",
-                stacklevel=2,
-            )
-            value = ""
-        ds_og1.attrs[key] = value
+        # A null or wholly-empty attribute is never written (not as an empty string,
+        # not as the word "null"): an absent global is absent. A multi-value string
+        # with an empty slot (e.g. ", PI" for a role-less first contributor) is kept.
+        # _check_required_globals reports any mandatory gap before the return.
+        if not _global_is_unset(value):
+            ds_og1.attrs[key] = value
+
+    # start_date names TRAJECTORY and the output id, so it must be the deployment
+    # time, not whichever dive happened to be first in the input sequence. ds_og1 is
+    # already sorted by TIME, so TIME[0] is the earliest measurement; seeding
+    # start_date from it keeps start_date, TRAJECTORY and id in agreement with
+    # time_coverage_start no matter what order the datasets were passed in.
+    ds_og1.attrs["start_date"] = _pipeline._clean_time_string(
+        np.datetime_as_string(ds_og1["TIME"][0], unit="s")
+    )
 
     ### Add information needed/used for hydrodynamic (flight) model (hdm)
     _log.info("Collecting scalar parameters to the dataset ...")
@@ -371,10 +545,24 @@ def to_og1(
         ds_og1["PLATFORM_MODEL"].attrs["platform_model_vocabulary"] = platform_fields[
             "platform_model_vocabulary"
         ]
+    if "platform_maker_vocabulary" in platform_fields:
+        ds_og1["PLATFORM_MAKER"].attrs["platform_maker_vocabulary"] = platform_fields[
+            "platform_maker_vocabulary"
+        ]
 
     if "PLATFORM_DEPTH_RATING" in platform_fields:
         ds_og1["PLATFORM_DEPTH_RATING"] = platform_fields["PLATFORM_DEPTH_RATING"]
         ds_og1["PLATFORM_DEPTH_RATING"].attrs["long_name"] = "maximum rated depth"
+
+    # Optional platform variables: written only when the config supplied a value,
+    # each with its OG1 long_name and (where defined) its vocabulary attribute.
+    for field, (long_name, vocab_attr, vocab_url) in OPTIONAL_PLATFORM_VARS.items():
+        if field not in platform_fields:
+            continue
+        ds_og1[field] = platform_fields[field]
+        ds_og1[field].attrs["long_name"] = long_name
+        if vocab_attr is not None:
+            ds_og1[field].attrs[vocab_attr] = vocab_url
 
     # Trajectory
     ds_og1["TRAJECTORY"] = (
@@ -447,11 +635,16 @@ def to_og1(
     )
     ds_og1.attrs["id"] = id
 
-    # Write config global attributes verbatim (nulls skipped). Collisions with
-    # converter-derived keys were already rejected at the top of this function.
+    # Mission config is the last word: the structured deployment block (which may
+    # override the derived id or comment, with a warning) then the verbatim escape
+    # hatch. Both skip null and placeholder values.
+    _apply_deployment(ds_og1, deployment)
     for key, value in global_attributes.items():
-        if value is not None:
+        if not _global_is_unset(value):
             ds_og1.attrs[key] = value
+
+    # Every metadata source is now merged: fail loud on a missing mandatory global.
+    _check_required_globals(ds_og1.attrs)
 
     # Re-fix QC flags the concat re-promoted to float, then optimise dtypes once on the
     # fully-assembled dataset (coordinates and post-concat variables included).
@@ -919,7 +1112,6 @@ def update_dataset_attributes(
     attr_to_add = vocabularies.global_attrs["attr_to_add"]
     attr_to_rename = vocabularies.global_attrs["attr_to_rename"]
     order_of_attr = vocabularies.order_of_attr
-    mandatory_attr = vocabularies.global_attrs["attr_mandatory"]
 
     # Extract creators and contributors and institution, then reformulate strings
     contrib_attrs = get_contributors(ds, people=people, institutions=institutions)
@@ -942,11 +1134,6 @@ def update_dataset_attributes(
         **keep_attrs,
         **attr_to_add,
     }
-
-    # Add mandatory attributes if they are not already present
-    for attr in mandatory_attr:
-        if attr not in new_attributes:
-            new_attributes[attr] = mandatory_attr[attr]
 
     # Reorder attributes according to vocabularies.order_of_attr
     ordered_attributes = {
@@ -1079,7 +1266,6 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
     time_attr_list = [
         "time_coverage_start",
         "time_coverage_end",
-        "date_created",
         "start_time",
     ]
     for attr in time_attr_list:
@@ -1097,6 +1283,11 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
         time_attrs["start_date"] = time_attrs.pop("start_time")
     if "start_date" not in time_attrs:
         time_attrs["start_date"] = time_attrs["time_coverage_start"]
+
+    # date_created (ACDD) is the creation date of *this* OG1 file, so it is the
+    # conversion time, not whatever the basestation file recorded. A basestation
+    # creation date, if wanted, belongs in history (a later branch), not here.
+    time_attrs["date_created"] = time_attrs["date_modified"]
 
     return time_attrs
 

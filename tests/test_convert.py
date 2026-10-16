@@ -257,3 +257,162 @@ def test_output_dtypes_end_to_end(tmp_path: pathlib.Path) -> None:
         assert profile.getncattr("_FillValue") == -9999
         assert nc.variables["DEPTH"].dtype == np.dtype("float32")
         assert nc.variables["LATITUDE"].dtype == np.dtype("float64")
+
+
+def test_check_required_globals_raises_on_missing_mandatory():
+    """A missing mandatory global raises MetadataError naming the gap."""
+    from seagliderOG1 import vocabularies
+
+    attrs = dict.fromkeys(vocabularies.REQUIRED_GLOBALS["mandatory"], "x")
+    del attrs["id"]
+    try:
+        convert._check_required_globals(attrs)
+    except convert.MetadataError as exc:
+        assert "id" in str(exc)
+    else:
+        raise AssertionError("expected MetadataError for a missing mandatory global")
+
+
+def test_check_required_globals_treats_placeholder_as_unset():
+    """An empty string or the literal 'null@null.com' counts as missing."""
+    from seagliderOG1 import vocabularies
+
+    attrs = dict.fromkeys(vocabularies.REQUIRED_GLOBALS["mandatory"], "x")
+    attrs["title"] = ""
+    attrs["Conventions"] = "null"
+    try:
+        convert._check_required_globals(attrs)
+    except convert.MetadataError as exc:
+        assert "title" in str(exc) and "Conventions" in str(exc)
+    else:
+        raise AssertionError("expected MetadataError for placeholder globals")
+
+
+def test_converted_globals_carry_no_placeholder():
+    """Conversion never writes '', 'null' or 'null@null.com' into a global attribute."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    placeholders = {"", "null", "null@null.com", "None"}
+    offenders = {
+        key: value
+        for key, value in ds.attrs.items()
+        if isinstance(value, str) and value.strip() in placeholders
+    }
+    assert offenders == {}, offenders
+    # The misspelt placeholder key is gone; featureType/Conventions match the manual.
+    assert "contributer_email" not in ds.attrs
+    assert ds.attrs["featureType"] == "trajectory"
+    assert ds.attrs["Conventions"] == "CF-1.10, ACDD-1.3, OG-1.0"
+    assert ds.attrs["date_created"]  # mandatory, always present and non-empty
+
+
+def test_deployment_globals_are_written():
+    """deployment: block values become globals; a null deployment key is skipped."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    ds = convert.to_og1(
+        datasets,
+        deployment={
+            "program": "MOOSE",
+            "license": "CC-BY-4.0",
+            "doi": "https://doi.org/10.0000/x",
+            "network": None,
+        },
+    )
+    assert ds.attrs["program"] == "MOOSE"
+    assert ds.attrs["license"] == "CC-BY-4.0"
+    assert ds.attrs["doi"] == "https://doi.org/10.0000/x"
+    assert "network" not in ds.attrs  # null deployment key is skipped
+
+
+def test_deployment_id_overrides_derived_with_warning():
+    """deployment.id replaces the derived id and warns, naming both values."""
+    import warnings
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        ds = convert.to_og1(datasets, deployment={"id": "my_custom_id"})
+    assert ds.attrs["id"] == "my_custom_id"
+    assert any("deployment.id overrides" in str(w.message) for w in caught)
+
+
+def test_global_attributes_refuses_a_deployment_key():
+    """A global_attributes key with a structured home in deployment: is an error."""
+    try:
+        convert.to_og1([], global_attributes={"program": "x"})
+    except ValueError as exc:
+        assert "program" in str(exc) and "deployment" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for a deployment key in globals")
+
+
+def test_deployment_unknown_key_raises():
+    """An unknown deployment: key is rejected, naming the key."""
+    try:
+        convert.to_og1([], deployment={"nonsense": "x"})
+    except ValueError as exc:
+        assert "nonsense" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for an unknown deployment key")
+
+
+def test_resolve_platform_optional_fields_omitted_when_null():
+    """Optional platform variables are absent from the resolved dict when unset."""
+    ds = xr.Dataset(attrs={"platform_id": "SG005"})
+    resolved = convert._resolve_platform(ds, None)
+    for field in convert.OPTIONAL_PLATFORM_VARS:
+        assert field not in resolved
+    assert "platform_maker_vocabulary" not in resolved
+
+
+def test_resolve_platform_optional_fields_written_when_set():
+    """A supplied optional platform field (and the maker vocabulary) is resolved."""
+    ds = xr.Dataset(attrs={"platform_id": "SG005"})
+    platform = {
+        "PLATFORM_NAME": "Orca",
+        "TELECOM_TYPE": "Iridium",
+        "platform_maker_vocabulary": "http://vocab.example/maker",
+    }
+    resolved = convert._resolve_platform(ds, platform)
+    assert resolved["PLATFORM_NAME"] == "Orca"
+    assert resolved["TELECOM_TYPE"] == "Iridium"
+    assert resolved["platform_maker_vocabulary"] == "http://vocab.example/maker"
+    assert "BATTERY_TYPE" not in resolved  # still unset
+
+
+def test_optional_platform_variables_written_with_long_name_and_vocab():
+    """Set optional platform fields become variables with long_name and vocabulary."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    ds = convert.to_og1(
+        datasets,
+        platform={
+            "PLATFORM_SERIAL_NUMBER": "sg005",
+            "PLATFORM_MODEL": "M1",
+            "PLATFORM_MAKER": "University of Washington",
+            "PLATFORM_NAME": "Orca",
+            "TELECOM_TYPE": "Iridium",
+            "platform_maker_vocabulary": "http://vocab.example/maker",
+        },
+    )
+    assert str(ds["PLATFORM_NAME"].values) == "Orca"
+    assert ds["PLATFORM_NAME"].attrs["long_name"] == "Local or nickname of the glider"
+    assert str(ds["TELECOM_TYPE"].values) == "Iridium"
+    assert "telecom_type.md" in ds["TELECOM_TYPE"].attrs["telecom_type_vocabulary"]
+    assert "BATTERY_TYPE" not in ds.variables  # unset -> not written
+    assert (
+        ds["PLATFORM_MAKER"].attrs["platform_maker_vocabulary"]
+        == "http://vocab.example/maker"
+    )
+
+
+def test_start_date_is_earliest_time_regardless_of_input_order():
+    """start_date/id/TRAJECTORY come from the earliest TIME, not the input order."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 3)
+    forward = convert.to_og1(datasets)
+    reverse = convert.to_og1(list(reversed(datasets)))
+    # start_date is the deployment time and agrees with the first measurement time.
+    assert forward.attrs["start_date"] == forward.attrs["time_coverage_start"]
+    # The identity globals are stable under a permutation of the input.
+    assert reverse.attrs["start_date"] == forward.attrs["start_date"]
+    assert reverse.attrs["id"] == forward.attrs["id"]
+    assert str(reverse["TRAJECTORY"].values) == str(forward["TRAJECTORY"].values)

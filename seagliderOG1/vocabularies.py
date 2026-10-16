@@ -71,6 +71,24 @@ ROLE_ALIASES = {
 # convention".
 MODE_SUFFIX = {"delayed": "delayed", "realtime": "R"}
 
+# OG1 deployment-identity globals the mission config sets through the structured
+# deployment: block, in template order (one key per global). The single list read by
+# convert.to_og1 (precedence, collision checks) and the validate deployment check.
+DEPLOYMENT_GLOBALS = (
+    "id",
+    "program",
+    "program_vocabulary",
+    "network",
+    "site",
+    "site_vocabulary",
+    "project",
+    "comment",
+    "license",
+    "acknowledgment",
+    "doi",
+    "data_url",
+)
+
 
 class PlatformField(NamedTuple):
     """How one OG1 platform field is sourced and written.
@@ -88,7 +106,8 @@ class PlatformField(NamedTuple):
     kind : str
         How ``to_og1`` writes an unset field: ``"serial"`` names the
         output and raises when absent, ``"string"`` warns and writes ``"UNK"``,
-        ``"numeric"`` is omitted.
+        ``"numeric"`` is omitted, ``"optional_string"`` is omitted silently (an
+        optional platform variable the user may leave null).
 
     """
 
@@ -122,6 +141,16 @@ PLATFORM_FIELDS: dict[str, PlatformField] = {
         "string",
     ),
     "WMO_IDENTIFIER": PlatformField("wmo_identifier", str, False, "string"),
+    # Optional platform variables (OG1 manual, platform-variables table). Config-only,
+    # written only when the user supplies a value; the four with a controlled
+    # vocabulary carry its default URL as a <field>_vocabulary attribute (see
+    # OPTIONAL_PLATFORM_VARS in convert.py). PLATFORM_MAKER's vocabulary is the
+    # platform_maker_vocabulary attribute, handled alongside platform_model_vocabulary.
+    "PLATFORM_NAME": PlatformField(None, None, False, "optional_string"),
+    "TELECOM_TYPE": PlatformField(None, None, False, "optional_string"),
+    "TRACKING_SYSTEM": PlatformField(None, None, False, "optional_string"),
+    "BATTERY_TYPE": PlatformField(None, None, False, "optional_string"),
+    "BATTERY_PACK": PlatformField(None, None, False, "optional_string"),
 }
 
 
@@ -292,7 +321,7 @@ order_of_attr = [
     "start_date",  # datetime of glider deployment YYYYmmddTHHMMss
     "date_created",  # date of creation of this dataset YYYYmmddTHHMMss
     "featureType",  # trajectory
-    "Conventions",  # CF-1.10,OG-1.0
+    "Conventions",  # CF-1.10, ACDD-1.3, OG-1.0
     "date_modified",  # date of last modification of this dataset YYYYmmddTHHMMss
 ]
 
@@ -301,3 +330,8 @@ order_of_attr = [
 # Compatible with base_station_version 2.8, nodc_template_version_v0.9
 with (CONFIG_DIR / "OG1_global_attrs.yaml").open() as file:
     global_attrs = yaml.safe_load(file)
+
+# OG1 global-attribute requirement tiers, keyed "mandatory" / "highly_desirable" /
+# "suggested"; each maps an attribute name to its filling source ("derived",
+# "constant" or "config"). Transcribed from the OG1 manual (see the file header).
+REQUIRED_GLOBALS: dict[str, dict[str, str]] = global_attrs["required"]

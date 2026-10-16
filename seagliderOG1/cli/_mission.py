@@ -21,6 +21,7 @@ KNOWN_KEYS = frozenset(
         "repair",
         "keep_variables",
         "platform",
+        "deployment",
         "global_attributes",
         "contributors",
         "institutions",
@@ -137,7 +138,7 @@ def render_template(
         "#   seagliderOG1 validate this_file.yaml",
         "#   seagliderOG1 process  this_file.yaml",
         "",
-        "config_version: 1",
+        "config_version: 2",
         "",
         f"source: {_scalar(source)}            # mission dir (p*.nc inside) or a root of SN/DATE dirs",
         "output_dir: ./          # where OG1 files are written",
@@ -155,11 +156,29 @@ def render_template(
         f"  GLIDER_FIRMWARE_VERSION: {_scalar(plat['GLIDER_FIRMWARE_VERSION'])}   # from seaglider_software_version",
         f"  LANDSTATION_VERSION: {_scalar(plat['LANDSTATION_VERSION'])}   # from base_station_version",
         f"  WMO_IDENTIFIER: {_scalar(plat['WMO_IDENTIFIER'])}   # from wmo_identifier",
+        "  # optional platform variables; written only when set (null = not written):",
+        f"  PLATFORM_NAME: {_scalar(plat['PLATFORM_NAME'])}   # local or nickname of the glider",
+        "  platform_maker_vocabulary: null   # e.g. http://vocab.nerc.ac.uk/collection/B75/current/",
+        f"  TELECOM_TYPE: {_scalar(plat['TELECOM_TYPE'])}   # e.g. Iridium (comma-separated for several)",
+        f"  TRACKING_SYSTEM: {_scalar(plat['TRACKING_SYSTEM'])}   # e.g. ARGOS, GPS",
+        f"  BATTERY_TYPE: {_scalar(plat['BATTERY_TYPE'])}   # see the OG1 battery_type vocabulary",
+        f"  BATTERY_PACK: {_scalar(plat['BATTERY_PACK'])}   # battery packaging",
         "",
-        "global_attributes:      # written verbatim into the OG1 file; add any OG1 global here",
-        "  project: null         # (tier: suggested)",
-        "  program: null         # (tier: suggested)",
-        "  title: null           # (tier: suggested)",
+        "deployment:             # OG1 deployment identity; one key per global, null = not written",
+        "  id: null              # (mandatory) overrides the derived <serial>_<start>_<mode>; 'init --from' proposes it",
+        "  program: null         # (highly desirable) overarching programme",
+        "  program_vocabulary: null   # (highly desirable)",
+        "  site: null            # (highly desirable) sample line or area",
+        "  site_vocabulary: null      # (highly desirable)",
+        "  project: null         # (suggested)",
+        "  network: null         # (suggested)",
+        "  license: null         # (highly desirable) e.g. CC-BY-4.0",
+        "  acknowledgment: null  # (suggested)",
+        "  doi: null             # (highly desirable) data DOI, e.g. https://doi.org/...",
+        "  data_url: null        # (highly desirable) where the OG1 file is hosted",
+        "  comment: null         # (suggested) overrides the file's history-derived comment",
+        "",
+        "global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above",
         "",
         "contributors:           # one entry per person per role; replace this example",
         "  # role is a W08 term: Manufacturer, Owner, Operator, PI, Technical Coordinator,",
@@ -447,6 +466,97 @@ def _validate_platform(platform: object) -> list[ValidationIssue]:
     return issues
 
 
+def _validate_deployment(deployment: object) -> list[ValidationIssue]:
+    """ERROR on a non-mapping deployment block or an unknown deployment key.
+
+    seagliderOG1 does not enforce OG1 completeness (the external cc-plugin-og checker
+    does), so a null identity global is not an error here; a typo'd key is, because it
+    would otherwise be silently ignored.
+
+    Parameters
+    ----------
+    deployment : object
+        The value of the ``deployment`` key.
+
+    Returns
+    -------
+    list of ValidationIssue
+        Problems found; empty when the block is absent or well-formed.
+
+    """
+    if deployment in (None, {}, ""):
+        return []
+    if not isinstance(deployment, dict):
+        return [ValidationIssue("ERROR", "deployment must be a mapping.", "deployment")]
+    from seagliderOG1 import vocabularies
+
+    allowed = set(vocabularies.DEPLOYMENT_GLOBALS)
+    return [
+        ValidationIssue(
+            "ERROR",
+            f"deployment.{key} is not an OG1 deployment global (allowed: "
+            f"{list(vocabularies.DEPLOYMENT_GLOBALS)}); put other globals under "
+            "global_attributes.",
+            f"deployment.{key}",
+        )
+        for key in deployment
+        if key not in allowed
+    ]
+
+
+def _validate_highly_desirable(data: dict[str, object]) -> list[ValidationIssue]:
+    """WARN for each OG1 highly-desirable global the config leaves unset.
+
+    Advisory, not an error: seagliderOG1 does not enforce OG1 completeness. Checks the
+    config-supplied highly-desirable globals that have a home validate can read without
+    the files — the ``deployment`` keys and ``internal_mission_identifier`` in
+    ``global_attributes``. Running ``validate`` on an unedited template surfaces these
+    as the template telling the user what to fill. The derived and package-constant
+    highly-desirable globals (``time_coverage_*``, ``institution``, ``rtqc_method_doi``)
+    are always produced and not checked; ``contributor_id`` and
+    ``contributing_institutions_vocabulary`` come from the contributor/institution
+    records, validated there.
+
+    Parameters
+    ----------
+    data : dict of str to object
+        The parsed configuration.
+
+    Returns
+    -------
+    list of ValidationIssue
+        One WARNING per unset config-supplied highly-desirable global.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    deployment = data.get("deployment")
+    deployment = deployment if isinstance(deployment, dict) else {}
+    extra = data.get("global_attributes")
+    extra = extra if isinstance(extra, dict) else {}
+    empty = (None, "", "None")
+    issues: list[ValidationIssue] = []
+    for name, source in vocabularies.REQUIRED_GLOBALS["highly_desirable"].items():
+        if source != "config":
+            continue
+        if name in vocabularies.DEPLOYMENT_GLOBALS:
+            block, present = "deployment", deployment.get(name) not in empty
+        elif name == "internal_mission_identifier":
+            block, present = "global_attributes", extra.get(name) not in empty
+        else:
+            continue  # from contributor/institution records, validated there
+        if not present:
+            issues.append(
+                ValidationIssue(
+                    "WARNING",
+                    f"{name} is unset; it is OG1 highly desirable. Set it under "
+                    f"{block} to improve discoverability.",
+                    name,
+                )
+            )
+    return issues
+
+
 def validate_config(
     config_path: pathlib.Path,
     strict: bool = False,
@@ -538,6 +648,8 @@ def validate_config(
             )
         )
 
+    issues.extend(_validate_deployment(data.get("deployment")))
+    issues.extend(_validate_highly_desirable(data))
     issues.extend(_validate_platform(data.get("platform")))
     issues.extend(_validate_people(data.get("contributors"), "contributors", "PI"))
     issues.extend(
