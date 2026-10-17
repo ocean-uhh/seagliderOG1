@@ -9,6 +9,10 @@ on stderr that the HTML page needs the extra. Works on a basestation or an OG1 f
 import argparse
 import pathlib
 import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import xarray as xr
 
 _EPILOG = """\
 Examples:
@@ -19,17 +23,51 @@ Examples:
 """
 
 
-def _conversion_text(ds: object) -> str | None:
-    """Return the conversion ledger as text, or None if the file predates the ledger.
-
-    Reads only the ledger globals an OG1 file carries (``conversion_dimensions``,
-    ``conversion_derived_variables``, ``conversion_dropped_variables``,
-    ``conversion_attribute_sources``, ``history``) — nothing from conversion-time state.
+def _scalar_row(name: str, entry: dict) -> str:
+    """Return one Scalar-parameters table row from a ``conversion_ledger`` entry.
 
     Parameters
     ----------
-    ds : object
-        An open ``xarray.Dataset`` for an OG1 file.
+    name : str
+        The scalar variable name.
+    entry : dict
+        Its ``conversion_ledger`` ``scalar_parameters`` entry.
+
+    Returns
+    -------
+    str
+        The formatted row (name, original_name, storage, dives, missing, units).
+
+    """
+    if entry["storage"] == "per_dive_scalar":
+        values = entry["values"]
+        storage, dives, missing = (
+            "per-dive JSON",
+            str(len(values)),
+            str(sum(value is None for value in values)),
+        )
+    else:
+        storage, dives, missing = "constant", "-", "-"
+    return (
+        f"  {name:28s} {str(entry.get('original_name') or ''):24s} "
+        f"{storage:13s} {dives:>5s} {missing:>7s}  {entry['units']}"
+    )
+
+
+def _conversion_text(ds: "xr.Dataset", show_all: bool = False) -> str | None:
+    """Return the conversion ledger as text, or None if the file predates the ledger.
+
+    Reads the parsed ledger from :func:`seagliderOG1.convert.conversion_ledger` (the
+    same accessor the HTML page uses) plus each variable's own attributes — nothing
+    from conversion-time state.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open dataset for an OG1 file.
+    show_all : bool, optional
+        List the constant scalars in full as well as the per-dive ones. Default is
+        False (constants are summarised as a count).
 
     Returns
     -------
@@ -38,21 +76,21 @@ def _conversion_text(ds: object) -> str | None:
         file predates the conversion ledger).
 
     """
-    import json
+    from seagliderOG1 import convert
 
     if "conversion_dimensions" not in ds.attrs:
         return None
+    ledger = convert.conversion_ledger(ds)
 
     out = ["Dimensions", f"  {'dimension':22s} {'fate':9s} {'n':>3s}  variables"]
-    dims = json.loads(ds.attrs["conversion_dimensions"])
-    for dim in sorted(dims):
-        info = dims[dim]
+    for dim in sorted(ledger["dimensions"]):
+        info = ledger["dimensions"][dim]
         out.append(
             f"  {dim:22s} {info['fate']:9s} {len(info['variables']):>3d}  "
             f"{', '.join(info['variables'])}"
         )
 
-    derived = set(json.loads(ds.attrs.get("conversion_derived_variables", "[]")))
+    derived = set(ledger["derived"])
     out += ["", "Variables (OG1 name  origin  [original_dimension]  units)"]
     for name in sorted(ds.variables):
         attrs = ds[name].attrs
@@ -73,31 +111,30 @@ def _conversion_text(ds: object) -> str | None:
             f"{attrs.get('units', '')}{marker}"
         )
 
-    scalar_params = [
-        name
-        for name in sorted(ds.variables)
-        if ds[name].attrs.get("storage_type") in ("constant_scalar", "per_dive_scalar")
-    ]
-    if scalar_params:
+    scalars = ledger["scalar_parameters"]
+    per_dive = sorted(
+        n for n, e in scalars.items() if e["storage"] == "per_dive_scalar"
+    )
+    constants = sorted(
+        n for n, e in scalars.items() if e["storage"] == "constant_scalar"
+    )
+    if scalars:
         out += [
             "",
             "Scalar parameters (name  original_name  storage  dives  missing  units)",
         ]
-        for name in scalar_params:
-            attrs = ds[name].attrs
-            if attrs.get("storage_type") == "per_dive_scalar":
-                values = json.loads(str(ds[name].values)).get("values", [])
-                storage = "per-dive JSON"
-                dives = str(len(values))
-                missing = str(sum(value is None for value in values))
-            else:
-                storage, dives, missing = "constant", "-", "-"
+        # The per-dive scalars are the thing to check; list them in full. Constants are
+        # sg_cal and friends — summarise as a count unless --all asked for them.
+        out += [_scalar_row(n, scalars[n]) for n in per_dive]
+        if show_all:
+            out += [_scalar_row(n, scalars[n]) for n in constants]
+        elif constants:
             out.append(
-                f"  {name:28s} {str(attrs.get('original_name', '')):24s} "
-                f"{storage:13s} {dives:>5s} {missing:>7s}  {attrs.get('units', '')}"
+                f"  {len(constants)} constant scalars (storage_type: constant_scalar) "
+                "— inspect --conversion --all to list"
             )
 
-    dropped = json.loads(ds.attrs.get("conversion_dropped_variables", "[]"))
+    dropped = ledger["dropped"]
     out += [
         "",
         "Dropped variables",
@@ -105,23 +142,22 @@ def _conversion_text(ds: object) -> str | None:
     ]
 
     out += ["", "Global attributes by source"]
-    sources = json.loads(ds.attrs["conversion_attribute_sources"])
-    for category in sorted(sources):
-        out.append(f"  {category}: {', '.join(sources[category])}")
+    for category in sorted(ledger["attribute_sources"]):
+        out.append(f"  {category}: {', '.join(ledger['attribute_sources'][category])}")
 
     out += ["", "History"]
-    out += [f"  {line}" for line in str(ds.attrs.get("history", "")).splitlines()]
+    out += [f"  {line}" for line in ledger["history"].splitlines()]
 
     return "\n".join(out)
 
 
-def _parameter_text(ds: object, name: str) -> str | None:
+def _parameter_text(ds: "xr.Dataset", name: str) -> str | None:
     """Return one per-dive JSON scalar decoded to a dive/value table, or None.
 
     Parameters
     ----------
-    ds : object
-        An open ``xarray.Dataset`` for an OG1 file.
+    ds : xarray.Dataset
+        An open dataset for an OG1 file.
     name : str
         The variable to decode.
 
@@ -131,23 +167,28 @@ def _parameter_text(ds: object, name: str) -> str | None:
         The dive/value table, or None when ``name`` is absent or is not a per-dive
         JSON scalar.
 
+    Raises
+    ------
+    MetadataError
+        If ``name`` is a per-dive scalar whose value is not valid per-dive JSON.
+
     """
-    import json
+    from seagliderOG1 import convert
 
-    if name not in ds.variables:
-        return None
-    attrs = ds[name].attrs
-    if attrs.get("storage_type") != "per_dive_scalar":
+    if (
+        name not in ds.variables
+        or ds[name].attrs.get("storage_type") != "per_dive_scalar"
+    ):
         return None
 
-    payload = json.loads(str(ds[name].values))
-    units = attrs.get("units", "")
+    entry = convert.conversion_ledger(ds)["scalar_parameters"][name]
+    units = entry["units"]
     out = [
         f"{name} (per-dive JSON scalar; original_name "
-        f"{attrs.get('original_name', name)})",
+        f"{entry.get('original_name') or name})",
         f"  {'dive':>6s}  value" + (f" ({units})" if units else ""),
     ]
-    for dive, value in zip(payload["dives"], payload["values"], strict=True):
+    for dive, value in zip(entry["dives"], entry["values"], strict=True):
         out.append(f"  {dive:>6}  {'null' if value is None else value}")
     return "\n".join(out)
 
@@ -193,10 +234,15 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
         action="store_true",
         help="show what the conversion recorded (dimensions, variables, dropped, sources)",
     )
-    parser.add_argument(
+    view.add_argument(
         "--parameter",
         metavar="NAME",
         help="decode one per-dive JSON scalar to a dive/value table",
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="with --conversion, list the constant scalars in full (not just a count)",
     )
     parser.add_argument(
         "-o",
@@ -227,6 +273,7 @@ def run(args: argparse.Namespace) -> int:
     import xarray as xr
 
     from seagliderOG1 import plotters
+    from seagliderOG1.exceptions import MetadataError
 
     if not args.file.is_file():
         print(f"error: file not found: {args.file}", file=sys.stderr)
@@ -237,6 +284,9 @@ def run(args: argparse.Namespace) -> int:
     if args.parameter:
         try:
             text = _parameter_text(ds, args.parameter)
+        except MetadataError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
         finally:
             ds.close()
         if text is None:
@@ -250,7 +300,10 @@ def run(args: argparse.Namespace) -> int:
 
     if args.conversion:
         try:
-            text = _conversion_text(ds)
+            text = _conversion_text(ds, show_all=args.all)
+        except MetadataError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
         finally:
             ds.close()
         if text is None:

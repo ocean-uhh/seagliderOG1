@@ -27,6 +27,7 @@ attr_as_is: !!set
   geospatial_lat_max: null
   date_created: null
   license: null
+  comment: null
 
 attr_to_rename:
   site: summary

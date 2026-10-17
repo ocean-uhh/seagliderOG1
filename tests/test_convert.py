@@ -526,26 +526,31 @@ def test_conversion_dimensions_ledger():
     assert all(info["variables"] for info in skipped.values())
 
 
-def test_history_names_the_dive_and_appends_provenance():
-    """to_og1 carries the first dive's basestation history (named) and appends one provenance line."""
+def test_basestation_comment_is_kept_not_renamed():
+    """A basestation comment is carried to the output unchanged, not folded into history."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    datasets[0].attrs["comment"] = "deployed off the shelf break"
+    ds = convert.to_og1(datasets)
+    assert ds.attrs.get("comment") == "deployed off the shelf break"
+    assert "deployed off the shelf break" not in ds.attrs["history"]
+
+
+def test_history_is_one_provenance_line():
+    """to_og1 writes history as a single conversion provenance line, not the basestation log."""
     import re
 
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
     base = datasets[0].attrs["history"].strip()
     ds = convert.to_og1(datasets)
     history = ds.attrs["history"].strip()
-    lines = history.splitlines()
-    # A naming line, then the basestation log verbatim, then one provenance line.
-    assert re.match(
-        r"^basestation history of dive \d+ \(first of \d+ dives\)$", lines[0]
-    )
-    assert base in history
-    assert history.count("\n") == base.count("\n") + 2
-    # The provenance line's shape is asserted, never its timestamp value (not reproducible).
+    # Exactly one line, and not the multi-line basestation per-dive QC log.
+    assert "\n" not in history
+    assert history != base
+    # Its shape is asserted, never its timestamp value (not reproducible).
     assert re.match(
         r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00 seagliderOG1 \S+: "
         r"basestation to OG1 \(to_og1\)$",
-        lines[-1],
+        history,
     )
 
 
@@ -569,6 +574,34 @@ def test_scalar_parameters_storage_and_dimension():
     payload = json.loads(str(ds[per_dive[0]].values))
     assert sorted(payload["dives"]) == [1, 2]
     assert len(payload["values"]) == len(payload["dives"])
+
+
+def test_conversion_ledger_parses_the_file():
+    """conversion_ledger returns the parsed ledger; a pre-ledger file raises MetadataError."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ledger = convert.conversion_ledger(convert.to_og1(datasets))
+    assert set(ledger) == {
+        "dimensions",
+        "derived",
+        "dropped",
+        "attribute_sources",
+        "history",
+        "scalar_parameters",
+    }
+    assert ledger["dimensions"]["sg_data_point"]["fate"] == "backbone"
+    per_dive = [
+        name
+        for name, entry in ledger["scalar_parameters"].items()
+        if entry["storage"] == "per_dive_scalar"
+    ]
+    assert per_dive
+    assert sorted(ledger["scalar_parameters"][per_dive[0]]["dives"]) == [1, 2]
+    try:
+        convert.conversion_ledger(readers.load_sample_basestation())
+    except convert.MetadataError:
+        pass
+    else:
+        raise AssertionError("expected MetadataError on a pre-ledger file")
 
 
 def test_start_date_is_earliest_time_regardless_of_input_order():

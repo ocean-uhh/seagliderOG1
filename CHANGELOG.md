@@ -63,8 +63,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   `ATTRIBUTE_ORDER`.
 - Conversion retains basestation variables previously dropped, merged onto a shared time axis with
   `original_name`/`original_dimension` provenance (#117).
-- Basestation `comment` is no longer renamed to `history`; `history` carries the basestation
-  processing log followed by one conversion provenance line.
+- Basestation `comment` is no longer renamed to `history`; `history` is a single conversion
+  provenance line (the basestation per-dive processing log is not carried).
+- Coverage gate floor raised from 75 to 82 (`main` is at 83%).
 - Dependencies in `pyproject.toml` only (`requirements*.txt`/`environment.yml` removed); ruff-family
   config, `ruff format` replaces `black`, CI coverage gate.
 

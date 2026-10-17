@@ -19,7 +19,13 @@ from tqdm import tqdm
 from seagliderOG1 import __version__, _pipeline, contributors, tools, vocabularies
 from seagliderOG1.exceptions import MetadataError
 
-__all__ = ["to_og1", "name_mapping", "keep_variables", "MetadataError"]
+__all__ = [
+    "to_og1",
+    "name_mapping",
+    "keep_variables",
+    "conversion_ledger",
+    "MetadataError",
+]
 
 _log = logging.getLogger(__name__)
 
@@ -277,6 +283,99 @@ def keep_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
     return result
 
 
+def _decode_per_dive(ds: xr.Dataset, name: str) -> dict:
+    """Return the decoded per-dive JSON payload for variable ``name``.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The OG1 dataset.
+    name : str
+        A variable whose ``storage_type`` is ``per_dive_scalar``.
+
+    Returns
+    -------
+    dict
+        The decoded ``{"dives": [...], "values": [...]}`` payload.
+
+    Raises
+    ------
+    MetadataError
+        If the stored value is not the per-dive JSON this package writes.
+
+    """
+    try:
+        return json.loads(str(ds[name].values))
+    except (json.JSONDecodeError, TypeError) as exc:
+        msg = (
+            f"{name}: storage_type is 'per_dive_scalar' but the value is not the "
+            f"per-dive JSON this package writes ({exc})."
+        )
+        raise MetadataError(msg) from exc
+
+
+def conversion_ledger(ds: xr.Dataset) -> dict:
+    """Return what the conversion recorded in a file, read from the file alone.
+
+    Parses the conversion-ledger globals and the per-scalar storage once, so a caller
+    (the ``inspect`` text view, the HTML page) does not re-decode the JSON or re-walk
+    the variables. Everything returned is reconstructable from the file; nothing is
+    read from conversion-time state.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An OG1 dataset written by :func:`to_og1`.
+
+    Returns
+    -------
+    dict
+        Keys ``dimensions`` (dimension to ``{"fate", "variables"}``), ``derived``
+        (list of names), ``dropped`` (list of names), ``attribute_sources`` (category
+        to names), ``history`` (str) and ``scalar_parameters`` (name to ``{"storage",
+        "original_name", "units"}``, plus ``"dives"`` and ``"values"`` for a per-dive
+        scalar).
+
+    Raises
+    ------
+    MetadataError
+        If ``ds`` predates the ledger (no ``conversion_dimensions``), or a per-dive
+        scalar's value is not the per-dive JSON this package writes.
+
+    """
+    if "conversion_dimensions" not in ds.attrs:
+        msg = (
+            "no conversion ledger: the file has no 'conversion_dimensions' global, so "
+            "it predates the ledger (not written by this version of to_og1)."
+        )
+        raise MetadataError(msg)
+
+    scalar_parameters: dict[str, dict] = {}
+    for name in ds.variables:
+        storage = ds[name].attrs.get("storage_type")
+        if storage not in ("constant_scalar", "per_dive_scalar"):
+            continue
+        entry = {
+            "storage": storage,
+            "original_name": ds[name].attrs.get("original_name"),
+            "units": ds[name].attrs.get("units", ""),
+        }
+        if storage == "per_dive_scalar":
+            payload = _decode_per_dive(ds, name)
+            entry["dives"] = payload.get("dives", [])
+            entry["values"] = payload.get("values", [])
+        scalar_parameters[str(name)] = entry
+
+    return {
+        "dimensions": json.loads(ds.attrs["conversion_dimensions"]),
+        "derived": json.loads(ds.attrs.get("conversion_derived_variables", "[]")),
+        "dropped": json.loads(ds.attrs.get("conversion_dropped_variables", "[]")),
+        "attribute_sources": json.loads(ds.attrs["conversion_attribute_sources"]),
+        "history": str(ds.attrs.get("history", "")),
+        "scalar_parameters": scalar_parameters,
+    }
+
+
 def _apply_deployment(
     ds_og1: xr.Dataset,
     deployment: Mapping[str, object],
@@ -428,7 +527,8 @@ def _dimension_ledger(
     output to carry its names, so the names are recorded here. ``gps_info`` is
     ``merged``: its fixes are placed on the time backbone as ``LONGITUDE``/``LATITUDE``
     by a dedicated path, so the file's reader sees a merge regardless of which function
-    did it.
+    did it. A variable defined on more than one dimension is listed under each of them,
+    so the per-dimension counts are "variables on this dimension", not a partition.
 
     Parameters
     ----------
@@ -799,24 +899,20 @@ def to_og1(
     # Every metadata source is now merged: fail loud on a missing mandatory global.
     _check_required_globals(ds_og1.attrs)
 
-    # history (ACDD): carry one dive's basestation processing log — the first dive, by
-    # dive number, the same early dive start_date/TRAJECTORY derive from — prefixed with a
-    # line naming it so a reader knows one dive's log stands for the mission, then append
-    # one provenance line for this conversion (append, never replace).
-    first_dive = min(list_of_datasets, key=lambda d: d.attrs.get("dive_number", 0))
-    base_history = str(first_dive.attrs.get("history", "")).strip()
+    # history (ACDD): one provenance line for this conversion, appended to any history the
+    # dataset already carries (never replacing it). The basestation history is a per-dive QC
+    # log (which samples were flagged, dive-specific warnings), not a mission record, so it is
+    # not carried here — carrying one dive's log would assert that dive's QC story for the file.
     conversion_line = (
         f"{datetime.now(UTC).isoformat(timespec='seconds')} "
         f"seagliderOG1 {__version__}: basestation to OG1 (to_og1)"
     )
-    if base_history:
-        provenance = (
-            f"basestation history of dive {first_dive.attrs.get('dive_number')} "
-            f"(first of {len(list_of_datasets)} dives)"
-        )
-        ds_og1.attrs["history"] = f"{provenance}\n{base_history}\n{conversion_line}"
-    else:
-        ds_og1.attrs["history"] = conversion_line
+    existing_history = str(ds_og1.attrs.get("history", "")).strip()
+    ds_og1.attrs["history"] = (
+        f"{existing_history}\n{conversion_line}"
+        if existing_history
+        else conversion_line
+    )
 
     # Write down what happened to the dimensions (fate and the basestation variable
     # names each carried), from the merge decisions made once before the per-dive loop.
@@ -832,8 +928,8 @@ def to_og1(
         for name in ds_og1.variables
         if "original_name" not in ds_og1[name].attrs
     )
-    if derived_variables:
-        ds_og1.attrs["conversion_derived_variables"] = json.dumps(derived_variables)
+    # Always written (``[]`` when empty) so an absent attribute is never ambiguous.
+    ds_og1.attrs["conversion_derived_variables"] = json.dumps(derived_variables)
 
     # Write down which source each global came from (names only; values are in the
     # file). Every written global is categorised; a converter-set global not otherwise

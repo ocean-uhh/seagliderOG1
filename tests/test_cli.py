@@ -235,6 +235,16 @@ def test_inspect_conversion_lists_scalar_parameters(
     out = capsys.readouterr().out
     assert "Scalar parameters" in out
     assert "per-dive JSON" in out
+    # Constants are summarised as a count, not listed, unless --all is given.
+    assert "constant scalars (storage_type: constant_scalar)" in out
+    assert cli.main(["inspect", str(nc), "--conversion", "--all"]) == 0
+    assert "constant scalars (storage_type" not in capsys.readouterr().out
+
+
+def test_inspect_parameter_conflicts_with_conversion() -> None:
+    """--parameter and --conversion are mutually exclusive (argparse usage error)."""
+    with pytest.raises(SystemExit):
+        cli.main(["inspect", "any.nc", "--conversion", "--parameter", "x"])
 
 
 def test_inspect_parameter_decodes_per_dive_scalar(

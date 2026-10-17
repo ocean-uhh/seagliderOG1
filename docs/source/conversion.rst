@@ -158,12 +158,14 @@ file alone:
 * every variable carries ``original_name`` (its basestation name; equal to the OG1 name when the
   variable passed through unrenamed), and merged variables also carry ``original_dimension``;
 * ``conversion_dimensions`` gives each basestation dimension a fate — ``backbone`` (the dimension
-  that becomes ``N_MEASUREMENTS``), ``merged``, or ``skipped`` — and lists the variables it carried;
+  that becomes ``N_MEASUREMENTS``), ``merged``, or ``skipped`` — and lists the variables it carried
+  (a variable on more than one dimension is listed under each, so the counts are not a partition);
 * ``conversion_derived_variables`` lists the variables the converter created (which therefore have
   no ``original_name``);
 * ``conversion_dropped_variables`` lists variables removed by ``convert.keep_variables``;
 * ``conversion_attribute_sources`` records the source of each global attribute;
-* ``history`` keeps the basestation processing log and appends one conversion line.
+* ``history`` is a single conversion provenance line (the basestation per-dive processing log
+  is a per-dive QC record, not a mission record, so it is not carried).
 
 A scalar that is constant across the mission is stored as a plain scalar with
 ``storage_type: constant_scalar``; one that varies per dive (or is missing on some dives)
@@ -171,8 +173,9 @@ is stored as a JSON string with ``storage_type: per_dive_scalar``, holding align
 and ``values`` lists (``null`` for a missing value).
 
 ``inspect --conversion`` prints these from any converted file, including a *Scalar
-parameters* section; ``--parameter NAME`` decodes one per-dive JSON scalar to a dive/value
-table:
+parameters* section that lists the per-dive scalars in full and summarises the constants as a
+count (``--all`` lists the constants too); ``--parameter NAME`` decodes one per-dive JSON
+scalar to a dive/value table:
 
 .. code-block:: console
 
