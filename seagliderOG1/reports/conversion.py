@@ -136,7 +136,7 @@ def _dimension_rows(ledger: dict) -> list[dict[str, object]]:
 
 
 def _interim_sections(ledger: dict) -> str:
-    """Return the not-yet-tabled sections (scalars, derived, dropped, globals, history) as text.
+    """Return the not-yet-tabled sections (derived, dropped, globals, history) as text.
 
     Parameters
     ----------
@@ -149,19 +149,7 @@ def _interim_sections(ledger: dict) -> str:
         A plain-text rendering of the interim sections.
 
     """
-    scalars = ledger["scalar_parameters"]
-    per_dive = sorted(
-        n for n, e in scalars.items() if e["storage"] == "per_dive_scalar"
-    )
-    lines = ["Scalar parameters (per-dive JSON)"]
-    for name in per_dive:
-        entry = scalars[name]
-        missing = sum(value is None for value in entry["values"])
-        lines.append(
-            f"  {name}: {len(entry['dives'])} dives, {missing} missing "
-            f"({entry['units'] or 'no units'})"
-        )
-    lines += ["", "Derived variables: " + (", ".join(ledger["derived"]) or "(none)")]
+    lines = ["Derived variables: " + (", ".join(ledger["derived"]) or "(none)")]
     lines += ["Dropped variables: " + (", ".join(ledger["dropped"]) or "(none)")]
     lines += ["", "Global attributes by source"]
     for category in sorted(ledger["attribute_sources"]):
@@ -199,6 +187,15 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         groups, var_source = _variable_groups_by_original_dimension(ds)
         reconciliation = _reconciliation_rows(ds, ledger)
         dimensions = _dimension_rows(ledger)
+        # Scalar parameters as a vendored table, so each row's Attributes disclosure shows a
+        # per-dive scalar's serialization / storage_type / original_name (how to decode it).
+        all_scalars, scalar_source = nc_tables.scalars_rows(
+            ds,
+            exclude=design.is_sensor,
+            original_name_attrs=design.ORIGINAL_NAME_ATTRS,
+        )
+        param_names = set(ledger["scalar_parameters"])
+        scalar_rows = [r for r in all_scalars if r["name"] in param_names]
         interim = _interim_sections(ledger)
     finally:
         ds.close()
@@ -212,5 +209,7 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         dimensions=dimensions,
         variable_groups=groups,
         variables_source=var_source,
+        scalar_rows=scalar_rows,
+        scalar_source=scalar_source,
         interim=interim,
     )

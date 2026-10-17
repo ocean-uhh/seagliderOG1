@@ -315,9 +315,11 @@ def _decode_per_dive(ds: xr.Dataset, name: str) -> dict:
     # Require the object shape the writer produces: a dict with equal-length dives and
     # values lists, so a non-object or ragged payload fails loudly here rather than as a
     # later AttributeError or zip mismatch.
-    if not isinstance(payload, dict) or not isinstance(
-        payload.get("dives"), list
-    ) or not isinstance(payload.get("values"), list):
+    if (
+        not isinstance(payload, dict)
+        or not isinstance(payload.get("dives"), list)
+        or not isinstance(payload.get("values"), list)
+    ):
         raise MetadataError(f"{note} (expected an object with 'dives' and 'values').")
     if len(payload["dives"]) != len(payload["values"]):
         raise MetadataError(
