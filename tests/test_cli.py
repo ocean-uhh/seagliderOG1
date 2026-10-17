@@ -324,6 +324,11 @@ def test_inspect_output_without_conversion_errors(
     assert cli.main(["inspect", str(nc), "-o", str(out)]) == 2
     assert "pass --conversion" in capsys.readouterr().err
     assert not out.exists()  # nothing written
+    # The guard is before the mode branches, so --parameter/--attrs with -o also fail (not
+    # silently ignored), and a conversion-only --title without --conversion is rejected too.
+    assert cli.main(["inspect", str(nc), "--parameter", "C_VBD", "-o", str(out)]) == 2
+    assert cli.main(["inspect", str(nc), "--title", "x"]) == 2
+    assert not out.exists()
 
 
 def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:

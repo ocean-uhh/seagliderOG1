@@ -276,6 +276,16 @@ def run(args: argparse.Namespace) -> int:
     from seagliderOG1 import plotters
     from seagliderOG1.exceptions import MetadataError
 
+    # -o/--title write the HTML conversion page and apply only with --conversion. Reject the
+    # combination up front, before any mode-specific branch (e.g. --parameter) can return and
+    # silently ignore the flag.
+    if (args.output or args.title) and not args.conversion:
+        print(
+            "error: -o/--title write the HTML conversion page; pass --conversion",
+            file=sys.stderr,
+        )
+        return 2
+
     if not args.file.is_file():
         print(f"error: file not found: {args.file}", file=sys.stderr)
         return 1
@@ -330,16 +340,6 @@ def run(args: argparse.Namespace) -> int:
             return 1
         print(text)
         return 0
-
-    # -o/--title write the HTML conversion page; without --conversion there is no HTML to
-    # write, so fail loudly rather than printing the text table as if the flag worked.
-    if args.output:
-        ds.close()
-        print(
-            "error: -o writes the HTML conversion page; pass --conversion",
-            file=sys.stderr,
-        )
-        return 2
 
     try:
         if args.attrs:
