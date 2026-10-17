@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
+  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev68 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=ced04548"></script>
+      <script src="_static/documentation_options.js?v=26cae68a"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -271,8 +271,9 @@ determines the data-mode suffix of the output id: <code class="docutils literal 
 <section id="seagliderOG1-inspect">
 <span id="inspect"></span><h4>inspect<a class="headerlink" href="#seagliderOG1-inspect" title="Link to this heading"></a></h4>
 <p>Show the inventory of one basestation or OG1 netCDF file. Writes an HTML inventory page with the seagliderOG1[report] extra; otherwise prints a text table.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">inspect</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">attrs</span> <span class="o">|</span> <span class="o">--</span><span class="n">variables</span> <span class="o">|</span> <span class="o">--</span><span class="n">by</span><span class="o">-</span><span class="n">dimension</span> <span class="n">DIM</span><span class="p">]</span>
-                     <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">HTML</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">title</span> <span class="n">TEXT</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">inspect</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span>
+                     <span class="p">[</span><span class="o">--</span><span class="n">attrs</span> <span class="o">|</span> <span class="o">--</span><span class="n">variables</span> <span class="o">|</span> <span class="o">--</span><span class="n">by</span><span class="o">-</span><span class="n">dimension</span> <span class="n">DIM</span> <span class="o">|</span> <span class="o">--</span><span class="n">conversion</span> <span class="o">|</span> <span class="o">--</span><span class="n">parameter</span> <span class="n">NAME</span><span class="p">]</span>
+                     <span class="p">[</span><span class="o">--</span><span class="nb">all</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">HTML</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">title</span> <span class="n">TEXT</span><span class="p">]</span>
                      <span class="n">file</span>
 </pre></div>
 </div>
@@ -298,6 +299,17 @@ determines the data-mode suffix of the output id: <code class="docutils literal 
 <dt><kbd>--by-dimension</kbd></dt>
 <dd><p>show only variables on dimension DIM</p>
 </dd>
+<dt><kbd>--conversion</kbd></dt>
+<dd><p>show what the conversion recorded (dimensions, variables, dropped, sources)</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+<dt><kbd>--parameter</kbd></dt>
+<dd><p>decode one per-dive JSON scalar to a dive/value table</p>
+</dd>
+<dt><kbd>--all</kbd></dt>
+<dd><p>with –conversion, list the constant scalars in full (not just a count)</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
 <dt><kbd>-o, --output</kbd></dt>
 <dd><p>write the HTML inventory page to this path</p>
 </dd>
@@ -309,7 +321,8 @@ determines the data-mode suffix of the output id: <code class="docutils literal 
 <dl class="simple">
 <dt>Examples:</dt><dd><p>seagliderOG1 inspect sg005_20080606_delayed.nc              variables as a table
 seagliderOG1 inspect sg005_20080606_delayed.nc –attrs      global attributes
-seagliderOG1 inspect p0050001.nc –by-dimension sg_data_point</p>
+seagliderOG1 inspect p0050001.nc –by-dimension sg_data_point
+seagliderOG1 inspect sg005_20080606_delayed.nc –conversion what the conversion did</p>
 </dd>
 </dl>
 </section>

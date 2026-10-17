@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Migrating to 0.1.0 &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
+  <title>Migrating to 0.1.0 &mdash; seagliderOG1 0.0.2.post1.dev68 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=ced04548"></script>
+      <script src="_static/documentation_options.js?v=26cae68a"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -139,50 +139,54 @@ no default; returns the path written; raises instead of returning <code class="d
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_sample_dataset()</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.load_sample_basestation()</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">standardise_OG10</span></code>, <code class="docutils literal notranslate"><span class="pre">tools.OG1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">print_OG1_mapping_summary</span></code>, the
-<code class="docutils literal notranslate"><span class="pre">OG1_mapping</span></code> argument</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">standardise_og1</span></code>, <code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">print_og1_mapping_summary</span></code>, <code class="docutils literal notranslate"><span class="pre">og1_mapping</span></code>
-— <code class="docutils literal notranslate"><span class="pre">og1</span></code> lower-case in names; the package name keeps its spelling</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">standardise_OG10</span></code> and its <code class="docutils literal notranslate"><span class="pre">OG1_mapping</span></code> argument</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">standardise_og1</span></code> and <code class="docutils literal notranslate"><span class="pre">og1_mapping</span></code> — <code class="docutils literal notranslate"><span class="pre">og1</span></code> lower-case in names; the package name
+keeps its spelling</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools</span></code> pipeline internals (<code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">gather_sensor_info</span></code>,
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools.OG1_name_mapping(...)</span></code> / <code class="docutils literal notranslate"><span class="pre">print_OG1_mapping_summary(...)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">convert.name_mapping(datasets)</span></code> returns the basestation → OG1 mapping as a DataFrame;
+the internal <code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code> moved to the private pipeline module, and
+<code class="docutils literal notranslate"><span class="pre">print_OG1_mapping_summary</span></code> was removed (print the DataFrame yourself)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tools</span></code> pipeline internals (<code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">gather_sensor_info</span></code>,
 <code class="docutils literal notranslate"><span class="pre">add_sensor_to_dataset</span></code>, <code class="docutils literal notranslate"><span class="pre">merge_datasets_along_time</span></code>, <code class="docutils literal notranslate"><span class="pre">extract_scalar_parameters</span></code> /
 <code class="docutils literal notranslate"><span class="pre">add_scalar_parameters</span></code>, <code class="docutils literal notranslate"><span class="pre">set_best_dtype</span></code>, …) and the <code class="docutils literal notranslate"><span class="pre">seagliderOG1.utilities</span></code> module</p></td>
 <td><p>moved to a private module (not part of the public API); <code class="docutils literal notranslate"><span class="pre">tools</span></code> keeps the user-facing
 utilities (<code class="docutils literal notranslate"><span class="pre">add_depth</span></code>, <code class="docutils literal notranslate"><span class="pre">add_phase</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_units_var</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_qc_flags</span></code>,
 <code class="docutils literal notranslate"><span class="pre">encode_times_og1</span></code>, …)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">firstrun=</span></code> parameters (e.g. <code class="docutils literal notranslate"><span class="pre">tools.convert_units_var(...,</span> <span class="pre">firstrun=...)</span></code>)</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">firstrun=</span></code> parameters (e.g. <code class="docutils literal notranslate"><span class="pre">tools.convert_units_var(...,</span> <span class="pre">firstrun=...)</span></code>)</p></td>
 <td><p>removed; progress and diagnostics go through <code class="docutils literal notranslate"><span class="pre">logging.getLogger(&quot;seagliderOG1...&quot;)</span></code>
 (set the level, e.g. the CLI <code class="docutils literal notranslate"><span class="pre">-v</span></code>)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_basestation_files(dir,</span> <span class="pre">first,</span> <span class="pre">last,</span> <span class="pre">repair=)</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">readers.read_mission(path,</span> <span class="pre">first=None,</span> <span class="pre">last=None,</span> <span class="pre">*,</span> <span class="pre">repair=False)</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_basestation_files(dir,</span> <span class="pre">first,</span> <span class="pre">last,</span> <span class="pre">repair=)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">readers.read_mission(source,</span> <span class="pre">start_profile=None,</span> <span class="pre">end_profile=None,</span> <span class="pre">*,</span> <span class="pre">repair=False)</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_first_basestation_file</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_first_basestation_file</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.read_file</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.scan_and_repair_files</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.scan_and_repair_files</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_files</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.profnum_from_filename</span></code> / <code class="docutils literal notranslate"><span class="pre">readers.glider_sn_from_filename</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.profnum_from_filename</span></code> / <code class="docutils literal notranslate"><span class="pre">readers.glider_sn_from_filename</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.profile_number_from_filename</span></code> / <code class="docutils literal notranslate"><span class="pre">readers.serial_from_filename</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_netcdf_time_metadata_inplace</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_netcdf_time_metadata_inplace</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_time_metadata</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">convert.apply_keep_variables(ds,</span> <span class="pre">keep)</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">convert.apply_keep_variables(ds,</span> <span class="pre">keep)</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">convert.keep_variables(ds,</span> <span class="pre">names)</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools.calc_Z</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_profile_number</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tools.calc_Z</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_profile_number</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">tools.add_depth</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.add_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.add_profile_number</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.registry_institutions()</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.registry_institutions()</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">contributors.institution_registry()</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.normalize_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">contributors.normalize_role</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.normalize_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">contributors.normalize_role</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">contributors.canonical_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">contributors.canonical_role</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vocabularies.load_default_contributors</span></code>, <code class="docutils literal notranslate"><span class="pre">vocabularies.contrib_to_append</span></code>,
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">vocabularies.load_default_contributors</span></code>, <code class="docutils literal notranslate"><span class="pre">vocabularies.contrib_to_append</span></code>,
 <code class="docutils literal notranslate"><span class="pre">config/OG1_author.yaml</span></code></p></td>
 <td><p>removed — contributors come from <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>; no packaged default-identity block</p></td>
 </tr>
@@ -210,6 +214,19 @@ string-matched the old units must adapt.</p></li>
 <code class="docutils literal notranslate"><span class="pre">HD_C</span></code>) are written as a JSON-string scalar variable
 (<code class="docutils literal notranslate"><span class="pre">{&quot;dives&quot;:</span> <span class="pre">[...],</span> <span class="pre">&quot;values&quot;:</span> <span class="pre">[...]}</span></code>, tagged <code class="docutils literal notranslate"><span class="pre">serialization:</span> <span class="pre">json</span></code>) instead of broadcast
 onto <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>. Decode the JSON to read them.</p></li>
+<li><p><strong>Conversion provenance in the output.</strong> Every variable carries <code class="docutils literal notranslate"><span class="pre">original_name</span></code> (its
+basestation name; equal to the OG1 name when it passed through unrenamed), and merged variables
+also carry <code class="docutils literal notranslate"><span class="pre">original_dimension</span></code>. New globals record the conversion: <code class="docutils literal notranslate"><span class="pre">conversion_dimensions</span></code>
+(each basestation dimension’s fate and the variables it carried), <code class="docutils literal notranslate"><span class="pre">conversion_derived_variables</span></code>
+(the converter-created variables mapped to the basestation variables they consumed),
+<code class="docutils literal notranslate"><span class="pre">conversion_dropped_variables</span></code>, <code class="docutils literal notranslate"><span class="pre">conversion_removed_variables</span></code>,
+<code class="docutils literal notranslate"><span class="pre">conversion_input_variable_count</span></code> and <code class="docutils literal notranslate"><span class="pre">conversion_attribute_sources</span></code>.
+<code class="docutils literal notranslate"><span class="pre">convert.conversion_ledger(ds)</span></code> reads them back and <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">inspect</span> <span class="pre">--conversion</span></code>
+prints them (<code class="docutils literal notranslate"><span class="pre">-o</span></code> writes an HTML page). The attribute is <code class="docutils literal notranslate"><span class="pre">original_name</span></code> — code that read
+the development-only <code class="docutils literal notranslate"><span class="pre">original_variable_name</span></code> must use <code class="docutils literal notranslate"><span class="pre">original_name</span></code>.</p></li>
+<li><p><strong>history</strong> is a single conversion provenance line; the basestation <code class="docutils literal notranslate"><span class="pre">comment</span></code> is no longer
+renamed to <code class="docutils literal notranslate"><span class="pre">history</span></code>. A reader that parsed the old per-dive processing log out of <code class="docutils literal notranslate"><span class="pre">history</span></code>
+must adapt.</p></li>
 </ul>
 </section>
 <section id="metadata-now-comes-from-the-mission-config">

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
+  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev68 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=ced04548"></script>
+      <script src="../../_static/documentation_options.js?v=26cae68a"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -111,16 +111,28 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">_pipeline</span><span class="p">,</span> <span class="n">contributors</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">vocabularies</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span><span class="p">,</span> <span class="n">_pipeline</span><span class="p">,</span> <span class="n">contributors</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">vocabularies</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetadataError</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"to_og1"</span><span class="p">,</span> <span class="s2">"name_mapping"</span><span class="p">,</span> <span class="s2">"keep_variables"</span><span class="p">,</span> <span class="s2">"MetadataError"</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"to_og1"</span><span class="p">,</span>
+    <span class="s2">"name_mapping"</span><span class="p">,</span>
+    <span class="s2">"keep_variables"</span><span class="p">,</span>
+    <span class="s2">"conversion_ledger"</span><span class="p">,</span>
+    <span class="s2">"MetadataError"</span><span class="p">,</span>
+<span class="p">]</span>
 
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="c1"># Global attributes the converter derives from the data; the mission config may</span>
 <span class="c1"># not set these through global_attributes (a collision is an error). ``id`` is not</span>
 <span class="c1"># here: it is derived by default but may be overridden via the deployment: block.</span>
+<span class="c1"># Transient per-variable attribute a derived-variable creation site stamps with the JSON</span>
+<span class="c1"># list of basestation variables its data came from; read and removed when the</span>
+<span class="c1"># conversion_derived_variables map is built, so it never reaches the file. Defined in</span>
+<span class="c1"># _pipeline (which also stamps the TIME axis) and aliased here for the local creation sites.</span>
+<span class="n">_DERIVED_SOURCES_ATTR</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">DERIVED_SOURCES_ATTR</span>
+
 <span class="n">_DERIVED_GLOBALS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
     <span class="p">{</span>
         <span class="s2">"time_coverage_start"</span><span class="p">,</span>
@@ -352,11 +364,140 @@
         <span class="p">):</span>
             <span class="n">kept</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
     <span class="n">dropped</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kept</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="nb">sorted</span><span class="p">(</span><span class="n">kept</span><span class="p">)]</span>
     <span class="k">if</span> <span class="n">dropped</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"keep_variables dropped science variables: </span><span class="si">{</span><span class="n">dropped</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span>
         <span class="p">)</span>
-    <span class="k">return</span> <span class="n">ds</span><span class="p">[</span><span class="nb">sorted</span><span class="p">(</span><span class="n">kept</span><span class="p">)]</span></div>
+        <span class="c1"># Record what went, so the file says what the warning said. A second call</span>
+        <span class="c1"># adds to the list rather than replacing it.</span>
+        <span class="n">previous</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversion_dropped_variables"</span><span class="p">,</span> <span class="s2">"[]"</span><span class="p">))</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_dropped_variables"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">previous</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">dropped</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="c1"># Keep the source ledger complete: the dropped-variables global is one the</span>
+        <span class="c1"># converter wrote, so categorise it as derived for a subset file too.</span>
+        <span class="k">if</span> <span class="s2">"conversion_attribute_sources"</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+            <span class="n">sources</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_attribute_sources"</span><span class="p">])</span>
+            <span class="n">sources</span><span class="p">[</span><span class="s2">"derived"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="nb">set</span><span class="p">(</span><span class="n">sources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"derived"</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">|</span> <span class="p">{</span><span class="s2">"conversion_dropped_variables"</span><span class="p">}</span>
+            <span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_attribute_sources"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">sources</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_decode_per_dive</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the decoded per-dive JSON payload for variable ``name``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds : xarray.Dataset</span>
+<span class="sd">        The OG1 dataset.</span>
+<span class="sd">    name : str</span>
+<span class="sd">        A variable whose ``storage_type`` is ``per_dive_scalar``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        The decoded ``{"dives": [...], "values": [...]}`` payload.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    MetadataError</span>
+<span class="sd">        If the stored value is not the per-dive JSON this package writes.</span>
+
+<span class="sd">    """</span>
+    <span class="n">note</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: storage_type is 'per_dive_scalar' but the value is not the per-dive "</span>
+        <span class="s2">"JSON this package writes"</span>
+    <span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">MetadataError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+    <span class="c1"># Require the object shape the writer produces: a dict with equal-length dives and</span>
+    <span class="c1"># values lists, so a non-object or ragged payload fails loudly here rather than as a</span>
+    <span class="c1"># later AttributeError or zip mismatch.</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dives"</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"values"</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="n">MetadataError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2"> (expected an object with 'dives' and 'values')."</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="s2">"dives"</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="s2">"values"</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="n">MetadataError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2"> ('dives' and 'values' have different lengths: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="s1">'dives'</span><span class="p">])</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="s1">'values'</span><span class="p">])</span><span class="si">}</span><span class="s2">)."</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">payload</span>
+
+
+<div class="viewcode-block" id="conversion_ledger">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.conversion_ledger">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">conversion_ledger</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return what the conversion recorded in a file, read from the file alone.</span>
+
+<span class="sd">    Parses the conversion-ledger globals and the per-scalar storage once, so a caller</span>
+<span class="sd">    (the ``inspect`` text view, the HTML page) does not re-decode the JSON or re-walk</span>
+<span class="sd">    the variables. Everything returned is reconstructable from the file; nothing is</span>
+<span class="sd">    read from conversion-time state.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds : xarray.Dataset</span>
+<span class="sd">        An OG1 dataset written by :func:`to_og1`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Keys ``dimensions`` (dimension to ``{"fate", "variables"}``), ``derived``</span>
+<span class="sd">        (derived-variable name to its list of source basestation names), ``dropped``</span>
+<span class="sd">        (list of names), ``removed`` (list of names), ``input_variable_count`` (int),</span>
+<span class="sd">        ``attribute_sources`` (category to names), ``history`` (str) and</span>
+<span class="sd">        ``scalar_parameters`` (name to ``{"storage", "original_name", "units"}``, plus</span>
+<span class="sd">        ``"dives"`` and ``"values"`` for a per-dive scalar).</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    MetadataError</span>
+<span class="sd">        If ``ds`` predates the ledger (no ``conversion_dimensions``), or a per-dive</span>
+<span class="sd">        scalar's value is not the per-dive JSON this package writes.</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="s2">"conversion_dimensions"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"no conversion ledger: the file has no 'conversion_dimensions' global, so "</span>
+            <span class="s2">"it predates the ledger (not written by this version of to_og1)."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="n">MetadataError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">scalar_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">storage</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"storage_type"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">storage</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"constant_scalar"</span><span class="p">,</span> <span class="s2">"per_dive_scalar"</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"storage"</span><span class="p">:</span> <span class="n">storage</span><span class="p">,</span>
+            <span class="s2">"original_name"</span><span class="p">:</span> <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"original_name"</span><span class="p">),</span>
+            <span class="s2">"units"</span><span class="p">:</span> <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"units"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">storage</span> <span class="o">==</span> <span class="s2">"per_dive_scalar"</span><span class="p">:</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">_decode_per_dive</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">entry</span><span class="p">[</span><span class="s2">"dives"</span><span class="p">]</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dives"</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">entry</span><span class="p">[</span><span class="s2">"values"</span><span class="p">]</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"values"</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">scalar_parameters</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">entry</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"dimensions"</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_dimensions"</span><span class="p">]),</span>
+        <span class="s2">"derived"</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversion_derived_variables"</span><span class="p">,</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">)),</span>
+        <span class="s2">"dropped"</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversion_dropped_variables"</span><span class="p">,</span> <span class="s2">"[]"</span><span class="p">)),</span>
+        <span class="s2">"removed"</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversion_removed_variables"</span><span class="p">,</span> <span class="s2">"[]"</span><span class="p">)),</span>
+        <span class="s2">"input_variable_count"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversion_input_variable_count"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="s2">"attribute_sources"</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_attribute_sources"</span><span class="p">]),</span>
+        <span class="s2">"history"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"history"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)),</span>
+        <span class="s2">"scalar_parameters"</span><span class="p">:</span> <span class="n">scalar_parameters</span><span class="p">,</span>
+    <span class="p">}</span></div>
 
 
 
@@ -498,6 +639,66 @@
     <span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_dimension_ledger</span><span class="p">(</span>
+    <span class="n">list_of_datasets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
+    <span class="n">ctd_dim</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">all_dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">ds_og1</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the ``conversion_dimensions`` JSON global (fate and variables per dimension).</span>
+
+<span class="sd">    One entry per basestation dimension, each with its fate and the basestation</span>
+<span class="sd">    variable names that lived on it. The fate is read from the output, not from the</span>
+<span class="sd">    pre-conversion merge plan: the CTD dimension that became ``N_MEASUREMENTS`` is</span>
+<span class="sd">    ``backbone``; a dimension any of whose variables reaches the output (carrying</span>
+<span class="sd">    ``original_dimension == dim``) is ``merged``; a dimension with no variable in the</span>
+<span class="sd">    output is ``skipped`` and its names are recorded here because nothing else carries</span>
+<span class="sd">    them. A variable defined on more than one dimension is listed under each of them,</span>
+<span class="sd">    so the per-dimension counts are "variables on this dimension", not a partition.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    list_of_datasets : collections.abc.Sequence of xarray.Dataset</span>
+<span class="sd">        The raw basestation datasets, read for their per-dimension variable names.</span>
+<span class="sd">    ctd_dim : str</span>
+<span class="sd">        The CTD dimension that becomes ``N_MEASUREMENTS`` (fate ``backbone``).</span>
+<span class="sd">    all_dims : collections.abc.Sequence of str</span>
+<span class="sd">        Every dimension present across the inputs.</span>
+<span class="sd">    ds_og1 : xarray.Dataset</span>
+<span class="sd">        The assembled OG1 output, read for which dimensions survived (via each</span>
+<span class="sd">        variable's ``original_dimension`` attribute).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        A JSON object of ``dimension -&gt; {"fate", "variables"}``, keys sorted.</span>
+
+<span class="sd">    """</span>
+    <span class="n">in_output</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"original_dimension"</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">variables</span>
+        <span class="k">if</span> <span class="s2">"original_dimension"</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+    <span class="p">}</span>
+    <span class="n">ledger</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">all_dims</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="n">ctd_dim</span><span class="p">:</span>
+            <span class="n">fate</span> <span class="o">=</span> <span class="s2">"backbone"</span>
+        <span class="k">elif</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">in_output</span><span class="p">:</span>
+            <span class="n">fate</span> <span class="o">=</span> <span class="s2">"merged"</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fate</span> <span class="o">=</span> <span class="s2">"skipped"</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">list_of_datasets</span>
+                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span>
+                <span class="k">if</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">ledger</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"fate"</span><span class="p">:</span> <span class="n">fate</span><span class="p">,</span> <span class="s2">"variables"</span><span class="p">:</span> <span class="n">names</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">ledger</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="to_og1">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.to_og1">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">to_og1</span><span class="p">(</span>
@@ -628,7 +829,12 @@
 
     <span class="c1"># Warn when a dimension group is dropped rather than merged, so a missing</span>
     <span class="c1"># instrument is visible; name_mapping() returns the full basestation -&gt; OG1 table.</span>
-    <span class="n">skipped_dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">all_dims</span> <span class="k">if</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">dims_to_merge</span><span class="p">)]</span>
+    <span class="c1"># gps_info is excluded: its fixes are folded onto the backbone by a dedicated path</span>
+    <span class="c1"># (add_gps_info_to_dataset), so the ledger records it as merged, not skipped — the</span>
+    <span class="c1"># warning must not contradict that.</span>
+    <span class="n">skipped_dims</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">all_dims</span> <span class="k">if</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">dims_to_merge</span><span class="p">)</span> <span class="ow">and</span> <span class="n">d</span> <span class="o">!=</span> <span class="s2">"gps_info"</span>
+    <span class="p">]</span>
     <span class="k">if</span> <span class="n">skipped_dims</span><span class="p">:</span>
         <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
             <span class="s2">"Dimensions not merged into the OG1 dataset: </span><span class="si">%s</span><span class="s2">. If instrument data "</span>
@@ -757,9 +963,13 @@
         <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">"long_name"</span><span class="p">:</span> <span class="s2">"time of deployment"</span><span class="p">},</span>
     <span class="p">)</span>
 
-    <span class="c1"># Remove attributes from TIME_GPS</span>
+    <span class="c1"># Remove attributes from TIME_GPS, but keep the transient derived-sources stamp so the</span>
+    <span class="c1"># ledger can record that TIME_GPS came from log_gps_time; it is popped before the write.</span>
     <span class="k">if</span> <span class="s2">"TIME_GPS"</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">gps_sources</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">)</span>
+        <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">{</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">:</span> <span class="n">gps_sources</span><span class="p">}</span> <span class="k">if</span> <span class="n">gps_sources</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="p">)</span>
     <span class="c1"># ---- -------------------------------------------- ----</span>
 
     <span class="c1"># Update time_coverage attributes</span>
@@ -825,6 +1035,60 @@
 
     <span class="c1"># Every metadata source is now merged: fail loud on a missing mandatory global.</span>
     <span class="n">_check_required_globals</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
+
+    <span class="c1"># history (ACDD): one provenance line for this conversion, appended to any history the</span>
+    <span class="c1"># dataset already carries (never replacing it). The basestation history is a per-dive QC</span>
+    <span class="c1"># log (which samples were flagged, dive-specific warnings), not a mission record, so it is</span>
+    <span class="c1"># not carried here — carrying one dive's log would assert that dive's QC story for the file.</span>
+    <span class="n">conversion_line</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">UTC</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="n">timespec</span><span class="o">=</span><span class="s1">'seconds'</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
+        <span class="sa">f</span><span class="s2">"seagliderOG1 </span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">: basestation to OG1 (to_og1)"</span>
+    <span class="p">)</span>
+    <span class="n">existing_history</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"history"</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"history"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">existing_history</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">conversion_line</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">if</span> <span class="n">existing_history</span>
+        <span class="k">else</span> <span class="n">conversion_line</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Write down what happened to the dimensions (fate read from the output, and the</span>
+    <span class="c1"># basestation variable names each dimension carried).</span>
+    <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_dimensions"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_dimension_ledger</span><span class="p">(</span>
+        <span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">ctd_dim</span><span class="p">,</span> <span class="n">all_dims</span><span class="p">,</span> <span class="n">ds_og1</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Variables the converter created rather than renamed or passed through carry no</span>
+    <span class="c1"># original_name. Record them as a map ``{derived: [source basestation names]}`` so the</span>
+    <span class="c1"># reconciliation can account for each basestation variable exactly once. The per-source</span>
+    <span class="c1"># lists are stamped at each creation site; a variable built from nothing (or not yet</span>
+    <span class="c1"># stamped) maps to ``[]``. Always written, so an absent attribute is never ambiguous.</span>
+    <span class="n">derived_map</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">):</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">,</span> <span class="s2">"[]"</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">variables</span>
+        <span class="k">if</span> <span class="s2">"original_name"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+    <span class="p">}</span>
+    <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_derived_variables"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+        <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">derived_map</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">derived_map</span><span class="p">)}</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Basestation variables the converter removed outright (the package drop list), distinct</span>
+    <span class="c1"># from a user keep_variables drop; removed variables leave no trace in the output, so the</span>
+    <span class="c1"># reconciliation can only see them if recorded here.</span>
+    <span class="n">removed</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">list_of_datasets</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">VARIABLES_TO_DROP</span>
+    <span class="p">}</span>
+    <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_removed_variables"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">removed</span><span class="p">))</span>
+
+    <span class="c1"># Distinct basestation variable names across the input dives, so the page can check that</span>
+    <span class="c1"># the per-fate counts sum to it.</span>
+    <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_input_variable_count"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span>
+        <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">list_of_datasets</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">}</span>
+    <span class="p">)</span>
 
     <span class="c1"># Write down which source each global came from (names only; values are in the</span>
     <span class="c1"># file). Every written global is categorised; a converter-set global not otherwise</span>
@@ -1068,6 +1332,13 @@
     <span class="k">if</span> <span class="n">rename_map</span><span class="p">:</span>
         <span class="n">dsa</span> <span class="o">=</span> <span class="n">dsa</span><span class="o">.</span><span class="n">rename_vars</span><span class="p">(</span><span class="n">rename_map</span><span class="p">)</span>
 
+    <span class="c1"># Record each variable's basestation name, so an unmapped variable is visible in</span>
+    <span class="c1"># the file (its original_name equals its own OG1 name) rather than inferred from</span>
+    <span class="c1"># the absence of the attribute. Coordinates are included. original_dimension is</span>
+    <span class="c1"># set only where the dimension changed (merged variables), in _pipeline.</span>
+    <span class="k">for</span> <span class="n">original_name</span><span class="p">,</span> <span class="n">output_name</span> <span class="ow">in</span> <span class="n">output_names</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">dsa</span><span class="p">[</span><span class="n">output_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"original_name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">original_name</span>
+
     <span class="c1"># Rename dimensions without changing the shapes of their variables.</span>
     <span class="n">dimension_renames</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">dimension</span><span class="p">:</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">DIMENSION_RENAMES</span><span class="p">[</span><span class="n">dimension</span><span class="p">]</span>
@@ -1266,6 +1537,12 @@
         <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">],</span>
         <span class="p">{</span><span class="s2">"dtype"</span><span class="p">:</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"TIME"</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">},</span>
     <span class="p">)</span>
+    <span class="c1"># Record each GPS variable's basestation source for the conversion ledger; the</span>
+    <span class="c1"># transient attr is consumed into conversion_derived_variables before the file is</span>
+    <span class="c1"># written (see to_og1) and never reaches the output.</span>
+    <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"LATITUDE_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_lat"</span><span class="p">])</span>
+    <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"LONGITUDE_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_lon"</span><span class="p">])</span>
+    <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_time"</span><span class="p">])</span>
 
     <span class="c1"># Concatenate ds and gps_ds</span>
     <span class="n">datasets</span> <span class="o">=</span> <span class="p">[]</span>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev68 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=ced04548"></script>
+      <script src="_static/documentation_options.js?v=26cae68a"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -69,6 +69,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#validation">Validation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#extended-variables">Extended variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-the-conversion-records">What the conversion records</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
@@ -245,6 +246,37 @@ against the format, use <a class="reference external" href="https://github.com/O
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">contributors</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> arguments are lists of records, one entry per person
 (or institution) per role; a conversion with no PI warns. See <a class="reference internal" href="cli_reference.html#cli-reference"><span class="std std-ref">CLI reference</span></a>.</p>
+</section>
+<section id="what-the-conversion-records">
+<h2>What the conversion records<a class="headerlink" href="#what-the-conversion-records" title="Link to this heading"></a></h2>
+<p>The output file records what the conversion did, so the treatment can be read back from the
+file alone:</p>
+<ul class="simple">
+<li><p>every renamed or passed-through variable carries <code class="docutils literal notranslate"><span class="pre">original_name</span></code> (its basestation name; equal
+to the OG1 name when the variable passed through unrenamed), and merged variables also carry
+<code class="docutils literal notranslate"><span class="pre">original_dimension</span></code>; converter-created variables have neither (see below);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">conversion_dimensions</span></code> gives each basestation dimension a fate — <code class="docutils literal notranslate"><span class="pre">backbone</span></code> (the dimension
+that becomes <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>), <code class="docutils literal notranslate"><span class="pre">merged</span></code>, or <code class="docutils literal notranslate"><span class="pre">skipped</span></code> — and lists the variables it carried
+(a variable on more than one dimension is listed under each, so the counts are not a partition);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">conversion_derived_variables</span></code> lists the variables the converter created (which therefore have
+no <code class="docutils literal notranslate"><span class="pre">original_name</span></code>);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">conversion_dropped_variables</span></code> lists variables removed by <code class="docutils literal notranslate"><span class="pre">convert.keep_variables</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">conversion_attribute_sources</span></code> records the source of each global attribute;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">history</span></code> is a single conversion provenance line (the basestation per-dive processing log
+is a per-dive QC record, not a mission record, so it is not carried).</p></li>
+</ul>
+<p>A scalar that is constant across the mission is stored as a plain scalar with
+<code class="docutils literal notranslate"><span class="pre">storage_type:</span> <span class="pre">constant_scalar</span></code>; one that varies per dive (or is missing on some dives)
+is stored as a JSON string with <code class="docutils literal notranslate"><span class="pre">storage_type:</span> <span class="pre">per_dive_scalar</span></code>, holding aligned <code class="docutils literal notranslate"><span class="pre">dives</span></code>
+and <code class="docutils literal notranslate"><span class="pre">values</span></code> lists (<code class="docutils literal notranslate"><span class="pre">null</span></code> for a missing value).</p>
+<p><code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span></code> prints these from any converted file, including a <em>Scalar
+parameters</em> section that lists the per-dive scalars in full and summarises the constants as a
+count (<code class="docutils literal notranslate"><span class="pre">--all</span></code> lists the constants too); <code class="docutils literal notranslate"><span class="pre">--parameter</span> <span class="pre">NAME</span></code> decodes one per-dive JSON
+scalar to a dive/value table:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>seagliderOG1<span class="w"> </span>inspect<span class="w"> </span>sg005_20080606_delayed.nc<span class="w"> </span>--conversion
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>inspect<span class="w"> </span>sg005_20080606_delayed.nc<span class="w"> </span>--parameter<span class="w"> </span>surface_curr_north
+</pre></div>
+</div>
 </section>
 </section>
 

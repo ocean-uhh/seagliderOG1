@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1 API &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
+  <title>seagliderOG1 API &mdash; seagliderOG1 0.0.2.post1.dev68 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=ced04548"></script>
+      <script src="_static/documentation_options.js?v=26cae68a"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -66,6 +66,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.convert">convert</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convert.MetadataError"><code class="docutils literal notranslate"><span class="pre">MetadataError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convert.conversion_ledger"><code class="docutils literal notranslate"><span class="pre">conversion_ledger()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convert.keep_variables"><code class="docutils literal notranslate"><span class="pre">keep_variables()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convert.name_mapping"><code class="docutils literal notranslate"><span class="pre">name_mapping()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convert.to_og1"><code class="docutils literal notranslate"><span class="pre">to_og1()</span></code></a></li>
@@ -191,6 +192,36 @@ variable renaming, attribute assignments, and dataset standardization.</p>
 sources (data-derived, package constants, mission config) are merged, when a
 mandatory global attribute is absent or holds a placeholder. Subclasses
 <code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code> so existing <code class="docutils literal notranslate"><span class="pre">except</span> <span class="pre">ValueError</span></code> handlers still catch it.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seagliderOG1.convert.conversion_ledger">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convert.</span></span><span class="sig-name descname"><span class="pre">conversion_ledger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/seagliderOG1/convert.html#conversion_ledger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convert.conversion_ledger" title="Link to this definition"></a></dt>
+<dd><p>Return what the conversion recorded in a file, read from the file alone.</p>
+<p>Parses the conversion-ledger globals and the per-scalar storage once, so a caller
+(the <code class="docutils literal notranslate"><span class="pre">inspect</span></code> text view, the HTML page) does not re-decode the JSON or re-walk
+the variables. Everything returned is reconstructable from the file; nothing is
+read from conversion-time state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ds</strong> (<em>xarray.Dataset</em>) – An OG1 dataset written by <a class="reference internal" href="#seagliderOG1.convert.to_og1" title="seagliderOG1.convert.to_og1"><code class="xref py py-func docutils literal notranslate"><span class="pre">to_og1()</span></code></a>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Keys <code class="docutils literal notranslate"><span class="pre">dimensions</span></code> (dimension to <code class="docutils literal notranslate"><span class="pre">{&quot;fate&quot;,</span> <span class="pre">&quot;variables&quot;}</span></code>), <code class="docutils literal notranslate"><span class="pre">derived</span></code>
+(derived-variable name to its list of source basestation names), <code class="docutils literal notranslate"><span class="pre">dropped</span></code>
+(list of names), <code class="docutils literal notranslate"><span class="pre">removed</span></code> (list of names), <code class="docutils literal notranslate"><span class="pre">input_variable_count</span></code> (int),
+<code class="docutils literal notranslate"><span class="pre">attribute_sources</span></code> (category to names), <code class="docutils literal notranslate"><span class="pre">history</span></code> (str) and
+<code class="docutils literal notranslate"><span class="pre">scalar_parameters</span></code> (name to <code class="docutils literal notranslate"><span class="pre">{&quot;storage&quot;,</span> <span class="pre">&quot;original_name&quot;,</span> <span class="pre">&quot;units&quot;}</span></code>, plus
+<code class="docutils literal notranslate"><span class="pre">&quot;dives&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;values&quot;</span></code> for a per-dive scalar).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#seagliderOG1.convert.MetadataError" title="seagliderOG1.convert.MetadataError"><strong>MetadataError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">ds</span></code> predates the ledger (no <code class="docutils literal notranslate"><span class="pre">conversion_dimensions</span></code>), or a per-dive
+    scalar’s value is not the per-dive JSON this package writes.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

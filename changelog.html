@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev68 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=ced04548"></script>
+      <script src="_static/documentation_options.js?v=26cae68a"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -152,6 +152,12 @@ a key with a structured home in the new <code class="docutils literal notranslat
 <li><p><code class="docutils literal notranslate"><span class="pre">required:</span></code> tier block in <code class="docutils literal notranslate"><span class="pre">config/OG1_global_attributes.yaml</span></code> → <code class="docutils literal notranslate"><span class="pre">vocabularies.REQUIRED_GLOBALS</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1.exceptions.MetadataError</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">conversion_attribute_sources</span></code> global: JSON provenance of each written global (names only).</p></li>
+<li><p>Conversion ledger: per-variable <code class="docutils literal notranslate"><span class="pre">original_name</span></code> on every variable, and the <code class="docutils literal notranslate"><span class="pre">conversion_dimensions</span></code>,
+<code class="docutils literal notranslate"><span class="pre">conversion_derived_variables</span></code> and <code class="docutils literal notranslate"><span class="pre">conversion_dropped_variables</span></code> globals record each dimension’s
+fate, the converter-created variables, and any <code class="docutils literal notranslate"><span class="pre">keep_variables</span></code> drops; <code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span></code>
+prints them from the file.</p></li>
+<li><p>Scalar parameters carry <code class="docutils literal notranslate"><span class="pre">storage_type</span></code> (<code class="docutils literal notranslate"><span class="pre">constant_scalar</span></code> or <code class="docutils literal notranslate"><span class="pre">per_dive_scalar</span></code>); <code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span></code> lists them in a Scalar parameters section and <code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--parameter</span> <span class="pre">NAME</span></code> decodes a
+per-dive JSON scalar to a dive/value table.</p></li>
 <li><p>Template lines name each key’s destination (variable / attribute / global); <code class="docutils literal notranslate"><span class="pre">validate</span></code> gives a
 case hint on a mis-cased key.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">writers.write</span></code> applies lossless zlib compression to numeric variables.</p></li>
@@ -166,6 +172,9 @@ change): <code class="docutils literal notranslate"><span class="pre">OG1_variab
 <code class="docutils literal notranslate"><span class="pre">ATTRIBUTE_ORDER</span></code>.</p></li>
 <li><p>Conversion retains basestation variables previously dropped, merged onto a shared time axis with
 <code class="docutils literal notranslate"><span class="pre">original_name</span></code>/<code class="docutils literal notranslate"><span class="pre">original_dimension</span></code> provenance (#117).</p></li>
+<li><p>Basestation <code class="docutils literal notranslate"><span class="pre">comment</span></code> is no longer renamed to <code class="docutils literal notranslate"><span class="pre">history</span></code>; <code class="docutils literal notranslate"><span class="pre">history</span></code> is a single conversion
+provenance line (the basestation per-dive processing log is not carried).</p></li>
+<li><p>Coverage gate floor raised from 75 to 82 (<code class="docutils literal notranslate"><span class="pre">main</span></code> is at 83%).</p></li>
 <li><p>Dependencies in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> only (<code class="docutils literal notranslate"><span class="pre">requirements*.txt</span></code>/<code class="docutils literal notranslate"><span class="pre">environment.yml</span></code> removed); ruff-family
 config, <code class="docutils literal notranslate"><span class="pre">ruff</span> <span class="pre">format</span></code> replaces <code class="docutils literal notranslate"><span class="pre">black</span></code>, CI coverage gate.</p></li>
 </ul>
@@ -176,6 +185,8 @@ config, <code class="docutils literal notranslate"><span class="pre">ruff</span>
 <li><p><code class="docutils literal notranslate"><span class="pre">start_date</span></code>, <code class="docutils literal notranslate"><span class="pre">TRAJECTORY</span></code> and <code class="docutils literal notranslate"><span class="pre">id</span></code> are seeded from the earliest measurement time, so they agree
 with <code class="docutils literal notranslate"><span class="pre">time_coverage_start</span></code> regardless of input order.</p></li>
 <li><p>A null or wholly-empty global is never written; <code class="docutils literal notranslate"><span class="pre">date_created</span></code> is always the conversion time.</p></li>
+<li><p>Scalar parameters no longer carry an empty <code class="docutils literal notranslate"><span class="pre">original_dimension</span></code>; the attribute is omitted when
+there is no source dimension.</p></li>
 <li><p>Whitespace stripped from vocabulary <code class="docutils literal notranslate"><span class="pre">long_name</span></code> strings written into output attributes.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">writers.write</span></code> preserves <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code>/<code class="docutils literal notranslate"><span class="pre">scale_factor</span></code>/<code class="docutils literal notranslate"><span class="pre">add_offset</span></code>, does not mutate the caller’s
 dataset, and reuses one encoding on the retry path.</p></li>
