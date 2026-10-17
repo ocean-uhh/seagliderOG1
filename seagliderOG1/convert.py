@@ -32,6 +32,11 @@ _log = logging.getLogger(__name__)
 # Global attributes the converter derives from the data; the mission config may
 # not set these through global_attributes (a collision is an error). ``id`` is not
 # here: it is derived by default but may be overridden via the deployment: block.
+# Transient per-variable attribute a derived-variable creation site stamps with the JSON
+# list of basestation variables its data came from; read and removed when the
+# conversion_derived_variables map is built, so it never reaches the file.
+_DERIVED_SOURCES_ATTR = "_derived_sources"
+
 _DERIVED_GLOBALS = frozenset(
     {
         "time_coverage_start",
@@ -383,8 +388,10 @@ def conversion_ledger(ds: xr.Dataset) -> dict:
 
     return {
         "dimensions": json.loads(ds.attrs["conversion_dimensions"]),
-        "derived": json.loads(ds.attrs.get("conversion_derived_variables", "[]")),
+        "derived": json.loads(ds.attrs.get("conversion_derived_variables", "{}")),
         "dropped": json.loads(ds.attrs.get("conversion_dropped_variables", "[]")),
+        "removed": json.loads(ds.attrs.get("conversion_removed_variables", "[]")),
+        "input_variable_count": int(ds.attrs.get("conversion_input_variable_count", 0)),
         "attribute_sources": json.loads(ds.attrs["conversion_attribute_sources"]),
         "history": str(ds.attrs.get("history", "")),
         "scalar_parameters": scalar_parameters,
@@ -936,15 +943,37 @@ def to_og1(
     )
 
     # Variables the converter created rather than renamed or passed through carry no
-    # original_name; list them so an absent original_name always means a bug, not a
-    # derived variable (coordinates included).
-    derived_variables = sorted(
-        str(name)
+    # original_name. Record them as a map ``{derived: [source basestation names]}`` so the
+    # reconciliation can account for each basestation variable exactly once. The per-source
+    # lists are stamped at each creation site; a variable built from nothing (or not yet
+    # stamped) maps to ``[]``. Always written, so an absent attribute is never ambiguous.
+    derived_map = {
+        str(name): sorted(
+            json.loads(ds_og1[name].attrs.pop(_DERIVED_SOURCES_ATTR, "[]"))
+        )
         for name in ds_og1.variables
         if "original_name" not in ds_og1[name].attrs
+    }
+    ds_og1.attrs["conversion_derived_variables"] = json.dumps(
+        {name: derived_map[name] for name in sorted(derived_map)}
     )
-    # Always written (``[]`` when empty) so an absent attribute is never ambiguous.
-    ds_og1.attrs["conversion_derived_variables"] = json.dumps(derived_variables)
+
+    # Basestation variables the converter removed outright (the package drop list), distinct
+    # from a user keep_variables drop; removed variables leave no trace in the output, so the
+    # reconciliation can only see them if recorded here.
+    removed = {
+        str(v)
+        for ds in list_of_datasets
+        for v in ds.variables
+        if str(v) in vocabularies.VARIABLES_TO_DROP
+    }
+    ds_og1.attrs["conversion_removed_variables"] = json.dumps(sorted(removed))
+
+    # Distinct basestation variable names across the input dives, so the page can check that
+    # the per-fate counts sum to it.
+    ds_og1.attrs["conversion_input_variable_count"] = len(
+        {str(v) for ds in list_of_datasets for v in ds.variables}
+    )
 
     # Write down which source each global came from (names only; values are in the
     # file). Every written global is categorised; a converter-set global not otherwise

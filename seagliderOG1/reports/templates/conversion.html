@@ -31,8 +31,8 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 
 <section id="reconciliation">
 <h2>1. Reconciliation — where the variables went</h2>
-{{ t.properties_table(reconciliation, header=("Where it went", "Count"),
-   caption="Counts, not a closing sum: a GPS fix is both a merged input and a derived output, so the categories overlap.") }}
+{{ t.properties_table(reconciliation, header=("Fate", "Count"),
+   caption=reconciliation_caption) }}
 </section>
 
 <section id="dimensions">

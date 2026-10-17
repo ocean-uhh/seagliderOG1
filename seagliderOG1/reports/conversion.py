@@ -60,12 +60,18 @@ def _variable_groups_by_original_dimension(
     return [(dim, by_dim[dim]) for dim in sorted(by_dim)], source
 
 
-def _reconciliation_rows(ds: xr.Dataset, ledger: dict) -> list[tuple[str, str, str]]:
-    """Return the Reconciliation rows (where the variables went) for ``properties_table``.
+def _reconciliation(
+    ds: xr.Dataset, ledger: dict
+) -> tuple[list[tuple[str, str, str]], str]:
+    """Return the Reconciliation rows and caption: each basestation variable's one fate.
 
-    Counts only — not an asserted closing sum. The merged/derived categories overlap (a
-    GPS fix is a merged input and a derived output), so a single closing identity does not
-    hold; the page states where things went rather than proving a total.
+    Every basestation variable has exactly one fate — renamed, passed through, consumed
+    (its data fed a derived variable), removed (the package drop list), dropped
+    (``keep_variables``), or skipped (its dimension) — resolved by name with that priority
+    so a variable on more than one dimension is not double-counted. The six counts should
+    sum to the recorded basestation input count; the caption states whether they do and, if
+    not, how many are unattributed (today, variables whose consumed→derived sources are not
+    yet recorded).
 
     Parameters
     ----------
@@ -76,33 +82,56 @@ def _reconciliation_rows(ds: xr.Dataset, ledger: dict) -> list[tuple[str, str, s
 
     Returns
     -------
-    list of (str, str, str)
-        ``(label, count, "")`` rows.
+    rows : list of (str, str, str)
+        ``(label, count, "")`` rows for ``properties_table``.
+    caption : str
+        Whether the fates sum to the input count.
 
     """
-    renamed = passed_through = 0
-    for name in ds.variables:
-        original = ds[name].attrs.get("original_name")
-        if original is None:
-            continue
-        if original == name:
-            passed_through += 1
-        else:
-            renamed += 1
-    fates = [info["fate"] for info in ledger["dimensions"].values()]
-    scalar_storage = [e["storage"] for e in ledger["scalar_parameters"].values()]
-    rows = [
+    renamed = {
+        str(ds[n].attrs["original_name"])
+        for n in ds.variables
+        if ds[n].attrs.get("original_name") not in (None, n)
+    }
+    passed = {str(n) for n in ds.variables if ds[n].attrs.get("original_name") == n}
+    consumed = {s for sources in ledger["derived"].values() for s in sources}
+    removed = set(ledger["removed"])
+    dropped = set(ledger["dropped"])
+    skipped = {
+        v
+        for info in ledger["dimensions"].values()
+        if info["fate"] == "skipped"
+        for v in info["variables"]
+    }
+    # One fate per name, in priority order (an output wins over a dimension listing).
+    buckets = [
         ("Renamed from a basestation name", renamed),
-        ("Passed through unrenamed", passed_through),
-        ("Derived by the converter", len(ledger["derived"])),
-        ("Dropped by keep_variables", len(ledger["dropped"])),
-        ("Dimensions: backbone", fates.count("backbone")),
-        ("Dimensions: merged", fates.count("merged")),
-        ("Dimensions: skipped", fates.count("skipped")),
-        ("Constant scalars", scalar_storage.count("constant_scalar")),
-        ("Per-dive JSON scalars", scalar_storage.count("per_dive_scalar")),
+        ("Passed through unrenamed", passed),
+        ("Consumed → derived", consumed),
+        ("Removed (package drop list)", removed),
+        ("Dropped (keep_variables)", dropped),
+        ("Skipped (dimension)", skipped),
     ]
-    return [(label, str(count), "") for label, count in rows]
+    seen: set[str] = set()
+    rows = []
+    total = 0
+    for label, names in buckets:
+        count = len(names - seen)
+        seen |= names
+        total += count
+        rows.append((label, str(count), ""))
+    inputs = ledger["input_variable_count"]
+    rows.append(("Basestation inputs", str(inputs), ""))
+    unattributed = inputs - total
+    if unattributed == 0:
+        caption = f"The six fates sum to the {inputs} basestation input variables."
+    else:
+        caption = (
+            f"{unattributed} of {inputs} basestation variables are not yet attributed — "
+            "their data fed derived variables whose per-source lists are not yet recorded; "
+            "the sum closes once they are."
+        )
+    return rows, caption
 
 
 def _dimension_rows(ledger: dict) -> list[dict[str, object]]:
@@ -185,7 +214,7 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
     try:
         ledger = convert.conversion_ledger(ds)
         groups, var_source = _variable_groups_by_original_dimension(ds)
-        reconciliation = _reconciliation_rows(ds, ledger)
+        reconciliation, reconciliation_caption = _reconciliation(ds, ledger)
         dimensions = _dimension_rows(ledger)
         # Scalar parameters as a vendored table, so each row's Attributes disclosure shows a
         # per-dive scalar's serialization / storage_type / original_name (how to decode it).
@@ -206,6 +235,7 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         version=__version__,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
         reconciliation=reconciliation,
+        reconciliation_caption=reconciliation_caption,
         dimensions=dimensions,
         variable_groups=groups,
         variables_source=var_source,

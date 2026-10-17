@@ -584,11 +584,17 @@ def test_conversion_ledger_parses_the_file():
         "dimensions",
         "derived",
         "dropped",
+        "removed",
+        "input_variable_count",
         "attribute_sources",
         "history",
         "scalar_parameters",
     }
     assert ledger["dimensions"]["sg_data_point"]["fate"] == "backbone"
+    # derived is a map {name: [source basestation names]}; removed is the drop list.
+    assert isinstance(ledger["derived"], dict)
+    assert ledger["input_variable_count"] > 0
+    assert "density" in ledger["removed"]  # a VARIABLES_TO_DROP member present in sg005
     per_dive = [
         name
         for name, entry in ledger["scalar_parameters"].items()
