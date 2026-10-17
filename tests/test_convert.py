@@ -595,9 +595,14 @@ def test_conversion_ledger_parses_the_file():
     assert isinstance(ledger["derived"], dict)
     assert ledger["input_variable_count"] > 0
     assert "density" in ledger["removed"]  # a VARIABLES_TO_DROP member present in sg005
-    # Derived variables record their basestation sources: the TIME axis from the backbone
-    # time variables, TIME_GPS from the GPS clock.
-    assert set(ledger["derived"]["TIME"]) == {"ctd_time", "time"}
+    # Derived variables record their basestation sources: every merged dimension's time
+    # variable folds into the shared TIME axis; TIME_GPS records the GPS clock separately.
+    assert set(ledger["derived"]["TIME"]) == {
+        "ctd_time",
+        "time",
+        "gc_st_secs",
+        "log_gps_time",
+    }
     assert ledger["derived"]["TIME_GPS"] == ["log_gps_time"]
     per_dive = [
         name
@@ -642,8 +647,32 @@ def test_reconciliation_fates_sum_to_input_count():
         total += len(names - seen)
         seen |= names
     assert total == ledger["input_variable_count"] == len(inputs)
-    # A skipped dimension's time variable stays with its dimension, not folded into TIME.
-    assert "gc_st_secs" in skipped and "gc_st_secs" not in consumed
+    # gc_event is merged (its variables reach the output), so its time variable feeds the
+    # shared TIME axis; it is consumed, not skipped.
+    assert "gc_st_secs" in consumed and "gc_st_secs" not in skipped
+
+
+def test_dimension_fate_agrees_with_output_variables():
+    """A dimension's fate is read from the output: merged iff a variable survives on it."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    dims = convert.conversion_ledger(ds)["dimensions"]
+    in_output = {
+        str(ds[n].attrs["original_dimension"])
+        for n in ds.variables
+        if "original_dimension" in ds[n].attrs
+    }
+    for dim, info in dims.items():
+        if info["fate"] in ("backbone", "merged"):
+            assert dim in in_output, (
+                f"{dim} is {info['fate']} but no output variable carries it"
+            )
+        else:
+            assert dim not in in_output, (
+                f"{dim} is skipped but a variable survived on it"
+            )
+    # gc_event in demo_sg005 is merged by this rule (its gc_* variables reach the axis).
+    assert dims["gc_event"]["fate"] == "merged"
 
 
 def test_derived_sources_stamp_never_reaches_the_file(tmp_path: pathlib.Path) -> None:

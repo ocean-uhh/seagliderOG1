@@ -1008,13 +1008,11 @@ def merge_datasets_along_time(
         time_values = time_source.values
         time_attrs = dict(time_source.attrs)
 
-        # Replace individual time variables with the shared time coordinate. Only the
-        # backbone dimension's time variables define the TIME axis; a merged side dimension
-        # (e.g. gps_info -> TIME_GPS) records its own source, and a skipped dimension's time
-        # variable belongs to that dimension, not to TIME.
+        # Replace individual time variables with the shared time coordinate. Every merged
+        # dimension folds its time variable onto this shared axis, so each dropped time name
+        # is a source of TIME; the TIME_GPS clock is recorded separately at the GPS path.
         dropped_time_names = [name for name in all_time_names if name in ds.variables]
-        if dim == "sg_data_point":
-            consumed_time_names.update(dropped_time_names)
+        consumed_time_names.update(dropped_time_names)
         ds = ds.drop_vars(dropped_time_names)
 
         if "time" in ds.variables:

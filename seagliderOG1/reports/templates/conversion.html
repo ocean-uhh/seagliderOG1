@@ -8,7 +8,6 @@
 <style>
 {{ css | safe }}
 section { margin: 1.4rem 0; }
-table.dims td.skipped { background: var(--amber, #fde68a); }
 pre.ledger { font-family: var(--font-mono); font-size: var(--fs-sm);
   white-space: pre-wrap; border-left: 3px solid var(--rule); padding: 0.4rem 0.8rem; }
 details.vars > summary { cursor: pointer; color: var(--muted); }
@@ -22,7 +21,7 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
     <span class="masthead-type">conversion</span>
   </div>
   <p class="sub" style="margin:0 0 0.6rem; text-align:right;">generated {{ generated_at }}</p>
-  <nav class="jump"><a href="#reconciliation">Reconciliation</a> ·
+  <nav class="jump-nav"><a href="#reconciliation">Reconciliation</a> ·
     <a href="#dimensions">Dimensions</a> · <a href="#variables">Variables</a> ·
     <a href="#scalars">Scalar parameters</a> ·
     <a href="#more">Derived, dropped, globals, history</a></nav>
@@ -37,12 +36,12 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 
 <section id="dimensions">
 <h2>2. Dimensions</h2>
-<p class="caption">amber: dimension skipped — its variables are not in this file. (Interim owned table; moves to a vendored macro — no family macro carries a fate column yet.)</p>
+<p class="caption">Orange: dimension skipped — no variable from it reaches this file. Fate is read from the output: a dimension with any surviving variable is merged, the CTD dimension is the backbone, the rest are skipped.</p>
 <table class="nc dims sortable">
 <thead><tr><th>Dimension</th><th>Fate</th><th>Variables</th><th>Ended on</th></tr></thead>
 <tbody>
 {%- for d in dimensions %}
-<tr><td>{{ d.dimension }}</td><td{% if d.fate == "skipped" %} class="skipped"{% endif %}>{{ d.fate }}</td>
+<tr><td>{{ d.dimension }}</td><td{% if d.fate == "skipped" %} class="cell-bad"{% endif %}>{{ d.fate }}</td>
 <td>{{ d.n }} <details class="vars"><summary>list</summary>{{ d.variables }}</details></td>
 <td>{{ d.ended_on }}</td></tr>
 {%- endfor %}

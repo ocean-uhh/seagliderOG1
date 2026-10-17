@@ -540,17 +540,18 @@ def _attribute_source_ledger(
 def _dimension_ledger(
     list_of_datasets: Sequence[xr.Dataset],
     ctd_dim: str,
-    dims_to_merge: Sequence[str],
     all_dims: Sequence[str],
+    ds_og1: xr.Dataset,
 ) -> str:
     """Return the ``conversion_dimensions`` JSON global (fate and variables per dimension).
 
     One entry per basestation dimension, each with its fate and the basestation
-    variable names that lived on it. A skipped dimension leaves no variable in the
-    output to carry its names, so the names are recorded here. ``gps_info`` is
-    ``merged``: its fixes are placed on the time backbone as ``LONGITUDE``/``LATITUDE``
-    by a dedicated path, so the file's reader sees a merge regardless of which function
-    did it. A variable defined on more than one dimension is listed under each of them,
+    variable names that lived on it. The fate is read from the output, not from the
+    pre-conversion merge plan: the CTD dimension that became ``N_MEASUREMENTS`` is
+    ``backbone``; a dimension any of whose variables reaches the output (carrying
+    ``original_dimension == dim``) is ``merged``; a dimension with no variable in the
+    output is ``skipped`` and its names are recorded here because nothing else carries
+    them. A variable defined on more than one dimension is listed under each of them,
     so the per-dimension counts are "variables on this dimension", not a partition.
 
     Parameters
@@ -559,10 +560,11 @@ def _dimension_ledger(
         The raw basestation datasets, read for their per-dimension variable names.
     ctd_dim : str
         The CTD dimension that becomes ``N_MEASUREMENTS`` (fate ``backbone``).
-    dims_to_merge : collections.abc.Sequence of str
-        The dimensions folded onto the backbone (fate ``merged``).
     all_dims : collections.abc.Sequence of str
         Every dimension present across the inputs.
+    ds_og1 : xarray.Dataset
+        The assembled OG1 output, read for which dimensions survived (via each
+        variable's ``original_dimension`` attribute).
 
     Returns
     -------
@@ -570,12 +572,16 @@ def _dimension_ledger(
         A JSON object of ``dimension -> {"fate", "variables"}``, keys sorted.
 
     """
-    merged = (set(dims_to_merge) - {ctd_dim}) | ({"gps_info"} & set(all_dims))
+    in_output = {
+        str(ds_og1[name].attrs["original_dimension"])
+        for name in ds_og1.variables
+        if "original_dimension" in ds_og1[name].attrs
+    }
     ledger = {}
     for dim in all_dims:
         if dim == ctd_dim:
             fate = "backbone"
-        elif dim in merged:
+        elif dim in in_output:
             fate = "merged"
         else:
             fate = "skipped"
@@ -941,10 +947,10 @@ def to_og1(
         else conversion_line
     )
 
-    # Write down what happened to the dimensions (fate and the basestation variable
-    # names each carried), from the merge decisions made once before the per-dive loop.
+    # Write down what happened to the dimensions (fate read from the output, and the
+    # basestation variable names each dimension carried).
     ds_og1.attrs["conversion_dimensions"] = _dimension_ledger(
-        list_of_datasets, ctd_dim, dims_to_merge, all_dims
+        list_of_datasets, ctd_dim, all_dims, ds_og1
     )
 
     # Variables the converter created rather than renamed or passed through carry no
