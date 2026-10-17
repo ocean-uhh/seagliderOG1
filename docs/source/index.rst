@@ -29,6 +29,7 @@ https://github.com/ocean-uhh/seagliderOG1/issues/new.
    mission_yaml
    conversion
    package_layout
+   migrating_0_1_0
    changelog
 
 .. toctree::
