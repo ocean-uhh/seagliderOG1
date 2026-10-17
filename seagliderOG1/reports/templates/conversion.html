@@ -10,9 +10,6 @@
 {{ css | safe }}
 section { margin: 1.4rem 0; }
 details.vars > summary { cursor: pointer; color: var(--muted); }
-/* The Type column never wraps (float32 / datetime on one line); column widths come from
-   the variables_tables widths= call so Min / Max and Standard / long name wrap instead. */
-.var-table td:nth-child(2) { white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -65,8 +62,8 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 
 <section id="variables">
 <h2>3. Variables (grouped by original dimension)</h2>
-{{ t.variables_tables(variable_groups, source=variables_source,
-   widths=("18%", "7%", "9%", "30%", "16%", "6%", "6%", "8%"),
+{{ t.variables_tables(variable_groups, source=variables_source, numbered=True,
+   optional=("units", "minmax", "attrs", "stdname"),
    caption="amber: Valid % < 100 — the variable sits at its own times on the shared axis (e.g. a GPS fix), not interpolated.") }}
 </section>
 
@@ -76,7 +73,7 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 {%- for g in scalar_groups %}
 <h3>{% if g.mono %}<code>{{ g.title }}</code>{% else %}{{ g.title }}{% endif %} ({{ g.rows|length }})</h3>
 {{ t.scalars_table(g.rows, source=(scalar_source if loop.last else None),
-   widths=("28%", "8%", "8%", "18%", "28%", "10%"),
+   optional=("units", "attrs", "stdname"),
    caption="amber: a numeric parameter with no units attribute") }}
 {%- endfor %}
 </section>

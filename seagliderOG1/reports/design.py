@@ -12,18 +12,11 @@ from seagliderOG1.reports._vendored.css import emit_css
 #: picks its own.
 PACKAGE_ACCENT: str = "var(--ocean)"
 
-#: The generated stylesheet, ready to concatenate into a page ``<style>`` block, with two
-#: owned interim rules both removed at the next re-vendor:
-#: ``.var-qc`` makes the inline ``(_QC)`` marker green (the family default) rather than the grey
-#: this vendored ``css.py`` still emits — gone when the vendored ``--qc-mark`` token carries it;
-#: ``.var-table td:first-child code`` puts a renamed variable's original name on its own line
-#: above the ``→ new name`` so the Variable column stays narrow — gone when F28 lands the
-#: ``var-orig`` span in the vendored ``name_cell``.
-SHARED_CSS: str = (
-    emit_css(PACKAGE_ACCENT)
-    + "\n.var-qc { color: var(--ok); }"
-    + "\n.var-table td:first-child code { display: block; }\n"
-)
+#: The generated stylesheet, ready to concatenate into a page ``<style>`` block. The vendored
+#: ``css.py`` now carries the ``(_QC)`` marker colour (``--qc-mark``, green by default) and the
+#: two-line ``name_cell``, so no owned CSS override is needed; ``emit_css`` takes an
+#: ``overrides=`` keyword if the accent or a token ever needs changing.
+SHARED_CSS: str = emit_css(PACKAGE_ACCENT)
 
 #: The per-figure ``source:`` caption is on (kept on for debugging).
 FIGURE_SOURCE: bool = True

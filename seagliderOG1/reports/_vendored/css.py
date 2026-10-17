@@ -31,15 +31,32 @@ from .design_tokens import (
 )
 
 
-def _emit_root(package_accent: str) -> str:
-    """Return the ``:root { … }`` custom-property block built from the tokens."""
+#: UI tokens a package may recolour through ``overrides`` (one allow-list, validated in
+#: ``emit_css``): one ``role-<key>`` per :data:`ROLE_ACCENT` role, the ``(_QC)`` marker colour
+#: ``qc-mark``, and ``package-accent`` for symmetry.  Data palettes (QC flag colours, track
+#: colours, colormaps) are deliberately *not* here — a flag colour must read the same everywhere.
+def _override_tokens() -> set[str]:
+    """Return the set of CSS-var suffixes a package may override via ``overrides``."""
+    return {f"role-{key}" for key in ROLE_ACCENT} | {"qc-mark", "package-accent"}
+
+
+def _emit_root(package_accent: str, overrides: dict[str, str] | None = None) -> str:
+    """Return the ``:root { … }`` custom-property block built from the tokens.
+
+    ``overrides`` rewrites individual overridable tokens (``role-<key>``, ``qc-mark``,
+    ``package-accent``), so a package recolours a role (pills + masthead together) or the
+    ``(_QC)`` marker without editing the shared table.
+    """
+    ov = overrides or {}
     lines: list[str] = [":root {"]
     for table in (COLORS, GRAYS, SEMANTIC):
         for key, value in table.items():
             lines.append(f"  --{key}: {value};")
     for key, value in ROLE_ACCENT.items():
-        lines.append(f"  --role-{key}: {value};")
-    lines.append(f"  --package-accent: {package_accent};")
+        lines.append(f"  --role-{key}: {ov.get(f'role-{key}', value)};")
+    # The (_QC) companion marker colour (css `.var-qc`); the "present/available" green by default.
+    lines.append(f"  --qc-mark: {ov.get('qc-mark', 'var(--ok)')};")
+    lines.append(f"  --package-accent: {ov.get('package-accent', package_accent)};")
     lines.append(f"  --font-sans: {FONT_SANS};")
     lines.append(f"  --font-mono: {FONT_MONO};")
     for name, spec in TYPE.items():
@@ -89,7 +106,20 @@ def _emit_nav_pills() -> str:
     )
 
 
-def emit_css(package_accent: str) -> str:
+def _emit_masthead_roles() -> str:
+    """Return one ``.masthead.role-<role>`` background rule per :data:`ROLE_ACCENT` key.
+
+    A page's masthead takes the colour of the nav pill that points at it, so the class set is
+    generated from the same table as ``--role-*`` and ``.nav-<role>`` — a new role needs no edit
+    here, and a ``role_overrides`` recolour moves the pill and the masthead together.
+    """
+    return "\n".join(
+        f".masthead.role-{key} {{ background: var(--role-{key}); }}"
+        for key in ROLE_ACCENT
+    )
+
+
+def emit_css(package_accent: str, *, overrides: dict[str, str] | None = None) -> str:
     """Return the full shared stylesheet as a string, generated from the tokens.
 
     Reproduces the established page look from the design tokens (the current
@@ -107,10 +137,22 @@ def emit_css(package_accent: str) -> str:
         value, e.g. a hex literal or ``var(--ocean)``.  Chosen by the
         package-specific caller; the function itself names no package and holds
         no per-package colour table.
+    overrides : dict of str to str, optional
+        ``{token: colour}`` rewriting an overridable UI token — ``role-<key>`` for each
+        :data:`~design_tokens.ROLE_ACCENT` role, ``qc-mark`` (the ``(_QC)`` marker), or
+        ``package-accent``.  An unknown key raises (never silently ignored), so pills/mastheads
+        of a role recolour together.  Data palettes (QC flag colours, track colours) stay fixed.
     """
-    root = _emit_root(package_accent)
+    if overrides:
+        unknown = set(overrides) - _override_tokens()
+        if unknown:
+            raise ValueError(
+                f"overrides keys are not overridable UI tokens: {sorted(unknown)}"
+            )
+    root = _emit_root(package_accent, overrides)
     slots = _emit_slots()
     nav_pills = _emit_nav_pills()
+    masthead_roles = _emit_masthead_roles()
     return f"""\
 {root}
 * {{ box-sizing: border-box; }}
@@ -248,7 +290,13 @@ td.mono {{ font-family: var(--font-mono); font-size: var(--fs-xs); }}
    global tables.  Package-neutral — the markup is emitted by templates/_nc_tables.html. */
 .var-table code {{ font-family: var(--font-mono); font-size: var(--fs-xs); }}
 .muted {{ color: var(--muted); }}
-.var-qc {{ color: var(--muted); font-size: var(--fs-xs); }}
+.var-qc {{ color: var(--qc-mark); font-size: var(--fs-xs); }}
+/* The original source name on its own muted line above the canonical name (name_cell), so the
+   Variable column does not widen to fit both on one line. */
+.var-orig {{ color: var(--muted); font-size: var(--fs-xs); }}
+/* A long unbroken token (a tracking_id, a path, a dotted standard_name) in a scalar value or a
+   standard/long-name cell would widen the whole table; cap the width and break inside the word. */
+.cell-wrap {{ overflow-wrap: anywhere; max-width: 28rem; }}
 .cell-bad {{ color: var(--warn); font-variant-numeric: tabular-nums; }}
 tr.units th {{
   background: transparent; color: var(--muted); font-weight: 400;
@@ -305,6 +353,7 @@ th.sorted-desc::after {{ content: " \\25BC"; font-size: 0.8em; }}
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
 }}
 {nav_pills}
+{masthead_roles}
 .nav-current {{ opacity: 0.5; pointer-events: none; }}
 .nav-missing {{ background: var(--gray-3); opacity: 0.5; pointer-events: none; }}
 .inventory-strip {{ margin: 0 0 1rem; }}
