@@ -286,6 +286,25 @@ def test_inspect_conversion_writes_html_page(
     assert "sum to the 342 basestation input variables" in html
     # The transient derived-sources stamp is internal and never reaches the page.
     assert "_derived_sources" not in html
+    # Item #2 sections render as tables, not the earlier interim text block.
+    assert "5. Derived variables" in html
+    assert "7. Global attributes" in html
+    assert "<h3>History</h3>" in html
+    assert "(scalar)" in html  # the Dimensions scalar row
+    assert "Interim text view" not in html
+    assert "data:image/png;base64," in html  # the section-1 fate histogram
+    # Masthead (S18) and the renamed calibration group (S15).
+    assert 'class="meta-grid"' in html
+    assert "<code>sg_calib_constants</code>" in html
+    # Spatiotemporal coverage computed column (S17) and the OG1-requirement line (S25).
+    assert "Computed" in html
+    assert "OG1 requirement: mandatory 9/9 present" in html
+    # Masthead polish (S19): meta-grid pairs are div-wrapped, and the jump-nav sits after the
+    # masthead closes (not a descendant of it).
+    assert "<div><dt>" in html
+    assert '</div>\n<nav class="jump-nav"' in html
+    # The per-heading "↑ top" link script is emitted (S24); it appends .top-link client-side.
+    assert "top-link" in html and "↑ top" in html
 
 
 def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:

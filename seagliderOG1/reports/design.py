@@ -5,19 +5,25 @@ vendored modules under ``reports/_vendored/`` name no package. The package accen
 applied to the shared CSS generator here; change :data:`PACKAGE_ACCENT` to rebrand.
 """
 
-from seagliderOG1 import vocabularies
 from seagliderOG1.reports._vendored.css import emit_css
-from seagliderOG1.reports._vendored.nc_tables import (
-    ATTR_GROUPS as _VENDORED_ATTR_GROUPS,
-)
 
 #: seagliderOG1's package accent — one line to rebrand; any CSS colour value works.
 #: Points at the vendored palette's ``--ocean`` (shared with ctdcast) until seagliderOG1
 #: picks its own.
 PACKAGE_ACCENT: str = "var(--ocean)"
 
-#: The generated stylesheet, ready to concatenate into a page ``<style>`` block.
-SHARED_CSS: str = emit_css(PACKAGE_ACCENT)
+#: The generated stylesheet, ready to concatenate into a page ``<style>`` block, with two
+#: owned interim rules both removed at the next re-vendor:
+#: ``.var-qc`` makes the inline ``(_QC)`` marker green (the family default) rather than the grey
+#: this vendored ``css.py`` still emits — gone when the vendored ``--qc-mark`` token carries it;
+#: ``.var-table td:first-child code`` puts a renamed variable's original name on its own line
+#: above the ``→ new name`` so the Variable column stays narrow — gone when F28 lands the
+#: ``var-orig`` span in the vendored ``name_cell``.
+SHARED_CSS: str = (
+    emit_css(PACKAGE_ACCENT)
+    + "\n.var-qc { color: var(--ok); }"
+    + "\n.var-table td:first-child code { display: block; }\n"
+)
 
 #: The per-figure ``source:`` caption is on (kept on for debugging).
 FIGURE_SOURCE: bool = True
@@ -61,22 +67,57 @@ def is_sensor(name: str) -> bool:
     return name.startswith("SENSOR_")
 
 
-#: OG1 global-attribute tier groups (membership only) for the grouped-globals table,
-#: from the one requirement table :data:`seagliderOG1.vocabularies.REQUIRED_GLOBALS`,
-#: minus any name a vendored convention group already carries — so the two cannot drift.
-_VENDORED_ATTR_NAMES: frozenset[str] = frozenset(
-    name for _title, names in _VENDORED_ATTR_GROUPS for name in names
-)
-_TIER_TITLES: dict[str, str] = {
-    "mandatory": "OG1 mandatory",
-    "highly_desirable": "OG1 highly desirable",
-    "suggested": "OG1 suggested",
-}
+#: seagliderOG1's own global-attribute names placed *into* the five vendored convention
+#: groups (:data:`~seagliderOG1.reports._vendored.nc_tables.ATTR_GROUPS`) by meaning, not by
+#: OG1 requirement tier — so the grouped-globals table shows those five groups and no more.
+#: Passed as the ``extras`` of :func:`~seagliderOG1.reports._vendored.nc_tables.globals_rows`;
+#: a name already in a vendored group may be repeated here harmlessly. The requirement tier is
+#: shown separately (a summary caption now, a column once F29 vendors it), not as groups.
 ATTR_GROUP_EXTRAS: dict[str, tuple[str, ...]] = {
-    _TIER_TITLES[tier]: tuple(
-        name for name in names if name not in _VENDORED_ATTR_NAMES
-    )
-    for tier, names in vocabularies.REQUIRED_GLOBALS.items()
+    "Identity & discovery": (
+        "internal_mission_identifier",
+        "site",
+        "site_vocabulary",
+        "program",
+        "program_vocabulary",
+        "network",
+        "uri",
+        "web_link",
+        "data_url",
+        "summary",
+        "uuid",
+        "id",
+        "keywords",
+        "keywords_vocabulary",
+    ),
+    "People & institutions": (
+        "contributor_id",
+        "contributor_role_vocabulary",
+        "contributing_institutions_vocabulary",
+        "contributor_email",
+    ),
+    "Rights & access": (
+        "doi",
+        "license",
+        "disclaimer",
+        "acknowledgment",
+    ),
+    "Provenance & processing": (
+        "rtqc_method",
+        "rtqc_method_doi",
+        "start_date",
+        "date_created",
+        "date_modified",
+        "comment",
+        "base_station_version",
+        "seaglider_software_version",
+        "file_version",
+        "conversion_dimensions",
+        "conversion_derived_variables",
+        "conversion_dropped_variables",
+        "conversion_removed_variables",
+        "conversion_input_variable_count",
+    ),
 }
 
 #: Tolerances for the inventory page's coverage check (file-stated ``geospatial_*`` /

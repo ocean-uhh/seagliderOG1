@@ -1,4 +1,5 @@
 {% import "_nc_tables.html" as t -%}
+{% import "_nav.html" as navm -%}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,9 +9,10 @@
 <style>
 {{ css | safe }}
 section { margin: 1.4rem 0; }
-pre.ledger { font-family: var(--font-mono); font-size: var(--fs-sm);
-  white-space: pre-wrap; border-left: 3px solid var(--rule); padding: 0.4rem 0.8rem; }
 details.vars > summary { cursor: pointer; color: var(--muted); }
+/* The Type column never wraps (float32 / datetime on one line); column widths come from
+   the variables_tables widths= call so Min / Max and Standard / long name wrap instead. */
+.var-table td:nth-child(2) { white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -20,18 +22,31 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
     <h1>{{ title }}</h1>
     <span class="masthead-type">conversion</span>
   </div>
-  <p class="sub" style="margin:0 0 0.6rem; text-align:right;">generated {{ generated_at }}</p>
-  <nav class="jump-nav"><a href="#reconciliation">Reconciliation</a> ·
-    <a href="#dimensions">Dimensions</a> · <a href="#variables">Variables</a> ·
-    <a href="#scalars">Scalar parameters</a> ·
-    <a href="#more">Derived, dropped, globals, history</a></nav>
+  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>{{ title }}</span><span>generated {{ generated_at }}</span></p>
+  {{ navm.page_nav(page_nav) }}
+  <dl class="meta-grid">
+  {%- for label, value in masthead_meta %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+  {%- endfor %}
+  </dl>
   <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
 </div>
+<nav class="jump-nav"><a href="#reconciliation">Reconciliation</a> ·
+  <a href="#dimensions">Dimensions</a> · <a href="#variables">Variables</a> ·
+  <a href="#scalars">Scalar parameters</a> · <a href="#derived">Derived</a> ·
+  <a href="#dropped">Dropped</a> · <a href="#globals">Globals</a></nav>
 
 <section id="reconciliation">
 <h2>1. Reconciliation — where the variables went</h2>
-{{ t.properties_table(reconciliation, header=("Fate", "Count"),
-   caption=reconciliation_caption) }}
+<div class="fig-row">
+<div class="slot-two-fifths">{{ t.properties_table(reconciliation, header=("Fate", "Count"),
+   caption=reconciliation_caption) }}</div>
+{%- if fate_histogram %}
+<figure class="slot-three-fifths">
+<img alt="Bar chart of the variable counts per fate" src="data:image/png;base64,{{ fate_histogram }}">
+{%- if show_source and fate_histogram_source %}<figcaption class="fig-source">source: {{ fate_histogram_source }}</figcaption>{% endif %}
+</figure>
+{%- endif %}
+</div>
 </section>
 
 <section id="dimensions">
@@ -51,22 +66,60 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 <section id="variables">
 <h2>3. Variables (grouped by original dimension)</h2>
 {{ t.variables_tables(variable_groups, source=variables_source,
+   widths=("18%", "7%", "9%", "30%", "16%", "6%", "6%", "8%"),
    caption="amber: Valid % < 100 — the variable sits at its own times on the shared axis (e.g. a GPS fix), not interpolated.") }}
 </section>
 
 <section id="scalars">
 <h2>4. Scalar parameters</h2>
-<p class="caption">A per-dive scalar's Attributes disclosure shows its serialization, storage_type and original_name — how to decode it.</p>
-{{ t.scalars_table(scalar_rows, source=scalar_source) }}
+<p class="caption">Split by whether the converter renamed the scalar to an OG1 name, then by basestation prefix. A per-dive scalar's Value shows the decoded per-dive values; its raw JSON serialization stays in the Attributes disclosure.</p>
+{%- for g in scalar_groups %}
+<h3>{% if g.mono %}<code>{{ g.title }}</code>{% else %}{{ g.title }}{% endif %} ({{ g.rows|length }})</h3>
+{{ t.scalars_table(g.rows, source=(scalar_source if loop.last else None),
+   widths=("28%", "8%", "8%", "18%", "28%", "10%"),
+   caption="amber: a numeric parameter with no units attribute") }}
+{%- endfor %}
 </section>
 
-<section id="more">
-<h2>Derived, dropped, global sources, history</h2>
-<p class="caption">Interim text view — these sections move to vendored tables next.</p>
-<pre class="ledger">{{ interim }}</pre>
+<section id="derived">
+<h2>5. Derived variables</h2>
+<p class="caption">Variables the converter built rather than renamed. Sources names the basestation variables consumed, or "(computed)" when built from other OG1 variables, vocabulary or global attributes.</p>
+{%- if derived_rows %}
+<table class="sortable var-table">
+{{ t.thead(("Variable", "Sources", "Attributes"), nosort=("Attributes",)) }}
+<tbody>
+{%- for r in derived_rows %}
+<tr>{{ t.name_cell(r) }}<td>{{ r.sources }}</td><td data-nosort>{{ t.attr_disclosure(r.attrs) }}</td></tr>
+{%- endfor %}
+</tbody></table>
+{%- else %}<p class="caption">Not applicable to this file: no derived variables.</p>{% endif %}
+</section>
+
+<section id="dropped">
+<h2>6. Dropped and removed variables</h2>
+<h3>Dropped on request (keep_variables)</h3>
+{%- if dropped %}
+<p class="caption">Recorded here because nothing in the file carries them.</p>
+<ul class="dropped">{% for name in dropped %}<li><code>{{ name }}</code></li>{% endfor %}</ul>
+{%- else %}<p class="caption">Not applicable to this file: no variables were dropped on request.</p>{% endif %}
+<h3>Removed by the converter (package drop list)</h3>
+{%- if removed %}
+<p class="caption">Basestation variables the converter always removes; recorded here because they leave no trace in the file.</p>
+<ul class="dropped">{% for name in removed %}<li><code>{{ name }}</code></li>{% endfor %}</ul>
+{%- else %}<p class="caption">Not applicable to this file: nothing was on the package drop list.</p>{% endif %}
+</section>
+
+<section id="globals">
+<h2>7. Global attributes</h2>
+<p class="caption{% if requirement_amber %} cell-bad{% endif %}">{{ requirement_text }}</p>
+{{ t.globals_tables(global_groups, computed=coverage_computed, source=globals_source,
+   coverage_note="amber: the file's stated bound differs from the value recomputed from the data by more than the tolerance.") }}
+<h3>History</h3>
+{{ t.properties_table(history_rows, header=("#", "History")) }}
 </section>
 
 <footer>Generated by seagliderOG1 v{{ version }} &nbsp;&middot;&nbsp; {{ generated_at }}</footer>
 {{ js_sort_tables | safe }}
+{{ js_top_links | safe }}
 </body>
 </html>
