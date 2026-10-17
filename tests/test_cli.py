@@ -65,7 +65,7 @@ def test_init_writes_template(tmp_path: pathlib.Path) -> None:
     """``init`` writes a parseable template with the expected keys."""
     out = tmp_path / "mission.yaml"
     assert cli.main(["init", "-o", str(out)]) == 0
-    data = yaml.safe_load(out.read_text())
+    data = yaml.safe_load(out.read_text(encoding="utf-8"))
     assert set(data) >= {"source", "contributors", "platform", "mode"}
     assert data["mode"] == "delayed"
 
@@ -75,16 +75,16 @@ def test_init_refuses_overwrite_without_force(tmp_path: pathlib.Path) -> None:
     out = tmp_path / "mission.yaml"
     out.write_text("existing")
     assert cli.main(["init", "-o", str(out)]) == 1
-    assert out.read_text() == "existing"
+    assert out.read_text(encoding="utf-8") == "existing"
     assert cli.main(["init", "-o", str(out), "--force"]) == 0
-    assert out.read_text() != "existing"
+    assert out.read_text(encoding="utf-8") != "existing"
 
 
 def test_init_from_fills_platform(tmp_path: pathlib.Path) -> None:
     """``init --from`` fills the platform block from the first basestation file."""
     out = tmp_path / "mission.yaml"
     assert cli.main(["init", "--from", str(DATA_DIR), "-o", str(out)]) == 0
-    platform = yaml.safe_load(out.read_text())["platform"]
+    platform = yaml.safe_load(out.read_text(encoding="utf-8"))["platform"]
     assert platform["PLATFORM_SERIAL_NUMBER"] == "sg005"
     assert str(platform["GLIDER_FIRMWARE_VERSION"]).startswith("seaglider")
     assert str(platform["LANDSTATION_VERSION"]).startswith("basestation")
@@ -94,7 +94,7 @@ def test_init_from_fills_source_and_serial(tmp_path: pathlib.Path) -> None:
     """Init --from fills source and the serial; model/maker/depth are left null to fill."""
     out = tmp_path / "mission.yaml"
     assert cli.main(["init", "--from", str(DATA_DIR), "-o", str(out)]) == 0
-    data = yaml.safe_load(out.read_text())
+    data = yaml.safe_load(out.read_text(encoding="utf-8"))
     assert data["source"] == str(DATA_DIR.resolve())
     assert data["platform"]["PLATFORM_SERIAL_NUMBER"] == "sg005"
     # The UW-specific model/maker/depth are no longer baked in; they stay null.
@@ -108,7 +108,7 @@ def test_validate_errors_on_null_platform_fields_then_passes(
     out = tmp_path / "mission.yaml"
     assert cli.main(["init", "--from", str(DATA_DIR), "-o", str(out)]) == 0
     assert cli.main(["validate", str(out)]) == 1  # model/maker/depth still null
-    data = yaml.safe_load(out.read_text())
+    data = yaml.safe_load(out.read_text(encoding="utf-8"))
     data["platform"]["PLATFORM_MODEL"] = "Seaglider"
     data["platform"]["PLATFORM_MAKER"] = "University of Washington"
     data["platform"]["PLATFORM_DEPTH_RATING"] = 1000
@@ -137,12 +137,12 @@ def test_template_comments_name_the_destination() -> None:
     """Each generated line's comment says where the key goes (variable/attribute/global)."""
     template = _mission.render_template(source="/tmp/x")
     assert "UPPER keys become OG1 variables" in template
-    assert "PLATFORM_MODEL: null   # required · → variable" in template
+    assert "PLATFORM_MODEL: null   # required -> variable" in template
     assert (
-        "platform_model_vocabulary: null   # optional · → attribute on PLATFORM_MODEL"
+        "platform_model_vocabulary: null   # optional -> attribute on PLATFORM_MODEL"
         in (template)
     )
-    assert "id: null   # mandatory · → global attribute" in template
+    assert "id: null   # mandatory -> global attribute" in template
 
 
 def test_case_hint_helper() -> None:

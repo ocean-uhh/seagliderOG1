@@ -73,7 +73,7 @@ def load_config(config_path: pathlib.Path) -> dict:
         otherwise pass ``safe_load`` and fail deep in validation or conversion.
 
     """
-    data = yaml.safe_load(config_path.read_text())
+    data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         msg = "configuration root is not a mapping."
         # Malformed config input, not a programming type error; ValueError matches
@@ -148,8 +148,8 @@ def _deployment_template_lines() -> list[str]:
     ]
     for key in vocabularies.DEPLOYMENT_GLOBALS:
         hint = hints.get(key)
-        comment = f"{tier_of.get(key, 'optional')} · → global attribute" + (
-            f" · {hint}" if hint else ""
+        comment = f"{tier_of.get(key, 'optional')} -> global attribute" + (
+            f"; {hint}" if hint else ""
         )
         lines.append(f"  {key}: null   # {comment}")
     return lines
@@ -158,8 +158,8 @@ def _deployment_template_lines() -> list[str]:
 def _platform_template_lines(plat: dict[str, object]) -> list[str]:
     """Build the ``platform:`` block, destination comments from PLATFORM_FIELDS.
 
-    Each line's comment says where the key goes — ``→ variable`` for an UPPER platform
-    field, ``→ attribute on <VARIABLE>`` for a lower ``_vocabulary`` key — read from
+    Each line's comment says where the key goes — ``-> variable`` for an UPPER platform
+    field, ``-> attribute on <VARIABLE>`` for a lower ``_vocabulary`` key — read from
     ``vocabularies.PLATFORM_FIELDS`` (which knows each field's kind and whether it is
     required) so the template cannot drift from the code.
 
@@ -224,7 +224,7 @@ def _platform_template_lines(plat: dict[str, object]) -> list[str]:
             spec = vocabularies.PLATFORM_FIELDS[key]
             req = "required" if spec.required else "optional"
             dest, value = "variable", _scalar(plat[key])
-        comment = f"{req} · → {dest} · {hints[key]}"
+        comment = f"{req} -> {dest}; {hints[key]}"
         lines.append(f"  {key}: {value}   # {comment}")
     return lines
 

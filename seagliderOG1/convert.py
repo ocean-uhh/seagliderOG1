@@ -478,14 +478,18 @@ def to_og1(
 
     global_attributes = global_attributes or {}
     deployment = deployment or {}
-    collisions = _DERIVED_GLOBALS.intersection(global_attributes)
+    # Only a real (non-null) value collides; a null is skipped later, so a legacy
+    # config_version 1 template that lists reserved keys as null (the old init wrote
+    # global_attributes: {project: null, program: null, ...}) still converts.
+    set_globals = {k for k, v in global_attributes.items() if not _is_empty(v)}
+    collisions = _DERIVED_GLOBALS.intersection(set_globals)
     if collisions:
         msg = (
             "global_attributes may not set converter-derived keys: "
             f"{sorted(collisions)}. Remove them from the mission config."
         )
         raise ValueError(msg)
-    structured = set(_DEPLOYMENT_GLOBALS).intersection(global_attributes)
+    structured = set(_DEPLOYMENT_GLOBALS).intersection(set_globals)
     if structured:
         msg = (
             "global_attributes may not set keys that have a structured home in the "
@@ -1174,7 +1178,7 @@ def update_dataset_attributes(
     ds: xr.Dataset,
     people: Sequence[dict] | None = None,
     institutions: Sequence[dict] | None = None,
-) -> dict[str, str]:
+) -> tuple[dict[str, object], dict[str, str]]:
     """Update the attributes of the dataset based on the provided attribute input.
 
     Processes contributor information, time attributes, and applies OG1

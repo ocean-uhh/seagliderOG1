@@ -147,35 +147,35 @@ The template ``init`` writes (fill the nulls before ``validate``):
    repair: false           # run repair_files on the basestation files (writes the source tree)
    keep_variables: null    # optional list of science variables to keep; null = all
 
-   platform:               # UPPER keys → variables, lower keys → attributes
-     PLATFORM_SERIAL_NUMBER: sg005   # required · → variable · from platform_id
-     PLATFORM_MODEL: University of Washington Seaglider M1 glider   # required · → variable
-     platform_model_vocabulary: null   # optional · → attribute on PLATFORM_MODEL
-     PLATFORM_DEPTH_RATING: 1000   # required · → variable · metres
-     PLATFORM_MAKER: University of Washington School of Oceanography   # required · → variable
-     platform_maker_vocabulary: null   # optional · → attribute on PLATFORM_MAKER
-     GLIDER_FIRMWARE_VERSION: null   # optional · → variable · from seaglider_software_version
-     LANDSTATION_VERSION: null   # optional · → variable · from base_station_version
-     WMO_IDENTIFIER: null   # optional · → variable · from wmo_identifier
-     PLATFORM_NAME: null   # optional · → variable
-     TELECOM_TYPE: null   # optional · → variable
-     TRACKING_SYSTEM: null   # optional · → variable
-     BATTERY_TYPE: null   # optional · → variable
-     BATTERY_PACK: null   # optional · → variable
+   platform:               # UPPER keys -> variables, lower keys -> attributes
+     PLATFORM_SERIAL_NUMBER: sg005   # required -> variable; from platform_id
+     PLATFORM_MODEL: University of Washington Seaglider M1 glider   # required -> variable
+     platform_model_vocabulary: null   # optional -> attribute on PLATFORM_MODEL
+     PLATFORM_DEPTH_RATING: 1000   # required -> variable; metres
+     PLATFORM_MAKER: University of Washington School of Oceanography   # required -> variable
+     platform_maker_vocabulary: null   # optional -> attribute on PLATFORM_MAKER
+     GLIDER_FIRMWARE_VERSION: null   # optional -> variable; from seaglider_software_version
+     LANDSTATION_VERSION: null   # optional -> variable; from base_station_version
+     WMO_IDENTIFIER: null   # optional -> variable; from wmo_identifier
+     PLATFORM_NAME: null   # optional -> variable
+     TELECOM_TYPE: null   # optional -> variable
+     TRACKING_SYSTEM: null   # optional -> variable
+     BATTERY_TYPE: null   # optional -> variable
+     BATTERY_PACK: null   # optional -> variable
 
-   deployment:             # each key → a global attribute; null = not written
-     id: null              # mandatory · → global attribute · overrides the derived id
-     site: null            # highly desirable · → global attribute
-     site_vocabulary: null # highly desirable · → global attribute
-     program: null         # highly desirable · → global attribute
-     program_vocabulary: null  # highly desirable · → global attribute
-     data_url: null        # highly desirable · → global attribute
-     doi: null             # highly desirable · → global attribute
-     project: null         # suggested · → global attribute
-     network: null         # suggested · → global attribute
-     comment: null         # suggested · → global attribute
-     license: null         # optional · → global attribute
-     acknowledgment: null  # optional · → global attribute
+   deployment:             # each key -> a global attribute; null = not written
+     id: null              # mandatory -> global attribute; overrides the derived id
+     site: null            # highly desirable -> global attribute
+     site_vocabulary: null # highly desirable -> global attribute
+     program: null         # highly desirable -> global attribute
+     program_vocabulary: null  # highly desirable -> global attribute
+     data_url: null        # highly desirable -> global attribute
+     doi: null             # highly desirable -> global attribute
+     project: null         # suggested -> global attribute
+     network: null         # suggested -> global attribute
+     comment: null         # suggested -> global attribute
+     license: null         # optional -> global attribute
+     acknowledgment: null  # optional -> global attribute
 
    global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above
 

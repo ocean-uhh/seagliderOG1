@@ -117,6 +117,8 @@ def run(args: argparse.Namespace) -> int:
             return 1
         source = str(pathlib.Path(args.from_dir).resolve())
 
-    out.write_text(_mission.render_template(platform, source=source))
+    # UTF-8 so the template's non-ASCII comment glyphs (e.g. the "→" destination
+    # markers) write on any platform, not just a UTF-8 locale.
+    out.write_text(_mission.render_template(platform, source=source), encoding="utf-8")
     print(f"wrote {out}")
     return 0
