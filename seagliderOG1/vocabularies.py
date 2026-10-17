@@ -15,10 +15,10 @@ Key Components:
 
 Configuration Files:
 
-- OG1_var_names.yaml: Variable name mappings
-- OG1_vocab_attrs.yaml: Variable attribute vocabularies
-- OG1_sensor_attrs.yaml: Sensor attribute definitions
-- OG1_global_attrs.yaml: Global attribute configurations
+- OG1_variable_names.yaml: Variable name mappings
+- OG1_variable_attributes.yaml: Variable attribute vocabularies
+- OG1_sensor_attributes.yaml: Sensor attribute definitions
+- OG1_global_attributes.yaml: Global attribute configurations
 
 Notes
 -----
@@ -43,7 +43,7 @@ CONFIG_DIR: pathlib.Path = script_dir / "config"
 config_dir = CONFIG_DIR
 
 # Dimension renaming: maps basestation dimension names to OG1 standard names
-dims_rename_dict = {"sg_data_point": "N_MEASUREMENTS"}
+DIMENSION_RENAMES = {"sg_data_point": "N_MEASUREMENTS"}
 
 # NERC W08 "SensorML Contact Section Terms": the controlled vocabulary the OG1 spec
 # cites for contributor_role and contributing_institutions_role (fetched from
@@ -71,6 +71,34 @@ ROLE_ALIASES = {
 # convention".
 MODE_SUFFIX = {"delayed": "delayed", "realtime": "R"}
 
+# Strings that mean "nothing was supplied" when a config or global-attribute value is
+# read: None renders as these, and they are the placeholders the old attr_mandatory
+# fill used to write. One definition so the converter and validate agree on what counts
+# as unset (a value here is never written to the output, and validate treats it as null).
+PLACEHOLDER_VALUES = frozenset({"", "None", "null", "null@null.com"})
+
+# OG1 deployment-identity globals the mission config sets through the structured
+# deployment: block (one key per global). Ordered as the OG1 manual's global-attribute
+# table lists them (the order the `required:` block carries): mandatory, then highly
+# desirable, then suggested; `license` and `acknowledgment` are ACDD globals with no
+# OG1-table position and trail the tiered ones. The single list read by
+# convert.to_og1 (precedence, collision checks), the validate deployment check, and
+# the init template (which reads each key's tier from REQUIRED_GLOBALS).
+DEPLOYMENT_GLOBALS = (
+    "id",
+    "site",
+    "site_vocabulary",
+    "program",
+    "program_vocabulary",
+    "data_url",
+    "doi",
+    "project",
+    "network",
+    "comment",
+    "license",
+    "acknowledgment",
+)
+
 
 class PlatformField(NamedTuple):
     """How one OG1 platform field is sourced and written.
@@ -88,7 +116,8 @@ class PlatformField(NamedTuple):
     kind : str
         How ``to_og1`` writes an unset field: ``"serial"`` names the
         output and raises when absent, ``"string"`` warns and writes ``"UNK"``,
-        ``"numeric"`` is omitted.
+        ``"numeric"`` is omitted, ``"optional_string"`` is omitted silently (an
+        optional platform variable the user may leave null).
 
     """
 
@@ -122,6 +151,16 @@ PLATFORM_FIELDS: dict[str, PlatformField] = {
         "string",
     ),
     "WMO_IDENTIFIER": PlatformField("wmo_identifier", str, False, "string"),
+    # Optional platform variables (OG1 manual, platform-variables table). Config-only,
+    # written only when the user supplies a value; the four with a controlled
+    # vocabulary carry its default URL as a <field>_vocabulary attribute (see
+    # OPTIONAL_PLATFORM_VARS in convert.py). PLATFORM_MAKER's vocabulary is the
+    # platform_maker_vocabulary attribute, handled alongside platform_model_vocabulary.
+    "PLATFORM_NAME": PlatformField(None, None, False, "optional_string"),
+    "TELECOM_TYPE": PlatformField(None, None, False, "optional_string"),
+    "TRACKING_SYSTEM": PlatformField(None, None, False, "optional_string"),
+    "BATTERY_TYPE": PlatformField(None, None, False, "optional_string"),
+    "BATTERY_PACK": PlatformField(None, None, False, "optional_string"),
 }
 
 
@@ -194,7 +233,7 @@ unit1_to_unit2 = {
 }
 
 # Variables to exclude from OG1 output (derived variables, duplicates, etc.)
-vars_to_remove = [
+VARIABLES_TO_DROP = [
     "dissolved_oxygen_sat",
     "depth",
     "eng_depth",
@@ -223,24 +262,24 @@ vars_to_remove = [
 ]
 
 # Variables to keep unchanged during conversion (currently empty)
-vars_as_is = []
+VARIABLES_AS_IS = []
 
 # --------------------------------
 # Variables + variable attributes
 # --------------------------------
 # Variable name mappings: basestation variable name -> OG1 standard name
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
-with (CONFIG_DIR / "OG1_var_names.yaml").open() as file:
+with (CONFIG_DIR / "OG1_variable_names.yaml").open() as file:
     standard_names = yaml.safe_load(file)
 
 # Variable attribute vocabularies for OG1 format
 # Reference: http://vocab.nerc.ac.uk/scheme/OG1/current/
-with (CONFIG_DIR / "OG1_vocab_attrs.yaml").open() as file:
+with (CONFIG_DIR / "OG1_variable_attributes.yaml").open() as file:
     vocab_attrs = yaml.safe_load(file)
 
 # Sensor attribute vocabularies for OG1 format
 # Reference: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/
-with (CONFIG_DIR / "OG1_sensor_attrs.yaml").open() as file:
+with (CONFIG_DIR / "OG1_sensor_attributes.yaml").open() as file:
     sensor_vocabs = yaml.safe_load(file)
 
 
@@ -250,7 +289,7 @@ with (CONFIG_DIR / "OG1_sensor_attrs.yaml").open() as file:
 
 
 # Preferred order for global attributes in OG1 files
-order_of_attr = [
+ATTRIBUTE_ORDER = [
     "title",  # OceanGliders trajectory file
     "id",  # sg015_20040920T000000_delayed
     "platform",  # sub-surface gliders
@@ -292,12 +331,17 @@ order_of_attr = [
     "start_date",  # datetime of glider deployment YYYYmmddTHHMMss
     "date_created",  # date of creation of this dataset YYYYmmddTHHMMss
     "featureType",  # trajectory
-    "Conventions",  # CF-1.10,OG-1.0
+    "Conventions",  # CF-1.10, ACDD-1.3, OG-1.0
     "date_modified",  # date of last modification of this dataset YYYYmmddTHHMMss
 ]
 
 # Global attribute configuration for OG1 conversion
 # Defines which attributes to keep, rename, or add during conversion
 # Compatible with base_station_version 2.8, nodc_template_version_v0.9
-with (CONFIG_DIR / "OG1_global_attrs.yaml").open() as file:
+with (CONFIG_DIR / "OG1_global_attributes.yaml").open() as file:
     global_attrs = yaml.safe_load(file)
+
+# OG1 global-attribute requirement tiers, keyed "mandatory" / "highly_desirable" /
+# "suggested"; each maps an attribute name to its filling source ("derived",
+# "constant" or "config"). Transcribed from the OG1 manual (see the file header).
+REQUIRED_GLOBALS: dict[str, dict[str, str]] = global_attrs["required"]

@@ -27,22 +27,22 @@ Defaults live in two places, neither of which is user configuration.
 
 Packaged YAML (``seagliderOG1/config/``), loaded at conversion time:
 
-* ``OG1_var_names.yaml`` — basestation → OG1 variable name mappings.
-* ``OG1_vocab_attrs.yaml`` — CF/OG1 variable attributes (``standard_name``, ``long_name``,
+* ``OG1_variable_names.yaml`` — basestation → OG1 variable name mappings.
+* ``OG1_variable_attributes.yaml`` — CF/OG1 variable attributes (``standard_name``, ``long_name``,
   ``units``).
-* ``OG1_sensor_attrs.yaml`` — sensor metadata.
-* ``OG1_global_attrs.yaml`` — global attribute templates (for example ``featureType``).
+* ``OG1_sensor_attributes.yaml`` — sensor metadata.
+* ``OG1_global_attributes.yaml`` — global attribute templates (for example ``featureType``).
 * ``institution_registry.yaml`` — EDMO codes for resolving institutions by name.
 
 Tables in ``vocabularies.py``:
 
-* ``dims_rename_dict`` — dimension renaming (``sg_data_point`` → ``N_MEASUREMENTS``).
+* ``DIMENSION_RENAMES`` — dimension renaming (``sg_data_point`` → ``N_MEASUREMENTS``).
 * ``MODE_SUFFIX`` — data mode to id suffix (``realtime`` → ``R``, ``delayed`` → ``delayed``).
 * ``PLATFORM_FIELDS`` — the OG1 platform fields with their source attribute, formatter and
   required flag.
 * ``preferred_units``, ``unit_str_format``, ``unit1_to_unit2`` — unit standardisation and the
   conversion factors.
-* ``vars_to_remove`` — basestation variables dropped from the OG1 output.
+* ``VARIABLES_TO_DROP`` — basestation variables dropped from the OG1 output.
 * ``ROLE_VOCABULARY``, ``ROLE_ALIASES`` — the W08 contributor roles and the accepted aliases.
 
 To change what the conversion writes, edit these — not a copy in ``mission.yaml``. The

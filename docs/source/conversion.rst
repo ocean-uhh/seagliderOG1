@@ -32,7 +32,7 @@ Data structure
 Variable names
 --------------
 
-Variable names are mapped to OG1 (full mapping in ``config/OG1_var_names.yaml``):
+Variable names are mapped to OG1 (full mapping in ``config/OG1_variable_names.yaml``):
 
 .. code-block:: text
 
@@ -52,7 +52,7 @@ Metadata added
 
 * **Sensors**: sensor information and calibration coefficients are catalogued from the
   basestation attributes and written as OG1 sensor variables.
-* **Global attributes**: CF and OG1 global attributes from ``config/OG1_global_attrs.yaml`` and
+* **Global attributes**: CF and OG1 global attributes from ``config/OG1_global_attributes.yaml`` and
   the mission configuration.
 * **QC variables**: where the basestation input carries a ``<name>_qc`` flag, it is carried
   through as the OG1 ``<NAME>_QC`` companion of the kept variable; variables with no input flag
@@ -86,10 +86,10 @@ directory, dive range, platform block, and the contributor and institution recor
 The package's own YAML files are not user settings; they hold the OG1 vocabularies and
 mappings:
 
-* ``OG1_var_names.yaml`` — variable name mappings;
-* ``OG1_vocab_attrs.yaml`` — CF variable attributes;
-* ``OG1_sensor_attrs.yaml`` — sensor metadata;
-* ``OG1_global_attrs.yaml`` — global attribute templates;
+* ``OG1_variable_names.yaml`` — variable name mappings;
+* ``OG1_variable_attributes.yaml`` — CF variable attributes;
+* ``OG1_sensor_attributes.yaml`` — sensor metadata;
+* ``OG1_global_attributes.yaml`` — global attribute templates;
 * ``institution_registry.yaml`` — EDMO codes for resolving institutions.
 
 OG1 compliance
@@ -101,7 +101,7 @@ Output files target:
 * `CF Conventions <http://cfconventions.org/>`_ (version 1.10)
 * `ACDD Conventions <https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery>`_
 
-The output carries ``featureType: trajectoryProfile`` (``config/OG1_global_attrs.yaml``).
+The output carries ``featureType: trajectory`` (``config/OG1_global_attributes.yaml``).
 
 Validation
 ----------

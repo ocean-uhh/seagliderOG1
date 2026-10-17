@@ -469,7 +469,7 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
 
 # OG1 canonical serialisation for time variables (CF seconds since the epoch, UTC).
 # Used by the time encoders here and by writers.write; keep in sync with the time
-# variable units declared in config/OG1_vocab_attrs.yaml.
+# variable units declared in config/OG1_variable_attributes.yaml.
 OG1_TIME_UNITS = "seconds since 1970-01-01T00:00:00Z"
 OG1_TIME_CALENDAR = "gregorian"
 

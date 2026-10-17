@@ -5,6 +5,7 @@ NetCDF files into OG1 (Ocean Gliders 1) format. It handles data processing,
 variable renaming, attribute assignments, and dataset standardization.
 """
 
+import json
 import logging
 import warnings
 from collections.abc import Mapping, Sequence
@@ -16,16 +17,17 @@ import xarray as xr
 from tqdm import tqdm
 
 from seagliderOG1 import _pipeline, contributors, tools, vocabularies
+from seagliderOG1.exceptions import MetadataError
 
-__all__ = ["to_og1", "name_mapping", "keep_variables"]
+__all__ = ["to_og1", "name_mapping", "keep_variables", "MetadataError"]
 
 _log = logging.getLogger(__name__)
 
 # Global attributes the converter derives from the data; the mission config may
-# not set these (a collision is an error, not a silent override either way).
+# not set these through global_attributes (a collision is an error). ``id`` is not
+# here: it is derived by default but may be overridden via the deployment: block.
 _DERIVED_GLOBALS = frozenset(
     {
-        "id",
         "time_coverage_start",
         "time_coverage_end",
         "geospatial_lat_min",
@@ -39,6 +41,13 @@ _DERIVED_GLOBALS = frozenset(
     }
 )
 
+# OG1 deployment-identity globals the mission config sets through the structured
+# deployment: block (vocabularies.DEPLOYMENT_GLOBALS). A global_attributes key
+# duplicating one of these is refused: the escape hatch is for everything else. ``id``
+# and ``comment`` also have a converter-derived default, so a deployment value for
+# them overrides with a warning naming both; the rest are config-only.
+_DEPLOYMENT_GLOBALS = vocabularies.DEPLOYMENT_GLOBALS
+
 # String platform fields, resolved in order config -> file -> "UNK", derived from
 # the one platform table in vocabularies (serial raises when absent, numeric fields
 # are omitted; only the string ones take the "UNK" fallback).
@@ -48,10 +57,61 @@ _PLATFORM_STRING_FIELDS = tuple(
     if spec.kind == "string"
 )
 
+# Config-only platform variables written only when the user supplies them (null is
+# omitted, never "UNK"). Each entry is (long_name, vocabulary-attribute-name or None,
+# default vocabulary URL or None), transcribed from the OG1 manual's platform-variable
+# table (OG1.0, v1.0.0). PLATFORM_MAKER's own vocabulary attribute is handled with
+# platform_model_vocabulary, not here.
+_VOCAB_BASE = (
+    "https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/"
+    "vocabularyCollection"
+)
+OPTIONAL_PLATFORM_VARS: dict[str, tuple[str, str | None, str | None]] = {
+    "PLATFORM_NAME": ("Local or nickname of the glider", None, None),
+    "TELECOM_TYPE": (
+        "types of telecommunication systems used by the glider, multiple telecom "
+        "type are separated by a comma",
+        "telecom_type_vocabulary",
+        f"{_VOCAB_BASE}/telecom_type.md",
+    ),
+    "TRACKING_SYSTEM": (
+        "type of tracking systems used by the glider, multiple tracking system are "
+        "separated by a comma",
+        "tracking_system_vocabulary",
+        f"{_VOCAB_BASE}/tracking_system.md",
+    ),
+    "BATTERY_TYPE": (
+        "type of the battery",
+        "battery_type_vocabulary",
+        f"{_VOCAB_BASE}/battery_type.md",
+    ),
+    "BATTERY_PACK": ("battery packaging", None, None),
+}
+
 
 def _is_empty(value: object) -> bool:
-    """Return True for a missing/placeholder value (None, "" or the string "None")."""
-    return value in (None, "", "None")
+    """Return True for a missing or placeholder value.
+
+    None, or a string that is empty or one of the placeholders the old
+    ``attr_mandatory`` fill wrote (``vocabularies.PLACEHOLDER_VALUES``: ``""``,
+    ``"None"``, ``"null"``, ``"null@null.com"``). One definition for platform fields,
+    deployment globals and the escape-hatch globals, so none of them can leak a
+    placeholder that another path would have dropped.
+
+    Parameters
+    ----------
+    value : object
+        The value to test.
+
+    Returns
+    -------
+    bool
+        True when the value counts as unset.
+
+    """
+    return value is None or (
+        isinstance(value, str) and value.strip() in vocabularies.PLACEHOLDER_VALUES
+    )
 
 
 def _resolve_platform(
@@ -120,7 +180,7 @@ def _resolve_platform(
         resolved[field] = value
 
     depth = platform.get("PLATFORM_DEPTH_RATING")
-    if depth not in (None, "", "None"):
+    if not _is_empty(depth):
         resolved["PLATFORM_DEPTH_RATING"] = depth
     else:
         warnings.warn(
@@ -130,9 +190,16 @@ def _resolve_platform(
             stacklevel=3,
         )
 
-    model_vocab = platform.get("platform_model_vocabulary")
-    if model_vocab not in (None, "", "None"):
-        resolved["platform_model_vocabulary"] = model_vocab
+    for field in ("platform_model_vocabulary", "platform_maker_vocabulary"):
+        vocab = platform.get(field)
+        if not _is_empty(vocab):
+            resolved[field] = vocab
+
+    # Optional platform variables: written only when the user supplies them.
+    for field in OPTIONAL_PLATFORM_VARS:
+        value = platform.get(field)
+        if not _is_empty(value):
+            resolved[field] = value
 
     return resolved
 
@@ -195,29 +262,166 @@ def keep_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
     return ds[sorted(kept)]
 
 
+def _apply_deployment(
+    ds_og1: xr.Dataset,
+    deployment: Mapping[str, object],
+    sources: dict[str, str],
+) -> None:
+    """Write the deployment: block globals, overriding a derived value with a warning.
+
+    Mission config takes precedence over a converter-derived global, so a deployment
+    value that differs from one already on the dataset (``id`` and ``comment`` are the
+    two with a derived default) is applied, with a warning naming both values. Null
+    and placeholder values are skipped. Called after the derived globals are set.
+
+    Filling a global that is absent or empty is not an override (there is no derived
+    value to replace), so it is applied silently; only replacing a present, differing
+    value warns.
+
+    Parameters
+    ----------
+    ds_og1 : xarray.Dataset
+        The assembled OG1 dataset, modified in place.
+    deployment : collections.abc.Mapping
+        The mission config ``deployment`` block.
+    sources : dict of str to str
+        The conversion-ledger source map, updated in place: a key is ``overridden``
+        when it replaced a value the conversion had already set, else ``mission``.
+
+    """
+    for key, value in deployment.items():
+        if _is_empty(value):
+            continue
+        existing = ds_og1.attrs.get(key)
+        replaced = existing is not None and str(existing) != str(value)
+        if replaced:
+            warnings.warn(
+                f"deployment.{key} overrides the converter value {existing!r} with "
+                f"{value!r}.",
+                stacklevel=2,
+            )
+        ds_og1.attrs[key] = value
+        sources[key] = "overridden" if replaced else "mission"
+
+
+def _check_required_globals(attrs: Mapping[str, object]) -> None:
+    """Fail loud on a missing mandatory global; log missing highly-desirable ones.
+
+    Runs after the three metadata sources are merged. Every OG1-mandatory global is
+    a package constant or derived from the data (none come from the user), so a gap
+    is a converter regression, not a config omission, and raises ``MetadataError``.
+    Highly-desirable globals the user did not supply are reported at INFO, not raised:
+    seagliderOG1 lets a user specify OG1 metadata but does not enforce the format;
+    the external ``cc-plugin-og`` checker is where completeness is judged.
+
+    Parameters
+    ----------
+    attrs : collections.abc.Mapping
+        The assembled global attributes of the converted dataset.
+
+    Raises
+    ------
+    MetadataError
+        If any mandatory global attribute is missing or a placeholder.
+
+    """
+    gaps = [
+        name
+        for name in vocabularies.REQUIRED_GLOBALS["mandatory"]
+        if _is_empty(attrs.get(name))
+    ]
+    if gaps:
+        msg = (
+            f"OG1-mandatory global attributes missing after conversion: {gaps}. "
+            "These are all package constants or derived from the data, so this is a "
+            "converter problem rather than a mission-config omission."
+        )
+        raise MetadataError(msg)
+    unset_desirable = [
+        name
+        for name in vocabularies.REQUIRED_GLOBALS["highly_desirable"]
+        if _is_empty(attrs.get(name))
+    ]
+    if unset_desirable:
+        _log.info(
+            "OG1 highly-desirable global attributes are unset: %s. Set them in the "
+            "mission config to improve discoverability.",
+            unset_desirable,
+        )
+
+
+# Conversion-ledger categories, in report order. A written global belongs to exactly
+# one; "mixed" holds the contributor/institution attributes, whose value blends the
+# mission config and the files, so the ledger names them without guessing one source.
+_LEDGER_CATEGORIES = (
+    "basestation",
+    "renamed",
+    "derived",
+    "package",
+    "mission",
+    "overridden",
+    "mixed",
+)
+
+
+def _attribute_source_ledger(
+    attrs: Mapping[str, object], sources: Mapping[str, str]
+) -> str:
+    """Return the ``conversion_attribute_sources`` JSON global (names only).
+
+    One category per written global, from the source map the conversion built: which
+    globals the files supplied (``basestation``), which were renamed from a file
+    attribute (``renamed``), computed by the converter (``derived``), package constants
+    (``package``), from ``mission.yaml`` (``mission``), a mission value that replaced a
+    converter one (``overridden``), or a blend of config and files (``mixed``). Values
+    are not recorded — they are in the file already.
+
+    Parameters
+    ----------
+    attrs : collections.abc.Mapping
+        The final global attributes (every one is categorised).
+    sources : collections.abc.Mapping
+        Each attribute name mapped to its category.
+
+    Returns
+    -------
+    str
+        A JSON object of ``category -> sorted list of attribute names``, categories in
+        report order, omitting any category with no members.
+
+    """
+    ledger: dict[str, list[str]] = {category: [] for category in _LEDGER_CATEGORIES}
+    for name in attrs:
+        if name == "conversion_attribute_sources":
+            continue
+        ledger[sources[name]].append(name)
+    return json.dumps(
+        {category: sorted(names) for category, names in ledger.items() if names}
+    )
+
+
 def to_og1(
     list_of_datasets: Sequence[xr.Dataset],
     *,
     contributors: Sequence[dict] | None = None,
     institutions: Sequence[dict] | None = None,
     platform: dict[str, object] | None = None,
+    deployment: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
     mode: str = "delayed",
 ) -> xr.Dataset:
     """Convert Seaglider basestation datasets to OG1 format.
 
-    Processes a list of xarray datasets, converts them to OG1 format,
-    concatenates the datasets, sorts by time, and applies attributes. Main conversion function that
-    processes basestation datasets, applies OG1 standardization, concatenates multiple datasets,
-    and adds global attributes.
+    Maps and standardises each dataset, concatenates them on a shared time axis,
+    sorts by time, and applies platform, deployment and contributor attributes.
 
     Parameters
     ----------
     list_of_datasets : sequence of xarray.Dataset
-        A list of xarray datasets in basestation format, expected in dive (time)
-        order: ``start_date``, ``TRAJECTORY`` and the output ``id`` are taken from
-        the first dataset, so out-of-order input can disagree with
-        ``time_coverage_start``.
+        A list of xarray datasets in basestation format. The datasets are
+        concatenated and sorted by time, so the input order does not matter:
+        ``start_date``, ``TRAJECTORY`` and the output ``id`` are seeded from the
+        earliest measurement time and so always agree with ``time_coverage_start``.
     contributors : sequence of dict, optional
         Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)
         merged with those already on the files. When None, contributors come from
@@ -231,9 +435,15 @@ def to_og1(
         ``GLIDER_FIRMWARE_VERSION``, ``LANDSTATION_VERSION``, ``WMO_IDENTIFIER``,
         ``platform_model_vocabulary``). Config values override file-derived ones.
         Default is None.
+    deployment : dict of str to object, optional
+        The deployment-identity globals from the mission config ``deployment`` block
+        (``id``, ``program``, ``license``, ``doi``, ``site``, ...). Written as global
+        attributes; a value for ``id`` or ``comment`` overrides the converter-derived
+        default with a warning. Nulls skipped. Default is None.
     global_attributes : dict of str to object, optional
         Global attributes written verbatim into the output (nulls skipped). A key
-        that collides with a converter-derived global raises. Default is None.
+        that collides with a converter-derived global, or with a key that has a
+        structured home in ``deployment``, raises. Default is None.
     mode : str, optional
         Data mode, ``"delayed"`` (default) or ``"realtime"``. Sets the ``id``
         suffix (``delayed`` or ``R``) and so the output filename, per the OG1
@@ -243,6 +453,16 @@ def to_og1(
     -------
     xarray.Dataset
         The concatenated and processed dataset in OG1 format.
+
+    Raises
+    ------
+    MetadataError
+        If an OG1-mandatory global attribute is absent after all metadata sources
+        are merged (a converter problem: the mandatory set is derived or constant).
+    ValueError
+        If ``global_attributes`` sets a converter-derived or deployment-home key, if
+        ``deployment`` has an unknown key, if no datasets are valid, or if ``mode`` is
+        not ``"delayed"``/``"realtime"``.
 
     """
     if isinstance(list_of_datasets, xr.Dataset):
@@ -257,11 +477,31 @@ def to_og1(
         raise TypeError(msg)
 
     global_attributes = global_attributes or {}
-    collisions = _DERIVED_GLOBALS.intersection(global_attributes)
+    deployment = deployment or {}
+    # Only a real (non-null) value collides; a null is skipped later, so a legacy
+    # config_version 1 template that lists reserved keys as null (the old init wrote
+    # global_attributes: {project: null, program: null, ...}) still converts.
+    set_globals = {k for k, v in global_attributes.items() if not _is_empty(v)}
+    collisions = _DERIVED_GLOBALS.intersection(set_globals)
     if collisions:
         msg = (
             "global_attributes may not set converter-derived keys: "
             f"{sorted(collisions)}. Remove them from the mission config."
+        )
+        raise ValueError(msg)
+    structured = set(_DEPLOYMENT_GLOBALS).intersection(set_globals)
+    if structured:
+        msg = (
+            "global_attributes may not set keys that have a structured home in the "
+            f"deployment: block: {sorted(structured)}. Move them under deployment:."
+        )
+        raise ValueError(msg)
+    unknown_deployment = set(deployment) - set(_DEPLOYMENT_GLOBALS)
+    if unknown_deployment:
+        msg = (
+            f"deployment: has unknown keys: {sorted(unknown_deployment)}. Allowed "
+            f"keys are {list(_DEPLOYMENT_GLOBALS)}; put anything else under "
+            "global_attributes:."
         )
         raise ValueError(msg)
 
@@ -327,18 +567,25 @@ def to_og1(
     ds_og1 = _pipeline.add_sensor_to_dataset(ds_og1, sensor_dict, og1_mapping)
 
     # Apply attributes
-    ordered_attributes = update_dataset_attributes(
+    ordered_attributes, attribute_sources = update_dataset_attributes(
         list_of_datasets[0], people=contributors, institutions=institutions
     )
     for key, value in ordered_attributes.items():
-        if value is None:
-            warnings.warn(
-                f"{key} is missing; writing an empty string. Set it in the mission "
-                "config to populate it.",
-                stacklevel=2,
-            )
-            value = ""
-        ds_og1.attrs[key] = value
+        # A null or wholly-empty attribute is never written (not as an empty string,
+        # not as the word "null"): an absent global is absent. A multi-value string
+        # with an empty slot (e.g. ", PI" for a role-less first contributor) is kept.
+        # _check_required_globals reports any mandatory gap before the return.
+        if not _is_empty(value):
+            ds_og1.attrs[key] = value
+
+    # start_date names TRAJECTORY and the output id, so it must be the deployment
+    # time, not whichever dive happened to be first in the input sequence. ds_og1 is
+    # already sorted by TIME, so TIME[0] is the earliest measurement; seeding
+    # start_date from it keeps start_date, TRAJECTORY and id in agreement with
+    # time_coverage_start no matter what order the datasets were passed in.
+    ds_og1.attrs["start_date"] = _pipeline._clean_time_string(
+        np.datetime_as_string(ds_og1["TIME"][0], unit="s")
+    )
 
     ### Add information needed/used for hydrodynamic (flight) model (hdm)
     _log.info("Collecting scalar parameters to the dataset ...")
@@ -371,10 +618,24 @@ def to_og1(
         ds_og1["PLATFORM_MODEL"].attrs["platform_model_vocabulary"] = platform_fields[
             "platform_model_vocabulary"
         ]
+    if "platform_maker_vocabulary" in platform_fields:
+        ds_og1["PLATFORM_MAKER"].attrs["platform_maker_vocabulary"] = platform_fields[
+            "platform_maker_vocabulary"
+        ]
 
     if "PLATFORM_DEPTH_RATING" in platform_fields:
         ds_og1["PLATFORM_DEPTH_RATING"] = platform_fields["PLATFORM_DEPTH_RATING"]
         ds_og1["PLATFORM_DEPTH_RATING"].attrs["long_name"] = "maximum rated depth"
+
+    # Optional platform variables: written only when the config supplied a value,
+    # each with its OG1 long_name and (where defined) its vocabulary attribute.
+    for field, (long_name, vocab_attr, vocab_url) in OPTIONAL_PLATFORM_VARS.items():
+        if field not in platform_fields:
+            continue
+        ds_og1[field] = platform_fields[field]
+        ds_og1[field].attrs["long_name"] = long_name
+        if vocab_attr is not None:
+            ds_og1[field].attrs[vocab_attr] = vocab_url
 
     # Trajectory
     ds_og1["TRAJECTORY"] = (
@@ -447,11 +708,32 @@ def to_og1(
     )
     ds_og1.attrs["id"] = id
 
-    # Write config global attributes verbatim (nulls skipped). Collisions with
-    # converter-derived keys were already rejected at the top of this function.
+    # The globals the converter computed here (geospatial, time coverage, id, the
+    # earliest-TIME start_date) are "derived" in the conversion ledger.
+    for key in (*_DERIVED_GLOBALS, "id"):
+        if key in ds_og1.attrs:
+            attribute_sources[key] = "derived"
+
+    # Mission config is the last word: the structured deployment block (which may
+    # override the derived id or comment, with a warning) then the verbatim escape
+    # hatch. Both skip null and placeholder values, and record their source.
+    _apply_deployment(ds_og1, deployment, attribute_sources)
     for key, value in global_attributes.items():
-        if value is not None:
+        if not _is_empty(value):
+            attribute_sources[key] = "overridden" if key in ds_og1.attrs else "mission"
             ds_og1.attrs[key] = value
+
+    # Every metadata source is now merged: fail loud on a missing mandatory global.
+    _check_required_globals(ds_og1.attrs)
+
+    # Write down which source each global came from (names only; values are in the
+    # file). Every written global is categorised; a converter-set global not otherwise
+    # attributed is "derived".
+    for key in ds_og1.attrs:
+        attribute_sources.setdefault(key, "derived")
+    ds_og1.attrs["conversion_attribute_sources"] = _attribute_source_ledger(
+        ds_og1.attrs, attribute_sources
+    )
 
     # Re-fix QC flags the concat re-promoted to float, then optimise dtypes once on the
     # fully-assembled dataset (coordinates and post-concat variables included).
@@ -581,8 +863,10 @@ def process_dataset(
     # Assign DEPTH_Z to the dataset where positive is up.
     ds_new = tools.add_depth(ds_new)
 
-    vars_to_remove = vocabularies.vars_to_remove
-    vars_present_to_remove = [var for var in vars_to_remove if var in ds_new.variables]
+    VARIABLES_TO_DROP = vocabularies.VARIABLES_TO_DROP
+    vars_present_to_remove = [
+        var for var in VARIABLES_TO_DROP if var in ds_new.variables
+    ]
 
     # Drop them
     ds_new = ds_new.drop_vars(vars_present_to_remove)
@@ -682,10 +966,10 @@ def standardise_og1(
 
     # Rename dimensions without changing the shapes of their variables.
     dimension_renames = {
-        dimension: vocabularies.dims_rename_dict[dimension]
+        dimension: vocabularies.DIMENSION_RENAMES[dimension]
         for dimension in dsa.dims
-        if dimension in vocabularies.dims_rename_dict
-        and vocabularies.dims_rename_dict[dimension] != dimension
+        if dimension in vocabularies.DIMENSION_RENAMES
+        and vocabularies.DIMENSION_RENAMES[dimension] != dimension
     }
 
     if dimension_renames:
@@ -845,7 +1129,7 @@ def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
 
     """
     # Set new dimension name
-    newdim = vocabularies.dims_rename_dict["sg_data_point"]
+    newdim = vocabularies.DIMENSION_RENAMES["sg_data_point"]
 
     # Create a new dataset with GPS information
     gps_ds = xr.Dataset(
@@ -894,7 +1178,7 @@ def update_dataset_attributes(
     ds: xr.Dataset,
     people: Sequence[dict] | None = None,
     institutions: Sequence[dict] | None = None,
-) -> dict[str, str]:
+) -> tuple[dict[str, object], dict[str, str]]:
     """Update the attributes of the dataset based on the provided attribute input.
 
     Processes contributor information, time attributes, and applies OG1
@@ -911,15 +1195,17 @@ def update_dataset_attributes(
 
     Returns
     -------
-    dict
-        A dictionary of ordered attributes with updated values.
+    ordered_attributes : dict
+        The ordered attributes with updated values.
+    sources : dict of str to str
+        Each attribute name mapped to its source for the conversion ledger
+        (``package``, ``mixed``, ``derived``, ``renamed`` or ``basestation``).
 
     """
     attr_as_is = vocabularies.global_attrs["attr_as_is"]
     attr_to_add = vocabularies.global_attrs["attr_to_add"]
     attr_to_rename = vocabularies.global_attrs["attr_to_rename"]
-    order_of_attr = vocabularies.order_of_attr
-    mandatory_attr = vocabularies.global_attrs["attr_mandatory"]
+    ATTRIBUTE_ORDER = vocabularies.ATTRIBUTE_ORDER
 
     # Extract creators and contributors and institution, then reformulate strings
     contrib_attrs = get_contributors(ds, people=people, institutions=institutions)
@@ -933,7 +1219,8 @@ def update_dataset_attributes(
     # Attributes to keep
     keep_attrs = extract_attr_to_keep(ds, attr_as_is)
 
-    # Combine all attributes
+    # Combine all attributes (last-writer-wins). attr_to_add is applied first and
+    # last, so a package constant wins over a file/contributor value of the same name.
     new_attributes = {
         **attr_to_add,
         **contrib_attrs,
@@ -943,22 +1230,32 @@ def update_dataset_attributes(
         **attr_to_add,
     }
 
-    # Add mandatory attributes if they are not already present
-    for attr in mandatory_attr:
-        if attr not in new_attributes:
-            new_attributes[attr] = mandatory_attr[attr]
+    # Record each attribute's source for the conversion ledger, in the same
+    # last-writer-wins order. Contributor/institution attributes are a blend of the
+    # mission config and the files, so they are "mixed", never guessed at one source.
+    sources: dict[str, str] = {}
+    for group, label in (
+        (attr_to_add, "package"),
+        (contrib_attrs, "mixed"),
+        (time_attrs, "derived"),
+        (renamed_attrs, "renamed"),
+        (keep_attrs, "basestation"),
+        (attr_to_add, "package"),
+    ):
+        for key in group:
+            sources[key] = label
 
-    # Reorder attributes according to vocabularies.order_of_attr
+    # Reorder attributes according to vocabularies.ATTRIBUTE_ORDER
     ordered_attributes = {
-        attr: new_attributes[attr] for attr in order_of_attr if attr in new_attributes
+        attr: new_attributes[attr] for attr in ATTRIBUTE_ORDER if attr in new_attributes
     }
 
-    # Add any remaining attributes that were not in the order_of_attr list
+    # Add any remaining attributes that were not in the ATTRIBUTE_ORDER list
     for attr in new_attributes:
         if attr not in ordered_attributes:
             ordered_attributes[attr] = new_attributes[attr]
 
-    return ordered_attributes
+    return ordered_attributes, sources
 
 
 def get_contributors(
@@ -1079,7 +1376,6 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
     time_attr_list = [
         "time_coverage_start",
         "time_coverage_end",
-        "date_created",
         "start_time",
     ]
     for attr in time_attr_list:
@@ -1097,6 +1393,11 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
         time_attrs["start_date"] = time_attrs.pop("start_time")
     if "start_date" not in time_attrs:
         time_attrs["start_date"] = time_attrs["time_coverage_start"]
+
+    # date_created (ACDD) is the creation date of *this* OG1 file, so it is the
+    # conversion time, not whatever the basestation file recorded. A basestation
+    # creation date, if wanted, belongs in history (a later branch), not here.
+    time_attrs["date_created"] = time_attrs["date_modified"]
 
     return time_attrs
 

@@ -21,6 +21,7 @@ KNOWN_KEYS = frozenset(
         "repair",
         "keep_variables",
         "platform",
+        "deployment",
         "global_attributes",
         "contributors",
         "institutions",
@@ -72,7 +73,7 @@ def load_config(config_path: pathlib.Path) -> dict:
         otherwise pass ``safe_load`` and fail deep in validation or conversion.
 
     """
-    data = yaml.safe_load(config_path.read_text())
+    data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         msg = "configuration root is not a mapping."
         # Malformed config input, not a programming type error; ValueError matches
@@ -108,6 +109,126 @@ def _scalar(value: object) -> str:
     return text
 
 
+def _deployment_template_lines() -> list[str]:
+    """Build the ``deployment:`` template block, tier comments from REQUIRED_GLOBALS.
+
+    One source for the tiers: each key's ``(mandatory)`` / ``(highly desirable)`` /
+    ``(suggested)`` comment is read from ``vocabularies.REQUIRED_GLOBALS`` so the
+    template cannot drift from the manual-sourced table. ``license`` and
+    ``acknowledgment`` are ACDD globals with no OG1 tier and are marked ``(optional)``.
+
+    Returns
+    -------
+    list of str
+        The ``deployment:`` header line and one ``key: null`` line per global.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    label = {
+        "mandatory": "mandatory",
+        "highly_desirable": "highly desirable",
+        "suggested": "suggested",
+    }
+    tier_of = {
+        name: text
+        for tier, text in label.items()
+        for name in vocabularies.REQUIRED_GLOBALS.get(tier, {})
+    }
+    hints = {
+        "id": "overrides the derived <serial>_<start>_<mode>; 'init --from' proposes it",
+        "comment": "overrides the comment derived from the file's history",
+        "license": "e.g. CC-BY-4.0",
+        "doi": "e.g. https://doi.org/...",
+        "data_url": "where the OG1 file is hosted",
+    }
+    lines = [
+        "deployment:             # OG1 deployment identity; one key per global, "
+        "null = not written"
+    ]
+    for key in vocabularies.DEPLOYMENT_GLOBALS:
+        hint = hints.get(key)
+        comment = f"{tier_of.get(key, 'optional')} -> global attribute" + (
+            f"; {hint}" if hint else ""
+        )
+        lines.append(f"  {key}: null   # {comment}")
+    return lines
+
+
+def _platform_template_lines(plat: dict[str, object]) -> list[str]:
+    """Build the ``platform:`` block, destination comments from PLATFORM_FIELDS.
+
+    Each line's comment says where the key goes — ``-> variable`` for an UPPER platform
+    field, ``-> attribute on <VARIABLE>`` for a lower ``_vocabulary`` key — read from
+    ``vocabularies.PLATFORM_FIELDS`` (which knows each field's kind and whether it is
+    required) so the template cannot drift from the code.
+
+    Parameters
+    ----------
+    plat : dict of str to object
+        Platform values to render (template defaults merged with any overrides).
+
+    Returns
+    -------
+    list of str
+        The ``platform:`` header line and one line per field.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    hints = {
+        "PLATFORM_SERIAL_NUMBER": "from platform_id; a serial or a local nickname",
+        "PLATFORM_MODEL": "e.g. University of Washington Seaglider M1 glider",
+        "platform_model_vocabulary": "e.g. https://vocab.nerc.ac.uk/collection/B76/current/B7600024/",
+        "PLATFORM_DEPTH_RATING": "e.g. 1000 (metres)",
+        "PLATFORM_MAKER": "e.g. University of Washington School of Oceanography",
+        "platform_maker_vocabulary": "e.g. http://vocab.nerc.ac.uk/collection/B75/current/",
+        "GLIDER_FIRMWARE_VERSION": "from seaglider_software_version",
+        "LANDSTATION_VERSION": "from base_station_version",
+        "WMO_IDENTIFIER": "from wmo_identifier",
+        "PLATFORM_NAME": "local or nickname of the glider",
+        "TELECOM_TYPE": "e.g. Iridium (comma-separated for several)",
+        "TRACKING_SYSTEM": "e.g. ARGOS, GPS",
+        "BATTERY_TYPE": "see the OG1 battery_type vocabulary",
+        "BATTERY_PACK": "battery packaging",
+    }
+    # The two _vocabulary keys are attributes on their parent variable, not variables.
+    vocab_parents = {
+        "platform_model_vocabulary": "PLATFORM_MODEL",
+        "platform_maker_vocabulary": "PLATFORM_MAKER",
+    }
+    # Template order: each _vocabulary key follows its parent variable.
+    order = [
+        "PLATFORM_SERIAL_NUMBER",
+        "PLATFORM_MODEL",
+        "platform_model_vocabulary",
+        "PLATFORM_DEPTH_RATING",
+        "PLATFORM_MAKER",
+        "platform_maker_vocabulary",
+        "GLIDER_FIRMWARE_VERSION",
+        "LANDSTATION_VERSION",
+        "WMO_IDENTIFIER",
+        "PLATFORM_NAME",
+        "TELECOM_TYPE",
+        "TRACKING_SYSTEM",
+        "BATTERY_TYPE",
+        "BATTERY_PACK",
+    ]
+    lines = [
+        "platform:               # 'init --from' fills these; fill any null before validate"
+    ]
+    for key in order:
+        if key in vocab_parents:
+            req, dest, value = "optional", f"attribute on {vocab_parents[key]}", "null"
+        else:
+            spec = vocabularies.PLATFORM_FIELDS[key]
+            req = "required" if spec.required else "optional"
+            dest, value = "variable", _scalar(plat[key])
+        comment = f"{req} -> {dest}; {hints[key]}"
+        lines.append(f"  {key}: {value}   # {comment}")
+    return lines
+
+
 def render_template(
     platform: dict[str, object] | None = None, source: str | None = None
 ) -> str:
@@ -133,11 +254,13 @@ def render_template(
     plat = {**dict.fromkeys(vocabularies.PLATFORM_FIELDS), **(platform or {})}
     lines = [
         "# seagliderOG1 mission configuration.",
+        "# UPPER keys become OG1 variables, lower keys become attributes or globals;",
+        "# the comment on each line says which. You fill the values.",
         "# Paths are resolved relative to this file. Edit the values, then:",
         "#   seagliderOG1 validate this_file.yaml",
         "#   seagliderOG1 process  this_file.yaml",
         "",
-        "config_version: 1",
+        "config_version: 2",
         "",
         f"source: {_scalar(source)}            # mission dir (p*.nc inside) or a root of SN/DATE dirs",
         "output_dir: ./          # where OG1 files are written",
@@ -146,20 +269,11 @@ def render_template(
         "repair: false           # run repair_files on the basestation files (writes the source tree)",
         "keep_variables: null    # optional list of science variables to keep; null = all",
         "",
-        "platform:               # 'init --from' fills these; fill any null before validate",
-        f"  PLATFORM_SERIAL_NUMBER: {_scalar(plat['PLATFORM_SERIAL_NUMBER'])}   # from platform_id; a serial or a local nickname",
-        f"  PLATFORM_MODEL: {_scalar(plat['PLATFORM_MODEL'])}   # e.g. University of Washington Seaglider M1 glider",
-        "  platform_model_vocabulary: null   # e.g. https://vocab.nerc.ac.uk/collection/B76/current/B7600024/ (NERC B76; B7600024 = Seaglider)",
-        f"  PLATFORM_DEPTH_RATING: {_scalar(plat['PLATFORM_DEPTH_RATING'])}   # e.g. 1000 (metres)",
-        f"  PLATFORM_MAKER: {_scalar(plat['PLATFORM_MAKER'])}   # e.g. University of Washington School of Oceanography",
-        f"  GLIDER_FIRMWARE_VERSION: {_scalar(plat['GLIDER_FIRMWARE_VERSION'])}   # from seaglider_software_version",
-        f"  LANDSTATION_VERSION: {_scalar(plat['LANDSTATION_VERSION'])}   # from base_station_version",
-        f"  WMO_IDENTIFIER: {_scalar(plat['WMO_IDENTIFIER'])}   # from wmo_identifier",
+        *_platform_template_lines(plat),
         "",
-        "global_attributes:      # written verbatim into the OG1 file; add any OG1 global here",
-        "  project: null         # (tier: suggested)",
-        "  program: null         # (tier: suggested)",
-        "  title: null           # (tier: suggested)",
+        *_deployment_template_lines(),
+        "",
+        "global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above",
         "",
         "contributors:           # one entry per person per role; replace this example",
         "  # role is a W08 term: Manufacturer, Owner, Operator, PI, Technical Coordinator,",
@@ -409,6 +523,60 @@ def _validate_source(
     return issues
 
 
+def _is_placeholder(value: object) -> bool:
+    """Return True for a null or placeholder config value.
+
+    Matches the converter's unset test (``vocabularies.PLACEHOLDER_VALUES``) so
+    ``validate`` and ``to_og1`` agree on what counts as missing — a value the
+    converter would drop (``""``, ``"null"``, ``"null@null.com"``) is treated as unset
+    here too, not reported as present.
+
+    Parameters
+    ----------
+    value : object
+        The value to test.
+
+    Returns
+    -------
+    bool
+        True when the value counts as unset.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    return value is None or (
+        isinstance(value, str) and value.strip() in vocabularies.PLACEHOLDER_VALUES
+    )
+
+
+def _case_hint(key: str, known: object) -> str | None:
+    """Return the correctly-cased known key a mis-cased ``key`` matches, or None.
+
+    OG1 keys are case-sensitive (UPPER names become variables, lower names become
+    attributes or globals), and a mis-cased key would otherwise be silently ignored.
+    This lets ``validate`` name the exact spelling instead of a bare "unknown key".
+
+    Parameters
+    ----------
+    key : str
+        The user's key.
+    known : iterable of str
+        The valid keys.
+
+    Returns
+    -------
+    str or None
+        The valid key that ``key`` matches case-insensitively (but not exactly), or
+        None when there is no such match.
+
+    """
+    lowered = key.lower() if isinstance(key, str) else key
+    for candidate in known:
+        if candidate != key and candidate.lower() == lowered:
+            return candidate
+    return None
+
+
 def _validate_platform(platform: object) -> list[ValidationIssue]:
     """ERROR on a null required platform field when a platform block is present.
 
@@ -435,13 +603,128 @@ def _validate_platform(platform: object) -> list[ValidationIssue]:
     required = [f for f, spec in vocabularies.PLATFORM_FIELDS.items() if spec.required]
     issues: list[ValidationIssue] = []
     for field in required:
-        if platform.get(field) in (None, "", "None"):
+        if _is_placeholder(platform.get(field)):
             issues.append(
                 ValidationIssue(
                     "ERROR",
                     f"platform.{field} is null; fill it (see the template '# e.g.' "
                     "comments) or run 'init --from DIR'.",
                     f"platform.{field}",
+                )
+            )
+    # A mis-cased platform key (e.g. platform_model for PLATFORM_MODEL) is a loud
+    # ERROR naming the exact spelling, not a silently-ignored key.
+    known = (
+        *vocabularies.PLATFORM_FIELDS,
+        "platform_model_vocabulary",
+        "platform_maker_vocabulary",
+    )
+    for key in platform:
+        hint = _case_hint(key, known)
+        if hint is not None:
+            issues.append(
+                ValidationIssue(
+                    "ERROR",
+                    f"platform.{key} is not a key; the OG1 key is {hint!r} "
+                    "(keys are case-sensitive).",
+                    f"platform.{key}",
+                )
+            )
+    return issues
+
+
+def _validate_deployment(deployment: object) -> list[ValidationIssue]:
+    """ERROR on a non-mapping deployment block or an unknown deployment key.
+
+    seagliderOG1 does not enforce OG1 completeness (the external cc-plugin-og checker
+    does), so a null identity global is not an error here; a typo'd key is, because it
+    would otherwise be silently ignored.
+
+    Parameters
+    ----------
+    deployment : object
+        The value of the ``deployment`` key.
+
+    Returns
+    -------
+    list of ValidationIssue
+        Problems found; empty when the block is absent or well-formed.
+
+    """
+    if deployment in (None, {}, ""):
+        return []
+    if not isinstance(deployment, dict):
+        return [ValidationIssue("ERROR", "deployment must be a mapping.", "deployment")]
+    from seagliderOG1 import vocabularies
+
+    allowed = set(vocabularies.DEPLOYMENT_GLOBALS)
+    issues: list[ValidationIssue] = []
+    for key in deployment:
+        if key in allowed:
+            continue
+        hint = _case_hint(key, vocabularies.DEPLOYMENT_GLOBALS)
+        if hint is not None:
+            message = (
+                f"deployment.{key} is not a key; the OG1 global is {hint!r} "
+                "(keys are case-sensitive)."
+            )
+        else:
+            message = (
+                f"deployment.{key} is not an OG1 deployment global (allowed: "
+                f"{list(vocabularies.DEPLOYMENT_GLOBALS)}); put other globals under "
+                "global_attributes."
+            )
+        issues.append(ValidationIssue("ERROR", message, f"deployment.{key}"))
+    return issues
+
+
+def _validate_highly_desirable(data: dict[str, object]) -> list[ValidationIssue]:
+    """WARN for each OG1 highly-desirable global the config leaves unset.
+
+    Advisory, not an error: seagliderOG1 does not enforce OG1 completeness. Checks the
+    config-supplied highly-desirable globals that have a home validate can read without
+    the files — the ``deployment`` keys and ``internal_mission_identifier`` in
+    ``global_attributes``. Running ``validate`` on an unedited template surfaces these
+    as the template telling the user what to fill. The derived and package-constant
+    highly-desirable globals (``time_coverage_*``, ``institution``, ``rtqc_method_doi``)
+    are always produced and not checked; ``contributor_id`` and
+    ``contributing_institutions_vocabulary`` come from the contributor/institution
+    records, validated there.
+
+    Parameters
+    ----------
+    data : dict of str to object
+        The parsed configuration.
+
+    Returns
+    -------
+    list of ValidationIssue
+        One WARNING per unset config-supplied highly-desirable global.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    deployment = data.get("deployment")
+    deployment = deployment if isinstance(deployment, dict) else {}
+    extra = data.get("global_attributes")
+    extra = extra if isinstance(extra, dict) else {}
+    issues: list[ValidationIssue] = []
+    for name, source in vocabularies.REQUIRED_GLOBALS["highly_desirable"].items():
+        if source != "config":
+            continue
+        if name in vocabularies.DEPLOYMENT_GLOBALS:
+            block, present = "deployment", not _is_placeholder(deployment.get(name))
+        elif name == "internal_mission_identifier":
+            block, present = "global_attributes", not _is_placeholder(extra.get(name))
+        else:
+            continue  # from contributor/institution records, validated there
+        if not present:
+            issues.append(
+                ValidationIssue(
+                    "WARNING",
+                    f"{name} is unset; it is OG1 highly desirable. Set it under "
+                    f"{block} to improve discoverability.",
+                    name,
                 )
             )
     return issues
@@ -481,7 +764,14 @@ def validate_config(
     issues: list[ValidationIssue] = []
     for key in data:
         if key not in KNOWN_KEYS:
-            issues.append(ValidationIssue("ERROR", f"unknown key {key!r}.", key))
+            hint = _case_hint(key, KNOWN_KEYS)
+            message = (
+                f"{key!r} is not a key; the config key is {hint!r} "
+                "(keys are case-sensitive)."
+                if hint is not None
+                else f"unknown key {key!r}."
+            )
+            issues.append(ValidationIssue("ERROR", message, key))
     for key in REQUIRED_KEYS:
         if data.get(key) in (None, "", []):
             issues.append(
@@ -538,6 +828,8 @@ def validate_config(
             )
         )
 
+    issues.extend(_validate_deployment(data.get("deployment")))
+    issues.extend(_validate_highly_desirable(data))
     issues.extend(_validate_platform(data.get("platform")))
     issues.extend(_validate_people(data.get("contributors"), "contributors", "PI"))
     issues.extend(
