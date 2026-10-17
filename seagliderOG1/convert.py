@@ -16,7 +16,7 @@ import pandas as pd
 import xarray as xr
 from tqdm import tqdm
 
-from seagliderOG1 import _pipeline, contributors, tools, vocabularies
+from seagliderOG1 import __version__, _pipeline, contributors, tools, vocabularies
 from seagliderOG1.exceptions import MetadataError
 
 __all__ = ["to_og1", "name_mapping", "keep_variables", "MetadataError"]
@@ -255,11 +255,26 @@ def keep_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
         ):
             kept.add(name)
     dropped = sorted(name for name in ds.data_vars if name not in kept)
+    result = ds[sorted(kept)]
     if dropped:
         warnings.warn(
             f"keep_variables dropped science variables: {dropped}", stacklevel=2
         )
-    return ds[sorted(kept)]
+        # Record what went, so the file says what the warning said. A second call
+        # adds to the list rather than replacing it.
+        previous = json.loads(result.attrs.get("conversion_dropped_variables", "[]"))
+        result.attrs["conversion_dropped_variables"] = json.dumps(
+            sorted(set(previous) | set(dropped))
+        )
+        # Keep the source ledger complete: the dropped-variables global is one the
+        # converter wrote, so categorise it as derived for a subset file too.
+        if "conversion_attribute_sources" in result.attrs:
+            sources = json.loads(result.attrs["conversion_attribute_sources"])
+            sources["derived"] = sorted(
+                set(sources.get("derived", [])) | {"conversion_dropped_variables"}
+            )
+            result.attrs["conversion_attribute_sources"] = json.dumps(sources)
+    return result
 
 
 def _apply_deployment(
@@ -400,6 +415,59 @@ def _attribute_source_ledger(
     )
 
 
+def _dimension_ledger(
+    list_of_datasets: Sequence[xr.Dataset],
+    ctd_dim: str,
+    dims_to_merge: Sequence[str],
+    all_dims: Sequence[str],
+) -> str:
+    """Return the ``conversion_dimensions`` JSON global (fate and variables per dimension).
+
+    One entry per basestation dimension, each with its fate and the basestation
+    variable names that lived on it. A skipped dimension leaves no variable in the
+    output to carry its names, so the names are recorded here. ``gps_info`` is
+    ``merged``: its fixes are placed on the time backbone as ``LONGITUDE``/``LATITUDE``
+    by a dedicated path, so the file's reader sees a merge regardless of which function
+    did it.
+
+    Parameters
+    ----------
+    list_of_datasets : collections.abc.Sequence of xarray.Dataset
+        The raw basestation datasets, read for their per-dimension variable names.
+    ctd_dim : str
+        The CTD dimension that becomes ``N_MEASUREMENTS`` (fate ``backbone``).
+    dims_to_merge : collections.abc.Sequence of str
+        The dimensions folded onto the backbone (fate ``merged``).
+    all_dims : collections.abc.Sequence of str
+        Every dimension present across the inputs.
+
+    Returns
+    -------
+    str
+        A JSON object of ``dimension -> {"fate", "variables"}``, keys sorted.
+
+    """
+    merged = (set(dims_to_merge) - {ctd_dim}) | ({"gps_info"} & set(all_dims))
+    ledger = {}
+    for dim in all_dims:
+        if dim == ctd_dim:
+            fate = "backbone"
+        elif dim in merged:
+            fate = "merged"
+        else:
+            fate = "skipped"
+        names = sorted(
+            {
+                str(name)
+                for ds in list_of_datasets
+                for name in ds.variables
+                if dim in ds[name].dims
+            }
+        )
+        ledger[dim] = {"fate": fate, "variables": names}
+    return json.dumps(ledger, sort_keys=True)
+
+
 def to_og1(
     list_of_datasets: Sequence[xr.Dataset],
     *,
@@ -528,7 +596,12 @@ def to_og1(
 
     # Warn when a dimension group is dropped rather than merged, so a missing
     # instrument is visible; name_mapping() returns the full basestation -> OG1 table.
-    skipped_dims = [d for d in all_dims if d not in set(dims_to_merge)]
+    # gps_info is excluded: its fixes are folded onto the backbone by a dedicated path
+    # (add_gps_info_to_dataset), so the ledger records it as merged, not skipped — the
+    # warning must not contradict that.
+    skipped_dims = [
+        d for d in all_dims if d not in set(dims_to_merge) and d != "gps_info"
+    ]
     if skipped_dims:
         _log.warning(
             "Dimensions not merged into the OG1 dataset: %s. If instrument data "
@@ -725,6 +798,42 @@ def to_og1(
 
     # Every metadata source is now merged: fail loud on a missing mandatory global.
     _check_required_globals(ds_og1.attrs)
+
+    # history (ACDD): carry one dive's basestation processing log — the first dive, by
+    # dive number, the same early dive start_date/TRAJECTORY derive from — prefixed with a
+    # line naming it so a reader knows one dive's log stands for the mission, then append
+    # one provenance line for this conversion (append, never replace).
+    first_dive = min(list_of_datasets, key=lambda d: d.attrs.get("dive_number", 0))
+    base_history = str(first_dive.attrs.get("history", "")).strip()
+    conversion_line = (
+        f"{datetime.now(UTC).isoformat(timespec='seconds')} "
+        f"seagliderOG1 {__version__}: basestation to OG1 (to_og1)"
+    )
+    if base_history:
+        provenance = (
+            f"basestation history of dive {first_dive.attrs.get('dive_number')} "
+            f"(first of {len(list_of_datasets)} dives)"
+        )
+        ds_og1.attrs["history"] = f"{provenance}\n{base_history}\n{conversion_line}"
+    else:
+        ds_og1.attrs["history"] = conversion_line
+
+    # Write down what happened to the dimensions (fate and the basestation variable
+    # names each carried), from the merge decisions made once before the per-dive loop.
+    ds_og1.attrs["conversion_dimensions"] = _dimension_ledger(
+        list_of_datasets, ctd_dim, dims_to_merge, all_dims
+    )
+
+    # Variables the converter created rather than renamed or passed through carry no
+    # original_name; list them so an absent original_name always means a bug, not a
+    # derived variable (coordinates included).
+    derived_variables = sorted(
+        str(name)
+        for name in ds_og1.variables
+        if "original_name" not in ds_og1[name].attrs
+    )
+    if derived_variables:
+        ds_og1.attrs["conversion_derived_variables"] = json.dumps(derived_variables)
 
     # Write down which source each global came from (names only; values are in the
     # file). Every written global is categorised; a converter-set global not otherwise
@@ -963,6 +1072,13 @@ def standardise_og1(
 
     if rename_map:
         dsa = dsa.rename_vars(rename_map)
+
+    # Record each variable's basestation name, so an unmapped variable is visible in
+    # the file (its original_name equals its own OG1 name) rather than inferred from
+    # the absence of the attribute. Coordinates are included. original_dimension is
+    # set only where the dimension changed (merged variables), in _pipeline.
+    for original_name, output_name in output_names.items():
+        dsa[output_name].attrs["original_name"] = original_name
 
     # Rename dimensions without changing the shapes of their variables.
     dimension_renames = {

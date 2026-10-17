@@ -32,7 +32,6 @@ attr_to_rename:
   site: summary
   uri: uuid
   uri_comment: UUID
-  comment: history
   platform_id: PLATFORM_SERIAL_NUMBER
 
 attr_to_var:

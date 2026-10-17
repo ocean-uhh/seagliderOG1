@@ -1011,7 +1011,7 @@ def merge_datasets_along_time(
         # Preserve original names and dimensions without OG1 renaming.
         for name in ds.variables:
             ds[name].attrs["original_dimension"] = dim
-            ds[name].attrs["original_variable_name"] = name
+            ds[name].attrs["original_name"] = name
 
         ds = ds.assign_coords(
             time=xr.DataArray(
@@ -1261,10 +1261,7 @@ def add_scalar_parameters(
 
         # Existing versions of this parameter can be replaced.
         if output_name in result.variables:
-            known_source = result[output_name].attrs.get(
-                "original_name",
-                result[output_name].attrs.get("original_variable_name"),
-            )
+            known_source = result[output_name].attrs.get("original_name")
 
             if (
                 output_name != original_name
@@ -1278,15 +1275,17 @@ def add_scalar_parameters(
 
         attributes = parameter["attributes"].copy()
         attributes["original_name"] = original_name
-        # Scalars have no source dimension; record the empty string for parity
-        # with merged non-scalar variables, which carry original_dimension.
-        attributes["original_dimension"] = ""
+        # Scalars have no source dimension; omit original_dimension rather than write
+        # an empty placeholder (merged non-scalar variables carry a real one).
         values = list(parameter["values"])
 
         if not values:
             raise ValueError(f"Parameter '{original_name}' has no extracted values.")
 
         if parameter["constant"]:
+            # Mark the storage so the two scalar cases are symmetric in the ledger and
+            # a reader infers nothing from the absence of per-dive JSON.
+            attributes["storage_type"] = "constant_scalar"
             variable = xr.DataArray(
                 values[0],
                 attrs=attributes,

@@ -44,6 +44,13 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - `required:` tier block in `config/OG1_global_attributes.yaml` → `vocabularies.REQUIRED_GLOBALS`.
 - `seagliderOG1.exceptions.MetadataError`.
 - `conversion_attribute_sources` global: JSON provenance of each written global (names only).
+- Conversion ledger: per-variable `original_name` on every variable, and the `conversion_dimensions`,
+  `conversion_derived_variables` and `conversion_dropped_variables` globals record each dimension's
+  fate, the converter-created variables, and any `keep_variables` drops; `inspect --conversion`
+  prints them from the file.
+- Scalar parameters carry `storage_type` (`constant_scalar` or `per_dive_scalar`); `inspect
+  --conversion` lists them in a Scalar parameters section and `inspect --parameter NAME` decodes a
+  per-dive JSON scalar to a dive/value table.
 - Template lines name each key's destination (variable / attribute / global); `validate` gives a
   case hint on a mis-cased key.
 - `writers.write` applies lossless zlib compression to numeric variables.
@@ -56,6 +63,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   `ATTRIBUTE_ORDER`.
 - Conversion retains basestation variables previously dropped, merged onto a shared time axis with
   `original_name`/`original_dimension` provenance (#117).
+- Basestation `comment` is no longer renamed to `history`; `history` carries the basestation
+  processing log followed by one conversion provenance line.
 - Dependencies in `pyproject.toml` only (`requirements*.txt`/`environment.yml` removed); ruff-family
   config, `ruff format` replaces `black`, CI coverage gate.
 
@@ -64,6 +73,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - `start_date`, `TRAJECTORY` and `id` are seeded from the earliest measurement time, so they agree
   with `time_coverage_start` regardless of input order.
 - A null or wholly-empty global is never written; `date_created` is always the conversion time.
+- Scalar parameters no longer carry an empty `original_dimension`; the attribute is omitted when
+  there is no source dimension.
 - Whitespace stripped from vocabulary `long_name` strings written into output attributes.
 - `writers.write` preserves `_FillValue`/`scale_factor`/`add_offset`, does not mutate the caller's
   dataset, and reuses one encoding on the retry path.

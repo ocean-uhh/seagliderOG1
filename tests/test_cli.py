@@ -196,6 +196,65 @@ def test_process_v_flag_controls_library_logging(
     assert "Start converting" in capsys.readouterr().err
 
 
+def test_inspect_conversion_shows_ledger(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """inspect --conversion prints the ledger sections read from the OG1 file."""
+    from seagliderOG1 import convert, readers, writers
+
+    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 1))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    assert cli.main(["inspect", str(nc), "--conversion"]) == 0
+    out = capsys.readouterr().out
+    assert "Dimensions" in out
+    assert "backbone" in out and "gps_info" in out
+    assert "Global attributes by source" in out
+    assert "History" in out
+
+
+def test_inspect_conversion_rejects_pre_ledger_file(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A basestation file has no ledger, so --conversion is a plain error (exit 1)."""
+    raw = sorted(DATA_DIR.glob("p*.nc"))[0]
+    assert cli.main(["inspect", str(raw), "--conversion"]) == 1
+    assert "conversion_dimensions" in capsys.readouterr().err
+
+
+def test_inspect_conversion_lists_scalar_parameters(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--conversion has a Scalar parameters section naming the per-dive JSON storage."""
+    from seagliderOG1 import convert, readers, writers
+
+    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    assert cli.main(["inspect", str(nc), "--conversion"]) == 0
+    out = capsys.readouterr().out
+    assert "Scalar parameters" in out
+    assert "per-dive JSON" in out
+
+
+def test_inspect_parameter_decodes_per_dive_scalar(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--parameter decodes one per-dive JSON scalar; a non-per-dive variable is an error."""
+    from seagliderOG1 import convert, readers, writers
+
+    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    per_dive = next(
+        v for v in ds.data_vars if ds[v].attrs.get("storage_type") == "per_dive_scalar"
+    )
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    assert cli.main(["inspect", str(nc), "--parameter", per_dive]) == 0
+    out = capsys.readouterr().out
+    assert "dive" in out and "value" in out
+    assert cli.main(["inspect", str(nc), "--parameter", "TEMP"]) == 1
+
+
 def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:
     """Stand in for to_og1: no real conversion, deterministic id from mode."""
     import xarray as xr

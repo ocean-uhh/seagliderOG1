@@ -178,6 +178,49 @@ def test_keep_variables_retains_mandatory_and_qc():
     assert any("dropped" in str(w.message) for w in caught)
 
 
+def test_keep_variables_records_dropped_in_ledger():
+    """keep_variables writes dropped names to conversion_dropped_variables, adding across calls."""
+    import json
+    import warnings
+
+    ds = xr.Dataset(
+        {
+            "TEMP": ("N", [1.0, 2.0]),
+            "PSAL": ("N", [3.0, 4.0]),
+            "GLIDE_SPEED": ("N", [0.1, 0.2]),
+            "PLATFORM_SERIAL_NUMBER": ((), "sg005"),
+        }
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        first = convert.keep_variables(ds, ["TEMP", "PSAL"])  # drops GLIDE_SPEED
+        second = convert.keep_variables(first, ["TEMP"])  # then drops PSAL
+    assert set(json.loads(first.attrs["conversion_dropped_variables"])) == {
+        "GLIDE_SPEED"
+    }
+    # The second call adds to the list rather than replacing it.
+    assert set(json.loads(second.attrs["conversion_dropped_variables"])) == {
+        "GLIDE_SPEED",
+        "PSAL",
+    }
+
+
+def test_keep_variables_keeps_source_ledger_complete():
+    """On a converted file, keep_variables lists conversion_dropped_variables under derived."""
+    import json
+    import warnings
+
+    ds = convert.to_og1(readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        subset = convert.keep_variables(ds, ["TEMP"])
+    sources = json.loads(subset.attrs["conversion_attribute_sources"])
+    assert "conversion_dropped_variables" in sources["derived"]
+    # Still categorised exactly once across all categories.
+    everywhere = [name for names in sources.values() for name in names]
+    assert everywhere.count("conversion_dropped_variables") == 1
+
+
 def test_process_dataset():
 
     ds1 = readers.load_sample_basestation()
@@ -441,6 +484,91 @@ def test_conversion_attribute_sources_ledger():
     assert "contributor_name" in ledger["mixed"]  # config/file blend, not guessed
     assert "title" in ledger["package"]
     assert "start_date" in ledger["derived"]
+
+
+def test_original_name_on_every_basestation_variable():
+    """Each renamed or passed-through variable records its basestation name; derived ones are listed."""
+    import json
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    derived = set(json.loads(ds.attrs["conversion_derived_variables"]))
+    for name in ds.variables:
+        named = "original_name" in ds[name].attrs
+        # A variable is either a basestation variable (named) or a listed derived one,
+        # never both and never neither — so a missing original_name is always a bug.
+        assert named != (name in derived), name
+    # Renaming actually happened (original_name differs from the OG1 name) ...
+    renamed = [
+        n for n in ds.variables if ds[n].attrs.get("original_name") not in (None, n)
+    ]
+    assert renamed
+    # ... and the pre-0.1.0 attribute spelling is gone.
+    assert all("original_variable_name" not in ds[n].attrs for n in ds.variables)
+
+
+def test_conversion_dimensions_ledger():
+    """conversion_dimensions records each dimension's fate and the variables it carried."""
+    import json
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    dims = json.loads(ds.attrs["conversion_dimensions"])
+    # The CTD dimension is the backbone that becomes N_MEASUREMENTS.
+    assert dims["sg_data_point"]["fate"] == "backbone"
+    # gps_info is merged (its fixes are placed on the backbone by a dedicated path),
+    # not skipped, and its basestation variables are named.
+    assert dims["gps_info"]["fate"] == "merged"
+    assert "log_gps_lat" in dims["gps_info"]["variables"]
+    # A skipped dimension leaves nothing in the file, so its variables are recorded here.
+    skipped = {d: info for d, info in dims.items() if info["fate"] == "skipped"}
+    assert skipped
+    assert all(info["variables"] for info in skipped.values())
+
+
+def test_history_names_the_dive_and_appends_provenance():
+    """to_og1 carries the first dive's basestation history (named) and appends one provenance line."""
+    import re
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    base = datasets[0].attrs["history"].strip()
+    ds = convert.to_og1(datasets)
+    history = ds.attrs["history"].strip()
+    lines = history.splitlines()
+    # A naming line, then the basestation log verbatim, then one provenance line.
+    assert re.match(
+        r"^basestation history of dive \d+ \(first of \d+ dives\)$", lines[0]
+    )
+    assert base in history
+    assert history.count("\n") == base.count("\n") + 2
+    # The provenance line's shape is asserted, never its timestamp value (not reproducible).
+    assert re.match(
+        r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00 seagliderOG1 \S+: "
+        r"basestation to OG1 \(to_og1\)$",
+        lines[-1],
+    )
+
+
+def test_scalar_parameters_storage_and_dimension():
+    """Scalars declare storage_type and carry no empty original_dimension; per-dive JSON decodes."""
+    import json
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    # No variable carries an empty original_dimension placeholder (it is omitted instead).
+    assert all(ds[v].attrs.get("original_dimension", "x") != "" for v in ds.variables)
+    # Both scalar cases declare their storage, so the ledger view infers nothing.
+    per_dive = [
+        v for v in ds.data_vars if ds[v].attrs.get("storage_type") == "per_dive_scalar"
+    ]
+    constants = [
+        v for v in ds.data_vars if ds[v].attrs.get("storage_type") == "constant_scalar"
+    ]
+    assert per_dive and constants
+    # A per-dive JSON scalar decodes to the converted dive numbers.
+    payload = json.loads(str(ds[per_dive[0]].values))
+    assert sorted(payload["dives"]) == [1, 2]
+    assert len(payload["values"]) == len(payload["dives"])
 
 
 def test_start_date_is_earliest_time_regardless_of_input_order():
