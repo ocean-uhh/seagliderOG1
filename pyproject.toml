@@ -55,7 +55,9 @@ docs = [
   "nbconvert>=7.8",
   "ipykernel",
 ]
-dev = ["seagliderOG1[test,docs]", "ruff>=0.3"]
+# ruff pinned to the exact version the tests workflow runs (.github/workflows/tests.yml),
+# so local `ruff check`/`ruff format` and the CI lint gate cannot disagree. Bump both together.
+dev = ["seagliderOG1[test,docs]", "ruff==0.16.4"]
 
 [project.scripts]
 seagliderOG1 = "seagliderOG1.cli:main"

@@ -12,7 +12,10 @@ script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
-from seagliderOG1 import convert, readers  # noqa: E402  # import after sys.path bootstrap
+from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
+    convert,
+    readers,
+)
 from seagliderOG1.reports import conversion  # noqa: E402
 
 DATA = str(parent_dir / "data/demo_sg005")
