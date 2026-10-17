@@ -133,6 +133,42 @@ def test_validate_accepts_known_deployment_keys(tmp_path: pathlib.Path) -> None:
     assert cli.main(["validate", str(cfg)]) == 0
 
 
+def test_template_comments_name_the_destination() -> None:
+    """Each generated line's comment says where the key goes (variable/attribute/global)."""
+    template = _mission.render_template(source="/tmp/x")
+    assert "UPPER keys become OG1 variables" in template
+    assert "PLATFORM_MODEL: null   # required · → variable" in template
+    assert (
+        "platform_model_vocabulary: null   # optional · → attribute on PLATFORM_MODEL"
+        in (template)
+    )
+    assert "id: null   # mandatory · → global attribute" in template
+
+
+def test_case_hint_helper() -> None:
+    """_case_hint returns a correctly-cased match only for a mis-cased key."""
+    assert _mission._case_hint("program", ["id", "program"]) is None  # exact: no hint
+    assert _mission._case_hint("Program", ["id", "program"]) == "program"
+    assert _mission._case_hint("xyz", ["id", "program"]) is None
+
+
+def test_validate_case_hint_for_miscased_deployment_key() -> None:
+    """A mis-cased deployment key errors naming the exact spelling."""
+    issues = _mission._validate_deployment({"Program": "X"})
+    assert any(
+        i.level == "ERROR"
+        and "'program'" in i.message
+        and "case-sensitive" in i.message
+        for i in issues
+    )
+
+
+def test_validate_case_hint_for_miscased_platform_key() -> None:
+    """A lower-cased platform variable name errors naming the UPPER spelling."""
+    issues = _mission._validate_platform({"platform_model": "Seaglider"})
+    assert any(i.level == "ERROR" and "'PLATFORM_MODEL'" in i.message for i in issues)
+
+
 def test_validate_warns_on_unset_highly_desirable_global() -> None:
     """A null highly-desirable deployment global is a WARNING, not an ERROR."""
     issues = _mission._validate_highly_desirable({"deployment": {"program": None}})

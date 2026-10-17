@@ -129,6 +129,15 @@ semantic versioning.
   with the source URL and verification date in the file header; read as
   `vocabularies.REQUIRED_GLOBALS`. `validate` reports an unknown `deployment:` key.
 - `seagliderOG1.exceptions` module with `MetadataError` (raised by `convert.to_og1`).
+- `conversion_attribute_sources` global attribute: a JSON object recording which source each
+  written global came from — `basestation`, `renamed`, `derived`, `package`, `mission`,
+  `overridden` (a mission value that replaced a converter one), or `mixed` (the contributor and
+  institution attributes, a blend of `mission.yaml` and the files). Names only; the values are in
+  the file. The per-variable ledger is deferred.
+- `init` template and `validate`: each generated line's comment names the key's destination
+  (`→ variable`, `→ attribute on PLATFORM_MODEL`, `→ global attribute`), read from
+  `PLATFORM_FIELDS`/`REQUIRED_GLOBALS` so it cannot drift; `validate` turns a mis-cased key into
+  an ERROR naming the exact spelling (`platform_model` → `PLATFORM_MODEL`).
 - `writers.write` now writes every non-scalar numeric variable, coordinates
   included, with lossless zlib compression (level 4) and the shuffle filter. String
   and scalar variables are left uncompressed. Output files are smaller and remain

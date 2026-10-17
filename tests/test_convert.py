@@ -415,6 +415,23 @@ def test_optional_platform_variables_written_with_long_name_and_vocab():
     )
 
 
+def test_conversion_attribute_sources_ledger():
+    """Every written global is in exactly one ledger category; an override shows up."""
+    import json
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    ds = convert.to_og1(datasets, deployment={"program": "MOOSE", "id": "custom_id"})
+    ledger = json.loads(ds.attrs["conversion_attribute_sources"])
+    written = [k for k in ds.attrs if k != "conversion_attribute_sources"]
+    categorised = [name for names in ledger.values() for name in names]
+    assert sorted(categorised) == sorted(written)  # covers every written global
+    assert len(categorised) == len(set(categorised))  # each in exactly one category
+    assert "id" in ledger["overridden"]  # deployment.id replaced the derived id
+    assert "contributor_name" in ledger["mixed"]  # config/file blend, not guessed
+    assert "title" in ledger["package"]
+    assert "start_date" in ledger["derived"]
+
+
 def test_start_date_is_earliest_time_regardless_of_input_order():
     """start_date/id/TRAJECTORY come from the earliest TIME, not the input order."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 3)

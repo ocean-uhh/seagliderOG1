@@ -8,6 +8,10 @@ platform, contributor and global-attribute metadata belong to you rather than to
 ``init`` writes a commented template; ``validate`` checks it; ``process`` reads it. Paths in it
 resolve relative to the file.
 
+UPPER-case keys become OG1 variables, lower-case keys become attributes or globals; the comment
+on each line of the generated template says which. Keys are case-sensitive — ``validate`` errors
+on a mis-cased key (``platform_model``) and names the right spelling (``PLATFORM_MODEL``).
+
 Keys
 ----
 
@@ -143,36 +147,35 @@ The template ``init`` writes (fill the nulls before ``validate``):
    repair: false           # run repair_files on the basestation files (writes the source tree)
    keep_variables: null    # optional list of science variables to keep; null = all
 
-   platform:               # 'init --from' fills these; fill any null before validate
-     PLATFORM_SERIAL_NUMBER: sg005   # from platform_id; a serial or a local nickname
-     PLATFORM_MODEL: University of Washington Seaglider M1 glider
-     platform_model_vocabulary: null   # e.g. NERC B76 B7600024 (Seaglider)
-     PLATFORM_DEPTH_RATING: 1000   # metres
-     PLATFORM_MAKER: University of Washington School of Oceanography
-     GLIDER_FIRMWARE_VERSION: null   # from seaglider_software_version
-     LANDSTATION_VERSION: null   # from base_station_version
-     WMO_IDENTIFIER: null   # from wmo_identifier
-     # optional platform variables; written only when set:
-     PLATFORM_NAME: null
-     platform_maker_vocabulary: null
-     TELECOM_TYPE: null
-     TRACKING_SYSTEM: null
-     BATTERY_TYPE: null
-     BATTERY_PACK: null
+   platform:               # UPPER keys → variables, lower keys → attributes
+     PLATFORM_SERIAL_NUMBER: sg005   # required · → variable · from platform_id
+     PLATFORM_MODEL: University of Washington Seaglider M1 glider   # required · → variable
+     platform_model_vocabulary: null   # optional · → attribute on PLATFORM_MODEL
+     PLATFORM_DEPTH_RATING: 1000   # required · → variable · metres
+     PLATFORM_MAKER: University of Washington School of Oceanography   # required · → variable
+     platform_maker_vocabulary: null   # optional · → attribute on PLATFORM_MAKER
+     GLIDER_FIRMWARE_VERSION: null   # optional · → variable · from seaglider_software_version
+     LANDSTATION_VERSION: null   # optional · → variable · from base_station_version
+     WMO_IDENTIFIER: null   # optional · → variable · from wmo_identifier
+     PLATFORM_NAME: null   # optional · → variable
+     TELECOM_TYPE: null   # optional · → variable
+     TRACKING_SYSTEM: null   # optional · → variable
+     BATTERY_TYPE: null   # optional · → variable
+     BATTERY_PACK: null   # optional · → variable
 
-   deployment:             # OG1 deployment identity; one key per global, null = not written
-     id: null              # (mandatory) overrides the derived <serial>_<start>_<mode>
-     site: null            # (highly desirable)
-     site_vocabulary: null # (highly desirable)
-     program: null         # (highly desirable)
-     program_vocabulary: null  # (highly desirable)
-     data_url: null        # (highly desirable)
-     doi: null             # (highly desirable)
-     project: null         # (suggested)
-     network: null         # (suggested)
-     comment: null         # (suggested)
-     license: null         # (optional)
-     acknowledgment: null  # (optional)
+   deployment:             # each key → a global attribute; null = not written
+     id: null              # mandatory · → global attribute · overrides the derived id
+     site: null            # highly desirable · → global attribute
+     site_vocabulary: null # highly desirable · → global attribute
+     program: null         # highly desirable · → global attribute
+     program_vocabulary: null  # highly desirable · → global attribute
+     data_url: null        # highly desirable · → global attribute
+     doi: null             # highly desirable · → global attribute
+     project: null         # suggested · → global attribute
+     network: null         # suggested · → global attribute
+     comment: null         # suggested · → global attribute
+     license: null         # optional · → global attribute
+     acknowledgment: null  # optional · → global attribute
 
    global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above
 

@@ -148,8 +148,84 @@ def _deployment_template_lines() -> list[str]:
     ]
     for key in vocabularies.DEPLOYMENT_GLOBALS:
         hint = hints.get(key)
-        comment = f"({tier_of.get(key, 'optional')})" + (f" {hint}" if hint else "")
+        comment = f"{tier_of.get(key, 'optional')} · → global attribute" + (
+            f" · {hint}" if hint else ""
+        )
         lines.append(f"  {key}: null   # {comment}")
+    return lines
+
+
+def _platform_template_lines(plat: dict[str, object]) -> list[str]:
+    """Build the ``platform:`` block, destination comments from PLATFORM_FIELDS.
+
+    Each line's comment says where the key goes — ``→ variable`` for an UPPER platform
+    field, ``→ attribute on <VARIABLE>`` for a lower ``_vocabulary`` key — read from
+    ``vocabularies.PLATFORM_FIELDS`` (which knows each field's kind and whether it is
+    required) so the template cannot drift from the code.
+
+    Parameters
+    ----------
+    plat : dict of str to object
+        Platform values to render (template defaults merged with any overrides).
+
+    Returns
+    -------
+    list of str
+        The ``platform:`` header line and one line per field.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    hints = {
+        "PLATFORM_SERIAL_NUMBER": "from platform_id; a serial or a local nickname",
+        "PLATFORM_MODEL": "e.g. University of Washington Seaglider M1 glider",
+        "platform_model_vocabulary": "e.g. https://vocab.nerc.ac.uk/collection/B76/current/B7600024/",
+        "PLATFORM_DEPTH_RATING": "e.g. 1000 (metres)",
+        "PLATFORM_MAKER": "e.g. University of Washington School of Oceanography",
+        "platform_maker_vocabulary": "e.g. http://vocab.nerc.ac.uk/collection/B75/current/",
+        "GLIDER_FIRMWARE_VERSION": "from seaglider_software_version",
+        "LANDSTATION_VERSION": "from base_station_version",
+        "WMO_IDENTIFIER": "from wmo_identifier",
+        "PLATFORM_NAME": "local or nickname of the glider",
+        "TELECOM_TYPE": "e.g. Iridium (comma-separated for several)",
+        "TRACKING_SYSTEM": "e.g. ARGOS, GPS",
+        "BATTERY_TYPE": "see the OG1 battery_type vocabulary",
+        "BATTERY_PACK": "battery packaging",
+    }
+    # The two _vocabulary keys are attributes on their parent variable, not variables.
+    vocab_parents = {
+        "platform_model_vocabulary": "PLATFORM_MODEL",
+        "platform_maker_vocabulary": "PLATFORM_MAKER",
+    }
+    # Template order: each _vocabulary key follows its parent variable.
+    order = [
+        "PLATFORM_SERIAL_NUMBER",
+        "PLATFORM_MODEL",
+        "platform_model_vocabulary",
+        "PLATFORM_DEPTH_RATING",
+        "PLATFORM_MAKER",
+        "platform_maker_vocabulary",
+        "GLIDER_FIRMWARE_VERSION",
+        "LANDSTATION_VERSION",
+        "WMO_IDENTIFIER",
+        "PLATFORM_NAME",
+        "TELECOM_TYPE",
+        "TRACKING_SYSTEM",
+        "BATTERY_TYPE",
+        "BATTERY_PACK",
+    ]
+    lines = [
+        "platform:               # 'init --from' fills these; fill any null before validate"
+    ]
+    for key in order:
+        if key in vocab_parents:
+            req, dest, value = "optional", f"attribute on {vocab_parents[key]}", "null"
+        else:
+            spec = vocabularies.PLATFORM_FIELDS[key]
+            req = "required" if spec.required else "optional"
+            dest, value = "variable", _scalar(plat[key])
+        comment = f"{req} · → {dest} · {hints[key]}"
+        lines.append(f"  {key}: {value}   # {comment}")
     return lines
 
 
@@ -178,6 +254,8 @@ def render_template(
     plat = {**dict.fromkeys(vocabularies.PLATFORM_FIELDS), **(platform or {})}
     lines = [
         "# seagliderOG1 mission configuration.",
+        "# UPPER keys become OG1 variables, lower keys become attributes or globals;",
+        "# the comment on each line says which. You fill the values.",
         "# Paths are resolved relative to this file. Edit the values, then:",
         "#   seagliderOG1 validate this_file.yaml",
         "#   seagliderOG1 process  this_file.yaml",
@@ -191,22 +269,7 @@ def render_template(
         "repair: false           # run repair_files on the basestation files (writes the source tree)",
         "keep_variables: null    # optional list of science variables to keep; null = all",
         "",
-        "platform:               # 'init --from' fills these; fill any null before validate",
-        f"  PLATFORM_SERIAL_NUMBER: {_scalar(plat['PLATFORM_SERIAL_NUMBER'])}   # from platform_id; a serial or a local nickname",
-        f"  PLATFORM_MODEL: {_scalar(plat['PLATFORM_MODEL'])}   # e.g. University of Washington Seaglider M1 glider",
-        "  platform_model_vocabulary: null   # e.g. https://vocab.nerc.ac.uk/collection/B76/current/B7600024/ (NERC B76; B7600024 = Seaglider)",
-        f"  PLATFORM_DEPTH_RATING: {_scalar(plat['PLATFORM_DEPTH_RATING'])}   # e.g. 1000 (metres)",
-        f"  PLATFORM_MAKER: {_scalar(plat['PLATFORM_MAKER'])}   # e.g. University of Washington School of Oceanography",
-        f"  GLIDER_FIRMWARE_VERSION: {_scalar(plat['GLIDER_FIRMWARE_VERSION'])}   # from seaglider_software_version",
-        f"  LANDSTATION_VERSION: {_scalar(plat['LANDSTATION_VERSION'])}   # from base_station_version",
-        f"  WMO_IDENTIFIER: {_scalar(plat['WMO_IDENTIFIER'])}   # from wmo_identifier",
-        "  # optional platform variables; written only when set (null = not written):",
-        f"  PLATFORM_NAME: {_scalar(plat['PLATFORM_NAME'])}   # local or nickname of the glider",
-        "  platform_maker_vocabulary: null   # e.g. http://vocab.nerc.ac.uk/collection/B75/current/",
-        f"  TELECOM_TYPE: {_scalar(plat['TELECOM_TYPE'])}   # e.g. Iridium (comma-separated for several)",
-        f"  TRACKING_SYSTEM: {_scalar(plat['TRACKING_SYSTEM'])}   # e.g. ARGOS, GPS",
-        f"  BATTERY_TYPE: {_scalar(plat['BATTERY_TYPE'])}   # see the OG1 battery_type vocabulary",
-        f"  BATTERY_PACK: {_scalar(plat['BATTERY_PACK'])}   # battery packaging",
+        *_platform_template_lines(plat),
         "",
         *_deployment_template_lines(),
         "",
@@ -486,6 +549,34 @@ def _is_placeholder(value: object) -> bool:
     )
 
 
+def _case_hint(key: str, known: object) -> str | None:
+    """Return the correctly-cased known key a mis-cased ``key`` matches, or None.
+
+    OG1 keys are case-sensitive (UPPER names become variables, lower names become
+    attributes or globals), and a mis-cased key would otherwise be silently ignored.
+    This lets ``validate`` name the exact spelling instead of a bare "unknown key".
+
+    Parameters
+    ----------
+    key : str
+        The user's key.
+    known : iterable of str
+        The valid keys.
+
+    Returns
+    -------
+    str or None
+        The valid key that ``key`` matches case-insensitively (but not exactly), or
+        None when there is no such match.
+
+    """
+    lowered = key.lower() if isinstance(key, str) else key
+    for candidate in known:
+        if candidate != key and candidate.lower() == lowered:
+            return candidate
+    return None
+
+
 def _validate_platform(platform: object) -> list[ValidationIssue]:
     """ERROR on a null required platform field when a platform block is present.
 
@@ -521,6 +612,24 @@ def _validate_platform(platform: object) -> list[ValidationIssue]:
                     f"platform.{field}",
                 )
             )
+    # A mis-cased platform key (e.g. platform_model for PLATFORM_MODEL) is a loud
+    # ERROR naming the exact spelling, not a silently-ignored key.
+    known = (
+        *vocabularies.PLATFORM_FIELDS,
+        "platform_model_vocabulary",
+        "platform_maker_vocabulary",
+    )
+    for key in platform:
+        hint = _case_hint(key, known)
+        if hint is not None:
+            issues.append(
+                ValidationIssue(
+                    "ERROR",
+                    f"platform.{key} is not a key; the OG1 key is {hint!r} "
+                    "(keys are case-sensitive).",
+                    f"platform.{key}",
+                )
+            )
     return issues
 
 
@@ -549,17 +658,24 @@ def _validate_deployment(deployment: object) -> list[ValidationIssue]:
     from seagliderOG1 import vocabularies
 
     allowed = set(vocabularies.DEPLOYMENT_GLOBALS)
-    return [
-        ValidationIssue(
-            "ERROR",
-            f"deployment.{key} is not an OG1 deployment global (allowed: "
-            f"{list(vocabularies.DEPLOYMENT_GLOBALS)}); put other globals under "
-            "global_attributes.",
-            f"deployment.{key}",
-        )
-        for key in deployment
-        if key not in allowed
-    ]
+    issues: list[ValidationIssue] = []
+    for key in deployment:
+        if key in allowed:
+            continue
+        hint = _case_hint(key, vocabularies.DEPLOYMENT_GLOBALS)
+        if hint is not None:
+            message = (
+                f"deployment.{key} is not a key; the OG1 global is {hint!r} "
+                "(keys are case-sensitive)."
+            )
+        else:
+            message = (
+                f"deployment.{key} is not an OG1 deployment global (allowed: "
+                f"{list(vocabularies.DEPLOYMENT_GLOBALS)}); put other globals under "
+                "global_attributes."
+            )
+        issues.append(ValidationIssue("ERROR", message, f"deployment.{key}"))
+    return issues
 
 
 def _validate_highly_desirable(data: dict[str, object]) -> list[ValidationIssue]:
@@ -648,7 +764,14 @@ def validate_config(
     issues: list[ValidationIssue] = []
     for key in data:
         if key not in KNOWN_KEYS:
-            issues.append(ValidationIssue("ERROR", f"unknown key {key!r}.", key))
+            hint = _case_hint(key, KNOWN_KEYS)
+            message = (
+                f"{key!r} is not a key; the config key is {hint!r} "
+                "(keys are case-sensitive)."
+                if hint is not None
+                else f"unknown key {key!r}."
+            )
+            issues.append(ValidationIssue("ERROR", message, key))
     for key in REQUIRED_KEYS:
         if data.get(key) in (None, "", []):
             issues.append(

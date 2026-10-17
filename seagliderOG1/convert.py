@@ -5,6 +5,7 @@ NetCDF files into OG1 (Ocean Gliders 1) format. It handles data processing,
 variable renaming, attribute assignments, and dataset standardization.
 """
 
+import json
 import logging
 import warnings
 from collections.abc import Mapping, Sequence
@@ -261,7 +262,11 @@ def keep_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
     return ds[sorted(kept)]
 
 
-def _apply_deployment(ds_og1: xr.Dataset, deployment: Mapping[str, object]) -> None:
+def _apply_deployment(
+    ds_og1: xr.Dataset,
+    deployment: Mapping[str, object],
+    sources: dict[str, str],
+) -> None:
     """Write the deployment: block globals, overriding a derived value with a warning.
 
     Mission config takes precedence over a converter-derived global, so a deployment
@@ -279,19 +284,24 @@ def _apply_deployment(ds_og1: xr.Dataset, deployment: Mapping[str, object]) -> N
         The assembled OG1 dataset, modified in place.
     deployment : collections.abc.Mapping
         The mission config ``deployment`` block.
+    sources : dict of str to str
+        The conversion-ledger source map, updated in place: a key is ``overridden``
+        when it replaced a value the conversion had already set, else ``mission``.
 
     """
     for key, value in deployment.items():
         if _is_empty(value):
             continue
         existing = ds_og1.attrs.get(key)
-        if existing is not None and str(existing) != str(value):
+        replaced = existing is not None and str(existing) != str(value)
+        if replaced:
             warnings.warn(
                 f"deployment.{key} overrides the converter value {existing!r} with "
                 f"{value!r}.",
                 stacklevel=2,
             )
         ds_og1.attrs[key] = value
+        sources[key] = "overridden" if replaced else "mission"
 
 
 def _check_required_globals(attrs: Mapping[str, object]) -> None:
@@ -338,6 +348,56 @@ def _check_required_globals(attrs: Mapping[str, object]) -> None:
             "mission config to improve discoverability.",
             unset_desirable,
         )
+
+
+# Conversion-ledger categories, in report order. A written global belongs to exactly
+# one; "mixed" holds the contributor/institution attributes, whose value blends the
+# mission config and the files, so the ledger names them without guessing one source.
+_LEDGER_CATEGORIES = (
+    "basestation",
+    "renamed",
+    "derived",
+    "package",
+    "mission",
+    "overridden",
+    "mixed",
+)
+
+
+def _attribute_source_ledger(
+    attrs: Mapping[str, object], sources: Mapping[str, str]
+) -> str:
+    """Return the ``conversion_attribute_sources`` JSON global (names only).
+
+    One category per written global, from the source map the conversion built: which
+    globals the files supplied (``basestation``), which were renamed from a file
+    attribute (``renamed``), computed by the converter (``derived``), package constants
+    (``package``), from ``mission.yaml`` (``mission``), a mission value that replaced a
+    converter one (``overridden``), or a blend of config and files (``mixed``). Values
+    are not recorded — they are in the file already.
+
+    Parameters
+    ----------
+    attrs : collections.abc.Mapping
+        The final global attributes (every one is categorised).
+    sources : collections.abc.Mapping
+        Each attribute name mapped to its category.
+
+    Returns
+    -------
+    str
+        A JSON object of ``category -> sorted list of attribute names``, categories in
+        report order, omitting any category with no members.
+
+    """
+    ledger: dict[str, list[str]] = {category: [] for category in _LEDGER_CATEGORIES}
+    for name in attrs:
+        if name == "conversion_attribute_sources":
+            continue
+        ledger[sources[name]].append(name)
+    return json.dumps(
+        {category: sorted(names) for category, names in ledger.items() if names}
+    )
 
 
 def to_og1(
@@ -503,7 +563,7 @@ def to_og1(
     ds_og1 = _pipeline.add_sensor_to_dataset(ds_og1, sensor_dict, og1_mapping)
 
     # Apply attributes
-    ordered_attributes = update_dataset_attributes(
+    ordered_attributes, attribute_sources = update_dataset_attributes(
         list_of_datasets[0], people=contributors, institutions=institutions
     )
     for key, value in ordered_attributes.items():
@@ -644,16 +704,32 @@ def to_og1(
     )
     ds_og1.attrs["id"] = id
 
+    # The globals the converter computed here (geospatial, time coverage, id, the
+    # earliest-TIME start_date) are "derived" in the conversion ledger.
+    for key in (*_DERIVED_GLOBALS, "id"):
+        if key in ds_og1.attrs:
+            attribute_sources[key] = "derived"
+
     # Mission config is the last word: the structured deployment block (which may
     # override the derived id or comment, with a warning) then the verbatim escape
-    # hatch. Both skip null and placeholder values.
-    _apply_deployment(ds_og1, deployment)
+    # hatch. Both skip null and placeholder values, and record their source.
+    _apply_deployment(ds_og1, deployment, attribute_sources)
     for key, value in global_attributes.items():
         if not _is_empty(value):
+            attribute_sources[key] = "overridden" if key in ds_og1.attrs else "mission"
             ds_og1.attrs[key] = value
 
     # Every metadata source is now merged: fail loud on a missing mandatory global.
     _check_required_globals(ds_og1.attrs)
+
+    # Write down which source each global came from (names only; values are in the
+    # file). Every written global is categorised; a converter-set global not otherwise
+    # attributed is "derived".
+    for key in ds_og1.attrs:
+        attribute_sources.setdefault(key, "derived")
+    ds_og1.attrs["conversion_attribute_sources"] = _attribute_source_ledger(
+        ds_og1.attrs, attribute_sources
+    )
 
     # Re-fix QC flags the concat re-promoted to float, then optimise dtypes once on the
     # fully-assembled dataset (coordinates and post-concat variables included).
@@ -1115,8 +1191,11 @@ def update_dataset_attributes(
 
     Returns
     -------
-    dict
-        A dictionary of ordered attributes with updated values.
+    ordered_attributes : dict
+        The ordered attributes with updated values.
+    sources : dict of str to str
+        Each attribute name mapped to its source for the conversion ledger
+        (``package``, ``mixed``, ``derived``, ``renamed`` or ``basestation``).
 
     """
     attr_as_is = vocabularies.global_attrs["attr_as_is"]
@@ -1136,7 +1215,8 @@ def update_dataset_attributes(
     # Attributes to keep
     keep_attrs = extract_attr_to_keep(ds, attr_as_is)
 
-    # Combine all attributes
+    # Combine all attributes (last-writer-wins). attr_to_add is applied first and
+    # last, so a package constant wins over a file/contributor value of the same name.
     new_attributes = {
         **attr_to_add,
         **contrib_attrs,
@@ -1145,6 +1225,21 @@ def update_dataset_attributes(
         **keep_attrs,
         **attr_to_add,
     }
+
+    # Record each attribute's source for the conversion ledger, in the same
+    # last-writer-wins order. Contributor/institution attributes are a blend of the
+    # mission config and the files, so they are "mixed", never guessed at one source.
+    sources: dict[str, str] = {}
+    for group, label in (
+        (attr_to_add, "package"),
+        (contrib_attrs, "mixed"),
+        (time_attrs, "derived"),
+        (renamed_attrs, "renamed"),
+        (keep_attrs, "basestation"),
+        (attr_to_add, "package"),
+    ):
+        for key in group:
+            sources[key] = label
 
     # Reorder attributes according to vocabularies.ATTRIBUTE_ORDER
     ordered_attributes = {
@@ -1156,7 +1251,7 @@ def update_dataset_attributes(
         if attr not in ordered_attributes:
             ordered_attributes[attr] = new_attributes[attr]
 
-    return ordered_attributes
+    return ordered_attributes, sources
 
 
 def get_contributors(
