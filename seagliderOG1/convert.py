@@ -18,7 +18,7 @@ from tqdm import tqdm
 from seagliderOG1 import _pipeline, contributors, tools, vocabularies
 from seagliderOG1.exceptions import MetadataError
 
-__all__ = ["to_og1", "name_mapping", "keep_variables"]
+__all__ = ["to_og1", "name_mapping", "keep_variables", "MetadataError"]
 
 _log = logging.getLogger(__name__)
 
@@ -89,8 +89,28 @@ OPTIONAL_PLATFORM_VARS: dict[str, tuple[str, str | None, str | None]] = {
 
 
 def _is_empty(value: object) -> bool:
-    """Return True for a missing/placeholder value (None, "" or the string "None")."""
-    return value in (None, "", "None")
+    """Return True for a missing or placeholder value.
+
+    None, or a string that is empty or one of the placeholders the old
+    ``attr_mandatory`` fill wrote (``vocabularies.PLACEHOLDER_VALUES``: ``""``,
+    ``"None"``, ``"null"``, ``"null@null.com"``). One definition for platform fields,
+    deployment globals and the escape-hatch globals, so none of them can leak a
+    placeholder that another path would have dropped.
+
+    Parameters
+    ----------
+    value : object
+        The value to test.
+
+    Returns
+    -------
+    bool
+        True when the value counts as unset.
+
+    """
+    return value is None or (
+        isinstance(value, str) and value.strip() in vocabularies.PLACEHOLDER_VALUES
+    )
 
 
 def _resolve_platform(
@@ -159,7 +179,7 @@ def _resolve_platform(
         resolved[field] = value
 
     depth = platform.get("PLATFORM_DEPTH_RATING")
-    if depth not in (None, "", "None"):
+    if not _is_empty(depth):
         resolved["PLATFORM_DEPTH_RATING"] = depth
     else:
         warnings.warn(
@@ -171,13 +191,13 @@ def _resolve_platform(
 
     for field in ("platform_model_vocabulary", "platform_maker_vocabulary"):
         vocab = platform.get(field)
-        if vocab not in (None, "", "None"):
+        if not _is_empty(vocab):
             resolved[field] = vocab
 
     # Optional platform variables: written only when the user supplies them.
     for field in OPTIONAL_PLATFORM_VARS:
         value = platform.get(field)
-        if value not in (None, "", "None"):
+        if not _is_empty(value):
             resolved[field] = value
 
     return resolved
@@ -241,19 +261,6 @@ def keep_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
     return ds[sorted(kept)]
 
 
-# Values that read as "nothing was supplied" when a global attribute is checked:
-# None, the empty string, and the placeholder strings the old attr_mandatory fill
-# used to write. A global holding one of these is treated as unset.
-_PLACEHOLDER_GLOBALS = frozenset({"", "None", "null", "null@null.com"})
-
-
-def _global_is_unset(value: object) -> bool:
-    """Return True when a global-attribute value is missing or a placeholder."""
-    return value is None or (
-        isinstance(value, str) and value.strip() in _PLACEHOLDER_GLOBALS
-    )
-
-
 def _apply_deployment(ds_og1: xr.Dataset, deployment: Mapping[str, object]) -> None:
     """Write the deployment: block globals, overriding a derived value with a warning.
 
@@ -261,6 +268,10 @@ def _apply_deployment(ds_og1: xr.Dataset, deployment: Mapping[str, object]) -> N
     value that differs from one already on the dataset (``id`` and ``comment`` are the
     two with a derived default) is applied, with a warning naming both values. Null
     and placeholder values are skipped. Called after the derived globals are set.
+
+    Filling a global that is absent or empty is not an override (there is no derived
+    value to replace), so it is applied silently; only replacing a present, differing
+    value warns.
 
     Parameters
     ----------
@@ -271,7 +282,7 @@ def _apply_deployment(ds_og1: xr.Dataset, deployment: Mapping[str, object]) -> N
 
     """
     for key, value in deployment.items():
-        if _global_is_unset(value):
+        if _is_empty(value):
             continue
         existing = ds_og1.attrs.get(key)
         if existing is not None and str(existing) != str(value):
@@ -307,7 +318,7 @@ def _check_required_globals(attrs: Mapping[str, object]) -> None:
     gaps = [
         name
         for name in vocabularies.REQUIRED_GLOBALS["mandatory"]
-        if _global_is_unset(attrs.get(name))
+        if _is_empty(attrs.get(name))
     ]
     if gaps:
         msg = (
@@ -319,7 +330,7 @@ def _check_required_globals(attrs: Mapping[str, object]) -> None:
     unset_desirable = [
         name
         for name in vocabularies.REQUIRED_GLOBALS["highly_desirable"]
-        if _global_is_unset(attrs.get(name))
+        if _is_empty(attrs.get(name))
     ]
     if unset_desirable:
         _log.info(
@@ -341,10 +352,8 @@ def to_og1(
 ) -> xr.Dataset:
     """Convert Seaglider basestation datasets to OG1 format.
 
-    Processes a list of xarray datasets, converts them to OG1 format,
-    concatenates the datasets, sorts by time, and applies attributes. Main conversion function that
-    processes basestation datasets, applies OG1 standardization, concatenates multiple datasets,
-    and adds global attributes.
+    Maps and standardises each dataset, concatenates them on a shared time axis,
+    sorts by time, and applies platform, deployment and contributor attributes.
 
     Parameters
     ----------
@@ -502,7 +511,7 @@ def to_og1(
         # not as the word "null"): an absent global is absent. A multi-value string
         # with an empty slot (e.g. ", PI" for a role-less first contributor) is kept.
         # _check_required_globals reports any mandatory gap before the return.
-        if not _global_is_unset(value):
+        if not _is_empty(value):
             ds_og1.attrs[key] = value
 
     # start_date names TRAJECTORY and the output id, so it must be the deployment
@@ -640,7 +649,7 @@ def to_og1(
     # hatch. Both skip null and placeholder values.
     _apply_deployment(ds_og1, deployment)
     for key, value in global_attributes.items():
-        if not _global_is_unset(value):
+        if not _is_empty(value):
             ds_og1.attrs[key] = value
 
     # Every metadata source is now merged: fail loud on a missing mandatory global.

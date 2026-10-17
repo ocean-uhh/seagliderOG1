@@ -356,6 +356,16 @@ def test_deployment_unknown_key_raises():
         raise AssertionError("expected ValueError for an unknown deployment key")
 
 
+def test_literal_null_platform_value_is_treated_as_unset():
+    """A literal 'null'/'null@null.com' string counts as unset, like None (one rule)."""
+    ds = xr.Dataset(attrs={"platform_id": "SG005"})
+    platform = {"PLATFORM_MODEL": "null", "PLATFORM_NAME": "null@null.com"}
+    resolved = convert._resolve_platform(ds, platform)
+    assert resolved["PLATFORM_MODEL"] == "UNK"  # "null" is unset -> UNK, not literal
+    assert "PLATFORM_NAME" not in resolved  # optional, unset -> omitted
+    assert convert._is_empty("null") and convert._is_empty("null@null.com")
+
+
 def test_resolve_platform_optional_fields_omitted_when_null():
     """Optional platform variables are absent from the resolved dict when unset."""
     ds = xr.Dataset(attrs={"platform_id": "SG005"})

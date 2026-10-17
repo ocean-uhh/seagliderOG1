@@ -71,22 +71,32 @@ ROLE_ALIASES = {
 # convention".
 MODE_SUFFIX = {"delayed": "delayed", "realtime": "R"}
 
+# Strings that mean "nothing was supplied" when a config or global-attribute value is
+# read: None renders as these, and they are the placeholders the old attr_mandatory
+# fill used to write. One definition so the converter and validate agree on what counts
+# as unset (a value here is never written to the output, and validate treats it as null).
+PLACEHOLDER_VALUES = frozenset({"", "None", "null", "null@null.com"})
+
 # OG1 deployment-identity globals the mission config sets through the structured
-# deployment: block, in template order (one key per global). The single list read by
-# convert.to_og1 (precedence, collision checks) and the validate deployment check.
+# deployment: block (one key per global). Ordered as the OG1 manual's global-attribute
+# table lists them (the order the `required:` block carries): mandatory, then highly
+# desirable, then suggested; `license` and `acknowledgment` are ACDD globals with no
+# OG1-table position and trail the tiered ones. The single list read by
+# convert.to_og1 (precedence, collision checks), the validate deployment check, and
+# the init template (which reads each key's tier from REQUIRED_GLOBALS).
 DEPLOYMENT_GLOBALS = (
     "id",
-    "program",
-    "program_vocabulary",
-    "network",
     "site",
     "site_vocabulary",
+    "program",
+    "program_vocabulary",
+    "data_url",
+    "doi",
     "project",
+    "network",
     "comment",
     "license",
     "acknowledgment",
-    "doi",
-    "data_url",
 )
 
 

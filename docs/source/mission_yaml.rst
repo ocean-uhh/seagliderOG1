@@ -112,10 +112,11 @@ enforce the format (the external ``cc-plugin-og`` checker does that). The OG1 re
 
 * **mandatory**: ``id`` (overrides the derived ``<serial>_<start>_<mode>``; ``init --from``
   proposes the derived value).
-* **highly desirable**: ``program``, ``program_vocabulary``, ``site``, ``site_vocabulary``,
-  ``license``, ``doi``, ``data_url``.
-* **suggested**: ``project``, ``network``, ``acknowledgment``, ``comment`` (overrides the
-  comment derived from the file's ``history``).
+* **highly desirable**: ``site``, ``site_vocabulary``, ``program``, ``program_vocabulary``,
+  ``data_url``, ``doi``.
+* **suggested**: ``project``, ``network``, ``comment`` (overrides the comment derived from the
+  file's ``history``).
+* **optional** (ACDD globals with no OG1 tier): ``license``, ``acknowledgment``.
 
 Contributor and institution records
 ------------------------------------
@@ -161,17 +162,17 @@ The template ``init`` writes (fill the nulls before ``validate``):
 
    deployment:             # OG1 deployment identity; one key per global, null = not written
      id: null              # (mandatory) overrides the derived <serial>_<start>_<mode>
-     program: null         # (highly desirable)
-     program_vocabulary: null
      site: null            # (highly desirable)
-     site_vocabulary: null
+     site_vocabulary: null # (highly desirable)
+     program: null         # (highly desirable)
+     program_vocabulary: null  # (highly desirable)
+     data_url: null        # (highly desirable)
+     doi: null             # (highly desirable)
      project: null         # (suggested)
      network: null         # (suggested)
-     license: null         # (highly desirable)
-     acknowledgment: null  # (suggested)
-     doi: null             # (highly desirable)
-     data_url: null        # (highly desirable)
      comment: null         # (suggested)
+     license: null         # (optional)
+     acknowledgment: null  # (optional)
 
    global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above
 

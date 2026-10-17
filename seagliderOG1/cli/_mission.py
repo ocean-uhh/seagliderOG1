@@ -109,6 +109,50 @@ def _scalar(value: object) -> str:
     return text
 
 
+def _deployment_template_lines() -> list[str]:
+    """Build the ``deployment:`` template block, tier comments from REQUIRED_GLOBALS.
+
+    One source for the tiers: each key's ``(mandatory)`` / ``(highly desirable)`` /
+    ``(suggested)`` comment is read from ``vocabularies.REQUIRED_GLOBALS`` so the
+    template cannot drift from the manual-sourced table. ``license`` and
+    ``acknowledgment`` are ACDD globals with no OG1 tier and are marked ``(optional)``.
+
+    Returns
+    -------
+    list of str
+        The ``deployment:`` header line and one ``key: null`` line per global.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    label = {
+        "mandatory": "mandatory",
+        "highly_desirable": "highly desirable",
+        "suggested": "suggested",
+    }
+    tier_of = {
+        name: text
+        for tier, text in label.items()
+        for name in vocabularies.REQUIRED_GLOBALS.get(tier, {})
+    }
+    hints = {
+        "id": "overrides the derived <serial>_<start>_<mode>; 'init --from' proposes it",
+        "comment": "overrides the comment derived from the file's history",
+        "license": "e.g. CC-BY-4.0",
+        "doi": "e.g. https://doi.org/...",
+        "data_url": "where the OG1 file is hosted",
+    }
+    lines = [
+        "deployment:             # OG1 deployment identity; one key per global, "
+        "null = not written"
+    ]
+    for key in vocabularies.DEPLOYMENT_GLOBALS:
+        hint = hints.get(key)
+        comment = f"({tier_of.get(key, 'optional')})" + (f" {hint}" if hint else "")
+        lines.append(f"  {key}: null   # {comment}")
+    return lines
+
+
 def render_template(
     platform: dict[str, object] | None = None, source: str | None = None
 ) -> str:
@@ -164,19 +208,7 @@ def render_template(
         f"  BATTERY_TYPE: {_scalar(plat['BATTERY_TYPE'])}   # see the OG1 battery_type vocabulary",
         f"  BATTERY_PACK: {_scalar(plat['BATTERY_PACK'])}   # battery packaging",
         "",
-        "deployment:             # OG1 deployment identity; one key per global, null = not written",
-        "  id: null              # (mandatory) overrides the derived <serial>_<start>_<mode>; 'init --from' proposes it",
-        "  program: null         # (highly desirable) overarching programme",
-        "  program_vocabulary: null   # (highly desirable)",
-        "  site: null            # (highly desirable) sample line or area",
-        "  site_vocabulary: null      # (highly desirable)",
-        "  project: null         # (suggested)",
-        "  network: null         # (suggested)",
-        "  license: null         # (highly desirable) e.g. CC-BY-4.0",
-        "  acknowledgment: null  # (suggested)",
-        "  doi: null             # (highly desirable) data DOI, e.g. https://doi.org/...",
-        "  data_url: null        # (highly desirable) where the OG1 file is hosted",
-        "  comment: null         # (suggested) overrides the file's history-derived comment",
+        *_deployment_template_lines(),
         "",
         "global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above",
         "",
@@ -428,6 +460,32 @@ def _validate_source(
     return issues
 
 
+def _is_placeholder(value: object) -> bool:
+    """Return True for a null or placeholder config value.
+
+    Matches the converter's unset test (``vocabularies.PLACEHOLDER_VALUES``) so
+    ``validate`` and ``to_og1`` agree on what counts as missing — a value the
+    converter would drop (``""``, ``"null"``, ``"null@null.com"``) is treated as unset
+    here too, not reported as present.
+
+    Parameters
+    ----------
+    value : object
+        The value to test.
+
+    Returns
+    -------
+    bool
+        True when the value counts as unset.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    return value is None or (
+        isinstance(value, str) and value.strip() in vocabularies.PLACEHOLDER_VALUES
+    )
+
+
 def _validate_platform(platform: object) -> list[ValidationIssue]:
     """ERROR on a null required platform field when a platform block is present.
 
@@ -454,7 +512,7 @@ def _validate_platform(platform: object) -> list[ValidationIssue]:
     required = [f for f, spec in vocabularies.PLATFORM_FIELDS.items() if spec.required]
     issues: list[ValidationIssue] = []
     for field in required:
-        if platform.get(field) in (None, "", "None"):
+        if _is_placeholder(platform.get(field)):
             issues.append(
                 ValidationIssue(
                     "ERROR",
@@ -534,15 +592,14 @@ def _validate_highly_desirable(data: dict[str, object]) -> list[ValidationIssue]
     deployment = deployment if isinstance(deployment, dict) else {}
     extra = data.get("global_attributes")
     extra = extra if isinstance(extra, dict) else {}
-    empty = (None, "", "None")
     issues: list[ValidationIssue] = []
     for name, source in vocabularies.REQUIRED_GLOBALS["highly_desirable"].items():
         if source != "config":
             continue
         if name in vocabularies.DEPLOYMENT_GLOBALS:
-            block, present = "deployment", deployment.get(name) not in empty
+            block, present = "deployment", not _is_placeholder(deployment.get(name))
         elif name == "internal_mission_identifier":
-            block, present = "global_attributes", extra.get(name) not in empty
+            block, present = "global_attributes", not _is_placeholder(extra.get(name))
         else:
             continue  # from contributor/institution records, validated there
         if not present:
