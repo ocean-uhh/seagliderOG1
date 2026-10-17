@@ -783,8 +783,10 @@ def process_dataset(
     # Assign DEPTH_Z to the dataset where positive is up.
     ds_new = tools.add_depth(ds_new)
 
-    vars_to_remove = vocabularies.vars_to_remove
-    vars_present_to_remove = [var for var in vars_to_remove if var in ds_new.variables]
+    VARIABLES_TO_DROP = vocabularies.VARIABLES_TO_DROP
+    vars_present_to_remove = [
+        var for var in VARIABLES_TO_DROP if var in ds_new.variables
+    ]
 
     # Drop them
     ds_new = ds_new.drop_vars(vars_present_to_remove)
@@ -884,10 +886,10 @@ def standardise_og1(
 
     # Rename dimensions without changing the shapes of their variables.
     dimension_renames = {
-        dimension: vocabularies.dims_rename_dict[dimension]
+        dimension: vocabularies.DIMENSION_RENAMES[dimension]
         for dimension in dsa.dims
-        if dimension in vocabularies.dims_rename_dict
-        and vocabularies.dims_rename_dict[dimension] != dimension
+        if dimension in vocabularies.DIMENSION_RENAMES
+        and vocabularies.DIMENSION_RENAMES[dimension] != dimension
     }
 
     if dimension_renames:
@@ -1047,7 +1049,7 @@ def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
 
     """
     # Set new dimension name
-    newdim = vocabularies.dims_rename_dict["sg_data_point"]
+    newdim = vocabularies.DIMENSION_RENAMES["sg_data_point"]
 
     # Create a new dataset with GPS information
     gps_ds = xr.Dataset(
@@ -1120,7 +1122,7 @@ def update_dataset_attributes(
     attr_as_is = vocabularies.global_attrs["attr_as_is"]
     attr_to_add = vocabularies.global_attrs["attr_to_add"]
     attr_to_rename = vocabularies.global_attrs["attr_to_rename"]
-    order_of_attr = vocabularies.order_of_attr
+    ATTRIBUTE_ORDER = vocabularies.ATTRIBUTE_ORDER
 
     # Extract creators and contributors and institution, then reformulate strings
     contrib_attrs = get_contributors(ds, people=people, institutions=institutions)
@@ -1144,12 +1146,12 @@ def update_dataset_attributes(
         **attr_to_add,
     }
 
-    # Reorder attributes according to vocabularies.order_of_attr
+    # Reorder attributes according to vocabularies.ATTRIBUTE_ORDER
     ordered_attributes = {
-        attr: new_attributes[attr] for attr in order_of_attr if attr in new_attributes
+        attr: new_attributes[attr] for attr in ATTRIBUTE_ORDER if attr in new_attributes
     }
 
-    # Add any remaining attributes that were not in the order_of_attr list
+    # Add any remaining attributes that were not in the ATTRIBUTE_ORDER list
     for attr in new_attributes:
         if attr not in ordered_attributes:
             ordered_attributes[attr] = new_attributes[attr]

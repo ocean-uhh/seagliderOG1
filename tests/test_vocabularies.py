@@ -8,8 +8,8 @@ sys.path.append(str(parent_dir))
 from seagliderOG1 import vocabularies  # noqa: E402  # import after sys.path bootstrap
 
 
-def test_dims_rename_dict():
-    assert vocabularies.dims_rename_dict == {"sg_data_point": "N_MEASUREMENTS"}
+def test_dimension_renames():
+    assert vocabularies.DIMENSION_RENAMES == {"sg_data_point": "N_MEASUREMENTS"}
 
 
 def test_preferred_units():
@@ -42,20 +42,20 @@ def test_var_names():
         "PLATFORM_MODEL",
         "PLATFORM_SERIAL_NUMBER",
     ]
-    # Set in OG1_var_names.yaml
+    # Set in OG1_variable_names.yaml
     # OG1 variables are all caps and here: https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html
     for var in og1_varlist:
         assert var in vocabularies.standard_names.values()
 
 
 def test_vocab_attrs():
-    # Set in OG1_vocab_attrs.yaml
+    # Set in OG1_variable_attributes.yaml
     # OG1 variables are all caps and here: https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html
     assert vocabularies.vocab_attrs["WMO_IDENTIFIER"]["long_name"] == "wmo id"
 
 
 def test_sensor_vocabs():
-    # Set in OG1_sensor_attrs.yaml
+    # Set in OG1_sensor_attributes.yaml
     # Sensor vocabularies from here: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/
     # and https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html
     assert (
@@ -88,10 +88,10 @@ def test_vocabulary_strings_have_no_edge_whitespace():
             offenders.append(f"{path}: {node!r}")
 
     for name in (
-        "OG1_vocab_attrs.yaml",
-        "OG1_var_names.yaml",
-        "OG1_sensor_attrs.yaml",
-        "OG1_global_attrs.yaml",
+        "OG1_variable_attributes.yaml",
+        "OG1_variable_names.yaml",
+        "OG1_sensor_attributes.yaml",
+        "OG1_global_attributes.yaml",
     ):
         walk(
             yaml.safe_load(

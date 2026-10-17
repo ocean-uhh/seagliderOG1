@@ -402,7 +402,7 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
 
     Extracts:
       - unique sensor names (from global 'instrument' attributes)
-      - technical specs (from OG1_sensor_attrs.yaml vocabularies)
+      - technical specs (from OG1_sensor_attributes.yaml vocabularies)
       - serial numbers + calibration dates (from calibcomm variables)
 
     Checks calibration information across all datasets. Missing information
@@ -456,7 +456,7 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
             sensor_dict[sensor] = dict(sensor_vocabs[new_name])
             _log.info(
                 "Adding technical specifications for '%s' (sensor key: '%s') "
-                "from OG1_sensor_attrs.yaml",
+                "from OG1_sensor_attributes.yaml",
                 new_name,
                 sensor,
             )

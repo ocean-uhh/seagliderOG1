@@ -15,10 +15,10 @@ Key Components:
 
 Configuration Files:
 
-- OG1_var_names.yaml: Variable name mappings
-- OG1_vocab_attrs.yaml: Variable attribute vocabularies
-- OG1_sensor_attrs.yaml: Sensor attribute definitions
-- OG1_global_attrs.yaml: Global attribute configurations
+- OG1_variable_names.yaml: Variable name mappings
+- OG1_variable_attributes.yaml: Variable attribute vocabularies
+- OG1_sensor_attributes.yaml: Sensor attribute definitions
+- OG1_global_attributes.yaml: Global attribute configurations
 
 Notes
 -----
@@ -43,7 +43,7 @@ CONFIG_DIR: pathlib.Path = script_dir / "config"
 config_dir = CONFIG_DIR
 
 # Dimension renaming: maps basestation dimension names to OG1 standard names
-dims_rename_dict = {"sg_data_point": "N_MEASUREMENTS"}
+DIMENSION_RENAMES = {"sg_data_point": "N_MEASUREMENTS"}
 
 # NERC W08 "SensorML Contact Section Terms": the controlled vocabulary the OG1 spec
 # cites for contributor_role and contributing_institutions_role (fetched from
@@ -233,7 +233,7 @@ unit1_to_unit2 = {
 }
 
 # Variables to exclude from OG1 output (derived variables, duplicates, etc.)
-vars_to_remove = [
+VARIABLES_TO_DROP = [
     "dissolved_oxygen_sat",
     "depth",
     "eng_depth",
@@ -262,24 +262,24 @@ vars_to_remove = [
 ]
 
 # Variables to keep unchanged during conversion (currently empty)
-vars_as_is = []
+VARIABLES_AS_IS = []
 
 # --------------------------------
 # Variables + variable attributes
 # --------------------------------
 # Variable name mappings: basestation variable name -> OG1 standard name
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
-with (CONFIG_DIR / "OG1_var_names.yaml").open() as file:
+with (CONFIG_DIR / "OG1_variable_names.yaml").open() as file:
     standard_names = yaml.safe_load(file)
 
 # Variable attribute vocabularies for OG1 format
 # Reference: http://vocab.nerc.ac.uk/scheme/OG1/current/
-with (CONFIG_DIR / "OG1_vocab_attrs.yaml").open() as file:
+with (CONFIG_DIR / "OG1_variable_attributes.yaml").open() as file:
     vocab_attrs = yaml.safe_load(file)
 
 # Sensor attribute vocabularies for OG1 format
 # Reference: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/
-with (CONFIG_DIR / "OG1_sensor_attrs.yaml").open() as file:
+with (CONFIG_DIR / "OG1_sensor_attributes.yaml").open() as file:
     sensor_vocabs = yaml.safe_load(file)
 
 
@@ -289,7 +289,7 @@ with (CONFIG_DIR / "OG1_sensor_attrs.yaml").open() as file:
 
 
 # Preferred order for global attributes in OG1 files
-order_of_attr = [
+ATTRIBUTE_ORDER = [
     "title",  # OceanGliders trajectory file
     "id",  # sg015_20040920T000000_delayed
     "platform",  # sub-surface gliders
@@ -338,7 +338,7 @@ order_of_attr = [
 # Global attribute configuration for OG1 conversion
 # Defines which attributes to keep, rename, or add during conversion
 # Compatible with base_station_version 2.8, nodc_template_version_v0.9
-with (CONFIG_DIR / "OG1_global_attrs.yaml").open() as file:
+with (CONFIG_DIR / "OG1_global_attributes.yaml").open() as file:
     global_attrs = yaml.safe_load(file)
 
 # OG1 global-attribute requirement tiers, keyed "mandatory" / "highly_desirable" /

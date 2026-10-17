@@ -124,7 +124,7 @@ semantic versioning.
   `PLATFORM_NAME`, `TELECOM_TYPE`, `TRACKING_SYSTEM`, `BATTERY_TYPE`, `BATTERY_PACK` (each with
   its OG1 long_name and, where defined, its controlled-vocabulary attribute), and
   `platform_maker_vocabulary` on `PLATFORM_MAKER` (mirroring `platform_model_vocabulary`).
-- `required:` block in `config/OG1_global_attrs.yaml`: the OG1 global-attribute requirement
+- `required:` block in `config/OG1_global_attributes.yaml`: the OG1 global-attribute requirement
   tiers (mandatory / highly desirable / suggested) transcribed from the OG1 manual (v1.0.0),
   with the source URL and verification date in the file header; read as
   `vocabularies.REQUIRED_GLOBALS`. `validate` reports an unknown `deployment:` key.
@@ -153,6 +153,12 @@ semantic versioning.
 
 ### Changed
 
+- Packaged config files renamed to whole words (no API change; they are package data):
+  `OG1_var_names.yaml` → `OG1_variable_names.yaml`, `OG1_vocab_attrs.yaml` →
+  `OG1_variable_attributes.yaml`, `OG1_sensor_attrs.yaml` → `OG1_sensor_attributes.yaml`,
+  `OG1_global_attrs.yaml` → `OG1_global_attributes.yaml`. The `vocabularies` module tables
+  likewise: `dims_rename_dict` → `DIMENSION_RENAMES`, `vars_to_remove` → `VARIABLES_TO_DROP`,
+  `vars_as_is` → `VARIABLES_AS_IS`, `order_of_attr` → `ATTRIBUTE_ORDER`.
 - Conversion retains basestation variables that were previously dropped (#117). Every scalar
   variable is carried through with `tools.extract_scalar_parameters` / `add_scalar_parameters`,
   replacing the earlier hydrodynamic-model-only extraction (`extract_hdm_parameters`); the
@@ -183,7 +189,7 @@ semantic versioning.
   value the OG1 manual gives and the value the manual's own example files carry; and `Conventions`
   is `CF-1.10, ACDD-1.3, OG-1.0` (was `CF-1.10,OG-1.0`), declaring the ACDD discovery attributes
   the output already writes and spacing the list as the manual shows it
-  (`config/OG1_global_attrs.yaml`).
+  (`config/OG1_global_attributes.yaml`).
 - Trailing/leading whitespace stripped from vocabulary `long_name` strings (`TEMP*`, `ICES_CODE`,
   the WET Labs sensors) that were written verbatim into output attributes; a test guards against
   edge whitespace in the vocabulary YAMLs.

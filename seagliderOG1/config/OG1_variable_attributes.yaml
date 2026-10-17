@@ -606,4 +606,4 @@ SOUND_VELOCITY:
 DELTA_TIME_S:
   long_name: Difference between sample times
   units: seconds
-#Time for oxygen concentration was defined in OG1_var_names.yaml but not called here
+#Time for oxygen concentration was defined in OG1_variable_names.yaml but not called here
