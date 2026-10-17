@@ -31,10 +31,13 @@ Renamed functions, modules and arguments
      - ``plotters.show_*(dataset)`` — Dataset only (the file-path branch is gone)
    * - ``readers.load_sample_dataset()``
      - ``readers.load_sample_basestation()``
-   * - ``standardise_OG10``, ``tools.OG1_name_mapping``, ``print_OG1_mapping_summary``, the
-       ``OG1_mapping`` argument
-     - ``standardise_og1``, ``og1_name_mapping``, ``print_og1_mapping_summary``, ``og1_mapping``
-       — ``og1`` lower-case in names; the package name keeps its spelling
+   * - ``standardise_OG10`` and its ``OG1_mapping`` argument
+     - ``standardise_og1`` and ``og1_mapping`` — ``og1`` lower-case in names; the package name
+       keeps its spelling
+   * - ``tools.OG1_name_mapping(...)`` / ``print_OG1_mapping_summary(...)``
+     - ``convert.name_mapping(datasets)`` returns the basestation → OG1 mapping as a DataFrame;
+       the internal ``og1_name_mapping`` moved to the private pipeline module, and
+       ``print_OG1_mapping_summary`` was removed (print the DataFrame yourself)
    * - ``tools`` pipeline internals (``og1_name_mapping``, ``gather_sensor_info``,
        ``add_sensor_to_dataset``, ``merge_datasets_along_time``, ``extract_scalar_parameters`` /
        ``add_scalar_parameters``, ``set_best_dtype``, …) and the ``seagliderOG1.utilities`` module
@@ -45,7 +48,7 @@ Renamed functions, modules and arguments
      - removed; progress and diagnostics go through ``logging.getLogger("seagliderOG1...")``
        (set the level, e.g. the CLI ``-v``)
    * - ``readers.load_basestation_files(dir, first, last, repair=)``
-     - ``readers.read_mission(path, first=None, last=None, *, repair=False)``
+     - ``readers.read_mission(source, start_profile=None, end_profile=None, *, repair=False)``
    * - ``readers.load_first_basestation_file``
      - ``readers.read_file``
    * - ``readers.scan_and_repair_files``
@@ -87,6 +90,19 @@ Output-format changes
   ``HD_C``) are written as a JSON-string scalar variable
   (``{"dives": [...], "values": [...]}``, tagged ``serialization: json``) instead of broadcast
   onto ``N_MEASUREMENTS``. Decode the JSON to read them.
+- **Conversion provenance in the output.** Every variable carries ``original_name`` (its
+  basestation name; equal to the OG1 name when it passed through unrenamed), and merged variables
+  also carry ``original_dimension``. New globals record the conversion: ``conversion_dimensions``
+  (each basestation dimension's fate and the variables it carried), ``conversion_derived_variables``
+  (the converter-created variables mapped to the basestation variables they consumed),
+  ``conversion_dropped_variables``, ``conversion_removed_variables``,
+  ``conversion_input_variable_count`` and ``conversion_attribute_sources``.
+  ``convert.conversion_ledger(ds)`` reads them back and ``seagliderOG1 inspect --conversion``
+  prints them (``-o`` writes an HTML page). The attribute is ``original_name`` — code that read
+  the development-only ``original_variable_name`` must use ``original_name``.
+- **history** is a single conversion provenance line; the basestation ``comment`` is no longer
+  renamed to ``history``. A reader that parsed the old per-dive processing log out of ``history``
+  must adapt.
 
 Metadata now comes from the mission config
 -------------------------------------------
