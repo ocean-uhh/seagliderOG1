@@ -196,6 +196,117 @@ def test_process_v_flag_controls_library_logging(
     assert "Start converting" in capsys.readouterr().err
 
 
+def test_inspect_conversion_shows_ledger(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """inspect --conversion prints the ledger sections read from the OG1 file."""
+    from seagliderOG1 import convert, readers, writers
+
+    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 1))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    assert cli.main(["inspect", str(nc), "--conversion"]) == 0
+    out = capsys.readouterr().out
+    assert "Dimensions" in out
+    assert "backbone" in out and "gps_info" in out
+    assert "Global attributes by source" in out
+    assert "History" in out
+
+
+def test_inspect_conversion_rejects_pre_ledger_file(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A basestation file has no ledger, so --conversion is a plain error (exit 1)."""
+    raw = sorted(DATA_DIR.glob("p*.nc"))[0]
+    assert cli.main(["inspect", str(raw), "--conversion"]) == 1
+    assert "conversion_dimensions" in capsys.readouterr().err
+
+
+def test_inspect_conversion_lists_scalar_parameters(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--conversion has a Scalar parameters section naming the per-dive JSON storage."""
+    from seagliderOG1 import convert, readers, writers
+
+    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    assert cli.main(["inspect", str(nc), "--conversion"]) == 0
+    out = capsys.readouterr().out
+    assert "Scalar parameters" in out
+    assert "per-dive JSON" in out
+    # Constants are summarised as a count, not listed, unless --all is given.
+    assert "constant scalars (storage_type: constant_scalar)" in out
+    assert cli.main(["inspect", str(nc), "--conversion", "--all"]) == 0
+    assert "constant scalars (storage_type" not in capsys.readouterr().out
+
+
+def test_inspect_parameter_conflicts_with_conversion() -> None:
+    """--parameter and --conversion are mutually exclusive (argparse usage error)."""
+    with pytest.raises(SystemExit):
+        cli.main(["inspect", "any.nc", "--conversion", "--parameter", "x"])
+
+
+def test_inspect_parameter_decodes_per_dive_scalar(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--parameter decodes one per-dive JSON scalar; a non-per-dive variable is an error."""
+    from seagliderOG1 import convert, readers, writers
+
+    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    per_dive = next(
+        v for v in ds.data_vars if ds[v].attrs.get("storage_type") == "per_dive_scalar"
+    )
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    assert cli.main(["inspect", str(nc), "--parameter", per_dive]) == 0
+    out = capsys.readouterr().out
+    assert "dive" in out and "value" in out
+    assert cli.main(["inspect", str(nc), "--parameter", "TEMP"]) == 1
+
+
+def test_inspect_conversion_writes_html_page(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """inspect --conversion -o writes a self-contained HTML conversion page."""
+    from seagliderOG1 import convert, readers, writers
+
+    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    out = tmp_path / "conversion.html"
+    assert cli.main(["inspect", str(nc), "--conversion", "-o", str(out)]) == 0
+    assert f"wrote {out}" in capsys.readouterr().out
+    html = out.read_text(encoding="utf-8")
+    assert "Reconciliation" in html
+    assert "Variables on" in html  # grouped by original dimension
+    assert "Valid %" in html  # the merge diagnostic column
+    assert "<table" in html
+    # The six fates account for every basestation variable (demo_sg005 dives 1-2: 342).
+    assert "sum to the 342 basestation input variables" in html
+    # The transient derived-sources stamp is internal and never reaches the page.
+    assert "_derived_sources" not in html
+    # Item #2 sections render as tables, not the earlier interim text block.
+    assert "5. Derived variables" in html
+    assert "7. Global attributes" in html
+    assert "<h3>History</h3>" in html
+    assert "(scalar)" in html  # the Dimensions scalar row
+    assert "Interim text view" not in html
+    assert "data:image/png;base64," in html  # the section-1 fate histogram
+    # Masthead (S18) and the renamed calibration group (S15).
+    assert 'class="meta-grid"' in html
+    assert "<code>sg_calib_constants</code>" in html
+    # Spatiotemporal coverage computed column (S17) and the OG1-requirement line (S25).
+    assert "Computed" in html
+    assert "OG1 requirement: mandatory 9/9 present" in html
+    # Masthead polish (S19): meta-grid pairs are div-wrapped, and the jump-nav sits after the
+    # masthead closes (not a descendant of it).
+    assert "<div><dt>" in html
+    assert '</div>\n<nav class="jump-nav"' in html
+    # The per-heading "↑ top" link script is emitted (S24); it appends .top-link client-side.
+    assert "top-link" in html and "↑ top" in html
+
+
 def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:
     """Stand in for to_og1: no real conversion, deterministic id from mode."""
     import xarray as xr

@@ -178,6 +178,49 @@ def test_keep_variables_retains_mandatory_and_qc():
     assert any("dropped" in str(w.message) for w in caught)
 
 
+def test_keep_variables_records_dropped_in_ledger():
+    """keep_variables writes dropped names to conversion_dropped_variables, adding across calls."""
+    import json
+    import warnings
+
+    ds = xr.Dataset(
+        {
+            "TEMP": ("N", [1.0, 2.0]),
+            "PSAL": ("N", [3.0, 4.0]),
+            "GLIDE_SPEED": ("N", [0.1, 0.2]),
+            "PLATFORM_SERIAL_NUMBER": ((), "sg005"),
+        }
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        first = convert.keep_variables(ds, ["TEMP", "PSAL"])  # drops GLIDE_SPEED
+        second = convert.keep_variables(first, ["TEMP"])  # then drops PSAL
+    assert set(json.loads(first.attrs["conversion_dropped_variables"])) == {
+        "GLIDE_SPEED"
+    }
+    # The second call adds to the list rather than replacing it.
+    assert set(json.loads(second.attrs["conversion_dropped_variables"])) == {
+        "GLIDE_SPEED",
+        "PSAL",
+    }
+
+
+def test_keep_variables_keeps_source_ledger_complete():
+    """On a converted file, keep_variables lists conversion_dropped_variables under derived."""
+    import json
+    import warnings
+
+    ds = convert.to_og1(readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        subset = convert.keep_variables(ds, ["TEMP"])
+    sources = json.loads(subset.attrs["conversion_attribute_sources"])
+    assert "conversion_dropped_variables" in sources["derived"]
+    # Still categorised exactly once across all categories.
+    everywhere = [name for names in sources.values() for name in names]
+    assert everywhere.count("conversion_dropped_variables") == 1
+
+
 def test_process_dataset():
 
     ds1 = readers.load_sample_basestation()
@@ -441,6 +484,216 @@ def test_conversion_attribute_sources_ledger():
     assert "contributor_name" in ledger["mixed"]  # config/file blend, not guessed
     assert "title" in ledger["package"]
     assert "start_date" in ledger["derived"]
+
+
+def test_original_name_on_every_basestation_variable():
+    """Each renamed or passed-through variable records its basestation name; derived ones are listed."""
+    import json
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    derived = set(json.loads(ds.attrs["conversion_derived_variables"]))
+    for name in ds.variables:
+        named = "original_name" in ds[name].attrs
+        # A variable is either a basestation variable (named) or a listed derived one,
+        # never both and never neither — so a missing original_name is always a bug.
+        assert named != (name in derived), name
+    # Renaming actually happened (original_name differs from the OG1 name) ...
+    renamed = [
+        n for n in ds.variables if ds[n].attrs.get("original_name") not in (None, n)
+    ]
+    assert renamed
+    # ... and the pre-0.1.0 attribute spelling is gone.
+    assert all("original_variable_name" not in ds[n].attrs for n in ds.variables)
+
+
+def test_conversion_dimensions_ledger():
+    """conversion_dimensions records each dimension's fate and the variables it carried."""
+    import json
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    dims = json.loads(ds.attrs["conversion_dimensions"])
+    # The CTD dimension is the backbone that becomes N_MEASUREMENTS.
+    assert dims["sg_data_point"]["fate"] == "backbone"
+    # gps_info is merged (its fixes are placed on the backbone by a dedicated path),
+    # not skipped, and its basestation variables are named.
+    assert dims["gps_info"]["fate"] == "merged"
+    assert "log_gps_lat" in dims["gps_info"]["variables"]
+    # A skipped dimension leaves nothing in the file, so its variables are recorded here.
+    skipped = {d: info for d, info in dims.items() if info["fate"] == "skipped"}
+    assert skipped
+    assert all(info["variables"] for info in skipped.values())
+
+
+def test_basestation_comment_is_kept_not_renamed():
+    """A basestation comment is carried to the output unchanged, not folded into history."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    datasets[0].attrs["comment"] = "deployed off the shelf break"
+    ds = convert.to_og1(datasets)
+    assert ds.attrs.get("comment") == "deployed off the shelf break"
+    assert "deployed off the shelf break" not in ds.attrs["history"]
+
+
+def test_history_is_one_provenance_line():
+    """to_og1 writes history as a single conversion provenance line, not the basestation log."""
+    import re
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    base = datasets[0].attrs["history"].strip()
+    ds = convert.to_og1(datasets)
+    history = ds.attrs["history"].strip()
+    # Exactly one line, and not the multi-line basestation per-dive QC log.
+    assert "\n" not in history
+    assert history != base
+    # Its shape is asserted, never its timestamp value (not reproducible).
+    assert re.match(
+        r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00 seagliderOG1 \S+: "
+        r"basestation to OG1 \(to_og1\)$",
+        history,
+    )
+
+
+def test_scalar_parameters_storage_and_dimension():
+    """Scalars declare storage_type and carry no empty original_dimension; per-dive JSON decodes."""
+    import json
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    # No variable carries an empty original_dimension placeholder (it is omitted instead).
+    assert all(ds[v].attrs.get("original_dimension", "x") != "" for v in ds.variables)
+    # Both scalar cases declare their storage, so the ledger view infers nothing.
+    per_dive = [
+        v for v in ds.data_vars if ds[v].attrs.get("storage_type") == "per_dive_scalar"
+    ]
+    constants = [
+        v for v in ds.data_vars if ds[v].attrs.get("storage_type") == "constant_scalar"
+    ]
+    assert per_dive and constants
+    # A per-dive JSON scalar decodes to the converted dive numbers.
+    payload = json.loads(str(ds[per_dive[0]].values))
+    assert sorted(payload["dives"]) == [1, 2]
+    assert len(payload["values"]) == len(payload["dives"])
+
+
+def test_conversion_ledger_parses_the_file():
+    """conversion_ledger returns the parsed ledger; a pre-ledger file raises MetadataError."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ledger = convert.conversion_ledger(convert.to_og1(datasets))
+    assert set(ledger) == {
+        "dimensions",
+        "derived",
+        "dropped",
+        "removed",
+        "input_variable_count",
+        "attribute_sources",
+        "history",
+        "scalar_parameters",
+    }
+    assert ledger["dimensions"]["sg_data_point"]["fate"] == "backbone"
+    # derived is a map {name: [source basestation names]}; removed is the drop list.
+    assert isinstance(ledger["derived"], dict)
+    assert ledger["input_variable_count"] > 0
+    assert "density" in ledger["removed"]  # a VARIABLES_TO_DROP member present in sg005
+    # Derived variables record their basestation sources: every merged dimension's time
+    # variable folds into the shared TIME axis; TIME_GPS records the GPS clock separately.
+    assert set(ledger["derived"]["TIME"]) == {
+        "ctd_time",
+        "time",
+        "gc_st_secs",
+        "log_gps_time",
+    }
+    assert ledger["derived"]["TIME_GPS"] == ["log_gps_time"]
+    per_dive = [
+        name
+        for name, entry in ledger["scalar_parameters"].items()
+        if entry["storage"] == "per_dive_scalar"
+    ]
+    assert per_dive
+    assert sorted(ledger["scalar_parameters"][per_dive[0]]["dives"]) == [1, 2]
+    try:
+        convert.conversion_ledger(readers.load_sample_basestation())
+    except convert.MetadataError:
+        pass
+    else:
+        raise AssertionError("expected MetadataError on a pre-ledger file")
+
+
+def test_reconciliation_fates_sum_to_input_count():
+    """Every basestation variable has exactly one fate; the six buckets sum to the input count."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    inputs = {str(v) for ds in datasets for v in ds.variables}
+    ds = convert.to_og1(datasets)
+    ledger = convert.conversion_ledger(ds)
+    renamed = {
+        str(ds[n].attrs["original_name"])
+        for n in ds.variables
+        if ds[n].attrs.get("original_name") not in (None, n)
+    }
+    passed = {str(n) for n in ds.variables if ds[n].attrs.get("original_name") == n}
+    consumed = {s for sources in ledger["derived"].values() for s in sources}
+    removed = set(ledger["removed"])
+    dropped = set(ledger["dropped"])
+    skipped = {
+        v
+        for info in ledger["dimensions"].values()
+        if info["fate"] == "skipped"
+        for v in info["variables"]
+    }
+    # One fate per name, resolved in the same priority order as the reconciliation page.
+    seen: set[str] = set()
+    total = 0
+    for names in (renamed, passed, consumed, removed, dropped, skipped):
+        total += len(names - seen)
+        seen |= names
+    assert total == ledger["input_variable_count"] == len(inputs)
+    # gc_event is merged (its variables reach the output), so its time variable feeds the
+    # shared TIME axis; it is consumed, not skipped.
+    assert "gc_st_secs" in consumed and "gc_st_secs" not in skipped
+
+
+def test_dimension_fate_agrees_with_output_variables():
+    """A dimension's fate is read from the output: merged iff a variable survives on it."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    dims = convert.conversion_ledger(ds)["dimensions"]
+    in_output = {
+        str(ds[n].attrs["original_dimension"])
+        for n in ds.variables
+        if "original_dimension" in ds[n].attrs
+    }
+    for dim, info in dims.items():
+        if info["fate"] in ("backbone", "merged"):
+            assert dim in in_output, (
+                f"{dim} is {info['fate']} but no output variable carries it"
+            )
+        else:
+            assert dim not in in_output, (
+                f"{dim} is skipped but a variable survived on it"
+            )
+    # gc_event in demo_sg005 is merged by this rule (its gc_* variables reach the axis).
+    assert dims["gc_event"]["fate"] == "merged"
+
+
+def test_derived_sources_stamp_never_reaches_the_file(tmp_path: pathlib.Path) -> None:
+    """The transient _derived_sources attr is consumed into the ledger, not written to disk."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    assert not [
+        n for n in ds.variables if _pipeline.DERIVED_SOURCES_ATTR in ds[n].attrs
+    ]
+    out = tmp_path / "og1.nc"
+    writers.write(ds, str(out), overwrite=True)
+    reopened = xr.open_dataset(str(out), engine="netcdf4", decode_timedelta=False)
+    try:
+        leaked = [
+            n
+            for n in reopened.variables
+            if _pipeline.DERIVED_SOURCES_ATTR in reopened[n].attrs
+        ]
+    finally:
+        reopened.close()
+    assert not leaked
 
 
 def test_start_date_is_earliest_time_regardless_of_input_order():

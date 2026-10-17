@@ -55,7 +55,9 @@ docs = [
   "nbconvert>=7.8",
   "ipykernel",
 ]
-dev = ["seagliderOG1[test,docs]", "ruff>=0.3"]
+# ruff pinned to the exact version the tests workflow runs (.github/workflows/tests.yml),
+# so local `ruff check`/`ruff format` and the CI lint gate cannot disagree. Bump both together.
+dev = ["seagliderOG1[test,docs]", "ruff==0.16.4"]
 
 [project.scripts]
 seagliderOG1 = "seagliderOG1.cli:main"
@@ -64,11 +66,20 @@ seagliderOG1 = "seagliderOG1.cli:main"
 packages = [
   "seagliderOG1",
   "seagliderOG1.cli",
+  "seagliderOG1.reports",
+  "seagliderOG1.reports._vendored",
 ]
 include-package-data = true
 
 [tool.setuptools.package-data]
 seagliderOG1 = ["config/*.yaml", "config/*.yml"]
+"seagliderOG1.reports._vendored" = [
+  "MANIFEST.txt",
+  "README.md",
+  "*.mplstyle",
+  "templates/*.html",
+  "leaflet/*",
+]
 
 [tool.setuptools_scm]
 write_to = "seagliderOG1/_version.py"
@@ -108,3 +119,19 @@ convention = "numpy"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ARG", "ANN", "D"]
+# Vendored byte-identical across the family packages; never edited here, so not held
+# to this repo's docstring/annotation rules. check.py verifies the bytes.
+"seagliderOG1/reports/_vendored/*" = ["RUF100", "D", "ANN"]
+
+[tool.ruff.format]
+# The vendored copy is byte-identical to its source and verified by check.py; the
+# formatter must not rewrap it (that would drift it from MANIFEST.txt). Interim until
+# the upstream copy is itself ruff-format-stable at line length 88 (ctdcast F14); lint
+# still covers it via the per-file ignore above.
+exclude = ["seagliderOG1/reports/_vendored/*"]
+
+[tool.coverage.run]
+# The vendored report layer is ctdcast's code, tested there and verified byte-identical
+# by check.py; it is not measured here (consumers do not measure vendored coverage).
+source = ["seagliderOG1"]
+omit = ["seagliderOG1/reports/_vendored/*"]

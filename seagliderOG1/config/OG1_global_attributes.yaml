@@ -27,12 +27,12 @@ attr_as_is: !!set
   geospatial_lat_max: null
   date_created: null
   license: null
+  comment: null
 
 attr_to_rename:
   site: summary
   uri: uuid
   uri_comment: UUID
-  comment: history
   platform_id: PLATFORM_SERIAL_NUMBER
 
 attr_to_var:
