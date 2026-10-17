@@ -352,10 +352,11 @@ def conversion_ledger(ds: xr.Dataset) -> dict:
     -------
     dict
         Keys ``dimensions`` (dimension to ``{"fate", "variables"}``), ``derived``
-        (list of names), ``dropped`` (list of names), ``attribute_sources`` (category
-        to names), ``history`` (str) and ``scalar_parameters`` (name to ``{"storage",
-        "original_name", "units"}``, plus ``"dives"`` and ``"values"`` for a per-dive
-        scalar).
+        (derived-variable name to its list of source basestation names), ``dropped``
+        (list of names), ``removed`` (list of names), ``input_variable_count`` (int),
+        ``attribute_sources`` (category to names), ``history`` (str) and
+        ``scalar_parameters`` (name to ``{"storage", "original_name", "units"}``, plus
+        ``"dives"`` and ``"values"`` for a per-dive scalar).
 
     Raises
     ------
