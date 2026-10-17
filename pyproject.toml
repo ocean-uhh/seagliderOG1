@@ -127,3 +127,9 @@ convention = "numpy"
 # the upstream copy is itself ruff-format-stable at line length 88 (ctdcast F14); lint
 # still covers it via the per-file ignore above.
 exclude = ["seagliderOG1/reports/_vendored/*"]
+
+[tool.coverage.run]
+# The vendored report layer is ctdcast's code, tested there and verified byte-identical
+# by check.py; it is not measured here (consumers do not measure vendored coverage).
+source = ["seagliderOG1"]
+omit = ["seagliderOG1/reports/_vendored/*"]

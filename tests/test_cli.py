@@ -265,6 +265,25 @@ def test_inspect_parameter_decodes_per_dive_scalar(
     assert cli.main(["inspect", str(nc), "--parameter", "TEMP"]) == 1
 
 
+def test_inspect_conversion_writes_html_page(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """inspect --conversion -o writes a self-contained HTML conversion page."""
+    from seagliderOG1 import convert, readers, writers
+
+    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    out = tmp_path / "conversion.html"
+    assert cli.main(["inspect", str(nc), "--conversion", "-o", str(out)]) == 0
+    assert f"wrote {out}" in capsys.readouterr().out
+    html = out.read_text(encoding="utf-8")
+    assert "Reconciliation" in html
+    assert "Variables on" in html  # grouped by original dimension
+    assert "Valid %" in html  # the merge diagnostic column
+    assert "<table" in html
+
+
 def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:
     """Stand in for to_og1: no real conversion, deterministic id from mode."""
     import xarray as xr

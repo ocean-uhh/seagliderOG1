@@ -299,6 +299,20 @@ def run(args: argparse.Namespace) -> int:
         return 0
 
     if args.conversion:
+        if args.output:
+            # The HTML page opens the file itself; close the handle opened above.
+            ds.close()
+            from seagliderOG1.reports.conversion import render_conversion
+
+            try:
+                html = render_conversion(args.file, title=args.title)
+            except MetadataError as exc:
+                print(f"error: {exc}", file=sys.stderr)
+                return 1
+            pathlib.Path(args.output).write_text(html, encoding="utf-8")
+            print(f"wrote {args.output}")
+            return 0
+
         try:
             text = _conversion_text(ds, show_all=args.all)
         except MetadataError as exc:
@@ -314,12 +328,6 @@ def run(args: argparse.Namespace) -> int:
             )
             return 1
         print(text)
-        if args.output:
-            print(
-                "[report] extra not installed; the conversion HTML page needs it — "
-                "printed the text instead",
-                file=sys.stderr,
-            )
         return 0
 
     try:

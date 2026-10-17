@@ -155,8 +155,9 @@ What the conversion records
 The output file records what the conversion did, so the treatment can be read back from the
 file alone:
 
-* every variable carries ``original_name`` (its basestation name; equal to the OG1 name when the
-  variable passed through unrenamed), and merged variables also carry ``original_dimension``;
+* every renamed or passed-through variable carries ``original_name`` (its basestation name; equal
+  to the OG1 name when the variable passed through unrenamed), and merged variables also carry
+  ``original_dimension``; converter-created variables have neither (see below);
 * ``conversion_dimensions`` gives each basestation dimension a fate — ``backbone`` (the dimension
   that becomes ``N_MEASUREMENTS``), ``merged``, or ``skipped`` — and lists the variables it carried
   (a variable on more than one dimension is listed under each, so the counts are not a partition);

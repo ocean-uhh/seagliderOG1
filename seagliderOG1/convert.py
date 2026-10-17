@@ -304,14 +304,27 @@ def _decode_per_dive(ds: xr.Dataset, name: str) -> dict:
         If the stored value is not the per-dive JSON this package writes.
 
     """
+    note = (
+        f"{name}: storage_type is 'per_dive_scalar' but the value is not the per-dive "
+        "JSON this package writes"
+    )
     try:
-        return json.loads(str(ds[name].values))
+        payload = json.loads(str(ds[name].values))
     except (json.JSONDecodeError, TypeError) as exc:
-        msg = (
-            f"{name}: storage_type is 'per_dive_scalar' but the value is not the "
-            f"per-dive JSON this package writes ({exc})."
+        raise MetadataError(f"{note} ({exc}).") from exc
+    # Require the object shape the writer produces: a dict with equal-length dives and
+    # values lists, so a non-object or ragged payload fails loudly here rather than as a
+    # later AttributeError or zip mismatch.
+    if not isinstance(payload, dict) or not isinstance(
+        payload.get("dives"), list
+    ) or not isinstance(payload.get("values"), list):
+        raise MetadataError(f"{note} (expected an object with 'dives' and 'values').")
+    if len(payload["dives"]) != len(payload["values"]):
+        raise MetadataError(
+            f"{note} ('dives' and 'values' have different lengths: "
+            f"{len(payload['dives'])} vs {len(payload['values'])})."
         )
-        raise MetadataError(msg) from exc
+    return payload
 
 
 def conversion_ledger(ds: xr.Dataset) -> dict:
