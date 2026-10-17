@@ -595,6 +595,10 @@ def test_conversion_ledger_parses_the_file():
     assert isinstance(ledger["derived"], dict)
     assert ledger["input_variable_count"] > 0
     assert "density" in ledger["removed"]  # a VARIABLES_TO_DROP member present in sg005
+    # Derived variables record their basestation sources: the TIME axis from the backbone
+    # time variables, TIME_GPS from the GPS clock.
+    assert set(ledger["derived"]["TIME"]) == {"ctd_time", "time"}
+    assert ledger["derived"]["TIME_GPS"] == ["log_gps_time"]
     per_dive = [
         name
         for name, entry in ledger["scalar_parameters"].items()
@@ -608,6 +612,59 @@ def test_conversion_ledger_parses_the_file():
         pass
     else:
         raise AssertionError("expected MetadataError on a pre-ledger file")
+
+
+def test_reconciliation_fates_sum_to_input_count():
+    """Every basestation variable has exactly one fate; the six buckets sum to the input count."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    inputs = {str(v) for ds in datasets for v in ds.variables}
+    ds = convert.to_og1(datasets)
+    ledger = convert.conversion_ledger(ds)
+    renamed = {
+        str(ds[n].attrs["original_name"])
+        for n in ds.variables
+        if ds[n].attrs.get("original_name") not in (None, n)
+    }
+    passed = {str(n) for n in ds.variables if ds[n].attrs.get("original_name") == n}
+    consumed = {s for sources in ledger["derived"].values() for s in sources}
+    removed = set(ledger["removed"])
+    dropped = set(ledger["dropped"])
+    skipped = {
+        v
+        for info in ledger["dimensions"].values()
+        if info["fate"] == "skipped"
+        for v in info["variables"]
+    }
+    # One fate per name, resolved in the same priority order as the reconciliation page.
+    seen: set[str] = set()
+    total = 0
+    for names in (renamed, passed, consumed, removed, dropped, skipped):
+        total += len(names - seen)
+        seen |= names
+    assert total == ledger["input_variable_count"] == len(inputs)
+    # A skipped dimension's time variable stays with its dimension, not folded into TIME.
+    assert "gc_st_secs" in skipped and "gc_st_secs" not in consumed
+
+
+def test_derived_sources_stamp_never_reaches_the_file(tmp_path: pathlib.Path) -> None:
+    """The transient _derived_sources attr is consumed into the ledger, not written to disk."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    assert not [
+        n for n in ds.variables if _pipeline.DERIVED_SOURCES_ATTR in ds[n].attrs
+    ]
+    out = tmp_path / "og1.nc"
+    writers.write(ds, str(out), overwrite=True)
+    reopened = xr.open_dataset(str(out), engine="netcdf4", decode_timedelta=False)
+    try:
+        leaked = [
+            n
+            for n in reopened.variables
+            if _pipeline.DERIVED_SOURCES_ATTR in reopened[n].attrs
+        ]
+    finally:
+        reopened.close()
+    assert not leaked
 
 
 def test_start_date_is_earliest_time_regardless_of_input_order():

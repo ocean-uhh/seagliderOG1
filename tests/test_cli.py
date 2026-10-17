@@ -282,6 +282,10 @@ def test_inspect_conversion_writes_html_page(
     assert "Variables on" in html  # grouped by original dimension
     assert "Valid %" in html  # the merge diagnostic column
     assert "<table" in html
+    # The six fates account for every basestation variable (demo_sg005 dives 1-2: 342).
+    assert "sum to the 342 basestation input variables" in html
+    # The transient derived-sources stamp is internal and never reaches the page.
+    assert "_derived_sources" not in html
 
 
 def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:

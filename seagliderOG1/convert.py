@@ -34,8 +34,9 @@ _log = logging.getLogger(__name__)
 # here: it is derived by default but may be overridden via the deployment: block.
 # Transient per-variable attribute a derived-variable creation site stamps with the JSON
 # list of basestation variables its data came from; read and removed when the
-# conversion_derived_variables map is built, so it never reaches the file.
-_DERIVED_SOURCES_ATTR = "_derived_sources"
+# conversion_derived_variables map is built, so it never reaches the file. Defined in
+# _pipeline (which also stamps the TIME axis) and aliased here for the local creation sites.
+_DERIVED_SOURCES_ATTR = _pipeline.DERIVED_SOURCES_ATTR
 
 _DERIVED_GLOBALS = frozenset(
     {
@@ -852,9 +853,13 @@ def to_og1(
         attrs={"long_name": "time of deployment"},
     )
 
-    # Remove attributes from TIME_GPS
+    # Remove attributes from TIME_GPS, but keep the transient derived-sources stamp so the
+    # ledger can record that TIME_GPS came from log_gps_time; it is popped before the write.
     if "TIME_GPS" in ds_og1.variables:
-        ds_og1["TIME_GPS"].attrs = {}
+        gps_sources = ds_og1["TIME_GPS"].attrs.get(_DERIVED_SOURCES_ATTR)
+        ds_og1["TIME_GPS"].attrs = (
+            {_DERIVED_SOURCES_ATTR: gps_sources} if gps_sources is not None else {}
+        )
     # ---- -------------------------------------------- ----
 
     # Update time_coverage attributes
@@ -1418,6 +1423,12 @@ def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
         vocabularies.vocab_attrs["TIME_GPS"],
         {"dtype": ds["TIME"].dtype},
     )
+    # Record each GPS variable's basestation source for the conversion ledger; the
+    # transient attr is consumed into conversion_derived_variables before the file is
+    # written (see to_og1) and never reaches the output.
+    gps_ds["LATITUDE_GPS"].attrs[_DERIVED_SOURCES_ATTR] = json.dumps(["log_gps_lat"])
+    gps_ds["LONGITUDE_GPS"].attrs[_DERIVED_SOURCES_ATTR] = json.dumps(["log_gps_lon"])
+    gps_ds["TIME_GPS"].attrs[_DERIVED_SOURCES_ATTR] = json.dumps(["log_gps_time"])
 
     # Concatenate ds and gps_ds
     datasets = []

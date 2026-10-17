@@ -5,6 +5,7 @@ name mapping, sensor/scalar extraction, dimension merge, dtype coercion, and the
 validation/parsing helpers. Public, user-facing utilities live in :mod:`seagliderOG1.tools`.
 """
 
+import json
 import logging
 import re
 from datetime import date
@@ -17,6 +18,11 @@ from dateutil import parser
 from seagliderOG1 import vocabularies
 
 _log = logging.getLogger(__name__)
+
+# Transient per-variable attribute a derived-variable creation site stamps with the JSON
+# list of basestation variables its data came from; read and removed when the
+# conversion_derived_variables map is built, so it never reaches the file.
+DERIVED_SOURCES_ATTR = "_derived_sources"
 
 
 CTD_MEASUREMENT_VARIABLES = {
@@ -921,6 +927,9 @@ def merge_datasets_along_time(
     duplicate_time_descriptions = []
 
     all_time_names = {name for names in time_variables.values() for name in names}
+    # Basestation time variables actually folded into the shared axis, for the ledger: the
+    # TIME coordinate carries no original_name, so these would otherwise go unaccounted.
+    consumed_time_names: set[str] = set()
 
     # Collect shared time sources before modifying datasets.
     time_sources: dict[str, list[xr.DataArray]] = {}
@@ -999,8 +1008,14 @@ def merge_datasets_along_time(
         time_values = time_source.values
         time_attrs = dict(time_source.attrs)
 
-        # Replace individual time variables with the shared time coordinate.
-        ds = ds.drop_vars([name for name in all_time_names if name in ds.variables])
+        # Replace individual time variables with the shared time coordinate. Only the
+        # backbone dimension's time variables define the TIME axis; a merged side dimension
+        # (e.g. gps_info -> TIME_GPS) records its own source, and a skipped dimension's time
+        # variable belongs to that dimension, not to TIME.
+        dropped_time_names = [name for name in all_time_names if name in ds.variables]
+        if dim == "sg_data_point":
+            consumed_time_names.update(dropped_time_names)
+        ds = ds.drop_vars(dropped_time_names)
 
         if "time" in ds.variables:
             raise ValueError(
@@ -1104,6 +1119,12 @@ def merge_datasets_along_time(
     merged_ds["time"].attrs["duplicate_timestamp_adjustment_rule"] = (
         "First occurrence unchanged; subsequent occurrences shifted "
         "forward by 0.5 seconds each. No measurements were discarded."
+    )
+    # Stamp the axis with the basestation time variables it consumed; the attr survives the
+    # rename to TIME (standardise copies source attrs forward) and is read into the
+    # conversion_derived_variables map before the file is written.
+    merged_ds["time"].attrs[DERIVED_SOURCES_ATTR] = json.dumps(
+        sorted(consumed_time_names)
     )
 
     _log.debug("Dimensions not merged: %s", sorted(all_dims - actually_merged_dims))
@@ -1209,8 +1230,6 @@ def add_scalar_parameters(
     range attributes that do not apply to JSON strings. No unit conversions
     are performed.
     """
-    import json
-
     import numpy as np
 
     result = ds_og1.copy()
