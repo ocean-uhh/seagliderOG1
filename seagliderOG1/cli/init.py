@@ -117,8 +117,9 @@ def run(args: argparse.Namespace) -> int:
             return 1
         source = str(pathlib.Path(args.from_dir).resolve())
 
-    # Always UTF-8: mission.yaml is read back with encoding="utf-8" and may carry
-    # non-ASCII values (e.g. an accented platform model or institution name), so a
+    # Always UTF-8: the template carries non-ASCII glyphs (the "→" destination
+    # markers) and may hold non-ASCII values (e.g. an accented platform model or
+    # institution name), and mission.yaml is read back with encoding="utf-8", so a
     # non-UTF-8 OS locale must not decide the on-disk encoding.
     out.write_text(_mission.render_template(platform, source=source), encoding="utf-8")
     print(f"wrote {out}")
