@@ -117,6 +117,9 @@ def run(args: argparse.Namespace) -> int:
             return 1
         source = str(pathlib.Path(args.from_dir).resolve())
 
-    out.write_text(_mission.render_template(platform, source=source))
+    # Always UTF-8: mission.yaml is read back with encoding="utf-8" and may carry
+    # non-ASCII values (e.g. an accented platform model or institution name), so a
+    # non-UTF-8 OS locale must not decide the on-disk encoding.
+    out.write_text(_mission.render_template(platform, source=source), encoding="utf-8")
     print(f"wrote {out}")
     return 0

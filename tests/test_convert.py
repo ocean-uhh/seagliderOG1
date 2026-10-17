@@ -346,6 +346,17 @@ def test_global_attributes_refuses_a_deployment_key():
         raise AssertionError("expected ValueError for a deployment key in globals")
 
 
+def test_global_attributes_null_reserved_key_is_tolerated():
+    """A legacy v1 template listing reserved keys as null still converts (nulls skipped)."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    # project/program have a deployment home, date_created is derived; all null -> no collision.
+    ds = convert.to_og1(
+        datasets,
+        global_attributes={"project": None, "program": None, "date_created": None},
+    )
+    assert "conversion_attribute_sources" in ds.attrs  # converted, did not raise
+
+
 def test_deployment_unknown_key_raises():
     """An unknown deployment: key is rejected, naming the key."""
     try:
