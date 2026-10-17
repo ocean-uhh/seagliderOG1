@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev66 documentation</title>
+  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=6aa8c151"></script>
+      <script src="../../_static/documentation_options.js?v=ced04548"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -56,6 +56,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API</span></p>
@@ -109,10 +110,10 @@
 
 <span class="sd">Configuration Files:</span>
 
-<span class="sd">- OG1_var_names.yaml: Variable name mappings</span>
-<span class="sd">- OG1_vocab_attrs.yaml: Variable attribute vocabularies</span>
-<span class="sd">- OG1_sensor_attrs.yaml: Sensor attribute definitions</span>
-<span class="sd">- OG1_global_attrs.yaml: Global attribute configurations</span>
+<span class="sd">- OG1_variable_names.yaml: Variable name mappings</span>
+<span class="sd">- OG1_variable_attributes.yaml: Variable attribute vocabularies</span>
+<span class="sd">- OG1_sensor_attributes.yaml: Sensor attribute definitions</span>
+<span class="sd">- OG1_global_attributes.yaml: Global attribute configurations</span>
 
 <span class="sd">Notes</span>
 <span class="sd">-----</span>
@@ -137,7 +138,7 @@
 <span class="n">config_dir</span> <span class="o">=</span> <span class="n">CONFIG_DIR</span>
 
 <span class="c1"># Dimension renaming: maps basestation dimension names to OG1 standard names</span>
-<span class="n">dims_rename_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"sg_data_point"</span><span class="p">:</span> <span class="s2">"N_MEASUREMENTS"</span><span class="p">}</span>
+<span class="n">DIMENSION_RENAMES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"sg_data_point"</span><span class="p">:</span> <span class="s2">"N_MEASUREMENTS"</span><span class="p">}</span>
 
 <span class="c1"># NERC W08 "SensorML Contact Section Terms": the controlled vocabulary the OG1 spec</span>
 <span class="c1"># cites for contributor_role and contributing_institutions_role (fetched from</span>
@@ -165,6 +166,34 @@
 <span class="c1"># convention".</span>
 <span class="n">MODE_SUFFIX</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"delayed"</span><span class="p">:</span> <span class="s2">"delayed"</span><span class="p">,</span> <span class="s2">"realtime"</span><span class="p">:</span> <span class="s2">"R"</span><span class="p">}</span>
 
+<span class="c1"># Strings that mean "nothing was supplied" when a config or global-attribute value is</span>
+<span class="c1"># read: None renders as these, and they are the placeholders the old attr_mandatory</span>
+<span class="c1"># fill used to write. One definition so the converter and validate agree on what counts</span>
+<span class="c1"># as unset (a value here is never written to the output, and validate treats it as null).</span>
+<span class="n">PLACEHOLDER_VALUES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"null"</span><span class="p">,</span> <span class="s2">"null@null.com"</span><span class="p">})</span>
+
+<span class="c1"># OG1 deployment-identity globals the mission config sets through the structured</span>
+<span class="c1"># deployment: block (one key per global). Ordered as the OG1 manual's global-attribute</span>
+<span class="c1"># table lists them (the order the `required:` block carries): mandatory, then highly</span>
+<span class="c1"># desirable, then suggested; `license` and `acknowledgment` are ACDD globals with no</span>
+<span class="c1"># OG1-table position and trail the tiered ones. The single list read by</span>
+<span class="c1"># convert.to_og1 (precedence, collision checks), the validate deployment check, and</span>
+<span class="c1"># the init template (which reads each key's tier from REQUIRED_GLOBALS).</span>
+<span class="n">DEPLOYMENT_GLOBALS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"id"</span><span class="p">,</span>
+    <span class="s2">"site"</span><span class="p">,</span>
+    <span class="s2">"site_vocabulary"</span><span class="p">,</span>
+    <span class="s2">"program"</span><span class="p">,</span>
+    <span class="s2">"program_vocabulary"</span><span class="p">,</span>
+    <span class="s2">"data_url"</span><span class="p">,</span>
+    <span class="s2">"doi"</span><span class="p">,</span>
+    <span class="s2">"project"</span><span class="p">,</span>
+    <span class="s2">"network"</span><span class="p">,</span>
+    <span class="s2">"comment"</span><span class="p">,</span>
+    <span class="s2">"license"</span><span class="p">,</span>
+    <span class="s2">"acknowledgment"</span><span class="p">,</span>
+<span class="p">)</span>
+
 
 <div class="viewcode-block" id="PlatformField">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.vocabularies.PlatformField">[docs]</a>
@@ -184,7 +213,8 @@
 <span class="sd">    kind : str</span>
 <span class="sd">        How ``to_og1`` writes an unset field: ``"serial"`` names the</span>
 <span class="sd">        output and raises when absent, ``"string"`` warns and writes ``"UNK"``,</span>
-<span class="sd">        ``"numeric"`` is omitted.</span>
+<span class="sd">        ``"numeric"`` is omitted, ``"optional_string"`` is omitted silently (an</span>
+<span class="sd">        optional platform variable the user may leave null).</span>
 
 <span class="sd">    """</span>
 
@@ -219,6 +249,16 @@
         <span class="s2">"string"</span><span class="p">,</span>
     <span class="p">),</span>
     <span class="s2">"WMO_IDENTIFIER"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span><span class="s2">"wmo_identifier"</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"string"</span><span class="p">),</span>
+    <span class="c1"># Optional platform variables (OG1 manual, platform-variables table). Config-only,</span>
+    <span class="c1"># written only when the user supplies a value; the four with a controlled</span>
+    <span class="c1"># vocabulary carry its default URL as a &lt;field&gt;_vocabulary attribute (see</span>
+    <span class="c1"># OPTIONAL_PLATFORM_VARS in convert.py). PLATFORM_MAKER's vocabulary is the</span>
+    <span class="c1"># platform_maker_vocabulary attribute, handled alongside platform_model_vocabulary.</span>
+    <span class="s2">"PLATFORM_NAME"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"optional_string"</span><span class="p">),</span>
+    <span class="s2">"TELECOM_TYPE"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"optional_string"</span><span class="p">),</span>
+    <span class="s2">"TRACKING_SYSTEM"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"optional_string"</span><span class="p">),</span>
+    <span class="s2">"BATTERY_TYPE"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"optional_string"</span><span class="p">),</span>
+    <span class="s2">"BATTERY_PACK"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"optional_string"</span><span class="p">),</span>
 <span class="p">}</span>
 
 
@@ -294,7 +334,7 @@
 <span class="p">}</span>
 
 <span class="c1"># Variables to exclude from OG1 output (derived variables, duplicates, etc.)</span>
-<span class="n">vars_to_remove</span> <span class="o">=</span> <span class="p">[</span>
+<span class="n">VARIABLES_TO_DROP</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">"dissolved_oxygen_sat"</span><span class="p">,</span>
     <span class="s2">"depth"</span><span class="p">,</span>
     <span class="s2">"eng_depth"</span><span class="p">,</span>
@@ -323,24 +363,24 @@
 <span class="p">]</span>
 
 <span class="c1"># Variables to keep unchanged during conversion (currently empty)</span>
-<span class="n">vars_as_is</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">VARIABLES_AS_IS</span> <span class="o">=</span> <span class="p">[]</span>
 
 <span class="c1"># --------------------------------</span>
 <span class="c1"># Variables + variable attributes</span>
 <span class="c1"># --------------------------------</span>
 <span class="c1"># Variable name mappings: basestation variable name -&gt; OG1 standard name</span>
 <span class="c1"># Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py</span>
-<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_var_names.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_variable_names.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
     <span class="n">standard_names</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
 <span class="c1"># Variable attribute vocabularies for OG1 format</span>
 <span class="c1"># Reference: http://vocab.nerc.ac.uk/scheme/OG1/current/</span>
-<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_vocab_attrs.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_variable_attributes.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
     <span class="n">vocab_attrs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
 <span class="c1"># Sensor attribute vocabularies for OG1 format</span>
 <span class="c1"># Reference: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/</span>
-<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_sensor_attrs.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_sensor_attributes.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
     <span class="n">sensor_vocabs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
 
@@ -350,7 +390,7 @@
 
 
 <span class="c1"># Preferred order for global attributes in OG1 files</span>
-<span class="n">order_of_attr</span> <span class="o">=</span> <span class="p">[</span>
+<span class="n">ATTRIBUTE_ORDER</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">"title"</span><span class="p">,</span>  <span class="c1"># OceanGliders trajectory file</span>
     <span class="s2">"id"</span><span class="p">,</span>  <span class="c1"># sg015_20040920T000000_delayed</span>
     <span class="s2">"platform"</span><span class="p">,</span>  <span class="c1"># sub-surface gliders</span>
@@ -392,15 +432,20 @@
     <span class="s2">"start_date"</span><span class="p">,</span>  <span class="c1"># datetime of glider deployment YYYYmmddTHHMMss</span>
     <span class="s2">"date_created"</span><span class="p">,</span>  <span class="c1"># date of creation of this dataset YYYYmmddTHHMMss</span>
     <span class="s2">"featureType"</span><span class="p">,</span>  <span class="c1"># trajectory</span>
-    <span class="s2">"Conventions"</span><span class="p">,</span>  <span class="c1"># CF-1.10,OG-1.0</span>
+    <span class="s2">"Conventions"</span><span class="p">,</span>  <span class="c1"># CF-1.10, ACDD-1.3, OG-1.0</span>
     <span class="s2">"date_modified"</span><span class="p">,</span>  <span class="c1"># date of last modification of this dataset YYYYmmddTHHMMss</span>
 <span class="p">]</span>
 
 <span class="c1"># Global attribute configuration for OG1 conversion</span>
 <span class="c1"># Defines which attributes to keep, rename, or add during conversion</span>
 <span class="c1"># Compatible with base_station_version 2.8, nodc_template_version_v0.9</span>
-<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_global_attrs.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_global_attributes.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
     <span class="n">global_attrs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+<span class="c1"># OG1 global-attribute requirement tiers, keyed "mandatory" / "highly_desirable" /</span>
+<span class="c1"># "suggested"; each maps an attribute name to its filling source ("derived",</span>
+<span class="c1"># "constant" or "config"). Transcribed from the OG1 manual (see the file header).</span>
+<span class="n">REQUIRED_GLOBALS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">global_attrs</span><span class="p">[</span><span class="s2">"required"</span><span class="p">]</span>
 </pre></div>
 
            </div>

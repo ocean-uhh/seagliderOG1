@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev66 documentation</title>
+  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=6aa8c151"></script>
+      <script src="_static/documentation_options.js?v=ced04548"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -59,12 +59,14 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">mission.yaml reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#keys">Keys</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#platform-fields">Platform fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deployment-fields">Deployment fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#contributor-and-institution-records">Contributor and institution records</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
 <li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API</span></p>
@@ -106,6 +108,9 @@
 platform, contributor and global-attribute metadata belong to you rather than to seagliderOG1.
 <code class="docutils literal notranslate"><span class="pre">init</span></code> writes a commented template; <code class="docutils literal notranslate"><span class="pre">validate</span></code> checks it; <code class="docutils literal notranslate"><span class="pre">process</span></code> reads it. Paths in it
 resolve relative to the file.</p>
+<p>UPPER-case keys become OG1 variables, lower-case keys become attributes or globals; the comment
+on each line of the generated template says which. Keys are case-sensitive — <code class="docutils literal notranslate"><span class="pre">validate</span></code> errors
+on a mis-cased key (<code class="docutils literal notranslate"><span class="pre">platform_model</span></code>) and names the right spelling (<code class="docutils literal notranslate"><span class="pre">PLATFORM_MODEL</span></code>).</p>
 <section id="keys">
 <h2>Keys<a class="headerlink" href="#keys" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
@@ -125,8 +130,10 @@ resolve relative to the file.</p>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">config_version</span></code></p></td>
 <td><p>int</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">1</span></code></p></td>
-<td><p>Schema version; a missing value warns and assumes <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2</span></code></p></td>
+<td><p>Schema version; a missing value warns and assumes <code class="docutils literal notranslate"><span class="pre">1</span></code>. Version 2 adds the
+<code class="docutils literal notranslate"><span class="pre">deployment</span></code> block and the optional platform variables. A version 1 file still
+converts.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">source</span></code></p></td>
 <td><p>str</p></td>
@@ -170,19 +177,27 @@ for a <code class="docutils literal notranslate"><span class="pre">SN/DATE</span
 <td><p>OG1 platform fields. The required fields must be non-null when a platform block is
 present.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">global_attributes</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">deployment</span></code></p></td>
+<td><p>mapping</p></td>
+<td><p><em>(see below)</em></p></td>
+<td><p>OG1 deployment-identity globals (<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">program</span></code>, <code class="docutils literal notranslate"><span class="pre">license</span></code>, <code class="docutils literal notranslate"><span class="pre">doi</span></code>, …), one
+key per global, written when set and skipped when null. <code class="docutils literal notranslate"><span class="pre">validate</span></code> errors on an
+unknown key.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">global_attributes</span></code></p></td>
 <td><p>mapping or null</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
-<td><p>Written into the OG1 file (null values are skipped). You may not set keys the converter
-derives (<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">time_coverage_start</span></code>/<code class="docutils literal notranslate"><span class="pre">_end</span></code>, the <code class="docutils literal notranslate"><span class="pre">geospatial_*</span></code> bounds,
-<code class="docutils literal notranslate"><span class="pre">date_created</span></code>, <code class="docutils literal notranslate"><span class="pre">start_date</span></code>); <code class="docutils literal notranslate"><span class="pre">process</span></code> raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if you do.</p></td>
+<td><p>Verbatim escape hatch written into the OG1 file (null values are skipped). You may not
+set keys the converter derives (<code class="docutils literal notranslate"><span class="pre">time_coverage_start</span></code>/<code class="docutils literal notranslate"><span class="pre">_end</span></code>, the <code class="docutils literal notranslate"><span class="pre">geospatial_*</span></code>
+bounds, <code class="docutils literal notranslate"><span class="pre">date_created</span></code>, <code class="docutils literal notranslate"><span class="pre">start_date</span></code>) or keys with a structured home in
+<code class="docutils literal notranslate"><span class="pre">deployment</span></code> (<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">program</span></code>, …); <code class="docutils literal notranslate"><span class="pre">process</span></code> raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if you do.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contributors</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors</span></code></p></td>
 <td><p>list</p></td>
 <td><p><em>(required)</em></p></td>
 <td><p>One record per person per role; at least one with role <code class="docutils literal notranslate"><span class="pre">PI</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">institutions</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">institutions</span></code></p></td>
 <td><p>list</p></td>
 <td><p><em>(required)</em></p></td>
 <td><p>One record per institution per role; at least one with role <code class="docutils literal notranslate"><span class="pre">Operator</span></code>; resolved
@@ -204,6 +219,25 @@ by hand or let <code class="docutils literal notranslate"><span class="pre">init
 <p>These are optional: <code class="docutils literal notranslate"><span class="pre">GLIDER_FIRMWARE_VERSION</span></code> (from <code class="docutils literal notranslate"><span class="pre">seaglider_software_version</span></code>),
 <code class="docutils literal notranslate"><span class="pre">LANDSTATION_VERSION</span></code> (from <code class="docutils literal notranslate"><span class="pre">base_station_version</span></code>), <code class="docutils literal notranslate"><span class="pre">WMO_IDENTIFIER</span></code> (from
 <code class="docutils literal notranslate"><span class="pre">wmo_identifier</span></code>), and <code class="docutils literal notranslate"><span class="pre">platform_model_vocabulary</span></code>.</p>
+<p>Also optional, written as OG1 variables only when you set them (a null is not written):
+<code class="docutils literal notranslate"><span class="pre">PLATFORM_NAME</span></code>, <code class="docutils literal notranslate"><span class="pre">TELECOM_TYPE</span></code>, <code class="docutils literal notranslate"><span class="pre">TRACKING_SYSTEM</span></code>, <code class="docutils literal notranslate"><span class="pre">BATTERY_TYPE</span></code>, <code class="docutils literal notranslate"><span class="pre">BATTERY_PACK</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">platform_maker_vocabulary</span></code> (attached to <code class="docutils literal notranslate"><span class="pre">PLATFORM_MAKER</span></code>).</p>
+</section>
+<section id="deployment-fields">
+<h2>Deployment fields<a class="headerlink" href="#deployment-fields" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">deployment</span></code> block carries the OG1 globals that identify the deployment, one key per
+global. A null key is not written; seagliderOG1 lets you supply OG1 metadata but does not
+enforce the format (the external <code class="docutils literal notranslate"><span class="pre">cc-plugin-og</span></code> checker does that). The OG1 requirement tier
+(from the manual, v1.0.0) is shown for each:</p>
+<ul class="simple">
+<li><p><strong>mandatory</strong>: <code class="docutils literal notranslate"><span class="pre">id</span></code> (overrides the derived <code class="docutils literal notranslate"><span class="pre">&lt;serial&gt;_&lt;start&gt;_&lt;mode&gt;</span></code>; <code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span></code>
+proposes the derived value).</p></li>
+<li><p><strong>highly desirable</strong>: <code class="docutils literal notranslate"><span class="pre">site</span></code>, <code class="docutils literal notranslate"><span class="pre">site_vocabulary</span></code>, <code class="docutils literal notranslate"><span class="pre">program</span></code>, <code class="docutils literal notranslate"><span class="pre">program_vocabulary</span></code>,
+<code class="docutils literal notranslate"><span class="pre">data_url</span></code>, <code class="docutils literal notranslate"><span class="pre">doi</span></code>.</p></li>
+<li><p><strong>suggested</strong>: <code class="docutils literal notranslate"><span class="pre">project</span></code>, <code class="docutils literal notranslate"><span class="pre">network</span></code>, <code class="docutils literal notranslate"><span class="pre">comment</span></code> (overrides the comment derived from the
+file’s <code class="docutils literal notranslate"><span class="pre">history</span></code>).</p></li>
+<li><p><strong>optional</strong> (ACDD globals with no OG1 tier): <code class="docutils literal notranslate"><span class="pre">license</span></code>, <code class="docutils literal notranslate"><span class="pre">acknowledgment</span></code>.</p></li>
+</ul>
 </section>
 <section id="contributor-and-institution-records">
 <h2>Contributor and institution records<a class="headerlink" href="#contributor-and-institution-records" title="Link to this heading"></a></h2>
@@ -216,7 +250,7 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
 <p>The template <code class="docutils literal notranslate"><span class="pre">init</span></code> writes (fill the nulls before <code class="docutils literal notranslate"><span class="pre">validate</span></code>):</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">config_version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">config_version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
 
 <span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/data/005/20080606</span><span class="w">   </span><span class="c1"># mission dir (p*.nc inside) or a root of SN/DATE dirs</span>
 <span class="nt">output_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./</span><span class="w">          </span><span class="c1"># where OG1 files are written</span>
@@ -225,20 +259,37 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
 <span class="nt">repair</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">           </span><span class="c1"># run repair_files on the basestation files (writes the source tree)</span>
 <span class="nt">keep_variables</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">    </span><span class="c1"># optional list of science variables to keep; null = all</span>
 
-<span class="nt">platform</span><span class="p">:</span><span class="w">               </span><span class="c1"># 'init --from' fills these; fill any null before validate</span>
-<span class="w">  </span><span class="nt">PLATFORM_SERIAL_NUMBER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sg005</span><span class="w">   </span><span class="c1"># from platform_id; a serial or a local nickname</span>
-<span class="w">  </span><span class="nt">PLATFORM_MODEL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">University of Washington Seaglider M1 glider</span>
-<span class="w">  </span><span class="nt">platform_model_vocabulary</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># e.g. NERC B76 B7600024 (Seaglider)</span>
-<span class="w">  </span><span class="nt">PLATFORM_DEPTH_RATING</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span><span class="w">   </span><span class="c1"># metres</span>
-<span class="w">  </span><span class="nt">PLATFORM_MAKER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">University of Washington School of Oceanography</span>
-<span class="w">  </span><span class="nt">GLIDER_FIRMWARE_VERSION</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># from seaglider_software_version</span>
-<span class="w">  </span><span class="nt">LANDSTATION_VERSION</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># from base_station_version</span>
-<span class="w">  </span><span class="nt">WMO_IDENTIFIER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># from wmo_identifier</span>
+<span class="nt">platform</span><span class="p">:</span><span class="w">               </span><span class="c1"># UPPER keys -&gt; variables, lower keys -&gt; attributes</span>
+<span class="w">  </span><span class="nt">PLATFORM_SERIAL_NUMBER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sg005</span><span class="w">   </span><span class="c1"># required -&gt; variable; from platform_id</span>
+<span class="w">  </span><span class="nt">PLATFORM_MODEL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">University of Washington Seaglider M1 glider</span><span class="w">   </span><span class="c1"># required -&gt; variable</span>
+<span class="w">  </span><span class="nt">platform_model_vocabulary</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; attribute on PLATFORM_MODEL</span>
+<span class="w">  </span><span class="nt">PLATFORM_DEPTH_RATING</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span><span class="w">   </span><span class="c1"># required -&gt; variable; metres</span>
+<span class="w">  </span><span class="nt">PLATFORM_MAKER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">University of Washington School of Oceanography</span><span class="w">   </span><span class="c1"># required -&gt; variable</span>
+<span class="w">  </span><span class="nt">platform_maker_vocabulary</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; attribute on PLATFORM_MAKER</span>
+<span class="w">  </span><span class="nt">GLIDER_FIRMWARE_VERSION</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable; from seaglider_software_version</span>
+<span class="w">  </span><span class="nt">LANDSTATION_VERSION</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable; from base_station_version</span>
+<span class="w">  </span><span class="nt">WMO_IDENTIFIER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable; from wmo_identifier</span>
+<span class="w">  </span><span class="nt">PLATFORM_NAME</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable</span>
+<span class="w">  </span><span class="nt">TELECOM_TYPE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable</span>
+<span class="w">  </span><span class="nt">TRACKING_SYSTEM</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable</span>
+<span class="w">  </span><span class="nt">BATTERY_TYPE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable</span>
+<span class="w">  </span><span class="nt">BATTERY_PACK</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable</span>
 
-<span class="nt">global_attributes</span><span class="p">:</span><span class="w">      </span><span class="c1"># written verbatim into the OG1 file</span>
-<span class="w">  </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="w">  </span><span class="nt">program</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="nt">deployment</span><span class="p">:</span><span class="w">             </span><span class="c1"># each key -&gt; a global attribute; null = not written</span>
+<span class="w">  </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">              </span><span class="c1"># mandatory -&gt; global attribute; overrides the derived id</span>
+<span class="w">  </span><span class="nt">site</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">            </span><span class="c1"># highly desirable -&gt; global attribute</span>
+<span class="w">  </span><span class="nt">site_vocabulary</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w"> </span><span class="c1"># highly desirable -&gt; global attribute</span>
+<span class="w">  </span><span class="nt">program</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># highly desirable -&gt; global attribute</span>
+<span class="w">  </span><span class="nt">program_vocabulary</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">  </span><span class="c1"># highly desirable -&gt; global attribute</span>
+<span class="w">  </span><span class="nt">data_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">        </span><span class="c1"># highly desirable -&gt; global attribute</span>
+<span class="w">  </span><span class="nt">doi</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">             </span><span class="c1"># highly desirable -&gt; global attribute</span>
+<span class="w">  </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># suggested -&gt; global attribute</span>
+<span class="w">  </span><span class="nt">network</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># suggested -&gt; global attribute</span>
+<span class="w">  </span><span class="nt">comment</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># suggested -&gt; global attribute</span>
+<span class="w">  </span><span class="nt">license</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># optional -&gt; global attribute</span>
+<span class="w">  </span><span class="nt">acknowledgment</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">  </span><span class="c1"># optional -&gt; global attribute</span>
+
+<span class="nt">global_attributes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w">   </span><span class="c1"># verbatim escape hatch for any OG1 global without a home above</span>
 
 <span class="nt">contributors</span><span class="p">:</span><span class="w">           </span><span class="c1"># one entry per person per role; at least one PI</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Jane Doe</span><span class="w">       </span><span class="c1"># no commas in a name</span>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1 API &mdash; seagliderOG1 0.0.2.post1.dev66 documentation</title>
+  <title>seagliderOG1 API &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=6aa8c151"></script>
+      <script src="_static/documentation_options.js?v=ced04548"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -58,12 +58,14 @@
 <li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
 <li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-seagliderOG1.convert">convert</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convert.MetadataError"><code class="docutils literal notranslate"><span class="pre">MetadataError</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convert.keep_variables"><code class="docutils literal notranslate"><span class="pre">keep_variables()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convert.name_mapping"><code class="docutils literal notranslate"><span class="pre">name_mapping()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convert.to_og1"><code class="docutils literal notranslate"><span class="pre">to_og1()</span></code></a></li>
@@ -181,6 +183,16 @@
 <p>This module provides the core functionality for converting Seaglider basestation
 NetCDF files into OG1 (Ocean Gliders 1) format. It handles data processing,
 variable renaming, attribute assignments, and dataset standardization.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="seagliderOG1.convert.MetadataError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">seagliderOG1.convert.</span></span><span class="sig-name descname"><span class="pre">MetadataError</span></span><a class="reference internal" href="_modules/seagliderOG1/exceptions.html#MetadataError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convert.MetadataError" title="Link to this definition"></a></dt>
+<dd><p>An OG1-mandatory global attribute is missing from the converted dataset.</p>
+<p>Raised by <a class="reference internal" href="#seagliderOG1.convert.to_og1" title="seagliderOG1.convert.to_og1"><code class="xref py py-func docutils literal notranslate"><span class="pre">seagliderOG1.convert.to_og1()</span></code></a> after the three metadata
+sources (data-derived, package constants, mission config) are merged, when a
+mandatory global attribute is absent or holds a placeholder. Subclasses
+<code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code> so existing <code class="docutils literal notranslate"><span class="pre">except</span> <span class="pre">ValueError</span></code> handlers still catch it.</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convert.keep_variables">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.convert.</span></span><span class="sig-name descname"><span class="pre">keep_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/convert.html#keep_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convert.keep_variables" title="Link to this definition"></a></dt>
@@ -228,19 +240,17 @@ through to OG1 and which are dropped, without running a conversion.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.convert.to_og1">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convert.</span></span><span class="sig-name descname"><span class="pre">to_og1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_of_datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">contributors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">institutions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">platform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'delayed'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/convert.html#to_og1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convert.to_og1" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.convert.</span></span><span class="sig-name descname"><span class="pre">to_og1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_of_datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">contributors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">institutions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">platform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'delayed'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/convert.html#to_og1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.convert.to_og1" title="Link to this definition"></a></dt>
 <dd><p>Convert Seaglider basestation datasets to OG1 format.</p>
-<p>Processes a list of xarray datasets, converts them to OG1 format,
-concatenates the datasets, sorts by time, and applies attributes. Main conversion function that
-processes basestation datasets, applies OG1 standardization, concatenates multiple datasets,
-and adds global attributes.</p>
+<p>Maps and standardises each dataset, concatenates them on a shared time axis,
+sorts by time, and applies platform, deployment and contributor attributes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>list_of_datasets</strong> (<em>sequence</em><em> of </em><em>xarray.Dataset</em>) – A list of xarray datasets in basestation format, expected in dive (time)
-order: <code class="docutils literal notranslate"><span class="pre">start_date</span></code>, <code class="docutils literal notranslate"><span class="pre">TRAJECTORY</span></code> and the output <code class="docutils literal notranslate"><span class="pre">id</span></code> are taken from
-the first dataset, so out-of-order input can disagree with
-<code class="docutils literal notranslate"><span class="pre">time_coverage_start</span></code>.</p></li>
+<li><p><strong>list_of_datasets</strong> (<em>sequence</em><em> of </em><em>xarray.Dataset</em>) – A list of xarray datasets in basestation format. The datasets are
+concatenated and sorted by time, so the input order does not matter:
+<code class="docutils literal notranslate"><span class="pre">start_date</span></code>, <code class="docutils literal notranslate"><span class="pre">TRAJECTORY</span></code> and the output <code class="docutils literal notranslate"><span class="pre">id</span></code> are seeded from the
+earliest measurement time and so always agree with <code class="docutils literal notranslate"><span class="pre">time_coverage_start</span></code>.</p></li>
 <li><p><strong>contributors</strong> (<em>sequence</em><em> of </em><em>dict</em><em>, </em><em>optional</em>) – Contributor records (<code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code> and optional <code class="docutils literal notranslate"><span class="pre">email</span></code>, <code class="docutils literal notranslate"><span class="pre">orcid</span></code>)
 merged with those already on the files. When None, contributors come from
 the files’ own attributes; no package default is applied. Default is None.</p></li>
@@ -251,8 +261,13 @@ those on the files and resolved against the EDMO registry. Default is None.</p><
 <code class="docutils literal notranslate"><span class="pre">GLIDER_FIRMWARE_VERSION</span></code>, <code class="docutils literal notranslate"><span class="pre">LANDSTATION_VERSION</span></code>, <code class="docutils literal notranslate"><span class="pre">WMO_IDENTIFIER</span></code>,
 <code class="docutils literal notranslate"><span class="pre">platform_model_vocabulary</span></code>). Config values override file-derived ones.
 Default is None.</p></li>
+<li><p><strong>deployment</strong> (<em>dict</em><em> of </em><em>str to object</em><em>, </em><em>optional</em>) – The deployment-identity globals from the mission config <code class="docutils literal notranslate"><span class="pre">deployment</span></code> block
+(<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">program</span></code>, <code class="docutils literal notranslate"><span class="pre">license</span></code>, <code class="docutils literal notranslate"><span class="pre">doi</span></code>, <code class="docutils literal notranslate"><span class="pre">site</span></code>, …). Written as global
+attributes; a value for <code class="docutils literal notranslate"><span class="pre">id</span></code> or <code class="docutils literal notranslate"><span class="pre">comment</span></code> overrides the converter-derived
+default with a warning. Nulls skipped. Default is None.</p></li>
 <li><p><strong>global_attributes</strong> (<em>dict</em><em> of </em><em>str to object</em><em>, </em><em>optional</em>) – Global attributes written verbatim into the output (nulls skipped). A key
-that collides with a converter-derived global raises. Default is None.</p></li>
+that collides with a converter-derived global, or with a key that has a
+structured home in <code class="docutils literal notranslate"><span class="pre">deployment</span></code>, raises. Default is None.</p></li>
 <li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) – Data mode, <code class="docutils literal notranslate"><span class="pre">&quot;delayed&quot;</span></code> (default) or <code class="docutils literal notranslate"><span class="pre">&quot;realtime&quot;</span></code>. Sets the <code class="docutils literal notranslate"><span class="pre">id</span></code>
 suffix (<code class="docutils literal notranslate"><span class="pre">delayed</span></code> or <code class="docutils literal notranslate"><span class="pre">R</span></code>) and so the output filename, per the OG1
 manual, which defines no separate data-mode attribute. Default is “delayed”.</p></li>
@@ -263,6 +278,15 @@ manual, which defines no separate data-mode attribute. Default is “delayed”.
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="#seagliderOG1.convert.MetadataError" title="seagliderOG1.convert.MetadataError"><strong>MetadataError</strong></a> – If an OG1-mandatory global attribute is absent after all metadata sources
+    are merged (a converter problem: the mandatory set is derived or constant).</p></li>
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">global_attributes</span></code> sets a converter-derived or deployment-home key, if
+    <code class="docutils literal notranslate"><span class="pre">deployment</span></code> has an unknown key, if no datasets are valid, or if <code class="docutils literal notranslate"><span class="pre">mode</span></code> is
+    not <code class="docutils literal notranslate"><span class="pre">&quot;delayed&quot;</span></code>/<code class="docutils literal notranslate"><span class="pre">&quot;realtime&quot;</span></code>.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -285,10 +309,10 @@ throughout the conversion process.</p>
 </ul>
 <p>Configuration Files:</p>
 <ul class="simple">
-<li><p>OG1_var_names.yaml: Variable name mappings</p></li>
-<li><p>OG1_vocab_attrs.yaml: Variable attribute vocabularies</p></li>
-<li><p>OG1_sensor_attrs.yaml: Sensor attribute definitions</p></li>
-<li><p>OG1_global_attrs.yaml: Global attribute configurations</p></li>
+<li><p>OG1_variable_names.yaml: Variable name mappings</p></li>
+<li><p>OG1_variable_attributes.yaml: Variable attribute vocabularies</p></li>
+<li><p>OG1_sensor_attributes.yaml: Sensor attribute definitions</p></li>
+<li><p>OG1_global_attributes.yaml: Global attribute configurations</p></li>
 </ul>
 <p class="rubric">Notes</p>
 <p>This module is primarily data-driven and loads most configuration from YAML files
@@ -308,7 +332,8 @@ field is config-only (no file fallback).</p></li>
 silent default written into the output.</p></li>
 <li><p><strong>kind</strong> (<em>str</em>) – How <code class="docutils literal notranslate"><span class="pre">to_og1</span></code> writes an unset field: <code class="docutils literal notranslate"><span class="pre">&quot;serial&quot;</span></code> names the
 output and raises when absent, <code class="docutils literal notranslate"><span class="pre">&quot;string&quot;</span></code> warns and writes <code class="docutils literal notranslate"><span class="pre">&quot;UNK&quot;</span></code>,
-<code class="docutils literal notranslate"><span class="pre">&quot;numeric&quot;</span></code> is omitted.</p></li>
+<code class="docutils literal notranslate"><span class="pre">&quot;numeric&quot;</span></code> is omitted, <code class="docutils literal notranslate"><span class="pre">&quot;optional_string&quot;</span></code> is omitted silently (an
+optional platform variable the user may leave null).</p></li>
 </ul>
 </dd>
 </dl>

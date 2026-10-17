@@ -1,0 +1,261 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migrating to 0.1.0 &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=ced04548"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Changelog" href="changelog.html" />
+    <link rel="prev" title="Package layout and defaults" href="package_layout.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Demo</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">seagliderOG1 demo</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Migrating to 0.1.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#renamed-functions-modules-and-arguments">Renamed functions, modules and arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#output-format-changes">Output-format changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#metadata-now-comes-from-the-mission-config">Metadata now comes from the mission config</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1">GitHub repository</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Migrating to 0.1.0</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/migrating_0_1_0.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="migrating-to-0-1-0">
+<span id="migrating-0-1-0"></span><h1>Migrating to 0.1.0<a class="headerlink" href="#migrating-to-0-1-0" title="Link to this heading"></a></h1>
+<p>0.1.0 is a breaking release: the public API was reshaped to the OceanGliders family
+convention (a clean break, no deprecation shims), and the output format changed. This page
+is the “what you need to change” reference; the <a class="reference internal" href="changelog.html"><span class="doc">Changelog</span></a> lists the changes tersely.</p>
+<section id="renamed-functions-modules-and-arguments">
+<h2>Renamed functions, modules and arguments<a class="headerlink" href="#renamed-functions-modules-and-arguments" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 48.0%" />
+<col style="width: 52.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>was</p></th>
+<th class="head"><p>now</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ds,</span> <span class="pre">varlist</span> <span class="pre">=</span> <span class="pre">convert_to_OG1(ds_or_list)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ds</span> <span class="pre">=</span> <span class="pre">convert.to_og1(sequence_of_datasets)</span></code> — returns the Dataset; takes a sequence
+(wrap a single dataset as <code class="docutils literal notranslate"><span class="pre">[ds]</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">seagliderOG1</span> <span class="pre">import</span> <span class="pre">convertOG1</span></code> → <code class="docutils literal notranslate"><span class="pre">convertOG1.convert_to_OG1(...)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">seagliderOG1</span> <span class="pre">import</span> <span class="pre">convert</span></code> → <code class="docutils literal notranslate"><span class="pre">convert.to_og1(...)</span></code> — module <code class="docutils literal notranslate"><span class="pre">convertOG1.py</span></code>
+renamed to <code class="docutils literal notranslate"><span class="pre">convert.py</span></code>; <code class="docutils literal notranslate"><span class="pre">convert_to_OG1</span></code> to <code class="docutils literal notranslate"><span class="pre">to_og1</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">writers.save_dataset(ds,</span> <span class="pre">output_file=&quot;../test.nc&quot;)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">writers.write(ds,</span> <span class="pre">path,</span> <span class="pre">*,</span> <span class="pre">overwrite=False)</span> <span class="pre">-&gt;</span> <span class="pre">pathlib.Path</span></code> — <code class="docutils literal notranslate"><span class="pre">path:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">Path</span></code>,
+no default; returns the path written; raises instead of returning <code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">plotters.plot_*(…)</span></code> returned <code class="docutils literal notranslate"><span class="pre">None</span></code> and called <code class="docutils literal notranslate"><span class="pre">plt.show()</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">plotters.plot_*(…,</span> <span class="pre">ax=None)</span> <span class="pre">-&gt;</span> <span class="pre">(fig,</span> <span class="pre">ax)</span></code>; no <code class="docutils literal notranslate"><span class="pre">plt.show()</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">plotters.show_*(path_or_dataset)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">plotters.show_*(dataset)</span></code> — Dataset only (the file-path branch is gone)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_sample_dataset()</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">readers.load_sample_basestation()</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">standardise_OG10</span></code>, <code class="docutils literal notranslate"><span class="pre">tools.OG1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">print_OG1_mapping_summary</span></code>, the
+<code class="docutils literal notranslate"><span class="pre">OG1_mapping</span></code> argument</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">standardise_og1</span></code>, <code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">print_og1_mapping_summary</span></code>, <code class="docutils literal notranslate"><span class="pre">og1_mapping</span></code>
+— <code class="docutils literal notranslate"><span class="pre">og1</span></code> lower-case in names; the package name keeps its spelling</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools</span></code> pipeline internals (<code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">gather_sensor_info</span></code>,
+<code class="docutils literal notranslate"><span class="pre">add_sensor_to_dataset</span></code>, <code class="docutils literal notranslate"><span class="pre">merge_datasets_along_time</span></code>, <code class="docutils literal notranslate"><span class="pre">extract_scalar_parameters</span></code> /
+<code class="docutils literal notranslate"><span class="pre">add_scalar_parameters</span></code>, <code class="docutils literal notranslate"><span class="pre">set_best_dtype</span></code>, …) and the <code class="docutils literal notranslate"><span class="pre">seagliderOG1.utilities</span></code> module</p></td>
+<td><p>moved to a private module (not part of the public API); <code class="docutils literal notranslate"><span class="pre">tools</span></code> keeps the user-facing
+utilities (<code class="docutils literal notranslate"><span class="pre">add_depth</span></code>, <code class="docutils literal notranslate"><span class="pre">add_phase</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_units_var</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_qc_flags</span></code>,
+<code class="docutils literal notranslate"><span class="pre">encode_times_og1</span></code>, …)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">firstrun=</span></code> parameters (e.g. <code class="docutils literal notranslate"><span class="pre">tools.convert_units_var(...,</span> <span class="pre">firstrun=...)</span></code>)</p></td>
+<td><p>removed; progress and diagnostics go through <code class="docutils literal notranslate"><span class="pre">logging.getLogger(&quot;seagliderOG1...&quot;)</span></code>
+(set the level, e.g. the CLI <code class="docutils literal notranslate"><span class="pre">-v</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_basestation_files(dir,</span> <span class="pre">first,</span> <span class="pre">last,</span> <span class="pre">repair=)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">readers.read_mission(path,</span> <span class="pre">first=None,</span> <span class="pre">last=None,</span> <span class="pre">*,</span> <span class="pre">repair=False)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_first_basestation_file</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">readers.read_file</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.scan_and_repair_files</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_files</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.profnum_from_filename</span></code> / <code class="docutils literal notranslate"><span class="pre">readers.glider_sn_from_filename</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">readers.profile_number_from_filename</span></code> / <code class="docutils literal notranslate"><span class="pre">readers.serial_from_filename</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_netcdf_time_metadata_inplace</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_time_metadata</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">convert.apply_keep_variables(ds,</span> <span class="pre">keep)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">convert.keep_variables(ds,</span> <span class="pre">names)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools.calc_Z</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_profile_number</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tools.add_depth</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.add_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.add_profile_number</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.registry_institutions()</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">contributors.institution_registry()</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.normalize_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">contributors.normalize_role</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">contributors.canonical_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">contributors.canonical_role</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vocabularies.load_default_contributors</span></code>, <code class="docutils literal notranslate"><span class="pre">vocabularies.contrib_to_append</span></code>,
+<code class="docutils literal notranslate"><span class="pre">config/OG1_author.yaml</span></code></p></td>
+<td><p>removed — contributors come from <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>; no packaged default-identity block</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output-format-changes">
+<h2>Output-format changes<a class="headerlink" href="#output-format-changes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Variable dtypes.</strong> QC flags are <code class="docutils literal notranslate"><span class="pre">int8</span></code> (were <code class="docutils literal notranslate"><span class="pre">float32</span></code>/<code class="docutils literal notranslate"><span class="pre">int64</span></code>) and use <code class="docutils literal notranslate"><span class="pre">6</span></code> for
+unsampled with no <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code>; <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> is <code class="docutils literal notranslate"><span class="pre">int8</span></code>; <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code>, <code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code> and
+<code class="docutils literal notranslate"><span class="pre">VBD_MIN_CNTS</span></code> are <code class="docutils literal notranslate"><span class="pre">int16</span></code>; <code class="docutils literal notranslate"><span class="pre">DEPTH</span></code> and <code class="docutils literal notranslate"><span class="pre">DEPTH_Z</span></code> are <code class="docutils literal notranslate"><span class="pre">float32</span></code>;
+<code class="docutils literal notranslate"><span class="pre">LATITUDE</span></code>/<code class="docutils literal notranslate"><span class="pre">LONGITUDE</span></code> stay <code class="docutils literal notranslate"><span class="pre">float64</span></code>. A reader that assumes the old dtypes, or tests
+<code class="docutils literal notranslate"><span class="pre">np.isnan</span></code> on a QC flag, must adapt; CF-decoding readers are unaffected.</p></li>
+<li><p><strong>Time units.</strong> <code class="docutils literal notranslate"><span class="pre">seconds</span> <span class="pre">since</span> <span class="pre">1970-01-01T00:00:00Z</span></code> / <code class="docutils literal notranslate"><span class="pre">gregorian</span></code> (was the non-conformant
+<code class="docutils literal notranslate"><span class="pre">seconds</span> <span class="pre">since</span> <span class="pre">1970-01-01</span> <span class="pre">00:00:00</span></code> / <code class="docutils literal notranslate"><span class="pre">standard</span></code>). The instant is unchanged; a parser that
+string-matched the old units must adapt.</p></li>
+<li><p><strong>TEMP units</strong> are <code class="docutils literal notranslate"><span class="pre">degree_Celsius</span></code> (CF spelling) rather than <code class="docutils literal notranslate"><span class="pre">Celsius</span></code>; values unchanged.</p></li>
+<li><p><strong>featureType / Conventions.</strong> <code class="docutils literal notranslate"><span class="pre">featureType</span></code> is <code class="docutils literal notranslate"><span class="pre">trajectory</span></code> (was <code class="docutils literal notranslate"><span class="pre">trajectoryProfile</span></code>);
+<code class="docutils literal notranslate"><span class="pre">Conventions</span></code> is <code class="docutils literal notranslate"><span class="pre">CF-1.10,</span> <span class="pre">ACDD-1.3,</span> <span class="pre">OG-1.0</span></code> (was <code class="docutils literal notranslate"><span class="pre">CF-1.10,OG-1.0</span></code>).</p></li>
+<li><p><strong>No placeholders.</strong> A missing mandatory global is no longer written as <code class="docutils literal notranslate"><span class="pre">null</span></code> /
+<code class="docutils literal notranslate"><span class="pre">null&#64;null.com</span></code>; a config that relied on the fabricated email must set a real
+<code class="docutils literal notranslate"><span class="pre">contributor_email</span></code>. <code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code> raises <code class="docutils literal notranslate"><span class="pre">MetadataError</span></code> on a missing mandatory global.</p></li>
+<li><p><strong>Per-dive-varying scalars</strong> (e.g. the flight-model constants <code class="docutils literal notranslate"><span class="pre">C_VBD</span></code>, <code class="docutils literal notranslate"><span class="pre">HD_A</span></code>/<code class="docutils literal notranslate"><span class="pre">HD_B</span></code>/
+<code class="docutils literal notranslate"><span class="pre">HD_C</span></code>) are written as a JSON-string scalar variable
+(<code class="docutils literal notranslate"><span class="pre">{&quot;dives&quot;:</span> <span class="pre">[...],</span> <span class="pre">&quot;values&quot;:</span> <span class="pre">[...]}</span></code>, tagged <code class="docutils literal notranslate"><span class="pre">serialization:</span> <span class="pre">json</span></code>) instead of broadcast
+onto <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>. Decode the JSON to read them.</p></li>
+</ul>
+</section>
+<section id="metadata-now-comes-from-the-mission-config">
+<h2>Metadata now comes from the mission config<a class="headerlink" href="#metadata-now-comes-from-the-mission-config" title="Link to this heading"></a></h2>
+<p>Platform, contributor, institution and deployment metadata are supplied in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> (see
+<a class="reference internal" href="mission_yaml.html"><span class="doc">mission.yaml reference</span></a>), not defaulted inside the package:</p>
+<ul class="simple">
+<li><p>A missing <code class="docutils literal notranslate"><span class="pre">PLATFORM_SERIAL_NUMBER</span></code> (no file <code class="docutils literal notranslate"><span class="pre">platform_id</span></code>, none in the config) raises
+instead of defaulting to <code class="docutils literal notranslate"><span class="pre">sg000</span></code>; other platform fields are written <code class="docutils literal notranslate"><span class="pre">&quot;UNK&quot;</span></code> with a warning
+rather than <code class="docutils literal notranslate"><span class="pre">0000000</span></code> or a hard-coded model.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code> takes <code class="docutils literal notranslate"><span class="pre">contributors=</span></code>, <code class="docutils literal notranslate"><span class="pre">institutions=</span></code>, <code class="docutils literal notranslate"><span class="pre">platform=</span></code>, <code class="docutils literal notranslate"><span class="pre">deployment=</span></code>,
+<code class="docutils literal notranslate"><span class="pre">global_attributes=</span></code> as lists/dicts from the config. A missing contributor role is no longer
+defaulted to <code class="docutils literal notranslate"><span class="pre">PI</span></code>; an unrecognised institution is no longer stamped with a default EDMO code.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="package_layout.html" class="btn btn-neutral float-left" title="Package layout and defaults" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="changelog.html" class="btn btn-neutral float-right" title="Changelog" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

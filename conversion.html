@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev66 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=6aa8c151"></script>
+      <script src="_static/documentation_options.js?v=ced04548"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -72,6 +72,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API</span></p>
@@ -136,7 +137,7 @@ user keeps with the data;</p></li>
 </section>
 <section id="variable-names">
 <h2>Variable names<a class="headerlink" href="#variable-names" title="Link to this heading"></a></h2>
-<p>Variable names are mapped to OG1 (full mapping in <code class="docutils literal notranslate"><span class="pre">config/OG1_var_names.yaml</span></code>):</p>
+<p>Variable names are mapped to OG1 (full mapping in <code class="docutils literal notranslate"><span class="pre">config/OG1_variable_names.yaml</span></code>):</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Basestation   OG1
 ----------------------------
 latitude      LATITUDE
@@ -155,7 +156,7 @@ ctd_depth     DEPTH
 <ul class="simple">
 <li><p><strong>Sensors</strong>: sensor information and calibration coefficients are catalogued from the
 basestation attributes and written as OG1 sensor variables.</p></li>
-<li><p><strong>Global attributes</strong>: CF and OG1 global attributes from <code class="docutils literal notranslate"><span class="pre">config/OG1_global_attrs.yaml</span></code> and
+<li><p><strong>Global attributes</strong>: CF and OG1 global attributes from <code class="docutils literal notranslate"><span class="pre">config/OG1_global_attributes.yaml</span></code> and
 the mission configuration.</p></li>
 <li><p><strong>QC variables</strong>: where the basestation input carries a <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_qc</span></code> flag, it is carried
 through as the OG1 <code class="docutils literal notranslate"><span class="pre">&lt;NAME&gt;_QC</span></code> companion of the kept variable; variables with no input flag
@@ -189,10 +190,10 @@ directory, dive range, platform block, and the contributor and institution recor
 <p>The package’s own YAML files are not user settings; they hold the OG1 vocabularies and
 mappings:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_var_names.yaml</span></code> — variable name mappings;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_vocab_attrs.yaml</span></code> — CF variable attributes;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_sensor_attrs.yaml</span></code> — sensor metadata;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_global_attrs.yaml</span></code> — global attribute templates;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_variable_names.yaml</span></code> — variable name mappings;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_variable_attributes.yaml</span></code> — CF variable attributes;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_sensor_attributes.yaml</span></code> — sensor metadata;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_global_attributes.yaml</span></code> — global attribute templates;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">institution_registry.yaml</span></code> — EDMO codes for resolving institutions.</p></li>
 </ul>
 </section>
@@ -204,7 +205,7 @@ mappings:</p>
 <li><p><a class="reference external" href="http://cfconventions.org/">CF Conventions</a> (version 1.10)</p></li>
 <li><p><a class="reference external" href="https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery">ACDD Conventions</a></p></li>
 </ul>
-<p>The output carries <code class="docutils literal notranslate"><span class="pre">featureType:</span> <span class="pre">trajectoryProfile</span></code> (<code class="docutils literal notranslate"><span class="pre">config/OG1_global_attrs.yaml</span></code>).</p>
+<p>The output carries <code class="docutils literal notranslate"><span class="pre">featureType:</span> <span class="pre">trajectory</span></code> (<code class="docutils literal notranslate"><span class="pre">config/OG1_global_attributes.yaml</span></code>).</p>
 </section>
 <section id="validation">
 <h2>Validation<a class="headerlink" href="#validation" title="Link to this heading"></a></h2>

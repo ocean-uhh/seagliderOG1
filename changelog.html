@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev66 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=6aa8c151"></script>
+      <script src="_static/documentation_options.js?v=ced04548"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -22,7 +22,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="seagliderOG1 API" href="seagliderOG1.html" />
-    <link rel="prev" title="Package layout and defaults" href="package_layout.html" /> 
+    <link rel="prev" title="Migrating to 0.1.0" href="migrating_0_1_0.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -59,6 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
 <li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#unreleased">[Unreleased]</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#breaking-changes">Breaking changes</a></li>
@@ -107,218 +108,80 @@
 <h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading"></a></h1>
 <p>All notable changes to this project are documented here. The format follows
 <a class="reference external" href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>, and the project uses
-semantic versioning.</p>
+semantic versioning. Each entry is one line: what changed and what to do about it. The full
+old → new API table and output-format detail for the 0.1.0 break are in the migration guide
+(<em>Migrating to 0.1.0</em> in the docs; <code class="docutils literal notranslate"><span class="pre">docs/source/migrating_0_1_0.rst</span></code>).</p>
 <section id="unreleased">
 <h2>[Unreleased]<a class="headerlink" href="#unreleased" title="Link to this heading"></a></h2>
 <section id="breaking-changes">
 <h3>Breaking changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
-<ul>
-<li><p>Public API reshaped to the OceanGliders family convention (0.1.0), a clean break with no
-deprecation shims. Old → new:</p>
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head"><p>was</p></th>
-<th class="head"><p>now</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ds,</span> <span class="pre">varlist</span> <span class="pre">=</span> <span class="pre">convert_to_OG1(ds_or_list)</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">ds</span> <span class="pre">=</span> <span class="pre">convert.to_og1(sequence_of_datasets)</span></code> — returns the Dataset; takes a sequence (wrap a single dataset as <code class="docutils literal notranslate"><span class="pre">[ds]</span></code>)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">seagliderOG1</span> <span class="pre">import</span> <span class="pre">convertOG1</span></code> → <code class="docutils literal notranslate"><span class="pre">convertOG1.convert_to_OG1(...)</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">seagliderOG1</span> <span class="pre">import</span> <span class="pre">convert</span></code> → <code class="docutils literal notranslate"><span class="pre">convert.to_og1(...)</span></code> — module <code class="docutils literal notranslate"><span class="pre">convertOG1.py</span></code> renamed to <code class="docutils literal notranslate"><span class="pre">convert.py</span></code>; function <code class="docutils literal notranslate"><span class="pre">convert_to_OG1</span></code> to <code class="docutils literal notranslate"><span class="pre">to_og1</span></code>, addressed as <code class="docutils literal notranslate"><span class="pre">convert.to_og1()</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">writers.save_dataset(ds,</span> <span class="pre">output_file=&quot;../test.nc&quot;)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">writers.write(ds,</span> <span class="pre">path,</span> <span class="pre">*,</span> <span class="pre">overwrite=False)</span> <span class="pre">-&gt;</span> <span class="pre">pathlib.Path</span></code> — renamed; <code class="docutils literal notranslate"><span class="pre">path:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">Path</span></code>, no default; returns the path written; raises <code class="docutils literal notranslate"><span class="pre">FileExistsError</span></code> (or the underlying write error) instead of returning <code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">plotters.plot_*(…)</span></code> returned <code class="docutils literal notranslate"><span class="pre">None</span></code> and called <code class="docutils literal notranslate"><span class="pre">plt.show()</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">plotters.plot_*(…,</span> <span class="pre">ax=None)</span> <span class="pre">-&gt;</span> <span class="pre">(fig,</span> <span class="pre">ax)</span></code>; no <code class="docutils literal notranslate"><span class="pre">plt.show()</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">plotters.show_*(path_or_dataset)</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">plotters.show_*(dataset)</span></code> — Dataset only (the file-path branch is gone)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_sample_dataset()</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">readers.load_sample_basestation()</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">standardise_OG10</span></code>, <code class="docutils literal notranslate"><span class="pre">tools.OG1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">print_OG1_mapping_summary</span></code>, the <code class="docutils literal notranslate"><span class="pre">OG1_mapping</span></code> argument</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">standardise_og1</span></code>, <code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">print_og1_mapping_summary</span></code>, <code class="docutils literal notranslate"><span class="pre">og1_mapping</span></code> — <code class="docutils literal notranslate"><span class="pre">og1</span></code> lower-case in names; the package name keeps its spelling</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools.&lt;pipeline</span> <span class="pre">internals&gt;</span></code> (<code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">gather_sensor_info</span></code>, <code class="docutils literal notranslate"><span class="pre">add_sensor_to_dataset</span></code>, <code class="docutils literal notranslate"><span class="pre">merge_datasets_along_time</span></code>, <code class="docutils literal notranslate"><span class="pre">extract_scalar_parameters</span></code>/<code class="docutils literal notranslate"><span class="pre">add_scalar_parameters</span></code>, <code class="docutils literal notranslate"><span class="pre">set_best_dtype</span></code>, …) and the whole <code class="docutils literal notranslate"><span class="pre">seagliderOG1.utilities</span></code> module</p></td>
-<td><p>private <code class="docutils literal notranslate"><span class="pre">seagliderOG1._pipeline</span></code> (not part of the public API); <code class="docutils literal notranslate"><span class="pre">tools</span></code> keeps the user-facing utilities (<code class="docutils literal notranslate"><span class="pre">add_depth</span></code>, <code class="docutils literal notranslate"><span class="pre">add_phase</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_units_var</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_qc_flags</span></code>, <code class="docutils literal notranslate"><span class="pre">encode_times_og1</span></code>, …)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">firstrun=</span></code> parameters (e.g. <code class="docutils literal notranslate"><span class="pre">tools.convert_units_var(...,</span> <span class="pre">firstrun=...)</span></code>)</p></td>
-<td><p>removed; progress and diagnostics go through <code class="docutils literal notranslate"><span class="pre">logging.getLogger(&quot;seagliderOG1...&quot;)</span></code> (set the level, e.g. the CLI <code class="docutils literal notranslate"><span class="pre">-v</span></code>)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_basestation_files(dir,</span> <span class="pre">first,</span> <span class="pre">last,</span> <span class="pre">repair=)</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">readers.read_mission(path,</span> <span class="pre">first=None,</span> <span class="pre">last=None,</span> <span class="pre">*,</span> <span class="pre">repair=False)</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_first_basestation_file</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">readers.read_file</span></code></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.scan_and_repair_files</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_files</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.profnum_from_filename</span></code> / <code class="docutils literal notranslate"><span class="pre">readers.glider_sn_from_filename</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">readers.profile_number_from_filename</span></code> / <code class="docutils literal notranslate"><span class="pre">readers.serial_from_filename</span></code></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_netcdf_time_metadata_inplace</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_time_metadata</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">convert.apply_keep_variables(ds,</span> <span class="pre">keep)</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">convert.keep_variables(ds,</span> <span class="pre">names)</span></code></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools.calc_Z</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_profile_number</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">tools.add_depth</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.add_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.add_profile_number</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.registry_institutions()</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">contributors.institution_registry()</span></code></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">vocabularies.load_default_contributors</span></code>, <code class="docutils literal notranslate"><span class="pre">vocabularies.contrib_to_append</span></code>, <code class="docutils literal notranslate"><span class="pre">config/OG1_author.yaml</span></code></p></td>
-<td><p>removed — contributors come from <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>; no packaged default-identity block</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.normalize_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">contributors.normalize_role</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">contributors.canonical_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">contributors.canonical_role</span></code> — public names carry no British/American-variant word</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TEMP</span></code>/<code class="docutils literal notranslate"><span class="pre">TEMP_RAW</span></code>/<code class="docutils literal notranslate"><span class="pre">TEMP_OXYGEN</span></code> output <code class="docutils literal notranslate"><span class="pre">units:</span> <span class="pre">Celsius</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">units:</span> <span class="pre">degree_Celsius</span></code> — CF spelling (udunits-equivalent; values unchanged)</p></td>
-</tr>
-</tbody>
-</table>
-</li>
-<li><p>Output variable dtypes changed. QC flags are <code class="docutils literal notranslate"><span class="pre">int8</span></code> (were <code class="docutils literal notranslate"><span class="pre">float32</span></code>/<code class="docutils literal notranslate"><span class="pre">int64</span></code>); <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> is
-<code class="docutils literal notranslate"><span class="pre">int8</span></code>; <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code>, <code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code> and <code class="docutils literal notranslate"><span class="pre">VBD_MIN_CNTS</span></code> are <code class="docutils literal notranslate"><span class="pre">int16</span></code>; <code class="docutils literal notranslate"><span class="pre">DEPTH</span></code> and
-<code class="docutils literal notranslate"><span class="pre">DEPTH_Z</span></code> are <code class="docutils literal notranslate"><span class="pre">float32</span></code>. <code class="docutils literal notranslate"><span class="pre">LATITUDE</span></code>/<code class="docutils literal notranslate"><span class="pre">LONGITUDE</span></code> stay <code class="docutils literal notranslate"><span class="pre">float64</span></code>. Non-QC integer variables
-carry a <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code>; QC flags use <code class="docutils literal notranslate"><span class="pre">6</span></code> (unsampled) and have no <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code>. A reader that
-assumes the old dtypes, or tests <code class="docutils literal notranslate"><span class="pre">np.isnan</span></code> on a QC flag, must adapt; CF-decoding readers
-are unaffected.</p></li>
-<li><p>Time variables are written with the OG1-specified units <code class="docutils literal notranslate"><span class="pre">seconds</span> <span class="pre">since</span> <span class="pre">1970-01-01T00:00:00Z</span></code> (ISO UTC; xarray serialises the zone as <code class="docutils literal notranslate"><span class="pre">+00:00</span></code>) and calendar
-<code class="docutils literal notranslate"><span class="pre">gregorian</span></code> (OG1 Format v1.0.0), replacing the previous non-conformant <code class="docutils literal notranslate"><span class="pre">seconds</span> <span class="pre">since</span> <span class="pre">1970-01-01</span> <span class="pre">00:00:00</span></code> / <code class="docutils literal notranslate"><span class="pre">standard</span></code>. The instant is unchanged; a parser that string-matched
-the old units must adapt.</p></li>
-<li><p>Minimum Python raised to 3.11 (<code class="docutils literal notranslate"><span class="pre">requires-python</span> <span class="pre">=</span> <span class="pre">&quot;&gt;=3.11&quot;</span></code>). The pinned <code class="docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">2.2</span></code> and
-<code class="docutils literal notranslate"><span class="pre">xarray</span> <span class="pre">2025.3</span></code> already require a recent Python, so the former <code class="docutils literal notranslate"><span class="pre">&gt;=3.8</span></code> was not installable;
-users on earlier Python must stay on an earlier release.</p></li>
-<li><p>Platform metadata is no longer silently defaulted. <code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code> takes <code class="docutils literal notranslate"><span class="pre">platform=</span></code> and
-<code class="docutils literal notranslate"><span class="pre">global_attributes=</span></code> from the mission config, config values overriding file-derived ones. A
-missing <code class="docutils literal notranslate"><span class="pre">PLATFORM_SERIAL_NUMBER</span></code> (no file <code class="docutils literal notranslate"><span class="pre">platform_id</span></code>, none in the config) now raises instead
-of defaulting to <code class="docutils literal notranslate"><span class="pre">sg000</span></code> — it names the output file and OG1 id. <code class="docutils literal notranslate"><span class="pre">WMO_IDENTIFIER</span></code>,
-<code class="docutils literal notranslate"><span class="pre">PLATFORM_MODEL</span></code>, <code class="docutils literal notranslate"><span class="pre">PLATFORM_MAKER</span></code>, <code class="docutils literal notranslate"><span class="pre">GLIDER_FIRMWARE_VERSION</span></code> and <code class="docutils literal notranslate"><span class="pre">LANDSTATION_VERSION</span></code> are
-written as <code class="docutils literal notranslate"><span class="pre">&quot;UNK&quot;</span></code> with a warning when absent, not <code class="docutils literal notranslate"><span class="pre">0000000</span></code> or the hard-coded M1 model.
-<code class="docutils literal notranslate"><span class="pre">PLATFORM_DEPTH_RATING</span></code> (numeric) is omitted when absent rather than written as a string.
-<code class="docutils literal notranslate"><span class="pre">PLATFORM_MAKER</span></code>, <code class="docutils literal notranslate"><span class="pre">PLATFORM_DEPTH_RATING</span></code>, <code class="docutils literal notranslate"><span class="pre">GLIDER_FIRMWARE_VERSION</span></code> and <code class="docutils literal notranslate"><span class="pre">LANDSTATION_VERSION</span></code>
-are new output variables. The hard-coded <code class="docutils literal notranslate"><span class="pre">platform_model_vocabulary</span></code> is dropped and written
-only when the config supplies it. A <code class="docutils literal notranslate"><span class="pre">global_attributes</span></code> key colliding with a converter-derived
-global (<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">time_coverage_*</span></code>, <code class="docutils literal notranslate"><span class="pre">geospatial_*</span></code>, <code class="docutils literal notranslate"><span class="pre">date_created</span></code>) raises.</p></li>
-<li><p>Contributor and institution attributes are rebuilt as OG1 positional, comma-aligned lists
-(<code class="docutils literal notranslate"><span class="pre">contributor_name</span></code>/<code class="docutils literal notranslate"><span class="pre">_email</span></code>/<code class="docutils literal notranslate"><span class="pre">_id</span></code>/<code class="docutils literal notranslate"><span class="pre">_role</span></code>/<code class="docutils literal notranslate"><span class="pre">_role_vocabulary</span></code>, and <code class="docutils literal notranslate"><span class="pre">contributing_institutions</span></code>
-with its <code class="docutils literal notranslate"><span class="pre">_role</span></code>/<code class="docutils literal notranslate"><span class="pre">_vocabulary</span></code>/<code class="docutils literal notranslate"><span class="pre">_role_vocabulary</span></code>): one slot per person/institution, empty
-slots kept so the lists stay aligned, one role per slot. Roles normalise to the NERC W08
-vocabulary. <code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code> takes <code class="docutils literal notranslate"><span class="pre">contributors=</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions=</span></code> as lists of records;
-the former <code class="docutils literal notranslate"><span class="pre">contrib_to_append</span></code> dict is removed (passing a dict raises <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>). Two silent
-substitutions are removed: a missing contributor role is no longer defaulted to <code class="docutils literal notranslate"><span class="pre">PI</span></code>, and an
-unrecognised institution is no longer stamped with the School of Oceanography EDMO code
-(<code class="docutils literal notranslate"><span class="pre">…/report/1434</span></code>) — institutions resolve to their own EDMO id via
-<code class="docutils literal notranslate"><span class="pre">config/institution_registry.yaml</span></code>, or are written with no id and a warning.</p></li>
+<ul class="simple">
+<li><p>Public API reshaped to the OceanGliders family convention — modules, functions and arguments
+renamed (<code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code>, <code class="docutils literal notranslate"><span class="pre">writers.write</span></code>, <code class="docutils literal notranslate"><span class="pre">readers.read_mission</span></code>, …). See the migration guide
+for the full old → new table.</p></li>
+<li><p>Output variable dtypes changed: QC flags <code class="docutils literal notranslate"><span class="pre">int8</span></code> (<code class="docutils literal notranslate"><span class="pre">6</span></code> for unsampled, no <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code>), <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>
+<code class="docutils literal notranslate"><span class="pre">int8</span></code>, <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code>/<code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code>/<code class="docutils literal notranslate"><span class="pre">VBD_MIN_CNTS</span></code> <code class="docutils literal notranslate"><span class="pre">int16</span></code>, <code class="docutils literal notranslate"><span class="pre">DEPTH</span></code>/<code class="docutils literal notranslate"><span class="pre">DEPTH_Z</span></code> <code class="docutils literal notranslate"><span class="pre">float32</span></code>. A
+reader that assumes the old dtypes or tests <code class="docutils literal notranslate"><span class="pre">np.isnan</span></code> on a QC flag must adapt.</p></li>
+<li><p>Time units are <code class="docutils literal notranslate"><span class="pre">seconds</span> <span class="pre">since</span> <span class="pre">1970-01-01T00:00:00Z</span></code> / <code class="docutils literal notranslate"><span class="pre">gregorian</span></code> (was <code class="docutils literal notranslate"><span class="pre">…</span> <span class="pre">00:00:00</span></code> /
+<code class="docutils literal notranslate"><span class="pre">standard</span></code>); the instant is unchanged. TEMP units are <code class="docutils literal notranslate"><span class="pre">degree_Celsius</span></code> (was <code class="docutils literal notranslate"><span class="pre">Celsius</span></code>).</p></li>
+<li><p>Output <code class="docutils literal notranslate"><span class="pre">featureType</span></code> is <code class="docutils literal notranslate"><span class="pre">trajectory</span></code> (was <code class="docutils literal notranslate"><span class="pre">trajectoryProfile</span></code>); <code class="docutils literal notranslate"><span class="pre">Conventions</span></code> is
+<code class="docutils literal notranslate"><span class="pre">CF-1.10,</span> <span class="pre">ACDD-1.3,</span> <span class="pre">OG-1.0</span></code> (was <code class="docutils literal notranslate"><span class="pre">CF-1.10,OG-1.0</span></code>).</p></li>
+<li><p>Minimum Python raised to 3.11.</p></li>
+<li><p>Platform, contributor and institution metadata come from <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>, not package defaults: a
+missing <code class="docutils literal notranslate"><span class="pre">PLATFORM_SERIAL_NUMBER</span></code> raises (was <code class="docutils literal notranslate"><span class="pre">sg000</span></code>); other platform fields are <code class="docutils literal notranslate"><span class="pre">&quot;UNK&quot;</span></code> with a
+warning (was <code class="docutils literal notranslate"><span class="pre">0000000</span></code> / a hard-coded model); no <code class="docutils literal notranslate"><span class="pre">PI</span></code> role default; no default EDMO code.</p></li>
+<li><p>A missing OG1-mandatory global is no longer written as a placeholder (<code class="docutils literal notranslate"><span class="pre">null</span></code> / <code class="docutils literal notranslate"><span class="pre">null&#64;null.com</span></code>);
+<code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code> raises <code class="docutils literal notranslate"><span class="pre">MetadataError</span></code>. A config that relied on the fabricated email must set a
+real <code class="docutils literal notranslate"><span class="pre">contributor_email</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> is <code class="docutils literal notranslate"><span class="pre">config_version:</span> <span class="pre">2</span></code> (a v1 file still converts). <code class="docutils literal notranslate"><span class="pre">global_attributes</span></code> may not set
+a key with a structured home in the new <code class="docutils literal notranslate"><span class="pre">deployment:</span></code> block; <code class="docutils literal notranslate"><span class="pre">id</span></code> is config-overridable there.</p></li>
+<li><p>Per-dive-varying scalars are written as a JSON-string scalar variable instead of broadcast onto
+<code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> (#117); decode the JSON to read them.</p></li>
 </ul>
 </section>
 <section id="added">
 <h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1.contributors</span></code> module and <code class="docutils literal notranslate"><span class="pre">config/institution_registry.yaml</span></code> (EDMO codes) backing
-the contributor/institution rebuild above.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> command-line interface (<code class="docutils literal notranslate"><span class="pre">cli/</span></code> package), run as <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">&lt;verb&gt;</span></code>:</p>
-<ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">init</span></code> — write a commented <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>; <code class="docutils literal notranslate"><span class="pre">--from</span> <span class="pre">DIR</span></code> fills the platform block and
-<code class="docutils literal notranslate"><span class="pre">source</span></code> from the first basestation file.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">validate</span></code> — check keys, types, <code class="docutils literal notranslate"><span class="pre">source</span></code> and the dive range; roles against the W08
-vocabulary; require a PI contributor and an Operator institution; <code class="docutils literal notranslate"><span class="pre">--strict</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">process</span></code> — convert a mission directory, or every <code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> mission under a root
-(<code class="docutils literal notranslate"><span class="pre">--all</span></code>/<code class="docutils literal notranslate"><span class="pre">--mission</span> <span class="pre">GLOB</span></code>), writing <code class="docutils literal notranslate"><span class="pre">&lt;output_dir&gt;/&lt;id&gt;.nc</span></code>; <code class="docutils literal notranslate"><span class="pre">--mode</span></code>, <code class="docutils literal notranslate"><span class="pre">--dives</span></code>, <code class="docutils literal notranslate"><span class="pre">-o</span></code>,
-<code class="docutils literal notranslate"><span class="pre">--force</span></code>/<code class="docutils literal notranslate"><span class="pre">--skip-existing</span></code>, <code class="docutils literal notranslate"><span class="pre">-n</span></code>; per-mission summary and exit 1 on any failure.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">FILE</span></code> — the file’s variables or attributes as a text table (<code class="docutils literal notranslate"><span class="pre">--attrs</span></code>,
-<code class="docutils literal notranslate"><span class="pre">--variables</span></code>, <code class="docutils literal notranslate"><span class="pre">--by-dimension</span> <span class="pre">DIM</span></code>); the HTML inventory page arrives with the planned
-<code class="docutils literal notranslate"><span class="pre">seagliderOG1[report]</span></code> extra.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">list</span> <span class="pre">{roles|institutions|missions}</span></code> — the W08 roles, the EDMO institution registry, or
-the missions discovered under a directory.
-Exit codes follow the CLI family convention: <code class="docutils literal notranslate"><span class="pre">0</span></code> success, <code class="docutils literal notranslate"><span class="pre">1</span></code> a conversion or validation
-failure or a missing/unreadable input path, <code class="docutils literal notranslate"><span class="pre">2</span></code> an argparse-level usage error (an unknown
-flag, a bad <code class="docutils literal notranslate"><span class="pre">choices</span></code> value, or <code class="docutils literal notranslate"><span class="pre">list</span> <span class="pre">missions</span></code> with no path).
-A global <code class="docutils literal notranslate"><span class="pre">-v</span></code>/<code class="docutils literal notranslate"><span class="pre">--verbose</span></code> flag routes library diagnostics to stderr (<code class="docutils literal notranslate"><span class="pre">-v</span></code> INFO progress,
-<code class="docutils literal notranslate"><span class="pre">-vv</span></code> debug); command results stay on stdout.
-<code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code> gains <code class="docutils literal notranslate"><span class="pre">contributors=</span></code>, <code class="docutils literal notranslate"><span class="pre">institutions=</span></code>, <code class="docutils literal notranslate"><span class="pre">platform=</span></code>, <code class="docutils literal notranslate"><span class="pre">global_attributes=</span></code>
-and <code class="docutils literal notranslate"><span class="pre">mode=</span></code>. <code class="docutils literal notranslate"><span class="pre">OG1_author.yaml</span></code> is no longer loaded at import (<code class="docutils literal notranslate"><span class="pre">load_default_contributors</span></code>
-loads it on demand); <code class="docutils literal notranslate"><span class="pre">readers.discover_missions</span></code> and public <code class="docutils literal notranslate"><span class="pre">readers.validate_filename</span></code>/
-<code class="docutils literal notranslate"><span class="pre">profnum_from_filename</span></code>/<code class="docutils literal notranslate"><span class="pre">glider_sn_from_filename</span></code>.</p></li>
-</ul>
-</li>
-<li><p><code class="docutils literal notranslate"><span class="pre">convert.name_mapping(datasets)</span></code> returns the basestation→OG1 variable-mapping table — the
-data the old <code class="docutils literal notranslate"><span class="pre">convert_to_OG1</span></code> returned as its second tuple element, now an explicit function.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">writers.write</span></code> now writes every non-scalar numeric variable, coordinates
-included, with lossless zlib compression (level 4) and the shuffle filter. String
-and scalar variables are left uncompressed. Output files are smaller and remain
-readable by any netCDF4 client.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tests/test_writers.py</span></code> (9 tests, 100% coverage of <code class="docutils literal notranslate"><span class="pre">writers.py</span></code>): compression applied,
-lossless round-trip, string/scalar variables skipped, time encoding preserved, size
-reduction, retry path, caller’s dataset not mutated, integer <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> preserved,
-and the failure return.</p></li>
-<li><p>Per-dive scalar parameters change representation (#117). A value that is constant for a whole
-dive but differs between dives (for example the flight-model constants <code class="docutils literal notranslate"><span class="pre">C_VBD</span></code>, <code class="docutils literal notranslate"><span class="pre">HD_A</span></code>/<code class="docutils literal notranslate"><span class="pre">HD_B</span></code>/
-<code class="docutils literal notranslate"><span class="pre">HD_C</span></code>) has no valid home in OG1, which permits no dimension other than <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>.
-Rather than broadcast it across every measurement — which wastes space and implies a
-per-measurement variation that does not exist — such a parameter is written as a single scalar
-variable holding a JSON string: a <code class="docutils literal notranslate"><span class="pre">{&quot;dives&quot;:</span> <span class="pre">[...],</span> <span class="pre">&quot;values&quot;:</span> <span class="pre">[...]}</span></code> object with aligned lists
-and <code class="docutils literal notranslate"><span class="pre">null</span></code> for a missing dive, tagged <code class="docutils literal notranslate"><span class="pre">serialization:</span> <span class="pre">json</span></code> and <code class="docutils literal notranslate"><span class="pre">storage_type:</span> <span class="pre">per_dive_scalar</span></code>.
-The numeric range attributes (<code class="docutils literal notranslate"><span class="pre">_FillValue</span></code>, <code class="docutils literal notranslate"><span class="pre">valid_min</span></code>/<code class="docutils literal notranslate"><span class="pre">valid_max</span></code>, <code class="docutils literal notranslate"><span class="pre">scale_factor</span></code>/<code class="docutils literal notranslate"><span class="pre">add_offset</span></code>)
-are dropped; units and source metadata describe the decoded values. Scalars constant across all
-dives (for example <code class="docutils literal notranslate"><span class="pre">MASS</span></code>, <code class="docutils literal notranslate"><span class="pre">VOLMAX</span></code>) are still written as ordinary scalar values. This replaces
-the previous handling, which expanded these parameters onto <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> as numeric arrays;
-code that read them numerically must now decode the JSON.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> CLI: <code class="docutils literal notranslate"><span class="pre">init</span></code>, <code class="docutils literal notranslate"><span class="pre">validate</span></code>, <code class="docutils literal notranslate"><span class="pre">process</span></code>, <code class="docutils literal notranslate"><span class="pre">inspect</span></code>, <code class="docutils literal notranslate"><span class="pre">list</span></code>; <code class="docutils literal notranslate"><span class="pre">-v</span></code>/<code class="docutils literal notranslate"><span class="pre">-vv</span></code> for diagnostics.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1.contributors</span></code> module and <code class="docutils literal notranslate"><span class="pre">config/institution_registry.yaml</span></code> (EDMO codes).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code> gains <code class="docutils literal notranslate"><span class="pre">contributors=</span></code>, <code class="docutils literal notranslate"><span class="pre">institutions=</span></code>, <code class="docutils literal notranslate"><span class="pre">platform=</span></code>, <code class="docutils literal notranslate"><span class="pre">deployment=</span></code>,
+<code class="docutils literal notranslate"><span class="pre">global_attributes=</span></code>, <code class="docutils literal notranslate"><span class="pre">mode=</span></code>; <code class="docutils literal notranslate"><span class="pre">convert.name_mapping(datasets)</span></code> returns the variable-mapping table.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">deployment:</span></code> block in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> (OG1 identity globals) with <code class="docutils literal notranslate"><span class="pre">config_version:</span> <span class="pre">2</span></code>.</p></li>
+<li><p>Optional platform variables: <code class="docutils literal notranslate"><span class="pre">PLATFORM_NAME</span></code>, <code class="docutils literal notranslate"><span class="pre">TELECOM_TYPE</span></code>, <code class="docutils literal notranslate"><span class="pre">TRACKING_SYSTEM</span></code>, <code class="docutils literal notranslate"><span class="pre">BATTERY_TYPE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">BATTERY_PACK</span></code>, <code class="docutils literal notranslate"><span class="pre">platform_maker_vocabulary</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">required:</span></code> tier block in <code class="docutils literal notranslate"><span class="pre">config/OG1_global_attributes.yaml</span></code> → <code class="docutils literal notranslate"><span class="pre">vocabularies.REQUIRED_GLOBALS</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1.exceptions.MetadataError</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">conversion_attribute_sources</span></code> global: JSON provenance of each written global (names only).</p></li>
+<li><p>Template lines name each key’s destination (variable / attribute / global); <code class="docutils literal notranslate"><span class="pre">validate</span></code> gives a
+case hint on a mis-cased key.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">writers.write</span></code> applies lossless zlib compression to numeric variables.</p></li>
 </ul>
 </section>
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p>Conversion retains basestation variables that were previously dropped (#117). Every scalar
-variable is carried through with <code class="docutils literal notranslate"><span class="pre">tools.extract_scalar_parameters</span></code> / <code class="docutils literal notranslate"><span class="pre">add_scalar_parameters</span></code>,
-replacing the earlier hydrodynamic-model-only extraction (<code class="docutils literal notranslate"><span class="pre">extract_hdm_parameters</span></code>); the
-per-dive representation of varying scalars is described under Breaking changes above. Non-scalar
-variables are merged onto a shared <code class="docutils literal notranslate"><span class="pre">time</span></code> axis by <code class="docutils literal notranslate"><span class="pre">tools.merge_datasets_along_time</span></code>, keeping
-their source identity in the <code class="docutils literal notranslate"><span class="pre">original_name</span></code> and <code class="docutils literal notranslate"><span class="pre">original_dimension</span></code> attributes.
-<code class="docutils literal notranslate"><span class="pre">tools.OG1_name_mapping</span></code> returns the per-dimension time variables separately; the
-<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> time source is the basestation <code class="docutils literal notranslate"><span class="pre">time</span></code> clock, never the science-controller
-<code class="docutils literal notranslate"><span class="pre">ctd_time</span></code>.</p></li>
-<li><p>Dependencies are declared in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">&quot;.[dev]&quot;</span></code>); <code class="docutils literal notranslate"><span class="pre">requirements*.txt</span></code>
-and <code class="docutils literal notranslate"><span class="pre">environment.yml</span></code> are removed; <code class="docutils literal notranslate"><span class="pre">scipy</span></code>, <code class="docutils literal notranslate"><span class="pre">cartopy</span></code> and <code class="docutils literal notranslate"><span class="pre">pooch</span></code> are dropped as unused; the
-ruff configuration is aligned with the family set and <code class="docutils literal notranslate"><span class="pre">ruff</span> <span class="pre">format</span></code> replaces <code class="docutils literal notranslate"><span class="pre">black</span></code>;
-pre-commit is removed; CI gains a coverage gate.</p></li>
+<li><p>Packaged config files and <code class="docutils literal notranslate"><span class="pre">vocabularies</span></code> tables renamed to whole words (package data, no API
+change): <code class="docutils literal notranslate"><span class="pre">OG1_variable_names.yaml</span></code>, <code class="docutils literal notranslate"><span class="pre">OG1_variable_attributes.yaml</span></code>, <code class="docutils literal notranslate"><span class="pre">OG1_sensor_attributes.yaml</span></code>,
+<code class="docutils literal notranslate"><span class="pre">OG1_global_attributes.yaml</span></code>; <code class="docutils literal notranslate"><span class="pre">DIMENSION_RENAMES</span></code>, <code class="docutils literal notranslate"><span class="pre">VARIABLES_TO_DROP</span></code>, <code class="docutils literal notranslate"><span class="pre">VARIABLES_AS_IS</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ATTRIBUTE_ORDER</span></code>.</p></li>
+<li><p>Conversion retains basestation variables previously dropped, merged onto a shared time axis with
+<code class="docutils literal notranslate"><span class="pre">original_name</span></code>/<code class="docutils literal notranslate"><span class="pre">original_dimension</span></code> provenance (#117).</p></li>
+<li><p>Dependencies in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> only (<code class="docutils literal notranslate"><span class="pre">requirements*.txt</span></code>/<code class="docutils literal notranslate"><span class="pre">environment.yml</span></code> removed); ruff-family
+config, <code class="docutils literal notranslate"><span class="pre">ruff</span> <span class="pre">format</span></code> replaces <code class="docutils literal notranslate"><span class="pre">black</span></code>, CI coverage gate.</p></li>
 </ul>
 </section>
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p>Trailing/leading whitespace stripped from vocabulary <code class="docutils literal notranslate"><span class="pre">long_name</span></code> strings (<code class="docutils literal notranslate"><span class="pre">TEMP*</span></code>, <code class="docutils literal notranslate"><span class="pre">ICES_CODE</span></code>,
-the WET Labs sensors) that were written verbatim into output attributes; a test guards against
-edge whitespace in the vocabulary YAMLs.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">writers.write</span></code> preserves each compressed variable’s <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> (and
-<code class="docutils literal notranslate"><span class="pre">scale_factor</span></code>/<code class="docutils literal notranslate"><span class="pre">add_offset</span></code>) when applying compression, so an integer missing-value
-sentinel is not written as an ordinary value.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">writers.write</span></code> no longer mutates the caller’s dataset: it copies the input
-before clearing conflicting time attributes and stringifying attributes.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">writers.write</span></code> reuses one encoding on the retry path, so a file written after
-a <code class="docutils literal notranslate"><span class="pre">TypeError</span></code> fallback keeps its time encoding and compression instead of being
-written unencoded.</p></li>
-<li><p>Dtype optimisation now runs once on the concatenated dataset (in <code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code>) instead
-of per dive, so <code class="docutils literal notranslate"><span class="pre">int8</span></code> QC flags are no longer re-promoted to <code class="docutils literal notranslate"><span class="pre">float32</span></code> by the concat.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tools.set_best_dtype</span></code> now visits coordinates (so <code class="docutils literal notranslate"><span class="pre">DEPTH</span></code> becomes <code class="docutils literal notranslate"><span class="pre">float32</span></code>) and restores
-coordinate status after coercion; it respects an existing <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> sentinel (e.g.
-<code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code>’s <code class="docutils literal notranslate"><span class="pre">-9999</span></code>) instead of overriding it, never leaves <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> in attrs,
-skips QC flags, and coerces scalar variables without an indexing error.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tools.find_best_dtype</span></code> no longer casts variables whose name ends in <code class="docutils literal notranslate"><span class="pre">raw</span></code> to <code class="docutils literal notranslate"><span class="pre">int16</span></code> (it
-truncated float “raw” variables); named integer variables map to a fixed integer type.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tools.convert_qc_flags</span></code> drops the inherited float <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> from the <code class="docutils literal notranslate"><span class="pre">int8</span></code> result;
-<code class="docutils literal notranslate"><span class="pre">tools.assign_profile_number</span></code> writes <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> to encoding rather than attrs.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">writers.write</span></code> no longer silently overrides <code class="docutils literal notranslate"><span class="pre">tools.encode_times_og1</span></code>: both use one
-canonical time-units constant (<code class="docutils literal notranslate"><span class="pre">tools.OG1_TIME_UNITS</span></code> / <code class="docutils literal notranslate"><span class="pre">OG1_TIME_CALENDAR</span></code>), so the saved
-file’s TIME units match the OG1 encoder instead of a divergent hard-coded string.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">start_date</span></code>, <code class="docutils literal notranslate"><span class="pre">TRAJECTORY</span></code> and <code class="docutils literal notranslate"><span class="pre">id</span></code> are seeded from the earliest measurement time, so they agree
+with <code class="docutils literal notranslate"><span class="pre">time_coverage_start</span></code> regardless of input order.</p></li>
+<li><p>A null or wholly-empty global is never written; <code class="docutils literal notranslate"><span class="pre">date_created</span></code> is always the conversion time.</p></li>
+<li><p>Whitespace stripped from vocabulary <code class="docutils literal notranslate"><span class="pre">long_name</span></code> strings written into output attributes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">writers.write</span></code> preserves <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code>/<code class="docutils literal notranslate"><span class="pre">scale_factor</span></code>/<code class="docutils literal notranslate"><span class="pre">add_offset</span></code>, does not mutate the caller’s
+dataset, and reuses one encoding on the retry path.</p></li>
+<li><p>Dtype optimisation runs once post-concat (QC flags stay <code class="docutils literal notranslate"><span class="pre">int8</span></code>); <code class="docutils literal notranslate"><span class="pre">set_best_dtype</span></code> visits
+coordinates and respects an existing <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code>; <code class="docutils literal notranslate"><span class="pre">find_best_dtype</span></code> no longer truncates <code class="docutils literal notranslate"><span class="pre">*raw</span></code>
+floats; the writer and <code class="docutils literal notranslate"><span class="pre">encode_times_og1</span></code> share one canonical time-units constant.</p></li>
 </ul>
 </section>
 </section>
@@ -328,7 +191,7 @@ file’s TIME units match the OG1 encoder instead of a divergent hard-coded stri
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="package_layout.html" class="btn btn-neutral float-left" title="Package layout and defaults" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="migrating_0_1_0.html" class="btn btn-neutral float-left" title="Migrating to 0.1.0" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="seagliderOG1.html" class="btn btn-neutral float-right" title="seagliderOG1 API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

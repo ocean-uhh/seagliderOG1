@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Package layout and defaults &mdash; seagliderOG1 0.0.2.post1.dev66 documentation</title>
+  <title>Package layout and defaults &mdash; seagliderOG1 0.0.2.post1.dev67 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,14 +14,14 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=6aa8c151"></script>
+      <script src="_static/documentation_options.js?v=ced04548"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Changelog" href="changelog.html" />
+    <link rel="next" title="Migrating to 0.1.0" href="migrating_0_1_0.html" />
     <link rel="prev" title="What the conversion does" href="conversion.html" /> 
 </head>
 
@@ -63,6 +63,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#built-in-defaults">Built-in defaults</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API</span></p>
@@ -122,22 +123,22 @@ helpers live in a private module).</p></li>
 <p>Defaults live in two places, neither of which is user configuration.</p>
 <p>Packaged YAML (<code class="docutils literal notranslate"><span class="pre">seagliderOG1/config/</span></code>), loaded at conversion time:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_var_names.yaml</span></code> — basestation → OG1 variable name mappings.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_vocab_attrs.yaml</span></code> — CF/OG1 variable attributes (<code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, <code class="docutils literal notranslate"><span class="pre">long_name</span></code>,
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_variable_names.yaml</span></code> — basestation → OG1 variable name mappings.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_variable_attributes.yaml</span></code> — CF/OG1 variable attributes (<code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, <code class="docutils literal notranslate"><span class="pre">long_name</span></code>,
 <code class="docutils literal notranslate"><span class="pre">units</span></code>).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_sensor_attrs.yaml</span></code> — sensor metadata.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_global_attrs.yaml</span></code> — global attribute templates (for example <code class="docutils literal notranslate"><span class="pre">featureType</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_sensor_attributes.yaml</span></code> — sensor metadata.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OG1_global_attributes.yaml</span></code> — global attribute templates (for example <code class="docutils literal notranslate"><span class="pre">featureType</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">institution_registry.yaml</span></code> — EDMO codes for resolving institutions by name.</p></li>
 </ul>
 <p>Tables in <code class="docutils literal notranslate"><span class="pre">vocabularies.py</span></code>:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">dims_rename_dict</span></code> — dimension renaming (<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> → <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DIMENSION_RENAMES</span></code> — dimension renaming (<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> → <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">MODE_SUFFIX</span></code> — data mode to id suffix (<code class="docutils literal notranslate"><span class="pre">realtime</span></code> → <code class="docutils literal notranslate"><span class="pre">R</span></code>, <code class="docutils literal notranslate"><span class="pre">delayed</span></code> → <code class="docutils literal notranslate"><span class="pre">delayed</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_FIELDS</span></code> — the OG1 platform fields with their source attribute, formatter and
 required flag.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">preferred_units</span></code>, <code class="docutils literal notranslate"><span class="pre">unit_str_format</span></code>, <code class="docutils literal notranslate"><span class="pre">unit1_to_unit2</span></code> — unit standardisation and the
 conversion factors.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">vars_to_remove</span></code> — basestation variables dropped from the OG1 output.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">VARIABLES_TO_DROP</span></code> — basestation variables dropped from the OG1 output.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ROLE_VOCABULARY</span></code>, <code class="docutils literal notranslate"><span class="pre">ROLE_ALIASES</span></code> — the W08 contributor roles and the accepted aliases.</p></li>
 </ul>
 <p>To change what the conversion writes, edit these — not a copy in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>. The
@@ -151,7 +152,7 @@ source and range).</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="conversion.html" class="btn btn-neutral float-left" title="What the conversion does" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="changelog.html" class="btn btn-neutral float-right" title="Changelog" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="migrating_0_1_0.html" class="btn btn-neutral float-right" title="Migrating to 0.1.0" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
