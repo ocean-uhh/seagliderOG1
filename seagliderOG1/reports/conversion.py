@@ -715,10 +715,17 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         # Global attributes grouped into the five vendored convention groups (the package's own
         # names placed by meaning via extras). history has its own ordinal table below;
         # conversion_attribute_sources is provenance detail shown via the attribute marks, not here.
+        # requirement= adds the OG1 tier column (vendored, F29); the summary caption stays too.
+        requirement_labels = {
+            name: label
+            for tier_key, label in _REQUIREMENT_TIERS
+            for name in vocabularies.REQUIRED_GLOBALS.get(tier_key, ())
+        }
         global_groups, globals_source = nc_tables.globals_rows(
             ds,
             extras=design.ATTR_GROUP_EXTRAS,
             exclude=["history", "conversion_attribute_sources"],
+            requirement=requirement_labels,
         )
         coverage_computed = _coverage_computed(ds)
         requirement_text, requirement_amber = _requirement_summary(ds)

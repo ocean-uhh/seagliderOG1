@@ -20,7 +20,7 @@ reader.  Nothing package-specific is hard-coded here.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -194,6 +194,8 @@ def fmt_datetime(value: Any) -> str:  # noqa: ANN401  # a datetime64 / ISO strin
         The formatted datetime.
     """
     dt = np.datetime64(value, "ns")
+    if np.isnat(dt):
+        return "—"
     whole = dt.astype("datetime64[s]")
     remainder = (dt - whole.astype("datetime64[ns]")) // np.timedelta64(1, "ns")
     out = str(whole) if remainder == 0 else str(dt.astype("datetime64[ms]"))
@@ -406,7 +408,9 @@ def variables_rows(
     sensor = is_sensor or (lambda _n: False)
     keep = include or (lambda _n: True)
     qc_names = {n for n in ds.data_vars if is_qc(n, ds)}
-    parents_with_qc = {_qc_parent(n) for n in qc_names}
+    # Parent → its QC companion's *actual* name, so the marker shows the file's own suffix
+    # (ctdcast ``{var}_qc`` → ``(_qc)``; OG1 ``{var}_QC`` → ``(_QC)``), never a hard-coded spelling.
+    qc_by_parent = {_qc_parent(n): n for n in qc_names}
 
     candidates = [
         n
@@ -422,7 +426,8 @@ def variables_rows(
             groups[dims] = []
             order.append(dims)
         row = _value_row(ds, name, original_name_attrs)
-        row["has_qc"] = name in parents_with_qc
+        row["has_qc"] = name in qc_by_parent
+        row["qc_name"] = qc_by_parent.get(name)
         groups[dims].append(row)
 
     out = [(_dims_heading(ds, dims), groups[dims]) for dims in order]
@@ -501,7 +506,9 @@ QC_TESTS: tuple[tuple[str, tuple[str, ...], tuple[str, ...], str], ...] = (
 )
 
 
-def _threshold_tier(attrs: dict[str, Any], keys: tuple[str, ...], kind: str) -> str | None:
+def _threshold_tier(
+    attrs: dict[str, Any], keys: tuple[str, ...], kind: str
+) -> str | None:
     """Render one tier (suspect or fail) of a QC test, or ``None`` when it has no value."""
     values = [attrs.get(k) for k in keys]
     if all(v is None for v in values):
@@ -596,11 +603,11 @@ def qc_flag_rows(
         ``is_qc(name, ds) -> bool`` — the package's QC-companion rule.
     labels : dict of str to str, optional
         Meaning-token → short label; defaults to the vendored
-        :data:`~ctdcast.reports._vendored.design_tokens.QC_FLAG_LABELS`.  A package passes its
+        :data:`QC_FLAG_LABELS`.  A package passes its
         own wording to override.
     colors : dict of str to str, optional
         Meaning-token → colour; defaults to the vendored
-        :data:`~ctdcast.reports._vendored.design_tokens.QC_FLAG_COLORS`.
+        :data:`QC_FLAG_COLORS`.
 
     Returns
     -------
@@ -625,10 +632,24 @@ def qc_flag_rows(
             continue
         values = ds[name].attrs.get("flag_values")
         meanings = str(ds[name].attrs.get("flag_meanings", "")).split()
-        declared = values is not None and len(np.asarray(values).ravel()) > 0
+        value_list = np.asarray(values).ravel().tolist() if values is not None else []
+        # A well-formed declaration needs flag_values AND a flag_meanings token per value (CF
+        # pairs them positionally), and the flag_values must be integer codes.  No flag_values, no
+        # flag_meanings, a length mismatch, or a non-integer flag value is a malformed declaration:
+        # fall back to the observed integer codes and flag the row amber, rather than silently
+        # truncating a float (int(1.5)=1) or pairing some values with a raw-integer "label".
+        try:
+            declared = (
+                bool(value_list)
+                and len(meanings) == len(value_list)
+                and all(float(v).is_integer() for v in value_list)
+            )
+        except (TypeError, ValueError, OverflowError):
+            # A non-numeric flag_values entry is malformed too — fall back, do not crash.
+            declared = False
         if declared:
-            vals = [int(v) for v in np.asarray(values).ravel().tolist()]
-            tokens = [meanings[i] if i < len(meanings) else str(v) for i, v in enumerate(vals)]
+            vals = [int(v) for v in value_list]
+            tokens = list(meanings)
         else:
             vals = sorted({int(v) for v in flags.tolist()})
             tokens = [str(v) for v in vals]
@@ -646,7 +667,12 @@ def qc_flag_rows(
                 }
             )
         rows.append(
-            {"var": base, "total": total, "undeclared": not declared, "flags": flag_entries}
+            {
+                "var": base,
+                "total": total,
+                "undeclared": not declared,
+                "flags": flag_entries,
+            }
         )
     return rows, source_for(qc_flag_rows)
 
@@ -665,9 +691,12 @@ def _merge_groups(
 
 
 def _fmt_attr_value(value: Any) -> str:  # noqa: ANN401  # any global-attribute value
-    """Format a global-attribute value: a datetime through :func:`fmt_datetime`, else ``str``."""
+    """Format a global-attribute value: a datetime through :func:`fmt_datetime`, bytes decoded as
+    UTF-8 (a netCDF char attribute, else a ``b'…'`` repr), else ``str``."""
     if isinstance(value, np.datetime64):
         return fmt_datetime(value)
+    if isinstance(value, bytes):
+        return value.decode("utf-8", "replace").strip() or "—"
     return str(value)
 
 
@@ -677,8 +706,9 @@ def globals_rows(
     groups: tuple[tuple[str, tuple[str, ...]], ...] = ATTR_GROUPS,
     extras: dict[str, Iterable[str]] | None = None,
     exclude: Iterable[str] = (),
-) -> tuple[list[tuple[str, list[tuple[str, str]]]], str]:
-    """Return ``([(group_title, [(attr, value), ...])], source)`` for the global attributes.
+    requirement: Mapping[str, str] | None = None,
+) -> tuple[list[tuple[str, list[tuple[str, ...]]]], str]:
+    """Return ``([(group_title, [(attr, type, value), ...])], source)`` for the global attributes.
 
     Groups appear in *groups* order with the package's *extras* merged into each title;
     within a group the attributes keep the file's own order so the page can be checked
@@ -697,11 +727,18 @@ def globals_rows(
     exclude : iterable of str, optional
         Attribute names to omit from the table — for a consumer that renders one in its own
         panel (e.g. ``history``) and would otherwise show it twice.
+    requirement : mapping of str to str, optional
+        ``{attr_name: requirement_label}`` (e.g. a CF/ACDD "required"/"recommended" level).
+        When given, each row gains a fourth element — the attribute's label, or ``""`` when
+        the mapping does not name it — and :func:`globals_tables` renders a "Requirement"
+        column after Attribute.  When ``None`` (the default) rows stay ``(attr, type, value)``
+        triples and no column is added.
 
     Returns
     -------
-    grouped : list of (str, list of (str, str, str))
-        ``(group_title, rows)`` with each row an ``(attribute, type, value)`` triple; the
+    grouped : list of (str, list of tuple)
+        ``(group_title, rows)`` with each row an ``(attribute, type, value)`` triple — or an
+        ``(attribute, type, value, requirement)`` quad when *requirement* is given; the
         *type* is the stored value's type name (:func:`_attr_type_name`), the *value* a
         datetime formatted through :func:`fmt_datetime`.
     source : str
@@ -710,14 +747,19 @@ def globals_rows(
     merged = _merge_groups(groups, extras)
     group_of = {name: title for title, names in merged for name in names}
     dropped = set(exclude)
-    buckets: dict[str, list[tuple[str, str, str]]] = {title: [] for title, _ in merged}
+    buckets: dict[str, list[tuple[str, ...]]] = {title: [] for title, _ in merged}
     buckets[OTHER_GROUP] = []
     for key, value in ds.attrs.items():
         if str(key) in dropped:
             continue
-        buckets.setdefault(group_of.get(str(key), OTHER_GROUP), []).append(
-            (str(key), _attr_type_name(value), _fmt_attr_value(value))
+        row: tuple[str, ...] = (
+            str(key),
+            _attr_type_name(value),
+            _fmt_attr_value(value),
         )
+        if requirement is not None:
+            row = (*row, requirement.get(str(key), ""))
+        buckets.setdefault(group_of.get(str(key), OTHER_GROUP), []).append(row)
     titles = [title for title, _ in merged] + [OTHER_GROUP]
     return [(t, buckets[t]) for t in titles if buckets[t]], source_for(globals_rows)
 

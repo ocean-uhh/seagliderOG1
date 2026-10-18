@@ -5,7 +5,11 @@ The vendored directory checks itself: ``check.main([])`` hashes every file under
 equality (are the siblings in sync?) is ``check``'s sibling mode, run in review, not here.
 """
 
+import subprocess
+import sys
 from pathlib import Path
+
+import pytest
 
 from seagliderOG1.reports._vendored import check
 
@@ -17,6 +21,25 @@ def test_vendored_copy_matches_its_manifest(capsys):
     rc = check.main([])
     out = capsys.readouterr().out
     assert rc == 0, f"vendored files drift from MANIFEST.txt:\n{out}"
+
+
+def test_vendored_is_ruff_format_stable():
+    """`ruff format` is a no-op on the vendored dir, so a whole-repo format cannot drift it.
+
+    The directory is no longer excluded from the formatter (it is format-stable upstream); this
+    guards that it stays so, since a reformat here would diverge it from MANIFEST.txt.
+    """
+    pytest.importorskip("ruff")
+    vendored = _REPO_ROOT / "seagliderOG1" / "reports" / "_vendored"
+    result = subprocess.run(
+        [sys.executable, "-m", "ruff", "format", "--check", str(vendored)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, (
+        f"ruff format would rewrite the vendored dir (re-vendor, do not format):\n{result.stdout}\n{result.stderr}"
+    )
 
 
 def test_no_owned_template_shadows_a_vendored_one():

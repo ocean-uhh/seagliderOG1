@@ -1,9 +1,8 @@
 """The ``inspect`` verb: the inventory of one netCDF file.
 
-Family-wide ``inspect`` writes a self-contained HTML inventory page for one file. Here
-the HTML page comes from glidertest through the ``seagliderOG1[report]`` extra; until
-that extra exists, ``inspect`` prints a text table (useful at sea, no browser) and notes
-on stderr that the HTML page needs the extra. Works on a basestation or an OG1 file.
+Prints a text inventory (useful at sea, no browser). ``inspect --conversion`` prints the
+conversion ledger, and ``inspect --conversion -o PATH`` writes the self-contained HTML
+conversion page. Works on a basestation or an OG1 file.
 """
 
 import argparse
@@ -211,9 +210,9 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
         "inspect",
         help="show the inventory of one netCDF file",
         description=(
-            "Show the inventory of one basestation or OG1 netCDF file. Writes an HTML "
-            "inventory page with the seagliderOG1[report] extra; otherwise prints a "
-            "text table."
+            "Show the inventory of one basestation or OG1 netCDF file as a text table. "
+            "With --conversion, print the conversion ledger; with --conversion -o, write "
+            "the HTML conversion page."
         ),
         epilog=_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -248,15 +247,17 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
         "-o",
         "--output",
         metavar="HTML",
-        help="write the HTML inventory page to this path",
+        help="with --conversion, write the HTML conversion page to this path",
     )
-    parser.add_argument("--title", metavar="TEXT", help="title for the inventory page")
+    parser.add_argument(
+        "--title", metavar="TEXT", help="title for the HTML conversion page"
+    )
     parser.set_defaults(func=run)
     return parser
 
 
 def run(args: argparse.Namespace) -> int:
-    """Print the file inventory as a text table (HTML page pending the report extra).
+    """Print a text inventory, or write the HTML conversion page with --conversion -o.
 
     Parameters
     ----------
@@ -274,6 +275,16 @@ def run(args: argparse.Namespace) -> int:
 
     from seagliderOG1 import plotters
     from seagliderOG1.exceptions import MetadataError
+
+    # -o/--title write the HTML conversion page and apply only with --conversion. Reject the
+    # combination up front, before any mode-specific branch (e.g. --parameter) can return and
+    # silently ignore the flag.
+    if (args.output or args.title) and not args.conversion:
+        print(
+            "error: -o/--title write the HTML conversion page; pass --conversion",
+            file=sys.stderr,
+        )
+        return 2
 
     if not args.file.is_file():
         print(f"error: file not found: {args.file}", file=sys.stderr)
@@ -343,12 +354,4 @@ def run(args: argparse.Namespace) -> int:
     # plotters returns a pandas Styler for variable tables; render its frame.
     frame = getattr(table, "data", table)
     print(frame.to_string())
-    # The HTML inventory page (-o/--title) comes from glidertest via the [report]
-    # extra; until then, say so when those flags are given rather than ignoring them.
-    if args.output or args.title:
-        print(
-            "[report] extra not installed; printed the text table instead — "
-            "pip install 'seagliderOG1[report]' for the HTML inventory page",
-            file=sys.stderr,
-        )
     return 0

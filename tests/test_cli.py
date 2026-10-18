@@ -305,6 +305,30 @@ def test_inspect_conversion_writes_html_page(
     assert '</div>\n<nav class="jump-nav"' in html
     # The per-heading "↑ top" link script is emitted (S24); it appends .top-link client-side.
     assert "top-link" in html and "↑ top" in html
+    # Vendored features adopted at the sync-4 re-vendor: numbered rows and the OG1-requirement
+    # column on the globals table.
+    assert ">#<" in html
+    assert "Requirement" in html
+
+
+def test_inspect_output_without_conversion_errors(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """``-o`` without ``--conversion`` fails (exit 2): the HTML page is the conversion page's."""
+    from seagliderOG1 import convert, readers, writers
+
+    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 1))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    out = tmp_path / "x.html"
+    assert cli.main(["inspect", str(nc), "-o", str(out)]) == 2
+    assert "pass --conversion" in capsys.readouterr().err
+    assert not out.exists()  # nothing written
+    # The guard is before the mode branches, so --parameter/--attrs with -o also fail (not
+    # silently ignored), and a conversion-only --title without --conversion is rejected too.
+    assert cli.main(["inspect", str(nc), "--parameter", "C_VBD", "-o", str(out)]) == 2
+    assert cli.main(["inspect", str(nc), "--title", "x"]) == 2
+    assert not out.exists()
 
 
 def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:
