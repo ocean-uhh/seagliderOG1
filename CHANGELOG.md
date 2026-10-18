@@ -56,6 +56,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - `writers.write` applies lossless zlib compression to numeric variables.
 - `convert.process_mission(source, output_dir, ...)`: one mission read → convert → write, the
   library form of `process`; the CLI calls it per mission.
+- `seagliderOG1 list globals | platform | variables [NAME] | sensors`: the OG1 globals with
+  tier and `mission.yaml` home, the `platform:` keys, the OG1 variables with their attributes
+  and basestation sources, and the sensor catalogue, read from the converter's own tables.
 - `process --report` (and `report:` in `mission.yaml`) writes the HTML conversion page
   `<id>_conversion.html` beside each file.
 - `data/demo_sg005/mission.yaml`: a filled-in example configuration for the bundled sample (writes
@@ -63,6 +66,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Changed
 
+- `seagliderOG1 list` prints each registry as an aligned table with a header and a one-line
+  summary; bare `seagliderOG1 list` names the registries; `--search TEXT` filters rows.
 - Packaged config files and `vocabularies` tables renamed to whole words (package data, no API
   change): `OG1_variable_names.yaml`, `OG1_variable_attributes.yaml`, `OG1_sensor_attributes.yaml`,
   `OG1_global_attributes.yaml`; `DIMENSION_RENAMES`, `VARIABLES_TO_DROP`, `VARIABLES_AS_IS`,

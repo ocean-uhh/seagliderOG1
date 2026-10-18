@@ -8,8 +8,11 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import datetime
+import pathlib
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
+
+from seagliderOG1.cli import _mission
 
 year = datetime.datetime.now(tz=datetime.UTC).date().year
 
@@ -22,6 +25,50 @@ try:
 except PackageNotFoundError:
     release = "0.0.0"
 version = release
+
+# -- Generated tables ----------------------------------------------------------
+# The mission.yaml reference includes tables written here from the same row builders
+# `seagliderOG1 init` and `seagliderOG1 list` use, so the docs cannot drift from the code.
+_GENERATED = pathlib.Path(__file__).parent / "_generated"
+
+
+def _list_table(columns: list[tuple[str, str]], rows: list[dict[str, str]]) -> str:
+    """Return ``rows`` as an rst list-table with ``(key, header)`` columns."""
+    lines = [".. list-table::", "   :header-rows: 1", ""]
+    lines.append("   * - " + "\n     - ".join(h for _, h in columns))
+    for row in rows:
+        cells = [f"``{row[columns[0][0]]}``"] + [row[k] or "—" for k, _ in columns[1:]]
+        lines.append("   * - " + "\n     - ".join(cells))
+    return "\n".join(lines) + "\n"
+
+
+def _write_generated_tables() -> None:
+    """Write the platform and deployment tables the mission.yaml page includes."""
+    _GENERATED.mkdir(exist_ok=True)
+    platform = [
+        {**row, "from_file": f"``{row['from_file']}``" if row["from_file"] else ""}
+        for row in _mission.platform_rows()
+    ]
+    (_GENERATED / "platform_fields.inc").write_text(
+        _list_table(
+            [
+                ("key", "Key"),
+                ("requirement", "Requirement"),
+                ("destination", "Written as"),
+                ("from_file", "init --from reads"),
+            ],
+            platform,
+        )
+    )
+    deployment = [r for r in _mission.global_rows() if r["set_in"] == "deployment"]
+    (_GENERATED / "deployment_fields.inc").write_text(
+        _list_table(
+            [("name", "Key"), ("tier", "OG1 tier"), ("note", "Note")], deployment
+        )
+    )
+
+
+_write_generated_tables()
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

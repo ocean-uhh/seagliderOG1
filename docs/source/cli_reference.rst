@@ -36,6 +36,20 @@ page ``<id>_conversion.html`` beside each OG1 file — the same page ``inspect -
 writes for an existing file. An existing page is refused like an existing file unless
 ``--force``.
 
+Listing the vocabulary
+----------------------
+
+``seagliderOG1 list`` prints what an OG1 file expects, read from the tables the converter uses:
+
+.. code-block:: console
+
+   $ seagliderOG1 list                          # the registry names
+   $ seagliderOG1 list globals                  # every OG1 global: tier, source, where it is set
+   $ seagliderOG1 list platform                 # the platform: keys and where each is written
+   $ seagliderOG1 list variables --search temp  # OG1 variables, filtered on any column
+   $ seagliderOG1 list variables TEMP           # one variable's attributes in full
+   $ seagliderOG1 list sensors                  # the sensor catalogue (NERC L22)
+
 Verbs
 -----
 
