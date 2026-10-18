@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev71 documentation</title>
+  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev72 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=c5ee81d8"></script>
+      <script src="_static/documentation_options.js?v=f2160bb2"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -58,6 +58,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">CLI reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#data-mode">Data mode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#conversion-page">Conversion page</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#listing-the-vocabulary">Listing the vocabulary</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#verbs">Verbs</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1-positional-arguments">Positional Arguments</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1-named-arguments">Named Arguments</a></li>
@@ -140,6 +141,18 @@ determines the data-mode suffix of the output id: <code class="docutils literal 
 page <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> beside each OG1 file — the same page <code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span> <span class="pre">-o</span></code>
 writes for an existing file. An existing page is refused like an existing file unless
 <code class="docutils literal notranslate"><span class="pre">--force</span></code>.</p>
+</section>
+<section id="listing-the-vocabulary">
+<h2>Listing the vocabulary<a class="headerlink" href="#listing-the-vocabulary" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">list</span></code> prints what an OG1 file expects, read from the tables the converter uses:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>seagliderOG1<span class="w"> </span>list<span class="w">                          </span><span class="c1"># the registry names</span>
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>list<span class="w"> </span>globals<span class="w">                  </span><span class="c1"># every OG1 global: tier, source, where it is set</span>
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>list<span class="w"> </span>platform<span class="w">                 </span><span class="c1"># the platform: keys and where each is written</span>
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>list<span class="w"> </span>variables<span class="w"> </span>--search<span class="w"> </span>temp<span class="w">  </span><span class="c1"># OG1 variables, filtered on any column</span>
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>list<span class="w"> </span>variables<span class="w"> </span>TEMP<span class="w">           </span><span class="c1"># one variable's attributes in full</span>
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>list<span class="w"> </span>sensors<span class="w">                  </span><span class="c1"># the sensor catalogue (NERC L22)</span>
+</pre></div>
+</div>
 </section>
 <section id="verbs">
 <h2>Verbs<a class="headerlink" href="#verbs" title="Link to this heading"></a></h2>
@@ -340,22 +353,41 @@ seagliderOG1 inspect sg005_20080606_delayed.nc –conversion what the conversion
 </section>
 <section id="seagliderOG1-list">
 <span id="list"></span><h4>list<a class="headerlink" href="#seagliderOG1-list" title="Link to this heading"></a></h4>
-<p>print a registry: roles, institutions, or missions</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="nb">list</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">{</span><span class="n">roles</span><span class="p">,</span><span class="n">institutions</span><span class="p">,</span><span class="n">missions</span><span class="p">}</span> <span class="p">[</span><span class="n">path</span><span class="p">]</span>
+<p>Print a seagliderOG1 registry as a table.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="nb">list</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">search</span> <span class="n">TEXT</span><span class="p">]</span>
+                  <span class="p">[{</span><span class="n">roles</span><span class="p">,</span><span class="n">institutions</span><span class="p">,</span><span class="n">missions</span><span class="p">,</span><span class="nb">globals</span><span class="p">,</span><span class="n">platform</span><span class="p">,</span><span class="n">variables</span><span class="p">,</span><span class="n">sensors</span><span class="p">}]</span>
+                  <span class="p">[</span><span class="n">PATH</span><span class="o">|</span><span class="n">NAME</span><span class="p">]</span>
 </pre></div>
 </div>
 <section id="seagliderOG1-list-positional-arguments">
 <span id="-positional-arguments_repeat3"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-list-positional-arguments" title="Link to this heading"></a></h5>
 <dl class="option-list">
 <dt><kbd>registry</kbd></dt>
-<dd><p>Possible choices: roles, institutions, missions</p>
-<p>which registry to print</p>
+<dd><p>Possible choices: roles, institutions, missions, globals, platform, variables, sensors</p>
+<p>which registry to print; omit to see the registry names</p>
 </dd>
-<dt><kbd>path</kbd></dt>
-<dd><p>root or mission directory (required for ‘missions’)</p>
+<dt><kbd>PATH|NAME</kbd></dt>
+<dd><p>root or mission directory for ‘missions’; a variable name for ‘variables’</p>
 </dd>
 </dl>
 </section>
+<section id="seagliderOG1-list-named-arguments">
+<span id="-named-arguments_repeat4"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-list-named-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>--search</kbd></dt>
+<dd><p>case-insensitive filter across every column</p>
+</dd>
+</dl>
+</section>
+<dl class="simple">
+<dt>Examples:</dt><dd><p>seagliderOG1 list                          # the registries
+seagliderOG1 list globals                  # every OG1 global with its tier
+seagliderOG1 list platform                 # the platform: keys in mission.yaml
+seagliderOG1 list variables –search temp  # filter by any column
+seagliderOG1 list variables TEMP           # one variable’s attributes in full
+seagliderOG1 list missions /data/005       # missions under a root</p>
+</dd>
+</dl>
 </section>
 </section>
 <p><dl class="simple">

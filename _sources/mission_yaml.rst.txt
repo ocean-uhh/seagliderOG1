@@ -95,21 +95,12 @@ Keys
 Platform fields
 ---------------
 
-Within ``platform``, these fields are **required** (a null is a ``validate`` error) — fill them
-by hand or let ``init --from DIR`` read them from the first basestation file:
+A **required** field that is null is a ``validate`` error; fill it by hand, or let
+``init --from DIR`` read the fields with an ``init --from reads`` entry from the first
+basestation file. An optional field left null is not written. ``seagliderOG1 list platform``
+prints the same table.
 
-* ``PLATFORM_SERIAL_NUMBER`` (from ``platform_id``)
-* ``PLATFORM_MODEL``
-* ``PLATFORM_DEPTH_RATING``
-* ``PLATFORM_MAKER``
-
-These are optional: ``GLIDER_FIRMWARE_VERSION`` (from ``seaglider_software_version``),
-``LANDSTATION_VERSION`` (from ``base_station_version``), ``WMO_IDENTIFIER`` (from
-``wmo_identifier``), and ``platform_model_vocabulary``.
-
-Also optional, written as OG1 variables only when you set them (a null is not written):
-``PLATFORM_NAME``, ``TELECOM_TYPE``, ``TRACKING_SYSTEM``, ``BATTERY_TYPE``, ``BATTERY_PACK``,
-and ``platform_maker_vocabulary`` (attached to ``PLATFORM_MAKER``).
+.. include:: _generated/platform_fields.inc
 
 The two ``*_vocabulary`` keys take the NERC term for this glider's model (collection B76) and
 maker (collection B75); the package supplies no default, because the right term depends on the
@@ -123,15 +114,10 @@ Deployment fields
 The ``deployment`` block carries the OG1 globals that identify the deployment, one key per
 global. A null key is not written; seagliderOG1 lets you supply OG1 metadata but does not
 enforce the format (the external ``cc-plugin-og`` checker does that). The OG1 requirement tier
-(from the manual, v1.0.0) is shown for each:
+is from the manual, v1.0.0; ``optional`` marks ACDD globals with no OG1 tier.
+``seagliderOG1 list globals`` lists every OG1 global, including the ones the converter derives.
 
-* **mandatory**: ``id`` (overrides the derived ``<serial>_<start>_<mode>``; ``init --from``
-  proposes the derived value).
-* **highly desirable**: ``site``, ``site_vocabulary``, ``program``, ``program_vocabulary``,
-  ``data_url``, ``doi``.
-* **suggested**: ``project``, ``network``, ``comment`` (overrides the comment derived from the
-  file's ``history``).
-* **optional** (ACDD globals with no OG1 tier): ``license``, ``acknowledgment``.
+.. include:: _generated/deployment_fields.inc
 
 Contributor and institution records
 ------------------------------------

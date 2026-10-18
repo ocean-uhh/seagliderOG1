@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev71 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev72 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=c5ee81d8"></script>
+      <script src="_static/documentation_options.js?v=f2160bb2"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -163,6 +163,9 @@ case hint on a mis-cased key.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">writers.write</span></code> applies lossless zlib compression to numeric variables.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">convert.process_mission(source,</span> <span class="pre">output_dir,</span> <span class="pre">...)</span></code>: one mission read → convert → write, the
 library form of <code class="docutils literal notranslate"><span class="pre">process</span></code>; the CLI calls it per mission.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">list</span> <span class="pre">globals</span> <span class="pre">|</span> <span class="pre">platform</span> <span class="pre">|</span> <span class="pre">variables</span> <span class="pre">[NAME]</span> <span class="pre">|</span> <span class="pre">sensors</span></code>: the OG1 globals with
+tier and <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> home, the <code class="docutils literal notranslate"><span class="pre">platform:</span></code> keys, the OG1 variables with their attributes
+and basestation sources, and the sensor catalogue, read from the converter’s own tables.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code> (and <code class="docutils literal notranslate"><span class="pre">report:</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>) writes the HTML conversion page
 <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> beside each file.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">data/demo_sg005/mission.yaml</span></code>: a filled-in example configuration for the bundled sample (writes
@@ -172,6 +175,8 @@ to the gitignored <code class="docutils literal notranslate"><span class="pre">o
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">list</span></code> prints each registry as an aligned table with a header and a one-line
+summary; bare <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">list</span></code> names the registries; <code class="docutils literal notranslate"><span class="pre">--search</span> <span class="pre">TEXT</span></code> filters rows.</p></li>
 <li><p>Packaged config files and <code class="docutils literal notranslate"><span class="pre">vocabularies</span></code> tables renamed to whole words (package data, no API
 change): <code class="docutils literal notranslate"><span class="pre">OG1_variable_names.yaml</span></code>, <code class="docutils literal notranslate"><span class="pre">OG1_variable_attributes.yaml</span></code>, <code class="docutils literal notranslate"><span class="pre">OG1_sensor_attributes.yaml</span></code>,
 <code class="docutils literal notranslate"><span class="pre">OG1_global_attributes.yaml</span></code>; <code class="docutils literal notranslate"><span class="pre">DIMENSION_RENAMES</span></code>, <code class="docutils literal notranslate"><span class="pre">VARIABLES_TO_DROP</span></code>, <code class="docutils literal notranslate"><span class="pre">VARIABLES_AS_IS</span></code>,

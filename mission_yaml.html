@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev71 documentation</title>
+  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev72 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=c5ee81d8"></script>
+      <script src="_static/documentation_options.js?v=f2160bb2"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -214,20 +214,91 @@ against the EDMO registry.</p></td>
 </section>
 <section id="platform-fields">
 <h2>Platform fields<a class="headerlink" href="#platform-fields" title="Link to this heading"></a></h2>
-<p>Within <code class="docutils literal notranslate"><span class="pre">platform</span></code>, these fields are <strong>required</strong> (a null is a <code class="docutils literal notranslate"><span class="pre">validate</span></code> error) — fill them
-by hand or let <code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span> <span class="pre">DIR</span></code> read them from the first basestation file:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_SERIAL_NUMBER</span></code> (from <code class="docutils literal notranslate"><span class="pre">platform_id</span></code>)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_MODEL</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_DEPTH_RATING</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_MAKER</span></code></p></li>
-</ul>
-<p>These are optional: <code class="docutils literal notranslate"><span class="pre">GLIDER_FIRMWARE_VERSION</span></code> (from <code class="docutils literal notranslate"><span class="pre">seaglider_software_version</span></code>),
-<code class="docutils literal notranslate"><span class="pre">LANDSTATION_VERSION</span></code> (from <code class="docutils literal notranslate"><span class="pre">base_station_version</span></code>), <code class="docutils literal notranslate"><span class="pre">WMO_IDENTIFIER</span></code> (from
-<code class="docutils literal notranslate"><span class="pre">wmo_identifier</span></code>), and <code class="docutils literal notranslate"><span class="pre">platform_model_vocabulary</span></code>.</p>
-<p>Also optional, written as OG1 variables only when you set them (a null is not written):
-<code class="docutils literal notranslate"><span class="pre">PLATFORM_NAME</span></code>, <code class="docutils literal notranslate"><span class="pre">TELECOM_TYPE</span></code>, <code class="docutils literal notranslate"><span class="pre">TRACKING_SYSTEM</span></code>, <code class="docutils literal notranslate"><span class="pre">BATTERY_TYPE</span></code>, <code class="docutils literal notranslate"><span class="pre">BATTERY_PACK</span></code>,
-and <code class="docutils literal notranslate"><span class="pre">platform_maker_vocabulary</span></code> (attached to <code class="docutils literal notranslate"><span class="pre">PLATFORM_MAKER</span></code>).</p>
+<p>A <strong>required</strong> field that is null is a <code class="docutils literal notranslate"><span class="pre">validate</span></code> error; fill it by hand, or let
+<code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span> <span class="pre">DIR</span></code> read the fields with an <code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span> <span class="pre">reads</span></code> entry from the first
+basestation file. An optional field left null is not written. <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">list</span> <span class="pre">platform</span></code>
+prints the same table.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Requirement</p></th>
+<th class="head"><p>Written as</p></th>
+<th class="head"><p>init –from reads</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_SERIAL_NUMBER</span></code></p></td>
+<td><p>required</p></td>
+<td><p>variable</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">platform_id</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_MODEL</span></code></p></td>
+<td><p>required</p></td>
+<td><p>variable</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">platform_model_vocabulary</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>attribute on PLATFORM_MODEL</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_DEPTH_RATING</span></code></p></td>
+<td><p>required</p></td>
+<td><p>variable</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_MAKER</span></code></p></td>
+<td><p>required</p></td>
+<td><p>variable</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">platform_maker_vocabulary</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>attribute on PLATFORM_MAKER</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GLIDER_FIRMWARE_VERSION</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>variable</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">seaglider_software_version</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LANDSTATION_VERSION</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>variable</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">base_station_version</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WMO_IDENTIFIER</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>variable</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">wmo_identifier</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_NAME</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>variable</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TELECOM_TYPE</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>variable</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TRACKING_SYSTEM</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>variable</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BATTERY_TYPE</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>variable</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BATTERY_PACK</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>variable</p></td>
+<td><p>—</p></td>
+</tr>
+</tbody>
+</table>
 <p>The two <code class="docutils literal notranslate"><span class="pre">*_vocabulary</span></code> keys take the NERC term for this glider’s model (collection B76) and
 maker (collection B75); the package supplies no default, because the right term depends on the
 glider. For a University of Washington Seaglider M1, as in <code class="docutils literal notranslate"><span class="pre">data/demo_sg005/mission.yaml</span></code>:
@@ -239,16 +310,66 @@ glider. For a University of Washington Seaglider M1, as in <code class="docutils
 <p>The <code class="docutils literal notranslate"><span class="pre">deployment</span></code> block carries the OG1 globals that identify the deployment, one key per
 global. A null key is not written; seagliderOG1 lets you supply OG1 metadata but does not
 enforce the format (the external <code class="docutils literal notranslate"><span class="pre">cc-plugin-og</span></code> checker does that). The OG1 requirement tier
-(from the manual, v1.0.0) is shown for each:</p>
-<ul class="simple">
-<li><p><strong>mandatory</strong>: <code class="docutils literal notranslate"><span class="pre">id</span></code> (overrides the derived <code class="docutils literal notranslate"><span class="pre">&lt;serial&gt;_&lt;start&gt;_&lt;mode&gt;</span></code>; <code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span></code>
-proposes the derived value).</p></li>
-<li><p><strong>highly desirable</strong>: <code class="docutils literal notranslate"><span class="pre">site</span></code>, <code class="docutils literal notranslate"><span class="pre">site_vocabulary</span></code>, <code class="docutils literal notranslate"><span class="pre">program</span></code>, <code class="docutils literal notranslate"><span class="pre">program_vocabulary</span></code>,
-<code class="docutils literal notranslate"><span class="pre">data_url</span></code>, <code class="docutils literal notranslate"><span class="pre">doi</span></code>.</p></li>
-<li><p><strong>suggested</strong>: <code class="docutils literal notranslate"><span class="pre">project</span></code>, <code class="docutils literal notranslate"><span class="pre">network</span></code>, <code class="docutils literal notranslate"><span class="pre">comment</span></code> (overrides the comment derived from the
-file’s <code class="docutils literal notranslate"><span class="pre">history</span></code>).</p></li>
-<li><p><strong>optional</strong> (ACDD globals with no OG1 tier): <code class="docutils literal notranslate"><span class="pre">license</span></code>, <code class="docutils literal notranslate"><span class="pre">acknowledgment</span></code>.</p></li>
-</ul>
+is from the manual, v1.0.0; <code class="docutils literal notranslate"><span class="pre">optional</span></code> marks ACDD globals with no OG1 tier.
+<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">list</span> <span class="pre">globals</span></code> lists every OG1 global, including the ones the converter derives.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>OG1 tier</p></th>
+<th class="head"><p>Note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p>mandatory</p></td>
+<td><p>overrides the derived &lt;serial&gt;_&lt;start&gt;_&lt;mode&gt;; ‘init –from’ proposes it</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">site</span></code></p></td>
+<td><p>highly desirable</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">site_vocabulary</span></code></p></td>
+<td><p>highly desirable</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">program</span></code></p></td>
+<td><p>highly desirable</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">program_vocabulary</span></code></p></td>
+<td><p>highly desirable</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">data_url</span></code></p></td>
+<td><p>highly desirable</p></td>
+<td><p>where the OG1 file is hosted</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">doi</span></code></p></td>
+<td><p>highly desirable</p></td>
+<td><p>e.g. <a class="reference external" href="https://doi.org/">https://doi.org/</a>…</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">project</span></code></p></td>
+<td><p>suggested</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">network</span></code></p></td>
+<td><p>suggested</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">comment</span></code></p></td>
+<td><p>suggested</p></td>
+<td><p>overrides the comment derived from the file’s history</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">license</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>e.g. CC-BY-4.0</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">acknowledgment</span></code></p></td>
+<td><p>optional</p></td>
+<td><p>—</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="contributor-and-institution-records">
 <h2>Contributor and institution records<a class="headerlink" href="#contributor-and-institution-records" title="Link to this heading"></a></h2>
