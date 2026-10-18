@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev72 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev73 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=f2160bb2"></script>
+      <script src="_static/documentation_options.js?v=566e8fab"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -168,6 +168,10 @@ tier and <code class="docutils literal notranslate"><span class="pre">mission.ya
 and basestation sources, and the sensor catalogue, read from the converter’s own tables.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code> (and <code class="docutils literal notranslate"><span class="pre">report:</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>) writes the HTML conversion page
 <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> beside each file.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">process</span></code> writes <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside each OG1 file: the input files and the dives
+each basestation variable is present and valid in. The conversion page shows it as a <em>Presence
+across dives</em> section; <code class="docutils literal notranslate"><span class="pre">process</span></code> prints a one-line summary when the dives disagree.
+<code class="docutils literal notranslate"><span class="pre">convert.presence_by_dive</span></code>, <code class="docutils literal notranslate"><span class="pre">presence_patterns</span></code>, <code class="docutils literal notranslate"><span class="pre">presence_summary</span></code>, <code class="docutils literal notranslate"><span class="pre">conversion_sidecar</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">data/demo_sg005/mission.yaml</span></code>: a filled-in example configuration for the bundled sample (writes
 to the gitignored <code class="docutils literal notranslate"><span class="pre">outputs/</span></code>); the demo notebook runs it through <code class="docutils literal notranslate"><span class="pre">convert.process_mission</span></code>.</p></li>
 </ul>

@@ -103,6 +103,29 @@ Output files target:
 
 The output carries ``featureType: trajectory`` (``config/OG1_global_attributes.yaml``).
 
+Variables that differ between dives
+-----------------------------------
+
+The basestation files of one mission need not carry the same variables: a sensor switched on
+part-way through, or present but off, makes the files disagree. The converter works from the
+union of the variables, so the OG1 file has one variable where the inputs had it on some dives
+and not others, and cannot say which dives that was.
+
+``convert.process_mission`` (and so ``process``) records this in ``<id>_conversion.json`` beside
+the OG1 file. For each basestation variable it gives the runs of dives it is *present* in (the
+variable exists in the file) and *valid* in (present, with at least one non-missing value). The
+sidecar also lists the input files and carries the file's ``id`` and ``date_created``;
+``convert.conversion_sidecar`` reads it back and ignores a sidecar whose ``id`` or
+``date_created`` differs from the file's.
+
+The conversion page groups the variables into patterns — ``every dive``, ``from dive k``,
+``until dive k``, ``dive k only``, ``dives a–b``, ``sporadic`` — and shows each as a strip over
+the dives. On the bundled ``demo_sg005`` sample (dives 1–5), 338 variables are on every dive,
+the four depth-averaged currents are present on every dive but have values from dive 2, and
+``log_ALTIM_BOTTOM_PING`` is on dive 4 only.
+
+Nothing about this is added to the OG1 file.
+
 Validation
 ----------
 

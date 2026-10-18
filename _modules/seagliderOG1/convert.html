@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev72 documentation</title>
+  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev73 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f2160bb2"></script>
+      <script src="../../_static/documentation_options.js?v=566e8fab"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -131,6 +131,10 @@
     <span class="s2">"name_mapping"</span><span class="p">,</span>
     <span class="s2">"keep_variables"</span><span class="p">,</span>
     <span class="s2">"conversion_ledger"</span><span class="p">,</span>
+    <span class="s2">"conversion_sidecar"</span><span class="p">,</span>
+    <span class="s2">"presence_by_dive"</span><span class="p">,</span>
+    <span class="s2">"presence_patterns"</span><span class="p">,</span>
+    <span class="s2">"presence_summary"</span><span class="p">,</span>
     <span class="s2">"MetadataError"</span><span class="p">,</span>
 <span class="p">]</span>
 
@@ -517,6 +521,341 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_input_record</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Return ``{"path", "bytes", "dive"}`` for one input dataset (file name only).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds : xarray.Dataset</span>
+<span class="sd">        A basestation dataset as opened by :func:`seagliderOG1.readers.read_mission`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict of str to object</span>
+<span class="sd">        The file name (not the machine path), its size in bytes (None when the dataset</span>
+<span class="sd">        was not read from a local file) and the dive number.</span>
+
+<span class="sd">    """</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"source"</span><span class="p">)</span>
+    <span class="n">local</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="k">if</span> <span class="n">source</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"path"</span><span class="p">:</span> <span class="n">local</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">local</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"bytes"</span><span class="p">:</span> <span class="n">local</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span> <span class="k">if</span> <span class="n">local</span> <span class="ow">and</span> <span class="n">local</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"dive"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]),</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_dive_runs</span><span class="p">(</span><span class="n">flags</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">dives</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Return the runs of consecutive input files where ``flags`` is true, as dive ranges.</span>
+
+<span class="sd">    Consecutive means adjacent in the input order, not adjacent dive numbers, so a gap in</span>
+<span class="sd">    the dive numbering (a missing file) does not split a run.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    flags : sequence of bool</span>
+<span class="sd">        One flag per input file, in dive order.</span>
+<span class="sd">    dives : sequence of int</span>
+<span class="sd">        The dive number of each input file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of [int, int]</span>
+<span class="sd">        ``[first_dive, last_dive]`` per run, in order; empty when no flag is true.</span>
+
+<span class="sd">    """</span>
+    <span class="n">runs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">flag</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">flags</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">flag</span> <span class="ow">and</span> <span class="n">start</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">flag</span> <span class="ow">and</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">runs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">dives</span><span class="p">[</span><span class="n">start</span><span class="p">],</span> <span class="n">dives</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]])</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">runs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">dives</span><span class="p">[</span><span class="n">start</span><span class="p">],</span> <span class="n">dives</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">flags</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]])</span>
+    <span class="k">return</span> <span class="n">runs</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_has_values</span><span class="p">(</span><span class="n">var</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Variable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return True when a basestation variable holds at least one non-missing value.</span>
+
+<span class="sd">    Floating data is tested for any finite value (the reader has already turned fill</span>
+<span class="sd">    values into NaN), times for any value that is not NaT, and text for any string that is</span>
+<span class="sd">    not blank; other data counts as values when the variable is not empty.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    var : xarray.Variable</span>
+<span class="sd">        One variable of one basestation file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        Whether the variable has any value in this file.</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">kind</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"f"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s2">"mM"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">((</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnat</span><span class="p">(</span><span class="n">values</span><span class="p">))</span><span class="o">.</span><span class="n">any</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s2">"SU"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">char</span><span class="o">.</span><span class="n">str_len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">char</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"O"</span><span class="p">:</span>
+        <span class="c1"># netCDF4 variable-length text decodes to an object array: a dive of only</span>
+        <span class="c1"># ""/whitespace/None has no value; genuinely non-text object data (rare) counts.</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="s2">"replace"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">item</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<div class="viewcode-block" id="presence_by_dive">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.presence_by_dive">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">presence_by_dive</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the dives each basestation variable is present in, and has values in.</span>
+
+<span class="sd">    A sensor switched on part-way through a mission, or one that is present but off,</span>
+<span class="sd">    makes the input files disagree; the converter works from the union of their</span>
+<span class="sd">    variables, so this records which dives each one came from. Read from the inputs, not</span>
+<span class="sd">    the output — the OG1 file cannot say which file carried what.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    list_of_datasets : sequence of xarray.Dataset</span>
+<span class="sd">        Basestation datasets, one per dive, each with a ``dive_number`` attribute.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        ``dives`` (the input dive numbers, in order) and ``variables`` (basestation name</span>
+<span class="sd">        to ``{"present": runs, "valid": runs}``, each run ``[first_dive, last_dive]``</span>
+<span class="sd">        over consecutive input files; ``valid`` means present with at least one</span>
+<span class="sd">        non-missing value).</span>
+
+<span class="sd">    """</span>
+    <span class="n">ordered</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ds</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]))</span>
+    <span class="n">dives</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">])</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">ordered</span><span class="p">]</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">ordered</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">})</span>
+    <span class="n">variables</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">present</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">ordered</span><span class="p">]</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">is_present</span> <span class="ow">and</span> <span class="n">_has_values</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">is_present</span><span class="p">,</span> <span class="n">ds</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">present</span><span class="p">,</span> <span class="n">ordered</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">variables</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"present"</span><span class="p">:</span> <span class="n">_dive_runs</span><span class="p">(</span><span class="n">present</span><span class="p">,</span> <span class="n">dives</span><span class="p">),</span>
+            <span class="s2">"valid"</span><span class="p">:</span> <span class="n">_dive_runs</span><span class="p">(</span><span class="n">valid</span><span class="p">,</span> <span class="n">dives</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"dives"</span><span class="p">:</span> <span class="n">dives</span><span class="p">,</span> <span class="s2">"variables"</span><span class="p">:</span> <span class="n">variables</span><span class="p">}</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_label</span><span class="p">(</span><span class="n">runs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">dives</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return a dive-range label: ``every dive``, ``from dive 12``, ``dives 3–7``, ...</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    runs : list of [int, int]</span>
+<span class="sd">        Dive ranges from :func:`presence_by_dive`.</span>
+<span class="sd">    dives : sequence of int</span>
+<span class="sd">        The input dive numbers, in order.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        One of ``every dive``, ``never``, ``from dive k``, ``until dive k``,</span>
+<span class="sd">        ``dive k only``, ``dives a–b`` or ``sporadic``.</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">runs</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"never"</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">runs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"sporadic"</span>
+    <span class="n">first</span><span class="p">,</span> <span class="n">last</span> <span class="o">=</span> <span class="n">runs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">first</span> <span class="o">==</span> <span class="n">dives</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">last</span> <span class="o">==</span> <span class="n">dives</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="s2">"every dive"</span>
+    <span class="k">if</span> <span class="n">first</span> <span class="o">==</span> <span class="n">last</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"dive </span><span class="si">{</span><span class="n">first</span><span class="si">}</span><span class="s2"> only"</span>
+    <span class="k">if</span> <span class="n">last</span> <span class="o">==</span> <span class="n">dives</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"from dive </span><span class="si">{</span><span class="n">first</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">if</span> <span class="n">first</span> <span class="o">==</span> <span class="n">dives</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"until dive </span><span class="si">{</span><span class="n">last</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"dives </span><span class="si">{</span><span class="n">first</span><span class="si">}</span><span class="s2">–</span><span class="si">{</span><span class="n">last</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_mask</span><span class="p">(</span><span class="n">runs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">dives</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Return one flag per input file: whether it falls inside ``runs``.</span>
+
+<span class="sd">    The inverse of :func:`_dive_runs`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    runs : list of [int, int]</span>
+<span class="sd">        Dive ranges.</span>
+<span class="sd">    dives : sequence of int</span>
+<span class="sd">        The input dive numbers, in order.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of bool</span>
+<span class="sd">        One flag per input dive.</span>
+
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nb">any</span><span class="p">(</span><span class="n">a</span> <span class="o">&lt;=</span> <span class="n">d</span> <span class="o">&lt;=</span> <span class="n">b</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">runs</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dives</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="presence_patterns">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.presence_patterns">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">presence_patterns</span><span class="p">(</span><span class="n">presence</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Group variables by the dives they are valid in, then present in — the page's rows.</span>
+
+<span class="sd">    Hundreds of variables over hundreds of dives is a table of patterns, not of</span>
+<span class="sd">    variables: on a normal mission a handful of patterns cover everything ("every dive",</span>
+<span class="sd">    "from dive 12", "until dive 40", "sporadic").</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    presence : dict</span>
+<span class="sd">        As returned by :func:`presence_by_dive`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of dict</span>
+<span class="sd">        One per distinct ``(valid, present)`` pair, the ``every dive`` row first, then</span>
+<span class="sd">        by variable count: ``label`` (from the valid runs), ``valid`` and ``present``</span>
+<span class="sd">        (runs), ``valid_mask`` / ``present_mask`` (one flag per input dive),</span>
+<span class="sd">        ``n_valid`` / ``n_present`` (dives covered), ``uniform`` (valid on every dive),</span>
+<span class="sd">        and ``variables`` (sorted names).</span>
+
+<span class="sd">    """</span>
+    <span class="n">dives</span> <span class="o">=</span> <span class="n">presence</span><span class="p">[</span><span class="s2">"dives"</span><span class="p">]</span>
+    <span class="n">groups</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">presence</span><span class="p">[</span><span class="s2">"variables"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">entry</span><span class="p">[</span><span class="s2">"valid"</span><span class="p">])),</span>
+            <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">entry</span><span class="p">[</span><span class="s2">"present"</span><span class="p">])),</span>
+        <span class="p">)</span>
+        <span class="n">groups</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">valid</span><span class="p">,</span> <span class="n">present</span><span class="p">),</span> <span class="n">names</span> <span class="ow">in</span> <span class="n">groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">valid_runs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">run</span><span class="p">)</span> <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">valid</span><span class="p">]</span>
+        <span class="n">present_runs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">run</span><span class="p">)</span> <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">present</span><span class="p">]</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">_run_label</span><span class="p">(</span><span class="n">valid_runs</span><span class="p">,</span> <span class="n">dives</span><span class="p">)</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">_run_mask</span><span class="p">(</span><span class="n">valid_runs</span><span class="p">,</span> <span class="n">dives</span><span class="p">)</span>
+        <span class="n">present_mask</span> <span class="o">=</span> <span class="n">_run_mask</span><span class="p">(</span><span class="n">present_runs</span><span class="p">,</span> <span class="n">dives</span><span class="p">)</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"label"</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span>
+                <span class="s2">"valid"</span><span class="p">:</span> <span class="n">valid_runs</span><span class="p">,</span>
+                <span class="s2">"present"</span><span class="p">:</span> <span class="n">present_runs</span><span class="p">,</span>
+                <span class="s2">"valid_mask"</span><span class="p">:</span> <span class="n">valid_mask</span><span class="p">,</span>
+                <span class="s2">"present_mask"</span><span class="p">:</span> <span class="n">present_mask</span><span class="p">,</span>
+                <span class="s2">"n_valid"</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">valid_mask</span><span class="p">),</span>
+                <span class="s2">"n_present"</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">present_mask</span><span class="p">),</span>
+                <span class="s2">"uniform"</span><span class="p">:</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">"every dive"</span><span class="p">,</span>
+                <span class="s2">"variables"</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">names</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+    <span class="n">rows</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="p">(</span><span class="ow">not</span> <span class="n">row</span><span class="p">[</span><span class="s2">"uniform"</span><span class="p">],</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">"variables"</span><span class="p">]),</span> <span class="n">row</span><span class="p">[</span><span class="s2">"label"</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">rows</span></div>
+
+
+
+<div class="viewcode-block" id="presence_summary">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.presence_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">presence_summary</span><span class="p">(</span><span class="n">presence</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return a one-line summary when the input dives disagree, else None.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    presence : dict</span>
+<span class="sd">        As returned by :func:`presence_by_dive`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str or None</span>
+<span class="sd">        e.g. ``"343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns)"``,</span>
+<span class="sd">        or None when every variable has values on every dive.</span>
+
+<span class="sd">    """</span>
+    <span class="n">patterns</span> <span class="o">=</span> <span class="n">presence_patterns</span><span class="p">(</span><span class="n">presence</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">"uniform"</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">patterns</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">"variables"</span><span class="p">])</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">patterns</span><span class="p">)</span>
+    <span class="n">every</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">"variables"</span><span class="p">])</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">patterns</span> <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s2">"uniform"</span><span class="p">])</span>
+    <span class="n">n_dives</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">presence</span><span class="p">[</span><span class="s2">"dives"</span><span class="p">])</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2"> variables over </span><span class="si">{</span><span class="n">n_dives</span><span class="si">}</span><span class="s2"> dives; </span><span class="si">{</span><span class="n">every</span><span class="si">}</span><span class="s2"> on every dive, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">total</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">every</span><span class="si">}</span><span class="s2"> on some (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">patterns</span><span class="p">)</span><span class="si">}</span><span class="s2"> patterns)"</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="conversion_sidecar">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.conversion_sidecar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">conversion_sidecar</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the conversion sidecar written beside an OG1 file, or None.</span>
+
+<span class="sd">    The sidecar (``&lt;id&gt;_conversion.json``, see :func:`seagliderOG1.writers.write`)</span>
+<span class="sd">    holds what the file cannot say about its own conversion. It is bound to the file by</span>
+<span class="sd">    ``id`` and ``date_created``; a sidecar from another conversion is not returned.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or os.PathLike</span>
+<span class="sd">        The OG1 netCDF file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict or None</span>
+<span class="sd">        The sidecar contents, or None when it is missing, unreadable, of another</span>
+<span class="sd">        schema, or belongs to another conversion (each but the first warned).</span>
+
+<span class="sd">    """</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">sidecar_path</span> <span class="o">=</span> <span class="n">writers</span><span class="o">.</span><span class="n">conversion_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">".json"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">sidecar_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sidecar</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">sidecar_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">))</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">UnicodeDecodeError</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sidecar_path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> could not be read (</span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">); ignoring it."</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sidecar</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="n">sidecar</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"schema"</span><span class="p">)</span> <span class="o">!=</span> <span class="n">writers</span><span class="o">.</span><span class="n">SIDECAR_SCHEMA</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sidecar_path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> is not a schema-</span><span class="si">{</span><span class="n">writers</span><span class="o">.</span><span class="n">SIDECAR_SCHEMA</span><span class="si">}</span><span class="s2"> conversion "</span>
+            <span class="s2">"sidecar; ignoring it."</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">with</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">"netcdf4"</span><span class="p">,</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+        <span class="n">binding</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"date_created"</span><span class="p">)}</span>
+    <span class="k">if</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">sidecar</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">binding</span><span class="p">}</span> <span class="o">!=</span> <span class="n">binding</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sidecar_path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> belongs to another conversion "</span>
+            <span class="sa">f</span><span class="s2">"(id/date_created differ from </span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">); ignoring it."</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">sidecar</span></div>
+
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_apply_deployment</span><span class="p">(</span>
     <span class="n">ds_og1</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
     <span class="n">deployment</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span>
@@ -726,6 +1065,7 @@
     <span class="n">deployment</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">global_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"delayed"</span><span class="p">,</span>
+    <span class="n">provenance</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Convert Seaglider basestation datasets to OG1 format.</span>
 
@@ -765,6 +1105,12 @@
 <span class="sd">        Data mode, ``"delayed"`` (default) or ``"realtime"``. Sets the ``id``</span>
 <span class="sd">        suffix (``delayed`` or ``R``) and so the output filename, per the OG1</span>
 <span class="sd">        manual, which defines no separate data-mode attribute. Default is "delayed".</span>
+<span class="sd">    provenance : dict, optional</span>
+<span class="sd">        When given, filled in place with what the output file cannot record about its own</span>
+<span class="sd">        conversion: ``inputs`` (one ``{"path", "bytes", "dive"}`` per input file) and</span>
+<span class="sd">        ``presence`` (:func:`presence_by_dive`). Pass it to</span>
+<span class="sd">        ``writers.write(..., sidecar=provenance)`` to write it beside the file. Default</span>
+<span class="sd">        is None.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -859,12 +1205,18 @@
             <span class="n">skipped_dims</span><span class="p">,</span>
         <span class="p">)</span>
 
+    <span class="n">used_inputs</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">ds1_base</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Processing datasets"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"dataset"</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">provenance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Presence reads every variable; loading the file once here lets both it</span>
+            <span class="c1"># and the conversion work from memory instead of reading the file twice.</span>
+            <span class="n">ds1_base</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
         <span class="n">ds_new</span><span class="p">,</span> <span class="n">attr_warnings</span> <span class="o">=</span> <span class="n">process_dataset</span><span class="p">(</span>
             <span class="n">ds1_base</span><span class="p">,</span> <span class="n">og1_mapping</span><span class="p">,</span> <span class="n">time_variables</span><span class="p">,</span> <span class="n">name_lookup</span><span class="o">=</span><span class="n">name_lookup</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">ds_new</span><span class="p">:</span>
             <span class="n">processed_datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
+            <span class="n">used_inputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"Dataset for dive number </span><span class="si">{</span><span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">'dive_number'</span><span class="p">]</span><span class="si">}</span><span class="s2"> is empty or invalid."</span>
@@ -875,6 +1227,11 @@
             <span class="s2">"No valid datasets were processed. Check the input datasets "</span>
             <span class="s2">"and the warnings from coordinate validation."</span>
         <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">provenance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Only the dives that reach the output: a rejected dive contributed nothing.</span>
+        <span class="n">provenance</span><span class="p">[</span><span class="s2">"inputs"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">_input_record</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">used_inputs</span><span class="p">]</span>
+        <span class="n">provenance</span><span class="p">[</span><span class="s2">"presence"</span><span class="p">]</span> <span class="o">=</span> <span class="n">presence_by_dive</span><span class="p">(</span><span class="n">used_inputs</span><span class="p">)</span>
 
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">processed_datasets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">)</span>
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span>
@@ -1147,7 +1504,9 @@
 
 <span class="sd">    The library form of ``seagliderOG1 process`` for a single mission: the CLI calls</span>
 <span class="sd">    this once per selected mission. The file is written as ``&lt;output_dir&gt;/&lt;id&gt;.nc``,</span>
-<span class="sd">    where ``id`` is the converter-derived (or ``deployment``-supplied) identifier.</span>
+<span class="sd">    where ``id`` is the converter-derived (or ``deployment``-supplied) identifier, with</span>
+<span class="sd">    the conversion sidecar ``&lt;id&gt;_conversion.json`` beside it (the input files and which</span>
+<span class="sd">    dives each variable came from; see :func:`conversion_sidecar`).</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1197,8 +1556,8 @@
 <span class="sd">        If ``source`` is not a directory, holds no basestation files, or is a root of</span>
 <span class="sd">        ``SN/DATE`` missions; or as raised by :func:`to_og1`.</span>
 <span class="sd">    FileExistsError</span>
-<span class="sd">        If the output file (or, with ``report``, the page) exists and ``overwrite``</span>
-<span class="sd">        is False; nothing is written. ``filename`` is the existing path. The</span>
+<span class="sd">        If the output file or (with ``report``) the page exists and ``overwrite`` is</span>
+<span class="sd">        False (a sidecar left beside a missing file is replaced, not refused); nothing is written. ``filename`` is the existing path. The</span>
 <span class="sd">        conversion has already run by then: the file name derives from the converted</span>
 <span class="sd">        ``id``.</span>
 <span class="sd">    MetadataError</span>
@@ -1237,6 +1596,7 @@
 
     <span class="n">first</span><span class="p">,</span> <span class="n">last</span> <span class="o">=</span> <span class="n">dives</span> <span class="k">if</span> <span class="n">dives</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">read_mission</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">),</span> <span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">repair</span><span class="o">=</span><span class="n">repair</span><span class="p">)</span>
+    <span class="n">provenance</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">ds</span> <span class="o">=</span> <span class="n">to_og1</span><span class="p">(</span>
         <span class="n">datasets</span><span class="p">,</span>
         <span class="n">contributors</span><span class="o">=</span><span class="n">contributors</span><span class="p">,</span>
@@ -1245,14 +1605,17 @@
         <span class="n">deployment</span><span class="o">=</span><span class="n">deployment</span><span class="p">,</span>
         <span class="n">global_attributes</span><span class="o">=</span><span class="n">global_attributes</span><span class="p">,</span>
         <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">provenance</span><span class="o">=</span><span class="n">provenance</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">keep_variables</span><span class="p">:</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="n">_keep_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">keep_variables</span><span class="p">))</span>
 
     <span class="n">output_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">.nc"</span>
-    <span class="n">page</span> <span class="o">=</span> <span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">_conversion.html"</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">writers</span><span class="o">.</span><span class="n">conversion_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">".html"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
+        <span class="c1"># The sidecar is not checked: it belongs to the .nc, and one left beside a</span>
+        <span class="c1"># missing .nc is stale and is replaced with it.</span>
         <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span> <span class="k">if</span> <span class="n">report</span> <span class="k">else</span> <span class="p">(</span><span class="n">path</span><span class="p">,):</span>
             <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span>
@@ -1261,7 +1624,7 @@
                     <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">),</span>
                 <span class="p">)</span>
     <span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">writers</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
+    <span class="n">writers</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">sidecar</span><span class="o">=</span><span class="n">provenance</span><span class="p">)</span>
     <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"wrote </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">report</span><span class="p">:</span>
         <span class="c1"># Lazy: reports.conversion imports this module at load time.</span>

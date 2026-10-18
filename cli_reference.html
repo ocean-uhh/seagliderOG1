@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev72 documentation</title>
+  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev73 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=f2160bb2"></script>
+      <script src="_static/documentation_options.js?v=566e8fab"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -141,6 +141,15 @@ determines the data-mode suffix of the output id: <code class="docutils literal 
 page <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> beside each OG1 file — the same page <code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span> <span class="pre">-o</span></code>
 writes for an existing file. An existing page is refused like an existing file unless
 <code class="docutils literal notranslate"><span class="pre">--force</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">process</span></code> also writes <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside each OG1 file: the input files (name,
+size, dive number) and which dives each basestation variable was present in and had values in.
+The page reads it for its <em>Presence across dives</em> section. When the input dives disagree,
+<code class="docutils literal notranslate"><span class="pre">process</span></code> prints one line per mission after <code class="docutils literal notranslate"><span class="pre">wrote</span></code>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">wrote outputs/sg005_20080606T180256_delayed.nc</span>
+<span class="go">  sg005_20080606T180256_delayed: 343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns) — see process --report</span>
+</pre></div>
+</div>
+<p>The sidecar belongs to its OG1 file: it is replaced whenever the file is written.</p>
 </section>
 <section id="listing-the-vocabulary">
 <h2>Listing the vocabulary<a class="headerlink" href="#listing-the-vocabulary" title="Link to this heading"></a></h2>

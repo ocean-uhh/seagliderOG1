@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev72 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev73 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=f2160bb2"></script>
+      <script src="_static/documentation_options.js?v=566e8fab"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -66,6 +66,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#units">Units</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#og1-compliance">OG1 compliance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#variables-that-differ-between-dives">Variables that differ between dives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#validation">Validation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#extended-variables">Extended variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
@@ -207,6 +208,25 @@ mappings:</p>
 <li><p><a class="reference external" href="https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery">ACDD Conventions</a></p></li>
 </ul>
 <p>The output carries <code class="docutils literal notranslate"><span class="pre">featureType:</span> <span class="pre">trajectory</span></code> (<code class="docutils literal notranslate"><span class="pre">config/OG1_global_attributes.yaml</span></code>).</p>
+</section>
+<section id="variables-that-differ-between-dives">
+<h2>Variables that differ between dives<a class="headerlink" href="#variables-that-differ-between-dives" title="Link to this heading"></a></h2>
+<p>The basestation files of one mission need not carry the same variables: a sensor switched on
+part-way through, or present but off, makes the files disagree. The converter works from the
+union of the variables, so the OG1 file has one variable where the inputs had it on some dives
+and not others, and cannot say which dives that was.</p>
+<p><code class="docutils literal notranslate"><span class="pre">convert.process_mission</span></code> (and so <code class="docutils literal notranslate"><span class="pre">process</span></code>) records this in <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside
+the OG1 file. For each basestation variable it gives the runs of dives it is <em>present</em> in (the
+variable exists in the file) and <em>valid</em> in (present, with at least one non-missing value). The
+sidecar also lists the input files and carries the file’s <code class="docutils literal notranslate"><span class="pre">id</span></code> and <code class="docutils literal notranslate"><span class="pre">date_created</span></code>;
+<code class="docutils literal notranslate"><span class="pre">convert.conversion_sidecar</span></code> reads it back and ignores a sidecar whose <code class="docutils literal notranslate"><span class="pre">id</span></code> or
+<code class="docutils literal notranslate"><span class="pre">date_created</span></code> differs from the file’s.</p>
+<p>The conversion page groups the variables into patterns — <code class="docutils literal notranslate"><span class="pre">every</span> <span class="pre">dive</span></code>, <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">dive</span> <span class="pre">k</span></code>,
+<code class="docutils literal notranslate"><span class="pre">until</span> <span class="pre">dive</span> <span class="pre">k</span></code>, <code class="docutils literal notranslate"><span class="pre">dive</span> <span class="pre">k</span> <span class="pre">only</span></code>, <code class="docutils literal notranslate"><span class="pre">dives</span> <span class="pre">a–b</span></code>, <code class="docutils literal notranslate"><span class="pre">sporadic</span></code> — and shows each as a strip over
+the dives. On the bundled <code class="docutils literal notranslate"><span class="pre">demo_sg005</span></code> sample (dives 1–5), 338 variables are on every dive,
+the four depth-averaged currents are present on every dive but have values from dive 2, and
+<code class="docutils literal notranslate"><span class="pre">log_ALTIM_BOTTOM_PING</span></code> is on dive 4 only.</p>
+<p>Nothing about this is added to the OG1 file.</p>
 </section>
 <section id="validation">
 <h2>Validation<a class="headerlink" href="#validation" title="Link to this heading"></a></h2>
