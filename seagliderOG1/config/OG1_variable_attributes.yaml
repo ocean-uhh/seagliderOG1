@@ -2,7 +2,6 @@ WMO_IDENTIFIER:
   long_name: wmo id
 PLATFORM_MODEL:
   long_name: model of the glider
-  platform_model_vocabulary: https://vocab.nerc.ac.uk/collection/B76/current/B7600024/
 PLATFORM_SERIAL_NUMBER:
   long_name: glider serial number
 PLATFORM_NAME:
@@ -15,7 +14,6 @@ ICES_CODE:
   ices_code_vocabulary: https://vocab.ices.dk/?codeguid=690d82e2 -b4e2-4e30-9772-7499c66144c6
 PLATFORM_MAKER:
   long_name: glider manufacturer
-  platform_maker_vocabulary: https://vocab.nerc.ac.uk/collection/B75/current/ORG01077/
 DEPLOYMENT_TIME:
   long_name: date of deployment
   standard_name: time

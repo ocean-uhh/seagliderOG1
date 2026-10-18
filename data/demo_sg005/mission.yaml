@@ -18,11 +18,11 @@ report: false           # also write <id>_conversion.html beside each file
 
 platform:               # 'init --from' fills these; fill any null before validate
   PLATFORM_SERIAL_NUMBER: sg005   # required -> variable; from platform_id; a serial or a local nickname
-  PLATFORM_MODEL: University of Washington Seaglider M1 glider   # required -> variable; e.g. University of Washington Seaglider M1 glider
-  platform_model_vocabulary: null   # optional -> attribute on PLATFORM_MODEL; e.g. https://vocab.nerc.ac.uk/collection/B76/current/B7600024/
+  PLATFORM_MODEL: University of Washington Seaglider M1 glider   # required -> variable
+  platform_model_vocabulary: https://vocab.nerc.ac.uk/collection/B76/current/B7600024/   # optional -> attribute on PLATFORM_MODEL
   PLATFORM_DEPTH_RATING: 1000   # required -> variable; e.g. 1000 (metres)
-  PLATFORM_MAKER: University of Washington   # required -> variable; e.g. University of Washington School of Oceanography
-  platform_maker_vocabulary: null   # optional -> attribute on PLATFORM_MAKER; e.g. http://vocab.nerc.ac.uk/collection/B75/current/
+  PLATFORM_MAKER: University of Washington, School of Oceanography   # required -> variable
+  platform_maker_vocabulary: https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/   # optional -> attribute on PLATFORM_MAKER
   GLIDER_FIRMWARE_VERSION: seaglider 66.03   # optional -> variable; from seaglider_software_version
   LANDSTATION_VERSION: basestation v2.8   # optional -> variable; from base_station_version
   WMO_IDENTIFIER: null   # optional -> variable; from wmo_identifier

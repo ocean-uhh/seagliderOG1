@@ -77,6 +77,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Fixed
 
+- `config/OG1_variable_attributes.yaml` no longer carries `platform_model_vocabulary` /
+  `platform_maker_vocabulary` defaults (never written to files; the maker term named Teledyne Webb
+  Research, the Slocum maker). Set both per glider in `mission.yaml`; the sg005 example now does.
 - `start_date`, `TRAJECTORY` and `id` are seeded from the earliest measurement time, so they agree
   with `time_coverage_start` regardless of input order.
 - A null or wholly-empty global is never written; `date_created` is always the conversion time.
