@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev70 documentation</title>
+  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev71 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=619605c1"></script>
+      <script src="_static/documentation_options.js?v=c5ee81d8"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -228,6 +228,11 @@ by hand or let <code class="docutils literal notranslate"><span class="pre">init
 <p>Also optional, written as OG1 variables only when you set them (a null is not written):
 <code class="docutils literal notranslate"><span class="pre">PLATFORM_NAME</span></code>, <code class="docutils literal notranslate"><span class="pre">TELECOM_TYPE</span></code>, <code class="docutils literal notranslate"><span class="pre">TRACKING_SYSTEM</span></code>, <code class="docutils literal notranslate"><span class="pre">BATTERY_TYPE</span></code>, <code class="docutils literal notranslate"><span class="pre">BATTERY_PACK</span></code>,
 and <code class="docutils literal notranslate"><span class="pre">platform_maker_vocabulary</span></code> (attached to <code class="docutils literal notranslate"><span class="pre">PLATFORM_MAKER</span></code>).</p>
+<p>The two <code class="docutils literal notranslate"><span class="pre">*_vocabulary</span></code> keys take the NERC term for this glider’s model (collection B76) and
+maker (collection B75); the package supplies no default, because the right term depends on the
+glider. For a University of Washington Seaglider M1, as in <code class="docutils literal notranslate"><span class="pre">data/demo_sg005/mission.yaml</span></code>:
+<code class="docutils literal notranslate"><span class="pre">https://vocab.nerc.ac.uk/collection/B76/current/B7600024/</span></code> and
+<code class="docutils literal notranslate"><span class="pre">https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/</span></code>.</p>
 </section>
 <section id="deployment-fields">
 <h2>Deployment fields<a class="headerlink" href="#deployment-fields" title="Link to this heading"></a></h2>
@@ -271,7 +276,7 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
 <span class="w">  </span><span class="nt">PLATFORM_MODEL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">University of Washington Seaglider M1 glider</span><span class="w">   </span><span class="c1"># required -&gt; variable</span>
 <span class="w">  </span><span class="nt">platform_model_vocabulary</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; attribute on PLATFORM_MODEL</span>
 <span class="w">  </span><span class="nt">PLATFORM_DEPTH_RATING</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span><span class="w">   </span><span class="c1"># required -&gt; variable; metres</span>
-<span class="w">  </span><span class="nt">PLATFORM_MAKER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">University of Washington School of Oceanography</span><span class="w">   </span><span class="c1"># required -&gt; variable</span>
+<span class="w">  </span><span class="nt">PLATFORM_MAKER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">University of Washington, School of Oceanography</span><span class="w">   </span><span class="c1"># required -&gt; variable</span>
 <span class="w">  </span><span class="nt">platform_maker_vocabulary</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; attribute on PLATFORM_MAKER</span>
 <span class="w">  </span><span class="nt">GLIDER_FIRMWARE_VERSION</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable; from seaglider_software_version</span>
 <span class="w">  </span><span class="nt">LANDSTATION_VERSION</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable; from base_station_version</span>

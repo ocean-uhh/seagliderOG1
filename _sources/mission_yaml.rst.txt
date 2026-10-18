@@ -111,6 +111,12 @@ Also optional, written as OG1 variables only when you set them (a null is not wr
 ``PLATFORM_NAME``, ``TELECOM_TYPE``, ``TRACKING_SYSTEM``, ``BATTERY_TYPE``, ``BATTERY_PACK``,
 and ``platform_maker_vocabulary`` (attached to ``PLATFORM_MAKER``).
 
+The two ``*_vocabulary`` keys take the NERC term for this glider's model (collection B76) and
+maker (collection B75); the package supplies no default, because the right term depends on the
+glider. For a University of Washington Seaglider M1, as in ``data/demo_sg005/mission.yaml``:
+``https://vocab.nerc.ac.uk/collection/B76/current/B7600024/`` and
+``https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/``.
+
 Deployment fields
 -----------------
 
@@ -158,7 +164,7 @@ The template ``init`` writes (fill the nulls before ``validate``):
      PLATFORM_MODEL: University of Washington Seaglider M1 glider   # required -> variable
      platform_model_vocabulary: null   # optional -> attribute on PLATFORM_MODEL
      PLATFORM_DEPTH_RATING: 1000   # required -> variable; metres
-     PLATFORM_MAKER: University of Washington School of Oceanography   # required -> variable
+     PLATFORM_MAKER: University of Washington, School of Oceanography   # required -> variable
      platform_maker_vocabulary: null   # optional -> attribute on PLATFORM_MAKER
      GLIDER_FIRMWARE_VERSION: null   # optional -> variable; from seaglider_software_version
      LANDSTATION_VERSION: null   # optional -> variable; from base_station_version

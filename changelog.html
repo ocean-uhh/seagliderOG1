@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev70 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev71 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=619605c1"></script>
+      <script src="_static/documentation_options.js?v=c5ee81d8"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -188,6 +188,9 @@ config, <code class="docutils literal notranslate"><span class="pre">ruff</span>
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">config/OG1_variable_attributes.yaml</span></code> no longer carries <code class="docutils literal notranslate"><span class="pre">platform_model_vocabulary</span></code> /
+<code class="docutils literal notranslate"><span class="pre">platform_maker_vocabulary</span></code> defaults (never written to files; the maker term named Teledyne Webb
+Research, the Slocum maker). Set both per glider in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>; the sg005 example now does.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">start_date</span></code>, <code class="docutils literal notranslate"><span class="pre">TRAJECTORY</span></code> and <code class="docutils literal notranslate"><span class="pre">id</span></code> are seeded from the earliest measurement time, so they agree
 with <code class="docutils literal notranslate"><span class="pre">time_coverage_start</span></code> regardless of input order.</p></li>
 <li><p>A null or wholly-empty global is never written; <code class="docutils literal notranslate"><span class="pre">date_created</span></code> is always the conversion time.</p></li>
