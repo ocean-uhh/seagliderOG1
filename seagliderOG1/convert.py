@@ -504,6 +504,17 @@ def _has_values(var: xr.Variable) -> bool:
         return bool((~np.isnat(values)).any())
     if kind in "SU":
         return bool((np.char.str_len(np.char.strip(values)) > 0).any())
+    if kind == "O":
+        # netCDF4 variable-length text decodes to an object array: a dive of only
+        # ""/whitespace/None has no value; genuinely non-text object data (rare) counts.
+        for item in values.ravel().tolist():
+            if item is None:
+                continue
+            if isinstance(item, bytes):
+                item = item.decode("utf-8", "replace")
+            if not isinstance(item, str) or item.strip():
+                return True
+        return False
     return True
 
 

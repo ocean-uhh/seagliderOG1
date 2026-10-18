@@ -853,18 +853,25 @@ def test_presence_counts_blank_text_and_nat_as_no_values() -> None:
     nat = np.array(["NaT"], dtype="datetime64[ns]")
     dives = [
         xr.Dataset(
-            {"t": ("x", nat), "s": ("x", np.array(["  "]))}, attrs={"dive_number": 1}
+            {
+                "t": ("x", nat),
+                "s": ("x", np.array(["  "])),
+                # object dtype: how netCDF4 variable-length text decodes (None/blank = no value)
+                "o": ("x", np.array([None], dtype=object)),
+            },
+            attrs={"dive_number": 1},
         ),
         xr.Dataset(
             {
                 "t": ("x", np.array(["2008-06-06"], dtype="datetime64[ns]")),
                 "s": ("x", np.array(["on"])),
+                "o": ("x", np.array(["on"], dtype=object)),
             },
             attrs={"dive_number": 2},
         ),
     ]
     variables = convert.presence_by_dive(dives)["variables"]
-    for name in ("t", "s"):
+    for name in ("t", "s", "o"):
         assert variables[name] == {"present": [[1, 2]], "valid": [[2, 2]]}, name
 
 
