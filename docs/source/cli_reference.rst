@@ -36,6 +36,18 @@ page ``<id>_conversion.html`` beside each OG1 file — the same page ``inspect -
 writes for an existing file. An existing page is refused like an existing file unless
 ``--force``.
 
+``process`` also writes ``<id>_conversion.json`` beside each OG1 file: the input files (name,
+size, dive number) and which dives each basestation variable was present in and had values in.
+The page reads it for its *Presence across dives* section. When the input dives disagree,
+``process`` prints one line per mission after ``wrote``:
+
+.. code-block:: console
+
+   wrote outputs/sg005_20080606T180256_delayed.nc
+     sg005_20080606T180256_delayed: 343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns) — see process --report
+
+The sidecar belongs to its OG1 file: it is replaced whenever the file is written.
+
 Listing the vocabulary
 ----------------------
 

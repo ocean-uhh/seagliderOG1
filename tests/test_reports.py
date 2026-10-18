@@ -192,3 +192,61 @@ def test_history_rows_are_ordinal_numbered():
     rows = conversion._history_rows(ledger)
     assert rows  # at least the conversion line
     assert [r[0] for r in rows] == [str(i) for i in range(1, len(rows) + 1)]
+
+
+def test_page_presence_section_with_and_without_sidecar(tmp_path) -> None:
+    """The page shows the pattern table from the sidecar, and says so when it is missing."""
+    import pathlib
+
+    from seagliderOG1 import convert, writers
+
+    path = convert.process_mission(
+        pathlib.Path(__file__).resolve().parent.parent / "data" / "demo_sg005",
+        tmp_path,
+    )
+    html = conversion.render_conversion(path)
+    assert "Presence across dives" in html
+    assert "from dive 2" in html and "dive 4 only" in html
+    assert "343 variables over 5 dives" in html
+    writers.conversion_path(path, ".json").unlink()
+    html = conversion.render_conversion(path)
+    assert "sidecar not found" in html
+
+
+def test_presence_strips_one_row_per_pattern() -> None:
+    """The strip figure has two panels with one row per contiguous pattern."""
+    from seagliderOG1 import convert
+
+    presence = {
+        "dives": [1, 2, 3],
+        "variables": {
+            "a": {"present": [[1, 3]], "valid": [[1, 3]]},
+            "b": {"present": [[1, 3]], "valid": [[2, 3]]},
+            "c": {"present": [[1, 1], [3, 3]], "valid": [[1, 1], [3, 3]]},
+        },
+    }
+    patterns = convert.presence_patterns(presence)
+    present, valid, labels, has_density = conversion._strip_matrix(patterns)
+    assert present.shape == valid.shape == (3, 3)
+    assert labels[-1].startswith("sporadic and other") and has_density
+    assert valid[1].tolist() == [0, 1, 1]  # "from dive 2": present on 1, valid from 2
+    fig = conversion.draw_presence_strips(patterns, [1, 2, 3])
+    assert fig is not None and len(fig.axes) == 3  # two panels + the density colorbar
+    assert conversion.draw_presence_strips([], []) is None
+
+
+def test_presence_strips_follow_file_order_across_a_dive_gap() -> None:
+    """Columns are input files: dives 1, 2, 100 take three equal columns labelled by dive."""
+    from seagliderOG1 import convert
+
+    presence = {
+        "dives": [1, 2, 100],
+        "variables": {"a": {"present": [[1, 100]], "valid": [[1, 100]]}},
+    }
+    fig = conversion.draw_presence_strips(
+        convert.presence_patterns(presence), presence["dives"]
+    )
+    assert len(fig.axes) == 2  # no density row, no colorbar
+    lower = fig.axes[1]
+    assert lower.get_xlim() == (-0.5, 2.5)
+    assert [t.get_text() for t in lower.get_xticklabels()] == ["1", "2", "100"]

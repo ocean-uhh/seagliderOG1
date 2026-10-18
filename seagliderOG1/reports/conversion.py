@@ -1,13 +1,15 @@
 """Render the conversion ledger of one OG1 file as an HTML page.
 
 Sections: a Reconciliation summary with a fate histogram (where the variables went),
-Dimensions (fate read from the output), Variables grouped by *original* dimension with the
+Presence across dives (which input dives each variable came from, read from the conversion
+sidecar beside the file), Dimensions (fate read from the output), Variables grouped by *original* dimension with the
 ``original -> OG1`` arrow and the Valid % column, Scalar parameters (split Renamed / Log /
 sg_calib_constants / Everything else, per-dive values decoded), Derived variables with their
 sources, Dropped and removed variables, and Global attributes (grouped by convention and OG1
 tier, with the computed spatiotemporal-coverage columns) ending in the History table.
-Everything is read from the file alone via :func:`seagliderOG1.convert.conversion_ledger`,
-the vendored row builders, and the vendored table macros.
+Everything but the presence section is read from the file alone via
+:func:`seagliderOG1.convert.conversion_ledger`, the vendored row builders, and the vendored
+table macros; the presence section reads the sidecar and says so when it is missing.
 """
 
 import math
@@ -21,11 +23,11 @@ import xarray as xr
 if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
-from seagliderOG1 import __version__, convert, vocabularies
+from seagliderOG1 import __version__, convert, vocabularies, writers
 from seagliderOG1.reports import design
 from seagliderOG1.reports._env import get_template
 from seagliderOG1.reports._vendored import figure_png, nc_tables
-from seagliderOG1.reports._vendored.design_tokens import COLORS, W_THREE_FIFTHS
+from seagliderOG1.reports._vendored.design_tokens import COLORS, W_FULL, W_THREE_FIFTHS
 
 __all__ = ["render_conversion"]
 
@@ -182,6 +184,191 @@ def draw_fate_histogram(fate_rows: list[tuple[str, str, str]]) -> "Figure | None
     ax.set_xlabel("variables")
     for position, count in zip(positions, counts, strict=True):
         ax.text(count, position, f" {count:,}", va="center", ha="left")
+    return fig
+
+
+# At most this many contiguous patterns get a strip each; the rest share the sporadic row.
+_MAX_STRIPS = 6
+
+
+def _dive_ranges(runs: list[list[int]], n: int, total: int) -> str:
+    """Return ``"2–5 · 4 of 5"`` for a set of dive runs.
+
+    Parameters
+    ----------
+    runs : list of [int, int]
+        Dive ranges.
+    n : int
+        Input dives covered.
+    total : int
+        Input dives in the mission.
+
+    Returns
+    -------
+    str
+        The ranges, then the count.
+
+    """
+    if not runs:
+        return f"none · 0 of {total}"
+    ranges = ", ".join(str(a) if a == b else f"{a}–{b}" for a, b in runs)
+    return f"{ranges} · {n} of {total}"
+
+
+def _presence_rows(patterns: list[dict], total: int) -> list[dict[str, object]]:
+    """Return one table row per presence pattern.
+
+    Parameters
+    ----------
+    patterns : list of dict
+        From :func:`seagliderOG1.convert.presence_patterns`.
+    total : int
+        Input dives in the mission.
+
+    Returns
+    -------
+    list of dict
+        ``label``, ``valid``, ``present`` (``"same"`` when it equals ``valid``), ``n``
+        (variables), ``variables`` (comma-joined) and ``bad`` (not valid on every dive).
+
+    """
+    rows = []
+    for pattern in patterns:
+        valid = _dive_ranges(pattern["valid"], pattern["n_valid"], total)
+        present = _dive_ranges(pattern["present"], pattern["n_present"], total)
+        rows.append(
+            {
+                "label": pattern["label"],
+                "valid": valid,
+                "present": "same" if present == valid else present,
+                "n": len(pattern["variables"]),
+                "variables": ", ".join(pattern["variables"]),
+                "bad": not pattern["uniform"],
+            }
+        )
+    return rows
+
+
+def _strip_matrix(
+    patterns: list[dict],
+) -> tuple[np.ndarray, np.ndarray, list[str], bool]:
+    """Return the present and valid patterns × dives matrices and the strip labels.
+
+    Contiguous patterns (one run or none) get a strip each, at most ``_MAX_STRIPS``,
+    largest first; every other pattern (sporadic, or past the cap) shares one density row
+    whose value per dive is the fraction of those variables that cover it. Both matrices
+    have the same rows, so one choice of strips serves both panels.
+
+    Parameters
+    ----------
+    patterns : list of dict
+        From :func:`seagliderOG1.convert.presence_patterns`, in display order (not empty).
+
+    Returns
+    -------
+    tuple of (numpy.ndarray, numpy.ndarray, list of str, bool)
+        The present and the valid matrix (1 covered, 0 not; one column per input file, in
+        order), one label per row, and whether the last row is the shared density row.
+
+    """
+    strips, rest, labels = [], [], []
+    for pattern in patterns:
+        contiguous = len(pattern["valid"]) <= 1 and len(pattern["present"]) <= 1
+        if contiguous and len(strips) < _MAX_STRIPS:
+            strips.append(pattern)
+            n = len(pattern["variables"])
+            labels.append(f"{pattern['label']} · {n} var{'' if n == 1 else 's'}")
+        else:
+            rest.append(pattern)
+    if rest:
+        labels.append(
+            f"sporadic and other · {sum(len(p['variables']) for p in rest)} vars "
+            "(shade = fraction)"
+        )
+
+    def matrix(key: str) -> np.ndarray:
+        rows = [np.array(p[f"{key}_mask"], dtype=float) for p in strips]
+        if rest:
+            weights = np.array([len(p["variables"]) for p in rest], dtype=float)
+            masks = np.array([p[f"{key}_mask"] for p in rest], dtype=float)
+            rows.append(weights @ masks / weights.sum())
+        return np.vstack(rows)
+
+    return matrix("present"), matrix("valid"), labels, bool(rest)
+
+
+def draw_presence_strips(patterns: list[dict], dives: list[int]) -> "Figure | None":
+    """Return presence and validity strips, one per pattern, x = dive; None if empty.
+
+    Two panels of the same shape: dives each pattern is *present* in (the variable exists
+    in the file) and dives it is *valid* in (it holds a value), so a sensor that is
+    present but off shows as a gap in the lower panel only. Drawn with ``imshow`` on the
+    patterns × dives matrix, so hundreds of dives map to the pixel width as runs, not
+    bars; a dive covered by a single-dive pattern is marked above its strip so it stays
+    visible at mission scale. Columns are input files in order, labelled with their dive
+    numbers, so a gap in the numbering takes no width. The shared density row is drawn
+    in five discrete levels with a colorbar.
+
+    Parameters
+    ----------
+    patterns : list of dict
+        From :func:`seagliderOG1.convert.presence_patterns`.
+    dives : list of int
+        The input dive numbers, in order.
+
+    Returns
+    -------
+    matplotlib.figure.Figure or None
+        The figure, or ``None`` when there are no patterns.
+
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
+
+    if not patterns or not dives:
+        return None
+    present, valid, labels, has_density = _strip_matrix(patterns)
+    # Five discrete levels: an on/off strip uses the two ends, the density row all five.
+    levels = np.linspace(0, 1, 6)
+    cmap = LinearSegmentedColormap.from_list(
+        "presence", [COLORS["bg"], COLORS["ocean"]], N=len(levels) - 1
+    )
+    norm = BoundaryNorm(levels, cmap.N)
+    n = len(dives)
+    height = 1.2 + 0.32 * 2 * len(labels)
+    fig, axes = plt.subplots(2, 1, figsize=(W_FULL, height), sharex=True)
+    extent = (-0.5, n - 0.5, len(labels) - 0.5, -0.5)
+    for ax, matrix, title in (
+        (axes[0], present, "present in the file"),
+        (axes[1], valid, "has values"),
+    ):
+        image = ax.imshow(
+            matrix,
+            aspect="auto",
+            interpolation="nearest",
+            cmap=cmap,
+            norm=norm,
+            extent=extent,
+        )
+        ax.set_yticks(range(len(labels)))
+        ax.set_yticklabels(labels)
+        ax.set_title(title, loc="left")
+        if n > 50:  # keep a one-dive pattern visible at mission scale
+            strip_rows = matrix[:-1] if has_density else matrix
+            for row, values in enumerate(strip_rows):
+                if values.sum() == 1:
+                    ax.plot(np.argmax(values), row - 0.45, "v", color=COLORS["ocean"])
+    if has_density:
+        fig.colorbar(
+            image,
+            ax=axes,
+            ticks=levels,
+            label="fraction of the sporadic row's variables",
+        )
+    ticks = np.unique(np.linspace(0, n - 1, min(n, 10)).round().astype(int))
+    axes[1].set_xticks(ticks)
+    axes[1].set_xticklabels([str(dives[i]) for i in ticks])
+    axes[1].set_xlabel("dive number (input files in order)")
     return fig
 
 
@@ -734,6 +921,26 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
     finally:
         ds.close()
 
+    # Which dives each variable came from is known only at conversion time: read it from
+    # the sidecar beside the file, and say so loudly when it is not there.
+    sidecar = convert.conversion_sidecar(path)
+    presence = sidecar.get("presence") if sidecar else None
+    if presence:
+        patterns = convert.presence_patterns(presence)
+        presence_rows = _presence_rows(patterns, len(presence["dives"]))
+        presence_strips = figure_png.render_b64(
+            draw_presence_strips,
+            patterns,
+            presence["dives"],
+            source="conversion.py:draw_presence_strips",
+        )
+        presence_summary = convert.presence_summary(presence) or (
+            f"Every variable has values on every one of the {len(presence['dives'])} "
+            "input dives."
+        )
+    else:
+        presence_rows, presence_strips, presence_summary = [], None, None
+
     return get_template("conversion.html").render(
         title=title or Path(path).name,
         css=design.SHARED_CSS,
@@ -759,4 +966,9 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         requirement_text=requirement_text,
         requirement_amber=requirement_amber,
         history_rows=history_rows,
+        presence_rows=presence_rows,
+        presence_strips=presence_strips,
+        presence_strips_source=figure_png.source_of(presence_strips),
+        presence_summary=presence_summary,
+        sidecar_name=writers.conversion_path(path, ".json").name,
     )

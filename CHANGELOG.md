@@ -61,6 +61,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   and basestation sources, and the sensor catalogue, read from the converter's own tables.
 - `process --report` (and `report:` in `mission.yaml`) writes the HTML conversion page
   `<id>_conversion.html` beside each file.
+- `process` writes `<id>_conversion.json` beside each OG1 file: the input files and the dives
+  each basestation variable is present and valid in. The conversion page shows it as a *Presence
+  across dives* section; `process` prints a one-line summary when the dives disagree.
+  `convert.presence_by_dive`, `presence_patterns`, `presence_summary`, `conversion_sidecar`.
 - `data/demo_sg005/mission.yaml`: a filled-in example configuration for the bundled sample (writes
   to the gitignored `outputs/`); the demo notebook runs it through `convert.process_mission`.
 

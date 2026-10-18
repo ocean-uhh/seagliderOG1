@@ -28,7 +28,7 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
   <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
 </div>
 <nav class="jump-nav"><a href="#reconciliation">Reconciliation</a> ·
-  <a href="#dimensions">Dimensions</a> · <a href="#variables">Variables</a> ·
+  <a href="#presence">Presence across dives</a> · <a href="#dimensions">Dimensions</a> · <a href="#variables">Variables</a> ·
   <a href="#scalars">Scalar parameters</a> · <a href="#derived">Derived</a> ·
   <a href="#dropped">Dropped</a> · <a href="#globals">Globals</a></nav>
 
@@ -46,8 +46,32 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 </div>
 </section>
 
+<section id="presence">
+<h2>2. Presence across dives</h2>
+{%- if presence_rows %}
+<p class="caption{% if presence_rows|selectattr('bad')|list %} cell-bad{% endif %}">{{ presence_summary }}. The converter works from the union of the input files' variables.</p>
+<p class="caption">One row per pattern: the dives a group of variables has values in (Valid in) and, where it differs, the dives it exists in at all (Present in). Amber: has values on fewer than every input dive — a sensor switched on or off mid-mission, a quantity only computed after the first dive, or an occasional log entry.</p>
+<table class="nc presence sortable">
+<thead><tr><th>Pattern</th><th>Valid in</th><th>Present in</th><th>Variables</th></tr></thead>
+<tbody>
+{%- for r in presence_rows %}
+<tr><td{% if r.bad %} class="cell-bad"{% endif %}>{{ r.label }}</td><td>{{ r.valid }}</td><td>{{ r.present }}</td>
+<td>{{ r.n }} <details class="vars"><summary>list</summary>{{ r.variables }}</details></td></tr>
+{%- endfor %}
+</tbody></table>
+{%- if presence_strips %}
+<figure>
+<img alt="Strips of the dives each variable pattern is present in and has values in" src="data:image/png;base64,{{ presence_strips }}">
+{%- if show_source and presence_strips_source %}<figcaption class="fig-source">source: {{ presence_strips_source }}</figcaption>{% endif %}
+</figure>
+{%- endif %}
+{%- else %}
+<p class="caption cell-bad">Presence across dives: sidecar not found ({{ sidecar_name }}). The variables are the union over the input files; which dives carried which is not recorded in the file.</p>
+{%- endif %}
+</section>
+
 <section id="dimensions">
-<h2>2. Dimensions</h2>
+<h2>3. Dimensions</h2>
 <p class="caption">Orange: dimension skipped — no variable from it reaches this file. Fate is read from the output: a dimension with any surviving variable is merged, the CTD dimension is the backbone, the rest are skipped.</p>
 <table class="nc dims sortable">
 <thead><tr><th>Dimension</th><th>Fate</th><th>Variables</th><th>Ended on</th></tr></thead>
@@ -61,14 +85,14 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 </section>
 
 <section id="variables">
-<h2>3. Variables (grouped by original dimension)</h2>
+<h2>4. Variables (grouped by original dimension)</h2>
 {{ t.variables_tables(variable_groups, source=variables_source, numbered=True,
    optional=("units", "minmax", "attrs", "stdname"),
    caption="amber: Valid % < 100 — the variable sits at its own times on the shared axis (e.g. a GPS fix), not interpolated.") }}
 </section>
 
 <section id="scalars">
-<h2>4. Scalar parameters</h2>
+<h2>5. Scalar parameters</h2>
 <p class="caption">Split by whether the converter renamed the scalar to an OG1 name, then by basestation prefix. A per-dive scalar's Value shows the decoded per-dive values; its raw JSON serialization stays in the Attributes disclosure.</p>
 {%- for g in scalar_groups %}
 <h3>{% if g.mono %}<code>{{ g.title }}</code>{% else %}{{ g.title }}{% endif %} ({{ g.rows|length }})</h3>
@@ -79,7 +103,7 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 </section>
 
 <section id="derived">
-<h2>5. Derived variables</h2>
+<h2>6. Derived variables</h2>
 <p class="caption">Variables the converter built rather than renamed. Sources names the basestation variables consumed, or "(computed)" when built from other OG1 variables, vocabulary or global attributes.</p>
 {%- if derived_rows %}
 <table class="sortable var-table">
@@ -93,7 +117,7 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 </section>
 
 <section id="dropped">
-<h2>6. Dropped and removed variables</h2>
+<h2>7. Dropped and removed variables</h2>
 <h3>Dropped on request (keep_variables)</h3>
 {%- if dropped %}
 <p class="caption">Recorded here because nothing in the file carries them.</p>
@@ -107,7 +131,7 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 </section>
 
 <section id="globals">
-<h2>7. Global attributes</h2>
+<h2>8. Global attributes</h2>
 <p class="caption{% if requirement_amber %} cell-bad{% endif %}">{{ requirement_text }}</p>
 {{ t.globals_tables(global_groups, computed=coverage_computed, source=globals_source,
    coverage_note="amber: the file's stated bound differs from the value recomputed from the data by more than the tolerance.") }}

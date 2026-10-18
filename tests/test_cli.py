@@ -287,8 +287,10 @@ def test_inspect_conversion_writes_html_page(
     # The transient derived-sources stamp is internal and never reaches the page.
     assert "_derived_sources" not in html
     # Item #2 sections render as tables, not the earlier interim text block.
-    assert "5. Derived variables" in html
-    assert "7. Global attributes" in html
+    # Located by section id, so inserting or renumbering sections does not break it.
+    for section in ("derived", "globals"):
+        body = html.split(f'<section id="{section}">', 1)[1].split("</section>", 1)[0]
+        assert "<table" in body, section
     assert "<h3>History</h3>" in html
     assert "(scalar)" in html  # the Dimensions scalar row
     assert "Interim text view" not in html
@@ -513,6 +515,16 @@ def test_validate_report_must_be_bool(tmp_path: pathlib.Path) -> None:
     assert not [i for i in _mission.validate_config(good) if i.level == "ERROR"]
     bad = _write_config(tmp_path / "bad.yaml", report="yes")
     assert any(i.key == "report" for i in _mission.validate_config(bad))
+
+
+def test_process_prints_presence_line_when_dives_disagree(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A real sg005 conversion prints one presence line pointing at --report."""
+    config = _write_config(tmp_path / "mission.yaml", output_dir=str(tmp_path / "out"))
+    assert cli.main(["process", str(config)]) == 0
+    out = capsys.readouterr().out
+    assert "on every dive, 5 on some (3 patterns) — see process --report" in out
 
 
 def test_process_save_failure_counts_as_failed(

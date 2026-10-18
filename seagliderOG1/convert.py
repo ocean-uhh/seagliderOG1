@@ -36,6 +36,10 @@ __all__ = [
     "name_mapping",
     "keep_variables",
     "conversion_ledger",
+    "conversion_sidecar",
+    "presence_by_dive",
+    "presence_patterns",
+    "presence_summary",
     "MetadataError",
 ]
 
@@ -416,6 +420,329 @@ def conversion_ledger(ds: xr.Dataset) -> dict:
     }
 
 
+def _input_record(ds: xr.Dataset) -> dict[str, object]:
+    """Return ``{"path", "bytes", "dive"}`` for one input dataset (file name only).
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        A basestation dataset as opened by :func:`seagliderOG1.readers.read_mission`.
+
+    Returns
+    -------
+    dict of str to object
+        The file name (not the machine path), its size in bytes (None when the dataset
+        was not read from a local file) and the dive number.
+
+    """
+    source = ds.encoding.get("source")
+    local = pathlib.Path(source) if source else None
+    return {
+        "path": local.name if local else None,
+        "bytes": local.stat().st_size if local and local.is_file() else None,
+        "dive": int(ds.attrs["dive_number"]),
+    }
+
+
+def _dive_runs(flags: Sequence[bool], dives: Sequence[int]) -> list[list[int]]:
+    """Return the runs of consecutive input files where ``flags`` is true, as dive ranges.
+
+    Consecutive means adjacent in the input order, not adjacent dive numbers, so a gap in
+    the dive numbering (a missing file) does not split a run.
+
+    Parameters
+    ----------
+    flags : sequence of bool
+        One flag per input file, in dive order.
+    dives : sequence of int
+        The dive number of each input file.
+
+    Returns
+    -------
+    list of [int, int]
+        ``[first_dive, last_dive]`` per run, in order; empty when no flag is true.
+
+    """
+    runs: list[list[int]] = []
+    start = None
+    for i, flag in enumerate(flags):
+        if flag and start is None:
+            start = i
+        if not flag and start is not None:
+            runs.append([dives[start], dives[i - 1]])
+            start = None
+    if start is not None:
+        runs.append([dives[start], dives[len(flags) - 1]])
+    return runs
+
+
+def _has_values(var: xr.Variable) -> bool:
+    """Return True when a basestation variable holds at least one non-missing value.
+
+    Floating data is tested for any finite value (the reader has already turned fill
+    values into NaN), times for any value that is not NaT, and text for any string that is
+    not blank; other data counts as values when the variable is not empty.
+
+    Parameters
+    ----------
+    var : xarray.Variable
+        One variable of one basestation file.
+
+    Returns
+    -------
+    bool
+        Whether the variable has any value in this file.
+
+    """
+    if var.size == 0:
+        return False
+    values = np.asarray(var.values)
+    kind = values.dtype.kind
+    if kind == "f":
+        return bool(np.isfinite(values).any())
+    if kind in "mM":
+        return bool((~np.isnat(values)).any())
+    if kind in "SU":
+        return bool((np.char.str_len(np.char.strip(values)) > 0).any())
+    if kind == "O":
+        # netCDF4 variable-length text decodes to an object array: a dive of only
+        # ""/whitespace/None has no value; genuinely non-text object data (rare) counts.
+        for item in values.ravel().tolist():
+            if item is None:
+                continue
+            if isinstance(item, bytes):
+                item = item.decode("utf-8", "replace")
+            if not isinstance(item, str) or item.strip():
+                return True
+        return False
+    return True
+
+
+def presence_by_dive(list_of_datasets: Sequence[xr.Dataset]) -> dict:
+    """Return the dives each basestation variable is present in, and has values in.
+
+    A sensor switched on part-way through a mission, or one that is present but off,
+    makes the input files disagree; the converter works from the union of their
+    variables, so this records which dives each one came from. Read from the inputs, not
+    the output — the OG1 file cannot say which file carried what.
+
+    Parameters
+    ----------
+    list_of_datasets : sequence of xarray.Dataset
+        Basestation datasets, one per dive, each with a ``dive_number`` attribute.
+
+    Returns
+    -------
+    dict
+        ``dives`` (the input dive numbers, in order) and ``variables`` (basestation name
+        to ``{"present": runs, "valid": runs}``, each run ``[first_dive, last_dive]``
+        over consecutive input files; ``valid`` means present with at least one
+        non-missing value).
+
+    """
+    ordered = sorted(list_of_datasets, key=lambda ds: int(ds.attrs["dive_number"]))
+    dives = [int(ds.attrs["dive_number"]) for ds in ordered]
+    names = sorted({str(name) for ds in ordered for name in ds.variables})
+    variables = {}
+    for name in names:
+        present = [name in ds.variables for ds in ordered]
+        valid = [
+            is_present and _has_values(ds.variables[name])
+            for is_present, ds in zip(present, ordered, strict=True)
+        ]
+        variables[name] = {
+            "present": _dive_runs(present, dives),
+            "valid": _dive_runs(valid, dives),
+        }
+    return {"dives": dives, "variables": variables}
+
+
+def _run_label(runs: list[list[int]], dives: Sequence[int]) -> str:
+    """Return a dive-range label: ``every dive``, ``from dive 12``, ``dives 3–7``, ...
+
+    Parameters
+    ----------
+    runs : list of [int, int]
+        Dive ranges from :func:`presence_by_dive`.
+    dives : sequence of int
+        The input dive numbers, in order.
+
+    Returns
+    -------
+    str
+        One of ``every dive``, ``never``, ``from dive k``, ``until dive k``,
+        ``dive k only``, ``dives a–b`` or ``sporadic``.
+
+    """
+    if not runs:
+        return "never"
+    if len(runs) > 1:
+        return "sporadic"
+    first, last = runs[0]
+    if first == dives[0] and last == dives[-1]:
+        return "every dive"
+    if first == last:
+        return f"dive {first} only"
+    if last == dives[-1]:
+        return f"from dive {first}"
+    if first == dives[0]:
+        return f"until dive {last}"
+    return f"dives {first}–{last}"
+
+
+def _run_mask(runs: list[list[int]], dives: Sequence[int]) -> list[bool]:
+    """Return one flag per input file: whether it falls inside ``runs``.
+
+    The inverse of :func:`_dive_runs`.
+
+    Parameters
+    ----------
+    runs : list of [int, int]
+        Dive ranges.
+    dives : sequence of int
+        The input dive numbers, in order.
+
+    Returns
+    -------
+    list of bool
+        One flag per input dive.
+
+    """
+    return [any(a <= d <= b for a, b in runs) for d in dives]
+
+
+def presence_patterns(presence: dict) -> list[dict]:
+    """Group variables by the dives they are valid in, then present in — the page's rows.
+
+    Hundreds of variables over hundreds of dives is a table of patterns, not of
+    variables: on a normal mission a handful of patterns cover everything ("every dive",
+    "from dive 12", "until dive 40", "sporadic").
+
+    Parameters
+    ----------
+    presence : dict
+        As returned by :func:`presence_by_dive`.
+
+    Returns
+    -------
+    list of dict
+        One per distinct ``(valid, present)`` pair, the ``every dive`` row first, then
+        by variable count: ``label`` (from the valid runs), ``valid`` and ``present``
+        (runs), ``valid_mask`` / ``present_mask`` (one flag per input dive),
+        ``n_valid`` / ``n_present`` (dives covered), ``uniform`` (valid on every dive),
+        and ``variables`` (sorted names).
+
+    """
+    dives = presence["dives"]
+    groups: dict[tuple, list[str]] = {}
+    for name, entry in presence["variables"].items():
+        key = (
+            tuple(map(tuple, entry["valid"])),
+            tuple(map(tuple, entry["present"])),
+        )
+        groups.setdefault(key, []).append(name)
+    rows = []
+    for (valid, present), names in groups.items():
+        valid_runs = [list(run) for run in valid]
+        present_runs = [list(run) for run in present]
+        label = _run_label(valid_runs, dives)
+        valid_mask = _run_mask(valid_runs, dives)
+        present_mask = _run_mask(present_runs, dives)
+        rows.append(
+            {
+                "label": label,
+                "valid": valid_runs,
+                "present": present_runs,
+                "valid_mask": valid_mask,
+                "present_mask": present_mask,
+                "n_valid": sum(valid_mask),
+                "n_present": sum(present_mask),
+                "uniform": label == "every dive",
+                "variables": sorted(names),
+            }
+        )
+    rows.sort(
+        key=lambda row: (not row["uniform"], -len(row["variables"]), row["label"])
+    )
+    return rows
+
+
+def presence_summary(presence: dict) -> str | None:
+    """Return a one-line summary when the input dives disagree, else None.
+
+    Parameters
+    ----------
+    presence : dict
+        As returned by :func:`presence_by_dive`.
+
+    Returns
+    -------
+    str or None
+        e.g. ``"343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns)"``,
+        or None when every variable has values on every dive.
+
+    """
+    patterns = presence_patterns(presence)
+    if all(row["uniform"] for row in patterns):
+        return None
+    total = sum(len(row["variables"]) for row in patterns)
+    every = sum(len(row["variables"]) for row in patterns if row["uniform"])
+    n_dives = len(presence["dives"])
+    return (
+        f"{total} variables over {n_dives} dives; {every} on every dive, "
+        f"{total - every} on some ({len(patterns)} patterns)"
+    )
+
+
+def conversion_sidecar(path: str | os.PathLike) -> dict | None:
+    """Return the conversion sidecar written beside an OG1 file, or None.
+
+    The sidecar (``<id>_conversion.json``, see :func:`seagliderOG1.writers.write`)
+    holds what the file cannot say about its own conversion. It is bound to the file by
+    ``id`` and ``date_created``; a sidecar from another conversion is not returned.
+
+    Parameters
+    ----------
+    path : str or os.PathLike
+        The OG1 netCDF file.
+
+    Returns
+    -------
+    dict or None
+        The sidecar contents, or None when it is missing, unreadable, of another
+        schema, or belongs to another conversion (each but the first warned).
+
+    """
+    path = pathlib.Path(path)
+    sidecar_path = writers.conversion_path(path, ".json")
+    if not sidecar_path.is_file():
+        return None
+    try:
+        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        warnings.warn(
+            f"{sidecar_path.name} could not be read ({exc}); ignoring it.", stacklevel=2
+        )
+        return None
+    if not isinstance(sidecar, dict) or sidecar.get("schema") != writers.SIDECAR_SCHEMA:
+        warnings.warn(
+            f"{sidecar_path.name} is not a schema-{writers.SIDECAR_SCHEMA} conversion "
+            "sidecar; ignoring it.",
+            stacklevel=2,
+        )
+        return None
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        binding = {key: ds.attrs.get(key) for key in ("id", "date_created")}
+    if {key: sidecar.get(key) for key in binding} != binding:
+        warnings.warn(
+            f"{sidecar_path.name} belongs to another conversion "
+            f"(id/date_created differ from {path.name}); ignoring it.",
+            stacklevel=2,
+        )
+        return None
+    return sidecar
+
+
 def _apply_deployment(
     ds_og1: xr.Dataset,
     deployment: Mapping[str, object],
@@ -623,6 +950,7 @@ def to_og1(
     deployment: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
     mode: str = "delayed",
+    provenance: dict | None = None,
 ) -> xr.Dataset:
     """Convert Seaglider basestation datasets to OG1 format.
 
@@ -662,6 +990,12 @@ def to_og1(
         Data mode, ``"delayed"`` (default) or ``"realtime"``. Sets the ``id``
         suffix (``delayed`` or ``R``) and so the output filename, per the OG1
         manual, which defines no separate data-mode attribute. Default is "delayed".
+    provenance : dict, optional
+        When given, filled in place with what the output file cannot record about its own
+        conversion: ``inputs`` (one ``{"path", "bytes", "dive"}`` per input file) and
+        ``presence`` (:func:`presence_by_dive`). Pass it to
+        ``writers.write(..., sidecar=provenance)`` to write it beside the file. Default
+        is None.
 
     Returns
     -------
@@ -756,12 +1090,18 @@ def to_og1(
             skipped_dims,
         )
 
+    used_inputs = []
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
+        if provenance is not None:
+            # Presence reads every variable; loading the file once here lets both it
+            # and the conversion work from memory instead of reading the file twice.
+            ds1_base.load()
         ds_new, attr_warnings = process_dataset(
             ds1_base, og1_mapping, time_variables, name_lookup=name_lookup
         )
         if ds_new:
             processed_datasets.append(ds_new)
+            used_inputs.append(ds1_base)
         else:
             _log.warning(
                 f"Dataset for dive number {ds1_base.attrs['dive_number']} is empty or invalid."
@@ -772,6 +1112,11 @@ def to_og1(
             "No valid datasets were processed. Check the input datasets "
             "and the warnings from coordinate validation."
         )
+
+    if provenance is not None:
+        # Only the dives that reach the output: a rejected dive contributed nothing.
+        provenance["inputs"] = [_input_record(ds) for ds in used_inputs]
+        provenance["presence"] = presence_by_dive(used_inputs)
 
     ds_og1 = xr.concat(processed_datasets, dim="N_MEASUREMENTS")
     ds_og1 = ds_og1.sortby("TIME")
@@ -1041,7 +1386,9 @@ def process_mission(
 
     The library form of ``seagliderOG1 process`` for a single mission: the CLI calls
     this once per selected mission. The file is written as ``<output_dir>/<id>.nc``,
-    where ``id`` is the converter-derived (or ``deployment``-supplied) identifier.
+    where ``id`` is the converter-derived (or ``deployment``-supplied) identifier, with
+    the conversion sidecar ``<id>_conversion.json`` beside it (the input files and which
+    dives each variable came from; see :func:`conversion_sidecar`).
 
     Parameters
     ----------
@@ -1091,8 +1438,8 @@ def process_mission(
         If ``source`` is not a directory, holds no basestation files, or is a root of
         ``SN/DATE`` missions; or as raised by :func:`to_og1`.
     FileExistsError
-        If the output file (or, with ``report``, the page) exists and ``overwrite``
-        is False; nothing is written. ``filename`` is the existing path. The
+        If the output file or (with ``report``) the page exists and ``overwrite`` is
+        False (a sidecar left beside a missing file is replaced, not refused); nothing is written. ``filename`` is the existing path. The
         conversion has already run by then: the file name derives from the converted
         ``id``.
     MetadataError
@@ -1131,6 +1478,7 @@ def process_mission(
 
     first, last = dives if dives is not None else (None, None)
     datasets = readers.read_mission(str(source), first, last, repair=repair)
+    provenance: dict = {}
     ds = to_og1(
         datasets,
         contributors=contributors,
@@ -1139,14 +1487,17 @@ def process_mission(
         deployment=deployment,
         global_attributes=global_attributes,
         mode=mode,
+        provenance=provenance,
     )
     if keep_variables:
         ds = _keep_variables(ds, list(keep_variables))
 
     output_dir = pathlib.Path(output_dir)
     path = output_dir / f"{ds.attrs['id']}.nc"
-    page = output_dir / f"{ds.attrs['id']}_conversion.html"
+    page = writers.conversion_path(path, ".html")
     if not overwrite:
+        # The sidecar is not checked: it belongs to the .nc, and one left beside a
+        # missing .nc is stale and is replaced with it.
         for target in (path, page) if report else (path,):
             if target.exists():
                 raise FileExistsError(
@@ -1155,7 +1506,7 @@ def process_mission(
                     str(target),
                 )
     output_dir.mkdir(parents=True, exist_ok=True)
-    writers.write(ds, path, overwrite=overwrite)
+    writers.write(ds, path, overwrite=overwrite, sidecar=provenance)
     _log.info("wrote %s", path)
     if report:
         # Lazy: reports.conversion imports this module at load time.
