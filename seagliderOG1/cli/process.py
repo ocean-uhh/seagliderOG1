@@ -132,6 +132,30 @@ def _select_missions(
     return selected, None
 
 
+def _print_presence(out_path: pathlib.Path, report: bool) -> None:
+    """Print one line when the mission's input dives disagree on their variables.
+
+    Parameters
+    ----------
+    out_path : pathlib.Path
+        The OG1 file just written; its sidecar holds the per-dive presence.
+    report : bool
+        Whether the conversion page was written beside it (else point at ``--report``).
+
+    """
+    from seagliderOG1 import convert, writers
+
+    sidecar = convert.conversion_sidecar(out_path)
+    if not sidecar or "presence" not in sidecar:
+        return
+    summary = convert.presence_summary(sidecar["presence"])
+    if summary is None:
+        return
+    page = writers.conversion_path(out_path, ".html").name
+    where = f"see {page}" if report else "see process --report"
+    print(f"  {out_path.stem}: {summary} — {where}")
+
+
 def run(args: argparse.Namespace) -> int:
     """Convert the selected missions and report a per-mission summary.
 
@@ -251,6 +275,7 @@ def run(args: argparse.Namespace) -> int:
             failed += 1
             continue
         print(f"wrote {out_path}")
+        _print_presence(out_path, report)
         converted += 1
 
     print(f"{converted} converted, {skipped} skipped, {failed} failed")

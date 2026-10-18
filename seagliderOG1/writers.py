@@ -1,5 +1,6 @@
 """Write OG1 datasets to compressed NetCDF files."""
 
+import json
 import logging
 from numbers import Number
 from pathlib import Path
@@ -7,11 +8,14 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from seagliderOG1 import tools
+from seagliderOG1 import __version__, tools
 
 _log = logging.getLogger(__name__)
 
-__all__ = ["write"]
+__all__ = ["write", "conversion_path"]
+
+# Version of the sidecar layout; bump when a reader would misread the old one.
+SIDECAR_SCHEMA = 1
 
 # OG1 serialisation for datetime variables: float64 seconds using the canonical OG1 time
 # units (defined once in tools), so the written file matches encode_times_og1 instead of
@@ -33,6 +37,7 @@ def write(
     path: str | Path,
     *,
     overwrite: bool = False,
+    sidecar: dict | None = None,
 ) -> Path:
     """Write the dataset to a NetCDF file with lossless compression.
 
@@ -51,6 +56,11 @@ def write(
     overwrite : bool, optional
         If True, an existing file will be deleted and replaced.
         If False, a FileExistsError is raised when the file exists.
+    sidecar : dict, optional
+        Conversion provenance (as filled by ``to_og1(provenance=...)``) to write beside
+        the file as ``<stem>_conversion.json`` (:func:`conversion_path`), bound to it by the
+        dataset's ``id`` and ``date_created``; a sidecar already there is replaced.
+        Nothing from it is written into the NetCDF file. Default is None (no sidecar).
 
     Returns
     -------
@@ -133,7 +143,42 @@ def write(
             ]
             _log.warning(f"Attributes with dtype float64: {float_attrs}")
             raise
+    if sidecar is not None:
+        # The binding keys come last so a sidecar dict cannot override them.
+        payload = {
+            **sidecar,
+            "schema": SIDECAR_SCHEMA,
+            "id": ds.attrs.get("id"),
+            "date_created": ds.attrs.get("date_created"),
+            "converter": {"seagliderOG1": __version__},
+        }
+        target = conversion_path(path, ".json")
+        target.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+        _log.info("Conversion sidecar written to %s", target)
     return Path(path)
+
+
+def conversion_path(path: str | Path, suffix: str) -> Path:
+    """Return a conversion output beside an OG1 file: ``<stem>_conversion<suffix>``.
+
+    The one place the names of the conversion sidecar (``.json``) and the conversion
+    page (``.html``) are built.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The OG1 netCDF file.
+    suffix : str
+        ``".json"`` for the sidecar, ``".html"`` for the page.
+
+    Returns
+    -------
+    pathlib.Path
+        The path, in the same directory as ``path``.
+
+    """
+    path = Path(path)
+    return path.with_name(f"{path.stem}_conversion{suffix}")
 
 
 def _compression_encoding(ds: xr.Dataset) -> dict[str, dict]:

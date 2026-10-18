@@ -1,3 +1,4 @@
+import json
 import pathlib
 import sys
 
@@ -811,3 +812,122 @@ def test_bundled_example_writes_platform_vocabularies(tmp_path: pathlib.Path) ->
             .attrs["platform_maker_vocabulary"]
             .endswith("/B75/current/ORG00142/")
         )
+
+
+# --- presence across dives (conversion sidecar) -------------------------------
+
+
+def test_presence_by_dive_on_sg005() -> None:
+    """sg005 shows three patterns: every dive, valid from dive 2, and dive 4 only."""
+    presence = convert.presence_by_dive(readers.read_mission(str(_SG005)))
+    assert presence["dives"] == [1, 2, 3, 4, 5]
+    current = presence["variables"]["depth_avg_curr_east"]
+    assert current == {"present": [[1, 5]], "valid": [[2, 5]]}  # empty until dive 2
+    assert presence["variables"]["log_ALTIM_BOTTOM_PING"]["present"] == [[4, 4]]
+    labels = [row["label"] for row in convert.presence_patterns(presence)]
+    assert labels == ["every dive", "from dive 2", "dive 4 only"]
+    assert convert.presence_summary(presence) == (
+        "343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns)"
+    )
+
+
+def test_presence_pattern_labels() -> None:
+    """The run classifier names every pattern class (pure logic; sg005 lacks until/range)."""
+    dives = [1, 2, 3, 4, 5, 7]  # dive 6 missing: runs follow file order, not numbering
+    label = convert._run_label
+    assert label([[1, 7]], dives) == "every dive"
+    assert label([[3, 7]], dives) == "from dive 3"
+    assert label([[1, 4]], dives) == "until dive 4"
+    assert label([[2, 4]], dives) == "dives 2–4"
+    assert label([[5, 5]], dives) == "dive 5 only"
+    assert label([[1, 2], [5, 7]], dives) == "sporadic"
+    assert label([], dives) == "never"
+    assert convert._dive_runs([True, True, False, True], [1, 2, 3, 4]) == [
+        [1, 2],
+        [4, 4],
+    ]
+
+
+def test_presence_counts_blank_text_and_nat_as_no_values() -> None:
+    """Validity tests times for NaT and text for blanks, not only floats (pure logic)."""
+    nat = np.array(["NaT"], dtype="datetime64[ns]")
+    dives = [
+        xr.Dataset(
+            {"t": ("x", nat), "s": ("x", np.array(["  "]))}, attrs={"dive_number": 1}
+        ),
+        xr.Dataset(
+            {
+                "t": ("x", np.array(["2008-06-06"], dtype="datetime64[ns]")),
+                "s": ("x", np.array(["on"])),
+            },
+            attrs={"dive_number": 2},
+        ),
+    ]
+    variables = convert.presence_by_dive(dives)["variables"]
+    for name in ("t", "s"):
+        assert variables[name] == {"present": [[1, 2]], "valid": [[2, 2]]}, name
+
+
+def test_to_og1_provenance_leaves_out_a_rejected_dive() -> None:
+    """A dive the converter rejects (no ctd_time) is not recorded as contributing."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 3)
+    datasets[1] = datasets[1].drop_vars("ctd_time")
+    provenance: dict = {}
+    convert.to_og1(datasets, provenance=provenance)
+    assert provenance["presence"]["dives"] == [1, 3]
+    assert [entry["dive"] for entry in provenance["inputs"]] == [1, 3]
+
+
+def test_conversion_sidecar_ignores_an_unreadable_or_foreign_sidecar(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A truncated sidecar, or one of another schema, is warned about and ignored."""
+    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    sidecar_file = writers.conversion_path(path, ".json")
+    payload = json.loads(sidecar_file.read_text())
+    sidecar_file.write_text(json.dumps({**payload, "schema": 99}))
+    with pytest.warns(UserWarning, match="not a schema-1"):
+        assert convert.conversion_sidecar(path) is None
+    sidecar_file.write_text('{"schema": 1, "id"')
+    with pytest.warns(UserWarning, match="could not be read"):
+        assert convert.conversion_sidecar(path) is None
+
+
+def test_presence_summary_none_when_dives_agree() -> None:
+    """No summary line when every variable has values on every dive."""
+    presence = {
+        "dives": [1, 2],
+        "variables": {"a": {"present": [[1, 2]], "valid": [[1, 2]]}},
+    }
+    assert convert.presence_summary(presence) is None
+
+
+def test_process_mission_writes_the_sidecar_bound_to_the_file(
+    tmp_path: pathlib.Path,
+) -> None:
+    """The sidecar sits beside the file, binds by id/date_created, and adds nothing to it."""
+    path = convert.process_mission(_SG005, tmp_path, dives=(1, 2))
+    sidecar = convert.conversion_sidecar(path)
+    assert sidecar is not None
+    assert [entry["dive"] for entry in sidecar["inputs"]] == [1, 2]
+    assert all(entry["path"].startswith("p005") for entry in sidecar["inputs"])
+    assert sidecar["presence"]["dives"] == [1, 2]
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        assert sidecar["id"] == ds.attrs["id"]
+        assert not [k for k in ds.attrs if "presence" in k or "sidecar" in k]
+
+    # A sidecar left beside a deleted file is stale: it is replaced, not refused.
+    path.unlink()
+    assert convert.process_mission(_SG005, tmp_path, dives=(1, 1)) == path
+    assert convert.conversion_sidecar(path)["presence"]["dives"] == [1]
+
+
+def test_conversion_sidecar_ignores_another_conversion(tmp_path: pathlib.Path) -> None:
+    """A sidecar whose date_created does not match the file is warned about and ignored."""
+    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    sidecar_file = writers.conversion_path(path, ".json")
+    payload = json.loads(sidecar_file.read_text())
+    payload["date_created"] = "19990101T000000"
+    sidecar_file.write_text(json.dumps(payload))
+    with pytest.warns(UserWarning, match="belongs to another conversion"):
+        assert convert.conversion_sidecar(path) is None
