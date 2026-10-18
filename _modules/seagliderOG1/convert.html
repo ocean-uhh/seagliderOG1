@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev69 documentation</title>
+  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev70 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=82b26293"></script>
+      <script src="../../_static/documentation_options.js?v=619605c1"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -100,8 +100,11 @@
 <span class="sd">variable renaming, attribute assignments, and dataset standardization.</span>
 <span class="sd">"""</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">errno</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">UTC</span><span class="p">,</span> <span class="n">datetime</span>
@@ -111,10 +114,19 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span><span class="p">,</span> <span class="n">_pipeline</span><span class="p">,</span> <span class="n">contributors</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">vocabularies</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">__version__</span><span class="p">,</span>
+    <span class="n">_pipeline</span><span class="p">,</span>
+    <span class="n">contributors</span><span class="p">,</span>
+    <span class="n">readers</span><span class="p">,</span>
+    <span class="n">tools</span><span class="p">,</span>
+    <span class="n">vocabularies</span><span class="p">,</span>
+    <span class="n">writers</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetadataError</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"process_mission"</span><span class="p">,</span>
     <span class="s2">"to_og1"</span><span class="p">,</span>
     <span class="s2">"name_mapping"</span><span class="p">,</span>
     <span class="s2">"keep_variables"</span><span class="p">,</span>
@@ -385,6 +397,10 @@
             <span class="n">result</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_attribute_sources"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">sources</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">result</span></div>
 
+
+
+<span class="c1"># process_mission takes a keep_variables= argument, which shadows the function inside it.</span>
+<span class="n">_keep_variables</span> <span class="o">=</span> <span class="n">keep_variables</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_decode_per_dive</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -1106,6 +1122,154 @@
             <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">convert_qc_flags</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">,</span> <span class="n">qc_name</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">set_best_dtype</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="process_mission">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.process_mission">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_mission</span><span class="p">(</span>
+    <span class="n">source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">dives</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">contributors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">institutions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">platform</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">deployment</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">global_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"delayed"</span><span class="p">,</span>
+    <span class="n">keep_variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">repair</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">report</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Convert one Seaglider mission to an OG1 file: read, convert, subset, write.</span>
+
+<span class="sd">    The library form of ``seagliderOG1 process`` for a single mission: the CLI calls</span>
+<span class="sd">    this once per selected mission. The file is written as ``&lt;output_dir&gt;/&lt;id&gt;.nc``,</span>
+<span class="sd">    where ``id`` is the converter-derived (or ``deployment``-supplied) identifier.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    source : str or os.PathLike</span>
+<span class="sd">        One mission directory holding basestation files (``pSSSDDDD*.nc``). A root of</span>
+<span class="sd">        ``SN/DATE`` missions is refused; select one with</span>
+<span class="sd">        :func:`seagliderOG1.readers.discover_missions` and pass its ``path``.</span>
+<span class="sd">    output_dir : str or os.PathLike</span>
+<span class="sd">        Directory the OG1 file is written to; created if missing.</span>
+<span class="sd">    dives : tuple of (int, int), optional</span>
+<span class="sd">        First and last dive to convert, inclusive. Default is None (every dive).</span>
+<span class="sd">    contributors : sequence of dict, optional</span>
+<span class="sd">        Contributor records, as for :func:`to_og1`. Default is None.</span>
+<span class="sd">    institutions : sequence of dict, optional</span>
+<span class="sd">        Institution records, as for :func:`to_og1`. Default is None.</span>
+<span class="sd">    platform : dict of str to object, optional</span>
+<span class="sd">        Platform fields, as for :func:`to_og1`. Default is None.</span>
+<span class="sd">    deployment : dict of str to object, optional</span>
+<span class="sd">        Deployment-identity globals, as for :func:`to_og1`. Default is None.</span>
+<span class="sd">    global_attributes : dict of str to object, optional</span>
+<span class="sd">        Global attributes written verbatim, as for :func:`to_og1`. Default is None.</span>
+<span class="sd">    mode : str, optional</span>
+<span class="sd">        Data mode, ``"delayed"`` (default) or ``"realtime"``; sets the ``id`` suffix</span>
+<span class="sd">        and so the filename. Default is "delayed".</span>
+<span class="sd">    keep_variables : sequence of str, optional</span>
+<span class="sd">        Science variables to keep (see :func:`keep_variables`); OG1-mandatory</span>
+<span class="sd">        variables always survive. Default is None (keep all).</span>
+<span class="sd">    repair : bool, optional</span>
+<span class="sd">        Repair basestation time metadata before loading; this rewrites files in the</span>
+<span class="sd">        source tree (see :func:`seagliderOG1.readers.read_mission`). Default is False.</span>
+<span class="sd">    overwrite : bool, optional</span>
+<span class="sd">        Replace an existing output file (and, with ``report``, the page). Default is</span>
+<span class="sd">        False.</span>
+<span class="sd">    report : bool, optional</span>
+<span class="sd">        Also write the HTML conversion page</span>
+<span class="sd">        (:func:`seagliderOG1.reports.conversion.render_conversion`) beside the file</span>
+<span class="sd">        as ``&lt;output_dir&gt;/&lt;id&gt;_conversion.html``. Default is False.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pathlib.Path</span>
+<span class="sd">        The path of the written OG1 file.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``source`` is not a directory, holds no basestation files, or is a root of</span>
+<span class="sd">        ``SN/DATE`` missions; or as raised by :func:`to_og1`.</span>
+<span class="sd">    FileExistsError</span>
+<span class="sd">        If the output file (or, with ``report``, the page) exists and ``overwrite``</span>
+<span class="sd">        is False; nothing is written. ``filename`` is the existing path. The</span>
+<span class="sd">        conversion has already run by then: the file name derives from the converted</span>
+<span class="sd">        ``id``.</span>
+<span class="sd">    MetadataError</span>
+<span class="sd">        As raised by :func:`to_og1`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    With ``report=True`` the page is rendered from the written file. If the render</span>
+<span class="sd">    fails, the OG1 file stays written and the error propagates.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    to_og1 : The conversion step alone, on datasets already read.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from seagliderOG1 import convert</span>
+<span class="sd">    &gt;&gt;&gt; path = convert.process_mission(</span>
+<span class="sd">    ...     "data/demo_sg005",</span>
+<span class="sd">    ...     "output",</span>
+<span class="sd">    ...     contributors=[{"name": "Charlie Eriksen", "role": "PI"}],</span>
+<span class="sd">    ...     institutions=[{"name": "University of Washington", "role": "Operator"}],</span>
+<span class="sd">    ... )  # doctest: +SKIP</span>
+
+<span class="sd">    """</span>
+    <span class="n">missions</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">discover_missions</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">missions</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"no basestation files (pSSSDDDD*.nc) found in </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">readers</span><span class="o">.</span><span class="n">is_root</span><span class="p">(</span><span class="n">missions</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2"> is a root of SN/DATE missions; process_mission converts one "</span>
+            <span class="s2">"mission. Select one with readers.discover_missions and pass its path."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">first</span><span class="p">,</span> <span class="n">last</span> <span class="o">=</span> <span class="n">dives</span> <span class="k">if</span> <span class="n">dives</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">read_mission</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">),</span> <span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">repair</span><span class="o">=</span><span class="n">repair</span><span class="p">)</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">to_og1</span><span class="p">(</span>
+        <span class="n">datasets</span><span class="p">,</span>
+        <span class="n">contributors</span><span class="o">=</span><span class="n">contributors</span><span class="p">,</span>
+        <span class="n">institutions</span><span class="o">=</span><span class="n">institutions</span><span class="p">,</span>
+        <span class="n">platform</span><span class="o">=</span><span class="n">platform</span><span class="p">,</span>
+        <span class="n">deployment</span><span class="o">=</span><span class="n">deployment</span><span class="p">,</span>
+        <span class="n">global_attributes</span><span class="o">=</span><span class="n">global_attributes</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">keep_variables</span><span class="p">:</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">_keep_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">keep_variables</span><span class="p">))</span>
+
+    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">.nc"</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">_conversion.html"</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span> <span class="k">if</span> <span class="n">report</span> <span class="k">else</span> <span class="p">(</span><span class="n">path</span><span class="p">,):</span>
+            <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span>
+                    <span class="n">errno</span><span class="o">.</span><span class="n">EEXIST</span><span class="p">,</span>
+                    <span class="s2">"output exists; pass overwrite=True to replace it"</span><span class="p">,</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">),</span>
+                <span class="p">)</span>
+    <span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">writers</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
+    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"wrote </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">report</span><span class="p">:</span>
+        <span class="c1"># Lazy: reports.conversion imports this module at load time.</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1.reports.conversion</span><span class="w"> </span><span class="kn">import</span> <span class="n">render_conversion</span>
+
+        <span class="n">page</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">render_conversion</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"wrote </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">path</span></div>
 
 
 

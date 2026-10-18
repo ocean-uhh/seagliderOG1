@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev69 documentation</title>
+  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev70 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=82b26293"></script>
+      <script src="_static/documentation_options.js?v=619605c1"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -171,20 +171,26 @@ for a <code class="docutils literal notranslate"><span class="pre">SN/DATE</span
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
 <td><p>Science variables to keep; <code class="docutils literal notranslate"><span class="pre">null</span></code> keeps all.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">platform</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">report</span></code></p></td>
+<td><p>bool</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p></td>
+<td><p>Also write the HTML conversion page <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> beside each file (as
+<code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">platform</span></code></p></td>
 <td><p>mapping</p></td>
 <td><p><em>(see below)</em></p></td>
 <td><p>OG1 platform fields. The required fields must be non-null when a platform block is
 present.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">deployment</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deployment</span></code></p></td>
 <td><p>mapping</p></td>
 <td><p><em>(see below)</em></p></td>
 <td><p>OG1 deployment-identity globals (<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">program</span></code>, <code class="docutils literal notranslate"><span class="pre">license</span></code>, <code class="docutils literal notranslate"><span class="pre">doi</span></code>, …), one
 key per global, written when set and skipped when null. <code class="docutils literal notranslate"><span class="pre">validate</span></code> errors on an
 unknown key.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">global_attributes</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">global_attributes</span></code></p></td>
 <td><p>mapping or null</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
 <td><p>Verbatim escape hatch written into the OG1 file (null values are skipped). You may not
@@ -192,12 +198,12 @@ set keys the converter derives (<code class="docutils literal notranslate"><span
 bounds, <code class="docutils literal notranslate"><span class="pre">date_created</span></code>, <code class="docutils literal notranslate"><span class="pre">start_date</span></code>) or keys with a structured home in
 <code class="docutils literal notranslate"><span class="pre">deployment</span></code> (<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">program</span></code>, …); <code class="docutils literal notranslate"><span class="pre">process</span></code> raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if you do.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contributors</span></code></p></td>
 <td><p>list</p></td>
 <td><p><em>(required)</em></p></td>
 <td><p>One record per person per role; at least one with role <code class="docutils literal notranslate"><span class="pre">PI</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">institutions</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">institutions</span></code></p></td>
 <td><p>list</p></td>
 <td><p><em>(required)</em></p></td>
 <td><p>One record per institution per role; at least one with role <code class="docutils literal notranslate"><span class="pre">Operator</span></code>; resolved
@@ -258,6 +264,7 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
 <span class="nt">dives</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">             </span><span class="c1"># [first, last] dive numbers; null = all files present</span>
 <span class="nt">repair</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">           </span><span class="c1"># run repair_files on the basestation files (writes the source tree)</span>
 <span class="nt">keep_variables</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">    </span><span class="c1"># optional list of science variables to keep; null = all</span>
+<span class="nt">report</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">           </span><span class="c1"># also write &lt;id&gt;_conversion.html beside each file</span>
 
 <span class="nt">platform</span><span class="p">:</span><span class="w">               </span><span class="c1"># UPPER keys -&gt; variables, lower keys -&gt; attributes</span>
 <span class="w">  </span><span class="nt">PLATFORM_SERIAL_NUMBER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sg005</span><span class="w">   </span><span class="c1"># required -&gt; variable; from platform_id</span>

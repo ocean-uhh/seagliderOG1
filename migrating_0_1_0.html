@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Migrating to 0.1.0 &mdash; seagliderOG1 0.0.2.post1.dev69 documentation</title>
+  <title>Migrating to 0.1.0 &mdash; seagliderOG1 0.0.2.post1.dev70 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=82b26293"></script>
+      <script src="_static/documentation_options.js?v=619605c1"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -126,67 +126,76 @@ is the “what you need to change” reference; the <a class="reference internal
 <td><p><code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">seagliderOG1</span> <span class="pre">import</span> <span class="pre">convert</span></code> → <code class="docutils literal notranslate"><span class="pre">convert.to_og1(...)</span></code> — module <code class="docutils literal notranslate"><span class="pre">convertOG1.py</span></code>
 renamed to <code class="docutils literal notranslate"><span class="pre">convert.py</span></code>; <code class="docutils literal notranslate"><span class="pre">convert_to_OG1</span></code> to <code class="docutils literal notranslate"><span class="pre">to_og1</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">writers.save_dataset(ds,</span> <span class="pre">output_file=&quot;../test.nc&quot;)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">convertOG1.process_and_save_data(directory)</span></code> (convert a mission directory and write
+its OG1 file)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">convert.process_mission(source,</span> <span class="pre">output_dir,</span> <span class="pre">*,</span> <span class="pre">contributors=,</span> <span class="pre">institutions=,</span>
+<span class="pre">platform=,</span> <span class="pre">deployment=,</span> <span class="pre">mode=,</span> <span class="pre">keep_variables=,</span> <span class="pre">overwrite=,</span> <span class="pre">report=)</span> <span class="pre">-&gt;</span> <span class="pre">Path</span></code> for one
+mission, or <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">process</span> <span class="pre">mission.yaml</span></code> from the command line — the output path
+and all metadata now come from the mission config, not package defaults; there is no
+single-call “convert and save a whole root” (the caller selects missions, then calls
+<code class="docutils literal notranslate"><span class="pre">process_mission</span></code> per mission, which is what the <code class="docutils literal notranslate"><span class="pre">process</span></code> CLI does)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">writers.save_dataset(ds,</span> <span class="pre">output_file=&quot;../test.nc&quot;)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">writers.write(ds,</span> <span class="pre">path,</span> <span class="pre">*,</span> <span class="pre">overwrite=False)</span> <span class="pre">-&gt;</span> <span class="pre">pathlib.Path</span></code> — <code class="docutils literal notranslate"><span class="pre">path:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">Path</span></code>,
 no default; returns the path written; raises instead of returning <code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">plotters.plot_*(…)</span></code> returned <code class="docutils literal notranslate"><span class="pre">None</span></code> and called <code class="docutils literal notranslate"><span class="pre">plt.show()</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">plotters.plot_*(…)</span></code> returned <code class="docutils literal notranslate"><span class="pre">None</span></code> and called <code class="docutils literal notranslate"><span class="pre">plt.show()</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">plotters.plot_*(…,</span> <span class="pre">ax=None)</span> <span class="pre">-&gt;</span> <span class="pre">(fig,</span> <span class="pre">ax)</span></code>; no <code class="docutils literal notranslate"><span class="pre">plt.show()</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">plotters.show_*(path_or_dataset)</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">plotters.show_*(path_or_dataset)</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">plotters.show_*(dataset)</span></code> — Dataset only (the file-path branch is gone)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_sample_dataset()</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_sample_dataset()</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.load_sample_basestation()</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">standardise_OG10</span></code> and its <code class="docutils literal notranslate"><span class="pre">OG1_mapping</span></code> argument</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">standardise_OG10</span></code> and its <code class="docutils literal notranslate"><span class="pre">OG1_mapping</span></code> argument</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">standardise_og1</span></code> and <code class="docutils literal notranslate"><span class="pre">og1_mapping</span></code> — <code class="docutils literal notranslate"><span class="pre">og1</span></code> lower-case in names; the package name
 keeps its spelling</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools.OG1_name_mapping(...)</span></code> / <code class="docutils literal notranslate"><span class="pre">print_OG1_mapping_summary(...)</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tools.OG1_name_mapping(...)</span></code> / <code class="docutils literal notranslate"><span class="pre">print_OG1_mapping_summary(...)</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">convert.name_mapping(datasets)</span></code> returns the basestation → OG1 mapping as a DataFrame;
 the internal <code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code> moved to the private pipeline module, and
 <code class="docutils literal notranslate"><span class="pre">print_OG1_mapping_summary</span></code> was removed (print the DataFrame yourself)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tools</span></code> pipeline internals (<code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">gather_sensor_info</span></code>,
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools</span></code> pipeline internals (<code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">gather_sensor_info</span></code>,
 <code class="docutils literal notranslate"><span class="pre">add_sensor_to_dataset</span></code>, <code class="docutils literal notranslate"><span class="pre">merge_datasets_along_time</span></code>, <code class="docutils literal notranslate"><span class="pre">extract_scalar_parameters</span></code> /
 <code class="docutils literal notranslate"><span class="pre">add_scalar_parameters</span></code>, <code class="docutils literal notranslate"><span class="pre">set_best_dtype</span></code>, …) and the <code class="docutils literal notranslate"><span class="pre">seagliderOG1.utilities</span></code> module</p></td>
 <td><p>moved to a private module (not part of the public API); <code class="docutils literal notranslate"><span class="pre">tools</span></code> keeps the user-facing
 utilities (<code class="docutils literal notranslate"><span class="pre">add_depth</span></code>, <code class="docutils literal notranslate"><span class="pre">add_phase</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_units_var</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_qc_flags</span></code>,
 <code class="docutils literal notranslate"><span class="pre">encode_times_og1</span></code>, …)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">firstrun=</span></code> parameters (e.g. <code class="docutils literal notranslate"><span class="pre">tools.convert_units_var(...,</span> <span class="pre">firstrun=...)</span></code>)</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">firstrun=</span></code> parameters (e.g. <code class="docutils literal notranslate"><span class="pre">tools.convert_units_var(...,</span> <span class="pre">firstrun=...)</span></code>)</p></td>
 <td><p>removed; progress and diagnostics go through <code class="docutils literal notranslate"><span class="pre">logging.getLogger(&quot;seagliderOG1...&quot;)</span></code>
 (set the level, e.g. the CLI <code class="docutils literal notranslate"><span class="pre">-v</span></code>)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_basestation_files(dir,</span> <span class="pre">first,</span> <span class="pre">last,</span> <span class="pre">repair=)</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_basestation_files(dir,</span> <span class="pre">first,</span> <span class="pre">last,</span> <span class="pre">repair=)</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.read_mission(source,</span> <span class="pre">start_profile=None,</span> <span class="pre">end_profile=None,</span> <span class="pre">*,</span> <span class="pre">repair=False)</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_first_basestation_file</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.load_first_basestation_file</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.read_file</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.scan_and_repair_files</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.scan_and_repair_files</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_files</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.profnum_from_filename</span></code> / <code class="docutils literal notranslate"><span class="pre">readers.glider_sn_from_filename</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.profnum_from_filename</span></code> / <code class="docutils literal notranslate"><span class="pre">readers.glider_sn_from_filename</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.profile_number_from_filename</span></code> / <code class="docutils literal notranslate"><span class="pre">readers.serial_from_filename</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_netcdf_time_metadata_inplace</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_netcdf_time_metadata_inplace</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.repair_time_metadata</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">convert.apply_keep_variables(ds,</span> <span class="pre">keep)</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">convert.apply_keep_variables(ds,</span> <span class="pre">keep)</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">convert.keep_variables(ds,</span> <span class="pre">names)</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tools.calc_Z</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_profile_number</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools.calc_Z</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.assign_profile_number</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">tools.add_depth</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.add_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">tools.add_profile_number</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.registry_institutions()</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.registry_institutions()</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">contributors.institution_registry()</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.normalize_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">contributors.normalize_role</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.normalize_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">contributors.normalize_role</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">contributors.canonical_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">contributors.canonical_role</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">vocabularies.load_default_contributors</span></code>, <code class="docutils literal notranslate"><span class="pre">vocabularies.contrib_to_append</span></code>,
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vocabularies.load_default_contributors</span></code>, <code class="docutils literal notranslate"><span class="pre">vocabularies.contrib_to_append</span></code>,
 <code class="docutils literal notranslate"><span class="pre">config/OG1_author.yaml</span></code></p></td>
 <td><p>removed — contributors come from <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>; no packaged default-identity block</p></td>
 </tr>

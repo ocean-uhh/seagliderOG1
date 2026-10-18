@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Getting started &mdash; seagliderOG1 0.0.2.post1.dev69 documentation</title>
+  <title>Getting started &mdash; seagliderOG1 0.0.2.post1.dev70 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=82b26293"></script>
+      <script src="_static/documentation_options.js?v=619605c1"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -50,7 +50,10 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Getting started</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#install">Install</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#convert-a-mission">Convert a mission</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#from-python">From Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#from-python">From Python</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-by-step">Step by step</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -133,9 +136,31 @@ the contributor and institution records before <code class="docutils literal not
 directories, point <code class="docutils literal notranslate"><span class="pre">source</span></code> at the root and select with <code class="docutils literal notranslate"><span class="pre">--all</span></code> or <code class="docutils literal notranslate"><span class="pre">--mission</span> <span class="pre">GLOB</span></code>; <code class="docutils literal notranslate"><span class="pre">-n</span></code>
 previews without writing. Paths in <code class="docutils literal notranslate"><span class="pre">sg005.yaml</span></code> resolve relative to the file. See
 <a class="reference internal" href="mission_yaml.html#mission-yaml"><span class="std std-ref">mission.yaml reference</span></a> for every key and <a class="reference internal" href="cli_reference.html#cli-reference"><span class="std std-ref">CLI reference</span></a> for every flag.</p>
+<p>A filled-in example for the bundled sample ships as <code class="docutils literal notranslate"><span class="pre">data/demo_sg005/mission.yaml</span></code>; from the
+repository root, <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">process</span> <span class="pre">data/demo_sg005/mission.yaml</span> <span class="pre">--report</span></code> writes the OG1
+file and its conversion page to <code class="docutils literal notranslate"><span class="pre">outputs/</span></code>.</p>
 </section>
 <section id="from-python">
 <h2>From Python<a class="headerlink" href="#from-python" title="Link to this heading"></a></h2>
+<p>One call does what <code class="docutils literal notranslate"><span class="pre">process</span></code> does for one mission — read, convert, write
+<code class="docutils literal notranslate"><span class="pre">&lt;output_dir&gt;/&lt;id&gt;.nc</span></code> — and returns the path written:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert</span>
+
+<span class="n">path</span> <span class="o">=</span> <span class="n">convert</span><span class="o">.</span><span class="n">process_mission</span><span class="p">(</span>
+    <span class="s2">"/data/005/20080606"</span><span class="p">,</span>
+    <span class="s2">"output"</span><span class="p">,</span>
+    <span class="n">contributors</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"Jane Doe"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"PI"</span><span class="p">,</span> <span class="s2">"email"</span><span class="p">:</span> <span class="s2">"jane@example.org"</span><span class="p">}],</span>
+    <span class="n">institutions</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"University of Hamburg (IfM)"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"Operator"</span><span class="p">}],</span>
+    <span class="n">report</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># also write output/&lt;id&gt;_conversion.html</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>It takes the same values as <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> (<code class="docutils literal notranslate"><span class="pre">dives</span></code>, <code class="docutils literal notranslate"><span class="pre">platform</span></code>, <code class="docutils literal notranslate"><span class="pre">deployment</span></code>,
+<code class="docutils literal notranslate"><span class="pre">global_attributes</span></code>, <code class="docutils literal notranslate"><span class="pre">mode</span></code>, <code class="docutils literal notranslate"><span class="pre">keep_variables</span></code>, <code class="docutils literal notranslate"><span class="pre">repair</span></code>) as keyword arguments, and
+raises <code class="docutils literal notranslate"><span class="pre">FileExistsError</span></code> rather than overwrite unless <code class="docutils literal notranslate"><span class="pre">overwrite=True</span></code>.</p>
+<section id="step-by-step">
+<h3>Step by step<a class="headerlink" href="#step-by-step" title="Link to this heading"></a></h3>
+<p>The same pipeline as three calls, for when you want the dataset in hand before writing:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">writers</span>
 
 <span class="n">datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">read_mission</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">)</span>
@@ -149,6 +174,7 @@ previews without writing. Paths in <code class="docutils literal notranslate"><s
 </div>
 <p>The worked example in <a class="reference internal" href="demo-output.html"><span class="doc">the demo notebook</span></a> runs this end to end on the
 bundled <code class="docutils literal notranslate"><span class="pre">sg005</span></code> sample data.</p>
+</section>
 </section>
 </section>
 

@@ -3,6 +3,8 @@
 
 At a glance, in pipeline order:
 
+- ``convert.process_mission`` — the whole pipeline for one mission: read, convert, write
+  (and optionally the HTML conversion page). The calls below are its steps.
 - ``readers.read_mission`` — read a mission's basestation files into a list of datasets.
 - ``convert.to_og1`` — convert that list into one OG1 dataset.
 - ``convert.keep_variables`` — optionally subset to a science-variable allow-list.

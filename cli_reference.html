@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev69 documentation</title>
+  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev70 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=82b26293"></script>
+      <script src="_static/documentation_options.js?v=619605c1"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -57,6 +57,7 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">CLI reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#data-mode">Data mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#conversion-page">Conversion page</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#verbs">Verbs</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1-positional-arguments">Positional Arguments</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1-named-arguments">Named Arguments</a></li>
@@ -132,6 +133,13 @@ per verb. The typical workflow is <code class="docutils literal notranslate"><sp
 <p><code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--mode</span></code> (and the <code class="docutils literal notranslate"><span class="pre">mode</span></code> key in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>) sets the OG1 data mode, which
 determines the data-mode suffix of the output id: <code class="docutils literal notranslate"><span class="pre">realtime</span></code> gives the suffix <code class="docutils literal notranslate"><span class="pre">R</span></code> and
 <code class="docutils literal notranslate"><span class="pre">delayed</span></code> gives <code class="docutils literal notranslate"><span class="pre">delayed</span></code> (<code class="docutils literal notranslate"><span class="pre">vocabularies.MODE_SUFFIX</span></code>).</p>
+</section>
+<section id="conversion-page">
+<h2>Conversion page<a class="headerlink" href="#conversion-page" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code> (or <code class="docutils literal notranslate"><span class="pre">report:</span> <span class="pre">true</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>) also writes the HTML conversion
+page <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> beside each OG1 file — the same page <code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span> <span class="pre">-o</span></code>
+writes for an existing file. An existing page is refused like an existing file unless
+<code class="docutils literal notranslate"><span class="pre">--force</span></code>.</p>
 </section>
 <section id="verbs">
 <h2>Verbs<a class="headerlink" href="#verbs" title="Link to this heading"></a></h2>
@@ -214,7 +222,7 @@ determines the data-mode suffix of the output id: <code class="docutils literal 
 <p>convert basestation missions to OG1 files</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">process</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">source</span> <span class="n">DIR_OR_ROOT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">all</span> <span class="o">|</span> <span class="o">--</span><span class="n">mission</span> <span class="n">GLOB</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">DIR</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">mode</span> <span class="p">{</span><span class="n">realtime</span><span class="p">,</span><span class="n">delayed</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">dives</span> <span class="n">FIRST</span> <span class="n">LAST</span><span class="p">]</span>
-                     <span class="p">[</span><span class="o">--</span><span class="n">repair</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span> <span class="o">|</span> <span class="o">--</span><span class="n">skip</span><span class="o">-</span><span class="n">existing</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">]</span>
+                     <span class="p">[</span><span class="o">--</span><span class="n">repair</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span> <span class="o">|</span> <span class="o">--</span><span class="n">skip</span><span class="o">-</span><span class="n">existing</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">]</span>
                      <span class="n">config</span>
 </pre></div>
 </div>
@@ -259,6 +267,10 @@ determines the data-mode suffix of the output id: <code class="docutils literal 
 </dd>
 <dt><kbd>--skip-existing</kbd></dt>
 <dd><p>skip a mission whose output file already exists</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+<dt><kbd>--report</kbd></dt>
+<dd><p>also write the HTML conversion page &lt;id&gt;_conversion.html beside each file</p>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>-n, --dry-run</kbd></dt>
