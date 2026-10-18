@@ -5,8 +5,11 @@ NetCDF files into OG1 (Ocean Gliders 1) format. It handles data processing,
 variable renaming, attribute assignments, and dataset standardization.
 """
 
+import errno
 import json
 import logging
+import os
+import pathlib
 import warnings
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -16,10 +19,19 @@ import pandas as pd
 import xarray as xr
 from tqdm import tqdm
 
-from seagliderOG1 import __version__, _pipeline, contributors, tools, vocabularies
+from seagliderOG1 import (
+    __version__,
+    _pipeline,
+    contributors,
+    readers,
+    tools,
+    vocabularies,
+    writers,
+)
 from seagliderOG1.exceptions import MetadataError
 
 __all__ = [
+    "process_mission",
     "to_og1",
     "name_mapping",
     "keep_variables",
@@ -287,6 +299,10 @@ def keep_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
             )
             result.attrs["conversion_attribute_sources"] = json.dumps(sources)
     return result
+
+
+# process_mission takes a keep_variables= argument, which shadows the function inside it.
+_keep_variables = keep_variables
 
 
 def _decode_per_dive(ds: xr.Dataset, name: str) -> dict:
@@ -1003,6 +1019,151 @@ def to_og1(
             ds_og1 = tools.convert_qc_flags(ds_og1, qc_name)
 
     return _pipeline.set_best_dtype(ds_og1)
+
+
+def process_mission(
+    source: str | os.PathLike,
+    output_dir: str | os.PathLike,
+    *,
+    dives: tuple[int, int] | None = None,
+    contributors: Sequence[dict] | None = None,
+    institutions: Sequence[dict] | None = None,
+    platform: dict[str, object] | None = None,
+    deployment: dict[str, object] | None = None,
+    global_attributes: dict[str, object] | None = None,
+    mode: str = "delayed",
+    keep_variables: Sequence[str] | None = None,
+    repair: bool = False,
+    overwrite: bool = False,
+    report: bool = False,
+) -> pathlib.Path:
+    """Convert one Seaglider mission to an OG1 file: read, convert, subset, write.
+
+    The library form of ``seagliderOG1 process`` for a single mission: the CLI calls
+    this once per selected mission. The file is written as ``<output_dir>/<id>.nc``,
+    where ``id`` is the converter-derived (or ``deployment``-supplied) identifier.
+
+    Parameters
+    ----------
+    source : str or os.PathLike
+        One mission directory holding basestation files (``pSSSDDDD*.nc``). A root of
+        ``SN/DATE`` missions is refused; select one with
+        :func:`seagliderOG1.readers.discover_missions` and pass its ``path``.
+    output_dir : str or os.PathLike
+        Directory the OG1 file is written to; created if missing.
+    dives : tuple of (int, int), optional
+        First and last dive to convert, inclusive. Default is None (every dive).
+    contributors : sequence of dict, optional
+        Contributor records, as for :func:`to_og1`. Default is None.
+    institutions : sequence of dict, optional
+        Institution records, as for :func:`to_og1`. Default is None.
+    platform : dict of str to object, optional
+        Platform fields, as for :func:`to_og1`. Default is None.
+    deployment : dict of str to object, optional
+        Deployment-identity globals, as for :func:`to_og1`. Default is None.
+    global_attributes : dict of str to object, optional
+        Global attributes written verbatim, as for :func:`to_og1`. Default is None.
+    mode : str, optional
+        Data mode, ``"delayed"`` (default) or ``"realtime"``; sets the ``id`` suffix
+        and so the filename. Default is "delayed".
+    keep_variables : sequence of str, optional
+        Science variables to keep (see :func:`keep_variables`); OG1-mandatory
+        variables always survive. Default is None (keep all).
+    repair : bool, optional
+        Repair basestation time metadata before loading; this rewrites files in the
+        source tree (see :func:`seagliderOG1.readers.read_mission`). Default is False.
+    overwrite : bool, optional
+        Replace an existing output file (and, with ``report``, the page). Default is
+        False.
+    report : bool, optional
+        Also write the HTML conversion page
+        (:func:`seagliderOG1.reports.conversion.render_conversion`) beside the file
+        as ``<output_dir>/<id>_conversion.html``. Default is False.
+
+    Returns
+    -------
+    pathlib.Path
+        The path of the written OG1 file.
+
+    Raises
+    ------
+    ValueError
+        If ``source`` is not a directory, holds no basestation files, or is a root of
+        ``SN/DATE`` missions; or as raised by :func:`to_og1`.
+    FileExistsError
+        If the output file (or, with ``report``, the page) exists and ``overwrite``
+        is False; nothing is written. ``filename`` is the existing path. The
+        conversion has already run by then: the file name derives from the converted
+        ``id``.
+    MetadataError
+        As raised by :func:`to_og1`.
+
+    Notes
+    -----
+    With ``report=True`` the page is rendered from the written file. If the render
+    fails, the OG1 file stays written and the error propagates.
+
+    See Also
+    --------
+    to_og1 : The conversion step alone, on datasets already read.
+
+    Examples
+    --------
+    >>> from seagliderOG1 import convert
+    >>> path = convert.process_mission(
+    ...     "data/demo_sg005",
+    ...     "output",
+    ...     contributors=[{"name": "Charlie Eriksen", "role": "PI"}],
+    ...     institutions=[{"name": "University of Washington", "role": "Operator"}],
+    ... )  # doctest: +SKIP
+
+    """
+    missions = readers.discover_missions(str(source))
+    if not missions:
+        msg = f"no basestation files (pSSSDDDD*.nc) found in {source}"
+        raise ValueError(msg)
+    if readers.is_root(missions):
+        msg = (
+            f"{source} is a root of SN/DATE missions; process_mission converts one "
+            "mission. Select one with readers.discover_missions and pass its path."
+        )
+        raise ValueError(msg)
+
+    first, last = dives if dives is not None else (None, None)
+    datasets = readers.read_mission(str(source), first, last, repair=repair)
+    ds = to_og1(
+        datasets,
+        contributors=contributors,
+        institutions=institutions,
+        platform=platform,
+        deployment=deployment,
+        global_attributes=global_attributes,
+        mode=mode,
+    )
+    if keep_variables:
+        ds = _keep_variables(ds, list(keep_variables))
+
+    output_dir = pathlib.Path(output_dir)
+    path = output_dir / f"{ds.attrs['id']}.nc"
+    page = output_dir / f"{ds.attrs['id']}_conversion.html"
+    if not overwrite:
+        for target in (path, page) if report else (path,):
+            if target.exists():
+                raise FileExistsError(
+                    errno.EEXIST,
+                    "output exists; pass overwrite=True to replace it",
+                    str(target),
+                )
+    output_dir.mkdir(parents=True, exist_ok=True)
+    writers.write(ds, path, overwrite=overwrite)
+    _log.info("wrote %s", path)
+    if report:
+        # Lazy: reports.conversion imports this module at load time.
+        from seagliderOG1.reports.conversion import render_conversion
+
+        page.write_text(render_conversion(path), encoding="utf-8")
+        _log.info("wrote %s", page)
+    return path
 
 
 def name_mapping(list_of_datasets: Sequence[xr.Dataset]) -> pd.DataFrame:

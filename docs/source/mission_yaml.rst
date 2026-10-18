@@ -59,6 +59,11 @@ Keys
      - list or null
      - ``null``
      - Science variables to keep; ``null`` keeps all.
+   * - ``report``
+     - bool
+     - ``false``
+     - Also write the HTML conversion page ``<id>_conversion.html`` beside each file (as
+       ``process --report``).
    * - ``platform``
      - mapping
      - *(see below)*
@@ -146,6 +151,7 @@ The template ``init`` writes (fill the nulls before ``validate``):
    dives: null             # [first, last] dive numbers; null = all files present
    repair: false           # run repair_files on the basestation files (writes the source tree)
    keep_variables: null    # optional list of science variables to keep; null = all
+   report: false           # also write <id>_conversion.html beside each file
 
    platform:               # UPPER keys -> variables, lower keys -> attributes
      PLATFORM_SERIAL_NUMBER: sg005   # required -> variable; from platform_id

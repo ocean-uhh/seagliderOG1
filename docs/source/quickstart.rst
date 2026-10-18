@@ -43,8 +43,36 @@ directories, point ``source`` at the root and select with ``--all`` or ``--missi
 previews without writing. Paths in ``sg005.yaml`` resolve relative to the file. See
 :ref:`mission_yaml` for every key and :ref:`cli_reference` for every flag.
 
+A filled-in example for the bundled sample ships as ``data/demo_sg005/mission.yaml``; from the
+repository root, ``seagliderOG1 process data/demo_sg005/mission.yaml --report`` writes the OG1
+file and its conversion page to ``outputs/``.
+
 From Python
 -----------
+
+One call does what ``process`` does for one mission — read, convert, write
+``<output_dir>/<id>.nc`` — and returns the path written:
+
+.. code-block:: python
+
+   from seagliderOG1 import convert
+
+   path = convert.process_mission(
+       "/data/005/20080606",
+       "output",
+       contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
+       institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],
+       report=True,  # also write output/<id>_conversion.html
+   )
+
+It takes the same values as ``mission.yaml`` (``dives``, ``platform``, ``deployment``,
+``global_attributes``, ``mode``, ``keep_variables``, ``repair``) as keyword arguments, and
+raises ``FileExistsError`` rather than overwrite unless ``overwrite=True``.
+
+Step by step
+^^^^^^^^^^^^
+
+The same pipeline as three calls, for when you want the dataset in hand before writing:
 
 .. code-block:: python
 

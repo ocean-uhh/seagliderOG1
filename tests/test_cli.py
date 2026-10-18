@@ -485,6 +485,36 @@ def test_process_dry_run_ignores_existing_output(
     assert cli.main(["process", str(config), "-n"]) == 0
 
 
+def test_process_report_writes_page_and_refuses_existing(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--report writes <id>_conversion.html; an existing page without --force fails."""
+    out = tmp_path / "out"
+    config = _write_config(tmp_path / "mission.yaml", output_dir=str(out), dives=[1, 1])
+    assert cli.main(["process", str(config), "--report", "-n"]) == 0
+    assert "_conversion.html" in capsys.readouterr().out
+    assert not out.exists()
+
+    assert cli.main(["process", str(config), "--report"]) == 0
+    (nc,) = out.glob("*.nc")
+    page = out / f"{nc.stem}_conversion.html"
+    assert page.is_file()
+
+    nc.unlink()
+    assert cli.main(["process", str(config), "--report"]) == 1
+    assert f"{page} exists" in capsys.readouterr().err
+    assert cli.main(["process", str(config), "--report", "--force"]) == 0
+    assert nc.is_file()
+
+
+def test_validate_report_must_be_bool(tmp_path: pathlib.Path) -> None:
+    """The report: key is known and must be a boolean."""
+    good = _write_config(tmp_path / "good.yaml", report=True)
+    assert not [i for i in _mission.validate_config(good) if i.level == "ERROR"]
+    bad = _write_config(tmp_path / "bad.yaml", report="yes")
+    assert any(i.key == "report" for i in _mission.validate_config(bad))
+
+
 def test_process_save_failure_counts_as_failed(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -707,3 +737,15 @@ def test_validate_strict_flags_gap(tmp_path: pathlib.Path) -> None:
     ]
     strict = _mission.validate_config(config, strict=True)
     assert any(i.level == "ERROR" and "missing" in i.message for i in strict)
+
+
+def test_bundled_example_config_validates_and_plans(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The committed data/demo_sg005/mission.yaml validates and plans, so it cannot rot."""
+    example = DATA_DIR / "mission.yaml"
+    assert cli.main(["validate", str(example)]) == 0
+    assert cli.main(["process", str(example), "-n"]) == 0
+    out = capsys.readouterr().out
+    assert "1 would convert" in out
+    assert "outputs" in out

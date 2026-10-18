@@ -20,6 +20,7 @@ KNOWN_KEYS = frozenset(
         "dives",
         "repair",
         "keep_variables",
+        "report",
         "platform",
         "deployment",
         "global_attributes",
@@ -268,6 +269,7 @@ def render_template(
         "dives: null             # [first, last] dive numbers; null = all files present",
         "repair: false           # run repair_files on the basestation files (writes the source tree)",
         "keep_variables: null    # optional list of science variables to keep; null = all",
+        "report: false           # also write <id>_conversion.html beside each file",
         "",
         *_platform_template_lines(plat),
         "",
@@ -801,6 +803,10 @@ def validate_config(
     if "repair" in data and not isinstance(data["repair"], bool):
         issues.append(
             ValidationIssue("ERROR", "repair must be true or false.", "repair")
+        )
+    if "report" in data and not isinstance(data["report"], bool):
+        issues.append(
+            ValidationIssue("ERROR", "report must be true or false.", "report")
         )
 
     dives = data.get("dives")

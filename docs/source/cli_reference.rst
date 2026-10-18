@@ -28,6 +28,14 @@ Data mode
 determines the data-mode suffix of the output id: ``realtime`` gives the suffix ``R`` and
 ``delayed`` gives ``delayed`` (``vocabularies.MODE_SUFFIX``).
 
+Conversion page
+---------------
+
+``process --report`` (or ``report: true`` in ``mission.yaml``) also writes the HTML conversion
+page ``<id>_conversion.html`` beside each OG1 file — the same page ``inspect --conversion -o``
+writes for an existing file. An existing page is refused like an existing file unless
+``--force``.
+
 Verbs
 -----
 
