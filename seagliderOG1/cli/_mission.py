@@ -110,13 +110,105 @@ def _scalar(value: object) -> str:
     return text
 
 
+# OG1 requirement tiers as written in templates and listings.
+_TIER_LABELS = {
+    "mandatory": "mandatory",
+    "highly_desirable": "highly desirable",
+    "suggested": "suggested",
+}
+
+# Notes on deployment keys whose value overrides something the converter derives.
+_DEPLOYMENT_HINTS = {
+    "id": "overrides the derived <serial>_<start>_<mode>; 'init --from' proposes it",
+    "comment": "overrides the comment derived from the file's history",
+    "license": "e.g. CC-BY-4.0",
+    "doi": "e.g. https://doi.org/...",
+    "data_url": "where the OG1 file is hosted",
+}
+
+
+def _set_in(name: str, source: str) -> str:
+    """Return the mission.yaml block a global is set in, or "" when the user does not set it.
+
+    Parameters
+    ----------
+    name : str
+        The OG1 global attribute name.
+    source : str
+        Its filling source from ``REQUIRED_GLOBALS``: ``derived``, ``constant`` or ``config``.
+
+    Returns
+    -------
+    str
+        ``deployment``, ``contributors``, ``institutions`` or ``global_attributes``; ""
+        for a derived or constant global that has no override.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    if name in vocabularies.DEPLOYMENT_GLOBALS:
+        return "deployment"
+    if source != "config":
+        return ""
+    if name.startswith("contributor_"):
+        return "contributors"
+    if name.startswith("contributing_institutions"):
+        return "institutions"
+    return "global_attributes"
+
+
+def global_rows() -> list[dict[str, str]]:
+    """Return one row per OG1 global the package knows a tier or a config home for.
+
+    Every name in ``vocabularies.REQUIRED_GLOBALS``, in tier order, followed by the
+    ``deployment`` keys with no OG1 tier (``license``, ``acknowledgment``), marked
+    ``optional``. The single source for the ``deployment:`` template comments, the
+    ``validate`` highly-desirable check and ``list globals``.
+
+    Returns
+    -------
+    list of dict of str to str
+        Rows with keys ``name``, ``tier``, ``source`` (``derived`` / ``constant`` /
+        ``config``), ``set_in`` (the mission.yaml block, or "") and ``note`` (what an
+        override does, or "").
+
+    """
+    from seagliderOG1 import vocabularies
+
+    rows = [
+        {
+            "name": name,
+            "tier": _TIER_LABELS[tier],
+            "source": source,
+            "set_in": _set_in(name, source),
+            "note": _DEPLOYMENT_HINTS.get(name, ""),
+        }
+        for tier, names in vocabularies.REQUIRED_GLOBALS.items()
+        for name, source in names.items()
+    ]
+    tiered = {row["name"] for row in rows}
+    rows.extend(
+        {
+            "name": name,
+            "tier": "optional",
+            "source": "config",
+            "set_in": "deployment",
+            "note": _DEPLOYMENT_HINTS.get(name, ""),
+        }
+        for name in vocabularies.DEPLOYMENT_GLOBALS
+        if name not in tiered
+    )
+    return rows
+
+
 def _deployment_template_lines() -> list[str]:
-    """Build the ``deployment:`` template block, tier comments from REQUIRED_GLOBALS.
+    """Build the ``deployment:`` template block, tier comments from ``global_rows``.
 
     One source for the tiers: each key's ``(mandatory)`` / ``(highly desirable)`` /
-    ``(suggested)`` comment is read from ``vocabularies.REQUIRED_GLOBALS`` so the
-    template cannot drift from the manual-sourced table. ``license`` and
-    ``acknowledgment`` are ACDD globals with no OG1 tier and are marked ``(optional)``.
+    ``(suggested)`` comment comes from ``vocabularies.REQUIRED_GLOBALS`` through
+    :func:`global_rows`, so the template cannot drift from the manual-sourced table.
+    ``license`` and ``acknowledgment`` are ACDD globals with no OG1 tier and are marked
+    ``(optional)``.
 
     Returns
     -------
@@ -126,43 +218,111 @@ def _deployment_template_lines() -> list[str]:
     """
     from seagliderOG1 import vocabularies
 
-    label = {
-        "mandatory": "mandatory",
-        "highly_desirable": "highly desirable",
-        "suggested": "suggested",
-    }
-    tier_of = {
-        name: text
-        for tier, text in label.items()
-        for name in vocabularies.REQUIRED_GLOBALS.get(tier, {})
-    }
-    hints = {
-        "id": "overrides the derived <serial>_<start>_<mode>; 'init --from' proposes it",
-        "comment": "overrides the comment derived from the file's history",
-        "license": "e.g. CC-BY-4.0",
-        "doi": "e.g. https://doi.org/...",
-        "data_url": "where the OG1 file is hosted",
-    }
+    rows = {row["name"]: row for row in global_rows()}
     lines = [
         "deployment:             # OG1 deployment identity; one key per global, "
         "null = not written"
     ]
     for key in vocabularies.DEPLOYMENT_GLOBALS:
-        hint = hints.get(key)
-        comment = f"{tier_of.get(key, 'optional')} -> global attribute" + (
+        hint = rows[key]["note"]
+        comment = f"{rows[key]['tier']} -> global attribute" + (
             f"; {hint}" if hint else ""
         )
         lines.append(f"  {key}: null   # {comment}")
     return lines
 
 
+# One hint per platform key, shown in the init template and by `list platform`.
+_PLATFORM_HINTS = {
+    "PLATFORM_SERIAL_NUMBER": "from platform_id; a serial or a local nickname",
+    "PLATFORM_MODEL": "e.g. University of Washington Seaglider M1 glider",
+    "platform_model_vocabulary": "e.g. https://vocab.nerc.ac.uk/collection/B76/current/B7600024/",
+    "PLATFORM_DEPTH_RATING": "e.g. 1000 (metres)",
+    "PLATFORM_MAKER": "e.g. University of Washington, School of Oceanography",
+    "platform_maker_vocabulary": "e.g. https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/",
+    "GLIDER_FIRMWARE_VERSION": "from seaglider_software_version",
+    "LANDSTATION_VERSION": "from base_station_version",
+    "WMO_IDENTIFIER": "from wmo_identifier",
+    "PLATFORM_NAME": "local or nickname of the glider",
+    "TELECOM_TYPE": "e.g. Iridium (comma-separated for several)",
+    "TRACKING_SYSTEM": "e.g. ARGOS, GPS",
+    "BATTERY_TYPE": "see the OG1 battery_type vocabulary",
+    "BATTERY_PACK": "battery packaging",
+}
+
+# The two _vocabulary keys are attributes on their parent variable, not variables.
+_PLATFORM_VOCABULARY_PARENTS = {
+    "platform_model_vocabulary": "PLATFORM_MODEL",
+    "platform_maker_vocabulary": "PLATFORM_MAKER",
+}
+
+# Template order: each _vocabulary key follows its parent variable.
+_PLATFORM_ORDER = (
+    "PLATFORM_SERIAL_NUMBER",
+    "PLATFORM_MODEL",
+    "platform_model_vocabulary",
+    "PLATFORM_DEPTH_RATING",
+    "PLATFORM_MAKER",
+    "platform_maker_vocabulary",
+    "GLIDER_FIRMWARE_VERSION",
+    "LANDSTATION_VERSION",
+    "WMO_IDENTIFIER",
+    "PLATFORM_NAME",
+    "TELECOM_TYPE",
+    "TRACKING_SYSTEM",
+    "BATTERY_TYPE",
+    "BATTERY_PACK",
+)
+
+
+def platform_rows() -> list[dict[str, str]]:
+    """Return one row per ``platform:`` key, in template order.
+
+    Read from ``vocabularies.PLATFORM_FIELDS`` (requirement, basestation source) plus
+    the two ``_vocabulary`` keys, which are attributes on ``PLATFORM_MODEL`` /
+    ``PLATFORM_MAKER``. The single source for the ``platform:`` template comments and
+    ``list platform``.
+
+    Returns
+    -------
+    list of dict of str to str
+        Rows with keys ``key``, ``requirement`` (``required`` / ``optional``),
+        ``destination`` (``variable`` or ``attribute on <VARIABLE>``), ``from_file``
+        (the basestation global ``init --from`` reads, or "") and ``hint``.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    rows = []
+    for key in _PLATFORM_ORDER:
+        if key in _PLATFORM_VOCABULARY_PARENTS:
+            requirement = "optional"
+            destination = f"attribute on {_PLATFORM_VOCABULARY_PARENTS[key]}"
+            from_file = ""
+        else:
+            spec = vocabularies.PLATFORM_FIELDS[key]
+            requirement = "required" if spec.required else "optional"
+            destination = "variable"
+            from_file = spec.source or ""
+        rows.append(
+            {
+                "key": key,
+                "requirement": requirement,
+                "destination": destination,
+                "from_file": from_file,
+                "hint": _PLATFORM_HINTS[key],
+            }
+        )
+    return rows
+
+
 def _platform_template_lines(plat: dict[str, object]) -> list[str]:
-    """Build the ``platform:`` block, destination comments from PLATFORM_FIELDS.
+    """Build the ``platform:`` block, destination comments from ``platform_rows``.
 
     Each line's comment says where the key goes — ``-> variable`` for an UPPER platform
     field, ``-> attribute on <VARIABLE>`` for a lower ``_vocabulary`` key — read from
-    ``vocabularies.PLATFORM_FIELDS`` (which knows each field's kind and whether it is
-    required) so the template cannot drift from the code.
+    :func:`platform_rows` (which reads ``vocabularies.PLATFORM_FIELDS``) so the template
+    cannot drift from the code.
 
     Parameters
     ----------
@@ -175,57 +335,13 @@ def _platform_template_lines(plat: dict[str, object]) -> list[str]:
         The ``platform:`` header line and one line per field.
 
     """
-    from seagliderOG1 import vocabularies
-
-    hints = {
-        "PLATFORM_SERIAL_NUMBER": "from platform_id; a serial or a local nickname",
-        "PLATFORM_MODEL": "e.g. University of Washington Seaglider M1 glider",
-        "platform_model_vocabulary": "e.g. https://vocab.nerc.ac.uk/collection/B76/current/B7600024/",
-        "PLATFORM_DEPTH_RATING": "e.g. 1000 (metres)",
-        "PLATFORM_MAKER": "e.g. University of Washington, School of Oceanography",
-        "platform_maker_vocabulary": "e.g. https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/",
-        "GLIDER_FIRMWARE_VERSION": "from seaglider_software_version",
-        "LANDSTATION_VERSION": "from base_station_version",
-        "WMO_IDENTIFIER": "from wmo_identifier",
-        "PLATFORM_NAME": "local or nickname of the glider",
-        "TELECOM_TYPE": "e.g. Iridium (comma-separated for several)",
-        "TRACKING_SYSTEM": "e.g. ARGOS, GPS",
-        "BATTERY_TYPE": "see the OG1 battery_type vocabulary",
-        "BATTERY_PACK": "battery packaging",
-    }
-    # The two _vocabulary keys are attributes on their parent variable, not variables.
-    vocab_parents = {
-        "platform_model_vocabulary": "PLATFORM_MODEL",
-        "platform_maker_vocabulary": "PLATFORM_MAKER",
-    }
-    # Template order: each _vocabulary key follows its parent variable.
-    order = [
-        "PLATFORM_SERIAL_NUMBER",
-        "PLATFORM_MODEL",
-        "platform_model_vocabulary",
-        "PLATFORM_DEPTH_RATING",
-        "PLATFORM_MAKER",
-        "platform_maker_vocabulary",
-        "GLIDER_FIRMWARE_VERSION",
-        "LANDSTATION_VERSION",
-        "WMO_IDENTIFIER",
-        "PLATFORM_NAME",
-        "TELECOM_TYPE",
-        "TRACKING_SYSTEM",
-        "BATTERY_TYPE",
-        "BATTERY_PACK",
-    ]
     lines = [
         "platform:               # 'init --from' fills these; fill any null before validate"
     ]
-    for key in order:
-        if key in vocab_parents:
-            req, dest, value = "optional", f"attribute on {vocab_parents[key]}", "null"
-        else:
-            spec = vocabularies.PLATFORM_FIELDS[key]
-            req = "required" if spec.required else "optional"
-            dest, value = "variable", _scalar(plat[key])
-        comment = f"{req} -> {dest}; {hints[key]}"
+    for row in platform_rows():
+        key = row["key"]
+        value = "null" if key in _PLATFORM_VOCABULARY_PARENTS else _scalar(plat[key])
+        comment = f"{row['requirement']} -> {row['destination']}; {row['hint']}"
         lines.append(f"  {key}: {value}   # {comment}")
     return lines
 
@@ -704,22 +820,19 @@ def _validate_highly_desirable(data: dict[str, object]) -> list[ValidationIssue]
         One WARNING per unset config-supplied highly-desirable global.
 
     """
-    from seagliderOG1 import vocabularies
-
     deployment = data.get("deployment")
     deployment = deployment if isinstance(deployment, dict) else {}
     extra = data.get("global_attributes")
     extra = extra if isinstance(extra, dict) else {}
     issues: list[ValidationIssue] = []
-    for name, source in vocabularies.REQUIRED_GLOBALS["highly_desirable"].items():
-        if source != "config":
+    blocks = {"deployment": deployment, "global_attributes": extra}
+    for row in global_rows():
+        block = row["set_in"]
+        # contributor/institution globals come from their records, validated there.
+        if row["tier"] != "highly desirable" or block not in blocks:
             continue
-        if name in vocabularies.DEPLOYMENT_GLOBALS:
-            block, present = "deployment", not _is_placeholder(deployment.get(name))
-        elif name == "internal_mission_identifier":
-            block, present = "global_attributes", not _is_placeholder(extra.get(name))
-        else:
-            continue  # from contributor/institution records, validated there
+        name = row["name"]
+        present = not _is_placeholder(blocks[block].get(name))
         if not present:
             issues.append(
                 ValidationIssue(

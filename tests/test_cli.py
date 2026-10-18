@@ -590,7 +590,9 @@ def test_list_institutions(capsys: pytest.CaptureFixture[str]) -> None:
 def test_list_missions(capsys: pytest.CaptureFixture[str]) -> None:
     """List missions discovers the missions under a directory."""
     assert cli.main(["list", "missions", str(DATA_DIR)]) == 0
-    assert "5 dives" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert out.splitlines()[0].split() == ["Mission", "Dives", "First", "Last", "Path"]
+    assert "1 mission under" in out
 
 
 def test_list_missions_requires_path() -> None:
@@ -603,6 +605,110 @@ def test_list_rejects_unknown_registry() -> None:
     with pytest.raises(SystemExit) as exc:
         cli.main(["list", "nonsense"])
     assert exc.value.code == 2
+
+
+def test_list_without_registry_names_them(capsys: pytest.CaptureFixture[str]) -> None:
+    """Bare ``list`` names every registry and exits 0."""
+    assert cli.main(["list"]) == 0
+    out = capsys.readouterr().out
+    for name in (
+        "roles",
+        "institutions",
+        "missions",
+        "globals",
+        "platform",
+        "variables",
+    ):
+        assert f"  {name} " in out
+
+
+def test_list_globals_matches_required_globals(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """``list globals`` has a row for every tiered global and every deployment key."""
+    from seagliderOG1 import vocabularies
+
+    assert cli.main(["list", "globals"]) == 0
+    rows = {
+        line.split()[0]: line.split()
+        for line in capsys.readouterr().out.splitlines()[2:]
+        if line.strip()
+    }
+    for names in vocabularies.REQUIRED_GLOBALS.values():
+        for name in names:
+            assert name in rows
+    for name in vocabularies.DEPLOYMENT_GLOBALS:
+        assert rows[name][-1] == "deployment"
+
+
+def test_global_rows_set_in() -> None:
+    """Each user-set global names the mission.yaml block it is set in."""
+    rows = {row["name"]: row for row in _mission.global_rows()}
+    assert rows["site"]["set_in"] == "deployment"
+    assert rows["id"]["set_in"] == "deployment"  # derived, overridable
+    assert rows["internal_mission_identifier"]["set_in"] == "global_attributes"
+    assert rows["contributor_id"]["set_in"] == "contributors"
+    assert rows["contributing_institutions_vocabulary"]["set_in"] == "institutions"
+    assert rows["title"]["set_in"] == ""  # package constant
+    assert rows["license"]["tier"] == "optional"  # ACDD, no OG1 tier
+
+
+def test_list_platform_matches_platform_fields(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """``list platform`` lists every platform field plus the two vocabulary attributes."""
+    from seagliderOG1 import vocabularies
+
+    assert cli.main(["list", "platform"]) == 0
+    out = capsys.readouterr().out
+    for key in vocabularies.PLATFORM_FIELDS:
+        assert f"{key} " in out
+    assert "attribute on PLATFORM_MAKER" in out
+    assert "seaglider_software_version" in out  # the From file column
+
+
+def test_list_variables_shows_sources(capsys: pytest.CaptureFixture[str]) -> None:
+    """``list variables`` lists each attribute entry with the basestation names mapping to it."""
+    from seagliderOG1 import vocabularies
+
+    assert cli.main(["list", "variables"]) == 0
+    out = capsys.readouterr().out
+    temp = next(line for line in out.splitlines() if line.startswith("TEMP "))
+    assert "degree_Celsius" in temp and "temperature" in temp
+    assert f"{len(vocabularies.vocab_attrs)} variables" in out
+    assert "sbe41" not in out  # a sensor key, not a variable source
+
+
+def test_list_one_variable_and_unknown(capsys: pytest.CaptureFixture[str]) -> None:
+    """``list variables NAME`` prints the entry; an unknown name exits 1 with suggestions."""
+    assert cli.main(["list", "variables", "TEMP"]) == 0
+    out = capsys.readouterr().out
+    assert "sea_water_temperature" in out and "Basestation names: temperature" in out
+    assert cli.main(["list", "variables", "TMEP"]) == 1
+    assert "TEMP" in capsys.readouterr().err
+
+
+def test_list_sensors(capsys: pytest.CaptureFixture[str]) -> None:
+    """``list sensors`` lists the L22 catalogue with each entry's L22 code."""
+    from seagliderOG1 import vocabularies
+
+    assert cli.main(["list", "sensors"]) == 0
+    out = capsys.readouterr().out
+    assert "TOOL1254" in out
+    assert f"{len(vocabularies.sensor_vocabs)} sensors" in out
+
+
+def test_list_search_filters_rows(capsys: pytest.CaptureFixture[str]) -> None:
+    """``--search`` keeps only rows containing the text in any column."""
+    assert cli.main(["list", "institutions", "--search", "washington"]) == 0
+    body = [line for line in capsys.readouterr().out.splitlines()[2:] if line.strip()]
+    rows = body[:-1]  # last line is the summary
+    assert rows and all("washington" in line.lower() for line in rows)
+
+
+def test_list_rejects_argument_where_none_is_taken() -> None:
+    """A PATH|NAME given to a registry that takes none is a usage error (exit 2)."""
+    assert cli.main(["list", "roles", "extra"]) == 2
 
 
 # --- validate --------------------------------------------------------------
