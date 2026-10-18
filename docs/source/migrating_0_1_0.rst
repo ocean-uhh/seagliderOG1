@@ -22,6 +22,14 @@ Renamed functions, modules and arguments
    * - ``from seagliderOG1 import convertOG1`` → ``convertOG1.convert_to_OG1(...)``
      - ``from seagliderOG1 import convert`` → ``convert.to_og1(...)`` — module ``convertOG1.py``
        renamed to ``convert.py``; ``convert_to_OG1`` to ``to_og1``
+   * - ``convertOG1.process_and_save_data(directory)`` (convert a mission directory and write
+       its OG1 file)
+     - ``convert.process_mission(source, output_dir, *, contributors=, institutions=,
+       platform=, deployment=, mode=, keep_variables=, overwrite=, report=) -> Path`` for one
+       mission, or ``seagliderOG1 process mission.yaml`` from the command line — the output path
+       and all metadata now come from the mission config, not package defaults; there is no
+       single-call "convert and save a whole root" (the caller selects missions, then calls
+       ``process_mission`` per mission, which is what the ``process`` CLI does)
    * - ``writers.save_dataset(ds, output_file="../test.nc") -> bool``
      - ``writers.write(ds, path, *, overwrite=False) -> pathlib.Path`` — ``path: str | Path``,
        no default; returns the path written; raises instead of returning ``False``
