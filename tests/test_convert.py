@@ -786,3 +786,28 @@ def test_process_mission_report_writes_the_page(tmp_path: pathlib.Path) -> None:
         convert.process_mission(_SG005, tmp_path, dives=(1, 1), report=True)
     assert exc.value.filename == str(page)
     assert not path.exists()
+
+
+def test_bundled_example_writes_platform_vocabularies(tmp_path: pathlib.Path) -> None:
+    """The sg005 example config's platform vocabulary terms reach the written file."""
+    import yaml
+
+    config = yaml.safe_load((_SG005 / "mission.yaml").read_text())
+    path = convert.process_mission(
+        _SG005,
+        tmp_path,
+        dives=(1, 1),
+        contributors=config["contributors"],
+        institutions=config["institutions"],
+        platform=config["platform"],
+    )
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        assert (
+            ds["PLATFORM_MODEL"].attrs["platform_model_vocabulary"]
+            == (config["platform"]["platform_model_vocabulary"])
+        )
+        assert (
+            ds["PLATFORM_MAKER"]
+            .attrs["platform_maker_vocabulary"]
+            .endswith("/B75/current/ORG00142/")
+        )
