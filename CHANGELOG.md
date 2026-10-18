@@ -54,6 +54,12 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - Template lines name each key's destination (variable / attribute / global); `validate` gives a
   case hint on a mis-cased key.
 - `writers.write` applies lossless zlib compression to numeric variables.
+- `convert.process_mission(source, output_dir, ...)`: one mission read → convert → write, the
+  library form of `process`; the CLI calls it per mission.
+- `process --report` (and `report:` in `mission.yaml`) writes the HTML conversion page
+  `<id>_conversion.html` beside each file.
+- `data/demo_sg005/mission.yaml`: a filled-in example configuration for the bundled sample (writes
+  to the gitignored `outputs/`); the demo notebook runs it through `convert.process_mission`.
 
 ### Changed
 

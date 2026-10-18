@@ -1,0 +1,66 @@
+# seagliderOG1 mission configuration.
+# UPPER keys become OG1 variables, lower keys become attributes or globals;
+# the comment on each line says which. You fill the values.
+# The worked example for the bundled sg005 sample (two dives, June 2008).
+# Paths are resolved relative to this file. From the repository root:
+#   seagliderOG1 validate data/demo_sg005/mission.yaml
+#   seagliderOG1 process  data/demo_sg005/mission.yaml   # -> outputs/<id>.nc
+
+config_version: 2
+
+source: ./              # mission dir (p*.nc inside) or a root of SN/DATE dirs
+output_dir: ../../outputs/   # where OG1 files are written (gitignored)
+mode: delayed           # realtime | delayed
+dives: null             # [first, last] dive numbers; null = all files present
+repair: false           # run repair_files on the basestation files (writes the source tree)
+keep_variables: null    # optional list of science variables to keep; null = all
+report: false           # also write <id>_conversion.html beside each file
+
+platform:               # 'init --from' fills these; fill any null before validate
+  PLATFORM_SERIAL_NUMBER: sg005   # required -> variable; from platform_id; a serial or a local nickname
+  PLATFORM_MODEL: University of Washington Seaglider M1 glider   # required -> variable; e.g. University of Washington Seaglider M1 glider
+  platform_model_vocabulary: null   # optional -> attribute on PLATFORM_MODEL; e.g. https://vocab.nerc.ac.uk/collection/B76/current/B7600024/
+  PLATFORM_DEPTH_RATING: 1000   # required -> variable; e.g. 1000 (metres)
+  PLATFORM_MAKER: University of Washington   # required -> variable; e.g. University of Washington School of Oceanography
+  platform_maker_vocabulary: null   # optional -> attribute on PLATFORM_MAKER; e.g. http://vocab.nerc.ac.uk/collection/B75/current/
+  GLIDER_FIRMWARE_VERSION: seaglider 66.03   # optional -> variable; from seaglider_software_version
+  LANDSTATION_VERSION: basestation v2.8   # optional -> variable; from base_station_version
+  WMO_IDENTIFIER: null   # optional -> variable; from wmo_identifier
+  PLATFORM_NAME: null   # optional -> variable; local or nickname of the glider
+  TELECOM_TYPE: null   # optional -> variable; e.g. Iridium (comma-separated for several)
+  TRACKING_SYSTEM: null   # optional -> variable; e.g. ARGOS, GPS
+  BATTERY_TYPE: null   # optional -> variable; see the OG1 battery_type vocabulary
+  BATTERY_PACK: null   # optional -> variable; battery packaging
+
+deployment:             # OG1 deployment identity; one key per global, null = not written
+  id: null   # mandatory -> global attribute; overrides the derived <serial>_<start>_<mode>; 'init --from' proposes it
+  site: null   # highly desirable -> global attribute
+  site_vocabulary: null   # highly desirable -> global attribute
+  program: null   # highly desirable -> global attribute
+  program_vocabulary: null   # highly desirable -> global attribute
+  data_url: null   # highly desirable -> global attribute; where the OG1 file is hosted
+  doi: null   # highly desirable -> global attribute; e.g. https://doi.org/...
+  project: null   # suggested -> global attribute
+  network: null   # suggested -> global attribute
+  comment: null   # suggested -> global attribute; overrides the comment derived from the file's history
+  license: null   # optional -> global attribute; e.g. CC-BY-4.0
+  acknowledgment: null   # optional -> global attribute
+
+global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above
+
+contributors:           # one entry per person per role
+  # role is a W08 term: Manufacturer, Owner, Operator, PI, Technical Coordinator,
+  # Data scientist, Service Provider. List a person once per role. At least one PI.
+  - name: Charlie Eriksen
+    email: eriksen@uw.edu
+    orcid: null
+    role: PI
+  - name: Peter Rhines
+    email: null
+    orcid: null
+    role: PI
+
+institutions:           # at least one with role Operator; resolved via the EDMO registry
+  - name: University of Washington
+    role: Operator
+    id: null             # null resolves by name against the registry

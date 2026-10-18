@@ -3,6 +3,7 @@ import sys
 
 import netCDF4
 import numpy as np
+import pytest
 import xarray as xr
 
 script_dir = pathlib.Path(__file__).parent.absolute()
@@ -707,3 +708,81 @@ def test_start_date_is_earliest_time_regardless_of_input_order():
     assert reverse.attrs["start_date"] == forward.attrs["start_date"]
     assert reverse.attrs["id"] == forward.attrs["id"]
     assert str(reverse["TRAJECTORY"].values) == str(forward["TRAJECTORY"].values)
+
+
+# --- process_mission ---------------------------------------------------------
+
+_SG005 = parent_dir / "data/demo_sg005"
+_SG005_CONTRIBUTORS = [
+    {"name": "Charlie Eriksen", "role": "PI", "email": "eriksen@uw.edu"},
+    {"name": "Peter Rhines", "role": "PI"},
+]
+_SG005_INSTITUTIONS = [{"name": "University of Washington", "role": "Operator"}]
+
+
+def test_process_mission_writes_then_refuses_then_overwrites(
+    tmp_path: pathlib.Path,
+) -> None:
+    """process_mission writes <id>.nc, refuses an existing file, replaces it on overwrite."""
+    out = tmp_path / "new" / "dir"  # created on demand
+    kwargs = {
+        "dives": (1, 1),
+        "contributors": _SG005_CONTRIBUTORS,
+        "institutions": _SG005_INSTITUTIONS,
+        "platform": {"PLATFORM_MAKER": "University of Washington"},
+    }
+    path = convert.process_mission(_SG005, out, **kwargs)
+    assert path.parent == out
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        assert path.name == f"{ds.attrs['id']}.nc"
+        assert "Charlie Eriksen" in ds.attrs["contributor_name"]
+        assert str(ds["PLATFORM_MAKER"].values) == "University of Washington"
+
+    with pytest.raises(FileExistsError) as exc:
+        convert.process_mission(_SG005, out, **kwargs)
+    assert exc.value.filename == str(path)
+
+    assert convert.process_mission(_SG005, out, overwrite=True, **kwargs) == path
+
+
+def test_process_mission_dives_and_keep_variables(tmp_path: pathlib.Path) -> None:
+    """dives limits the dives read; keep_variables subsets and records what it dropped."""
+    with pytest.warns(UserWarning, match="keep_variables dropped"):
+        path = convert.process_mission(
+            _SG005, tmp_path, dives=(2, 2), keep_variables=["TEMP", "DIVE_NUMBER"]
+        )
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        assert set(np.unique(ds["DIVE_NUMBER"].values)) == {2}
+        assert "TEMP" in ds.data_vars
+        assert "PSAL" not in ds.data_vars
+        assert "PSAL" in ds.attrs["conversion_dropped_variables"]
+
+
+def test_process_mission_refuses_a_root_and_an_empty_dir(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A root of SN/DATE missions or a directory without basestation files is a ValueError."""
+    mission = tmp_path / "root" / "005" / "20080606"
+    mission.mkdir(parents=True)
+    for nc in _SG005.glob("p*.nc"):
+        (mission / nc.name).write_bytes(nc.read_bytes())
+    with pytest.raises(ValueError, match="root of SN/DATE missions"):
+        convert.process_mission(tmp_path / "root", tmp_path / "out")
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    with pytest.raises(ValueError, match="no basestation files"):
+        convert.process_mission(empty, tmp_path / "out")
+
+
+def test_process_mission_report_writes_the_page(tmp_path: pathlib.Path) -> None:
+    """report=True writes <id>_conversion.html beside the file; an existing page is refused."""
+    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1), report=True)
+    page = tmp_path / f"{path.stem}_conversion.html"
+    assert page.is_file()
+    assert path.stem in page.read_text(encoding="utf-8")
+
+    path.unlink()  # only the page is left: still refused, and nothing is written
+    with pytest.raises(FileExistsError) as exc:
+        convert.process_mission(_SG005, tmp_path, dives=(1, 1), report=True)
+    assert exc.value.filename == str(page)
+    assert not path.exists()

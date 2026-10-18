@@ -2,7 +2,9 @@
 
 Resolves the source (a mission directory, or a root of ``SN/DATE`` missions selected
 with ``--all``/``--mission``), converts each with the mission config's contributors,
-institutions, platform and global attributes, and writes ``<output_dir>/<id>.nc``.
+institutions, platform and global attributes, and writes ``<output_dir>/<id>.nc``
+(plus ``<id>_conversion.html`` with ``--report``) via
+:func:`seagliderOG1.convert.process_mission`.
 Each mission is attempted independently; one failure does not stop the run.
 """
 
@@ -74,6 +76,11 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
         help="skip a mission whose output file already exists",
     )
     parser.add_argument(
+        "--report",
+        action="store_true",
+        help="also write the HTML conversion page <id>_conversion.html beside each file",
+    )
+    parser.add_argument(
         "-n",
         "--dry-run",
         action="store_true",
@@ -141,7 +148,7 @@ def run(args: argparse.Namespace) -> int:
         (see the CLI family convention).
 
     """
-    from seagliderOG1 import convert, readers, writers
+    from seagliderOG1 import convert, readers
 
     config_path = pathlib.Path(args.config)
     if not config_path.is_file():
@@ -170,6 +177,7 @@ def run(args: argparse.Namespace) -> int:
     first, last = (dives[0], dives[1]) if dives else (None, None)
     repair = bool(args.repair or config.get("repair", False))
     keep_variables = config.get("keep_variables")
+    report = bool(args.report or config.get("report", False))
 
     try:
         missions = readers.discover_missions(str(source_path))
@@ -200,7 +208,8 @@ def run(args: argparse.Namespace) -> int:
                 if last is not None
                 else (max(mission.dives) if mission.dives else "?")
             )
-            print(f"{mission.path} dives [{lo}, {hi}] -> {output_dir}/<id>.nc")
+            page = f" + {output_dir}/<id>_conversion.html" if report else ""
+            print(f"{mission.path} dives [{lo}, {hi}] -> {output_dir}/<id>.nc{page}")
         print(f"{len(selected)} would convert, 0 skipped, 0 failed")
         return 0
 
@@ -208,43 +217,41 @@ def run(args: argparse.Namespace) -> int:
     converted = skipped = failed = 0
     for mission in selected:
         try:
-            datasets = readers.read_mission(mission.path, first, last, repair=repair)
-            ds = convert.to_og1(
-                datasets,
+            out_path = convert.process_mission(
+                mission.path,
+                output_dir,
+                dives=dives,
                 contributors=config.get("contributors"),
                 institutions=config.get("institutions"),
                 platform=config.get("platform"),
                 deployment=config.get("deployment"),
                 global_attributes=config.get("global_attributes"),
                 mode=mode,
+                keep_variables=keep_variables,
+                repair=repair,
+                overwrite=args.force,
+                report=report,
             )
-            if keep_variables:
-                ds = convert.keep_variables(ds, keep_variables)
-            out_path = output_dir / f"{ds.attrs['id']}.nc"
-            if out_path.exists():
-                if args.skip_existing:
-                    print(f"skip (exists): {out_path}")
-                    skipped += 1
-                    continue
-                if not args.force:
-                    print(
-                        f"error: {out_path} exists; use --force or --skip-existing",
-                        file=sys.stderr,
-                    )
-                    failed += 1
-                    continue
-            output_dir.mkdir(parents=True, exist_ok=True)
-            # write returns the written Path and raises on failure; the
-            # per-mission except below reports it and continues to the next.
-            writers.write(ds, str(out_path), overwrite=args.force)
-            print(f"wrote {out_path}")
-            converted += 1
+        except FileExistsError as exc:
+            if args.skip_existing:
+                print(f"skip (exists): {exc.filename}")
+                skipped += 1
+                continue
+            print(
+                f"error: {exc.filename} exists; use --force or --skip-existing",
+                file=sys.stderr,
+            )
+            failed += 1
+            continue
         # One mission's failure is reported and the run continues to the next.
         except Exception as exc:  # noqa: BLE001
             print(
                 f"FAILED {mission.path}: {type(exc).__name__}: {exc}", file=sys.stderr
             )
             failed += 1
+            continue
+        print(f"wrote {out_path}")
+        converted += 1
 
     print(f"{converted} converted, {skipped} skipped, {failed} failed")
     return 1 if failed else 0
