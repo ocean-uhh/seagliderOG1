@@ -282,7 +282,9 @@ def test_og1_required_rows_all_present_on_demo() -> None:
     assert "14 of 14 variables present" in caption
     names = {r["name"] for r in rows}
     assert {"LATITUDE", "LONGITUDE", "DEPTH", "TIME_GPS"} <= names
-    assert any(str(r["name"]).startswith("N_MEASUREMENTS") for r in rows)
+    # The required-dimension row carries the same orig_var/orig_dim fields the table reads.
+    dim_row = next(r for r in rows if str(r["name"]).startswith("N_MEASUREMENTS"))
+    assert dim_row["orig_var"] == "—" and dim_row["orig_dim"] == "—"
     lat = next(r for r in rows if r["name"] == "LATITUDE")
     assert lat["present"] is True
     assert lat["valid"] == "91.0"  # pulled from the passed valid-by-name map
@@ -326,6 +328,14 @@ def test_og1_candidate_groups_from_the_curated_list() -> None:
     assert vspeed["valid"] == "61.0"
 
 
+def test_unit_factor_direct_normalised_and_unrelated() -> None:
+    """Same unit is 1.0; a spelling variant resolves via the alias table; unrelated is None."""
+    assert conversion._unit_factor("m", "m") == 1.0
+    assert conversion._unit_factor("cm", "m") == 0.01  # direct table key
+    assert conversion._unit_factor("meters", "cm") == 100.0  # normalised fallback (m_to_cm)
+    assert conversion._unit_factor("degrees_north", "cm") is None  # no conversion invented
+
+
 def test_summary_rows_and_verdict_before_and_after(tmp_path) -> None:
     """The before → after rows read the sidecar; the verdict is all-green on demo."""
     import xarray as xr
@@ -351,6 +361,11 @@ def test_summary_rows_and_verdict_before_and_after(tmp_path) -> None:
         rows_mixed = conversion._summary_rows(
             ds, ledger, mixed, dim_samples, path, requirement_text
         )
+        # A legacy (schema-1) sidecar lacks n_globals: the row falls back to "—", not KeyError.
+        legacy = [{k: v for k, v in r.items() if k != "n_globals"} for r in inputs]
+        rows_legacy = conversion._summary_rows(
+            ds, ledger, legacy, dim_samples, path, requirement_text
+        )
     by_q = {r["quantity"]: r for r in rows}
     assert by_q["Files"]["input"] == "2" and by_q["Files"]["output"] == "1"
     assert by_q["Variables"]["input"] == f"{ledger['input_variable_count']:,}"
@@ -361,6 +376,8 @@ def test_summary_rows_and_verdict_before_and_after(tmp_path) -> None:
     assert by_q_no["Global attributes"]["input"] == "—"
     mixed_globals = {r["quantity"]: r for r in rows_mixed}["Global attributes"]["input"]
     assert mixed_globals == "50–59"
+    legacy_globals = {r["quantity"]: r for r in rows_legacy}["Global attributes"]["input"]
+    assert legacy_globals == "—"
     # Demo converts cleanly: every clause is green and all inputs are accounted for.
     assert not any(c["bad"] for c in verdict)
     assert verdict[0]["text"].endswith("inputs accounted for")

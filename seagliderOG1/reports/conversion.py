@@ -243,7 +243,8 @@ def _og1_required_rows(
             {
                 "name": f"{dim} (dimension)",
                 "present": present,
-                "came_from": "—",
+                "orig_var": "—",
+                "orig_dim": "—",
                 "dims": f"{ds.sizes[dim]:,}" if present else "—",
                 "units": "—",
                 "valid": "—",
@@ -434,7 +435,11 @@ def _unit_factor(u_from: str, u_to: str) -> float | None:
     """
     if _norm_unit(u_from) == _norm_unit(u_to):
         return 1.0
-    entry = vocabularies.unit1_to_unit2.get(f"{u_from}_to_{u_to}")
+    # The table keys a direct conversion by exact spelling; fall back to the normalised
+    # spellings so a "meters"/"m" variant still finds an "m_to_cm"-style entry.
+    entry = vocabularies.unit1_to_unit2.get(
+        f"{u_from}_to_{u_to}"
+    ) or vocabularies.unit1_to_unit2.get(f"{_norm_unit(u_from)}_to_{_norm_unit(u_to)}")
     return float(entry["factor"]) if entry else None
 
 
@@ -1471,7 +1476,12 @@ def _summary_rows(
     )
     axis_in = dim_samples.get(backbone) if backbone else None
     axis_out = int(ds.sizes["N_MEASUREMENTS"]) if "N_MEASUREMENTS" in ds.sizes else None
-    counts = sorted({record["n_globals"] for record in inputs}) if inputs else []
+    # n_globals is additive: a schema-1 sidecar from before it still renders ("—").
+    counts = (
+        sorted({r["n_globals"] for r in inputs if r.get("n_globals") is not None})
+        if inputs
+        else []
+    )
     if not counts:
         globals_in = "—"
     elif len(counts) == 1:

@@ -71,6 +71,11 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   `convert.presence_by_dive`, `presence_patterns`, `presence_summary`, `conversion_sidecar`.
 - `data/demo_sg005/mission.yaml`: a filled-in example configuration for the bundled sample (writes
   to the gitignored `outputs/`); the demo notebook runs it through `convert.process_mission`.
+- Conversion page "The OG1 file" section: the output read by what OG1 requires and names rather
+  than by basestation origin — Required by OG1 (present/absent + where each came from), Named by
+  OG1, a Candidate-for-OG1 tier the project curates, Carried-through families, and a "same
+  quantity, more than once" comparison. `vocabularies.OG1_REQUIRED_VARS` (the upstream checker's
+  list) and `vocabularies.OG1_CANDIDATE_VARS` (the project's uplift list) back it.
 
 ### Changed
 
@@ -101,6 +106,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - `init --from` and the converter read dotted version strings (`base_station_version: "3.0.6"`)
   from newer basestation files instead of failing; `init --from` also accepts one
   `pSSSDDDD*.nc` file.
+- `inspect --conversion -o DIR` accepts a directory and writes `<id>_conversion.html` into it
+  (was a file path only, failing with `IsADirectoryError`).
 - `config/OG1_variable_attributes.yaml` no longer carries `platform_model_vocabulary` /
   `platform_maker_vocabulary` defaults (never written to files; the maker term named Teledyne Webb
   Research, the Slocum maker). Set both per glider in `mission.yaml`; the sg005 example now does.

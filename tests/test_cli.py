@@ -325,6 +325,23 @@ def test_inspect_conversion_writes_html_page(
     assert "Requirement" in html
 
 
+def test_inspect_conversion_output_directory_writes_canonical_name(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """inspect --conversion -o DIR writes <id>_conversion.html into DIR, as process does."""
+    from seagliderOG1 import convert, readers, writers
+
+    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    out_dir = tmp_path / "pages"
+    out_dir.mkdir()
+    assert cli.main(["inspect", str(nc), "--conversion", "-o", str(out_dir)]) == 0
+    expected = out_dir / writers.conversion_path(nc, ".html").name
+    assert expected.is_file()
+    assert f"wrote {expected}" in capsys.readouterr().out
+
+
 def test_inspect_output_without_conversion_errors(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

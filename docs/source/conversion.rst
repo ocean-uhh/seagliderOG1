@@ -138,6 +138,19 @@ Its sections, in order:
    global-attribute counts, time span and OG1-requirement coverage, basestation input beside
    OG1 output, with a one-line verdict. The input column reads the sidecar; its cells show
    ``—`` when the sidecar is absent.
+#. **The OG1 file** — the output read by what OG1 says about each variable, not by where it
+   came from, with an *Orig var* / *Orig dim* column pair naming the basestation source:
+
+   * *Required by OG1* — the variables (and the ``N_MEASUREMENTS`` dimension) a valid OG1 file
+     must carry, present/absent, from :data:`seagliderOG1.vocabularies.OG1_REQUIRED_VARS` (the
+     upstream ``ioos/cc-plugin-og`` checker list).
+   * *Named by OG1* — variables OG1 defines but does not require (science, phase, sensor, QC).
+   * *Candidate for OG1* — variables the project proposes to canonise, from
+     :data:`seagliderOG1.vocabularies.OG1_CANDIDATE_VARS` (e.g. the flight-model inputs and
+     outputs), shown present/absent; edit that list as candidates are agreed.
+   * *Carried through* — everything else, summarised by basestation family.
+   * *Same quantity, more than once* — where several variables share a ``standard_name``, each
+     compared (member − reference) to the OG1 reference member, in its units.
 #. **Reconciliation** — each basestation variable's one fate (renamed, passed through,
    consumed, removed, dropped, skipped) with a count, a Meaning column, and a fate histogram.
 #. **Presence across dives** — the patterns above, with each pattern's share of the input dives.
@@ -146,8 +159,8 @@ Its sections, in order:
 #. **Derived variables** — variables the converter built, with their basestation sources.
 #. **Dropped and removed variables** — variables left out by ``keep_variables`` or the package
    drop list (empty, so every basestation variable is retained).
-#. **Variables** — the output variables grouped by original dimension, with a Valid % column
-   and a per-group baseline (the share of the axis that dimension supplied).
+#. **By basestation origin** — the same output variables grouped by original dimension, with a
+   Valid % column and a per-group baseline (the share of the axis that dimension supplied).
 #. **Global attributes** — grouped by convention and OG1 tier, with recomputed coverage bounds
    and the history.
 #. **Scalar parameters** — the per-dive and constant scalars, split by group, each collapsible.
