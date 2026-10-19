@@ -102,6 +102,15 @@ def test_init_from_one_file_fills_platform_and_its_directory(
     assert data["platform"]["PLATFORM_SERIAL_NUMBER"] == "sg005"
 
 
+def test_init_template_does_not_promise_an_id(tmp_path: pathlib.Path) -> None:
+    """The id line says null means the derived id; init never fills it."""
+    out = tmp_path / "mission.yaml"
+    assert cli.main(["init", "--from", str(DATA_DIR), "-o", str(out)]) == 0
+    text = out.read_text(encoding="utf-8")
+    assert "proposes" not in text
+    assert yaml.safe_load(text)["deployment"]["id"] is None
+
+
 def test_init_from_fills_source_and_serial(tmp_path: pathlib.Path) -> None:
     """Init --from fills source and the serial; model/maker/depth are left null to fill."""
     out = tmp_path / "mission.yaml"
@@ -896,3 +905,14 @@ def test_bundled_example_config_validates_and_plans(
     out = capsys.readouterr().out
     assert "1 would convert" in out
     assert "outputs" in out
+
+
+def test_inspect_conversion_output_dir_is_created(tmp_path: pathlib.Path) -> None:
+    """-o new/ (trailing slash, not yet existing) writes <id>_conversion.html inside it."""
+    from seagliderOG1 import convert, readers, writers
+
+    nc = tmp_path / "og1.nc"
+    writers.write(convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 1)), str(nc))
+    out_dir = tmp_path / "reports"
+    assert cli.main(["inspect", str(nc), "--conversion", "-o", f"{out_dir}/"]) == 0
+    assert (out_dir / "og1_conversion.html").is_file()

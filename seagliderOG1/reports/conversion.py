@@ -195,7 +195,7 @@ def _og1_required_rows(
     Returns
     -------
     rows : list of dict
-        ``{"name", "present", "came_from", "dims", "units", "valid"}`` rows.
+        ``{"name", "present", "orig_var", "orig_dim", "dims", "units", "valid"}`` rows.
     caption : str
         The OG1-required count line, naming any missing variables.
     incomplete : bool
@@ -306,7 +306,7 @@ def _og1_tiers(
     Returns
     -------
     named : list of dict
-        ``{"name", "came_from", "dims", "units", "valid"}`` rows, name-sorted.
+        ``{"name", "orig_var", "orig_dim", "dims", "units", "valid"}`` rows, name-sorted.
     carried : list of dict
         ``{"family", "what", "count", "names"}`` family rows, largest first.
 
@@ -373,7 +373,7 @@ def _og1_candidate_groups(
     -------
     list of dict
         ``{"label", "rows", "n_present", "n_total"}`` per group, label-sorted; each row is
-        ``{"name", "present", "came_from", "dims", "units", "valid"}``.
+        ``{"name", "present", "orig_var", "orig_dim", "dims", "units", "valid"}``.
 
     """
     derived = set(ledger["derived"])
@@ -619,12 +619,12 @@ def _reconciliation(
         (
             "Consumed → derived",
             consumed,
-            "Not in the file itself; its data went into a variable the converter built (§5).",
+            "Not in the file itself; its data went into a variable the converter built (see Derived variables).",
         ),
         (
             "Removed (package drop list)",
             removed,
-            "Not in the file; was on the package drop list, now empty (§6).",
+            "Not in the file; was on the package drop list, now empty (see Dropped and removed variables).",
         ),
         (
             "Dropped (keep_variables)",
@@ -634,7 +634,7 @@ def _reconciliation(
         (
             "Skipped (dimension)",
             skipped,
-            "Not in the file; its dimension is not placed on N_MEASUREMENTS (§4).",
+            "Not in the file; its dimension is not placed on N_MEASUREMENTS (see Dimensions).",
         ),
     ]
     seen: set[str] = set()
@@ -1550,7 +1550,10 @@ def _summary_rows(
 
 
 def _verdict_clauses(
-    reconciliation: list[tuple[str, str, str]], ledger: dict, requirement_amber: bool
+    reconciliation: list[tuple[str, str, str]],
+    ledger: dict,
+    requirement_amber: bool,
+    og1_required_incomplete: bool = False,
 ) -> list[dict[str, object]]:
     """Return the Before → after verdict clauses, each amber when false.
 
@@ -1562,6 +1565,8 @@ def _verdict_clauses(
         The parsed ledger.
     requirement_amber : bool
         Whether a mandatory OG1 global is missing.
+    og1_required_incomplete : bool, default False
+        Whether a variable OG1 requires is missing (the "Required by OG1" tier).
 
     Returns
     -------
@@ -1573,6 +1578,15 @@ def _verdict_clauses(
     accounted = sum(int(row[1]) for row in reconciliation[:-1])
     n_dropped = len(ledger["dropped"])
     n_removed = len(ledger["removed"])
+    # Mandatory means both the required globals and the required variables.
+    missing = [
+        part
+        for part, short in (
+            ("globals", requirement_amber),
+            ("variables", og1_required_incomplete),
+        )
+        if short
+    ]
     return [
         {
             "text": f"{accounted} of {inputs} inputs accounted for",
@@ -1590,9 +1604,9 @@ def _verdict_clauses(
         },
         {
             "text": "OG1 mandatory complete"
-            if not requirement_amber
-            else "OG1 mandatory incomplete",
-            "bad": requirement_amber,
+            if not missing
+            else f"OG1 mandatory incomplete ({' and '.join(missing)})",
+            "bad": bool(missing),
         },
     ]
 
@@ -1702,7 +1716,9 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         summary_rows = _summary_rows(
             ds, ledger, inputs, dim_samples, path, requirement_text
         )
-        verdict_clauses = _verdict_clauses(reconciliation, ledger, requirement_amber)
+        verdict_clauses = _verdict_clauses(
+            reconciliation, ledger, requirement_amber, og1_required_incomplete
+        )
         history_rows = _history_rows(ledger)
         masthead_meta = _masthead_meta(ds, ledger)
     finally:

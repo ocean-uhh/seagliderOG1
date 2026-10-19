@@ -104,7 +104,8 @@ def _version(prefix: str) -> Callable[[object], str]:
     """Return a formatter that writes a version attribute after ``prefix``.
 
     Older basestation files store the versions as numbers (``66.03``, ``2.8``), newer
-    ones as dotted strings (``"3.0.6"``); a number is written compactly, a string as is.
+    ones as strings (``"3.0.6"``); a number is written compactly, a string as is — so
+    ``"2.10"`` stays ``2.10`` and is not read as the number 2.1.
 
     Parameters
     ----------
@@ -119,11 +120,11 @@ def _version(prefix: str) -> Callable[[object], str]:
     """
 
     def format_version(value: object) -> str:
-        text = str(value).strip()
-        try:
-            return f"{prefix}{float(text):g}"
-        except ValueError:
-            return f"{prefix}{text}"
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+        if isinstance(value, str):
+            return f"{prefix}{value.strip()}"
+        return f"{prefix}{float(value):g}"
 
     return format_version
 
@@ -213,6 +214,14 @@ def platform_from_file(attrs: dict) -> dict:
             derived[field] = spec.formatter(attrs[spec.source])
     return derived
 
+
+# Raw instrument count channels (WET Labs ECO pucks and similar): the basestation writes
+# them without units. They are counts, converted to physical units only with calibration
+# coefficients the file does not carry, so they keep their basestation names (not an OG1
+# backscatter or fluorescence name) and are labelled with RAW_COUNT_UNITS — the spelling
+# the package already writes on ROLL_CTL / PITCH_CTL.
+RAW_COUNT_SUFFIXES = ("redCount", "blueCount", "fluorCount", "redRef", "blueRef")
+RAW_COUNT_UNITS = "counts"
 
 # Preferred units for OG1 format - conversion will be attempted if mapping exists
 preferred_units = ["m s-1", "dbar", "S m-1"]
@@ -315,8 +324,9 @@ with (CONFIG_DIR / "OG1_sensor_attributes.yaml").open() as file:
 # Variables and the dimension an OG1 file must carry to pass the OceanGliders format check.
 # Transcribed from the upstream checker (``ioos/cc-plugin-og``,
 # ``cc_plugin_og/checker.py`` ``check_mandatory_variables`` / ``check_dimensions``); the
-# conversion page's "OG1 required" tier reads this, and a CI test asserts it still matches the
-# installed checker (skipped when cc-plugin-og is absent) so the two cannot diverge unnoticed.
+# conversion page's "OG1 required" tier reads this. Nothing yet checks it against the installed
+# checker: re-transcribe when cc-plugin-og changes (the CI cc-plugin-og step, roadmap A6, is
+# where that comparison belongs).
 OG1_REQUIRED_VARS: tuple[str, ...] = (
     "LATITUDE_GPS",
     "LONGITUDE_GPS",

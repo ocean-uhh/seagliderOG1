@@ -429,3 +429,17 @@ def test_presence_strips_follow_file_order_across_a_dive_gap() -> None:
     lower = fig.axes[1]
     assert lower.get_xlim() == (-0.5, 2.5)
     assert [t.get_text() for t in lower.get_xticklabels()] == ["1", "2", "100"]
+
+
+def test_verdict_counts_required_variables_and_meanings_name_sections():
+    """Mandatory covers variables too; Meaning texts name sections, not numbers."""
+    recon = [("Renamed", "1", "x"), ("Basestation inputs", "1", "")]
+    ledger = {"dropped": [], "removed": []}
+    clause = conversion._verdict_clauses(recon, ledger, False, True)[-1]
+    assert clause == {"text": "OG1 mandatory incomplete (variables)", "bad": True}
+    clause = conversion._verdict_clauses(recon, ledger, False, False)[-1]
+    assert clause == {"text": "OG1 mandatory complete", "bad": False}
+    ds = _dataset()
+    ledger = convert.conversion_ledger(ds)
+    rows, _caption = conversion._reconciliation(ds, ledger)
+    assert not any("§" in meaning for _label, _count, meaning in rows)

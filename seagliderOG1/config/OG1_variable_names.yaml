@@ -60,15 +60,12 @@ depth_avg_curr_north: DAVG_CURR_NORTH
 depth_avg_curr_qc: DAVG_CURR_EAST_QC
 adcp_Pressure: PRES_ADCP
 blueRef: BBP470_REF
-blueCount: BBP470
-redCount: BBP700
 redRef: BBP700_REF
 VFtemp: BBP_VFTEMP ### What is the correct variable name for this?
 tempFreq: TEMP_FREQ ### What is the correct variable name for this?
 O2Freq: O2_FREQ ### What is the correct variable name for this?
 condFreq: COND_FREQ ### What is the correct variable name for this?
 particulate_backscatter: BBP700
-bb700: BBP700
 backscatter_scaled: BBP700
 backscatter_raw: RBBP700
 chla470: CHLA

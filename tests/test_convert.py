@@ -4,6 +4,7 @@ import sys
 
 import netCDF4
 import numpy as np
+import pandas as pd
 import pytest
 import xarray as xr
 
@@ -977,3 +978,73 @@ def test_conversion_sidecar_ignores_another_conversion(tmp_path: pathlib.Path) -
     sidecar_file.write_text(json.dumps(payload))
     with pytest.warns(UserWarning, match="belongs to another conversion"):
         assert convert.conversion_sidecar(path) is None
+
+
+def test_raw_count_channels_keep_their_names_and_are_counts():
+    """WET Labs counts are not written as BBP700/BBP470; counts get units 'counts'."""
+    ds = convert.to_og1(readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2))
+    assert "BBP700" not in ds and "BBP470" not in ds
+    for name in ("eng_wlbb2f_redCount", "eng_wlbb2f_blueCount"):
+        assert ds[name].attrs["units"] == "counts", name
+        assert ds[name].attrs["original_name"] == name
+    assert ds["FLUOCHLA"].attrs["units"] == "counts"  # mapped, still a raw count
+    assert ds["BBP700_REF"].attrs["units"] == "counts"
+
+
+def test_tridente_bb700_keeps_its_name_and_units():
+    """A Tridente bb700 (a volume scattering function) is not mapped to BBP700.
+
+    Synthetic, for the name mapping only (no basestation-3 file is in the test data): the
+    chla470 channel beside it shows the instrument-prefix stripping still runs, so bb700 is
+    unmapped because the config no longer names it, not because the prefix went unseen.
+    """
+    dim = "tridentebb700chla470fdom365_data_point"
+    units = "meter^-1 steradian^-1"
+    ds = xr.Dataset(
+        {
+            "tridentebb700chla470fdom365_bb700": (
+                dim,
+                np.array([1e-3, 2e-3]),
+                {"units": units},
+            ),
+            "tridentebb700chla470fdom365_chla470": (dim, np.array([0.1, 0.2])),
+        },
+        attrs={"instrument": "tridentebb700chla470fdom365", "dive_number": 1},
+    )
+    mapping, _ = _pipeline.og1_name_mapping([ds])
+    og1 = dict(zip(mapping["original_name"], mapping["OG1_name"], strict=True))
+    assert (
+        og1["tridentebb700chla470fdom365_chla470"] == "CHLA"
+    )  # prefix stripping is live
+    assert pd.isna(og1["tridentebb700chla470fdom365_bb700"])  # passes through by name
+    # Its stated units are kept: the counts label applies only to unit-less raw counts.
+    assert not convert._is_raw_count(
+        "tridentebb700chla470fdom365_bb700", {"units": units}
+    )
+    # The three uncalibrated sources unmapped here stay unmapped (computed backscatter
+    # names such as particulate_backscatter may still map to BBP700).
+    for raw in ("bb700", "redCount", "blueCount"):
+        assert raw not in vocabularies.standard_names, raw
+
+
+def test_is_raw_count_needs_the_suffix_and_no_units():
+    """Pure logic: a stated unit is never overwritten."""
+    assert convert._is_raw_count("eng_wlbb2f_redCount", {})
+    assert not convert._is_raw_count("eng_wlbb2f_redCount", {"units": "m-1"})
+    assert not convert._is_raw_count("eng_rollCtl", {})
+
+
+def test_skipped_dimension_warning_names_only_absent_dimensions(caplog):
+    """The warning is read from the ledger: on sg005 only 'trajectory' is skipped."""
+    import logging
+
+    with caplog.at_level(logging.WARNING, logger="seagliderOG1.convert"):
+        convert.to_og1(readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1))
+    lines = [
+        r.getMessage()
+        for r in caplog.records
+        if "not in the OG1 dataset" in r.getMessage()
+    ]
+    assert lines == [
+        "Dimensions not in the OG1 dataset: ['trajectory']; their variables are not written (see conversion_dimensions)."
+    ]

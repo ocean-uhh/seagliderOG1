@@ -119,7 +119,7 @@ _TIER_LABELS = {
 
 # Notes on deployment keys whose value overrides something the converter derives.
 _DEPLOYMENT_HINTS = {
-    "id": "overrides the derived <serial>_<start>_<mode>; 'init --from' proposes it",
+    "id": "leave null for the derived <serial>_<start>_<mode>; set only to override it",
     "comment": "overrides the comment derived from the file's history",
     "license": "e.g. CC-BY-4.0",
     "doi": "e.g. https://doi.org/...",

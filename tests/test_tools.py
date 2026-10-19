@@ -401,3 +401,14 @@ def test_og1_name_mapping_sample_dataset():
     #         .unique()
     #     )
     #     assert len(instrument_types) <= 1
+
+
+def test_unconverted_units_warned_once(caplog):
+    """The same unconvertible unit pair warns once, not once per dive."""
+    import logging
+
+    tools._UNCONVERTED_UNITS.discard(("furlong", "m"))
+    with caplog.at_level(logging.WARNING):
+        for _ in range(3):
+            tools.convert_units_var(np.array([1.0]), "furlong", "m")
+    assert sum("furlong" in r.getMessage() for r in caplog.records) == 1

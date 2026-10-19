@@ -324,6 +324,10 @@ def reformat_units_str(
     return new_unit.strip()  # .casefold()
 
 
+# Unit pairs already warned about (see convert_units_var).
+_UNCONVERTED_UNITS: set[tuple[str, str]] = set()
+
+
 def convert_units_var(
     var_values: np.ndarray,
     current_unit: str,
@@ -374,11 +378,14 @@ def convert_units_var(
         converted_values = var_values * conversion["factor"]
         return converted_values, requested_unit
 
-    _log.warning(
-        "No conversion information found for %r to %r",
-        current_unit,
-        requested_unit,
-    )
+    # Once per unit pair per session: the same pair recurs on every dive.
+    if (current_unit, requested_unit) not in _UNCONVERTED_UNITS:
+        _UNCONVERTED_UNITS.add((current_unit, requested_unit))
+        _log.warning(
+            "No conversion information found for %r to %r",
+            current_unit,
+            requested_unit,
+        )
 
     return var_values, current_unit
 
