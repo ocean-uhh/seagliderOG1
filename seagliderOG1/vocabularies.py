@@ -100,6 +100,34 @@ DEPLOYMENT_GLOBALS = (
 )
 
 
+def _version(prefix: str) -> Callable[[object], str]:
+    """Return a formatter that writes a version attribute after ``prefix``.
+
+    Older basestation files store the versions as numbers (``66.03``, ``2.8``), newer
+    ones as dotted strings (``"3.0.6"``); a number is written compactly, a string as is.
+
+    Parameters
+    ----------
+    prefix : str
+        Text before the version, e.g. ``"basestation v"``.
+
+    Returns
+    -------
+    callable
+        ``value -> str``.
+
+    """
+
+    def format_version(value: object) -> str:
+        text = str(value).strip()
+        try:
+            return f"{prefix}{float(text):g}"
+        except ValueError:
+            return f"{prefix}{text}"
+
+    return format_version
+
+
 class PlatformField(NamedTuple):
     """How one OG1 platform field is sourced and written.
 
@@ -140,13 +168,13 @@ PLATFORM_FIELDS: dict[str, PlatformField] = {
     "PLATFORM_MAKER": PlatformField(None, None, True, "string"),
     "GLIDER_FIRMWARE_VERSION": PlatformField(
         "seaglider_software_version",
-        lambda value: f"seaglider {float(value):g}",
+        _version("seaglider "),
         False,
         "string",
     ),
     "LANDSTATION_VERSION": PlatformField(
         "base_station_version",
-        lambda value: f"basestation v{float(value):g}",
+        _version("basestation v"),
         False,
         "string",
     ),
@@ -232,32 +260,33 @@ unit1_to_unit2 = {
     },
 }
 
-# Variables to exclude from OG1 output (derived variables, duplicates, etc.)
+# Variables to exclude from OG1 output. Empty: every basestation variable is retained. The
+# names below were dropped before; kept commented out until the list is removed.
 VARIABLES_TO_DROP = [
-    "dissolved_oxygen_sat",
-    "depth",
-    "eng_depth",
-    "eng_elaps_t",
-    "eng_elaps_t_0000",
-    "eng_rec",
-    "eng_GC_state",
-    "latitude_gsm",
-    "longitude_gsm",
-    "sound_velocity",
-    "eng_sbect_condFreq",
-    "eng_sbect_tempFreq",
-    "glide_angle_gsm",
-    "horz_speed_gsm",
-    "north_displacement_gsm",
-    "east_displacement_gsm",
-    "polar_heading",
-    "speed_gsm",
-    "vert_speed_gsm",
-    "dive_num_cast",
-    "density",
-    "gsw_sigma3",
-    "gsw_sigma4",
-    "theta",
+    # "dissolved_oxygen_sat",
+    # "depth",
+    # "eng_depth",
+    # "eng_elaps_t",
+    # "eng_elaps_t_0000",
+    # "eng_rec",
+    # "eng_GC_state",
+    # "latitude_gsm",
+    # "longitude_gsm",
+    # "sound_velocity",
+    # "eng_sbect_condFreq",
+    # "eng_sbect_tempFreq",
+    # "glide_angle_gsm",
+    # "horz_speed_gsm",
+    # "north_displacement_gsm",
+    # "east_displacement_gsm",
+    # "polar_heading",
+    # "speed_gsm",
+    # "vert_speed_gsm",
+    # "dive_num_cast",
+    # "density",
+    # "gsw_sigma3",
+    # "gsw_sigma4",
+    # "theta",
     # "time",
 ]
 
@@ -281,6 +310,59 @@ with (CONFIG_DIR / "OG1_variable_attributes.yaml").open() as file:
 # Reference: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/
 with (CONFIG_DIR / "OG1_sensor_attributes.yaml").open() as file:
     sensor_vocabs = yaml.safe_load(file)
+
+
+# Variables and the dimension an OG1 file must carry to pass the OceanGliders format check.
+# Transcribed from the upstream checker (``ioos/cc-plugin-og``,
+# ``cc_plugin_og/checker.py`` ``check_mandatory_variables`` / ``check_dimensions``); the
+# conversion page's "OG1 required" tier reads this, and a CI test asserts it still matches the
+# installed checker (skipped when cc-plugin-og is absent) so the two cannot diverge unnoticed.
+OG1_REQUIRED_VARS: tuple[str, ...] = (
+    "LATITUDE_GPS",
+    "LONGITUDE_GPS",
+    "TIME_GPS",
+    "LATITUDE",
+    "LONGITUDE",
+    "TIME",
+    "DEPTH",
+    "TRAJECTORY",
+    "PLATFORM_MODEL",
+    "WMO_IDENTIFIER",
+    "PLATFORM_SERIAL_NUMBER",
+    "DEPLOYMENT_TIME",
+    "DEPLOYMENT_LATITUDE",
+    "DEPLOYMENT_LONGITUDE",
+)
+OG1_REQUIRED_DIMS: tuple[str, ...] = ("N_MEASUREMENTS",)
+
+# Variables the project proposes to canonise but the upstream OG1 vocabulary has not adopted
+# yet. The conversion page lifts these out of the carried-through tier into a named candidate
+# group, shown present/absent like the required tier, so "what a flight model needs" and "what
+# we hope to agree as OG1 parameters" are visible on the page. This is the project's editorial
+# list: edit it as the data-format group agrees candidates, and remove a name once it appears in
+# OG1_variable_attributes.yaml upstream. Seeded from demo_sg005 (2026-10-19); the membership is
+# a proposal to prune, not a standard — the flight-model inputs in particular are a first guess.
+OG1_CANDIDATE_VARS: dict[str, str] = {
+    # Flight-model outputs: the glider-flight-model products proposed as agreed OG1 parameters.
+    "vert_speed_gsm": "flight model — output",
+    "horz_speed_gsm": "flight model — output",
+    "speed_gsm": "flight model — output",
+    "glide_angle_gsm": "flight model — output",
+    "latitude_gsm": "flight model — output",
+    "longitude_gsm": "flight model — output",
+    "north_displacement_gsm": "flight model — output",
+    "east_displacement_gsm": "flight model — output",
+    "flight_avg_speed_east_gsm": "flight model — output",
+    "flight_avg_speed_north_gsm": "flight model — output",
+    "depth_avg_curr_east_gsm": "flight model — output",
+    "depth_avg_curr_north_gsm": "flight model — output",
+    "surface_curr_east": "flight model — output",
+    "surface_curr_north": "flight model — output",
+    # Measured inputs a flight model consumes (control channels present in demo_sg005).
+    "gc_pitch_ctl": "flight model — input",
+    "gc_roll_ad": "flight model — input",
+    "gc_vbd_ctl": "flight model — input",
+}
 
 
 # --------------------------------

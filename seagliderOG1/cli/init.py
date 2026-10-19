@@ -31,8 +31,11 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
     parser.add_argument(
         "--from",
         dest="from_dir",
-        metavar="DIR",
-        help="basestation directory to read the platform block from",
+        metavar="PATH",
+        help=(
+            "basestation directory, or one pSSSDDDD*.nc file in it, to read the "
+            "platform block from"
+        ),
     )
     parser.add_argument(
         "-o",
@@ -48,12 +51,12 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
 
 
 def _platform_from_file(source: str) -> dict[str, object]:
-    """Read platform fields from the first basestation file in ``source``.
+    """Read platform fields from a basestation file, or the first one in ``source``.
 
     Parameters
     ----------
     source : str
-        Directory (or URL) holding basestation ``pSSSDDDD*.nc`` files.
+        One basestation ``pSSSDDDD*.nc`` file, or a directory (or URL) holding them.
 
     Returns
     -------
@@ -71,13 +74,18 @@ def _platform_from_file(source: str) -> dict[str, object]:
 
     from seagliderOG1 import readers, vocabularies
 
-    names = [f for f in readers.list_files(source) if readers.validate_filename(f)]
-    if not names:
-        msg = f"no basestation files (pSSSDDDD*.nc) in {source}"
-        raise ValueError(msg)
-    ds = xr.open_dataset(
-        pathlib.Path(source) / names[0], engine="netcdf4", decode_timedelta=False
-    )
+    if pathlib.Path(source).is_file():
+        if not readers.validate_filename(pathlib.Path(source).name):
+            msg = f"{source} is not a basestation file (pSSSDDDD*.nc)"
+            raise ValueError(msg)
+        path = pathlib.Path(source)
+    else:
+        names = [f for f in readers.list_files(source) if readers.validate_filename(f)]
+        if not names:
+            msg = f"no basestation files (pSSSDDDD*.nc) in {source}"
+            raise ValueError(msg)
+        path = pathlib.Path(source) / names[0]
+    ds = xr.open_dataset(path, engine="netcdf4", decode_timedelta=False)
     try:
         # The one file->field mapping lives in vocabularies, shared with the converter.
         return vocabularies.platform_from_file(ds.attrs)
@@ -115,7 +123,9 @@ def run(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return 1
-        source = str(pathlib.Path(args.from_dir).resolve())
+        # source: is the directory of files to convert, also when --from names one file.
+        from_path = pathlib.Path(args.from_dir).resolve()
+        source = str(from_path.parent if from_path.is_file() else from_path)
 
     # Always UTF-8: the template carries non-ASCII glyphs (the "→" destination
     # markers) and may hold non-ASCII values (e.g. an accented platform model or

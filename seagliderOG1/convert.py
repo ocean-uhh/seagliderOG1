@@ -421,7 +421,11 @@ def conversion_ledger(ds: xr.Dataset) -> dict:
 
 
 def _input_record(ds: xr.Dataset) -> dict[str, object]:
-    """Return ``{"path", "bytes", "dive"}`` for one input dataset (file name only).
+    """Return ``{"path", "bytes", "dive", "dimensions", "n_globals"}`` for one input dataset.
+
+    The dimension lengths and global-attribute count let the conversion page show what each
+    file held before conversion (the before → after table) and state each dimension's share of
+    the shared axis; both are read from the already-open dataset, so no data is read.
 
     Parameters
     ----------
@@ -431,8 +435,9 @@ def _input_record(ds: xr.Dataset) -> dict[str, object]:
     Returns
     -------
     dict of str to object
-        The file name (not the machine path), its size in bytes (None when the dataset
-        was not read from a local file) and the dive number.
+        The file name (not the machine path), its size in bytes (None when the dataset was
+        not read from a local file), the dive number, the dimension lengths as a
+        ``{name: length}`` map, and the number of global attributes.
 
     """
     source = ds.encoding.get("source")
@@ -441,6 +446,8 @@ def _input_record(ds: xr.Dataset) -> dict[str, object]:
         "path": local.name if local else None,
         "bytes": local.stat().st_size if local and local.is_file() else None,
         "dive": int(ds.attrs["dive_number"]),
+        "dimensions": {str(name): int(length) for name, length in ds.sizes.items()},
+        "n_globals": len(ds.attrs),
     }
 
 

@@ -90,6 +90,18 @@ def test_init_from_fills_platform(tmp_path: pathlib.Path) -> None:
     assert str(platform["LANDSTATION_VERSION"]).startswith("basestation")
 
 
+def test_init_from_one_file_fills_platform_and_its_directory(
+    tmp_path: pathlib.Path,
+) -> None:
+    """Init --from accepts one basestation file; source is that file's directory."""
+    out = tmp_path / "mission.yaml"
+    one = DATA_DIR / "p0050001_20080606.nc"
+    assert cli.main(["init", "--from", str(one), "-o", str(out)]) == 0
+    data = yaml.safe_load(out.read_text(encoding="utf-8"))
+    assert data["source"] == str(DATA_DIR.resolve())
+    assert data["platform"]["PLATFORM_SERIAL_NUMBER"] == "sg005"
+
+
 def test_init_from_fills_source_and_serial(tmp_path: pathlib.Path) -> None:
     """Init --from fills source and the serial; model/maker/depth are left null to fill."""
     out = tmp_path / "mission.yaml"
@@ -311,6 +323,23 @@ def test_inspect_conversion_writes_html_page(
     # column on the globals table.
     assert ">#<" in html
     assert "Requirement" in html
+
+
+def test_inspect_conversion_output_directory_writes_canonical_name(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """inspect --conversion -o DIR writes <id>_conversion.html into DIR, as process does."""
+    from seagliderOG1 import convert, readers, writers
+
+    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    out_dir = tmp_path / "pages"
+    out_dir.mkdir()
+    assert cli.main(["inspect", str(nc), "--conversion", "-o", str(out_dir)]) == 0
+    expected = out_dir / writers.conversion_path(nc, ".html").name
+    assert expected.is_file()
+    assert f"wrote {expected}" in capsys.readouterr().out
 
 
 def test_inspect_output_without_conversion_errors(

@@ -320,8 +320,15 @@ def run(args: argparse.Namespace) -> int:
             except MetadataError as exc:
                 print(f"error: {exc}", file=sys.stderr)
                 return 1
-            pathlib.Path(args.output).write_text(html, encoding="utf-8")
-            print(f"wrote {args.output}")
+            from seagliderOG1 import writers
+
+            # A directory for -o writes <id>_conversion.html into it (as process does);
+            # a file path writes there verbatim.
+            out_path = pathlib.Path(args.output)
+            if out_path.is_dir():
+                out_path = out_path / writers.conversion_path(args.file, ".html").name
+            out_path.write_text(html, encoding="utf-8")
+            print(f"wrote {out_path}")
             return 0
 
         try:

@@ -100,3 +100,17 @@ def test_vocabulary_strings_have_no_edge_whitespace():
             name,
         )
     assert not offenders, offenders
+
+
+def test_platform_from_file_versions_as_numbers_or_dotted_strings():
+    """Old basestation files store versions as numbers, newer ones as "3.0.6" (pure logic)."""
+    old = vocabularies.platform_from_file(
+        {"seaglider_software_version": 66.03, "base_station_version": 2.8}
+    )
+    assert old["GLIDER_FIRMWARE_VERSION"] == "seaglider 66.03"
+    assert old["LANDSTATION_VERSION"] == "basestation v2.8"
+    new = vocabularies.platform_from_file(
+        {"seaglider_software_version": "67.00", "base_station_version": "3.0.6"}
+    )
+    assert new["GLIDER_FIRMWARE_VERSION"] == "seaglider 67"
+    assert new["LANDSTATION_VERSION"] == "basestation v3.0.6"

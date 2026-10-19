@@ -42,7 +42,8 @@ Tables in ``vocabularies.py``:
   required flag.
 * ``preferred_units``, ``unit_str_format``, ``unit1_to_unit2`` — unit standardisation and the
   conversion factors.
-* ``VARIABLES_TO_DROP`` — basestation variables dropped from the OG1 output.
+* ``VARIABLES_TO_DROP`` — basestation variables dropped from the OG1 output; empty, so every
+  basestation variable is retained.
 * ``ROLE_VOCABULARY``, ``ROLE_ALIASES`` — the W08 contributor roles and the accepted aliases.
 
 To change what the conversion writes, edit these — not a copy in ``mission.yaml``. The
