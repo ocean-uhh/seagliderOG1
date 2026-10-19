@@ -10,6 +10,13 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Breaking changes
 
+- CLI flags in the family shape: `init [dest]` (a directory gets `mission.yaml`, a `.yaml` path is
+  that file) replaces `init -o FILE`; `--raw-dir` replaces `init --from` and `process --source`;
+  the `mission.yaml` key is `raw_dir` (`source:` is read with a deprecation warning for one
+  release; both set is an error). `inspect` prints text only: the HTML page is `seagliderOG1
+  report` (`inspect -o` / `--title` exit 2 and say so).
+- The conversion sidecar binds to its file by `id` + `tracking_id` (was `id` + `date_created`; an
+  older sidecar is still read) and records the file's SHA-256.
 - Raw WET Labs counts are no longer written as `BBP700` / `BBP470` (they were labelled m-1); they
   keep their basestation names (`eng_wlbb2f_redCount`, `eng_wlbb2f_blueCount`) with `units: counts`.
   A volume scattering function (`*_bb700`, m-1 sr-1) is no longer written as `BBP700` either.
@@ -41,6 +48,19 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Added
 
+- `seagliderOG1 draft --raw-dir DIR`: convert with no config to see what the basestation files
+  hold — `<id>_draft.nc` (a `draft` global, no `OG-1.0` in `Conventions`), a draft conversion
+  page with the basestation's own global attributes, the sidecar, and a proposed
+  `<id>_draft_mission.yaml`. `convert.process_mission(draft=True)`.
+- `seagliderOG1 report FILE.nc [-o DIR | --report-dir ROOT]` writes the conversion page;
+  `process --report-dir ROOT` writes it to `ROOT/<id>/`, apart from the data.
+- `seagliderOG1 enrich FILE.nc [CONFIG] [--doi DOI]` / `convert.enrich`: set globals (e.g. a DOI)
+  on a written file in place; sets `date_modified`, appends `history`, renews `tracking_id`,
+  keeps `date_created`, rebinds the sidecar.
+- A `tracking_id` global (UUID, new on every write); `writers.file_sha256`, `writers.write_sidecar`.
+- Conversion page: a conventions box under the global attributes — what `Conventions` claims, ACDD
+  1.3 highly recommended / recommended present (lists from the IOOS compliance-checker 6.1.0), and
+  dimensioned floating-point variables without `units`.
 - `seagliderOG1` CLI: `init`, `validate`, `process`, `inspect`, `list`; `-v`/`-vv` for diagnostics.
 - `seagliderOG1.contributors` module and `config/institution_registry.yaml` (EDMO codes).
 - `convert.to_og1` gains `contributors=`, `institutions=`, `platform=`, `deployment=`,

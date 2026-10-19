@@ -14,7 +14,8 @@ import yaml
 KNOWN_KEYS = frozenset(
     {
         "config_version",
-        "source",
+        "raw_dir",
+        "source",  # deprecated name of raw_dir, read for one release
         "output_dir",
         "mode",
         "dives",
@@ -28,7 +29,10 @@ KNOWN_KEYS = frozenset(
         "institutions",
     }
 )
-REQUIRED_KEYS = ("source",)
+REQUIRED_KEYS = ("raw_dir",)
+
+# The old name of raw_dir; read with a deprecation warning for one release.
+DEPRECATED_KEYS = {"source": "raw_dir"}
 
 # The valid data modes, the platform defaults, and the required platform fields all
 # derive from the one platform/mode table in ``vocabularies`` (imported lazily so the
@@ -65,13 +69,36 @@ def load_config(config_path: pathlib.Path) -> dict:
     Returns
     -------
     dict
-        The parsed configuration.
+        The parsed configuration, with the deprecated ``source`` read as ``raw_dir``.
 
     Raises
     ------
     ValueError
         If the file's YAML root is not a mapping (a list or scalar), which would
-        otherwise pass ``safe_load`` and fail deep in validation or conversion.
+        otherwise pass ``safe_load`` and fail deep in validation or conversion, or if
+        ``raw_dir`` and its deprecated name ``source`` are both set.
+
+    """
+    return _normalise(_read_yaml(config_path))
+
+
+def _read_yaml(config_path: pathlib.Path) -> dict:
+    """Return the configuration mapping exactly as written in the file.
+
+    Parameters
+    ----------
+    config_path : pathlib.Path
+        Path to the ``mission.yaml`` file.
+
+    Returns
+    -------
+    dict
+        The parsed YAML mapping.
+
+    Raises
+    ------
+    ValueError
+        If the YAML root is not a mapping.
 
     """
     data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
@@ -80,6 +107,36 @@ def load_config(config_path: pathlib.Path) -> dict:
         # Malformed config input, not a programming type error; ValueError matches
         # readers.discover_missions' bad-input style and validate_config catches it.
         raise ValueError(msg)
+    return data
+
+
+def _normalise(data: dict) -> dict:
+    """Return ``data`` with each deprecated key moved to its current name.
+
+    Parameters
+    ----------
+    data : dict
+        The configuration mapping as written.
+
+    Returns
+    -------
+    dict
+        A copy in which ``source`` is read as ``raw_dir``.
+
+    Raises
+    ------
+    ValueError
+        If a deprecated key and its replacement are both set.
+
+    """
+    data = dict(data)
+    for old, new in DEPRECATED_KEYS.items():
+        if old not in data:
+            continue
+        if new in data:
+            msg = f"both {new!r} and its deprecated name {old!r} are set; keep {new!r}."
+            raise ValueError(msg)
+        data[new] = data.pop(old)
     return data
 
 
@@ -201,7 +258,7 @@ def global_rows() -> list[dict[str, str]]:
     return rows
 
 
-def _deployment_template_lines() -> list[str]:
+def _deployment_template_lines(values: dict[str, object] | None = None) -> list[str]:
     """Build the ``deployment:`` template block, tier comments from ``global_rows``.
 
     One source for the tiers: each key's ``(mandatory)`` / ``(highly desirable)`` /
@@ -210,10 +267,15 @@ def _deployment_template_lines() -> list[str]:
     ``license`` and ``acknowledgment`` are ACDD globals with no OG1 tier and are marked
     ``(optional)``.
 
+    Parameters
+    ----------
+    values : dict of str to object or None, optional
+        Values to write instead of ``null`` (``draft`` proposes ``id``).
+
     Returns
     -------
     list of str
-        The ``deployment:`` header line and one ``key: null`` line per global.
+        The ``deployment:`` header line and one ``key: value`` line per global.
 
     """
     from seagliderOG1 import vocabularies
@@ -228,7 +290,7 @@ def _deployment_template_lines() -> list[str]:
         comment = f"{rows[key]['tier']} -> global attribute" + (
             f"; {hint}" if hint else ""
         )
-        lines.append(f"  {key}: null   # {comment}")
+        lines.append(f"  {key}: {_scalar((values or {}).get(key))}   # {comment}")
     return lines
 
 
@@ -288,7 +350,7 @@ def platform_rows() -> list[dict[str, str]]:
     list of dict of str to str
         Rows with keys ``key``, ``requirement`` (``required`` / ``optional``),
         ``destination`` (``variable`` or ``attribute on <VARIABLE>``), ``from_file``
-        (the basestation global ``init --from`` reads, or "") and ``hint``.
+        (the basestation global ``init --raw-dir`` reads, or "") and ``hint``.
 
     """
     from seagliderOG1 import vocabularies
@@ -336,7 +398,7 @@ def _platform_template_lines(plat: dict[str, object]) -> list[str]:
 
     """
     lines = [
-        "platform:               # 'init --from' fills these; fill any null before validate"
+        "platform:               # 'init --raw-dir' fills these; fill any null before validate"
     ]
     for row in platform_rows():
         key = row["key"]
@@ -347,7 +409,10 @@ def _platform_template_lines(plat: dict[str, object]) -> list[str]:
 
 
 def render_template(
-    platform: dict[str, object] | None = None, source: str | None = None
+    platform: dict[str, object] | None = None,
+    raw_dir: str | None = None,
+    dives: list[int] | None = None,
+    deployment: dict[str, object] | None = None,
 ) -> str:
     """Return ``mission.yaml`` text with the given platform block and guidance.
 
@@ -356,9 +421,13 @@ def render_template(
     platform : dict of str to object or None, optional
         Platform values to merge over the template defaults (every platform field
         null). None uses the defaults unchanged.
-    source : str or None, optional
-        Value for the ``source`` key. None leaves it as ``null`` for the user to
-        fill; ``init --from DIR`` passes DIR so the template validates as written.
+    raw_dir : str or None, optional
+        Value for the ``raw_dir`` key. None leaves it as ``null`` for the user to
+        fill; ``init --raw-dir DIR`` passes DIR so the template validates as written.
+    dives : list of int or None, optional
+        ``[first, last]`` for the ``dives`` key; None leaves it null (every file).
+    deployment : dict of str to object or None, optional
+        Values for ``deployment:`` keys; the rest stay null.
 
     Returns
     -------
@@ -379,17 +448,17 @@ def render_template(
         "",
         "config_version: 2",
         "",
-        f"source: {_scalar(source)}            # mission dir (p*.nc inside) or a root of SN/DATE dirs",
+        f"raw_dir: {_scalar(raw_dir)}           # basestation files: a mission dir (p*.nc inside) or a root of SN/DATE dirs",
         "output_dir: ./          # where OG1 files are written",
         "mode: delayed           # realtime | delayed",
-        "dives: null             # [first, last] dive numbers; null = all files present",
-        "repair: false           # run repair_files on the basestation files (writes the source tree)",
+        f"dives: {_scalar(dives) if dives else 'null'}             # [first, last] dive numbers; null = all files present",
+        "repair: false           # run repair_files on the basestation files (writes the raw_dir tree)",
         "keep_variables: null    # optional list of science variables to keep; null = all",
         "report: false           # also write <id>_conversion.html beside each file",
         "",
         *_platform_template_lines(plat),
         "",
-        *_deployment_template_lines(),
+        *_deployment_template_lines(deployment),
         "",
         "global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above",
         "",
@@ -570,46 +639,46 @@ def _validate_people(
     return issues
 
 
-def _validate_source(
+def _validate_raw_dir(
     data: dict[str, object], config_path: pathlib.Path, strict: bool
 ) -> list[ValidationIssue]:
-    """Check that ``source`` exists, holds basestation files, and spans ``dives``.
+    """Check that ``raw_dir`` exists, holds basestation files, and spans ``dives``.
 
     Parameters
     ----------
     data : dict of str to object
         The parsed configuration.
     config_path : pathlib.Path
-        Path to the configuration file; ``source`` resolves relative to its parent.
+        Path to the configuration file; ``raw_dir`` resolves relative to its parent.
     strict : bool
         When True, every dive in the ``dives`` range must be present (no gaps).
 
     Returns
     -------
     list of ValidationIssue
-        Problems found with the source directory or the dive range.
+        Problems found with the raw-data directory or the dive range.
 
     """
-    source = data.get("source")
-    if source in (None, ""):
+    raw_dir = data.get("raw_dir")
+    if raw_dir in (None, ""):
         return []
-    src = (config_path.parent / str(source)).resolve()
+    src = (config_path.parent / str(raw_dir)).resolve()
     if not src.exists():
-        return [ValidationIssue("ERROR", f"source not found: {src}", "source")]
+        return [ValidationIssue("ERROR", f"raw_dir not found: {src}", "raw_dir")]
 
     from seagliderOG1 import readers
 
     try:
         missions = readers.discover_missions(str(src))
     except ValueError as exc:
-        return [ValidationIssue("ERROR", f"source unreadable: {exc}", "source")]
+        return [ValidationIssue("ERROR", f"raw_dir unreadable: {exc}", "raw_dir")]
     if not missions:
         return [
             ValidationIssue(
                 "ERROR",
-                "no basestation files (pSSSDDDD*.nc) under source "
+                "no basestation files (pSSSDDDD*.nc) under raw_dir "
                 "(a mission directory, or a root of SN/DATE directories).",
-                "source",
+                "raw_dir",
             )
         ]
 
@@ -726,7 +795,7 @@ def _validate_platform(platform: object) -> list[ValidationIssue]:
                 ValidationIssue(
                     "ERROR",
                     f"platform.{field} is null; fill it (see the template '# e.g.' "
-                    "comments) or run 'init --from DIR'.",
+                    "comments) or run 'init --raw-dir DIR'.",
                     f"platform.{field}",
                 )
             )
@@ -848,7 +917,7 @@ def _validate_highly_desirable(data: dict[str, object]) -> list[ValidationIssue]
 def validate_config(
     config_path: pathlib.Path,
     strict: bool = False,
-    source_override: str | None = None,
+    raw_dir_override: str | None = None,
 ) -> list[ValidationIssue]:
     """Validate a mission configuration file.
 
@@ -859,8 +928,8 @@ def validate_config(
     strict : bool, optional
         When True, also require every dive in the ``dives`` range to be present.
         Default is False.
-    source_override : str or None, optional
-        A command-line ``--source`` that replaces the config's ``source`` for
+    raw_dir_override : str or None, optional
+        A command-line ``--raw-dir`` that replaces the config's ``raw_dir`` for
         validation, so an override is checked rather than the stale config value.
 
     Returns
@@ -870,13 +939,22 @@ def validate_config(
 
     """
     try:
-        data = load_config(config_path)
+        written = _read_yaml(config_path)
+        data = _normalise(written)
     except ValueError as exc:
         return [ValidationIssue("ERROR", str(exc), None)]
-    if source_override is not None:
-        data = {**data, "source": source_override}
+    issues: list[ValidationIssue] = [
+        ValidationIssue(
+            "WARNING",
+            f"{old!r} is deprecated; rename it to {new!r} (read for one more release).",
+            old,
+        )
+        for old, new in DEPRECATED_KEYS.items()
+        if old in written
+    ]
+    if raw_dir_override is not None:
+        data = {**data, "raw_dir": raw_dir_override}
 
-    issues: list[ValidationIssue] = []
     for key in data:
         if key not in KNOWN_KEYS:
             hint = _case_hint(key, KNOWN_KEYS)
@@ -954,5 +1032,5 @@ def validate_config(
     issues.extend(
         _validate_people(data.get("institutions"), "institutions", "Operator")
     )
-    issues.extend(_validate_source(data, config_path, strict))
+    issues.extend(_validate_raw_dir(data, config_path, strict))
     return issues

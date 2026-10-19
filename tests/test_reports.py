@@ -443,3 +443,56 @@ def test_verdict_counts_required_variables_and_meanings_name_sections():
     ledger = convert.conversion_ledger(ds)
     rows, _caption = conversion._reconciliation(ds, ledger)
     assert not any("§" in meaning for _label, _count, meaning in rows)
+
+
+def test_basestation_rows_flag_values_that_differ_or_are_missing():
+    """Pure logic: one row per attribute; amber when it varies or misses some files."""
+    found = {
+        "platform_id": {"values": ["SG005"], "n_files": 3},
+        "dive_number": {"values": ["1", "2", "3"], "n_files": 3},
+        "wmo_id": {"values": ["123"], "n_files": 1},
+    }
+    rows = {r["name"]: r for r in conversion._basestation_rows(found, 3)}
+    assert (
+        rows["platform_id"]["status"] == "all 3 files"
+        and not rows["platform_id"]["bad"]
+    )
+    assert (
+        rows["dive_number"]["distinct"] == ["1", "2", "3"]
+        and rows["dive_number"]["bad"]
+    )
+    assert rows["wmo_id"]["status"] == "1 of 3 files" and rows["wmo_id"]["bad"]
+    assert conversion._basestation_rows(None, 3) == []
+
+
+def test_conventions_check_counts_acdd_and_cf_units():
+    """The box reads Conventions and counts ACDD 1.3 globals and CF units on sg005."""
+    ds = _dataset()
+    box = conversion._conventions_check(ds)
+    assert box["claim"] == ds.attrs["Conventions"]
+    levels = {level["level"]: level for level in box["acdd"]}
+    assert levels["highly recommended"]["total"] == 4
+    assert levels["recommended"]["total"] == 31
+    assert "summary" in levels["highly recommended"]["missing"]
+    assert box["short"]
+    for name in box["no_units"]:
+        assert "units" not in ds[name].attrs and ds[name].ndim
+
+
+def test_draft_snippets_fill_only_what_the_files_carry(tmp_path):
+    """Pure logic: dives and file-derived platform fields filled; required ones null."""
+    found = {
+        "platform_id": {"values": ["SG005"], "n_files": 2},
+        "base_station_version": {"values": ["2.8"], "n_files": 2},
+    }
+    blocks = conversion._draft_snippets(found, [3, 4], "sg005_x_delayed_draft")
+    text = "\n".join(block["text"] for block in blocks)
+    assert "dives: [3, 4]" in text
+    assert "PLATFORM_SERIAL_NUMBER: sg005" in text
+    assert "LANDSTATION_VERSION: basestation v2.8" in text
+    assert "PLATFORM_MODEL: null" in text  # required, not in the files
+    assert "sg005_x_delayed\n" in text and "id: null" in text  # derived id as a comment
+    assert conversion._draft_snippets(None, [1], "x") == []
+    # An OG1 (non-draft) page gets none.
+    path = convert.process_mission(DATA, tmp_path, dives=(1, 1))
+    assert "Suggested mission.yaml lines" not in conversion.render_conversion(path)

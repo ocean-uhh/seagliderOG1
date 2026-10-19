@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import xarray as xr
+import yaml
 
 if TYPE_CHECKING:
     from matplotlib.figure import Figure
@@ -1611,6 +1612,150 @@ def _verdict_clauses(
     ]
 
 
+def _conventions_check(ds: xr.Dataset) -> dict[str, object]:
+    """Return what the file's ``Conventions`` claims and what it holds against CF / ACDD.
+
+    Presence counts only, not a compliance check: ACDD 1.3 highly recommended and
+    recommended globals (:data:`seagliderOG1.vocabularies.ACDD_1_3_HIGHLY_RECOMMENDED`
+    / ``ACDD_1_3_RECOMMENDED``) and, for CF, the floating-point data variables on a
+    dimension with no ``units`` attribute.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open OG1 (or draft) dataset.
+
+    Returns
+    -------
+    dict
+        ``claim`` (the ``Conventions`` text), ``acdd`` (one ``{"level", "have",
+        "total", "missing"}`` per level), ``no_units`` (sorted names) and ``short``
+        (any count short).
+
+    """
+    present = {name for name, value in ds.attrs.items() if str(value).strip()}
+    acdd = []
+    for level, names in (
+        ("highly recommended", vocabularies.ACDD_1_3_HIGHLY_RECOMMENDED),
+        ("recommended", vocabularies.ACDD_1_3_RECOMMENDED),
+    ):
+        missing = [name for name in names if name not in present]
+        acdd.append(
+            {
+                "level": level,
+                "have": len(names) - len(missing),
+                "total": len(names),
+                "missing": missing,
+            }
+        )
+    no_units = sorted(
+        str(name)
+        for name, var in ds.data_vars.items()
+        if var.dtype.kind == "f" and var.ndim and "units" not in var.attrs
+    )
+    return {
+        "claim": str(ds.attrs.get("Conventions", "")),
+        "acdd": acdd,
+        "no_units": no_units,
+        "short": bool(no_units) or any(level["missing"] for level in acdd),
+    }
+
+
+def _draft_snippets(
+    found: dict | None, dives: list[int] | None, og1_id: str
+) -> list[dict[str, str]]:
+    """Return the copyable ``mission.yaml`` lines a draft can fill from the files.
+
+    Only what the draft read: the dive range, and the platform fields the basestation
+    globals carry (from the first file's values, through the same
+    :func:`seagliderOG1.vocabularies.platform_from_file` that ``init`` uses). Required
+    fields the files cannot supply stay ``null`` for the user to fill.
+
+    Parameters
+    ----------
+    found : dict or None
+        The sidecar's ``basestation_globals``.
+    dives : list of int or None
+        The input dive numbers, in order.
+    og1_id : str
+        The draft's ``id`` (``..._draft``).
+
+    Returns
+    -------
+    list of dict
+        ``{"title", "text"}`` blocks, in ``mission.yaml`` order; empty without a sidecar.
+
+    """
+    if not found or not dives:
+        return []
+    first = {
+        name: entry["values"][0] for name, entry in found.items() if entry["values"]
+    }
+    from_file = vocabularies.platform_from_file(first)
+    platform = {
+        field: from_file.get(field)
+        for field, spec in vocabularies.PLATFORM_FIELDS.items()
+        if field in from_file or spec.required
+    }
+    derived_id = og1_id.removesuffix("_draft")
+    return [
+        {
+            "title": "Dive range",
+            "text": f"dives: [{dives[0]}, {dives[-1]}]   # {len(dives)} dive files read",
+        },
+        {
+            "title": "Platform (null: not in the files, fill by hand)",
+            "text": yaml.safe_dump(
+                {"platform": platform}, sort_keys=False, allow_unicode=True
+            ).strip(),
+        },
+        {
+            "title": "Deployment id",
+            "text": (
+                f"# derived for these dives: {derived_id}\n"
+                "deployment:\n  id: null   # leave null to keep it derived"
+            ),
+        },
+    ]
+
+
+def _basestation_rows(found: dict | None, n_files: int) -> list[dict[str, object]]:
+    """Return one row per basestation global attribute for the draft page.
+
+    Parameters
+    ----------
+    found : dict or None
+        The sidecar's ``basestation_globals`` (name to ``{"values", "n_files"}``), or
+        None when the sidecar does not carry it.
+    n_files : int
+        Input files in the conversion.
+
+    Returns
+    -------
+    list of dict
+        ``{"name", "value", "status", "distinct", "bad"}``: the first file's value; where
+        it appears (``"all N files"``, ``"k of N files"``); every distinct value when
+        there is more than one; ``bad`` when it varies or is missing from some files.
+
+    """
+    rows = []
+    for name, entry in (found or {}).items():
+        values = entry["values"]
+        k = entry["n_files"]
+        where = f"all {n_files} files" if k == n_files else f"{k} of {n_files} files"
+        varies = len(values) > 1
+        rows.append(
+            {
+                "name": name,
+                "value": values[0] if values else "",
+                "status": f"{where}; {len(values)} values" if varies else where,
+                "distinct": values if varies else [],
+                "bad": varies or k != n_files,
+            }
+        )
+    return rows
+
+
 def render_conversion(path: str | Path, *, title: str | None = None) -> str:
     """Return the conversion page for an OG1 file as a self-contained HTML string.
 
@@ -1641,6 +1786,11 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
 
     ds = xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False)
     try:
+        # A draft (process_mission(draft=True), the draft verb) says so in a global; the
+        # page then shows the basestation's own globals instead of the OG1 ones.
+        draft = "draft" in ds.attrs
+        ds_id = ds.attrs.get("id", "")
+        conventions = _conventions_check(ds)
         ledger = convert.conversion_ledger(ds)
         groups, var_source = _variable_groups_by_original_dimension(ds)
         # Each Variables group gets its own Valid % baseline caption (the share of the shared
@@ -1781,4 +1931,17 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         presence_strips_source=figure_png.source_of(presence_strips),
         presence_summary=presence_summary,
         sidecar_name=writers.conversion_path(path, ".json").name,
+        draft=draft,
+        conventions=conventions,
+        draft_snippets=_draft_snippets(
+            sidecar.get("basestation_globals") if sidecar else None,
+            (sidecar.get("presence") or {}).get("dives") if sidecar else None,
+            str(ds_id),
+        )
+        if draft
+        else [],
+        basestation_rows=_basestation_rows(
+            sidecar.get("basestation_globals") if sidecar else None,
+            len(inputs) if inputs else 0,
+        ),
     )

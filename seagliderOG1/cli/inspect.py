@@ -1,8 +1,8 @@
 """The ``inspect`` verb: the inventory of one netCDF file.
 
 Prints a text inventory (useful at sea, no browser). ``inspect --conversion`` prints the
-conversion ledger, and ``inspect --conversion -o PATH`` writes the self-contained HTML
-conversion page. Works on a basestation or an OG1 file.
+conversion ledger; the HTML conversion page is the ``report`` verb's. Works on a basestation
+or an OG1 file.
 """
 
 import argparse
@@ -243,27 +243,22 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
         action="store_true",
         help="with --conversion, list the constant scalars in full (not just a count)",
     )
-    parser.add_argument(
-        "-o",
-        "--output",
-        metavar="HTML",
-        help="with --conversion, write the HTML conversion page to this path",
-    )
-    parser.add_argument(
-        "--title", metavar="TEXT", help="title for the HTML conversion page"
-    )
+    # The HTML page moved to the report verb; these stay, hidden, to say so.
+    parser.add_argument("-o", "--output", help=argparse.SUPPRESS)
+    parser.add_argument("--title", help=argparse.SUPPRESS)
     parser.set_defaults(func=run)
     return parser
 
 
 def run(args: argparse.Namespace) -> int:
-    """Print a text inventory, or write the HTML conversion page with --conversion -o.
+    """Print a text inventory of a netCDF file.
 
     Parameters
     ----------
     args : argparse.Namespace
         Parsed arguments: ``file``, ``attrs``, ``variables``, ``by_dimension``,
-        ``output`` and ``title``.
+        ``conversion``, ``parameter``, ``all``; ``output`` / ``title`` only to point at
+        ``report``.
 
     Returns
     -------
@@ -276,12 +271,10 @@ def run(args: argparse.Namespace) -> int:
     from seagliderOG1 import plotters
     from seagliderOG1.exceptions import MetadataError
 
-    # -o/--title write the HTML conversion page and apply only with --conversion. Reject the
-    # combination up front, before any mode-specific branch (e.g. --parameter) can return and
-    # silently ignore the flag.
-    if (args.output or args.title) and not args.conversion:
+    if args.output or args.title:
         print(
-            "error: -o/--title write the HTML conversion page; pass --conversion",
+            "error: inspect prints text only; the HTML conversion page is written by "
+            f"'seagliderOG1 report {args.file} [-o DIR]'.",
             file=sys.stderr,
         )
         return 2
@@ -310,32 +303,6 @@ def run(args: argparse.Namespace) -> int:
         return 0
 
     if args.conversion:
-        if args.output:
-            # The HTML page opens the file itself; close the handle opened above.
-            ds.close()
-            from seagliderOG1.reports.conversion import render_conversion
-
-            try:
-                html = render_conversion(args.file, title=args.title)
-            except MetadataError as exc:
-                print(f"error: {exc}", file=sys.stderr)
-                return 1
-            from seagliderOG1 import writers
-
-            # A directory for -o (existing, or named with a trailing /) writes
-            # <id>_conversion.html into it, as process does; a file path writes there.
-            out_path = pathlib.Path(args.output)
-            if out_path.is_dir() or args.output.endswith(("/", "\\")):
-                out_path = out_path / writers.conversion_path(args.file, ".html").name
-            try:
-                out_path.parent.mkdir(parents=True, exist_ok=True)
-                out_path.write_text(html, encoding="utf-8")
-            except OSError as exc:
-                print(f"error: could not write {out_path}: {exc}", file=sys.stderr)
-                return 1
-            print(f"wrote {out_path}")
-            return 0
-
         try:
             text = _conversion_text(ds, show_all=args.all)
         except MetadataError as exc:

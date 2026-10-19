@@ -12,17 +12,22 @@ import logging
 from collections.abc import Sequence
 
 from seagliderOG1 import __version__
+from seagliderOG1.cli import draft as draft_cmd
+from seagliderOG1.cli import enrich as enrich_cmd
 from seagliderOG1.cli import init as init_cmd
 from seagliderOG1.cli import inspect as inspect_cmd
 from seagliderOG1.cli import list as list_cmd
 from seagliderOG1.cli import process as process_cmd
+from seagliderOG1.cli import report as report_cmd
 from seagliderOG1.cli import validate as validate_cmd
 
 _EPILOG = """\
 typical workflow:
-  seagliderOG1 init --from /data/005/20080606 -o sg005.yaml   template from the first file
-  seagliderOG1 validate sg005.yaml                            config, source, dive range
+  seagliderOG1 draft --raw-dir /data/005/20080606             look at the data, no config
+  seagliderOG1 init sg005.yaml --raw-dir /data/005/20080606   template from the first file
+  seagliderOG1 validate sg005.yaml                            config, raw_dir, dive range
   seagliderOG1 process  sg005.yaml                            -> <output_dir>/<OG1 id>.nc
+  seagliderOG1 report   <output_dir>/<OG1 id>.nc              the conversion page
 """
 
 
@@ -54,7 +59,16 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(
         dest="command", metavar="<command>", required=True
     )
-    for module in (init_cmd, validate_cmd, process_cmd, inspect_cmd, list_cmd):
+    for module in (
+        draft_cmd,
+        init_cmd,
+        validate_cmd,
+        process_cmd,
+        report_cmd,
+        enrich_cmd,
+        inspect_cmd,
+        list_cmd,
+    ):
         module.build_parser(subparsers)
     # Accept -v/--verbose after the verb (``seagliderOG1 process cfg -v``), not only
     # before it; SUPPRESS default so a verb-level -v never clobbers a top-level one.

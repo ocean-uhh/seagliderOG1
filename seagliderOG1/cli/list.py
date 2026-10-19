@@ -340,7 +340,7 @@ def _list_platform(search: str | None) -> int:
     )
     print(f"\nRequirement: {_count_by(rows, 'requirement')}.")
     print(
-        "Set these under platform: in mission.yaml; 'init --from DIR' fills the "
+        "Set these under platform: in mission.yaml; 'init --raw-dir DIR' fills the "
         "'From file' ones from the first basestation file."
     )
     return 0

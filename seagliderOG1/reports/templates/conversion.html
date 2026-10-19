@@ -13,6 +13,10 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 details.scalar-group > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
 table.summary td.indent { padding-left: 1.4rem; color: var(--muted); }
 p.verdict span.cell-bad { padding: 0 0.3rem; }
+.snippets { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 0.8rem; }
+.snippet-title { margin: 0 0 0.2rem; color: var(--muted); }
+.snippet textarea { width: 100%; height: auto; min-height: 2.4em; font-family: ui-monospace, monospace; border: 1px solid var(--ocean); border-radius: 4px; padding: 0.4rem; resize: vertical; box-sizing: border-box; }
+button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -20,7 +24,7 @@ p.verdict span.cell-bad { padding: 0 0.3rem; }
 <div class="masthead">
   <div class="masthead-header">
     <h1>{{ title }}</h1>
-    <span class="masthead-type">conversion</span>
+    <span class="masthead-type">{{ "draft" if draft else "conversion" }}</span>
   </div>
   <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>{{ title }}</span><span>generated {{ generated_at }}</span></p>
   {{ navm.page_nav(page_nav) }}
@@ -30,18 +34,36 @@ p.verdict span.cell-bad { padding: 0 0.3rem; }
   </dl>
   <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
 </div>
+{%- if draft %}
+<p class="caption cell-bad draft-banner">Draft: converted with no mission config, so platform, contributor and institution metadata are absent or <code>UNK</code> and this is not an OG1 file (amber: every draft page carries this line). It shows what the basestation files hold and what the conversion does to them; write the config with <code>seagliderOG1 init --raw-dir …</code>, then <code>seagliderOG1 process</code>.</p>
+{%- endif %}
 <nav class="jump-nav"><a href="#summary">Before → after</a> ·
-  <a href="#og1">The OG1 file</a> · <a href="#reconciliation">Reconciliation</a> ·
+  <a href="#og1">{{ "What an OG1 file would hold" if draft else "The OG1 file" }}</a> · <a href="#reconciliation">Reconciliation</a> ·
   <a href="#presence">Presence across dives</a> · <a href="#dimensions">Dimensions</a> ·
   <a href="#derived">Derived</a> · <a href="#dropped">Dropped</a> ·
   <a href="#variables">By basestation origin</a> · <a href="#globals">Globals</a> ·
   <a href="#scalars">Scalar parameters</a></nav>
 
+{%- if draft_snippets %}
+<section id="suggested">
+<h2>Suggested mission.yaml lines</h2>
+<p class="caption">What this draft read from the basestation files, as lines to paste into a <code>mission.yaml</code> (start one with <code>seagliderOG1 init</code>, or use <code>&lt;id&gt;_draft_mission.yaml</code> written beside this page, which also has <code>raw_dir</code>). Only values the files carry are filled; <code>null</code> is yours to fill.</p>
+<div class="snippets">
+{%- for s in draft_snippets %}
+<div class="snippet">
+<p class="snippet-title">{{ s.title }} <button type="button" class="copy" data-copy="snippet-{{ loop.index }}">copy</button></p>
+<textarea id="snippet-{{ loop.index }}" readonly wrap="off" rows="{{ s.text.count("\n") + 1 }}">{{ s.text }}</textarea>
+</div>
+{%- endfor %}
+</div>
+</section>
+{%- endif %}
+
 <section id="summary">
 <h2>1. Before → after</h2>
 <p class="caption">What the conversion read and what it wrote. The basestation column is read from the conversion sidecar beside the file{% if not sidecar_present %}, which was not found, so its cells show "—"{% endif %}. "same" means the quantity is unchanged by conversion.</p>
 <table class="nc summary">
-<thead><tr><th>Quantity</th><th>Basestation input</th><th>OG1 output</th></tr></thead>
+<thead><tr><th>Quantity</th><th>Basestation input</th><th>{{ "Draft output" if draft else "OG1 output" }}</th></tr></thead>
 <tbody>
 {%- for r in summary_rows %}
 <tr><td{% if r.indent %} class="indent"{% endif %}>{{ r.quantity }}</td><td>{{ r.input }}</td><td>{{ r.output }}</td></tr>
@@ -51,7 +73,7 @@ p.verdict span.cell-bad { padding: 0 0.3rem; }
 </section>
 
 <section id="og1">
-<h2>2. The OG1 file</h2>
+<h2>2. {{ "What an OG1 file would hold" if draft else "The OG1 file" }}</h2>
 <p class="caption">The output read by what OG1 says it must and may contain, not by where it came from — the view that answers "where did the elements of my OG1 file come from". Orig var names the basestation variable (or how the converter built it) and Orig dim its basestation dimension.</p>
 <h3>Required by OG1</h3>
 <p class="caption{% if og1_required_incomplete %} cell-bad{% endif %}">{{ og1_required_caption }}. The list is the upstream checker's (<code>ioos/cc-plugin-og</code>); amber: a required variable or the required dimension is absent.</p>
@@ -219,10 +241,37 @@ p.verdict span.cell-bad { padding: 0 0.3rem; }
 </section>
 
 <section id="globals">
+{%- if draft %}
+<h2>9. Basestation global attributes</h2>
+<p class="caption{% if requirement_amber %} cell-bad{% endif %}">For an OG1 file, mission.yaml must supply what is missing here — {{ requirement_text }}</p>
+{%- if basestation_rows %}
+<p class="caption">The input files' own global attributes, before any OG1 enrichment; the value is the first file's. Amber: the attribute differs between files or is missing from some.</p>
+<table class="nc sortable">
+<thead><tr><th>Attribute</th><th>Value (first file)</th><th>In</th></tr></thead>
+<tbody>
+{%- for r in basestation_rows %}
+<tr><td><code>{{ r.name }}</code></td><td class="cell-wrap">{{ r.value }}</td><td{% if r.bad %} class="cell-bad"{% endif %}>{{ r.status }}{% if r.distinct %} <details class="vars"><summary>values</summary>{{ r.distinct|join(" · ") }}</details>{% endif %}</td></tr>
+{%- endfor %}
+</tbody></table>
+{%- else %}
+<p class="caption cell-bad">Basestation global attributes: not in the sidecar ({{ sidecar_name }}); convert again with this version to record them.</p>
+{%- endif %}
+{%- else %}
 <h2>9. Global attributes</h2>
 <p class="caption{% if requirement_amber %} cell-bad{% endif %}">{{ requirement_text }}</p>
 {{ t.globals_tables(global_groups, computed=coverage_computed, source=globals_source,
    coverage_note="amber: the file's stated bound differs from the value recomputed from the data by more than the tolerance.") }}
+{%- endif %}
+<div class="{% if conventions.short %}warn{% else %}caption{% endif %} conventions-box">
+<p><strong>Conventions</strong> claims <code>{{ conventions.claim or "(none)" }}</code>. What the file holds against it (presence only; amber when any count is short):</p>
+<ul>
+{%- for level in conventions.acdd %}
+<li>ACDD 1.3 {{ level.level }}: {{ level.have }} of {{ level.total }} present{% if level.missing %} — missing {{ level.missing|join(", ") }}{% endif %}</li>
+{%- endfor %}
+<li>CF: {% if conventions.no_units %}{{ conventions.no_units|length }} floating-point variables on a dimension have no <code>units</code> <details class="vars"><summary>list</summary>{{ conventions.no_units|join(", ") }}</details>{% else %}every floating-point variable on a dimension has <code>units</code>{% endif %}</li>
+</ul>
+<p>Not a compliance check: run cc-plugin-og (OG1) or the IOOS compliance-checker (CF, ACDD) on the file.</p>
+</div>
 <h3>History</h3>
 {{ t.properties_table(history_rows, header=("#", "History")) }}
 </section>
@@ -242,6 +291,19 @@ p.verdict span.cell-bad { padding: 0 0.3rem; }
 
 <footer>Generated by seagliderOG1 v{{ version }} &nbsp;&middot;&nbsp; {{ generated_at }}</footer>
 {{ js_sort_tables | safe }}
+{%- if draft_snippets %}
+<script>
+document.querySelectorAll("button.copy").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var box = document.getElementById(b.dataset.copy);
+    box.select();
+    (navigator.clipboard ? navigator.clipboard.writeText(box.value) : Promise.reject())
+      .catch(function () { document.execCommand("copy"); });
+    b.textContent = "copied";
+  });
+});
+</script>
+{%- endif %}
 {{ js_top_links | safe }}
 </body>
 </html>

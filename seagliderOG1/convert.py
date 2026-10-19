@@ -10,10 +10,12 @@ import json
 import logging
 import os
 import pathlib
+import uuid
 import warnings
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 
+import netCDF4
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -40,6 +42,7 @@ __all__ = [
     "presence_by_dive",
     "presence_patterns",
     "presence_summary",
+    "enrich",
     "MetadataError",
 ]
 
@@ -706,7 +709,10 @@ def conversion_sidecar(path: str | os.PathLike) -> dict | None:
 
     The sidecar (``<id>_conversion.json``, see :func:`seagliderOG1.writers.write`)
     holds what the file cannot say about its own conversion. It is bound to the file by
-    ``id`` and ``date_created``; a sidecar from another conversion is not returned.
+    ``id`` and ``tracking_id`` (``id`` and ``date_created`` for a sidecar written
+    before ``tracking_id``); a sidecar from another conversion is not returned. When the
+    file's SHA-256 differs from the one recorded, the sidecar is returned with a warning
+    that the file changed after it was written.
 
     Parameters
     ----------
@@ -738,16 +744,198 @@ def conversion_sidecar(path: str | os.PathLike) -> dict | None:
             stacklevel=2,
         )
         return None
+    keys = ("id", "tracking_id") if "tracking_id" in sidecar else ("id", "date_created")
     with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
-        binding = {key: ds.attrs.get(key) for key in ("id", "date_created")}
+        binding = {key: ds.attrs.get(key) for key in keys}
     if {key: sidecar.get(key) for key in binding} != binding:
         warnings.warn(
             f"{sidecar_path.name} belongs to another conversion "
-            f"(id/date_created differ from {path.name}); ignoring it.",
+            f"({'/'.join(keys)} differ from {path.name}); ignoring it.",
             stacklevel=2,
         )
         return None
+    if "sha256" in sidecar and sidecar["sha256"] != writers.file_sha256(path):
+        warnings.warn(
+            f"{path.name} has changed since {sidecar_path.name} was written "
+            "(SHA-256 differs).",
+            stacklevel=2,
+        )
     return sidecar
+
+
+# The one sentence a draft carries in its ``draft`` global (see process_mission).
+DRAFT_NOTE = "converted without a mission config; not an OG1 file"
+
+
+def _basestation_globals(list_of_datasets: Sequence[xr.Dataset]) -> dict:
+    """Return each basestation global attribute's distinct values across the inputs.
+
+    What the files say about themselves, before any OG1 enrichment — the draft page's
+    global-attributes section reads it from the sidecar.
+
+    Parameters
+    ----------
+    list_of_datasets : sequence of xarray.Dataset
+        The basestation datasets that reached the output.
+
+    Returns
+    -------
+    dict
+        Attribute name to ``{"values": [distinct values as text, first-seen order],
+        "n_files": files that carry it}``, names sorted.
+
+    """
+    found: dict[str, dict] = {}
+    for ds in list_of_datasets:
+        for name, value in ds.attrs.items():
+            entry = found.setdefault(str(name), {"values": [], "n_files": 0})
+            entry["n_files"] += 1
+            text = str(value)
+            if text not in entry["values"]:
+                entry["values"].append(text)
+    return {name: found[name] for name in sorted(found)}
+
+
+def _check_metadata_keys(
+    deployment: Mapping[str, object], global_attributes: Mapping[str, object]
+) -> None:
+    """Raise on a mission-config global the converter owns or that has another home.
+
+    Parameters
+    ----------
+    deployment : collections.abc.Mapping
+        The ``deployment:`` block.
+    global_attributes : collections.abc.Mapping
+        The ``global_attributes:`` block.
+
+    Raises
+    ------
+    ValueError
+        If ``global_attributes`` sets a converter-derived key or a key with a home in
+        ``deployment:``, or ``deployment:`` has an unknown key.
+
+    """
+    # Only a real (non-null) value collides; a null is skipped later, so a legacy
+    # config_version 1 template that lists reserved keys as null (the old init wrote
+    # global_attributes: {project: null, program: null, ...}) still converts.
+    set_globals = {k for k, v in global_attributes.items() if not _is_empty(v)}
+    collisions = _DERIVED_GLOBALS.intersection(set_globals)
+    if collisions:
+        msg = (
+            "global_attributes may not set converter-derived keys: "
+            f"{sorted(collisions)}. Remove them from the mission config."
+        )
+        raise ValueError(msg)
+    structured = set(_DEPLOYMENT_GLOBALS).intersection(set_globals)
+    if structured:
+        msg = (
+            "global_attributes may not set keys that have a structured home in the "
+            f"deployment: block: {sorted(structured)}. Move them under deployment:."
+        )
+        raise ValueError(msg)
+    unknown_deployment = set(deployment) - set(_DEPLOYMENT_GLOBALS)
+    if unknown_deployment:
+        msg = (
+            f"deployment: has unknown keys: {sorted(unknown_deployment)}. Allowed "
+            f"keys are {list(_DEPLOYMENT_GLOBALS)}; put anything else under "
+            "global_attributes:."
+        )
+        raise ValueError(msg)
+
+
+def enrich(
+    path: str | os.PathLike,
+    *,
+    deployment: Mapping[str, object] | None = None,
+    global_attributes: Mapping[str, object] | None = None,
+    doi: str | None = None,
+) -> pathlib.Path:
+    """Set global attributes on a written OG1 file without converting again.
+
+    For metadata that exists only after the file is written — a DOI assigned on
+    publication — or a corrected ``deployment:`` / ``global_attributes:`` value. Only
+    global attributes change (edited in place; variables are not rewritten). The file
+    gets ``date_modified`` set to now, a ``history`` line naming the keys, and a new
+    ``tracking_id``; ``date_created`` is kept. A sidecar beside the file is rebound to
+    the new ``tracking_id`` and SHA-256.
+
+    Parameters
+    ----------
+    path : str or os.PathLike
+        The OG1 netCDF file.
+    deployment : collections.abc.Mapping, optional
+        ``deployment:`` keys to set (as in :func:`to_og1`); null values are skipped.
+    global_attributes : collections.abc.Mapping, optional
+        ``global_attributes:`` keys to set (as in :func:`to_og1`).
+    doi : str, optional
+        The DOI, written as the ``doi`` global (wins over ``deployment["doi"]``).
+
+    Returns
+    -------
+    pathlib.Path
+        The enriched file.
+
+    Raises
+    ------
+    ValueError
+        If nothing is given to set, or a key is one the converter owns or that
+        belongs in the other block (as for :func:`to_og1`).
+    FileNotFoundError
+        If ``path`` does not exist.
+
+    """
+    path = pathlib.Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(errno.ENOENT, "no such OG1 file", str(path))
+    deployment = dict(deployment or {})
+    global_attributes = dict(global_attributes or {})
+    _check_metadata_keys(deployment, global_attributes)
+    if doi is not None:
+        deployment["doi"] = doi
+    updates = {
+        key: value
+        for block in (deployment, global_attributes)
+        for key, value in block.items()
+        if not _is_empty(value)
+    }
+    if not updates:
+        msg = "nothing to enrich: no deployment, global_attributes or doi value given."
+        raise ValueError(msg)
+
+    now = datetime.now(UTC)
+    with netCDF4.Dataset(path, "a") as nc:
+        for key, value in updates.items():
+            nc.setncattr(key, value)
+        nc.setncattr("date_modified", now.strftime("%Y%m%dT%H%M%S"))
+        line = (
+            f"{now.isoformat(timespec='seconds')} seagliderOG1 {__version__}: "
+            f"enrich set {', '.join(sorted(updates))}"
+        )
+        history = str(getattr(nc, "history", "")).strip()
+        nc.setncattr("history", f"{history}\n{line}" if history else line)
+        if "conversion_attribute_sources" in nc.ncattrs():
+            sources = json.loads(nc.getncattr("conversion_attribute_sources"))
+            for names in sources.values():
+                names[:] = [name for name in names if name not in updates]
+            sources.setdefault("enriched", [])
+            sources["enriched"] = sorted(set(sources["enriched"]) | set(updates))
+            nc.setncattr("conversion_attribute_sources", json.dumps(sources))
+        nc.setncattr("tracking_id", str(uuid.uuid4()))
+        attrs = {key: nc.getncattr(key) for key in nc.ncattrs()}
+
+    sidecar_file = writers.conversion_path(path, ".json")
+    if sidecar_file.is_file():
+        try:
+            contents = json.loads(sidecar_file.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            warnings.warn(
+                f"{sidecar_file.name} could not be read ({exc}); not rebound.",
+                stacklevel=2,
+            )
+        else:
+            writers.write_sidecar(path, attrs, contents)
+    _log.info("enriched %s: %s", path, sorted(updates))
+    return path
 
 
 def _apply_deployment(
@@ -1053,32 +1241,7 @@ def to_og1(
 
     global_attributes = global_attributes or {}
     deployment = deployment or {}
-    # Only a real (non-null) value collides; a null is skipped later, so a legacy
-    # config_version 1 template that lists reserved keys as null (the old init wrote
-    # global_attributes: {project: null, program: null, ...}) still converts.
-    set_globals = {k for k, v in global_attributes.items() if not _is_empty(v)}
-    collisions = _DERIVED_GLOBALS.intersection(set_globals)
-    if collisions:
-        msg = (
-            "global_attributes may not set converter-derived keys: "
-            f"{sorted(collisions)}. Remove them from the mission config."
-        )
-        raise ValueError(msg)
-    structured = set(_DEPLOYMENT_GLOBALS).intersection(set_globals)
-    if structured:
-        msg = (
-            "global_attributes may not set keys that have a structured home in the "
-            f"deployment: block: {sorted(structured)}. Move them under deployment:."
-        )
-        raise ValueError(msg)
-    unknown_deployment = set(deployment) - set(_DEPLOYMENT_GLOBALS)
-    if unknown_deployment:
-        msg = (
-            f"deployment: has unknown keys: {sorted(unknown_deployment)}. Allowed "
-            f"keys are {list(_DEPLOYMENT_GLOBALS)}; put anything else under "
-            "global_attributes:."
-        )
-        raise ValueError(msg)
+    _check_metadata_keys(deployment, global_attributes)
 
     if mode not in vocabularies.MODE_SUFFIX:
         msg = f"mode must be one of {sorted(vocabularies.MODE_SUFFIX)}, not {mode!r}."
@@ -1128,6 +1291,7 @@ def to_og1(
         # Only the dives that reach the output: a rejected dive contributed nothing.
         provenance["inputs"] = [_input_record(ds) for ds in used_inputs]
         provenance["presence"] = presence_by_dive(used_inputs)
+        provenance["basestation_globals"] = _basestation_globals(used_inputs)
 
     ds_og1 = xr.concat(processed_datasets, dim="N_MEASUREMENTS")
     ds_og1 = ds_og1.sortby("TIME")
@@ -1405,6 +1569,7 @@ def process_mission(
     repair: bool = False,
     overwrite: bool = False,
     report: bool = False,
+    draft: bool = False,
 ) -> pathlib.Path:
     """Convert one Seaglider mission to an OG1 file: read, convert, subset, write.
 
@@ -1450,6 +1615,11 @@ def process_mission(
         Also write the HTML conversion page
         (:func:`seagliderOG1.reports.conversion.render_conversion`) beside the file
         as ``<output_dir>/<id>_conversion.html``. Default is False.
+    draft : bool, optional
+        Mark the output as a draft, not an OG1 file — for a conversion run with no
+        mission config, to see what the basestation files hold. The ``id`` (and so
+        every file name) ends ``_draft``, a ``draft`` global says why, and
+        ``Conventions`` drops ``OG-1.0``. Default is False.
 
     Returns
     -------
@@ -1515,6 +1685,15 @@ def process_mission(
     )
     if keep_variables:
         ds = _keep_variables(ds, list(keep_variables))
+    if draft:
+        ds.attrs["id"] = f"{ds.attrs['id']}_draft"
+        ds.attrs["draft"] = DRAFT_NOTE
+        conventions = [
+            part.strip()
+            for part in str(ds.attrs.get("Conventions", "")).split(",")
+            if part.strip() and not part.strip().startswith("OG-")
+        ]
+        ds.attrs["Conventions"] = ", ".join(conventions)
 
     output_dir = pathlib.Path(output_dir)
     path = output_dir / f"{ds.attrs['id']}.nc"

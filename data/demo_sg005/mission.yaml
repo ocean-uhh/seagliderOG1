@@ -8,15 +8,15 @@
 
 config_version: 2
 
-source: ./              # mission dir (p*.nc inside) or a root of SN/DATE dirs
+raw_dir: ./             # basestation files: a mission dir (p*.nc inside) or a root of SN/DATE dirs
 output_dir: ../../outputs/   # where OG1 files are written (gitignored)
 mode: delayed           # realtime | delayed
 dives: null             # [first, last] dive numbers; null = all files present
-repair: false           # run repair_files on the basestation files (writes the source tree)
+repair: false           # run repair_files on the basestation files (writes the raw_dir tree)
 keep_variables: null    # optional list of science variables to keep; null = all
 report: false           # also write <id>_conversion.html beside each file
 
-platform:               # 'init --from' fills these; fill any null before validate
+platform:               # 'init --raw-dir' fills these; fill any null before validate
   PLATFORM_SERIAL_NUMBER: sg005   # required -> variable; from platform_id; a serial or a local nickname
   PLATFORM_MODEL: University of Washington Seaglider M1 glider   # required -> variable
   platform_model_vocabulary: https://vocab.nerc.ac.uk/collection/B76/current/B7600024/   # optional -> attribute on PLATFORM_MODEL
@@ -33,7 +33,7 @@ platform:               # 'init --from' fills these; fill any null before valida
   BATTERY_PACK: null   # optional -> variable; battery packaging
 
 deployment:             # OG1 deployment identity; one key per global, null = not written
-  id: null   # mandatory -> global attribute; overrides the derived <serial>_<start>_<mode>; 'init --from' proposes it
+  id: null   # mandatory -> global attribute; leave null for the derived <serial>_<start>_<mode>; set only to override it
   site: null   # highly desirable -> global attribute
   site_vocabulary: null   # highly desirable -> global attribute
   program: null   # highly desirable -> global attribute

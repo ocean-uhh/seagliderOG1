@@ -131,7 +131,9 @@ Nothing about this is added to the OG1 file.
 The conversion page
 -------------------
 
-``process --report`` (and ``inspect --conversion -o``) writes an HTML page beside the OG1 file.
+``seagliderOG1 report`` (and ``process --report``) writes an HTML page for the OG1 file. A
+draft (``seagliderOG1 draft``) gets the same page with its global attributes replaced by the
+basestation files' own.
 Its sections, in order:
 
 #. **Before → after** — files, dives, size on disk, samples on the shared axis, variable and
@@ -169,7 +171,7 @@ Validation
 ----------
 
 The ``validate`` verb checks the **mission configuration** before conversion: known and
-required keys, that ``source`` is reachable and holds basestation files, the dive range, the
+required keys, that ``raw_dir`` is reachable and holds basestation files, the dive range, the
 required platform fields, and that the contributor and institution records include at least
 one PI and one Operator. During conversion the input coordinates are checked.
 

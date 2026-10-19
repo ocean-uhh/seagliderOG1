@@ -1,7 +1,9 @@
 """Write OG1 datasets to compressed NetCDF files."""
 
+import hashlib
 import json
 import logging
+import uuid
 from numbers import Number
 from pathlib import Path
 
@@ -12,7 +14,7 @@ from seagliderOG1 import __version__, tools
 
 _log = logging.getLogger(__name__)
 
-__all__ = ["write", "conversion_path"]
+__all__ = ["write", "conversion_path", "file_sha256", "write_sidecar"]
 
 # Version of the sidecar layout; bump when a reader would misread the old one.
 SIDECAR_SCHEMA = 1
@@ -103,6 +105,10 @@ def write(
 
     valid_types = (str, Number, np.ndarray, np.number, list, tuple)
 
+    # A new identity for every written version of the file (ctdcast's tracking_id); the
+    # sidecar binds to it, and enrich issues a new one.
+    ds.attrs["tracking_id"] = str(uuid.uuid4())
+
     encoding = _compression_encoding(ds)
     for name, var in ds.variables.items():
         if np.issubdtype(var.dtype, np.datetime64):
@@ -144,18 +150,68 @@ def write(
             _log.warning(f"Attributes with dtype float64: {float_attrs}")
             raise
     if sidecar is not None:
-        # The binding keys come last so a sidecar dict cannot override them.
-        payload = {
-            **sidecar,
-            "schema": SIDECAR_SCHEMA,
-            "id": ds.attrs.get("id"),
-            "date_created": ds.attrs.get("date_created"),
-            "converter": {"seagliderOG1": __version__},
-        }
-        target = conversion_path(path, ".json")
-        target.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
-        _log.info("Conversion sidecar written to %s", target)
+        write_sidecar(path, ds.attrs, sidecar)
     return Path(path)
+
+
+def file_sha256(path: str | Path) -> str:
+    """Return the SHA-256 hex digest of a file's bytes.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The file to hash.
+
+    Returns
+    -------
+    str
+        The 64-character hex digest.
+
+    """
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as file:
+        for block in iter(lambda: file.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def write_sidecar(path: str | Path, attrs: dict, contents: dict) -> Path:
+    """Write ``<stem>_conversion.json`` beside an OG1 file, bound to its current version.
+
+    The binding is the file's ``id`` and ``tracking_id`` plus the SHA-256 of its bytes,
+    so a reader can tell the sidecar belongs to this file and that the file has not
+    changed since. A checksum cannot live inside the file it covers, so it lives here.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The OG1 netCDF file, already written.
+    attrs : dict
+        Its global attributes (``id``, ``tracking_id``, ``date_created``).
+    contents : dict
+        The sidecar body (``inputs``, ``presence``, ...); its binding keys, if any,
+        are replaced.
+
+    Returns
+    -------
+    pathlib.Path
+        The sidecar path.
+
+    """
+    # The binding keys come last so the body cannot override them.
+    payload = {
+        **contents,
+        "schema": SIDECAR_SCHEMA,
+        "id": attrs.get("id"),
+        "tracking_id": attrs.get("tracking_id"),
+        "date_created": attrs.get("date_created"),
+        "sha256": file_sha256(path),
+        "converter": {"seagliderOG1": __version__},
+    }
+    target = conversion_path(path, ".json")
+    target.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    _log.info("Conversion sidecar written to %s", target)
+    return target
 
 
 def conversion_path(path: str | Path, suffix: str) -> Path:

@@ -33,13 +33,14 @@ template from the first basestation file, check it, then convert.
 
 .. code-block:: console
 
-   $ seagliderOG1 init --from /data/005/20080606 -o sg005.yaml   # template from the first file
-   $ seagliderOG1 validate sg005.yaml                            # config, source, dive range
+   $ seagliderOG1 draft --raw-dir /data/005/20080606             # optional: a draft page, no config
+   $ seagliderOG1 init sg005.yaml --raw-dir /data/005/20080606   # template from the first file
+   $ seagliderOG1 validate sg005.yaml                            # config, raw_dir, dive range
    $ seagliderOG1 process  sg005.yaml                            # -> <output_dir>/<id>.nc
 
 ``init`` fills the platform block from the basestation file; open ``sg005.yaml`` and complete
 the contributor and institution records before ``validate``. For a root of ``SN/DATE`` mission
-directories, point ``source`` at the root and select with ``--all`` or ``--mission GLOB``; ``-n``
+directories, point ``raw_dir`` at the root and select with ``--all`` or ``--mission GLOB``; ``-n``
 previews without writing. Paths in ``sg005.yaml`` resolve relative to the file. See
 :ref:`mission_yaml` for every key and :ref:`cli_reference` for every flag.
 

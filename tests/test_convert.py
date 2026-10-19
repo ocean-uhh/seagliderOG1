@@ -970,14 +970,33 @@ def test_sidecar_inputs_record_dimension_lengths_and_global_count(
 
 
 def test_conversion_sidecar_ignores_another_conversion(tmp_path: pathlib.Path) -> None:
-    """A sidecar whose date_created does not match the file is warned about and ignored."""
+    """A sidecar whose tracking_id does not match the file is warned about and ignored."""
     path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
     sidecar_file = writers.conversion_path(path, ".json")
     payload = json.loads(sidecar_file.read_text())
-    payload["date_created"] = "19990101T000000"
+    payload["tracking_id"] = "not-this-file"
     sidecar_file.write_text(json.dumps(payload))
     with pytest.warns(UserWarning, match="belongs to another conversion"):
         assert convert.conversion_sidecar(path) is None
+    # A sidecar written before tracking_id binds by id + date_created, as it did.
+    del payload["tracking_id"]
+    sidecar_file.write_text(json.dumps(payload))
+    assert convert.conversion_sidecar(path) is not None
+
+
+def test_sidecar_records_tracking_id_and_hash_and_warns_on_change(
+    tmp_path: pathlib.Path,
+) -> None:
+    """The sidecar carries the file's tracking_id and SHA-256; a changed file warns."""
+    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    sidecar = json.loads(writers.conversion_path(path, ".json").read_text())
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        assert sidecar["tracking_id"] == ds.attrs["tracking_id"]
+    assert sidecar["sha256"] == writers.file_sha256(path)
+    with netCDF4.Dataset(path, "a") as nc:
+        nc.setncattr("comment", "edited by hand")
+    with pytest.warns(UserWarning, match="has changed since"):
+        assert convert.conversion_sidecar(path) is not None
 
 
 def test_raw_count_channels_keep_their_names_and_are_counts():
