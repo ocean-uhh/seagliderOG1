@@ -160,7 +160,6 @@ LONGITUDE_GPS:
   uri: https://vocab.nerc.ac.uk/collection/OG1/current/LON/
 TIME_GPS:
   long_name: time of each GPS location
-  units: seconds since 1970-01-01T00:00:00Z
 TIME:
   long_name: time of measurement
   observation_type: measured

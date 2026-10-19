@@ -104,6 +104,7 @@ def og1_name_mapping(
             all_sources.setdefault(variable_name, dataset[variable_name])
 
     standard_names = vocabularies.standard_names
+    sensor_names = vocabularies.sensor_names
     sensor_vocabs = vocabularies.sensor_vocabs
     has_ctd_pressure = "ctd_pressure" in all_sources
 
@@ -134,7 +135,7 @@ def og1_name_mapping(
         if instrument is None:
             return None
 
-        og1_instrument_name = standard_names.get(instrument)
+        og1_instrument_name = sensor_names.get(instrument)
 
         if og1_instrument_name is None:
             return None
@@ -438,9 +439,8 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
     for dataset in datasets:
         instrument = dataset.attrs.get("instrument")
         if instrument and instrument.strip():
-            sensor_names = instrument.split()
             # Remove unneeded entries and initialize unique dictionary entries
-            for sensor in sensor_names:
+            for sensor in instrument.split():
                 if sensor != "magnetometer":
                     sensor_dict.setdefault(sensor, {})
 
@@ -453,12 +453,12 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
     # -------------------------------------------------------------------------
     # 2. Add technical specifications from OG1 vocabularies
     # -------------------------------------------------------------------------
-    standard_names = vocabularies.standard_names
+    sensor_names = vocabularies.sensor_names
     sensor_vocabs = vocabularies.sensor_vocabs
 
     for sensor in sensor_dict:
-        if sensor in standard_names:
-            new_name = standard_names[sensor]
+        if sensor in sensor_names:
+            new_name = sensor_names[sensor]
             # Copy so calibration metadata does not modify shared vocabularies.
             sensor_dict[sensor] = dict(sensor_vocabs[new_name])
             _log.info(
@@ -469,8 +469,8 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
             )
         else:
             _log.warning(
-                "Sensor '%s' not found in standard names vocabulary; no technical "
-                "specifications added.",
+                "Sensor '%s' is not in OG1_sensor_names.yaml; no technical "
+                "specifications and no SENSOR_ variable for it.",
                 sensor,
             )
 
@@ -641,6 +641,10 @@ def add_sensor_to_dataset(
     # 1. Create dimensionless sensor variables in the dataset
     # -------------------------------------------------------------------------
     for _, sensor_info in sensor_dict.items():
+        # A sensor key with no catalogue entry has no type to name a variable by
+        # (gather_sensor_info warned about it); skip it rather than fail the run.
+        if "sensor_type" not in sensor_info:
+            continue
         # Build sensor variable name
         sensor_type = sensor_info["sensor_type"].upper().replace(" ", "_")
         serial = sensor_info["sensor_serial_number"]
@@ -837,12 +841,15 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
     """
     bytes_in = ds.nbytes
     coord_names = list(ds.coords)
-    for var_name in list(ds.variables):
+    # Work on the bare Variables and swap the changed ones in with one drop and one
+    # assign: per-variable drop_vars + reassignment rebuilt the whole dataset each
+    # time. Changed variables still move to the end, in order, as before.
+    changed: dict[str, xr.Variable] = {}
+    for var_name, da in ds.variables.items():
         if var_name[-2:].lower() == "qc":
             # QC flags are owned by convert_qc_flags (int8, fill 6, no _FillValue);
             # never apply the generic bit-width fill (127) to a flag variable.
             continue
-        da = ds[var_name]
         # Serialized per-dive parameters must remain scalar strings.
         if da.attrs.get("serialization") == "json":
             continue
@@ -858,7 +865,6 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
         if new_dtype == input_dtype:
             continue
         _log.debug(f"{var_name} input dtype {input_dtype} change to {new_dtype}")
-        ds = ds.drop_vars(var_name)
         if "int" in str(new_dtype):
             # Respect a sentinel the variable already declares (e.g. PROFILE_NUMBER uses
             # -9999); only derive one from the bit width when none exists.
@@ -877,7 +883,8 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
             da_new.encoding["_FillValue"] = fill_val
         else:
             da_new = da.astype(new_dtype)
-        ds[var_name] = da_new
+        changed[str(var_name)] = da_new
+    ds = ds.drop_vars(list(changed)).assign(changed)
     # drop_vars + reassignment demotes a coordinate to a data variable; restore coords.
     ds = ds.set_coords([c for c in coord_names if c in ds.variables])
     bytes_out = ds.nbytes
@@ -1256,6 +1263,19 @@ def add_scalar_parameters(
         return value
 
     used_names = {}
+    # Collected, then applied with one drop and one assign at the end: assigning into
+    # the large merged dataset once per parameter rebuilt it every time. `added` and
+    # `dropped` give the loop the view the one-at-a-time version had.
+    added: dict[str, xr.DataArray] = {}
+    dropped: set[str] = set()
+
+    def current(name: str) -> xr.DataArray | xr.Variable | None:
+        """Return the variable ``name`` as the loop has left it so far, or None."""
+        if name in added:
+            return added[name]
+        if name in result.variables and name not in dropped:
+            return result.variables[name]
+        return None
 
     for original_name, parameter in extracted["parameters"].items():
         row_mask = mapping["original_name"].eq(original_name)
@@ -1278,8 +1298,9 @@ def add_scalar_parameters(
         used_names[output_name] = original_name
 
         # Existing versions of this parameter can be replaced.
-        if output_name in result.variables:
-            known_source = result[output_name].attrs.get("original_name")
+        existing_variable = current(output_name)
+        if existing_variable is not None:
+            known_source = existing_variable.attrs.get("original_name")
 
             if (
                 output_name != original_name
@@ -1375,10 +1396,12 @@ def add_scalar_parameters(
             variable.encoding["dtype"] = str
 
         # Remove an old original-name version when the parameter is renamed.
-        if output_name != original_name and original_name in result.variables:
-            result = result.drop_vars(original_name)
+        if output_name != original_name and current(original_name) is not None:
+            added.pop(original_name, None)
+            if original_name in result.variables:
+                dropped.add(original_name)
 
-        result[output_name] = variable
+        added[output_name] = variable
 
         mapping_updates = {
             "OG1_name": output_name if is_mapped else None,
@@ -1411,6 +1434,7 @@ def add_scalar_parameters(
                 ignore_index=True,
             )
 
+    result = result.drop_vars(sorted(dropped)).assign(added)
     return result, mapping
 
 

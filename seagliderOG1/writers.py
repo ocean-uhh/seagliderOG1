@@ -52,10 +52,9 @@ def write(
     """Write the dataset to a NetCDF file with lossless compression.
 
     Every non-scalar numeric variable, coordinates included, is written with zlib
-    at level 4 and the shuffle filter. If a TypeError occurs due to invalid
-    attribute values, converts the invalid attributes to strings and retries the
-    save. The input dataset is copied first, so the caller's dataset is not
-    modified.
+    at level 4 and the shuffle filter. Attributes are checked before anything is
+    written: one netCDF cannot store is refused by name, never converted to text.
+    The input dataset is copied first, so the caller's dataset is not modified.
 
     Parameters
     ----------
@@ -69,7 +68,7 @@ def write(
     sidecar : dict, optional
         Conversion provenance (as filled by ``to_og1(provenance=...)``) to write beside
         the file as ``<stem>_conversion.json`` (:func:`conversion_path`), bound to it by the
-        dataset's ``id`` and ``date_created``; a sidecar already there is replaced.
+        dataset's ``id`` and ``tracking_id``; a sidecar already there is replaced.
         Nothing from it is written into the NetCDF file. Default is None (no sidecar).
 
     Returns
@@ -83,11 +82,13 @@ def write(
         If ``path`` exists and ``overwrite`` is False.
     ValueError
         If the dataset carries a None-valued attribute.
+    TypeError
+        If an attribute (global or on a variable) has a type netCDF cannot store, such
+        as a dict or a bool; the message names each one. Nothing is written or removed.
     """
     ds = ds.copy()
 
-    # Refuse None-valued attributes by name rather than letting the stringify
-    # retry below turn them into the literal "None".
+    # Refuse None-valued attributes by name rather than writing the literal "None".
     none_attrs = [name for name, value in ds.attrs.items() if value is None]
     none_attrs += [
         f"{var_name}:{name}"
@@ -98,6 +99,18 @@ def write(
     if none_attrs:
         msg = f"refusing to write None-valued attribute(s): {none_attrs}"
         raise ValueError(msg)
+    # Checked here, before an existing file is removed: an attribute netCDF cannot
+    # store is the caller's to fix, so it is named, not converted to text.
+    bad_attrs = [
+        f"{owner}:{name} ({type(value).__name__})"
+        for owner, attrs in [("global", ds.attrs)]
+        + [(str(var_name), var.attrs) for var_name, var in ds.variables.items()]
+        for name, value in attrs.items()
+        if not _storable_attribute(value)
+    ]
+    if bad_attrs:
+        msg = f"refusing to write attribute(s) netCDF cannot store: {bad_attrs}"
+        raise TypeError(msg)
 
     # Handle existing file
     output_path = Path(path)
@@ -110,8 +123,6 @@ def write(
                 f"Output file '{path}' already exists. "
                 "Use overwrite=True to replace it."
             )
-
-    valid_types = (str, Number, np.ndarray, np.number, list, tuple)
 
     # A new identity for every written version of the file (ctdcast's tracking_id); the
     # sidecar binds to it, and enrich issues a new one.
@@ -127,37 +138,8 @@ def write(
             var.attrs.pop("calendar", None)
             encoding.setdefault(name, {}).update(_TIME_ENCODING)
 
-    def _write() -> None:
-        ds.to_netcdf(path, encoding=encoding, format="NETCDF4", engine="netcdf4")
-        _log.info("Dataset successfully saved to %s", path)
-
-    try:
-        _write()
-    except TypeError as e:
-        _log.error(f"TypeError saving dataset: {e.__class__.__name__}: {e}")
-
-        for varname, variable in ds.variables.items():
-            for k, v in variable.attrs.items():
-                if not isinstance(v, valid_types) or isinstance(v, bool):
-                    _log.warning(
-                        f"For variable '{varname}': "
-                        f"Converting attribute '{k}' with value '{v}' to string."
-                    )
-                    variable.attrs[k] = str(v)
-
-        try:
-            _write()
-        except Exception as e:  # I/O boundary: last-ditch save attempt
-            _log.error(f"Failed to save dataset: {e}")
-            datetime_vars = [
-                var for var in ds.variables if ds[var].dtype == "datetime64[ns]"
-            ]
-            _log.warning(f"Variables with dtype datetime64[ns]: {datetime_vars}")
-            float_attrs = [
-                attr for attr in ds.attrs if isinstance(ds.attrs[attr], float)
-            ]
-            _log.warning(f"Attributes with dtype float64: {float_attrs}")
-            raise
+    ds.to_netcdf(path, encoding=encoding, format="NETCDF4", engine="netcdf4")
+    _log.info("Dataset successfully saved to %s", path)
     if sidecar is not None:
         write_sidecar(path, ds.attrs, sidecar)
     return Path(path)
@@ -276,6 +258,36 @@ def conversion_path(path: str | Path, suffix: str) -> Path:
     """
     path = Path(path)
     return path.with_name(f"{path.stem}_conversion{suffix}")
+
+
+def _storable_attribute(value: object) -> bool:
+    """Return whether netCDF can store ``value`` as an attribute unchanged.
+
+    Text, a number, or a sequence or array of text or numbers. Not a bool (netCDF has no
+    boolean attribute), None, a mapping, or a sequence holding any of those.
+
+    Parameters
+    ----------
+    value : object
+        The attribute value.
+
+    Returns
+    -------
+    bool
+        True when it can be written as is.
+
+    """
+
+    def scalar(item: object) -> bool:
+        if isinstance(item, bool | np.bool_):
+            return False
+        return isinstance(item, str | bytes | Number | np.number)
+
+    if isinstance(value, np.ndarray):
+        return value.dtype.kind in "iufcSU"
+    if isinstance(value, list | tuple):
+        return all(scalar(item) for item in value)
+    return scalar(value)
 
 
 def proposal_path(path: str | Path) -> Path:

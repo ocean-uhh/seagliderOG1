@@ -16,6 +16,7 @@ Key Components:
 Configuration Files:
 
 - OG1_variable_names.yaml: Variable name mappings
+- OG1_sensor_names.yaml: Sensor keys to OG1_sensor_attributes.yaml titles
 - OG1_variable_attributes.yaml: Variable attribute vocabularies
 - OG1_sensor_attributes.yaml: Sensor attribute definitions
 - OG1_global_attributes.yaml: Global attribute configurations
@@ -319,6 +320,11 @@ with (CONFIG_DIR / "OG1_variable_attributes.yaml").open() as file:
 # Reference: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/
 with (CONFIG_DIR / "OG1_sensor_attributes.yaml").open() as file:
     sensor_vocabs = yaml.safe_load(file)
+
+# Sensor keys from the basestation `instrument` global -> sensor_vocabs titles. A
+# lookup only, kept apart from standard_names so it is never applied as a rename.
+with (CONFIG_DIR / "OG1_sensor_names.yaml").open() as file:
+    sensor_names = yaml.safe_load(file)
 
 
 # ACDD 1.3 global attributes by level, for the conversion page's conventions box.

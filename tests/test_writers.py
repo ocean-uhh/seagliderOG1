@@ -92,16 +92,25 @@ def test_smaller_than_uncompressed(tmp_path: pathlib.Path) -> None:
     assert compressed.stat().st_size < plain.stat().st_size
 
 
-def test_retry_path_stays_compressed(tmp_path: pathlib.Path) -> None:
-    """A bad variable attribute forces the retry path, which still compresses."""
+def test_unwritable_attribute_is_refused_by_name(tmp_path: pathlib.Path) -> None:
+    """A variable attribute netCDF cannot store is named, not stringified; nothing is lost."""
     ds = _load_sample()
     out = tmp_path / "out.nc"
+    out.write_text("previous version")
     ds["TEMP"].attrs["bad_attr"] = {"not": "serialisable"}
+    ds["TEMP"].attrs["flag"] = True
 
-    assert writers.write(ds, str(out)) == out
-
-    with netCDF4.Dataset(out) as nc:
-        assert nc.variables["TEMP"].filters()["zlib"] is True
+    with pytest.raises(TypeError, match=r"TEMP:bad_attr \(dict\).*TEMP:flag \(bool\)"):
+        writers.write(ds, str(out), overwrite=True)
+    # Refused before the existing file is removed.
+    assert out.read_text() == "previous version"
+    # Containers are checked by element: these pass a top-level type check.
+    for value in ([True, False], np.array([True]), ["a", None], [{"a": 1}]):
+        bad = _load_sample()
+        bad["TEMP"].attrs["nested"] = value
+        with pytest.raises(TypeError, match="TEMP:nested"):
+            writers.write(bad, str(out), overwrite=True)
+        assert out.read_text() == "previous version"
 
 
 def test_input_dataset_not_mutated(tmp_path: pathlib.Path) -> None:
@@ -144,14 +153,14 @@ def test_preserves_integer_fill_value(tmp_path: pathlib.Path) -> None:
 
 
 def test_raises_when_unwriteable(tmp_path: pathlib.Path) -> None:
-    """A bad global attribute the retry cannot fix makes write raise."""
+    """A bad global attribute is refused by name and no file is written."""
     ds = _load_sample()
     out = tmp_path / "out.nc"
-    # the retry only stringifies variable attrs, so a bad global attr survives both writes
     ds.attrs["bad_global"] = {"not": "serialisable"}
 
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match=r"global:bad_global \(dict\)"):
         writers.write(ds, str(out))
+    assert not out.exists()
 
 
 def test_time_units_canonical(tmp_path: pathlib.Path) -> None:

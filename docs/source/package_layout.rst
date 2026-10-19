@@ -28,6 +28,8 @@ Defaults live in two places, neither of which is user configuration.
 Packaged YAML (``seagliderOG1/config/``), loaded at conversion time:
 
 * ``OG1_variable_names.yaml`` — basestation → OG1 variable name mappings.
+* ``OG1_sensor_names.yaml`` — sensor keys (``sbe41``, ``wlbb2f``) → ``OG1_sensor_attributes.yaml``
+  entries; a lookup, never a variable rename.
 * ``OG1_variable_attributes.yaml`` — CF/OG1 variable attributes (``standard_name``, ``long_name``,
   ``units``).
 * ``OG1_sensor_attributes.yaml`` — sensor metadata.

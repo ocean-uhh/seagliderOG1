@@ -1214,10 +1214,12 @@ def _dimension_ledger(
         A JSON object of ``dimension -> {"fate", "variables"}``, keys sorted.
 
     """
+    # ds.variables[name] is the bare Variable; ds[name] would build a DataArray with
+    # all its coordinates for every variable of every dive.
     in_output = {
-        str(ds_og1[name].attrs["original_dimension"])
-        for name in ds_og1.variables
-        if "original_dimension" in ds_og1[name].attrs
+        str(var.attrs["original_dimension"])
+        for var in ds_og1.variables.values()
+        if "original_dimension" in var.attrs
     }
     ledger = {}
     for dim in all_dims:
@@ -1231,8 +1233,8 @@ def _dimension_ledger(
             {
                 str(name)
                 for ds in list_of_datasets
-                for name in ds.variables
-                if dim in ds[name].dims
+                for name, var in ds.variables.items()
+                if dim in var.dims
             }
         )
         ledger[dim] = {"fate": fate, "variables": names}
@@ -1483,13 +1485,6 @@ def to_og1(
         attrs={"long_name": "time of deployment"},
     )
 
-    # Remove attributes from TIME_GPS, but keep the transient derived-sources stamp so the
-    # ledger can record that TIME_GPS came from log_gps_time; it is popped before the write.
-    if "TIME_GPS" in ds_og1.variables:
-        gps_sources = ds_og1["TIME_GPS"].attrs.get(_DERIVED_SOURCES_ATTR)
-        ds_og1["TIME_GPS"].attrs = (
-            {_DERIVED_SOURCES_ATTR: gps_sources} if gps_sources is not None else {}
-        )
     # ---- -------------------------------------------- ----
 
     # Update time_coverage attributes
@@ -1512,9 +1507,6 @@ def to_og1(
     )
     ds_og1.attrs["time_coverage_end"] = (
         tend_str  # ds_og1.TIME[-1].values.strftime('%Y%m%dT%H%M%S')
-    )
-    ds_og1.attrs["date_created"] = _pipeline._clean_time_string(
-        ds_og1.attrs["date_created"]
     )
 
     # Update geospatial attributes
@@ -2261,6 +2253,10 @@ def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
     gps_ds["LATITUDE_GPS"].attrs[_DERIVED_SOURCES_ATTR] = json.dumps(["log_gps_lat"])
     gps_ds["LONGITUDE_GPS"].attrs[_DERIVED_SOURCES_ATTR] = json.dumps(["log_gps_lon"])
     gps_ds["TIME_GPS"].attrs[_DERIVED_SOURCES_ATTR] = json.dumps(["log_gps_time"])
+    # Their source dimension, as every merged variable carries, so they group with
+    # gps_info. No original_name: a derived variable names its sources in the ledger.
+    for name in ("LATITUDE_GPS", "LONGITUDE_GPS", "TIME_GPS"):
+        gps_ds[name].attrs["original_dimension"] = "gps_info"
 
     # Concatenate ds and gps_ds
     datasets = []
@@ -2485,7 +2481,8 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
             if isinstance(val1, str) and ("-" in val1 or ":" in val1):
                 val1 = _pipeline._clean_time_string(val1)
             time_attrs[attr] = val1
-    time_attrs["date_modified"] = datetime.now().strftime("%Y%m%dT%H%M%S")
+    # UTC, as every other time the package writes (enrich, history lines).
+    time_attrs["date_modified"] = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
 
     # Handle start_date attribute
     if "start_time" in time_attrs:
@@ -2494,8 +2491,9 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
         time_attrs["start_date"] = time_attrs["time_coverage_start"]
 
     # date_created (ACDD) is the creation date of *this* OG1 file, so it is the
-    # conversion time, not whatever the basestation file recorded. A basestation
-    # creation date, if wanted, belongs in history (a later branch), not here.
+    # conversion time, not whatever the basestation file recorded. It must not be in
+    # attr_as_is (OG1_global_attributes.yaml): kept attributes are merged after these
+    # and would put the basestation's date back.
     time_attrs["date_created"] = time_attrs["date_modified"]
 
     return time_attrs

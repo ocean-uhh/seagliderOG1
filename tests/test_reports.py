@@ -481,7 +481,7 @@ def test_conventions_check_counts_acdd_and_cf_units():
         assert "units" not in ds[name].attrs and ds[name].ndim
 
 
-def test_draft_snippets_fill_only_what_the_files_carry(tmp_path):
+def test_draft_snippets_fill_only_what_the_files_carry(sg005_og1_copy):
     """Pure logic: dives and file-derived platform fields filled; required ones null."""
     from_file = vocabularies.platform_from_file(
         {"platform_id": "SG005", "base_station_version": "2.8"}
@@ -496,7 +496,7 @@ def test_draft_snippets_fill_only_what_the_files_carry(tmp_path):
     assert conversion._draft_snippets(None, [1], "x") == []
     # An OG1 (non-draft) page gets none, also when some other global is called draft:
     # the page knows a draft by the draft global's value.
-    path = convert.process_mission(DATA, tmp_path, dives=(1, 1))
+    path = sg005_og1_copy
     assert "Suggested mission.yaml lines" not in conversion.render_conversion(path)
     with netCDF4.Dataset(path, "a") as nc:
         nc.setncattr("draft", "v2 of the cruise report")
@@ -523,3 +523,13 @@ def test_importing_reports_pins_a_headless_backend() -> None:
         env=env,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_fate_figure_labels_are_ascii() -> None:
+    """The figure writes "->" (the arrow glyph is missing from common figure fonts)."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    fig = conversion.draw_fate_histogram([("Consumed → derived", "3", "")])
+    labels = [label.get_text() for label in fig.axes[0].get_yticklabels()]
+    assert labels == ["Consumed -> derived"]

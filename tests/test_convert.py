@@ -913,9 +913,10 @@ def test_to_og1_provenance_leaves_out_a_rejected_dive() -> None:
 
 def test_conversion_sidecar_ignores_an_unreadable_or_foreign_sidecar(
     tmp_path: pathlib.Path,
+    sg005_og1_copy: pathlib.Path,
 ) -> None:
     """A truncated sidecar, or one of another schema, is warned about and ignored."""
-    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    path = sg005_og1_copy
     sidecar_file = writers.conversion_path(path, ".json")
     payload = json.loads(sidecar_file.read_text())
     sidecar_file.write_text(json.dumps({**payload, "schema": 99}))
@@ -970,9 +971,11 @@ def test_sidecar_inputs_record_dimension_lengths_and_global_count(
     assert convert.conversion_sidecar(path)["presence"]["dives"] == [1]
 
 
-def test_conversion_sidecar_ignores_another_conversion(tmp_path: pathlib.Path) -> None:
+def test_conversion_sidecar_ignores_another_conversion(
+    tmp_path: pathlib.Path, sg005_og1_copy: pathlib.Path
+) -> None:
     """A sidecar whose tracking_id does not match the file is warned about and ignored."""
-    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    path = sg005_og1_copy
     sidecar_file = writers.conversion_path(path, ".json")
     payload = json.loads(sidecar_file.read_text())
     payload["tracking_id"] = "not-this-file"
@@ -987,9 +990,10 @@ def test_conversion_sidecar_ignores_another_conversion(tmp_path: pathlib.Path) -
 
 def test_sidecar_records_tracking_id_and_hash_and_warns_on_change(
     tmp_path: pathlib.Path,
+    sg005_og1_copy: pathlib.Path,
 ) -> None:
     """The sidecar carries the file's tracking_id and SHA-256; a changed file warns."""
-    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    path = sg005_og1_copy
     sidecar = json.loads(writers.conversion_path(path, ".json").read_text())
     with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
         assert sidecar["tracking_id"] == ds.attrs["tracking_id"]
@@ -1009,9 +1013,11 @@ def test_sidecar_records_tracking_id_and_hash_and_warns_on_change(
         assert convert.conversion_sidecar(path, verify=True) is not None
 
 
-def test_enrich_checks_every_value_before_writing(tmp_path: pathlib.Path) -> None:
+def test_enrich_checks_every_value_before_writing(
+    tmp_path: pathlib.Path, sg005_og1_copy: pathlib.Path
+) -> None:
     """A refused value or a changed id leaves the file byte-for-byte as it was."""
-    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    path = sg005_og1_copy
     digest = writers.file_sha256(path)
     with pytest.raises(ValueError, match="list cannot be a global attribute"):
         convert.enrich(
@@ -1026,11 +1032,12 @@ def test_enrich_checks_every_value_before_writing(tmp_path: pathlib.Path) -> Non
 
 def test_enrich_warns_on_a_replaced_value_and_records_it(
     tmp_path: pathlib.Path,
+    sg005_og1_copy: pathlib.Path,
 ) -> None:
     """Replacing a value warns with both; a date becomes ISO text; the ledger says so."""
     import datetime as dt
 
-    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    path = sg005_og1_copy
     convert.enrich(path, deployment={"program": "MOOSE"})  # new key: no warning
     with pytest.warns(UserWarning, match="enrich replaces program: 'MOOSE' -> 'OSNAP'"):
         convert.enrich(
@@ -1135,3 +1142,63 @@ def test_skipped_dimension_warning_names_only_absent_dimensions(caplog):
     assert lines == [
         "Dimensions not in the OG1 dataset: ['trajectory']; their variables are not written (see conversion_dimensions)."
     ]
+
+
+def test_date_created_is_the_conversion_time_in_utc(tmp_path: pathlib.Path) -> None:
+    """date_created is this file's creation (UTC), not the basestation files' 2014 date."""
+    from datetime import UTC, datetime, timedelta
+
+    start = datetime.now(UTC).replace(microsecond=0)
+    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        created = datetime.strptime(ds.attrs["date_created"], "%Y%m%dT%H%M%S")
+        assert ds.attrs["date_modified"] == ds.attrs["date_created"]
+        ledger = json.loads(ds.attrs["conversion_attribute_sources"])
+    created = created.replace(tzinfo=UTC)
+    assert start <= created <= datetime.now(UTC) + timedelta(seconds=1)
+    assert "date_created" in ledger["derived"]
+
+
+def test_sensor_keys_are_not_variable_names(sg005_og1: pathlib.Path) -> None:
+    """Sensor keys look up sensor metadata; they never rename a variable."""
+    with xr.open_dataset(sg005_og1, engine="netcdf4", decode_timedelta=False) as ds:
+        assert [name for name in ds.variables if " " in str(name)] == []
+        for key in ("sbe41", "sbe43", "wlbb2f"):
+            assert key in ds.variables, key
+            assert ds[key].attrs["original_name"] == key
+        # The lookup still works: the SENSOR_* variables carry the catalogue entry.
+        sensors = {
+            str(n): ds[n].attrs for n in ds.variables if str(n).startswith("SENSOR_")
+        }
+    assert sensors
+    assert all(attrs.get("long_name") for attrs in sensors.values())
+    assert not set(vocabularies.sensor_names) & set(vocabularies.standard_names)
+
+
+def test_built_variables_carry_their_provenance_and_names(
+    sg005_og1: pathlib.Path,
+) -> None:
+    """Converter-built variables keep their vocabulary long_name and source dimension."""
+    with xr.open_dataset(sg005_og1, engine="netcdf4", decode_timedelta=False) as ds:
+        for name in ("LATITUDE_GPS", "LONGITUDE_GPS", "TIME_GPS"):
+            assert ds[name].attrs["original_dimension"] == "gps_info", name
+            # Derived: the ledger names its sources, so no original_name.
+            assert "original_name" not in ds[name].attrs
+        for name in ("LATITUDE_GPS", "TIME_GPS", "PHASE", "PROFILE_NUMBER"):
+            assert (
+                ds[name].attrs["long_name"]
+                == vocabularies.vocab_attrs[name]["long_name"]
+            )
+        assert ds["PHASE_QC"].attrs["long_name"] == (
+            f"{vocabularies.vocab_attrs['PHASE']['long_name']} quality flag"
+        )
+        assert ds["PROFILE_NUMBER"].encoding["_FillValue"] == -9999
+
+
+def test_unknown_sensor_key_is_skipped_not_fatal() -> None:
+    """A sensor key with no catalogue entry warns and gets no SENSOR_ variable."""
+    datasets = readers.read_mission(str(_SG005), 1, 1)
+    datasets[0].attrs["instrument"] = f"{datasets[0].attrs['instrument']} xyzsensor"
+    ds = convert.to_og1(datasets)
+    assert not [name for name in ds.variables if "XYZ" in str(name).upper()]
+    assert [name for name in ds.variables if str(name).startswith("SENSOR_CTD_")]

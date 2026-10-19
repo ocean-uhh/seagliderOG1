@@ -72,8 +72,9 @@ def _variable_groups_by_original_dimension(
     for row in rows:
         origin = ds[row["name"]].attrs.get("original_dimension")
         by_dim.setdefault(str(origin) if origin else no_dim_title, []).append(row)
-    # Real basestation dimensions first (name-sorted), then the converter-built variables
-    # (no original dimension) last — their full provenance is in the Derived section.
+    # Real basestation dimensions first (name-sorted), then the variables with no
+    # original dimension (built by the converter) last — their full provenance is in
+    # the Derived section.
     dims = sorted(d for d in by_dim if d != no_dim_title)
     ordered = [(dim, by_dim[dim]) for dim in dims]
     if no_dim_title in by_dim:
@@ -167,7 +168,8 @@ def _origin(ds: xr.Dataset, name: str, derived: set[str]) -> tuple[str, str]:
     if origin and origin != name:
         return str(origin), dim
     if name in derived:
-        return "(derived)", "—"
+        # A derived variable may still name its source dimension (the GPS variables).
+        return "(derived)", dim
     if origin == name:
         return name, dim
     return "(built)", "—"
@@ -683,7 +685,9 @@ def draw_fate_histogram(fate_rows: list[tuple[str, str, str]]) -> "Figure | None
     if not fate_rows:
         return None
     # Full fate labels; the figure is drawn at three-fifths width so they do not crowd.
-    labels = [str(row[0]) for row in fate_rows]
+    # ASCII arrows in the figure only: U+2192 is missing from common figure fonts
+    # (Helvetica Neue on macOS), which matplotlib warns about; the HTML keeps "→".
+    labels = [str(row[0]).replace("→", "->") for row in fate_rows]
     counts = [int(row[1]) for row in fate_rows]
     positions = list(range(len(labels)))
     fig, ax = plt.subplots(figsize=(W_THREE_FIFTHS, 3.0))
