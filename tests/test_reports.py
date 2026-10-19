@@ -332,8 +332,12 @@ def test_unit_factor_direct_normalised_and_unrelated() -> None:
     """Same unit is 1.0; a spelling variant resolves via the alias table; unrelated is None."""
     assert conversion._unit_factor("m", "m") == 1.0
     assert conversion._unit_factor("cm", "m") == 0.01  # direct table key
-    assert conversion._unit_factor("meters", "cm") == 100.0  # normalised fallback (m_to_cm)
-    assert conversion._unit_factor("degrees_north", "cm") is None  # no conversion invented
+    assert (
+        conversion._unit_factor("meters", "cm") == 100.0
+    )  # normalised fallback (m_to_cm)
+    assert (
+        conversion._unit_factor("degrees_north", "cm") is None
+    )  # no conversion invented
 
 
 def test_summary_rows_and_verdict_before_and_after(tmp_path) -> None:
@@ -376,7 +380,9 @@ def test_summary_rows_and_verdict_before_and_after(tmp_path) -> None:
     assert by_q_no["Global attributes"]["input"] == "—"
     mixed_globals = {r["quantity"]: r for r in rows_mixed}["Global attributes"]["input"]
     assert mixed_globals == "50–59"
-    legacy_globals = {r["quantity"]: r for r in rows_legacy}["Global attributes"]["input"]
+    legacy_globals = {r["quantity"]: r for r in rows_legacy}["Global attributes"][
+        "input"
+    ]
     assert legacy_globals == "—"
     # Demo converts cleanly: every clause is green and all inputs are accounted for.
     assert not any(c["bad"] for c in verdict)
