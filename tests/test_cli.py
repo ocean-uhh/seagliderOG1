@@ -102,6 +102,15 @@ def test_init_from_one_file_fills_platform_and_its_directory(
     assert data["platform"]["PLATFORM_SERIAL_NUMBER"] == "sg005"
 
 
+def test_init_template_does_not_promise_an_id(tmp_path: pathlib.Path) -> None:
+    """The id line says null means the derived id; init never fills it."""
+    out = tmp_path / "mission.yaml"
+    assert cli.main(["init", "--from", str(DATA_DIR), "-o", str(out)]) == 0
+    text = out.read_text(encoding="utf-8")
+    assert "proposes" not in text
+    assert yaml.safe_load(text)["deployment"]["id"] is None
+
+
 def test_init_from_fills_source_and_serial(tmp_path: pathlib.Path) -> None:
     """Init --from fills source and the serial; model/maker/depth are left null to fill."""
     out = tmp_path / "mission.yaml"

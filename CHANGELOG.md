@@ -10,6 +10,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Breaking changes
 
+- Raw WET Labs counts are no longer written as `BBP700` / `BBP470` (they were labelled m-1); they
+  keep their basestation names (`eng_wlbb2f_redCount`, `eng_wlbb2f_blueCount`) with `units: counts`.
+  A volume scattering function (`*_bb700`, m-1 sr-1) is no longer written as `BBP700` either.
 - A second or later basestation variable mapping to the same OG1 name is numbered with an
   underscore (`DEPTH_2`, was `DEPTH2`); the first keeps the plain name.
 - `log_VBD_MIN` is no longer mapped to `VBD_MIN_CNTS` (which `sg_cal_vbd_min_cnts` holds); it is
@@ -108,6 +111,13 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   `pSSSDDDD*.nc` file.
 - `inspect --conversion -o DIR` accepts a directory and writes `<id>_conversion.html` into it
   (was a file path only, failing with `IsADirectoryError`).
+- Raw instrument count channels with no units (`*redCount`, `*blueCount`, `*fluorCount`, `*redRef`,
+  `*blueRef`) are written with `units: counts`.
+- The "dimensions not merged" warning is read from the conversion ledger and names only
+  dimensions whose variables are absent (it listed merged basestation-3 dimensions).
+- A unit pair with no conversion warns once, not once per dive.
+- The `init` template's `id` line no longer says `init --from` proposes an id (it never did);
+  null means the derived `<serial>_<start>_<mode>`.
 - `config/OG1_variable_attributes.yaml` no longer carries `platform_model_vocabulary` /
   `platform_maker_vocabulary` defaults (never written to files; the maker term named Teledyne Webb
   Research, the Slocum maker). Set both per glider in `mission.yaml`; the sg005 example now does.

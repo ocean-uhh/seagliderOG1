@@ -214,6 +214,14 @@ def platform_from_file(attrs: dict) -> dict:
     return derived
 
 
+# Raw instrument count channels (WET Labs ECO pucks and similar): the basestation writes
+# them without units. They are counts, converted to physical units only with calibration
+# coefficients the file does not carry, so they keep their basestation names (not an OG1
+# backscatter or fluorescence name) and are labelled with RAW_COUNT_UNITS — the spelling
+# the package already writes on ROLL_CTL / PITCH_CTL.
+RAW_COUNT_SUFFIXES = ("redCount", "blueCount", "fluorCount", "redRef", "blueRef")
+RAW_COUNT_UNITS = "counts"
+
 # Preferred units for OG1 format - conversion will be attempted if mapping exists
 preferred_units = ["m s-1", "dbar", "S m-1"]
 

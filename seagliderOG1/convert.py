@@ -792,6 +792,26 @@ def _apply_deployment(
         sources[key] = "overridden" if replaced else "mission"
 
 
+def _is_raw_count(name: str, attrs: Mapping[str, object]) -> bool:
+    """Return True for a raw instrument count channel that carries no units.
+
+    Parameters
+    ----------
+    name : str
+        Basestation variable name.
+    attrs : collections.abc.Mapping
+        Its attributes.
+
+    Returns
+    -------
+    bool
+        Whether ``name`` ends in one of :data:`vocabularies.RAW_COUNT_SUFFIXES` and
+        has no ``units`` attribute.
+
+    """
+    return "units" not in attrs and name.endswith(vocabularies.RAW_COUNT_SUFFIXES)
+
+
 def _check_required_globals(attrs: Mapping[str, object]) -> None:
     """Fail loud on a missing mandatory global; log missing highly-desirable ones.
 
@@ -1081,22 +1101,6 @@ def to_og1(
     # Build the original->OG1 name lookup once; it is loop-invariant across dives.
     name_lookup = og1_mapping.set_index("original_name")["OG1_name"]
 
-    # Warn when a dimension group is dropped rather than merged, so a missing
-    # instrument is visible; name_mapping() returns the full basestation -> OG1 table.
-    # gps_info is excluded: its fixes are folded onto the backbone by a dedicated path
-    # (add_gps_info_to_dataset), so the ledger records it as merged, not skipped — the
-    # warning must not contradict that.
-    skipped_dims = [
-        d for d in all_dims if d not in set(dims_to_merge) and d != "gps_info"
-    ]
-    if skipped_dims:
-        _log.warning(
-            "Dimensions not merged into the OG1 dataset: %s. If instrument data "
-            "is missing, its dimension must be named '<instrument>_data_point' "
-            "(from ds.attrs['instrument']).",
-            skipped_dims,
-        )
-
     used_inputs = []
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
         if provenance is not None:
@@ -1321,6 +1325,19 @@ def to_og1(
     ds_og1.attrs["conversion_dimensions"] = _dimension_ledger(
         list_of_datasets, ctd_dim, all_dims, ds_og1
     )
+    # Warn from the ledger, so the warning names only dimensions whose variables are
+    # really absent (the merge list alone misses those placed by the retention path).
+    skipped_dims = [
+        dim
+        for dim, entry in json.loads(ds_og1.attrs["conversion_dimensions"]).items()
+        if entry["fate"] == "skipped"
+    ]
+    if skipped_dims:
+        _log.warning(
+            "Dimensions not in the OG1 dataset: %s; their variables are not written "
+            "(see conversion_dimensions).",
+            skipped_dims,
+        )
 
     # Variables the converter created rather than renamed or passed through carry no
     # original_name. Record them as a map ``{derived: [source basestation names]}`` so the
@@ -1765,8 +1782,11 @@ def standardise_og1(
     for original_name in ds.variables:
         output_name = output_names[original_name]
 
-        # Unmapped variables retain their values and attributes unchanged.
+        # Unmapped variables retain their values and attributes unchanged, except that
+        # a raw instrument count with no units is labelled as counts.
         if original_name not in mapped_variables:
+            if _is_raw_count(original_name, ds[original_name].attrs):
+                dsa[output_name].attrs["units"] = vocabularies.RAW_COUNT_UNITS
             continue
 
         og1_attributes = vocabularies.vocab_attrs.get(
@@ -1780,6 +1800,10 @@ def standardise_og1(
         # Source attributes provide defaults; OG1 attributes take precedence.
         attributes = ds[original_name].attrs.copy()
         attributes.update(og1_attributes)
+        if "units" not in attributes and _is_raw_count(
+            original_name, ds[original_name].attrs
+        ):
+            attributes["units"] = vocabularies.RAW_COUNT_UNITS
 
         if "units" in ds[original_name].attrs and "units" in og1_attributes:
             original_unit = tools.reformat_units_var(
