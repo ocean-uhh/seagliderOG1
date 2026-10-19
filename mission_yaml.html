@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev75 documentation</title>
+  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev76 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=399f9b7f"></script>
+      <script src="_static/documentation_options.js?v=0e671115"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -135,10 +135,12 @@ on a mis-cased key (<code class="docutils literal notranslate"><span class="pre"
 <code class="docutils literal notranslate"><span class="pre">deployment</span></code> block and the optional platform variables. A version 1 file still
 converts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">source</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">raw_dir</span></code></p></td>
 <td><p>str</p></td>
 <td><p><em>(required)</em></p></td>
-<td><p>A mission directory holding <code class="docutils literal notranslate"><span class="pre">pSSSDDDD*.nc</span></code>, or a root of <code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> directories.
+<td><p>The basestation files: a mission directory holding <code class="docutils literal notranslate"><span class="pre">pSSSDDDD*.nc</span></code>, or a root of
+<code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> directories. <code class="docutils literal notranslate"><span class="pre">source</span></code>, its old name, is still read with a deprecation
+warning for one release.
 The only key required at the top level, but <code class="docutils literal notranslate"><span class="pre">validate</span></code> also enforces a <code class="docutils literal notranslate"><span class="pre">PI</span></code>
 contributor and an <code class="docutils literal notranslate"><span class="pre">Operator</span></code> institution (see those rows). Checked to exist and to
 hold basestation files.</p></td>
@@ -164,7 +166,7 @@ for a <code class="docutils literal notranslate"><span class="pre">SN/DATE</span
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">repair</span></code></p></td>
 <td><p>bool</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p></td>
-<td><p>Run <code class="docutils literal notranslate"><span class="pre">repair_files</span></code> on the basestation files before loading (writes the source tree).</p></td>
+<td><p>Run <code class="docutils literal notranslate"><span class="pre">repair_files</span></code> on the basestation files before loading (writes the raw_dir tree).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">keep_variables</span></code></p></td>
 <td><p>list or null</p></td>
@@ -215,7 +217,7 @@ against the EDMO registry.</p></td>
 <section id="platform-fields">
 <h2>Platform fields<a class="headerlink" href="#platform-fields" title="Link to this heading"></a></h2>
 <p>A <strong>required</strong> field that is null is a <code class="docutils literal notranslate"><span class="pre">validate</span></code> error; fill it by hand, or let
-<code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span> <span class="pre">DIR</span></code> read the fields with an <code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span> <span class="pre">reads</span></code> entry from the first
+<code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--raw-dir</span> <span class="pre">DIR</span></code> read the fields with an <code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--raw-dir</span> <span class="pre">reads</span></code> entry from the first
 basestation file. An optional field left null is not written. <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">list</span> <span class="pre">platform</span></code>
 prints the same table.</p>
 <table class="docutils align-default">
@@ -223,7 +225,7 @@ prints the same table.</p>
 <tr class="row-odd"><th class="head"><p>Key</p></th>
 <th class="head"><p>Requirement</p></th>
 <th class="head"><p>Written as</p></th>
-<th class="head"><p>init –from reads</p></th>
+<th class="head"><p>init –raw-dir reads</p></th>
 </tr>
 </thead>
 <tbody>
@@ -384,11 +386,11 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
 <p>The template <code class="docutils literal notranslate"><span class="pre">init</span></code> writes (fill the nulls before <code class="docutils literal notranslate"><span class="pre">validate</span></code>):</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">config_version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
 
-<span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/data/005/20080606</span><span class="w">   </span><span class="c1"># mission dir (p*.nc inside) or a root of SN/DATE dirs</span>
+<span class="nt">raw_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/data/005/20080606</span><span class="w">  </span><span class="c1"># basestation files: a mission dir (p*.nc inside) or a root of SN/DATE dirs</span>
 <span class="nt">output_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./</span><span class="w">          </span><span class="c1"># where OG1 files are written</span>
 <span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">delayed</span><span class="w">           </span><span class="c1"># realtime | delayed</span>
 <span class="nt">dives</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">             </span><span class="c1"># [first, last] dive numbers; null = all files present</span>
-<span class="nt">repair</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">           </span><span class="c1"># run repair_files on the basestation files (writes the source tree)</span>
+<span class="nt">repair</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">           </span><span class="c1"># run repair_files on the basestation files (writes the raw_dir tree)</span>
 <span class="nt">keep_variables</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">    </span><span class="c1"># optional list of science variables to keep; null = all</span>
 <span class="nt">report</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">           </span><span class="c1"># also write &lt;id&gt;_conversion.html beside each file</span>
 

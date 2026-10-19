@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev75 documentation</title>
+  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev76 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=399f9b7f"></script>
+      <script src="../../_static/documentation_options.js?v=0e671115"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -105,10 +105,12 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">UTC</span><span class="p">,</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">UTC</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">netCDF4</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
@@ -135,6 +137,7 @@
     <span class="s2">"presence_by_dive"</span><span class="p">,</span>
     <span class="s2">"presence_patterns"</span><span class="p">,</span>
     <span class="s2">"presence_summary"</span><span class="p">,</span>
+    <span class="s2">"enrich"</span><span class="p">,</span>
     <span class="s2">"MetadataError"</span><span class="p">,</span>
 <span class="p">]</span>
 
@@ -161,6 +164,7 @@
         <span class="s2">"geospatial_vertical_max"</span><span class="p">,</span>
         <span class="s2">"date_created"</span><span class="p">,</span>
         <span class="s2">"start_date"</span><span class="p">,</span>
+        <span class="s2">"tracking_id"</span><span class="p">,</span>
     <span class="p">}</span>
 <span class="p">)</span>
 
@@ -393,12 +397,9 @@
         <span class="p">)</span>
         <span class="c1"># Keep the source ledger complete: the dropped-variables global is one the</span>
         <span class="c1"># converter wrote, so categorise it as derived for a subset file too.</span>
-        <span class="k">if</span> <span class="s2">"conversion_attribute_sources"</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
-            <span class="n">sources</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_attribute_sources"</span><span class="p">])</span>
-            <span class="n">sources</span><span class="p">[</span><span class="s2">"derived"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
-                <span class="nb">set</span><span class="p">(</span><span class="n">sources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"derived"</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">|</span> <span class="p">{</span><span class="s2">"conversion_dropped_variables"</span><span class="p">}</span>
-            <span class="p">)</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_attribute_sources"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">sources</span><span class="p">)</span>
+        <span class="n">writers</span><span class="o">.</span><span class="n">record_attribute_sources</span><span class="p">(</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="p">[</span><span class="s2">"conversion_dropped_variables"</span><span class="p">],</span> <span class="s2">"derived"</span>
+        <span class="p">)</span>
     <span class="k">return</span> <span class="n">result</span></div>
 
 
@@ -813,17 +814,23 @@
 
 <div class="viewcode-block" id="conversion_sidecar">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.conversion_sidecar">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">conversion_sidecar</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">conversion_sidecar</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">verify</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Return the conversion sidecar written beside an OG1 file, or None.</span>
 
 <span class="sd">    The sidecar (``&lt;id&gt;_conversion.json``, see :func:`seagliderOG1.writers.write`)</span>
 <span class="sd">    holds what the file cannot say about its own conversion. It is bound to the file by</span>
-<span class="sd">    ``id`` and ``date_created``; a sidecar from another conversion is not returned.</span>
+<span class="sd">    ``id`` and ``tracking_id`` (``id`` and ``date_created`` for a sidecar written</span>
+<span class="sd">    before ``tracking_id``); a sidecar from another conversion is not returned. With</span>
+<span class="sd">    ``verify``, the file's SHA-256 is compared with the one recorded and a mismatch</span>
+<span class="sd">    warns that the file changed after the sidecar was written (the sidecar is still</span>
+<span class="sd">    returned).</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    path : str or os.PathLike</span>
 <span class="sd">        The OG1 netCDF file.</span>
+<span class="sd">    verify : bool, optional</span>
+<span class="sd">        Hash the file and compare (reads the whole file). Default is False.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -850,16 +857,282 @@
             <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"tracking_id"</span><span class="p">)</span> <span class="k">if</span> <span class="s2">"tracking_id"</span> <span class="ow">in</span> <span class="n">sidecar</span> <span class="k">else</span> <span class="p">(</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"date_created"</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">"netcdf4"</span><span class="p">,</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
-        <span class="n">binding</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"date_created"</span><span class="p">)}</span>
+        <span class="n">binding</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">}</span>
     <span class="k">if</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">sidecar</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">binding</span><span class="p">}</span> <span class="o">!=</span> <span class="n">binding</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sidecar_path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> belongs to another conversion "</span>
-            <span class="sa">f</span><span class="s2">"(id/date_created differ from </span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">); ignoring it."</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="s1">'/'</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span><span class="si">}</span><span class="s2"> differ from </span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">); ignoring it."</span><span class="p">,</span>
             <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">verify</span>
+        <span class="ow">and</span> <span class="s2">"sha256"</span> <span class="ow">in</span> <span class="n">sidecar</span>
+        <span class="ow">and</span> <span class="n">sidecar</span><span class="p">[</span><span class="s2">"sha256"</span><span class="p">]</span> <span class="o">!=</span> <span class="n">writers</span><span class="o">.</span><span class="n">file_sha256</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> has changed since </span><span class="si">{</span><span class="n">sidecar_path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> was written "</span>
+            <span class="s2">"(SHA-256 differs)."</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="k">return</span> <span class="n">sidecar</span></div>
+
+
+
+<span class="c1"># The one sentence a draft carries in its ``draft`` global (see process_mission).</span>
+<span class="n">DRAFT_NOTE</span> <span class="o">=</span> <span class="s2">"converted without a mission config; not an OG1 file"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_basestation_globals</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return each basestation global attribute's distinct values across the inputs.</span>
+
+<span class="sd">    What the files say about themselves, before any OG1 enrichment — the draft page's</span>
+<span class="sd">    global-attributes section reads it from the sidecar.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    list_of_datasets : sequence of xarray.Dataset</span>
+<span class="sd">        The basestation datasets that reached the output.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Attribute name to ``{"values": [distinct values as text, first-seen order],</span>
+<span class="sd">        "n_files": files that carry it}``, names sorted.</span>
+
+<span class="sd">    """</span>
+    <span class="n">found</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">list_of_datasets</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="n">found</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="p">{</span><span class="s2">"values"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"n_files"</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+            <span class="n">entry</span><span class="p">[</span><span class="s2">"n_files"</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">text</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">entry</span><span class="p">[</span><span class="s2">"values"</span><span class="p">]:</span>
+                <span class="n">entry</span><span class="p">[</span><span class="s2">"values"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">found</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">found</span><span class="p">)}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_metadata_keys</span><span class="p">(</span>
+    <span class="n">deployment</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span> <span class="n">global_attributes</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Raise on a mission-config global the converter owns or that has another home.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    deployment : collections.abc.Mapping</span>
+<span class="sd">        The ``deployment:`` block.</span>
+<span class="sd">    global_attributes : collections.abc.Mapping</span>
+<span class="sd">        The ``global_attributes:`` block.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``global_attributes`` sets a converter-derived key or a key with a home in</span>
+<span class="sd">        ``deployment:``, or ``deployment:`` has an unknown key.</span>
+
+<span class="sd">    """</span>
+    <span class="c1"># Only a real (non-null) value collides; a null is skipped later, so a legacy</span>
+    <span class="c1"># config_version 1 template that lists reserved keys as null (the old init wrote</span>
+    <span class="c1"># global_attributes: {project: null, program: null, ...}) still converts.</span>
+    <span class="n">set_globals</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">global_attributes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_empty</span><span class="p">(</span><span class="n">v</span><span class="p">)}</span>
+    <span class="n">collisions</span> <span class="o">=</span> <span class="n">_DERIVED_GLOBALS</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">set_globals</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">collisions</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"global_attributes may not set converter-derived keys: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">collisions</span><span class="p">)</span><span class="si">}</span><span class="s2">. Remove them from the mission config."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="n">structured</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_DEPLOYMENT_GLOBALS</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">set_globals</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">structured</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"global_attributes may not set keys that have a structured home in the "</span>
+            <span class="sa">f</span><span class="s2">"deployment: block: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">structured</span><span class="p">)</span><span class="si">}</span><span class="s2">. Move them under deployment:."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="n">unknown_deployment</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">deployment</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">_DEPLOYMENT_GLOBALS</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unknown_deployment</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"deployment: has unknown keys: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown_deployment</span><span class="p">)</span><span class="si">}</span><span class="s2">. Allowed "</span>
+            <span class="sa">f</span><span class="s2">"keys are </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_DEPLOYMENT_GLOBALS</span><span class="p">)</span><span class="si">}</span><span class="s2">; put anything else under "</span>
+            <span class="s2">"global_attributes:."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+
+<span class="c1"># Globals enrich writes itself (besides the converter-owned _DERIVED_GLOBALS): a</span>
+<span class="c1"># config may not set them, or the file's own record of the edit would be overwritten.</span>
+<span class="n">_ENRICH_OWNED</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+    <span class="p">{</span><span class="s2">"date_modified"</span><span class="p">,</span> <span class="s2">"history"</span><span class="p">,</span> <span class="s2">"draft"</span><span class="p">,</span> <span class="s2">"conversion_attribute_sources"</span><span class="p">}</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_enrich_value</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return ``value`` as a netCDF global attribute value, or raise.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    key : str</span>
+<span class="sd">        The global's name (for the error message).</span>
+<span class="sd">    value : object</span>
+<span class="sd">        The value from the config or the command line.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str or int or float</span>
+<span class="sd">        Text and numbers unchanged; a date or datetime as ISO 8601 text (YAML reads an</span>
+<span class="sd">        unquoted ``2024-05-01`` as a date).</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the value is a bool, a list, a mapping or any other type netCDF cannot</span>
+<span class="sd">        store as a global attribute unchanged.</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: a true/false value cannot be a global attribute; quote it."</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> cannot be a global attribute; give text or "</span>
+        <span class="s2">"a number."</span>
+    <span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="enrich">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.convert.enrich">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">enrich</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">deployment</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">global_attributes</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">doi</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Set global attributes on a written OG1 file without converting again.</span>
+
+<span class="sd">    For metadata that exists only after the file is written — a DOI assigned on</span>
+<span class="sd">    publication — or a corrected ``deployment:`` / ``global_attributes:`` value. Only</span>
+<span class="sd">    global attributes change (edited in place; variables are not rewritten). The file</span>
+<span class="sd">    gets ``date_modified`` set to now, a ``history`` line naming the keys, and a new</span>
+<span class="sd">    ``tracking_id``; ``date_created`` is kept. Every value is checked before the file</span>
+<span class="sd">    is opened for writing, so a refused value leaves the file as it was. Replacing a</span>
+<span class="sd">    different value already in the file warns with both values. The set keys move to</span>
+<span class="sd">    the ``enriched`` category of ``conversion_attribute_sources``. A sidecar beside the</span>
+<span class="sd">    file is rebound to the new ``tracking_id`` and SHA-256.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or os.PathLike</span>
+<span class="sd">        The OG1 netCDF file.</span>
+<span class="sd">    deployment : collections.abc.Mapping, optional</span>
+<span class="sd">        ``deployment:`` keys to set (as in :func:`to_og1`); null values are skipped.</span>
+<span class="sd">    global_attributes : collections.abc.Mapping, optional</span>
+<span class="sd">        ``global_attributes:`` keys to set (as in :func:`to_og1`).</span>
+<span class="sd">    doi : str, optional</span>
+<span class="sd">        The DOI, written as the ``doi`` global (wins over ``deployment["doi"]``).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pathlib.Path</span>
+<span class="sd">        The enriched file.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If nothing is given to set; a key is one the converter owns or that belongs in</span>
+<span class="sd">        the other block (as for :func:`to_og1`); a value is not text, a number or a</span>
+<span class="sd">        date; a key is one ``enrich`` writes itself (``date_modified``, ``history``,</span>
+<span class="sd">        ``tracking_id``, ``draft``) or a ``conversion_*`` record; or</span>
+<span class="sd">        ``deployment["id"]`` differs from the file's ``id`` (the file name and the</span>
+<span class="sd">        sidecar are bound to it: convert again to change it).</span>
+<span class="sd">    FileNotFoundError</span>
+<span class="sd">        If ``path`` does not exist.</span>
+
+<span class="sd">    """</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">ENOENT</span><span class="p">,</span> <span class="s2">"no such OG1 file"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+    <span class="n">deployment</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">deployment</span> <span class="ow">or</span> <span class="p">{})</span>
+    <span class="n">global_attributes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">global_attributes</span> <span class="ow">or</span> <span class="p">{})</span>
+    <span class="n">_check_metadata_keys</span><span class="p">(</span><span class="n">deployment</span><span class="p">,</span> <span class="n">global_attributes</span><span class="p">)</span>
+    <span class="n">owned</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="n">key</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">global_attributes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_empty</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">_ENRICH_OWNED</span> <span class="ow">or</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"conversion_"</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">owned</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"enrich writes </span><span class="si">{</span><span class="n">owned</span><span class="si">}</span><span class="s2"> itself (or they are the conversion record); "</span>
+            <span class="s2">"remove them from global_attributes."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">doi</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">deployment</span><span class="p">[</span><span class="s2">"doi"</span><span class="p">]</span> <span class="o">=</span> <span class="n">doi</span>
+    <span class="n">updates</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">key</span><span class="p">:</span> <span class="n">_enrich_value</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="p">(</span><span class="n">deployment</span><span class="p">,</span> <span class="n">global_attributes</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">block</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_empty</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">updates</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">"nothing to enrich: no deployment, global_attributes or doi value given."</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">netCDF4</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">nc</span><span class="p">:</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">nc</span><span class="o">.</span><span class="n">getncattr</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">nc</span><span class="o">.</span><span class="n">ncattrs</span><span class="p">()}</span>
+    <span class="k">if</span> <span class="s2">"id"</span> <span class="ow">in</span> <span class="n">updates</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">updates</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">(</span><span class="n">current</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">)):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"deployment id </span><span class="si">{</span><span class="n">updates</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">!r}</span><span class="s2"> differs from the file's id "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">current</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'id'</span><span class="p">)</span><span class="si">!r}</span><span class="s2">; the file name and sidecar are bound to the id, so "</span>
+            <span class="s2">"convert again (process) to change it."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">updates</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">current</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">current</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"enrich replaces </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">current</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">!r}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">"</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span>
+            <span class="p">)</span>
+
+    <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">UTC</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="n">timespec</span><span class="o">=</span><span class="s1">'seconds'</span><span class="p">)</span><span class="si">}</span><span class="s2"> seagliderOG1 </span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">: "</span>
+        <span class="sa">f</span><span class="s2">"enrich set </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">updates</span><span class="p">))</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span>
+    <span class="n">history</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">current</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"history"</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">attrs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="o">**</span><span class="n">current</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">updates</span><span class="p">,</span>
+        <span class="s2">"date_modified"</span><span class="p">:</span> <span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">T%H%M%S"</span><span class="p">),</span>
+        <span class="s2">"history"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">history</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">history</span> <span class="k">else</span> <span class="n">line</span><span class="p">,</span>
+        <span class="s2">"tracking_id"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
+    <span class="p">}</span>
+    <span class="n">writers</span><span class="o">.</span><span class="n">record_attribute_sources</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="n">updates</span><span class="p">,</span> <span class="s2">"enriched"</span><span class="p">)</span>
+    <span class="n">writers</span><span class="o">.</span><span class="n">record_attribute_sources</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="p">[</span><span class="s2">"date_modified"</span><span class="p">,</span> <span class="s2">"tracking_id"</span><span class="p">],</span> <span class="s2">"derived"</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">netCDF4</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">nc</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">current</span> <span class="ow">or</span> <span class="n">current</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+                <span class="n">nc</span><span class="o">.</span><span class="n">setncattr</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="n">sidecar_file</span> <span class="o">=</span> <span class="n">writers</span><span class="o">.</span><span class="n">conversion_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">".json"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sidecar_file</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">sidecar_file</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">))</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">UnicodeDecodeError</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sidecar_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> could not be read (</span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">); not rebound."</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">writers</span><span class="o">.</span><span class="n">write_sidecar</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span> <span class="n">contents</span><span class="p">)</span>
+    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"enriched </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">updates</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">path</span></div>
 
 
 
@@ -982,6 +1255,7 @@
     <span class="s2">"mission"</span><span class="p">,</span>
     <span class="s2">"overridden"</span><span class="p">,</span>
     <span class="s2">"mixed"</span><span class="p">,</span>
+    <span class="s2">"enriched"</span><span class="p">,</span>
 <span class="p">)</span>
 
 
@@ -1168,32 +1442,7 @@
 
     <span class="n">global_attributes</span> <span class="o">=</span> <span class="n">global_attributes</span> <span class="ow">or</span> <span class="p">{}</span>
     <span class="n">deployment</span> <span class="o">=</span> <span class="n">deployment</span> <span class="ow">or</span> <span class="p">{}</span>
-    <span class="c1"># Only a real (non-null) value collides; a null is skipped later, so a legacy</span>
-    <span class="c1"># config_version 1 template that lists reserved keys as null (the old init wrote</span>
-    <span class="c1"># global_attributes: {project: null, program: null, ...}) still converts.</span>
-    <span class="n">set_globals</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">global_attributes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_empty</span><span class="p">(</span><span class="n">v</span><span class="p">)}</span>
-    <span class="n">collisions</span> <span class="o">=</span> <span class="n">_DERIVED_GLOBALS</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">set_globals</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">collisions</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">"global_attributes may not set converter-derived keys: "</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">collisions</span><span class="p">)</span><span class="si">}</span><span class="s2">. Remove them from the mission config."</span>
-        <span class="p">)</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-    <span class="n">structured</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_DEPLOYMENT_GLOBALS</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">set_globals</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">structured</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">"global_attributes may not set keys that have a structured home in the "</span>
-            <span class="sa">f</span><span class="s2">"deployment: block: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">structured</span><span class="p">)</span><span class="si">}</span><span class="s2">. Move them under deployment:."</span>
-        <span class="p">)</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-    <span class="n">unknown_deployment</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">deployment</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">_DEPLOYMENT_GLOBALS</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">unknown_deployment</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"deployment: has unknown keys: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown_deployment</span><span class="p">)</span><span class="si">}</span><span class="s2">. Allowed "</span>
-            <span class="sa">f</span><span class="s2">"keys are </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_DEPLOYMENT_GLOBALS</span><span class="p">)</span><span class="si">}</span><span class="s2">; put anything else under "</span>
-            <span class="s2">"global_attributes:."</span>
-        <span class="p">)</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="n">_check_metadata_keys</span><span class="p">(</span><span class="n">deployment</span><span class="p">,</span> <span class="n">global_attributes</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">MODE_SUFFIX</span><span class="p">:</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"mode must be one of </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">MODE_SUFFIX</span><span class="p">)</span><span class="si">}</span><span class="s2">, not </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">."</span>
@@ -1243,6 +1492,11 @@
         <span class="c1"># Only the dives that reach the output: a rejected dive contributed nothing.</span>
         <span class="n">provenance</span><span class="p">[</span><span class="s2">"inputs"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">_input_record</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">used_inputs</span><span class="p">]</span>
         <span class="n">provenance</span><span class="p">[</span><span class="s2">"presence"</span><span class="p">]</span> <span class="o">=</span> <span class="n">presence_by_dive</span><span class="p">(</span><span class="n">used_inputs</span><span class="p">)</span>
+        <span class="n">provenance</span><span class="p">[</span><span class="s2">"basestation_globals"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_basestation_globals</span><span class="p">(</span><span class="n">used_inputs</span><span class="p">)</span>
+        <span class="c1"># What init would propose for platform:, from the file the resolver reads.</span>
+        <span class="n">provenance</span><span class="p">[</span><span class="s2">"platform_from_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">platform_from_file</span><span class="p">(</span>
+            <span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="p">)</span>
 
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">processed_datasets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">)</span>
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span>
@@ -1523,6 +1777,8 @@
     <span class="n">repair</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">report</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">report_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">draft</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Convert one Seaglider mission to an OG1 file: read, convert, subset, write.</span>
 
@@ -1568,6 +1824,15 @@
 <span class="sd">        Also write the HTML conversion page</span>
 <span class="sd">        (:func:`seagliderOG1.reports.conversion.render_conversion`) beside the file</span>
 <span class="sd">        as ``&lt;output_dir&gt;/&lt;id&gt;_conversion.html``. Default is False.</span>
+<span class="sd">    report_dir : str or os.PathLike, optional</span>
+<span class="sd">        With ``report``, write the page to ``&lt;report_dir&gt;/&lt;id&gt;/`` instead of beside</span>
+<span class="sd">        the file, so pages can live apart from the archived data (the sidecar stays</span>
+<span class="sd">        beside the file). Default is None.</span>
+<span class="sd">    draft : bool, optional</span>
+<span class="sd">        Mark the output as a draft, not an OG1 file — for a conversion run with no</span>
+<span class="sd">        mission config, to see what the basestation files hold. The ``id`` (and so</span>
+<span class="sd">        every file name) ends ``_draft``, a ``draft`` global says why, and</span>
+<span class="sd">        ``Conventions`` drops ``OG-1.0``. Default is False.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1581,9 +1846,11 @@
 <span class="sd">        ``SN/DATE`` missions; or as raised by :func:`to_og1`.</span>
 <span class="sd">    FileExistsError</span>
 <span class="sd">        If the output file or (with ``report``) the page exists and ``overwrite`` is</span>
-<span class="sd">        False (a sidecar left beside a missing file is replaced, not refused); nothing is written. ``filename`` is the existing path. The</span>
-<span class="sd">        conversion has already run by then: the file name derives from the converted</span>
-<span class="sd">        ``id``.</span>
+<span class="sd">        False; with ``draft``, also the sidecar or the proposed</span>
+<span class="sd">        ``&lt;id&gt;_mission.yaml`` (:func:`seagliderOG1.writers.proposal_path`). Otherwise a</span>
+<span class="sd">        sidecar left beside a missing file is replaced, not refused. Nothing is</span>
+<span class="sd">        written; ``filename`` is the existing path. The conversion has already run by</span>
+<span class="sd">        then: the file name derives from the converted ``id``.</span>
 <span class="sd">    MetadataError</span>
 <span class="sd">        As raised by :func:`to_og1`.</span>
 
@@ -1633,14 +1900,31 @@
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">keep_variables</span><span class="p">:</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="n">_keep_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">keep_variables</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">draft</span><span class="p">:</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">_draft"</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"draft"</span><span class="p">]</span> <span class="o">=</span> <span class="n">DRAFT_NOTE</span>
+        <span class="n">writers</span><span class="o">.</span><span class="n">record_attribute_sources</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="p">[</span><span class="s2">"draft"</span><span class="p">],</span> <span class="s2">"derived"</span><span class="p">)</span>
+        <span class="n">conventions</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Conventions"</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"OG-"</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"Conventions"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">conventions</span><span class="p">)</span>
 
     <span class="n">output_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">.nc"</span>
     <span class="n">page</span> <span class="o">=</span> <span class="n">writers</span><span class="o">.</span><span class="n">conversion_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">".html"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">report_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">report_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">path</span><span class="o">.</span><span class="n">stem</span> <span class="o">/</span> <span class="n">page</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">targets</span> <span class="o">=</span> <span class="p">[</span><span class="n">path</span><span class="p">,</span> <span class="n">page</span><span class="p">]</span> <span class="k">if</span> <span class="n">report</span> <span class="k">else</span> <span class="p">[</span><span class="n">path</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">draft</span><span class="p">:</span>
+        <span class="c1"># A draft run writes four files; none is replaced without overwrite, the</span>
+        <span class="c1"># proposal least of all (the user is told to edit it in place).</span>
+        <span class="n">targets</span> <span class="o">+=</span> <span class="p">[</span><span class="n">writers</span><span class="o">.</span><span class="n">conversion_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">".json"</span><span class="p">),</span> <span class="n">writers</span><span class="o">.</span><span class="n">proposal_path</span><span class="p">(</span><span class="n">path</span><span class="p">)]</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
-        <span class="c1"># The sidecar is not checked: it belongs to the .nc, and one left beside a</span>
-        <span class="c1"># missing .nc is stale and is replaced with it.</span>
-        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span> <span class="k">if</span> <span class="n">report</span> <span class="k">else</span> <span class="p">(</span><span class="n">path</span><span class="p">,):</span>
+        <span class="c1"># Otherwise the sidecar is not checked: it belongs to the .nc, and one left</span>
+        <span class="c1"># beside a missing .nc is stale and is replaced with it.</span>
+        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span>
                     <span class="n">errno</span><span class="o">.</span><span class="n">EEXIST</span><span class="p">,</span>
@@ -1654,6 +1938,7 @@
         <span class="c1"># Lazy: reports.conversion imports this module at load time.</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1.reports.conversion</span><span class="w"> </span><span class="kn">import</span> <span class="n">render_conversion</span>
 
+        <span class="n">page</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">page</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">render_conversion</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
         <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"wrote </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">path</span></div>

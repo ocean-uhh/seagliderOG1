@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev75 documentation</title>
+  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev76 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=399f9b7f"></script>
+      <script src="_static/documentation_options.js?v=0e671115"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -58,14 +58,19 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">CLI reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#data-mode">Data mode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#conversion-page">Conversion page</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#draft">Draft</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-metadata-later">Adding metadata later</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#listing-the-vocabulary">Listing the vocabulary</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#verbs">Verbs</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1-positional-arguments">Positional Arguments</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1-named-arguments">Named Arguments</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Sub-commands">Sub-commands</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-draft">draft</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-init">init</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-validate">validate</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-process">process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-report">report</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-enrich">enrich</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-inspect">inspect</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seagliderOG1-list">list</a></li>
 </ul>
@@ -117,11 +122,14 @@
   <section id="cli-reference">
 <span id="id1"></span><h1>CLI reference<a class="headerlink" href="#cli-reference" title="Link to this heading"></a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> command converts Seaglider basestation files to OG1 with one subcommand
-per verb. The typical workflow is <code class="docutils literal notranslate"><span class="pre">init</span></code> → <code class="docutils literal notranslate"><span class="pre">validate</span></code> → <code class="docutils literal notranslate"><span class="pre">process</span></code>; <code class="docutils literal notranslate"><span class="pre">inspect</span></code> and
-<code class="docutils literal notranslate"><span class="pre">list</span></code> are read-only helpers.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>seagliderOG1<span class="w"> </span>init<span class="w"> </span>--from<span class="w"> </span>/data/005/20080606<span class="w"> </span>-o<span class="w"> </span>sg005.yaml
+per verb. The typical workflow is <code class="docutils literal notranslate"><span class="pre">draft</span></code> (optional) → <code class="docutils literal notranslate"><span class="pre">init</span></code> → <code class="docutils literal notranslate"><span class="pre">validate</span></code> → <code class="docutils literal notranslate"><span class="pre">process</span></code>
+→ <code class="docutils literal notranslate"><span class="pre">report</span></code>; <code class="docutils literal notranslate"><span class="pre">enrich</span></code> adds metadata to a written file; <code class="docutils literal notranslate"><span class="pre">inspect</span></code> and <code class="docutils literal notranslate"><span class="pre">list</span></code> are
+read-only helpers.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>seagliderOG1<span class="w"> </span>draft<span class="w"> </span>--raw-dir<span class="w"> </span>/data/005/20080606<span class="w"> </span>-o<span class="w"> </span>drafts/
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>init<span class="w"> </span>sg005.yaml<span class="w"> </span>--raw-dir<span class="w"> </span>/data/005/20080606
 <span class="gp">$ </span>seagliderOG1<span class="w"> </span>validate<span class="w"> </span>sg005.yaml
 <span class="gp">$ </span>seagliderOG1<span class="w"> </span>process<span class="w">  </span>sg005.yaml
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>report<span class="w">   </span>out/sg005_20080606T180256_delayed.nc
 </pre></div>
 </div>
 <p>The same entry point is available as a module:</p>
@@ -137,22 +145,54 @@ determines the data-mode suffix of the output id: <code class="docutils literal 
 </section>
 <section id="conversion-page">
 <h2>Conversion page<a class="headerlink" href="#conversion-page" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code> (or <code class="docutils literal notranslate"><span class="pre">report:</span> <span class="pre">true</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>) also writes the HTML conversion
-page <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> beside each OG1 file — the same page <code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span> <span class="pre">-o</span></code>
-writes for an existing file. <code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span> <span class="pre">-o</span></code> takes either an output file path or a
-directory, in which case it writes <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> into it. An existing page is refused
-like an existing file unless <code class="docutils literal notranslate"><span class="pre">--force</span></code>. See <a class="reference internal" href="conversion.html#conversion-page"><span class="std std-ref">The conversion page</span></a> for the sections the page
-shows.</p>
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span> <span class="pre">FILE.nc</span></code> writes the HTML conversion page <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> for a
+written OG1 file: beside the file by default, directly into <code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">DIR</span></code>, or into <code class="docutils literal notranslate"><span class="pre">ROOT/&lt;id&gt;/</span></code>
+with <code class="docutils literal notranslate"><span class="pre">--report-dir</span> <span class="pre">ROOT</span></code> — so the pages can live apart from the archived data. <code class="docutils literal notranslate"><span class="pre">process</span>
+<span class="pre">--report</span></code> (or <code class="docutils literal notranslate"><span class="pre">report:</span> <span class="pre">true</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>) writes the same page as it converts, and
+<code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report-dir</span> <span class="pre">ROOT</span></code> puts it under ROOT. An existing page is refused unless
+<code class="docutils literal notranslate"><span class="pre">--force</span></code>. <code class="docutils literal notranslate"><span class="pre">inspect</span></code> prints text only. See <a class="reference internal" href="conversion.html#conversion-page"><span class="std std-ref">The conversion page</span></a> for the sections the
+page shows.</p>
 <p><code class="docutils literal notranslate"><span class="pre">process</span></code> also writes <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside each OG1 file: the input files (name,
 size, dive number, dimension lengths and global-attribute count) and which dives each
 basestation variable was present in and had values in.
 The page reads it for its <em>Presence across dives</em> and <em>Before → after</em> sections. When the input dives disagree,
 <code class="docutils literal notranslate"><span class="pre">process</span></code> prints one line per mission after <code class="docutils literal notranslate"><span class="pre">wrote</span></code>:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">wrote outputs/sg005_20080606T180256_delayed.nc</span>
-<span class="go">  sg005_20080606T180256_delayed: 343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns) — see process --report</span>
+<span class="go">  sg005_20080606T180256_delayed: 343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns) — see seagliderOG1 report outputs/sg005_20080606T180256_delayed.nc</span>
 </pre></div>
 </div>
-<p>The sidecar belongs to its OG1 file: it is replaced whenever the file is written.</p>
+<p>The sidecar belongs to its OG1 file: it is replaced whenever the file is written. It records
+the file’s <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> (a new UUID on every write) and the SHA-256 of its bytes; <code class="docutils literal notranslate"><span class="pre">report</span></code>
+warns when the file beside it has changed since.</p>
+</section>
+<section id="draft">
+<h2>Draft<a class="headerlink" href="#draft" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">draft</span> <span class="pre">--raw-dir</span> <span class="pre">DIR</span> <span class="pre">[-o</span> <span class="pre">OUT]</span> <span class="pre">[--dives</span> <span class="pre">FIRST</span> <span class="pre">LAST]</span></code> converts one mission with
+no <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>, to see what the basestation files hold before writing one. It writes
+<code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_draft.nc</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_draft_conversion.html</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_draft_conversion.json</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_draft_mission.yaml</span></code> (the <code class="docutils literal notranslate"><span class="pre">init</span></code> template with <code class="docutils literal notranslate"><span class="pre">raw_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">dives</span></code> and the platform
+fields filled, and the derived id in a comment). None of these is an OG1 file: every name ends
+<code class="docutils literal notranslate"><span class="pre">_draft</span></code>, the netCDF carries a <code class="docutils literal notranslate"><span class="pre">draft</span></code> global attribute, and its <code class="docutils literal notranslate"><span class="pre">Conventions</span></code> has no
+<code class="docutils literal notranslate"><span class="pre">OG-1.0</span></code>. If any of the four files exists, <code class="docutils literal notranslate"><span class="pre">draft</span></code> writes nothing unless given <code class="docutils literal notranslate"><span class="pre">--force</span></code>
+(the proposal may have been edited in place). The draft page shows the basestation files’ own
+global attributes, marking those that differ between files, and what <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> must
+still supply.</p>
+</section>
+<section id="adding-metadata-later">
+<h2>Adding metadata later<a class="headerlink" href="#adding-metadata-later" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">enrich</span> <span class="pre">FILE.nc</span> <span class="pre">[mission.yaml]</span> <span class="pre">[--doi</span> <span class="pre">DOI]</span></code> sets global attributes on a written
+OG1 file without converting again — a DOI assigned after publication, or a corrected
+<code class="docutils literal notranslate"><span class="pre">deployment:</span></code> / <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code> value. It changes the netCDF file, not the
+configuration: the globals are edited in place, <code class="docutils literal notranslate"><span class="pre">date_modified</span></code> is set, a <code class="docutils literal notranslate"><span class="pre">history</span></code> line
+names the keys, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> is renewed, <code class="docutils literal notranslate"><span class="pre">date_created</span></code> is kept, and the sidecar is
+rebound. Values must be text, numbers or dates (a date is written as ISO 8601 text); every
+value is checked before the file is opened, so a refused one leaves the file unchanged.
+Replacing a different value already in the file warns with both values. <code class="docutils literal notranslate"><span class="pre">deployment.id</span></code>
+cannot change: the file name and sidecar are bound to it, so a new id means converting again.
+The globals <code class="docutils literal notranslate"><span class="pre">enrich</span></code> writes itself (<code class="docutils literal notranslate"><span class="pre">date_modified</span></code>, <code class="docutils literal notranslate"><span class="pre">history</span></code>, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code>,
+<code class="docutils literal notranslate"><span class="pre">draft</span></code>) and the <code class="docutils literal notranslate"><span class="pre">conversion_*</span></code> records cannot be set.
+Reserving the DOI first and setting <code class="docutils literal notranslate"><span class="pre">deployment.doi</span></code> before <code class="docutils literal notranslate"><span class="pre">process</span></code> is the
+alternative.</p>
 </section>
 <section id="listing-the-vocabulary">
 <h2>Listing the vocabulary<a class="headerlink" href="#listing-the-vocabulary" title="Link to this heading"></a></h2>
@@ -177,7 +217,7 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 <span id="seagliderOG1.cli-build_parser-positional-arguments"></span><h3>Positional Arguments<a class="headerlink" href="#seagliderOG1-positional-arguments" title="Link to this heading"></a></h3>
 <dl class="option-list">
 <dt><kbd>&lt;command&gt;</kbd></dt>
-<dd><p>Possible choices: init, validate, process, inspect, list</p>
+<dd><p>Possible choices: draft, init, validate, process, report, enrich, inspect, list</p>
 </dd>
 </dl>
 </section>
@@ -195,21 +235,58 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 </section>
 <section id="Sub-commands">
 <h3>Sub-commands<a class="headerlink" href="#Sub-commands" title="Link to this heading"></a></h3>
-<section id="seagliderOG1-init">
-<span id="init"></span><h4>init<a class="headerlink" href="#seagliderOG1-init" title="Link to this heading"></a></h4>
-<p>write a commented mission.yaml template</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">init</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="kn">from</span><span class="w"> </span><span class="nn">PATH</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">OUTPUT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span><span class="p">]</span>
+<section id="seagliderOG1-draft">
+<span id="draft"></span><h4>draft<a class="headerlink" href="#seagliderOG1-draft" title="Link to this heading"></a></h4>
+<p>Convert one mission with no mission config and write a draft netCDF, its conversion page and a proposed mission.yaml. Nothing written is an OG1 file: every name ends _draft.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">draft</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="o">--</span><span class="n">raw</span><span class="o">-</span><span class="nb">dir</span> <span class="n">DIR</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">DIR</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dives</span> <span class="n">FIRST</span> <span class="n">LAST</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span><span class="p">]</span>
 </pre></div>
 </div>
-<section id="seagliderOG1-init-named-arguments">
-<span id="-named-arguments"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-init-named-arguments" title="Link to this heading"></a></h5>
+<section id="seagliderOG1-draft-named-arguments">
+<span id="-named-arguments"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-draft-named-arguments" title="Link to this heading"></a></h5>
 <dl class="option-list">
-<dt><kbd>--from</kbd></dt>
-<dd><p>basestation directory, or one pSSSDDDD*.nc file in it, to read the platform block from</p>
+<dt><kbd>--raw-dir</kbd></dt>
+<dd><p>one mission directory of basestation files (pSSSDDDD*.nc)</p>
 </dd>
-<dt><kbd>-o, --output</kbd></dt>
-<dd><p>output path (default: mission.yaml)</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">'mission.yaml'</span></code></p>
+<dt><kbd>-o, --output-dir</kbd></dt>
+<dd><p>where the draft files go (default: .)</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'.'</span></code></p>
+</dd>
+<dt><kbd>--dives</kbd></dt>
+<dd><p>dive range to convert (default: every file)</p>
+</dd>
+<dt><kbd>--force</kbd></dt>
+<dd><p>overwrite existing draft files</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+</dl>
+</section>
+<dl class="simple">
+<dt>example:</dt><dd><p>seagliderOG1 draft –raw-dir /data/005/20080606 -o drafts/
+then: seagliderOG1 init sg005.yaml –raw-dir /data/005/20080606, or edit
+drafts/&lt;id&gt;_draft_mission.yaml, validate it and process it.</p>
+</dd>
+</dl>
+</section>
+<section id="seagliderOG1-init">
+<span id="init"></span><h4>init<a class="headerlink" href="#seagliderOG1-init" title="Link to this heading"></a></h4>
+<p>Write a commented mission.yaml. dest is a directory (mission.yaml is written inside) or a .yaml file name; default the current directory.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">init</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">raw</span><span class="o">-</span><span class="nb">dir</span> <span class="n">PATH</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span><span class="p">]</span> <span class="p">[</span><span class="n">dest</span><span class="p">]</span>
+</pre></div>
+</div>
+<section id="seagliderOG1-init-positional-arguments">
+<span id="-positional-arguments"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-init-positional-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>dest</kbd></dt>
+<dd><p>directory (mission.yaml inside) or a .yaml file name (default: .)</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">'.'</span></code></p>
+</dd>
+</dl>
+</section>
+<section id="seagliderOG1-init-named-arguments">
+<span id="-named-arguments_repeat1"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-init-named-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>--raw-dir</kbd></dt>
+<dd><p>basestation directory, or one pSSSDDDD*.nc file in it, to fill raw_dir and the platform block from</p>
 </dd>
 <dt><kbd>--force</kbd></dt>
 <dd><p>overwrite an existing file</p>
@@ -217,6 +294,12 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 </dd>
 </dl>
 </section>
+<dl class="simple">
+<dt>examples:</dt><dd><p>seagliderOG1 init                                  ./mission.yaml
+seagliderOG1 init outputs/ –raw-dir /data/005/    outputs/mission.yaml
+seagliderOG1 init sg005.yaml –raw-dir /data/005/  that file</p>
+</dd>
+</dl>
 </section>
 <section id="seagliderOG1-validate">
 <span id="validate"></span><h4>validate<a class="headerlink" href="#seagliderOG1-validate" title="Link to this heading"></a></h4>
@@ -225,7 +308,7 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 </pre></div>
 </div>
 <section id="seagliderOG1-validate-positional-arguments">
-<span id="-positional-arguments"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-validate-positional-arguments" title="Link to this heading"></a></h5>
+<span id="-positional-arguments_repeat1"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-validate-positional-arguments" title="Link to this heading"></a></h5>
 <dl class="option-list">
 <dt><kbd>config</kbd></dt>
 <dd><p>path to mission.yaml</p>
@@ -233,7 +316,7 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 </dl>
 </section>
 <section id="seagliderOG1-validate-named-arguments">
-<span id="-named-arguments_repeat1"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-validate-named-arguments" title="Link to this heading"></a></h5>
+<span id="-named-arguments_repeat2"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-validate-named-arguments" title="Link to this heading"></a></h5>
 <dl class="option-list">
 <dt><kbd>--strict</kbd></dt>
 <dd><p>also require every dive in the range to be present (no gaps)</p>
@@ -245,14 +328,15 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 <section id="seagliderOG1-process">
 <span id="process"></span><h4>process<a class="headerlink" href="#seagliderOG1-process" title="Link to this heading"></a></h4>
 <p>convert basestation missions to OG1 files</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">process</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">source</span> <span class="n">DIR_OR_ROOT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">all</span> <span class="o">|</span> <span class="o">--</span><span class="n">mission</span> <span class="n">GLOB</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">process</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">raw</span><span class="o">-</span><span class="nb">dir</span> <span class="n">DIR_OR_ROOT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">all</span> <span class="o">|</span> <span class="o">--</span><span class="n">mission</span> <span class="n">GLOB</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">DIR</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">mode</span> <span class="p">{</span><span class="n">realtime</span><span class="p">,</span><span class="n">delayed</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">dives</span> <span class="n">FIRST</span> <span class="n">LAST</span><span class="p">]</span>
-                     <span class="p">[</span><span class="o">--</span><span class="n">repair</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span> <span class="o">|</span> <span class="o">--</span><span class="n">skip</span><span class="o">-</span><span class="n">existing</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">]</span>
+                     <span class="p">[</span><span class="o">--</span><span class="n">repair</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span> <span class="o">|</span> <span class="o">--</span><span class="n">skip</span><span class="o">-</span><span class="n">existing</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">report</span><span class="p">]</span>
+                     <span class="p">[</span><span class="o">--</span><span class="n">report</span><span class="o">-</span><span class="nb">dir</span> <span class="n">ROOT</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">]</span>
                      <span class="n">config</span>
 </pre></div>
 </div>
 <section id="seagliderOG1-process-positional-arguments">
-<span id="-positional-arguments_repeat1"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-process-positional-arguments" title="Link to this heading"></a></h5>
+<span id="-positional-arguments_repeat2"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-process-positional-arguments" title="Link to this heading"></a></h5>
 <dl class="option-list">
 <dt><kbd>config</kbd></dt>
 <dd><p>path to mission.yaml</p>
@@ -260,10 +344,10 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 </dl>
 </section>
 <section id="seagliderOG1-process-named-arguments">
-<span id="-named-arguments_repeat2"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-process-named-arguments" title="Link to this heading"></a></h5>
+<span id="-named-arguments_repeat3"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-process-named-arguments" title="Link to this heading"></a></h5>
 <dl class="option-list">
-<dt><kbd>--source</kbd></dt>
-<dd><p>override the config source (a mission dir or a root of SN/DATE dirs)</p>
+<dt><kbd>--raw-dir</kbd></dt>
+<dd><p>override the config raw_dir (a mission dir or a root of SN/DATE dirs)</p>
 </dd>
 <dt><kbd>--all</kbd></dt>
 <dd><p>convert every SN/DATE mission under a root</p>
@@ -283,7 +367,7 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 <dd><p>dive range to convert (overrides the config dives)</p>
 </dd>
 <dt><kbd>--repair</kbd></dt>
-<dd><p>repair basestation time metadata before loading (writes the source tree)</p>
+<dd><p>repair basestation time metadata before loading (writes the raw_dir tree)</p>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--force</kbd></dt>
@@ -298,6 +382,9 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 <dd><p>also write the HTML conversion page &lt;id&gt;_conversion.html beside each file</p>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
+<dt><kbd>--report-dir</kbd></dt>
+<dd><p>write each conversion page into ROOT/&lt;id&gt;/ instead (implies –report)</p>
+</dd>
 <dt><kbd>-n, --dry-run</kbd></dt>
 <dd><p>print what would be written; write nothing</p>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
@@ -305,17 +392,88 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 </dl>
 </section>
 </section>
+<section id="seagliderOG1-report">
+<span id="report"></span><h4>report<a class="headerlink" href="#seagliderOG1-report" title="Link to this heading"></a></h4>
+<p>Write &lt;id&gt;_conversion.html for an OG1 file written by seagliderOG1: beside the file, in -o DIR, or in –report-dir ROOT/&lt;id&gt;/.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">report</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">DIR</span> <span class="o">|</span> <span class="o">--</span><span class="n">report</span><span class="o">-</span><span class="nb">dir</span> <span class="n">ROOT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">title</span> <span class="n">TEXT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span><span class="p">]</span>
+                    <span class="n">files</span> <span class="p">[</span><span class="n">files</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<section id="seagliderOG1-report-positional-arguments">
+<span id="-positional-arguments_repeat3"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-report-positional-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>files</kbd></dt>
+<dd><p>OG1 netCDF file(s)</p>
+</dd>
+</dl>
+</section>
+<section id="seagliderOG1-report-named-arguments">
+<span id="-named-arguments_repeat4"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-report-named-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>-o, --output-dir</kbd></dt>
+<dd><p>write the page(s) directly into DIR</p>
+</dd>
+<dt><kbd>--report-dir</kbd></dt>
+<dd><p>write each page into ROOT/&lt;id&gt;/</p>
+</dd>
+<dt><kbd>--title</kbd></dt>
+<dd><p>title for the page</p>
+</dd>
+<dt><kbd>--force</kbd></dt>
+<dd><p>overwrite an existing page</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+</dl>
+</section>
+<dl class="simple">
+<dt>examples:</dt><dd><p>seagliderOG1 report out/&lt;id&gt;.nc                       beside the file
+seagliderOG1 report out/&lt;id&gt;.nc -o pages/             into pages/
+seagliderOG1 report out/&lt;id&gt;.nc –report-dir site/    into site/&lt;id&gt;/</p>
+</dd>
+</dl>
+</section>
+<section id="seagliderOG1-enrich">
+<span id="enrich"></span><h4>enrich<a class="headerlink" href="#seagliderOG1-enrich" title="Link to this heading"></a></h4>
+<p>Set global attributes on a written OG1 file, without converting again. Changes the netCDF file (not the config): sets date_modified, adds a history line and a new tracking_id, keeps date_created, and rebinds the sidecar beside it.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">enrich</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">doi</span> <span class="n">DOI</span><span class="p">]</span> <span class="n">file</span> <span class="p">[</span><span class="n">config</span><span class="p">]</span>
+</pre></div>
+</div>
+<section id="seagliderOG1-enrich-positional-arguments">
+<span id="-positional-arguments_repeat4"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-enrich-positional-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>file</kbd></dt>
+<dd><p>the OG1 netCDF file</p>
+</dd>
+<dt><kbd>config</kbd></dt>
+<dd><p>mission.yaml whose deployment: and global_attributes: are applied</p>
+</dd>
+</dl>
+</section>
+<section id="seagliderOG1-enrich-named-arguments">
+<span id="-named-arguments_repeat5"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-enrich-named-arguments" title="Link to this heading"></a></h5>
+<dl class="option-list">
+<dt><kbd>--doi</kbd></dt>
+<dd><p>set the doi global</p>
+</dd>
+</dl>
+</section>
+<dl class="simple">
+<dt>examples:</dt><dd><p>seagliderOG1 enrich out/&lt;id&gt;.nc –doi 10.5281/zenodo.123
+seagliderOG1 enrich out/&lt;id&gt;.nc mission.yaml</p>
+</dd>
+</dl>
+</section>
 <section id="seagliderOG1-inspect">
 <span id="inspect"></span><h4>inspect<a class="headerlink" href="#seagliderOG1-inspect" title="Link to this heading"></a></h4>
 <p>Show the inventory of one basestation or OG1 netCDF file as a text table. With –conversion, print the conversion ledger; with –conversion -o, write the HTML conversion page.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">inspect</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">--</span><span class="n">attrs</span> <span class="o">|</span> <span class="o">--</span><span class="n">variables</span> <span class="o">|</span> <span class="o">--</span><span class="n">by</span><span class="o">-</span><span class="n">dimension</span> <span class="n">DIM</span> <span class="o">|</span> <span class="o">--</span><span class="n">conversion</span> <span class="o">|</span> <span class="o">--</span><span class="n">parameter</span> <span class="n">NAME</span><span class="p">]</span>
-                     <span class="p">[</span><span class="o">--</span><span class="nb">all</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">HTML</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">title</span> <span class="n">TEXT</span><span class="p">]</span>
+                     <span class="p">[</span><span class="o">--</span><span class="nb">all</span><span class="p">]</span>
                      <span class="n">file</span>
 </pre></div>
 </div>
 <section id="seagliderOG1-inspect-positional-arguments">
-<span id="-positional-arguments_repeat2"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-inspect-positional-arguments" title="Link to this heading"></a></h5>
+<span id="-positional-arguments_repeat5"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-inspect-positional-arguments" title="Link to this heading"></a></h5>
 <dl class="option-list">
 <dt><kbd>file</kbd></dt>
 <dd><p>path to a basestation or OG1 netCDF file</p>
@@ -323,7 +481,7 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 </dl>
 </section>
 <section id="seagliderOG1-inspect-named-arguments">
-<span id="-named-arguments_repeat3"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-inspect-named-arguments" title="Link to this heading"></a></h5>
+<span id="-named-arguments_repeat6"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-inspect-named-arguments" title="Link to this heading"></a></h5>
 <dl class="option-list">
 <dt><kbd>--attrs</kbd></dt>
 <dd><p>show global attributes</p>
@@ -347,12 +505,6 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 <dd><p>with –conversion, list the constant scalars in full (not just a count)</p>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
-<dt><kbd>-o, --output</kbd></dt>
-<dd><p>with –conversion, write the HTML conversion page to this path</p>
-</dd>
-<dt><kbd>--title</kbd></dt>
-<dd><p>title for the HTML conversion page</p>
-</dd>
 </dl>
 </section>
 <dl class="simple">
@@ -372,7 +524,7 @@ seagliderOG1 inspect sg005_20080606_delayed.nc –conversion what the conversion
 </pre></div>
 </div>
 <section id="seagliderOG1-list-positional-arguments">
-<span id="-positional-arguments_repeat3"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-list-positional-arguments" title="Link to this heading"></a></h5>
+<span id="-positional-arguments_repeat6"></span><h5>Positional Arguments<a class="headerlink" href="#seagliderOG1-list-positional-arguments" title="Link to this heading"></a></h5>
 <dl class="option-list">
 <dt><kbd>registry</kbd></dt>
 <dd><p>Possible choices: roles, institutions, missions, globals, platform, variables, sensors</p>
@@ -384,7 +536,7 @@ seagliderOG1 inspect sg005_20080606_delayed.nc –conversion what the conversion
 </dl>
 </section>
 <section id="seagliderOG1-list-named-arguments">
-<span id="-named-arguments_repeat4"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-list-named-arguments" title="Link to this heading"></a></h5>
+<span id="-named-arguments_repeat7"></span><h5>Named Arguments<a class="headerlink" href="#seagliderOG1-list-named-arguments" title="Link to this heading"></a></h5>
 <dl class="option-list">
 <dt><kbd>--search</kbd></dt>
 <dd><p>case-insensitive filter across every column</p>
@@ -403,9 +555,11 @@ seagliderOG1 list missions /data/005       # missions under a root</p>
 </section>
 </section>
 <p><dl class="simple">
-<dt>typical workflow:</dt><dd><p>seagliderOG1 init –from /data/005/20080606 -o sg005.yaml   template from the first file
-seagliderOG1 validate sg005.yaml                            config, source, dive range
-seagliderOG1 process  sg005.yaml                            -&gt; &lt;output_dir&gt;/&lt;OG1 id&gt;.nc</p>
+<dt>typical workflow:</dt><dd><p>seagliderOG1 draft –raw-dir /data/005/20080606             look at the data, no config
+seagliderOG1 init sg005.yaml –raw-dir /data/005/20080606   template from the first file
+seagliderOG1 validate sg005.yaml                            config, raw_dir, dive range
+seagliderOG1 process  sg005.yaml                            -&gt; &lt;output_dir&gt;/&lt;OG1 id&gt;.nc
+seagliderOG1 report   &lt;output_dir&gt;/&lt;OG1 id&gt;.nc              the conversion page</p>
 </dd>
 </dl>
 </p>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev75 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev76 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=399f9b7f"></script>
+      <script src="_static/documentation_options.js?v=0e671115"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -231,7 +231,9 @@ the four depth-averaged currents are present on every dive but have values from 
 </section>
 <section id="the-conversion-page">
 <span id="conversion-page"></span><h2>The conversion page<a class="headerlink" href="#the-conversion-page" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code> (and <code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span> <span class="pre">-o</span></code>) writes an HTML page beside the OG1 file.
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span></code> (and <code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code>) writes an HTML page for the OG1 file. A
+draft (<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">draft</span></code>) gets the same page with its global attributes replaced by the
+basestation files’ own.
 Its sections, in order:</p>
 <ol class="arabic simple">
 <li><p><strong>Before → after</strong> — files, dives, size on disk, samples on the shared axis, variable and
@@ -271,7 +273,7 @@ and the history.</p></li>
 <section id="validation">
 <h2>Validation<a class="headerlink" href="#validation" title="Link to this heading"></a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">validate</span></code> verb checks the <strong>mission configuration</strong> before conversion: known and
-required keys, that <code class="docutils literal notranslate"><span class="pre">source</span></code> is reachable and holds basestation files, the dive range, the
+required keys, that <code class="docutils literal notranslate"><span class="pre">raw_dir</span></code> is reachable and holds basestation files, the dive range, the
 required platform fields, and that the contributor and institution records include at least
 one PI and one Operator. During conversion the input coordinates are checked.</p>
 <p>Neither step runs an OG1 compliance check on the output file. To check a finished OG1 file

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.writers &mdash; seagliderOG1 0.0.2.post1.dev75 documentation</title>
+  <title>seagliderOG1.writers &mdash; seagliderOG1 0.0.2.post1.dev76 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=399f9b7f"></script>
+      <script src="../../_static/documentation_options.js?v=0e671115"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -95,8 +95,11 @@
   <h1>Source code for seagliderOG1.writers</h1><div class="highlight"><pre>
 <span></span><span class="sd">"""Write OG1 datasets to compressed NetCDF files."""</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">MutableMapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Number</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
@@ -107,7 +110,14 @@
 
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"write"</span><span class="p">,</span> <span class="s2">"conversion_path"</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"write"</span><span class="p">,</span>
+    <span class="s2">"conversion_path"</span><span class="p">,</span>
+    <span class="s2">"file_sha256"</span><span class="p">,</span>
+    <span class="s2">"proposal_path"</span><span class="p">,</span>
+    <span class="s2">"record_attribute_sources"</span><span class="p">,</span>
+    <span class="s2">"write_sidecar"</span><span class="p">,</span>
+<span class="p">]</span>
 
 <span class="c1"># Version of the sidecar layout; bump when a reader would misread the old one.</span>
 <span class="n">SIDECAR_SCHEMA</span> <span class="o">=</span> <span class="mi">1</span>
@@ -200,6 +210,11 @@
 
     <span class="n">valid_types</span> <span class="o">=</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Number</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span>
 
+    <span class="c1"># A new identity for every written version of the file (ctdcast's tracking_id); the</span>
+    <span class="c1"># sidecar binds to it, and enrich issues a new one.</span>
+    <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"tracking_id"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+    <span class="n">record_attribute_sources</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="p">[</span><span class="s2">"tracking_id"</span><span class="p">],</span> <span class="s2">"derived"</span><span class="p">)</span>
+
     <span class="n">encoding</span> <span class="o">=</span> <span class="n">_compression_encoding</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">):</span>
@@ -241,18 +256,109 @@
             <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Attributes with dtype float64: </span><span class="si">{</span><span class="n">float_attrs</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">raise</span>
     <span class="k">if</span> <span class="n">sidecar</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># The binding keys come last so a sidecar dict cannot override them.</span>
-        <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="o">**</span><span class="n">sidecar</span><span class="p">,</span>
-            <span class="s2">"schema"</span><span class="p">:</span> <span class="n">SIDECAR_SCHEMA</span><span class="p">,</span>
-            <span class="s2">"id"</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">),</span>
-            <span class="s2">"date_created"</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"date_created"</span><span class="p">),</span>
-            <span class="s2">"converter"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"seagliderOG1"</span><span class="p">:</span> <span class="n">__version__</span><span class="p">},</span>
-        <span class="p">}</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">conversion_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">".json"</span><span class="p">)</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Conversion sidecar written to </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="n">write_sidecar</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="n">sidecar</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="file_sha256">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.writers.file_sha256">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">file_sha256</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the SHA-256 hex digest of a file's bytes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or pathlib.Path</span>
+<span class="sd">        The file to hash.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        The 64-character hex digest.</span>
+
+<span class="sd">    """</span>
+    <span class="n">digest</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">20</span><span class="p">),</span> <span class="sa">b</span><span class="s2">""</span><span class="p">):</span>
+            <span class="n">digest</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">digest</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="record_attribute_sources">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.writers.record_attribute_sources">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">record_attribute_sources</span><span class="p">(</span>
+    <span class="n">attrs</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span> <span class="n">names</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">category</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Move global names into one category of the ``conversion_attribute_sources`` ledger.</span>
+
+<span class="sd">    For a global written after the conversion built the ledger (``tracking_id`` here,</span>
+<span class="sd">    ``draft`` and ``enrich``'s keys in :mod:`seagliderOG1.convert`), so the ledger</span>
+<span class="sd">    still names every global exactly once. Does nothing when ``attrs`` carries no</span>
+<span class="sd">    ledger.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attrs : collections.abc.MutableMapping</span>
+<span class="sd">        Global attributes holding the ledger as JSON; modified in place.</span>
+<span class="sd">    names : collections.abc.Iterable of str</span>
+<span class="sd">        The globals to record.</span>
+<span class="sd">    category : str</span>
+<span class="sd">        The ledger category they now belong to (e.g. ``"derived"``, ``"enriched"``).</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="s2">"conversion_attribute_sources"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+    <span class="n">sources</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_attribute_sources"</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">members</span> <span class="ow">in</span> <span class="n">sources</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">members</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">members</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
+    <span class="n">sources</span><span class="p">[</span><span class="n">category</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">|</span> <span class="n">names</span><span class="p">)</span>
+    <span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_attribute_sources"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+        <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">members</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="n">sources</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">members</span><span class="p">}</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="write_sidecar">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.writers.write_sidecar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_sidecar</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">attrs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">contents</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Write ``&lt;stem&gt;_conversion.json`` beside an OG1 file, bound to its current version.</span>
+
+<span class="sd">    The binding is the file's ``id`` and ``tracking_id`` plus the SHA-256 of its bytes,</span>
+<span class="sd">    so a reader can tell the sidecar belongs to this file and that the file has not</span>
+<span class="sd">    changed since. A checksum cannot live inside the file it covers, so it lives here.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or pathlib.Path</span>
+<span class="sd">        The OG1 netCDF file, already written.</span>
+<span class="sd">    attrs : dict</span>
+<span class="sd">        Its global attributes (``id``, ``tracking_id``, ``date_created``).</span>
+<span class="sd">    contents : dict</span>
+<span class="sd">        The sidecar body (``inputs``, ``presence``, ...); its binding keys, if any,</span>
+<span class="sd">        are replaced.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pathlib.Path</span>
+<span class="sd">        The sidecar path.</span>
+
+<span class="sd">    """</span>
+    <span class="c1"># The binding keys come last so the body cannot override them.</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="o">**</span><span class="n">contents</span><span class="p">,</span>
+        <span class="s2">"schema"</span><span class="p">:</span> <span class="n">SIDECAR_SCHEMA</span><span class="p">,</span>
+        <span class="s2">"id"</span><span class="p">:</span> <span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">),</span>
+        <span class="s2">"tracking_id"</span><span class="p">:</span> <span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tracking_id"</span><span class="p">),</span>
+        <span class="s2">"date_created"</span><span class="p">:</span> <span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"date_created"</span><span class="p">),</span>
+        <span class="s2">"sha256"</span><span class="p">:</span> <span class="n">file_sha256</span><span class="p">(</span><span class="n">path</span><span class="p">),</span>
+        <span class="s2">"converter"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"seagliderOG1"</span><span class="p">:</span> <span class="n">__version__</span><span class="p">},</span>
+    <span class="p">}</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">conversion_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">".json"</span><span class="p">)</span>
+    <span class="n">target</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
+    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Conversion sidecar written to </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">target</span></div>
 
 
 
@@ -279,6 +385,31 @@
 <span class="sd">    """</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">stem</span><span class="si">}</span><span class="s2">_conversion</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="proposal_path">
+<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.writers.proposal_path">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">proposal_path</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the proposed mission config beside a draft file: ``&lt;stem&gt;_mission.yaml``.</span>
+
+<span class="sd">    Written by the ``draft`` verb; named here, beside :func:`conversion_path`, so the</span>
+<span class="sd">    verb and :func:`seagliderOG1.convert.process_mission`'s existence check agree. Not</span>
+<span class="sd">    a ``_conversion`` name: it is a config for the next run, not a record of this one.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or pathlib.Path</span>
+<span class="sd">        The draft netCDF file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pathlib.Path</span>
+<span class="sd">        The path, in the same directory as ``path``.</span>
+
+<span class="sd">    """</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">stem</span><span class="si">}</span><span class="s2">_mission.yaml"</span><span class="p">)</span></div>
 
 
 

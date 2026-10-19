@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Getting started &mdash; seagliderOG1 0.0.2.post1.dev75 documentation</title>
+  <title>Getting started &mdash; seagliderOG1 0.0.2.post1.dev76 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=399f9b7f"></script>
+      <script src="_static/documentation_options.js?v=0e671115"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -126,14 +126,15 @@
 <h2>Convert a mission<a class="headerlink" href="#convert-a-mission" title="Link to this heading"></a></h2>
 <p>The command-line interface converts one mission with three steps: write a configuration
 template from the first basestation file, check it, then convert.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>seagliderOG1<span class="w"> </span>init<span class="w"> </span>--from<span class="w"> </span>/data/005/20080606<span class="w"> </span>-o<span class="w"> </span>sg005.yaml<span class="w">   </span><span class="c1"># template from the first file</span>
-<span class="gp">$ </span>seagliderOG1<span class="w"> </span>validate<span class="w"> </span>sg005.yaml<span class="w">                            </span><span class="c1"># config, source, dive range</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>seagliderOG1<span class="w"> </span>draft<span class="w"> </span>--raw-dir<span class="w"> </span>/data/005/20080606<span class="w">             </span><span class="c1"># optional: a draft page, no config</span>
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>init<span class="w"> </span>sg005.yaml<span class="w"> </span>--raw-dir<span class="w"> </span>/data/005/20080606<span class="w">   </span><span class="c1"># template from the first file</span>
+<span class="gp">$ </span>seagliderOG1<span class="w"> </span>validate<span class="w"> </span>sg005.yaml<span class="w">                            </span><span class="c1"># config, raw_dir, dive range</span>
 <span class="gp">$ </span>seagliderOG1<span class="w"> </span>process<span class="w">  </span>sg005.yaml<span class="w">                            </span><span class="c1"># -&gt; &lt;output_dir&gt;/&lt;id&gt;.nc</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">init</span></code> fills the platform block from the basestation file; open <code class="docutils literal notranslate"><span class="pre">sg005.yaml</span></code> and complete
 the contributor and institution records before <code class="docutils literal notranslate"><span class="pre">validate</span></code>. For a root of <code class="docutils literal notranslate"><span class="pre">SN/DATE</span></code> mission
-directories, point <code class="docutils literal notranslate"><span class="pre">source</span></code> at the root and select with <code class="docutils literal notranslate"><span class="pre">--all</span></code> or <code class="docutils literal notranslate"><span class="pre">--mission</span> <span class="pre">GLOB</span></code>; <code class="docutils literal notranslate"><span class="pre">-n</span></code>
+directories, point <code class="docutils literal notranslate"><span class="pre">raw_dir</span></code> at the root and select with <code class="docutils literal notranslate"><span class="pre">--all</span></code> or <code class="docutils literal notranslate"><span class="pre">--mission</span> <span class="pre">GLOB</span></code>; <code class="docutils literal notranslate"><span class="pre">-n</span></code>
 previews without writing. Paths in <code class="docutils literal notranslate"><span class="pre">sg005.yaml</span></code> resolve relative to the file. See
 <a class="reference internal" href="mission_yaml.html#mission-yaml"><span class="std std-ref">mission.yaml reference</span></a> for every key and <a class="reference internal" href="cli_reference.html#cli-reference"><span class="std std-ref">CLI reference</span></a> for every flag.</p>
 <p>A filled-in example for the bundled sample ships as <code class="docutils literal notranslate"><span class="pre">data/demo_sg005/mission.yaml</span></code>; from the
