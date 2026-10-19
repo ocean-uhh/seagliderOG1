@@ -1,5 +1,6 @@
 """Tests for the seagliderOG1 command-line interface (``init``, ``validate``)."""
 
+import os
 import pathlib
 import subprocess
 import sys
@@ -56,6 +57,22 @@ def test_help_imports_stay_light() -> None:
         [sys.executable, "-c", code], capture_output=True, text=True, check=False
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_cli_forces_noninteractive_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    """main() pins a headless matplotlib backend so a figure render never blocks on a GUI."""
+    monkeypatch.delenv("MPLBACKEND", raising=False)
+    with pytest.raises(SystemExit):  # --version exits after main() sets the backend
+        cli.main(["--version"])
+    assert os.environ["MPLBACKEND"] == "Agg"
+
+
+def test_cli_respects_an_explicit_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A backend the user set themselves is left untouched (setdefault, not override)."""
+    monkeypatch.setenv("MPLBACKEND", "pdf")
+    with pytest.raises(SystemExit):
+        cli.main(["--version"])
+    assert os.environ["MPLBACKEND"] == "pdf"
 
 
 # --- init ------------------------------------------------------------------

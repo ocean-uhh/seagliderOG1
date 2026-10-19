@@ -9,6 +9,7 @@ import those inside ``run`` rather than at module load.
 
 import argparse
 import logging
+import os
 from collections.abc import Sequence
 
 from seagliderOG1 import __version__
@@ -127,6 +128,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         Process exit code: 0 on success, 1 on a handled error, 2 on a usage error.
 
     """
+    # The CLI only ever renders figures to a PNG in the conversion page, never to a
+    # screen, so force a non-interactive matplotlib backend: on an interactive shell
+    # (macOS defaults to `macosx`) the first figure otherwise blocks on a GUI window.
+    # An env var, not matplotlib.use(), so building the parser still imports no
+    # matplotlib; setdefault leaves a backend the user set themselves untouched.
+    os.environ.setdefault("MPLBACKEND", "Agg")
     parser = build_parser()
     args = parser.parse_args(argv)
     _configure_logging(args.verbose)
