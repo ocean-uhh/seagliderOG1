@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev73 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev74 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=566e8fab"></script>
+      <script src="_static/documentation_options.js?v=9de71f66"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -116,6 +116,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 <section id="breaking-changes">
 <h3>Breaking changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>A second or later basestation variable mapping to the same OG1 name is numbered with an
+underscore (<code class="docutils literal notranslate"><span class="pre">DEPTH_2</span></code>, was <code class="docutils literal notranslate"><span class="pre">DEPTH2</span></code>); the first keeps the plain name.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">log_VBD_MIN</span></code> is no longer mapped to <code class="docutils literal notranslate"><span class="pre">VBD_MIN_CNTS</span></code> (which <code class="docutils literal notranslate"><span class="pre">sg_cal_vbd_min_cnts</span></code> holds); it is
+written under its basestation name (was <code class="docutils literal notranslate"><span class="pre">VBD_MIN_CNTS2</span></code>).</p></li>
 <li><p>Public API reshaped to the OceanGliders family convention — modules, functions and arguments
 renamed (<code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code>, <code class="docutils literal notranslate"><span class="pre">writers.write</span></code>, <code class="docutils literal notranslate"><span class="pre">readers.read_mission</span></code>, …). See the migration guide
 for the full old → new table.</p></li>
@@ -174,11 +178,24 @@ across dives</em> section; <code class="docutils literal notranslate"><span clas
 <code class="docutils literal notranslate"><span class="pre">convert.presence_by_dive</span></code>, <code class="docutils literal notranslate"><span class="pre">presence_patterns</span></code>, <code class="docutils literal notranslate"><span class="pre">presence_summary</span></code>, <code class="docutils literal notranslate"><span class="pre">conversion_sidecar</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">data/demo_sg005/mission.yaml</span></code>: a filled-in example configuration for the bundled sample (writes
 to the gitignored <code class="docutils literal notranslate"><span class="pre">outputs/</span></code>); the demo notebook runs it through <code class="docutils literal notranslate"><span class="pre">convert.process_mission</span></code>.</p></li>
+<li><p>Conversion page “The OG1 file” section: the output read by what OG1 requires and names rather
+than by basestation origin — Required by OG1 (present/absent + where each came from), Named by
+OG1, a Candidate-for-OG1 tier the project curates, Carried-through families, and a “same
+quantity, more than once” comparison. <code class="docutils literal notranslate"><span class="pre">vocabularies.OG1_REQUIRED_VARS</span></code> (the upstream checker’s
+list) and <code class="docutils literal notranslate"><span class="pre">vocabularies.OG1_CANDIDATE_VARS</span></code> (the project’s uplift list) back it.</p></li>
 </ul>
 </section>
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">vocabularies.VARIABLES_TO_DROP</span></code> is empty: the 24 basestation variables it removed (e.g. <code class="docutils literal notranslate"><span class="pre">density</span></code>,
+<code class="docutils literal notranslate"><span class="pre">theta</span></code>, <code class="docutils literal notranslate"><span class="pre">dissolved_oxygen_sat</span></code>, the <code class="docutils literal notranslate"><span class="pre">*_gsm</span></code> flight-model set) are now in the output. <code class="docutils literal notranslate"><span class="pre">depth</span></code> and
+<code class="docutils literal notranslate"><span class="pre">eng_depth</span></code> map to <code class="docutils literal notranslate"><span class="pre">DEPTH</span></code>, which <code class="docutils literal notranslate"><span class="pre">ctd_depth</span></code> holds, and are written as <code class="docutils literal notranslate"><span class="pre">DEPTH_2</span></code> / <code class="docutils literal notranslate"><span class="pre">DEPTH_3</span></code>.</p></li>
+<li><p>Conversion page reordered for a first read: a Before → after summary and the Reconciliation
+with a Meaning column first, scalar parameters last and collapsed; Presence and Dimensions
+gain percentage and Samples in columns, and each Variables group states the Valid % baseline
+its dimension sets. <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> input records gain each file’s dimension lengths
+and global-attribute count (additive; an older sidecar still renders).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">list</span></code> prints each registry as an aligned table with a header and a one-line
 summary; bare <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">list</span></code> names the registries; <code class="docutils literal notranslate"><span class="pre">--search</span> <span class="pre">TEXT</span></code> filters rows.</p></li>
 <li><p>Packaged config files and <code class="docutils literal notranslate"><span class="pre">vocabularies</span></code> tables renamed to whole words (package data, no API
@@ -197,6 +214,11 @@ config, <code class="docutils literal notranslate"><span class="pre">ruff</span>
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span></code> and the converter read dotted version strings (<code class="docutils literal notranslate"><span class="pre">base_station_version:</span> <span class="pre">&quot;3.0.6&quot;</span></code>)
+from newer basestation files instead of failing; <code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span></code> also accepts one
+<code class="docutils literal notranslate"><span class="pre">pSSSDDDD*.nc</span></code> file.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span> <span class="pre">-o</span> <span class="pre">DIR</span></code> accepts a directory and writes <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> into it
+(was a file path only, failing with <code class="docutils literal notranslate"><span class="pre">IsADirectoryError</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">config/OG1_variable_attributes.yaml</span></code> no longer carries <code class="docutils literal notranslate"><span class="pre">platform_model_vocabulary</span></code> /
 <code class="docutils literal notranslate"><span class="pre">platform_maker_vocabulary</span></code> defaults (never written to files; the maker term named Teledyne Webb
 Research, the Slocum maker). Set both per glider in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>; the sg005 example now does.</p></li>

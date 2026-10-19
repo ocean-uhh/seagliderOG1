@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev73 documentation</title>
+  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev74 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=566e8fab"></script>
+      <script src="../../_static/documentation_options.js?v=9de71f66"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -522,7 +522,11 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_input_record</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Return ``{"path", "bytes", "dive"}`` for one input dataset (file name only).</span>
+<span class="w">    </span><span class="sd">"""Return ``{"path", "bytes", "dive", "dimensions", "n_globals"}`` for one input dataset.</span>
+
+<span class="sd">    The dimension lengths and global-attribute count let the conversion page show what each</span>
+<span class="sd">    file held before conversion (the before → after table) and state each dimension's share of</span>
+<span class="sd">    the shared axis; both are read from the already-open dataset, so no data is read.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -532,8 +536,9 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    dict of str to object</span>
-<span class="sd">        The file name (not the machine path), its size in bytes (None when the dataset</span>
-<span class="sd">        was not read from a local file) and the dive number.</span>
+<span class="sd">        The file name (not the machine path), its size in bytes (None when the dataset was</span>
+<span class="sd">        not read from a local file), the dive number, the dimension lengths as a</span>
+<span class="sd">        ``{name: length}`` map, and the number of global attributes.</span>
 
 <span class="sd">    """</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"source"</span><span class="p">)</span>
@@ -542,6 +547,8 @@
         <span class="s2">"path"</span><span class="p">:</span> <span class="n">local</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">local</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="s2">"bytes"</span><span class="p">:</span> <span class="n">local</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span> <span class="k">if</span> <span class="n">local</span> <span class="ow">and</span> <span class="n">local</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="s2">"dive"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]),</span>
+        <span class="s2">"dimensions"</span><span class="p">:</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">):</span> <span class="nb">int</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">length</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+        <span class="s2">"n_globals"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">),</span>
     <span class="p">}</span>
 
 

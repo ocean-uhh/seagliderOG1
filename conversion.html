@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev73 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev74 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=566e8fab"></script>
+      <script src="_static/documentation_options.js?v=9de71f66"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -67,6 +67,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#og1-compliance">OG1 compliance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#variables-that-differ-between-dives">Variables that differ between dives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-conversion-page">The conversion page</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#validation">Validation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#extended-variables">Extended variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
@@ -227,6 +228,45 @@ the dives. On the bundled <code class="docutils literal notranslate"><span class
 the four depth-averaged currents are present on every dive but have values from dive 2, and
 <code class="docutils literal notranslate"><span class="pre">log_ALTIM_BOTTOM_PING</span></code> is on dive 4 only.</p>
 <p>Nothing about this is added to the OG1 file.</p>
+</section>
+<section id="the-conversion-page">
+<span id="conversion-page"></span><h2>The conversion page<a class="headerlink" href="#the-conversion-page" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code> (and <code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span> <span class="pre">-o</span></code>) writes an HTML page beside the OG1 file.
+Its sections, in order:</p>
+<ol class="arabic simple">
+<li><p><strong>Before → after</strong> — files, dives, size on disk, samples on the shared axis, variable and
+global-attribute counts, time span and OG1-requirement coverage, basestation input beside
+OG1 output, with a one-line verdict. The input column reads the sidecar; its cells show
+<code class="docutils literal notranslate"><span class="pre">—</span></code> when the sidecar is absent.</p></li>
+<li><p><strong>The OG1 file</strong> — the output read by what OG1 says about each variable, not by where it
+came from, with an <em>Orig var</em> / <em>Orig dim</em> column pair naming the basestation source:</p>
+<ul class="simple">
+<li><p><em>Required by OG1</em> — the variables (and the <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> dimension) a valid OG1 file
+must carry, present/absent, from <code class="xref py py-data docutils literal notranslate"><span class="pre">seagliderOG1.vocabularies.OG1_REQUIRED_VARS</span></code> (the
+upstream <code class="docutils literal notranslate"><span class="pre">ioos/cc-plugin-og</span></code> checker list).</p></li>
+<li><p><em>Named by OG1</em> — variables OG1 defines but does not require (science, phase, sensor, QC).</p></li>
+<li><p><em>Candidate for OG1</em> — variables the project proposes to canonise, from
+<code class="xref py py-data docutils literal notranslate"><span class="pre">seagliderOG1.vocabularies.OG1_CANDIDATE_VARS</span></code> (e.g. the flight-model inputs and
+outputs), shown present/absent; edit that list as candidates are agreed.</p></li>
+<li><p><em>Carried through</em> — everything else, summarised by basestation family.</p></li>
+<li><p><em>Same quantity, more than once</em> — where several variables share a <code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, each
+compared (member − reference) to the OG1 reference member, in its units.</p></li>
+</ul>
+</li>
+<li><p><strong>Reconciliation</strong> — each basestation variable’s one fate (renamed, passed through,
+consumed, removed, dropped, skipped) with a count, a Meaning column, and a fate histogram.</p></li>
+<li><p><strong>Presence across dives</strong> — the patterns above, with each pattern’s share of the input dives.</p></li>
+<li><p><strong>Dimensions</strong> — each basestation dimension’s fate, the samples it supplied, and the
+dimension it ended on.</p></li>
+<li><p><strong>Derived variables</strong> — variables the converter built, with their basestation sources.</p></li>
+<li><p><strong>Dropped and removed variables</strong> — variables left out by <code class="docutils literal notranslate"><span class="pre">keep_variables</span></code> or the package
+drop list (empty, so every basestation variable is retained).</p></li>
+<li><p><strong>By basestation origin</strong> — the same output variables grouped by original dimension, with a
+Valid % column and a per-group baseline (the share of the axis that dimension supplied).</p></li>
+<li><p><strong>Global attributes</strong> — grouped by convention and OG1 tier, with recomputed coverage bounds
+and the history.</p></li>
+<li><p><strong>Scalar parameters</strong> — the per-dive and constant scalars, split by group, each collapsible.</p></li>
+</ol>
 </section>
 <section id="validation">
 <h2>Validation<a class="headerlink" href="#validation" title="Link to this heading"></a></h2>

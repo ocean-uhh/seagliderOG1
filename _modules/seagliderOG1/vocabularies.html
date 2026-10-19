@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev73 documentation</title>
+  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev74 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=566e8fab"></script>
+      <script src="../../_static/documentation_options.js?v=9de71f66"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -195,6 +195,34 @@
 <span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_version</span><span class="p">(</span><span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">object</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Return a formatter that writes a version attribute after ``prefix``.</span>
+
+<span class="sd">    Older basestation files store the versions as numbers (``66.03``, ``2.8``), newer</span>
+<span class="sd">    ones as dotted strings (``"3.0.6"``); a number is written compactly, a string as is.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    prefix : str</span>
+<span class="sd">        Text before the version, e.g. ``"basestation v"``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    callable</span>
+<span class="sd">        ``value -&gt; str``.</span>
+
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_version</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="nb">float</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">text</span><span class="si">}</span><span class="s2">"</span>
+
+    <span class="k">return</span> <span class="n">format_version</span>
+
+
 <div class="viewcode-block" id="PlatformField">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.vocabularies.PlatformField">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PlatformField</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
@@ -238,13 +266,13 @@
     <span class="s2">"PLATFORM_MAKER"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"string"</span><span class="p">),</span>
     <span class="s2">"GLIDER_FIRMWARE_VERSION"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span>
         <span class="s2">"seaglider_software_version"</span><span class="p">,</span>
-        <span class="k">lambda</span> <span class="n">value</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"seaglider </span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">_version</span><span class="p">(</span><span class="s2">"seaglider "</span><span class="p">),</span>
         <span class="kc">False</span><span class="p">,</span>
         <span class="s2">"string"</span><span class="p">,</span>
     <span class="p">),</span>
     <span class="s2">"LANDSTATION_VERSION"</span><span class="p">:</span> <span class="n">PlatformField</span><span class="p">(</span>
         <span class="s2">"base_station_version"</span><span class="p">,</span>
-        <span class="k">lambda</span> <span class="n">value</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"basestation v</span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">_version</span><span class="p">(</span><span class="s2">"basestation v"</span><span class="p">),</span>
         <span class="kc">False</span><span class="p">,</span>
         <span class="s2">"string"</span><span class="p">,</span>
     <span class="p">),</span>
@@ -333,32 +361,33 @@
     <span class="p">},</span>
 <span class="p">}</span>
 
-<span class="c1"># Variables to exclude from OG1 output (derived variables, duplicates, etc.)</span>
+<span class="c1"># Variables to exclude from OG1 output. Empty: every basestation variable is retained. The</span>
+<span class="c1"># names below were dropped before; kept commented out until the list is removed.</span>
 <span class="n">VARIABLES_TO_DROP</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">"dissolved_oxygen_sat"</span><span class="p">,</span>
-    <span class="s2">"depth"</span><span class="p">,</span>
-    <span class="s2">"eng_depth"</span><span class="p">,</span>
-    <span class="s2">"eng_elaps_t"</span><span class="p">,</span>
-    <span class="s2">"eng_elaps_t_0000"</span><span class="p">,</span>
-    <span class="s2">"eng_rec"</span><span class="p">,</span>
-    <span class="s2">"eng_GC_state"</span><span class="p">,</span>
-    <span class="s2">"latitude_gsm"</span><span class="p">,</span>
-    <span class="s2">"longitude_gsm"</span><span class="p">,</span>
-    <span class="s2">"sound_velocity"</span><span class="p">,</span>
-    <span class="s2">"eng_sbect_condFreq"</span><span class="p">,</span>
-    <span class="s2">"eng_sbect_tempFreq"</span><span class="p">,</span>
-    <span class="s2">"glide_angle_gsm"</span><span class="p">,</span>
-    <span class="s2">"horz_speed_gsm"</span><span class="p">,</span>
-    <span class="s2">"north_displacement_gsm"</span><span class="p">,</span>
-    <span class="s2">"east_displacement_gsm"</span><span class="p">,</span>
-    <span class="s2">"polar_heading"</span><span class="p">,</span>
-    <span class="s2">"speed_gsm"</span><span class="p">,</span>
-    <span class="s2">"vert_speed_gsm"</span><span class="p">,</span>
-    <span class="s2">"dive_num_cast"</span><span class="p">,</span>
-    <span class="s2">"density"</span><span class="p">,</span>
-    <span class="s2">"gsw_sigma3"</span><span class="p">,</span>
-    <span class="s2">"gsw_sigma4"</span><span class="p">,</span>
-    <span class="s2">"theta"</span><span class="p">,</span>
+    <span class="c1"># "dissolved_oxygen_sat",</span>
+    <span class="c1"># "depth",</span>
+    <span class="c1"># "eng_depth",</span>
+    <span class="c1"># "eng_elaps_t",</span>
+    <span class="c1"># "eng_elaps_t_0000",</span>
+    <span class="c1"># "eng_rec",</span>
+    <span class="c1"># "eng_GC_state",</span>
+    <span class="c1"># "latitude_gsm",</span>
+    <span class="c1"># "longitude_gsm",</span>
+    <span class="c1"># "sound_velocity",</span>
+    <span class="c1"># "eng_sbect_condFreq",</span>
+    <span class="c1"># "eng_sbect_tempFreq",</span>
+    <span class="c1"># "glide_angle_gsm",</span>
+    <span class="c1"># "horz_speed_gsm",</span>
+    <span class="c1"># "north_displacement_gsm",</span>
+    <span class="c1"># "east_displacement_gsm",</span>
+    <span class="c1"># "polar_heading",</span>
+    <span class="c1"># "speed_gsm",</span>
+    <span class="c1"># "vert_speed_gsm",</span>
+    <span class="c1"># "dive_num_cast",</span>
+    <span class="c1"># "density",</span>
+    <span class="c1"># "gsw_sigma3",</span>
+    <span class="c1"># "gsw_sigma4",</span>
+    <span class="c1"># "theta",</span>
     <span class="c1"># "time",</span>
 <span class="p">]</span>
 
@@ -382,6 +411,59 @@
 <span class="c1"># Reference: http://vocab.nerc.ac.uk/scheme/OG_SENSORS/current/</span>
 <span class="k">with</span> <span class="p">(</span><span class="n">CONFIG_DIR</span> <span class="o">/</span> <span class="s2">"OG1_sensor_attributes.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
     <span class="n">sensor_vocabs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+
+<span class="c1"># Variables and the dimension an OG1 file must carry to pass the OceanGliders format check.</span>
+<span class="c1"># Transcribed from the upstream checker (``ioos/cc-plugin-og``,</span>
+<span class="c1"># ``cc_plugin_og/checker.py`` ``check_mandatory_variables`` / ``check_dimensions``); the</span>
+<span class="c1"># conversion page's "OG1 required" tier reads this, and a CI test asserts it still matches the</span>
+<span class="c1"># installed checker (skipped when cc-plugin-og is absent) so the two cannot diverge unnoticed.</span>
+<span class="n">OG1_REQUIRED_VARS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"LATITUDE_GPS"</span><span class="p">,</span>
+    <span class="s2">"LONGITUDE_GPS"</span><span class="p">,</span>
+    <span class="s2">"TIME_GPS"</span><span class="p">,</span>
+    <span class="s2">"LATITUDE"</span><span class="p">,</span>
+    <span class="s2">"LONGITUDE"</span><span class="p">,</span>
+    <span class="s2">"TIME"</span><span class="p">,</span>
+    <span class="s2">"DEPTH"</span><span class="p">,</span>
+    <span class="s2">"TRAJECTORY"</span><span class="p">,</span>
+    <span class="s2">"PLATFORM_MODEL"</span><span class="p">,</span>
+    <span class="s2">"WMO_IDENTIFIER"</span><span class="p">,</span>
+    <span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">,</span>
+    <span class="s2">"DEPLOYMENT_TIME"</span><span class="p">,</span>
+    <span class="s2">"DEPLOYMENT_LATITUDE"</span><span class="p">,</span>
+    <span class="s2">"DEPLOYMENT_LONGITUDE"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">OG1_REQUIRED_DIMS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">,)</span>
+
+<span class="c1"># Variables the project proposes to canonise but the upstream OG1 vocabulary has not adopted</span>
+<span class="c1"># yet. The conversion page lifts these out of the carried-through tier into a named candidate</span>
+<span class="c1"># group, shown present/absent like the required tier, so "what a flight model needs" and "what</span>
+<span class="c1"># we hope to agree as OG1 parameters" are visible on the page. This is the project's editorial</span>
+<span class="c1"># list: edit it as the data-format group agrees candidates, and remove a name once it appears in</span>
+<span class="c1"># OG1_variable_attributes.yaml upstream. Seeded from demo_sg005 (2026-10-19); the membership is</span>
+<span class="c1"># a proposal to prune, not a standard — the flight-model inputs in particular are a first guess.</span>
+<span class="n">OG1_CANDIDATE_VARS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># Flight-model outputs: the glider-flight-model products proposed as agreed OG1 parameters.</span>
+    <span class="s2">"vert_speed_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"horz_speed_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"speed_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"glide_angle_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"latitude_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"longitude_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"north_displacement_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"east_displacement_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"flight_avg_speed_east_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"flight_avg_speed_north_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"depth_avg_curr_east_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"depth_avg_curr_north_gsm"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"surface_curr_east"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="s2">"surface_curr_north"</span><span class="p">:</span> <span class="s2">"flight model — output"</span><span class="p">,</span>
+    <span class="c1"># Measured inputs a flight model consumes (control channels present in demo_sg005).</span>
+    <span class="s2">"gc_pitch_ctl"</span><span class="p">:</span> <span class="s2">"flight model — input"</span><span class="p">,</span>
+    <span class="s2">"gc_roll_ad"</span><span class="p">:</span> <span class="s2">"flight model — input"</span><span class="p">,</span>
+    <span class="s2">"gc_vbd_ctl"</span><span class="p">:</span> <span class="s2">"flight model — input"</span><span class="p">,</span>
+<span class="p">}</span>
 
 
 <span class="c1"># --------------------------------</span>
