@@ -29,10 +29,12 @@ Keys
      - Schema version; a missing value warns and assumes ``1``. Version 2 adds the
        ``deployment`` block and the optional platform variables. A version 1 file still
        converts.
-   * - ``source``
+   * - ``raw_dir``
      - str
      - *(required)*
-     - A mission directory holding ``pSSSDDDD*.nc``, or a root of ``SN/DATE`` directories.
+     - The basestation files: a mission directory holding ``pSSSDDDD*.nc``, or a root of
+       ``SN/DATE`` directories. ``source``, its old name, is still read with a deprecation
+       warning for one release.
        The only key required at the top level, but ``validate`` also enforces a ``PI``
        contributor and an ``Operator`` institution (see those rows). Checked to exist and to
        hold basestation files.
@@ -54,7 +56,7 @@ Keys
    * - ``repair``
      - bool
      - ``false``
-     - Run ``repair_files`` on the basestation files before loading (writes the source tree).
+     - Run ``repair_files`` on the basestation files before loading (writes the raw_dir tree).
    * - ``keep_variables``
      - list or null
      - ``null``
@@ -96,7 +98,7 @@ Platform fields
 ---------------
 
 A **required** field that is null is a ``validate`` error; fill it by hand, or let
-``init --from DIR`` read the fields with an ``init --from reads`` entry from the first
+``init --raw-dir DIR`` read the fields with an ``init --raw-dir reads`` entry from the first
 basestation file. An optional field left null is not written. ``seagliderOG1 list platform``
 prints the same table.
 
@@ -137,11 +139,11 @@ The template ``init`` writes (fill the nulls before ``validate``):
 
    config_version: 2
 
-   source: /data/005/20080606   # mission dir (p*.nc inside) or a root of SN/DATE dirs
+   raw_dir: /data/005/20080606  # basestation files: a mission dir (p*.nc inside) or a root of SN/DATE dirs
    output_dir: ./          # where OG1 files are written
    mode: delayed           # realtime | delayed
    dives: null             # [first, last] dive numbers; null = all files present
-   repair: false           # run repair_files on the basestation files (writes the source tree)
+   repair: false           # run repair_files on the basestation files (writes the raw_dir tree)
    keep_variables: null    # optional list of science variables to keep; null = all
    report: false           # also write <id>_conversion.html beside each file
 

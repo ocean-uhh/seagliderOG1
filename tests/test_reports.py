@@ -8,6 +8,8 @@ logic are checked once each.
 import pathlib
 import sys
 
+import netCDF4
+
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
@@ -443,3 +445,81 @@ def test_verdict_counts_required_variables_and_meanings_name_sections():
     ledger = convert.conversion_ledger(ds)
     rows, _caption = conversion._reconciliation(ds, ledger)
     assert not any("§" in meaning for _label, _count, meaning in rows)
+
+
+def test_basestation_rows_flag_values_that_differ_or_are_missing():
+    """Pure logic: one row per attribute; amber when it varies or misses some files."""
+    found = {
+        "platform_id": {"values": ["SG005"], "n_files": 3},
+        "dive_number": {"values": ["1", "2", "3"], "n_files": 3},
+        "wmo_id": {"values": ["123"], "n_files": 1},
+    }
+    rows = {r["name"]: r for r in conversion._basestation_rows(found, 3)}
+    assert (
+        rows["platform_id"]["status"] == "all 3 files"
+        and not rows["platform_id"]["bad"]
+    )
+    assert (
+        rows["dive_number"]["distinct"] == ["1", "2", "3"]
+        and rows["dive_number"]["bad"]
+    )
+    assert rows["wmo_id"]["status"] == "1 of 3 files" and rows["wmo_id"]["bad"]
+    assert conversion._basestation_rows(None, 3) == []
+
+
+def test_conventions_check_counts_acdd_and_cf_units():
+    """The box reads Conventions and counts ACDD 1.3 globals and CF units on sg005."""
+    ds = _dataset()
+    box = conversion._conventions_check(ds)
+    assert box["claim"] == ds.attrs["Conventions"]
+    levels = {level["level"]: level for level in box["acdd"]}
+    assert levels["highly recommended"]["total"] == 4
+    assert levels["recommended"]["total"] == 31
+    assert "summary" in levels["highly recommended"]["missing"]
+    assert box["short"]
+    for name in box["no_units"]:
+        assert "units" not in ds[name].attrs and ds[name].ndim
+
+
+def test_draft_snippets_fill_only_what_the_files_carry(tmp_path):
+    """Pure logic: dives and file-derived platform fields filled; required ones null."""
+    from_file = vocabularies.platform_from_file(
+        {"platform_id": "SG005", "base_station_version": "2.8"}
+    )
+    blocks = conversion._draft_snippets(from_file, [3, 4], "sg005_x_delayed_draft")
+    text = "\n".join(block["text"] for block in blocks)
+    assert "dives: [3, 4]" in text
+    assert "PLATFORM_SERIAL_NUMBER: sg005" in text
+    assert "LANDSTATION_VERSION: basestation v2.8" in text
+    assert "PLATFORM_MODEL: null" in text  # required, not in the files
+    assert "sg005_x_delayed\n" in text and "id: null" in text  # derived id as a comment
+    assert conversion._draft_snippets(None, [1], "x") == []
+    # An OG1 (non-draft) page gets none, also when some other global is called draft:
+    # the page knows a draft by the draft global's value.
+    path = convert.process_mission(DATA, tmp_path, dives=(1, 1))
+    assert "Suggested mission.yaml lines" not in conversion.render_conversion(path)
+    with netCDF4.Dataset(path, "a") as nc:
+        nc.setncattr("draft", "v2 of the cruise report")
+    html = conversion.render_conversion(path)
+    assert '<span class="masthead-type">conversion</span>' in html
+
+
+def test_importing_reports_pins_a_headless_backend() -> None:
+    """Importing the report layer forces a non-interactive backend, even with none set, so a
+    render (CLI, notebook, script or test) never blocks on a GUI window."""
+    import os
+    import subprocess
+
+    env = {k: v for k, v in os.environ.items() if k != "MPLBACKEND"}
+    code = (
+        "import matplotlib; from seagliderOG1 import reports; "
+        "assert matplotlib.get_backend().lower() == 'agg', matplotlib.get_backend()"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+    assert result.returncode == 0, result.stderr

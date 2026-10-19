@@ -1,7 +1,10 @@
 """Write OG1 datasets to compressed NetCDF files."""
 
+import hashlib
 import json
 import logging
+import uuid
+from collections.abc import Iterable, MutableMapping
 from numbers import Number
 from pathlib import Path
 
@@ -12,7 +15,14 @@ from seagliderOG1 import __version__, tools
 
 _log = logging.getLogger(__name__)
 
-__all__ = ["write", "conversion_path"]
+__all__ = [
+    "write",
+    "conversion_path",
+    "file_sha256",
+    "proposal_path",
+    "record_attribute_sources",
+    "write_sidecar",
+]
 
 # Version of the sidecar layout; bump when a reader would misread the old one.
 SIDECAR_SCHEMA = 1
@@ -103,6 +113,11 @@ def write(
 
     valid_types = (str, Number, np.ndarray, np.number, list, tuple)
 
+    # A new identity for every written version of the file (ctdcast's tracking_id); the
+    # sidecar binds to it, and enrich issues a new one.
+    ds.attrs["tracking_id"] = str(uuid.uuid4())
+    record_attribute_sources(ds.attrs, ["tracking_id"], "derived")
+
     encoding = _compression_encoding(ds)
     for name, var in ds.variables.items():
         if np.issubdtype(var.dtype, np.datetime64):
@@ -144,18 +159,100 @@ def write(
             _log.warning(f"Attributes with dtype float64: {float_attrs}")
             raise
     if sidecar is not None:
-        # The binding keys come last so a sidecar dict cannot override them.
-        payload = {
-            **sidecar,
-            "schema": SIDECAR_SCHEMA,
-            "id": ds.attrs.get("id"),
-            "date_created": ds.attrs.get("date_created"),
-            "converter": {"seagliderOG1": __version__},
-        }
-        target = conversion_path(path, ".json")
-        target.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
-        _log.info("Conversion sidecar written to %s", target)
+        write_sidecar(path, ds.attrs, sidecar)
     return Path(path)
+
+
+def file_sha256(path: str | Path) -> str:
+    """Return the SHA-256 hex digest of a file's bytes.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The file to hash.
+
+    Returns
+    -------
+    str
+        The 64-character hex digest.
+
+    """
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as file:
+        for block in iter(lambda: file.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def record_attribute_sources(
+    attrs: MutableMapping[str, object], names: Iterable[str], category: str
+) -> None:
+    """Move global names into one category of the ``conversion_attribute_sources`` ledger.
+
+    For a global written after the conversion built the ledger (``tracking_id`` here,
+    ``draft`` and ``enrich``'s keys in :mod:`seagliderOG1.convert`), so the ledger
+    still names every global exactly once. Does nothing when ``attrs`` carries no
+    ledger.
+
+    Parameters
+    ----------
+    attrs : collections.abc.MutableMapping
+        Global attributes holding the ledger as JSON; modified in place.
+    names : collections.abc.Iterable of str
+        The globals to record.
+    category : str
+        The ledger category they now belong to (e.g. ``"derived"``, ``"enriched"``).
+
+    """
+    if "conversion_attribute_sources" not in attrs:
+        return
+    names = set(names)
+    sources = json.loads(str(attrs["conversion_attribute_sources"]))
+    for members in sources.values():
+        members[:] = [name for name in members if name not in names]
+    sources[category] = sorted(set(sources.get(category, [])) | names)
+    attrs["conversion_attribute_sources"] = json.dumps(
+        {key: members for key, members in sources.items() if members}
+    )
+
+
+def write_sidecar(path: str | Path, attrs: dict, contents: dict) -> Path:
+    """Write ``<stem>_conversion.json`` beside an OG1 file, bound to its current version.
+
+    The binding is the file's ``id`` and ``tracking_id`` plus the SHA-256 of its bytes,
+    so a reader can tell the sidecar belongs to this file and that the file has not
+    changed since. A checksum cannot live inside the file it covers, so it lives here.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The OG1 netCDF file, already written.
+    attrs : dict
+        Its global attributes (``id``, ``tracking_id``, ``date_created``).
+    contents : dict
+        The sidecar body (``inputs``, ``presence``, ...); its binding keys, if any,
+        are replaced.
+
+    Returns
+    -------
+    pathlib.Path
+        The sidecar path.
+
+    """
+    # The binding keys come last so the body cannot override them.
+    payload = {
+        **contents,
+        "schema": SIDECAR_SCHEMA,
+        "id": attrs.get("id"),
+        "tracking_id": attrs.get("tracking_id"),
+        "date_created": attrs.get("date_created"),
+        "sha256": file_sha256(path),
+        "converter": {"seagliderOG1": __version__},
+    }
+    target = conversion_path(path, ".json")
+    target.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    _log.info("Conversion sidecar written to %s", target)
+    return target
 
 
 def conversion_path(path: str | Path, suffix: str) -> Path:
@@ -179,6 +276,28 @@ def conversion_path(path: str | Path, suffix: str) -> Path:
     """
     path = Path(path)
     return path.with_name(f"{path.stem}_conversion{suffix}")
+
+
+def proposal_path(path: str | Path) -> Path:
+    """Return the proposed mission config beside a draft file: ``<stem>_mission.yaml``.
+
+    Written by the ``draft`` verb; named here, beside :func:`conversion_path`, so the
+    verb and :func:`seagliderOG1.convert.process_mission`'s existence check agree. Not
+    a ``_conversion`` name: it is a config for the next run, not a record of this one.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The draft netCDF file.
+
+    Returns
+    -------
+    pathlib.Path
+        The path, in the same directory as ``path``.
+
+    """
+    path = Path(path)
+    return path.with_name(f"{path.stem}_mission.yaml")
 
 
 def _compression_encoding(ds: xr.Dataset) -> dict[str, dict]:

@@ -1,7 +1,9 @@
 """The ``init`` verb: write a commented mission.yaml template.
 
-``--from DIR`` reads the first basestation file in DIR and fills the platform
-block from its attributes; without it, the platform block carries defaults.
+``init [dest]`` follows ctdcast's shape: ``dest`` is a directory (``mission.yaml`` is
+written inside it) or a ``.yaml`` file name; default the current directory.
+``--raw-dir PATH`` reads the first basestation file in PATH (or PATH itself, one file)
+and fills the platform block and ``raw_dir`` from it; without it they are left null.
 """
 
 import argparse
@@ -26,22 +28,33 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
 
     """
     parser = subparsers.add_parser(
-        "init", help="write a commented mission.yaml template"
+        "init",
+        help="write a commented mission.yaml template",
+        description=(
+            "Write a commented mission.yaml. dest is a directory (mission.yaml is "
+            "written inside) or a .yaml file name; default the current directory."
+        ),
+        epilog=(
+            "examples:\n"
+            "  seagliderOG1 init                                  ./mission.yaml\n"
+            "  seagliderOG1 init outputs/ --raw-dir /data/005/    outputs/mission.yaml\n"
+            "  seagliderOG1 init sg005.yaml --raw-dir /data/005/  that file"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--from",
-        dest="from_dir",
+        "dest",
+        nargs="?",
+        default=".",
+        help="directory (mission.yaml inside) or a .yaml file name (default: .)",
+    )
+    parser.add_argument(
+        "--raw-dir",
         metavar="PATH",
         help=(
-            "basestation directory, or one pSSSDDDD*.nc file in it, to read the "
-            "platform block from"
+            "basestation directory, or one pSSSDDDD*.nc file in it, to fill raw_dir "
+            "and the platform block from"
         ),
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        default="mission.yaml",
-        help="output path (default: mission.yaml)",
     )
     parser.add_argument(
         "--force", action="store_true", help="overwrite an existing file"
@@ -93,13 +106,34 @@ def _platform_from_file(source: str) -> dict[str, object]:
         ds.close()
 
 
+def _config_target(dest: str) -> pathlib.Path:
+    """Return the file ``init`` writes for ``dest``.
+
+    Parameters
+    ----------
+    dest : str
+        A directory (existing, or a path not ending in ``.yaml``/``.yml``) or a
+        ``.yaml`` file name.
+
+    Returns
+    -------
+    pathlib.Path
+        ``dest/mission.yaml`` for a directory, else ``dest``.
+
+    """
+    path = pathlib.Path(dest)
+    if path.suffix.lower() in (".yaml", ".yml") and not path.is_dir():
+        return path
+    return path / "mission.yaml"
+
+
 def run(args: argparse.Namespace) -> int:
-    """Write the mission template to ``args.output``.
+    """Write the mission template to the file ``args.dest`` names.
 
     Parameters
     ----------
     args : argparse.Namespace
-        Parsed arguments: ``from_dir``, ``output``, ``force``.
+        Parsed arguments: ``dest``, ``raw_dir``, ``force``.
 
     Returns
     -------
@@ -107,30 +141,37 @@ def run(args: argparse.Namespace) -> int:
         0 on success, 1 on a handled error.
 
     """
-    out = pathlib.Path(args.output)
+    out = _config_target(args.dest)
     if out.exists() and not args.force:
         print(f"error: {out} exists; use --force to overwrite.", file=sys.stderr)
         return 1
 
     platform: dict[str, object] = {}
-    source: str | None = None
-    if args.from_dir:
+    raw_dir: str | None = None
+    if args.raw_dir:
         try:
-            platform = _platform_from_file(args.from_dir)
+            platform = _platform_from_file(args.raw_dir)
         except (FileNotFoundError, ValueError, OSError, KeyError) as exc:
             print(
-                f"error: could not read platform from {args.from_dir}: {exc}",
+                f"error: could not read platform from {args.raw_dir}: {exc}",
                 file=sys.stderr,
             )
             return 1
-        # source: is the directory of files to convert, also when --from names one file.
-        from_path = pathlib.Path(args.from_dir).resolve()
-        source = str(from_path.parent if from_path.is_file() else from_path)
+        # raw_dir: is the directory of files to convert, also when given one file.
+        raw_path = pathlib.Path(args.raw_dir).resolve()
+        raw_dir = str(raw_path.parent if raw_path.is_file() else raw_path)
 
     # Always UTF-8: the template carries non-ASCII glyphs (the "→" destination
     # markers) and may hold non-ASCII values (e.g. an accented platform model or
     # institution name), and mission.yaml is read back with encoding="utf-8", so a
     # non-UTF-8 OS locale must not decide the on-disk encoding.
-    out.write_text(_mission.render_template(platform, source=source), encoding="utf-8")
+    try:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(
+            _mission.render_template(platform, raw_dir=raw_dir), encoding="utf-8"
+        )
+    except OSError as exc:
+        print(f"error: could not write {out}: {exc}", file=sys.stderr)
+        return 1
     print(f"wrote {out}")
     return 0

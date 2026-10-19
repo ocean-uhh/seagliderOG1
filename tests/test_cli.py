@@ -1,5 +1,6 @@
 """Tests for the seagliderOG1 command-line interface (``init``, ``validate``)."""
 
+import os
 import pathlib
 import subprocess
 import sys
@@ -17,7 +18,7 @@ def _write_config(path: pathlib.Path, **overrides: object) -> pathlib.Path:
     """Write a minimal valid mission config, applying overrides, and return its path."""
     config: dict[str, object] = {
         "config_version": 1,
-        "source": str(DATA_DIR),
+        "raw_dir": str(DATA_DIR),
         "output_dir": "./",
         "contributors": [{"name": "Jane Doe", "role": "PI"}],
         "institutions": [{"name": "Your Institution", "role": "Operator"}],
@@ -58,15 +59,31 @@ def test_help_imports_stay_light() -> None:
     assert result.returncode == 0, result.stderr
 
 
+def test_cli_forces_noninteractive_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    """main() pins a headless matplotlib backend so a figure render never blocks on a GUI."""
+    monkeypatch.delenv("MPLBACKEND", raising=False)
+    with pytest.raises(SystemExit):  # --version exits after main() sets the backend
+        cli.main(["--version"])
+    assert os.environ["MPLBACKEND"] == "Agg"
+
+
+def test_cli_respects_an_explicit_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A backend the user set themselves is left untouched (setdefault, not override)."""
+    monkeypatch.setenv("MPLBACKEND", "pdf")
+    with pytest.raises(SystemExit):
+        cli.main(["--version"])
+    assert os.environ["MPLBACKEND"] == "pdf"
+
+
 # --- init ------------------------------------------------------------------
 
 
 def test_init_writes_template(tmp_path: pathlib.Path) -> None:
     """``init`` writes a parseable template with the expected keys."""
     out = tmp_path / "mission.yaml"
-    assert cli.main(["init", "-o", str(out)]) == 0
+    assert cli.main(["init", str(out)]) == 0
     data = yaml.safe_load(out.read_text(encoding="utf-8"))
-    assert set(data) >= {"source", "contributors", "platform", "mode"}
+    assert set(data) >= {"raw_dir", "contributors", "platform", "mode"}
     assert data["mode"] == "delayed"
 
 
@@ -74,16 +91,16 @@ def test_init_refuses_overwrite_without_force(tmp_path: pathlib.Path) -> None:
     """``init`` refuses an existing file unless ``--force`` is given."""
     out = tmp_path / "mission.yaml"
     out.write_text("existing")
-    assert cli.main(["init", "-o", str(out)]) == 1
+    assert cli.main(["init", str(out)]) == 1
     assert out.read_text(encoding="utf-8") == "existing"
-    assert cli.main(["init", "-o", str(out), "--force"]) == 0
+    assert cli.main(["init", str(out), "--force"]) == 0
     assert out.read_text(encoding="utf-8") != "existing"
 
 
 def test_init_from_fills_platform(tmp_path: pathlib.Path) -> None:
-    """``init --from`` fills the platform block from the first basestation file."""
+    """``init --raw-dir`` fills the platform block from the first basestation file."""
     out = tmp_path / "mission.yaml"
-    assert cli.main(["init", "--from", str(DATA_DIR), "-o", str(out)]) == 0
+    assert cli.main(["init", str(out), "--raw-dir", str(DATA_DIR)]) == 0
     platform = yaml.safe_load(out.read_text(encoding="utf-8"))["platform"]
     assert platform["PLATFORM_SERIAL_NUMBER"] == "sg005"
     assert str(platform["GLIDER_FIRMWARE_VERSION"]).startswith("seaglider")
@@ -93,30 +110,30 @@ def test_init_from_fills_platform(tmp_path: pathlib.Path) -> None:
 def test_init_from_one_file_fills_platform_and_its_directory(
     tmp_path: pathlib.Path,
 ) -> None:
-    """Init --from accepts one basestation file; source is that file's directory."""
+    """Init --raw-dir accepts one basestation file; raw_dir is that file's directory."""
     out = tmp_path / "mission.yaml"
     one = DATA_DIR / "p0050001_20080606.nc"
-    assert cli.main(["init", "--from", str(one), "-o", str(out)]) == 0
+    assert cli.main(["init", str(out), "--raw-dir", str(one)]) == 0
     data = yaml.safe_load(out.read_text(encoding="utf-8"))
-    assert data["source"] == str(DATA_DIR.resolve())
+    assert data["raw_dir"] == str(DATA_DIR.resolve())
     assert data["platform"]["PLATFORM_SERIAL_NUMBER"] == "sg005"
 
 
 def test_init_template_does_not_promise_an_id(tmp_path: pathlib.Path) -> None:
     """The id line says null means the derived id; init never fills it."""
     out = tmp_path / "mission.yaml"
-    assert cli.main(["init", "--from", str(DATA_DIR), "-o", str(out)]) == 0
+    assert cli.main(["init", str(out), "--raw-dir", str(DATA_DIR)]) == 0
     text = out.read_text(encoding="utf-8")
     assert "proposes" not in text
     assert yaml.safe_load(text)["deployment"]["id"] is None
 
 
-def test_init_from_fills_source_and_serial(tmp_path: pathlib.Path) -> None:
-    """Init --from fills source and the serial; model/maker/depth are left null to fill."""
+def test_init_from_fills_raw_dir_and_serial(tmp_path: pathlib.Path) -> None:
+    """Init --raw-dir fills raw_dir and the serial; model/maker/depth are left null to fill."""
     out = tmp_path / "mission.yaml"
-    assert cli.main(["init", "--from", str(DATA_DIR), "-o", str(out)]) == 0
+    assert cli.main(["init", str(out), "--raw-dir", str(DATA_DIR)]) == 0
     data = yaml.safe_load(out.read_text(encoding="utf-8"))
-    assert data["source"] == str(DATA_DIR.resolve())
+    assert data["raw_dir"] == str(DATA_DIR.resolve())
     assert data["platform"]["PLATFORM_SERIAL_NUMBER"] == "sg005"
     # The UW-specific model/maker/depth are no longer baked in; they stay null.
     assert data["platform"]["PLATFORM_MODEL"] is None
@@ -127,7 +144,7 @@ def test_validate_errors_on_null_platform_fields_then_passes(
 ) -> None:
     """A template with null platform fields errors; filling them validates."""
     out = tmp_path / "mission.yaml"
-    assert cli.main(["init", "--from", str(DATA_DIR), "-o", str(out)]) == 0
+    assert cli.main(["init", str(out), "--raw-dir", str(DATA_DIR)]) == 0
     assert cli.main(["validate", str(out)]) == 1  # model/maker/depth still null
     data = yaml.safe_load(out.read_text(encoding="utf-8"))
     data["platform"]["PLATFORM_MODEL"] = "Seaglider"
@@ -156,7 +173,7 @@ def test_validate_accepts_known_deployment_keys(tmp_path: pathlib.Path) -> None:
 
 def test_template_comments_name_the_destination() -> None:
     """Each generated line's comment says where the key goes (variable/attribute/global)."""
-    template = _mission.render_template(source="/tmp/x")
+    template = _mission.render_template(raw_dir="/tmp/x")
     assert "UPPER keys become OG1 variables" in template
     assert "PLATFORM_MODEL: null   # required -> variable" in template
     assert (
@@ -286,17 +303,17 @@ def test_inspect_parameter_decodes_per_dive_scalar(
     assert cli.main(["inspect", str(nc), "--parameter", "TEMP"]) == 1
 
 
-def test_inspect_conversion_writes_html_page(
+def test_report_writes_html_page(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """inspect --conversion -o writes a self-contained HTML conversion page."""
+    """report writes a self-contained HTML conversion page beside the file."""
     from seagliderOG1 import convert, readers, writers
 
     ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
     nc = tmp_path / "og1.nc"
     writers.write(ds, str(nc), overwrite=True)
-    out = tmp_path / "conversion.html"
-    assert cli.main(["inspect", str(nc), "--conversion", "-o", str(out)]) == 0
+    out = tmp_path / "og1_conversion.html"
+    assert cli.main(["report", str(nc)]) == 0
     assert f"wrote {out}" in capsys.readouterr().out
     html = out.read_text(encoding="utf-8")
     assert "Reconciliation" in html
@@ -334,38 +351,40 @@ def test_inspect_conversion_writes_html_page(
     assert "Requirement" in html
 
 
-def test_inspect_conversion_output_directory_writes_canonical_name(
+def test_report_output_dir_and_report_dir(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """inspect --conversion -o DIR writes <id>_conversion.html into DIR, as process does."""
+    """report -o DIR writes into DIR; --report-dir ROOT into ROOT/<id>/; no overwrite."""
     from seagliderOG1 import convert, readers, writers
 
     ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
     nc = tmp_path / "og1.nc"
     writers.write(ds, str(nc), overwrite=True)
     out_dir = tmp_path / "pages"
-    out_dir.mkdir()
-    assert cli.main(["inspect", str(nc), "--conversion", "-o", str(out_dir)]) == 0
+    assert cli.main(["report", str(nc), "-o", str(out_dir)]) == 0
     expected = out_dir / writers.conversion_path(nc, ".html").name
     assert expected.is_file()
     assert f"wrote {expected}" in capsys.readouterr().out
+    assert cli.main(["report", str(nc), "-o", str(out_dir)]) == 1  # exists
+    assert "use --force" in capsys.readouterr().err
+    assert cli.main(["report", str(nc), "-o", str(out_dir), "--force"]) == 0
+    assert cli.main(["report", str(nc), "--report-dir", str(tmp_path / "site")]) == 0
+    assert (tmp_path / "site" / "og1" / "og1_conversion.html").is_file()
 
 
-def test_inspect_output_without_conversion_errors(
+def test_inspect_output_points_at_report(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """``-o`` without ``--conversion`` fails (exit 2): the HTML page is the conversion page's."""
+    """inspect prints text only: -o/--title exit 2 and name the report verb."""
     from seagliderOG1 import convert, readers, writers
 
     ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 1))
     nc = tmp_path / "og1.nc"
     writers.write(ds, str(nc), overwrite=True)
     out = tmp_path / "x.html"
-    assert cli.main(["inspect", str(nc), "-o", str(out)]) == 2
-    assert "pass --conversion" in capsys.readouterr().err
+    assert cli.main(["inspect", str(nc), "--conversion", "-o", str(out)]) == 2
+    assert "seagliderOG1 report" in capsys.readouterr().err
     assert not out.exists()  # nothing written
-    # The guard is before the mode branches, so --parameter/--attrs with -o also fail (not
-    # silently ignored), and a conversion-only --title without --conversion is rejected too.
     assert cli.main(["inspect", str(nc), "--parameter", "C_VBD", "-o", str(out)]) == 2
     assert cli.main(["inspect", str(nc), "--title", "x"]) == 2
     assert not out.exists()
@@ -399,7 +418,7 @@ def test_process_writes_output(
     monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
-        tmp_path / "mission.yaml", source=str(DATA_DIR), output_dir=str(out)
+        tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
     )
     assert cli.main(["process", str(config)]) == 0
     assert (out / "sg005_delayed.nc").is_file()
@@ -414,7 +433,7 @@ def test_process_dry_run_writes_nothing(
     monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
-        tmp_path / "mission.yaml", source=str(DATA_DIR), output_dir=str(out)
+        tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
     )
     assert cli.main(["process", str(config), "-n"]) == 0
     assert not out.exists()
@@ -429,7 +448,7 @@ def test_process_mode_realtime_sets_suffix(
     monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
-        tmp_path / "mission.yaml", source=str(DATA_DIR), output_dir=str(out)
+        tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
     )
     assert cli.main(["process", str(config), "--mode", "realtime"]) == 0
     assert (out / "sg005_R.nc").is_file()
@@ -444,7 +463,7 @@ def test_process_existing_output_refused_then_force_and_skip(
     monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
-        tmp_path / "mission.yaml", source=str(DATA_DIR), output_dir=str(out)
+        tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
     )
     assert cli.main(["process", str(config)]) == 0
     assert cli.main(["process", str(config)]) == 1  # exists, refused
@@ -470,7 +489,7 @@ def test_process_root_all_converts_each(
     root = _build_root(tmp_path / "root")
     out = tmp_path / "out"
     config = _write_config(
-        tmp_path / "mission.yaml", source=str(root), output_dir=str(out)
+        tmp_path / "mission.yaml", raw_dir=str(root), output_dir=str(out)
     )
     assert cli.main(["process", str(config), "--all"]) == 0
     assert len(list(out.glob("*.nc"))) == 2
@@ -485,7 +504,7 @@ def test_process_root_requires_selection(
     monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
     root = _build_root(tmp_path / "root")
     config = _write_config(
-        tmp_path / "mission.yaml", source=str(root), output_dir=str(tmp_path / "out")
+        tmp_path / "mission.yaml", raw_dir=str(root), output_dir=str(tmp_path / "out")
     )
     assert cli.main(["process", str(config)]) == 1
 
@@ -503,7 +522,7 @@ def test_process_failing_mission_exits_one(
     monkeypatch.setattr(convert, "to_og1", failing)
     config = _write_config(
         tmp_path / "mission.yaml",
-        source=str(DATA_DIR),
+        raw_dir=str(DATA_DIR),
         output_dir=str(tmp_path / "out"),
     )
     assert cli.main(["process", str(config)]) == 1
@@ -520,7 +539,7 @@ def test_process_dry_run_ignores_existing_output(
     out.mkdir()
     (out / "sg005_delayed.nc").write_text("existing")
     config = _write_config(
-        tmp_path / "mission.yaml", source=str(DATA_DIR), output_dir=str(out)
+        tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
     )
     assert cli.main(["process", str(config), "-n"]) == 0
 
@@ -558,11 +577,11 @@ def test_validate_report_must_be_bool(tmp_path: pathlib.Path) -> None:
 def test_process_prints_presence_line_when_dives_disagree(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """A real sg005 conversion prints one presence line pointing at --report."""
+    """A real sg005 conversion prints one presence line pointing at the report verb."""
     config = _write_config(tmp_path / "mission.yaml", output_dir=str(tmp_path / "out"))
     assert cli.main(["process", str(config)]) == 0
     out = capsys.readouterr().out
-    assert "on every dive, 5 on some (3 patterns) — see process --report" in out
+    assert "on every dive, 5 on some (3 patterns) — see seagliderOG1 report" in out
 
 
 def test_process_save_failure_counts_as_failed(
@@ -578,16 +597,16 @@ def test_process_save_failure_counts_as_failed(
     monkeypatch.setattr(writers, "write", _raise)
     config = _write_config(
         tmp_path / "mission.yaml",
-        source=str(DATA_DIR),
+        raw_dir=str(DATA_DIR),
         output_dir=str(tmp_path / "out"),
     )
     assert cli.main(["process", str(config)]) == 1
 
 
-def test_validate_source_override_rescues_missing_config_source(
+def test_validate_raw_dir_override_rescues_missing_config_raw_dir(
     tmp_path: pathlib.Path,
 ) -> None:
-    """A --source override is validated, rescuing a config whose own source is missing."""
+    """A --raw-dir override is validated, rescuing a config whose raw_dir is missing."""
     path = tmp_path / "mission.yaml"
     path.write_text(
         yaml.safe_dump(
@@ -597,9 +616,9 @@ def test_validate_source_override_rescues_missing_config_source(
             }
         )
     )
-    assert any(i.key == "source" for i in _mission.validate_config(path))
-    issues = _mission.validate_config(path, source_override=str(DATA_DIR))
-    assert not any(i.key == "source" for i in issues)
+    assert any(i.key == "raw_dir" for i in _mission.validate_config(path))
+    issues = _mission.validate_config(path, raw_dir_override=str(DATA_DIR))
+    assert not any(i.key == "raw_dir" for i in issues)
 
 
 # --- inspect / list --------------------------------------------------------
@@ -774,7 +793,7 @@ def test_validate_role_and_roles_together_is_error(tmp_path: pathlib.Path) -> No
     """Setting both role: and roles: on one entry is an ERROR (not a silent drop)."""
     config = _write_config(
         tmp_path / "mission.yaml",
-        source=str(tmp_path),
+        raw_dir=str(tmp_path),
         contributors=[{"name": "Ann", "role": "PI", "roles": ["Operator"]}],
     )
     issues = _mission.validate_config(config)
@@ -785,7 +804,7 @@ def test_validate_role_and_roles_together_is_error(tmp_path: pathlib.Path) -> No
 
 def test_validate_rejects_unknown_key(tmp_path: pathlib.Path) -> None:
     """An unknown top-level key is an ERROR (pure schema check, no real data)."""
-    config = _write_config(tmp_path / "mission.yaml", source=str(tmp_path), nonsense=1)
+    config = _write_config(tmp_path / "mission.yaml", raw_dir=str(tmp_path), nonsense=1)
     assert cli.main(["validate", str(config)]) == 1
     issues = _mission.validate_config(config)
     assert any(i.level == "ERROR" and i.key == "nonsense" for i in issues)
@@ -795,7 +814,7 @@ def test_validate_rejects_bad_types(tmp_path: pathlib.Path) -> None:
     """mode, dives and keep_variables type errors surface without real data."""
     config = _write_config(
         tmp_path / "mission.yaml",
-        source=str(tmp_path),
+        raw_dir=str(tmp_path),
         mode="sideways",
         dives="all",
         keep_variables="TEMP",
@@ -808,7 +827,7 @@ def test_validate_rejects_non_w08_role(tmp_path: pathlib.Path) -> None:
     """A role outside the W08 vocabulary is an ERROR."""
     config = _write_config(
         tmp_path / "mission.yaml",
-        source=str(tmp_path),
+        raw_dir=str(tmp_path),
         contributors=[{"name": "Ann", "role": "Chief Wrangler"}],
     )
     assert any(
@@ -821,7 +840,7 @@ def test_validate_rejects_name_with_comma(tmp_path: pathlib.Path) -> None:
     """A contributor name containing a comma is an ERROR."""
     config = _write_config(
         tmp_path / "mission.yaml",
-        source=str(tmp_path),
+        raw_dir=str(tmp_path),
         contributors=[{"name": "Doe, Jane", "role": "PI"}],
     )
     assert any(
@@ -834,7 +853,7 @@ def test_validate_requires_pi_and_operator(tmp_path: pathlib.Path) -> None:
     """Missing a PI contributor and an Operator institution are both ERRORs."""
     config = _write_config(
         tmp_path / "mission.yaml",
-        source=str(tmp_path),
+        raw_dir=str(tmp_path),
         contributors=[{"name": "Ann", "role": "Data scientist"}],
         institutions=[{"name": "Inst", "role": "Owner"}],
     )
@@ -847,7 +866,7 @@ def test_validate_warns_on_roles_list(tmp_path: pathlib.Path) -> None:
     """A single-element roles: is a warning (prefer role:), not an error."""
     config = _write_config(
         tmp_path / "mission.yaml",
-        source=str(tmp_path),
+        raw_dir=str(tmp_path),
         contributors=[{"name": "Ann", "roles": ["PI"]}],
     )
     issues = _mission.validate_config(config)
@@ -887,7 +906,9 @@ def test_validate_strict_flags_gap(tmp_path: pathlib.Path) -> None:
     mission.mkdir()
     for name in ("p0050001_20080606.nc", "p0050003_20080606.nc"):
         (mission / name).write_bytes((DATA_DIR / name).read_bytes())
-    config = _write_config(tmp_path / "mission.yaml", source=str(mission), dives=[1, 3])
+    config = _write_config(
+        tmp_path / "mission.yaml", raw_dir=str(mission), dives=[1, 3]
+    )
     assert not [
         i for i in _mission.validate_config(config, strict=False) if i.key == "dives"
     ]
@@ -907,12 +928,174 @@ def test_bundled_example_config_validates_and_plans(
     assert "outputs" in out
 
 
-def test_inspect_conversion_output_dir_is_created(tmp_path: pathlib.Path) -> None:
-    """-o new/ (trailing slash, not yet existing) writes <id>_conversion.html inside it."""
+def test_report_output_dir_is_created(tmp_path: pathlib.Path) -> None:
+    """report -o new/ (not yet existing) writes <id>_conversion.html inside it."""
     from seagliderOG1 import convert, readers, writers
 
     nc = tmp_path / "og1.nc"
     writers.write(convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 1)), str(nc))
     out_dir = tmp_path / "reports"
-    assert cli.main(["inspect", str(nc), "--conversion", "-o", f"{out_dir}/"]) == 0
+    assert cli.main(["report", str(nc), "-o", f"{out_dir}/"]) == 0
     assert (out_dir / "og1_conversion.html").is_file()
+
+
+def test_deprecated_source_key_is_read_as_raw_dir_with_a_warning(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A config that still says source: validates with a WARNING; both keys is an ERROR."""
+    config = _write_config(tmp_path / "old.yaml")
+    data = yaml.safe_load(config.read_text())
+    data["source"] = data.pop("raw_dir")
+    config.write_text(yaml.safe_dump(data))
+    issues = _mission.validate_config(config)
+    assert [i.level for i in issues if i.key == "source"] == ["WARNING"]
+    assert not [i for i in issues if i.level == "ERROR"]
+    assert _mission.load_config(config)["raw_dir"] == str(DATA_DIR)
+    data["raw_dir"] = str(DATA_DIR)
+    config.write_text(yaml.safe_dump(data))
+    assert any(
+        i.level == "ERROR" and "both 'raw_dir'" in i.message
+        for i in _mission.validate_config(config)
+    )
+
+
+def test_init_dest_is_a_directory_or_a_yaml_file(tmp_path: pathlib.Path) -> None:
+    """init dest: a directory gets mission.yaml inside (created); a .yaml path is used."""
+    assert cli.main(["init", str(tmp_path / "new" / "dir")]) == 0
+    assert (tmp_path / "new" / "dir" / "mission.yaml").is_file()
+    assert cli.main(["init", str(tmp_path / "sg271.yaml")]) == 0
+    assert (tmp_path / "sg271.yaml").is_file()
+
+
+def test_process_report_dir_writes_pages_apart_from_the_data(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """process --report-dir ROOT writes the page in ROOT/<id>/, nothing beside the data."""
+    out = tmp_path / "data"
+    site = tmp_path / "site"
+    config = _write_config(tmp_path / "mission.yaml", output_dir=str(out), dives=[1, 1])
+    assert cli.main(["process", str(config), "--report-dir", str(site)]) == 0
+    (nc,) = out.glob("*.nc")
+    assert (site / nc.stem / f"{nc.stem}_conversion.html").is_file()
+    assert not list(out.glob("*.html"))
+    assert (
+        out / f"{nc.stem}_conversion.json"
+    ).is_file()  # the sidecar stays with the data
+
+
+def test_enrich_sets_the_doi_and_rebinds_the_sidecar(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """enrich --doi edits the globals in place, keeps date_created, rebinds the sidecar."""
+    import json
+
+    import numpy as np
+    import xarray as xr
+
+    from seagliderOG1 import convert, writers
+
+    nc = convert.process_mission(DATA_DIR, tmp_path, dives=(1, 1))
+    with xr.open_dataset(nc, engine="netcdf4", decode_timedelta=False) as ds:
+        before = dict(ds.attrs)
+        temp_before = ds["TEMP"].values.copy()
+    assert cli.main(["enrich", str(nc)]) == 2  # nothing to set
+    assert cli.main(["enrich", str(nc), "--doi", "10.5281/zenodo.1"]) == 0
+    with xr.open_dataset(nc, engine="netcdf4", decode_timedelta=False) as ds:
+        after = dict(ds.attrs)
+        np.testing.assert_array_equal(ds["TEMP"].values, temp_before)
+    assert after["doi"] == "10.5281/zenodo.1"
+    assert after["date_created"] == before["date_created"]
+    assert after["tracking_id"] != before["tracking_id"]
+    assert "enrich set doi" in after["history"].splitlines()[-1]
+    assert "doi" in json.loads(after["conversion_attribute_sources"])["enriched"]
+    sidecar = json.loads(writers.conversion_path(nc, ".json").read_text())
+    assert sidecar["tracking_id"] == after["tracking_id"]
+    assert sidecar["sha256"] == writers.file_sha256(nc)
+    assert convert.conversion_sidecar(nc)["presence"]  # still bound, no warning
+
+
+def test_enrich_from_config_refuses_converter_owned_keys(
+    tmp_path: pathlib.Path,
+) -> None:
+    """enrich FILE CONFIG applies deployment:; a derived key in global_attributes fails."""
+    import xarray as xr
+
+    from seagliderOG1 import convert
+
+    nc = convert.process_mission(DATA_DIR, tmp_path, dives=(1, 1))
+    good = _write_config(tmp_path / "good.yaml", deployment={"program": "MOOSE"})
+    assert cli.main(["enrich", str(nc), str(good)]) == 0
+    with xr.open_dataset(nc, engine="netcdf4", decode_timedelta=False) as ds:
+        assert ds.attrs["program"] == "MOOSE"
+    bad = _write_config(
+        tmp_path / "bad.yaml", global_attributes={"date_created": "20000101T000000"}
+    )
+    assert cli.main(["enrich", str(nc), str(bad)]) == 1
+    listed = _write_config(
+        tmp_path / "listed.yaml", global_attributes={"keywords": ["a", "b"]}
+    )
+    assert cli.main(["enrich", str(nc), str(listed)]) == 1  # refused, no traceback
+    for key in ("date_modified", "tracking_id", "history", "conversion_dimensions"):
+        owned = _write_config(tmp_path / "owned.yaml", global_attributes={key: "x"})
+        assert cli.main(["enrich", str(nc), str(owned)]) == 1, key
+
+
+def test_draft_writes_only_draft_files_and_a_draft_page(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """draft: four files, every name ends _draft*; the netCDF says it is not OG1."""
+    import xarray as xr
+
+    out = tmp_path / "drafts"
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    for name in ("p0050001_20080606.nc", "p0050002_20080606.nc"):
+        (raw / name).symlink_to(DATA_DIR / name)
+    assert cli.main(["draft", "--raw-dir", str(raw), "-o", str(out)]) == 0
+    written = sorted(path.name for path in out.iterdir())
+    stem = written[0].removesuffix(".nc")
+    assert stem.endswith("_draft")
+    assert written == sorted(
+        [
+            f"{stem}.nc",
+            f"{stem}_conversion.html",
+            f"{stem}_conversion.json",
+            f"{stem}_mission.yaml",
+        ]
+    )
+    with xr.open_dataset(out / f"{stem}.nc", engine="netcdf4") as ds:
+        assert ds.attrs["id"] == stem
+        assert "not an OG1 file" in ds.attrs["draft"]
+        assert "OG-1.0" not in ds.attrs["Conventions"]
+        assert "CF-1.10" in ds.attrs["Conventions"]
+    html = (out / f"{stem}_conversion.html").read_text(encoding="utf-8")
+    assert '<span class="masthead-type">draft</span>' in html
+    assert "this is not an OG1 file" in html
+    assert "9. Basestation global attributes" in html
+    assert "What an OG1 file would hold" in html
+    assert "Suggested mission.yaml lines" in html
+    assert "dives: [1, 2]" in html and 'class="copy"' in html
+    proposal = (out / f"{stem}_mission.yaml").read_text(encoding="utf-8")
+    assert stem.removesuffix("_draft") in proposal.splitlines()[1]
+    data = yaml.safe_load(proposal)
+    assert data["dives"] == [1, 2]
+    assert data["raw_dir"] == str(raw.resolve())
+    assert data["deployment"]["id"] is None  # stays derived
+    assert cli.main(["draft", "--raw-dir", str(raw), "-o", str(out)]) == 1  # exists
+    # The proposal is checked before anything is written, even with the .nc gone: the
+    # user is told to edit it in place. --force replaces it.
+    (out / f"{stem}.nc").unlink()
+    (out / f"{stem}_conversion.html").unlink()
+    (out / f"{stem}_conversion.json").unlink()
+    (out / f"{stem}_mission.yaml").write_text("edited\n", encoding="utf-8")
+    assert cli.main(["draft", "--raw-dir", str(raw), "-o", str(out)]) == 1
+    assert f"{stem}_mission.yaml exists" in capsys.readouterr().err
+    assert not (out / f"{stem}.nc").exists()  # refused before writing
+    argv = ["draft", "--raw-dir", str(raw), "-o", str(out), "--force"]
+    assert cli.main(argv) == 0
+    assert "edited" not in (out / f"{stem}_mission.yaml").read_text(encoding="utf-8")
+    # A proposal that cannot be written is one error line and exit 1, not a traceback.
+    (out / f"{stem}_mission.yaml").unlink()
+    (out / f"{stem}_mission.yaml").mkdir()
+    assert cli.main(argv) == 1
+    assert "could not write" in capsys.readouterr().err

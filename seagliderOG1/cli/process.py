@@ -1,6 +1,6 @@
 """The ``process`` verb: convert basestation missions to OG1 files.
 
-Resolves the source (a mission directory, or a root of ``SN/DATE`` missions selected
+Resolves the raw-data directory (a mission directory, or a root of ``SN/DATE`` missions selected
 with ``--all``/``--mission``), converts each with the mission config's contributors,
 institutions, platform and global attributes, and writes ``<output_dir>/<id>.nc``
 (plus ``<id>_conversion.html`` with ``--report``) via
@@ -35,9 +35,9 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
     )
     parser.add_argument("config", help="path to mission.yaml")
     parser.add_argument(
-        "--source",
+        "--raw-dir",
         metavar="DIR_OR_ROOT",
-        help="override the config source (a mission dir or a root of SN/DATE dirs)",
+        help="override the config raw_dir (a mission dir or a root of SN/DATE dirs)",
     )
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument(
@@ -64,7 +64,7 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
     parser.add_argument(
         "--repair",
         action="store_true",
-        help="repair basestation time metadata before loading (writes the source tree)",
+        help="repair basestation time metadata before loading (writes the raw_dir tree)",
     )
     existing = parser.add_mutually_exclusive_group()
     existing.add_argument(
@@ -79,6 +79,11 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
         "--report",
         action="store_true",
         help="also write the HTML conversion page <id>_conversion.html beside each file",
+    )
+    parser.add_argument(
+        "--report-dir",
+        metavar="ROOT",
+        help="write each conversion page into ROOT/<id>/ instead (implies --report)",
     )
     parser.add_argument(
         "-n",
@@ -132,7 +137,9 @@ def _select_missions(
     return selected, None
 
 
-def _print_presence(out_path: pathlib.Path, report: bool) -> None:
+def _print_presence(
+    out_path: pathlib.Path, report: bool, report_dir: str | None = None
+) -> None:
     """Print one line when the mission's input dives disagree on their variables.
 
     Parameters
@@ -140,10 +147,13 @@ def _print_presence(out_path: pathlib.Path, report: bool) -> None:
     out_path : pathlib.Path
         The OG1 file just written; its sidecar holds the per-dive presence.
     report : bool
-        Whether the conversion page was written beside it (else point at ``--report``).
+        Whether the conversion page was written (else point at ``report``).
+    report_dir : str or None, optional
+        The ``--report-dir`` root the page was written under, if any.
 
     """
-    from seagliderOG1 import convert, writers
+    from seagliderOG1 import convert
+    from seagliderOG1.cli import report as report_cmd
 
     sidecar = convert.conversion_sidecar(out_path)
     if not sidecar or "presence" not in sidecar:
@@ -151,8 +161,10 @@ def _print_presence(out_path: pathlib.Path, report: bool) -> None:
     summary = convert.presence_summary(sidecar["presence"])
     if summary is None:
         return
-    page = writers.conversion_path(out_path, ".html").name
-    where = f"see {page}" if report else "see process --report"
+    if report:
+        where = f"see {report_cmd.page_target(out_path, report_dir=report_dir)}"
+    else:
+        where = f"see seagliderOG1 report {out_path}"
     print(f"  {out_path.stem}: {summary} — {where}")
 
 
@@ -179,17 +191,17 @@ def run(args: argparse.Namespace) -> int:
         print(f"error: config not found: {config_path}", file=sys.stderr)
         return 1
 
-    # Validate the effective source (the --source override, if any), not the stale
-    # config value, so an override can rescue a config whose own source is missing.
-    issues = _mission.validate_config(config_path, source_override=args.source)
+    # Validate the effective raw_dir (the --raw-dir override, if any), not the stale
+    # config value, so an override can rescue a config whose own raw_dir is missing.
+    issues = _mission.validate_config(config_path, raw_dir_override=args.raw_dir)
     if _mission.report_issues(issues):
         print("configuration invalid; not converting.", file=sys.stderr)
         return 1
 
     config = _mission.load_config(config_path)
     base = config_path.parent
-    source = args.source if args.source else config.get("source")
-    source_path = (base / str(source)).resolve()
+    raw_dir = args.raw_dir if args.raw_dir else config.get("raw_dir")
+    source_path = (base / str(raw_dir)).resolve()
     output_dir = (
         pathlib.Path(args.output_dir)
         if args.output_dir
@@ -201,7 +213,7 @@ def run(args: argparse.Namespace) -> int:
     first, last = (dives[0], dives[1]) if dives else (None, None)
     repair = bool(args.repair or config.get("repair", False))
     keep_variables = config.get("keep_variables")
-    report = bool(args.report or config.get("report", False))
+    report = bool(args.report or args.report_dir or config.get("report", False))
 
     try:
         missions = readers.discover_missions(str(source_path))
@@ -232,7 +244,8 @@ def run(args: argparse.Namespace) -> int:
                 if last is not None
                 else (max(mission.dives) if mission.dives else "?")
             )
-            page = f" + {output_dir}/<id>_conversion.html" if report else ""
+            page_dir = f"{args.report_dir}/<id>" if args.report_dir else output_dir
+            page = f" + {page_dir}/<id>_conversion.html" if report else ""
             print(f"{mission.path} dives [{lo}, {hi}] -> {output_dir}/<id>.nc{page}")
         print(f"{len(selected)} would convert, 0 skipped, 0 failed")
         return 0
@@ -255,6 +268,7 @@ def run(args: argparse.Namespace) -> int:
                 repair=repair,
                 overwrite=args.force,
                 report=report,
+                report_dir=args.report_dir,
             )
         except FileExistsError as exc:
             if args.skip_existing:
@@ -275,7 +289,7 @@ def run(args: argparse.Namespace) -> int:
             failed += 1
             continue
         print(f"wrote {out_path}")
-        _print_presence(out_path, report)
+        _print_presence(out_path, report, args.report_dir)
         converted += 1
 
     print(f"{converted} converted, {skipped} skipped, {failed} failed")

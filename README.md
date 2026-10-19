@@ -16,12 +16,14 @@ pip install git+https://github.com/ocean-uhh/seagliderOG1.git
 ## Quick start
 
 ```bash
-seagliderOG1 init --from /data/005/20080606 -o sg005.yaml   # template from the first file
-seagliderOG1 validate sg005.yaml                            # config, source, dive range
+seagliderOG1 draft --raw-dir /data/005/20080606             # see the data first: a draft page, no config
+seagliderOG1 init sg005.yaml --raw-dir /data/005/20080606   # template from the first file
+seagliderOG1 validate sg005.yaml                            # config, raw_dir, dive range
 seagliderOG1 process  sg005.yaml                            # -> <output_dir>/<id>.nc
+seagliderOG1 report   <output_dir>/<id>.nc                  # the conversion page
 ```
 
-For a root of `SN/DATE` mission directories, point `--source` at the root and select with `--all` or `--mission GLOB`; `-n` previews without writing. `mission.yaml` holds the source, output directory, dive range, platform block, and the contributor and institution records; paths in it resolve relative to the file.
+For a root of `SN/DATE` mission directories, point `--raw-dir` at the root and select with `--all` or `--mission GLOB`; `-n` previews without writing. `mission.yaml` holds the raw-data directory (`raw_dir`), output directory, dive range, platform block, and the contributor and institution records; paths in it resolve relative to the file.
 
 ## Python
 

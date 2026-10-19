@@ -55,7 +55,7 @@ def _write_generated_tables() -> None:
                 ("key", "Key"),
                 ("requirement", "Requirement"),
                 ("destination", "Written as"),
-                ("from_file", "init --from reads"),
+                ("from_file", "init --raw-dir reads"),
             ],
             platform,
         )

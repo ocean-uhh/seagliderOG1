@@ -321,12 +321,59 @@ with (CONFIG_DIR / "OG1_sensor_attributes.yaml").open() as file:
     sensor_vocabs = yaml.safe_load(file)
 
 
+# ACDD 1.3 global attributes by level, for the conversion page's conventions box.
+# Transcribed from the IOOS compliance checker (``compliance-checker`` 6.1.0,
+# ``compliance_checker/acdd.py``, ``ACDD1_3Check``: the base lists plus the 1.3 extensions),
+# which implements https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery_1-3.
+# Presence only: the checker also tests some values (ISO dates, geospatial_bounds), which
+# the page does not.
+ACDD_1_3_HIGHLY_RECOMMENDED: tuple[str, ...] = (
+    "title",
+    "keywords",
+    "summary",
+    "Conventions",
+)
+ACDD_1_3_RECOMMENDED: tuple[str, ...] = (
+    "id",
+    "naming_authority",
+    "history",
+    "comment",
+    "date_created",
+    "creator_name",
+    "creator_url",
+    "creator_email",
+    "institution",
+    "project",
+    "processing_level",
+    "geospatial_bounds",
+    "geospatial_lat_min",
+    "geospatial_lat_max",
+    "geospatial_lon_min",
+    "geospatial_lon_max",
+    "geospatial_vertical_min",
+    "geospatial_vertical_max",
+    "time_coverage_start",
+    "time_coverage_end",
+    "time_coverage_duration",
+    "time_coverage_resolution",
+    "standard_name_vocabulary",
+    "license",
+    "geospatial_vertical_positive",
+    "geospatial_bounds_crs",
+    "geospatial_bounds_vertical_crs",
+    "publisher_name",
+    "publisher_url",
+    "publisher_email",
+    "source",
+)
+
+
 # Variables and the dimension an OG1 file must carry to pass the OceanGliders format check.
 # Transcribed from the upstream checker (``ioos/cc-plugin-og``,
 # ``cc_plugin_og/checker.py`` ``check_mandatory_variables`` / ``check_dimensions``); the
 # conversion page's "OG1 required" tier reads this. Nothing yet checks it against the installed
-# checker: re-transcribe when cc-plugin-og changes (the CI cc-plugin-og step, roadmap A6, is
-# where that comparison belongs).
+# checker: re-transcribe when cc-plugin-og changes (a CI step running cc-plugin-og is where
+# that comparison belongs).
 OG1_REQUIRED_VARS: tuple[str, ...] = (
     "LATITUDE_GPS",
     "LONGITUDE_GPS",
