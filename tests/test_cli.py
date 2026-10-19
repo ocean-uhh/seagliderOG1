@@ -90,6 +90,18 @@ def test_init_from_fills_platform(tmp_path: pathlib.Path) -> None:
     assert str(platform["LANDSTATION_VERSION"]).startswith("basestation")
 
 
+def test_init_from_one_file_fills_platform_and_its_directory(
+    tmp_path: pathlib.Path,
+) -> None:
+    """Init --from accepts one basestation file; source is that file's directory."""
+    out = tmp_path / "mission.yaml"
+    one = DATA_DIR / "p0050001_20080606.nc"
+    assert cli.main(["init", "--from", str(one), "-o", str(out)]) == 0
+    data = yaml.safe_load(out.read_text(encoding="utf-8"))
+    assert data["source"] == str(DATA_DIR.resolve())
+    assert data["platform"]["PLATFORM_SERIAL_NUMBER"] == "sg005"
+
+
 def test_init_from_fills_source_and_serial(tmp_path: pathlib.Path) -> None:
     """Init --from fills source and the serial; model/maker/depth are left null to fill."""
     out = tmp_path / "mission.yaml"

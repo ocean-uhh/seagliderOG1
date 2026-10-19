@@ -137,6 +137,422 @@ def _variable_group_caption(
     )
 
 
+def _origin(ds: xr.Dataset, name: str, derived: set[str]) -> tuple[str, str]:
+    """Return ``(original variable, original dimension)`` for an OG1 variable.
+
+    The original variable is the basestation name it came from, or how the converter built it
+    (``"(derived)"`` / ``"(built)"``); a variable kept under its own name shows that name. The
+    original dimension is the basestation dimension it sat on, or ``"—"`` when none is recorded
+    (a derived or built variable).
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open OG1 dataset.
+    name : str
+        The OG1 variable name.
+    derived : set of str
+        Names the ledger records as derived (built by the converter).
+
+    Returns
+    -------
+    tuple of (str, str)
+        ``(original_variable, original_dimension)``.
+
+    """
+    attrs = ds[name].attrs
+    origin = attrs.get("original_name")
+    dim = str(attrs.get("original_dimension") or "—")
+    if origin and origin != name:
+        return str(origin), dim
+    if name in derived:
+        return "(derived)", "—"
+    if origin == name:
+        return name, dim
+    return "(built)", "—"
+
+
+def _og1_required_rows(
+    ds: xr.Dataset, ledger: dict, valid_by_name: dict[str, float]
+) -> tuple[list[dict[str, object]], str, bool]:
+    """Return the OG1-required tier: one row per required variable, then the required dimension.
+
+    The required names come from :data:`seagliderOG1.vocabularies.OG1_REQUIRED_VARS` (the
+    upstream checker list). A variable present in the file gets its came-from, dims, units and
+    Valid %; an absent one is flagged (the caller ambers it). The caption counts how many of
+    the required names are present and names any that are missing.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open OG1 dataset.
+    ledger : dict
+        The parsed ledger (for the derived set).
+    valid_by_name : dict of str to float
+        Valid % per dimensioned variable/coordinate (from the vendored row builders); a
+        required scalar is not in it and shows ``"—"``.
+
+    Returns
+    -------
+    rows : list of dict
+        ``{"name", "present", "came_from", "dims", "units", "valid"}`` rows.
+    caption : str
+        The OG1-required count line, naming any missing variables.
+    incomplete : bool
+        True when a required variable or dimension is missing (the caller ambers the caption).
+
+    """
+    derived = set(ledger["derived"])
+    rows: list[dict[str, object]] = []
+    missing: list[str] = []
+    for name in vocabularies.OG1_REQUIRED_VARS:
+        present = name in ds.variables
+        if present:
+            v = ds[name]
+            valid = valid_by_name.get(name)
+            orig_var, orig_dim = _origin(ds, name, derived)
+            rows.append(
+                {
+                    "name": name,
+                    "present": True,
+                    "orig_var": orig_var,
+                    "orig_dim": orig_dim,
+                    "dims": " × ".join(str(d) for d in v.dims) or "(scalar)",
+                    "units": str(v.attrs.get("units", "")),
+                    "valid": f"{valid}" if valid is not None else "—",
+                }
+            )
+        else:
+            missing.append(name)
+            rows.append(
+                {
+                    "name": name,
+                    "present": False,
+                    "orig_var": "—",
+                    "orig_dim": "—",
+                    "dims": "—",
+                    "units": "—",
+                    "valid": "—",
+                }
+            )
+    for dim in vocabularies.OG1_REQUIRED_DIMS:
+        present = dim in ds.dims
+        if not present:
+            missing.append(dim)
+        rows.append(
+            {
+                "name": f"{dim} (dimension)",
+                "present": present,
+                "came_from": "—",
+                "dims": f"{ds.sizes[dim]:,}" if present else "—",
+                "units": "—",
+                "valid": "—",
+            }
+        )
+    n_vars = len(vocabularies.OG1_REQUIRED_VARS)
+    have = n_vars - len([m for m in missing if m in vocabularies.OG1_REQUIRED_VARS])
+    caption = f"OG1 required: {have} of {n_vars} variables present"
+    if missing:
+        caption += f" — missing: {', '.join(missing)}"
+    return rows, caption, bool(missing)
+
+
+# Basestation families summarised in the carried-through tier, longest prefix first; the
+# display label and a one-line note on what they are (so the 300-odd leftovers read as a few
+# rows, not a wall of names).
+_CARRIED_FAMILIES: tuple[tuple[str, str, str], ...] = (
+    ("sg_calib_constants_", "sg_cal_*", "glider calibration constants"),
+    ("sg_cal_", "sg_cal_*", "glider calibration constants"),
+    ("log_", "log_*", "basestation dive-log parameters, kept for provenance"),
+    ("gc_", "gc_*", "guidance-and-control event records"),
+    ("eng_", "eng_*", "engineering channels"),
+)
+
+
+def _carried_family(name: str) -> tuple[str, str]:
+    """Return the ``(label, description)`` of the carried-through family a name belongs to."""
+    for prefix, label, what in _CARRIED_FAMILIES:
+        if name.startswith(prefix):
+            return label, what
+    if name.endswith("_gsm"):
+        return "*_gsm", "glider flight-model estimates"
+    if name.endswith("_RAW"):
+        return "*_RAW", "raw instrument channels before calibration"
+    if name.lower().endswith("_qc"):
+        return "*_qc", "basestation per-variable QC strings"
+    return "other", "other carried-through variables"
+
+
+def _og1_tiers(
+    ds: xr.Dataset, ledger: dict, valid_by_name: dict[str, float]
+) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+    """Return the "named by OG1" rows and the "carried through" family summary.
+
+    A variable not in :data:`seagliderOG1.vocabularies.OG1_REQUIRED_VARS` is "named by OG1"
+    when it has an OG1 attribute vocabulary, is a ``SENSOR_*`` instance, or is an OG1 ``*_QC``
+    flag; everything else is carried through and summarised by basestation family so the ~300
+    engineering/log leftovers read as a handful of rows.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open OG1 dataset.
+    ledger : dict
+        The parsed ledger (for the derived set).
+    valid_by_name : dict of str to float
+        Valid % per dimensioned variable/coordinate (a scalar is absent and shows ``"—"``).
+
+    Returns
+    -------
+    named : list of dict
+        ``{"name", "came_from", "dims", "units", "valid"}`` rows, name-sorted.
+    carried : list of dict
+        ``{"family", "what", "count", "names"}`` family rows, largest first.
+
+    """
+    derived = set(ledger["derived"])
+    required = set(vocabularies.OG1_REQUIRED_VARS)
+    candidates = set(vocabularies.OG1_CANDIDATE_VARS)
+    og1_named = set(vocabularies.vocab_attrs)
+    named: list[dict[str, object]] = []
+    carried: dict[str, dict[str, object]] = {}
+    for name in sorted(map(str, ds.variables)):
+        if (
+            name in required or name in candidates
+        ):  # candidates are their own group (2.5)
+            continue
+        if name in og1_named or name.startswith("SENSOR_") or name.endswith("_QC"):
+            v = ds[name]
+            valid = valid_by_name.get(name)
+            orig_var, orig_dim = _origin(ds, name, derived)
+            named.append(
+                {
+                    "name": name,
+                    "orig_var": orig_var,
+                    "orig_dim": orig_dim,
+                    "dims": " × ".join(str(d) for d in v.dims) or "(scalar)",
+                    "units": str(v.attrs.get("units", "")),
+                    "valid": f"{valid}" if valid is not None else "—",
+                }
+            )
+        else:
+            label, what = _carried_family(name)
+            entry = carried.setdefault(
+                label, {"family": label, "what": what, "names": []}
+            )
+            entry["names"].append(name)  # type: ignore[attr-defined]
+    rows = sorted(carried.values(), key=lambda f: -len(f["names"]))
+    for entry in rows:
+        names = entry["names"]
+        entry["count"] = len(names)  # type: ignore[arg-type]
+        entry["names"] = ", ".join(names)  # type: ignore[arg-type]
+    return named, rows
+
+
+def _og1_candidate_groups(
+    ds: xr.Dataset, ledger: dict, valid_by_name: dict[str, float]
+) -> list[dict[str, object]]:
+    """Return the candidate (uplift) groups: variables the project proposes to canonise.
+
+    Each group named in :data:`seagliderOG1.vocabularies.OG1_CANDIDATE_VARS` is listed
+    present/absent (from the curated list, so a variable the file lacks still shows), recording
+    what the project wants to require — e.g. for a flight model — independent of the upstream
+    OG1 vocabulary. Absence is informational, not an error: the file may predate the candidate.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open OG1 dataset.
+    ledger : dict
+        The parsed ledger (for the derived set).
+    valid_by_name : dict of str to float
+        Valid % per dimensioned variable/coordinate (a scalar is absent and shows ``"—"``).
+
+    Returns
+    -------
+    list of dict
+        ``{"label", "rows", "n_present", "n_total"}`` per group, label-sorted; each row is
+        ``{"name", "present", "came_from", "dims", "units", "valid"}``.
+
+    """
+    derived = set(ledger["derived"])
+    groups: dict[str, list[dict[str, object]]] = {}
+    for name, label in vocabularies.OG1_CANDIDATE_VARS.items():
+        if name in ds.variables:
+            v = ds[name]
+            valid = valid_by_name.get(name)
+            orig_var, orig_dim = _origin(ds, name, derived)
+            row = {
+                "name": name,
+                "present": True,
+                "orig_var": orig_var,
+                "orig_dim": orig_dim,
+                "dims": " × ".join(str(d) for d in v.dims) or "(scalar)",
+                "units": str(v.attrs.get("units", "")),
+                "valid": f"{valid}" if valid is not None else "—",
+            }
+        else:
+            row = {
+                "name": name,
+                "present": False,
+                "orig_var": "—",
+                "orig_dim": "—",
+                "dims": "—",
+                "units": "—",
+                "valid": "—",
+            }
+        groups.setdefault(label, []).append(row)
+    out = []
+    for label in sorted(groups):
+        group_rows = groups[label]
+        out.append(
+            {
+                "label": label,
+                "rows": group_rows,
+                "n_present": sum(1 for r in group_rows if r["present"]),
+                "n_total": len(group_rows),
+            }
+        )
+    return out
+
+
+_UNIT_SPELLING = {"meters": "m", "metre": "m", "metres": "m", "meter": "m"}
+
+
+def _norm_unit(unit: str) -> str:
+    """Return a unit string normalised for spelling (``meters`` → ``m``), lowercased."""
+    text = unit.strip().lower()
+    return _UNIT_SPELLING.get(text, text)
+
+
+def _unit_factor(u_from: str, u_to: str) -> float | None:
+    """Return the multiplier converting ``u_from`` into ``u_to``, or None when unrelated.
+
+    Same unit (after spelling normalisation) is ``1.0``; otherwise the family alias table
+    (:data:`seagliderOG1.vocabularies.unit1_to_unit2`) is consulted. No conversion is invented:
+    units the table does not relate return None and the comparison is marked not comparable.
+    """
+    if _norm_unit(u_from) == _norm_unit(u_to):
+        return 1.0
+    entry = vocabularies.unit1_to_unit2.get(f"{u_from}_to_{u_to}")
+    return float(entry["factor"]) if entry else None
+
+
+def _duplicate_groups(ds: xr.Dataset) -> list[dict[str, object]]:
+    """Return groups of output variables that encode the same quantity, compared to a reference.
+
+    Variables sharing a ``standard_name`` (grouping by meaning, never by name prefix) are one
+    group when the group has a reference member — one that is OG1-required or OG1-named,
+    preferring required then the shortest name. The reference is listed first; each other member
+    is compared to it (member minus reference) over the samples both carry, in the reference's
+    units. A member whose units the alias table cannot relate is "not comparable" rather than
+    converted by guess. ``status_flag`` (the QC flags) and groups without a reference are
+    excluded.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open OG1 dataset.
+
+    Returns
+    -------
+    list of dict
+        ``{"standard_name", "reference", "reference_units", "rows"}`` per group; each row is
+        ``{"name", "units", "reference", "n_overlap", "offset", "rmsd", "max_abs", "note"}``,
+        the reference row first.
+
+    """
+    required = set(vocabularies.OG1_REQUIRED_VARS)
+    og1_named = set(vocabularies.vocab_attrs)
+    by_sn: dict[str, list[str]] = {}
+    for name in map(str, ds.variables):
+        v = ds[name]
+        if v.ndim >= 1 and v.dtype.kind in "fiu":
+            sn = str(v.attrs.get("standard_name", "")).strip()
+            if sn and sn != "status_flag":
+                by_sn.setdefault(sn, []).append(name)
+    groups: list[dict[str, object]] = []
+    for sn, members in sorted(by_sn.items()):
+        if len(members) < 2:
+            continue
+        canon = [m for m in members if m in required] or [
+            m for m in members if m in og1_named
+        ]
+        if not canon:
+            continue  # no OG1 canonical: not a converter-made OG1 duplicate
+        reference = min(canon, key=lambda m: (m not in required, len(m), m))
+        ref_vals = np.asarray(ds[reference].values, dtype=float)
+        ref_units = str(ds[reference].attrs.get("units", ""))
+        # Reference row first, then each other member's difference from it.
+        rows: list[dict[str, object]] = [
+            _duplicate_row(reference, ref_units, reference=True)
+        ]
+        for member in members:
+            if member == reference:
+                continue
+            units = str(ds[member].attrs.get("units", ""))
+            factor = _unit_factor(units, ref_units)
+            if factor is None:
+                rows.append(
+                    _duplicate_row(
+                        member, units, note=f"not comparable ({units} vs {ref_units})"
+                    )
+                )
+                continue
+            vals = np.asarray(ds[member].values, dtype=float) * factor
+            mask = np.isfinite(vals) & np.isfinite(ref_vals)
+            n = int(mask.sum())
+            if not n:
+                rows.append(
+                    _duplicate_row(member, units, n_overlap="0", note="no overlap")
+                )
+                continue
+            diff = vals[mask] - ref_vals[mask]  # member minus reference
+            rows.append(
+                _duplicate_row(
+                    member,
+                    units,
+                    n_overlap=f"{n:,}",
+                    offset=nc_tables._fmt_minmax(float(diff.mean())),
+                    rmsd=nc_tables._fmt_minmax(float(np.sqrt((diff**2).mean()))),
+                    max_abs=nc_tables._fmt_minmax(float(np.abs(diff).max())),
+                )
+            )
+        groups.append(
+            {
+                "standard_name": sn,
+                "reference": reference,
+                "reference_units": ref_units,
+                "rows": rows,
+            }
+        )
+    return groups
+
+
+def _duplicate_row(
+    name: str,
+    units: str,
+    *,
+    reference: bool = False,
+    n_overlap: str = "—",
+    offset: str = "—",
+    rmsd: str = "—",
+    max_abs: str = "—",
+    note: str = "",
+) -> dict[str, object]:
+    """Return one duplicate-comparison row with its defaults (an en-dash where not computed)."""
+    return {
+        "name": name,
+        "units": units,
+        "reference": reference,
+        "n_overlap": n_overlap,
+        "offset": offset,
+        "rmsd": rmsd,
+        "max_abs": max_abs,
+        "note": "reference" if reference else note,
+    }
+
+
 def _reconciliation(
     ds: xr.Dataset, ledger: dict
 ) -> tuple[list[tuple[str, str, str]], str]:
@@ -1218,6 +1634,21 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
             }
             for title, rows in groups
         ]
+        # OG1-first view, tier 1: the required variables. Valid % for the dimensioned ones
+        # comes from the coordinate rows and the grouped variable rows already built.
+        coord_rows, _coord_source = nc_tables.coords_rows(
+            ds, original_name_attrs=design.ORIGINAL_NAME_ATTRS
+        )
+        valid_by_name = {r["name"]: r["valid_pct"] for r in coord_rows}
+        for _group_title, group_rows in groups:
+            for r in group_rows:
+                valid_by_name[r["name"]] = r["valid_pct"]
+        og1_required, og1_required_caption, og1_required_incomplete = (
+            _og1_required_rows(ds, ledger, valid_by_name)
+        )
+        og1_candidate_groups = _og1_candidate_groups(ds, ledger, valid_by_name)
+        og1_named, og1_carried = _og1_tiers(ds, ledger, valid_by_name)
+        duplicate_groups = _duplicate_groups(ds)
         reconciliation, reconciliation_caption = _reconciliation(ds, ledger)
         # The fate rows excluding the input-total row (the last), for the histogram.
         fate_histogram = figure_png.render_b64(
@@ -1293,6 +1724,13 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         page_nav=_page_nav(),
         summary_rows=summary_rows,
         verdict_clauses=verdict_clauses,
+        og1_required=og1_required,
+        og1_required_caption=og1_required_caption,
+        og1_required_incomplete=og1_required_incomplete,
+        og1_candidate_groups=og1_candidate_groups,
+        og1_named=og1_named,
+        og1_carried=og1_carried,
+        duplicate_groups=duplicate_groups,
         reconciliation=reconciliation,
         reconciliation_caption=reconciliation_caption,
         sidecar_present=sidecar is not None,

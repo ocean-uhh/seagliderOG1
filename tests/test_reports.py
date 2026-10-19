@@ -15,6 +15,7 @@ sys.path.append(str(parent_dir))
 from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
     convert,
     readers,
+    vocabularies,
 )
 from seagliderOG1.reports import conversion  # noqa: E402
 
@@ -270,6 +271,61 @@ def test_variable_group_caption_states_the_baseline() -> None:
     assert "Converter-built" in derived
 
 
+def test_og1_required_rows_all_present_on_demo() -> None:
+    """The OG1-required tier lists the checker's 14 names + the dimension, all present on demo."""
+    ds = _dataset()
+    ledger = convert.conversion_ledger(ds)
+    rows, caption, incomplete = conversion._og1_required_rows(
+        ds, ledger, {"LATITUDE": 91.0}
+    )
+    assert not incomplete
+    assert "14 of 14 variables present" in caption
+    names = {r["name"] for r in rows}
+    assert {"LATITUDE", "LONGITUDE", "DEPTH", "TIME_GPS"} <= names
+    assert any(str(r["name"]).startswith("N_MEASUREMENTS") for r in rows)
+    lat = next(r for r in rows if r["name"] == "LATITUDE")
+    assert lat["present"] is True
+    assert lat["valid"] == "91.0"  # pulled from the passed valid-by-name map
+    assert lat["orig_var"] == "latitude"  # basestation source variable
+    assert lat["orig_dim"] == "sg_data_point"  # and its original dimension
+
+
+def test_og1_tiers_partition_every_variable() -> None:
+    """Required, candidate, named and carried together account for every variable, no overlap."""
+    ds = _dataset()
+    ledger = convert.conversion_ledger(ds)
+    named, carried = conversion._og1_tiers(ds, ledger, {})
+    candidate_groups = conversion._og1_candidate_groups(ds, ledger, {})
+    all_names = {str(n) for n in ds.variables}
+    required = set(vocabularies.OG1_REQUIRED_VARS) & all_names
+    candidates_present = {
+        r["name"] for g in candidate_groups for r in g["rows"] if r["present"]
+    }
+    named_names = {r["name"] for r in named}
+    carried_names = {n for f in carried for n in str(f["names"]).split(", ")}
+    assert required | candidates_present | named_names | carried_names == all_names
+    assert not (named_names & carried_names)  # a variable is named or carried, not both
+    assert not (
+        candidates_present & (named_names | carried_names)
+    )  # candidates are lifted out
+
+
+def test_og1_candidate_groups_from_the_curated_list() -> None:
+    """Candidate groups come from OG1_CANDIDATE_VARS and record present/absent per variable."""
+    ds = _dataset()
+    ledger = convert.conversion_ledger(ds)
+    groups = conversion._og1_candidate_groups(ds, ledger, {"vert_speed_gsm": 61.0})
+    assert {g["label"] for g in groups} == set(vocabularies.OG1_CANDIDATE_VARS.values())
+    listed = {r["name"] for g in groups for r in g["rows"]}
+    assert listed == set(
+        vocabularies.OG1_CANDIDATE_VARS
+    )  # every curated name appears once
+    out = next(g for g in groups if g["label"] == "flight model — output")
+    vspeed = next(r for r in out["rows"] if r["name"] == "vert_speed_gsm")
+    assert vspeed["present"] is True
+    assert vspeed["valid"] == "61.0"
+
+
 def test_summary_rows_and_verdict_before_and_after(tmp_path) -> None:
     """The before → after rows read the sidecar; the verdict is all-green on demo."""
     import xarray as xr
@@ -319,6 +375,7 @@ def test_page_section_order_and_scalars_collapsed(tmp_path) -> None:
     ids = re.findall(r'<section id="([^"]+)">', html)
     assert ids == [
         "summary",
+        "og1",
         "reconciliation",
         "presence",
         "dimensions",

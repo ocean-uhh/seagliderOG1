@@ -98,6 +98,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Fixed
 
+- `init --from` and the converter read dotted version strings (`base_station_version: "3.0.6"`)
+  from newer basestation files instead of failing; `init --from` also accepts one
+  `pSSSDDDD*.nc` file.
 - `config/OG1_variable_attributes.yaml` no longer carries `platform_model_vocabulary` /
   `platform_maker_vocabulary` defaults (never written to files; the maker term named Teledyne Webb
   Research, the Slocum maker). Set both per glider in `mission.yaml`; the sg005 example now does.
