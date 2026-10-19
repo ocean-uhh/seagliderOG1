@@ -10,6 +10,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Breaking changes
 
+- A second or later basestation variable mapping to the same OG1 name is numbered with an
+  underscore (`DEPTH_2`, was `DEPTH2`); the first keeps the plain name.
+- `log_VBD_MIN` is no longer mapped to `VBD_MIN_CNTS` (which `sg_cal_vbd_min_cnts` holds); it is
+  written under its basestation name (was `VBD_MIN_CNTS2`).
 - Public API reshaped to the OceanGliders family convention — modules, functions and arguments
   renamed (`convert.to_og1`, `writers.write`, `readers.read_mission`, …). See the migration guide
   for the full old → new table.
@@ -70,6 +74,14 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Changed
 
+- `vocabularies.VARIABLES_TO_DROP` is empty: the 24 basestation variables it removed (e.g. `density`,
+  `theta`, `dissolved_oxygen_sat`, the `*_gsm` flight-model set) are now in the output. `depth` and
+  `eng_depth` map to `DEPTH`, which `ctd_depth` holds, and are written as `DEPTH_2` / `DEPTH_3`.
+- Conversion page reordered for a first read: a Before → after summary and the Reconciliation
+  with a Meaning column first, scalar parameters last and collapsed; Presence and Dimensions
+  gain percentage and Samples in columns, and each Variables group states the Valid % baseline
+  its dimension sets. `<id>_conversion.json` input records gain each file's dimension lengths
+  and global-attribute count (additive; an older sidecar still renders).
 - `seagliderOG1 list` prints each registry as an aligned table with a header and a one-line
   summary; bare `seagliderOG1 list` names the registries; `--search TEXT` filters rows.
 - Packaged config files and `vocabularies` tables renamed to whole words (package data, no API

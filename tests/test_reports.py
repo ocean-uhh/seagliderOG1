@@ -150,13 +150,15 @@ def test_requirement_summary_counts_the_mandatory_tier():
     assert amber is False
 
 
-def test_masthead_meta_names_platform_and_input_output_counts():
-    """The masthead metadata carries the platform/serial and the input/output variable counts."""
+def test_masthead_meta_names_platform_not_input_output_counts():
+    """The masthead carries the platform/serial; the input → output counts moved to §1."""
     ds = _dataset()
     ledger = convert.conversion_ledger(ds)
     meta = dict(conversion._masthead_meta(ds, ledger))
     assert "sg005" in meta["Platform"]
-    assert meta["Inputs → outputs"].startswith(f"{ledger['input_variable_count']} → ")
+    assert (
+        "Inputs → outputs" not in meta
+    )  # now the first row of the Before → after table
 
 
 def test_per_dive_scalar_value_is_decoded_not_json():
@@ -233,6 +235,103 @@ def test_presence_strips_one_row_per_pattern() -> None:
     fig = conversion.draw_presence_strips(patterns, [1, 2, 3])
     assert fig is not None and len(fig.axes) == 3  # two panels + the density colorbar
     assert conversion.draw_presence_strips([], []) is None
+
+
+def test_reconciliation_rows_carry_a_meaning() -> None:
+    """Every fate row has Meaning text; the basestation-input total row has none."""
+    ds = _dataset()
+    rows, _caption = conversion._reconciliation(ds, convert.conversion_ledger(ds))
+    assert all(row[2] for row in rows[:-1])  # each fate explains itself
+    assert rows[-1][2] == ""  # the input-total row carries no meaning
+
+
+def test_dimension_rows_show_samples_in_from_the_sidecar() -> None:
+    """Samples in is the sidecar sum per dimension; "—" for the scalar row and without it."""
+    ledger = convert.conversion_ledger(_dataset())
+    rows = conversion._dimension_rows(ledger, {"sg_data_point": 2213})
+    sg = next(r for r in rows if r["dimension"] == "sg_data_point")
+    assert sg["samples_in"] == "2,213"
+    assert next(r for r in rows if r["dimension"] == "(scalar)")["samples_in"] == "—"
+    assert all(r["samples_in"] == "—" for r in conversion._dimension_rows(ledger))
+
+
+def test_variable_group_caption_states_the_baseline() -> None:
+    """With the sidecar the baseline is exact (k of N); without it the group's best stands in."""
+    rows = [{"valid_pct": 90.4}, {"valid_pct": 12.0}]
+    exact = conversion._variable_group_caption(
+        "sg_data_point", rows, {"sg_data_point": 2213}, 2449
+    )
+    assert "sg_data_point supplied 2,213 of 2,449 samples (90.4 %)" in exact
+    estimate = conversion._variable_group_caption("sg_data_point", rows, {}, 2449)
+    assert "at least 90.4 %" in estimate
+    derived = conversion._variable_group_caption(
+        conversion._NO_DIMENSION_GROUP, rows, {}, 2449
+    )
+    assert "Converter-built" in derived
+
+
+def test_summary_rows_and_verdict_before_and_after(tmp_path) -> None:
+    """The before → after rows read the sidecar; the verdict is all-green on demo."""
+    import xarray as xr
+
+    path = convert.process_mission(DATA, tmp_path, dives=(1, 2))
+    inputs = convert.conversion_sidecar(path)["inputs"]
+    dim_samples = conversion._dimension_samples(inputs)
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        ledger = convert.conversion_ledger(ds)
+        requirement_text, amber = conversion._requirement_summary(ds)
+        rows = conversion._summary_rows(
+            ds, ledger, inputs, dim_samples, path, requirement_text
+        )
+        recon, _caption = conversion._reconciliation(ds, ledger)
+        verdict = conversion._verdict_clauses(recon, ledger, amber)
+        rows_no_sidecar = conversion._summary_rows(
+            ds, ledger, None, {}, path, requirement_text
+        )
+        # When the input files disagree on global count, the input cell shows the range.
+        mixed = [dict(record) for record in inputs]
+        mixed[0]["n_globals"] = 50
+        mixed[1]["n_globals"] = 59
+        rows_mixed = conversion._summary_rows(
+            ds, ledger, mixed, dim_samples, path, requirement_text
+        )
+    by_q = {r["quantity"]: r for r in rows}
+    assert by_q["Files"]["input"] == "2" and by_q["Files"]["output"] == "1"
+    assert by_q["Variables"]["input"] == f"{ledger['input_variable_count']:,}"
+    assert by_q["Dives"]["output"] == "same"
+    # Without a sidecar the sidecar-only input cells fall back to "—".
+    by_q_no = {r["quantity"]: r for r in rows_no_sidecar}
+    assert by_q_no["Files"]["input"] == "—"
+    assert by_q_no["Global attributes"]["input"] == "—"
+    mixed_globals = {r["quantity"]: r for r in rows_mixed}["Global attributes"]["input"]
+    assert mixed_globals == "50–59"
+    # Demo converts cleanly: every clause is green and all inputs are accounted for.
+    assert not any(c["bad"] for c in verdict)
+    assert verdict[0]["text"].endswith("inputs accounted for")
+
+
+def test_page_section_order_and_scalars_collapsed(tmp_path) -> None:
+    """The sections render in the new-user order; the first scalar group is open, rest closed."""
+    import re
+
+    path = convert.process_mission(DATA, tmp_path, dives=(1, 2))
+    html = conversion.render_conversion(path)
+    ids = re.findall(r'<section id="([^"]+)">', html)
+    assert ids == [
+        "summary",
+        "reconciliation",
+        "presence",
+        "dimensions",
+        "derived",
+        "dropped",
+        "variables",
+        "globals",
+        "scalars",
+    ]
+    assert "1. Before → after" in html
+    details = re.findall(r'<details class="scalar-group"( open)?>', html)
+    assert details and details[0] == " open"
+    assert all(flag == "" for flag in details[1:])
 
 
 def test_presence_strips_follow_file_order_across_a_dive_gap() -> None:

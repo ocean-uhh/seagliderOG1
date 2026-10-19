@@ -34,11 +34,12 @@ Conversion page
 ``process --report`` (or ``report: true`` in ``mission.yaml``) also writes the HTML conversion
 page ``<id>_conversion.html`` beside each OG1 file — the same page ``inspect --conversion -o``
 writes for an existing file. An existing page is refused like an existing file unless
-``--force``.
+``--force``. See :ref:`conversion_page` for the sections the page shows.
 
 ``process`` also writes ``<id>_conversion.json`` beside each OG1 file: the input files (name,
-size, dive number) and which dives each basestation variable was present in and had values in.
-The page reads it for its *Presence across dives* section. When the input dives disagree,
+size, dive number, dimension lengths and global-attribute count) and which dives each
+basestation variable was present in and had values in.
+The page reads it for its *Presence across dives* and *Before → after* sections. When the input dives disagree,
 ``process`` prints one line per mission after ``wrote``:
 
 .. code-block:: console

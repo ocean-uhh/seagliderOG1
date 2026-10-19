@@ -16,6 +16,7 @@ from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
     convert,
     readers,
     tools,
+    vocabularies,
     writers,
 )
 
@@ -578,6 +579,28 @@ def test_scalar_parameters_storage_and_dimension():
     assert len(payload["values"]) == len(payload["dives"])
 
 
+def test_formerly_dropped_variables_reach_the_file():
+    """Variables the package drop list used to remove are now in the output, by original_name."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    written = {ds[v].attrs.get("original_name"): v for v in ds.variables}
+    assert vocabularies.VARIABLES_TO_DROP == []
+    assert written["density"] == "density"  # passed through
+    assert written["theta"] == "THETA"  # renamed by OG1_variable_names.yaml
+    assert written["dissolved_oxygen_sat"] == "OXYSAT"
+    # depth and eng_depth also map to DEPTH, which ctd_depth holds; they are numbered.
+    assert written["ctd_depth"] == "DEPTH"
+    assert {written["depth"], written["eng_depth"]} == {"DEPTH_2", "DEPTH_3"}
+
+
+def test_vbd_min_cnts_has_one_source():
+    """VBD_MIN_CNTS is the calibration constant; the dive-log value keeps its own name."""
+    ds = convert.to_og1(readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1))
+    assert ds["VBD_MIN_CNTS"].attrs["original_name"] == "sg_cal_vbd_min_cnts"
+    assert ds["log_VBD_MIN"].attrs["original_name"] == "log_VBD_MIN"
+    assert not [v for v in ds.variables if str(v).startswith("VBD_MIN_CNTS_")]
+
+
 def test_conversion_ledger_parses_the_file():
     """conversion_ledger returns the parsed ledger; a pre-ledger file raises MetadataError."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
@@ -593,10 +616,11 @@ def test_conversion_ledger_parses_the_file():
         "scalar_parameters",
     }
     assert ledger["dimensions"]["sg_data_point"]["fate"] == "backbone"
-    # derived is a map {name: [source basestation names]}; removed is the drop list.
+    # derived is a map {name: [source basestation names]}; removed is the drop list, empty
+    # now that every basestation variable is retained.
     assert isinstance(ledger["derived"], dict)
     assert ledger["input_variable_count"] > 0
-    assert "density" in ledger["removed"]  # a VARIABLES_TO_DROP member present in sg005
+    assert ledger["removed"] == []
     # Derived variables record their basestation sources: every merged dimension's time
     # variable folds into the shared TIME axis; TIME_GPS records the GPS clock separately.
     assert set(ledger["derived"]["TIME"]) == {
@@ -922,6 +946,21 @@ def test_process_mission_writes_the_sidecar_bound_to_the_file(
     with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
         assert sidecar["id"] == ds.attrs["id"]
         assert not [k for k in ds.attrs if "presence" in k or "sidecar" in k]
+
+
+def test_sidecar_inputs_record_dimension_lengths_and_global_count(
+    tmp_path: pathlib.Path,
+) -> None:
+    """Each input record carries the file's dimension lengths and global-attribute count."""
+    datasets = readers.read_mission(str(_SG005), 1, 2)
+    path = convert.process_mission(_SG005, tmp_path, dives=(1, 2))
+    inputs = convert.conversion_sidecar(path)["inputs"]
+    by_dive = {entry["dive"]: entry for entry in inputs}
+    for ds in datasets:
+        entry = by_dive[int(ds.attrs["dive_number"])]
+        assert entry["dimensions"] == {str(n): int(v) for n, v in ds.sizes.items()}
+        assert entry["dimensions"]["sg_data_point"] > 0
+        assert entry["n_globals"] == len(ds.attrs)
 
     # A sidecar left beside a deleted file is stale: it is replaced, not refused.
     path.unlink()

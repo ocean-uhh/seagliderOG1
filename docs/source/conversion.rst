@@ -126,6 +126,32 @@ the four depth-averaged currents are present on every dive but have values from 
 
 Nothing about this is added to the OG1 file.
 
+.. _conversion_page:
+
+The conversion page
+-------------------
+
+``process --report`` (and ``inspect --conversion -o``) writes an HTML page beside the OG1 file.
+Its sections, in order:
+
+#. **Before → after** — files, dives, size on disk, samples on the shared axis, variable and
+   global-attribute counts, time span and OG1-requirement coverage, basestation input beside
+   OG1 output, with a one-line verdict. The input column reads the sidecar; its cells show
+   ``—`` when the sidecar is absent.
+#. **Reconciliation** — each basestation variable's one fate (renamed, passed through,
+   consumed, removed, dropped, skipped) with a count, a Meaning column, and a fate histogram.
+#. **Presence across dives** — the patterns above, with each pattern's share of the input dives.
+#. **Dimensions** — each basestation dimension's fate, the samples it supplied, and the
+   dimension it ended on.
+#. **Derived variables** — variables the converter built, with their basestation sources.
+#. **Dropped and removed variables** — variables left out by ``keep_variables`` or the package
+   drop list (empty, so every basestation variable is retained).
+#. **Variables** — the output variables grouped by original dimension, with a Valid % column
+   and a per-group baseline (the share of the axis that dimension supplied).
+#. **Global attributes** — grouped by convention and OG1 tier, with recomputed coverage bounds
+   and the history.
+#. **Scalar parameters** — the per-dive and constant scalars, split by group, each collapsible.
+
 Validation
 ----------
 

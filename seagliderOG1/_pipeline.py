@@ -304,7 +304,8 @@ def og1_name_mapping(
             count = og1_name_counts.get(base_og1_name, 0) + 1
             og1_name_counts[base_og1_name] = count
 
-            og1_name = base_og1_name if count == 1 else f"{base_og1_name}{count}"
+            # The first claimant keeps the OG1 name; later ones are numbered from _2.
+            og1_name = base_og1_name if count == 1 else f"{base_og1_name}_{count}"
 
         mapping.append(
             {
@@ -332,7 +333,7 @@ def og1_name_mapping(
         result["OG1_name"]
         .astype("string")
         .str.fullmatch(
-            r"TIME[0-9]*",
+            r"TIME(_[0-9]+)?",
             na=False,
         )
     )

@@ -1,15 +1,19 @@
 """Render the conversion ledger of one OG1 file as an HTML page.
 
-Sections: a Reconciliation summary with a fate histogram (where the variables went),
-Presence across dives (which input dives each variable came from, read from the conversion
-sidecar beside the file), Dimensions (fate read from the output), Variables grouped by *original* dimension with the
-``original -> OG1`` arrow and the Valid % column, Scalar parameters (split Renamed / Log /
-sg_calib_constants / Everything else, per-dive values decoded), Derived variables with their
-sources, Dropped and removed variables, and Global attributes (grouped by convention and OG1
-tier, with the computed spatiotemporal-coverage columns) ending in the History table.
-Everything but the presence section is read from the file alone via
-:func:`seagliderOG1.convert.conversion_ledger`, the vendored row builders, and the vendored
-table macros; the presence section reads the sidecar and says so when it is missing.
+Sections, in reading order for a new user: Before → after (what the conversion read and
+wrote, from the sidecar), Reconciliation with a fate histogram and a Meaning column (where
+the variables went), Presence across dives (which input dives each variable came from, from
+the sidecar), Dimensions (fate from the output, with each dimension's Samples in), Derived
+variables with their sources, Dropped and removed variables, Variables grouped by *original*
+dimension with the Valid % column and a per-group baseline caption, Global attributes
+(grouped by convention and OG1 tier, with the computed spatiotemporal-coverage columns and
+the History table), and Scalar parameters last (split Renamed / Log / sg_calib_constants /
+Everything else, per-dive values decoded, each group collapsible).
+
+Everything but the presence section and the sidecar-fed columns is read from the file alone
+via :func:`seagliderOG1.convert.conversion_ledger`, the vendored row builders, and the
+vendored table macros; the sidecar-fed columns show "—" and the presence section says so
+when the ``<id>_conversion.json`` beside the file is missing.
 """
 
 import math
@@ -62,7 +66,7 @@ def _variable_groups_by_original_dimension(
         original_name_attrs=design.ORIGINAL_NAME_ATTRS,
     )
     rows = flat[0][1] if flat else []
-    no_dim_title = "Derived (no basestation dimension)"
+    no_dim_title = _NO_DIMENSION_GROUP
     by_dim: dict[str, list] = {}
     for row in rows:
         origin = ds[row["name"]].attrs.get("original_dimension")
@@ -74,6 +78,63 @@ def _variable_groups_by_original_dimension(
     if no_dim_title in by_dim:
         ordered.append((no_dim_title, by_dim[no_dim_title]))
     return ordered, source
+
+
+_NO_DIMENSION_GROUP = "Derived (no basestation dimension)"
+
+
+def _variable_group_caption(
+    title: str,
+    rows: list[dict],
+    dim_samples: dict[str, int],
+    axis_total: int | None,
+) -> str:
+    """Return the Valid % baseline caption for one Variables group.
+
+    A dimensioned variable has values only at its own dimension's rows of the shared axis, so
+    its Valid % is naturally the share of ``N_MEASUREMENTS`` that dimension supplied, not 100.
+    The caption states that share so a reader can tell an expected gap from a real one: with
+    the sidecar it is exact (``k`` of ``N`` samples); without it the group's highest Valid %
+    stands in ("at least"). The amber still marks any Valid % below 100 (vendored, until F35).
+
+    Parameters
+    ----------
+    title : str
+        The group's original dimension, or the derived-no-dimension title.
+    rows : list of dict
+        The group's variable rows (each with a ``valid_pct``).
+    dim_samples : dict of str to int
+        Each dimension's samples summed over the inputs (empty without the sidecar).
+    axis_total : int or None
+        The length of ``N_MEASUREMENTS`` (the shared axis), or None when absent.
+
+    Returns
+    -------
+    str
+        The caption for this group.
+
+    """
+    amber = (
+        "Amber marks any Valid % below 100 — the variable sits at its own times on the "
+        "shared axis, not interpolated."
+    )
+    if title == _NO_DIMENSION_GROUP:
+        return (
+            "Converter-built variables carry values at their own times on the shared axis; "
+            f"a low Valid % is expected here. {amber}"
+        )
+    if axis_total and title in dim_samples:
+        k = dim_samples[title]
+        pct = round(100 * k / axis_total, 1)
+        return (
+            f"{title} supplied {k:,} of {axis_total:,} samples ({pct} %); a variable with a "
+            f"lower Valid % has missing values of its own. {amber}"
+        )
+    best = max((r["valid_pct"] for r in rows), default=0.0)
+    return (
+        f"{title}: at least {best} % of the shared axis; a variable with a lower Valid % "
+        f"has missing values of its own. {amber}"
+    )
 
 
 def _reconciliation(
@@ -99,7 +160,8 @@ def _reconciliation(
     Returns
     -------
     rows : list of (str, str, str)
-        ``(label, count, "")`` rows for ``properties_table``.
+        ``(label, count, meaning)`` rows; the final row is the basestation input total with
+        an empty meaning.
     caption : str
         Whether the fates sum to the input count.
 
@@ -119,23 +181,49 @@ def _reconciliation(
         if info["fate"] == "skipped"
         for v in info["variables"]
     }
-    # One fate per name, in priority order (an output wins over a dimension listing).
+    # One fate per name, in priority order (an output wins over a dimension listing). The
+    # third item is the Meaning text for the owned table; the fate histogram reads only the
+    # label and count, so it is unaffected.
     buckets = [
-        ("Renamed from a basestation name", renamed),
-        ("Passed through unrenamed", passed),
-        ("Consumed → derived", consumed),
-        ("Removed (package drop list)", removed),
-        ("Dropped (keep_variables)", dropped),
-        ("Skipped (dimension)", skipped),
+        (
+            "Renamed from a basestation name",
+            renamed,
+            "In the file under its OG1 name; original_name holds the basestation name.",
+        ),
+        (
+            "Passed through unrenamed",
+            passed,
+            "In the file under its basestation name.",
+        ),
+        (
+            "Consumed → derived",
+            consumed,
+            "Not in the file itself; its data went into a variable the converter built (§5).",
+        ),
+        (
+            "Removed (package drop list)",
+            removed,
+            "Not in the file; was on the package drop list, now empty (§6).",
+        ),
+        (
+            "Dropped (keep_variables)",
+            dropped,
+            "Not in the file; left out by your keep_variables.",
+        ),
+        (
+            "Skipped (dimension)",
+            skipped,
+            "Not in the file; its dimension is not placed on N_MEASUREMENTS (§4).",
+        ),
     ]
     seen: set[str] = set()
     rows = []
     total = 0
-    for label, names in buckets:
+    for label, names, meaning in buckets:
         count = len(names - seen)
         seen |= names
         total += count
-        rows.append((label, str(count), ""))
+        rows.append((label, str(count), meaning))
     inputs = ledger["input_variable_count"]
     rows.append(("Basestation inputs", str(inputs), ""))
     unattributed = inputs - total
@@ -191,28 +279,26 @@ def draw_fate_histogram(fate_rows: list[tuple[str, str, str]]) -> "Figure | None
 _MAX_STRIPS = 6
 
 
-def _dive_ranges(runs: list[list[int]], n: int, total: int) -> str:
-    """Return ``"2–5 · 4 of 5"`` for a set of dive runs.
+def _dive_ranges(runs: list[list[int]]) -> str:
+    """Return ``"2–5"`` (or ``"2–5, 7"``) for a set of dive runs, ``"none"`` when empty.
+
+    The count the ranges cover is carried in its own Valid % / Present % column, so the range
+    cell holds only the ranges.
 
     Parameters
     ----------
     runs : list of [int, int]
         Dive ranges.
-    n : int
-        Input dives covered.
-    total : int
-        Input dives in the mission.
 
     Returns
     -------
     str
-        The ranges, then the count.
+        The ranges, or ``"none"``.
 
     """
     if not runs:
-        return f"none · 0 of {total}"
-    ranges = ", ".join(str(a) if a == b else f"{a}–{b}" for a, b in runs)
-    return f"{ranges} · {n} of {total}"
+        return "none"
+    return ", ".join(str(a) if a == b else f"{a}–{b}" for a, b in runs)
 
 
 def _presence_rows(patterns: list[dict], total: int) -> list[dict[str, object]]:
@@ -228,19 +314,20 @@ def _presence_rows(patterns: list[dict], total: int) -> list[dict[str, object]]:
     Returns
     -------
     list of dict
-        ``label``, ``valid``, ``present`` (``"same"`` when it equals ``valid``), ``n``
-        (variables), ``variables`` (comma-joined) and ``bad`` (not valid on every dive).
+        ``label``, ``valid`` / ``present`` (dive ranges), ``valid_pct`` / ``present_pct`` (the
+        share of the input dives, one decimal), ``n`` (variables), ``variables``
+        (comma-joined) and ``bad`` (not valid on every dive).
 
     """
     rows = []
     for pattern in patterns:
-        valid = _dive_ranges(pattern["valid"], pattern["n_valid"], total)
-        present = _dive_ranges(pattern["present"], pattern["n_present"], total)
         rows.append(
             {
                 "label": pattern["label"],
-                "valid": valid,
-                "present": "same" if present == valid else present,
+                "valid": _dive_ranges(pattern["valid"]),
+                "valid_pct": round(100 * pattern["n_valid"] / total, 1),
+                "present": _dive_ranges(pattern["present"]),
+                "present_pct": round(100 * pattern["n_present"] / total, 1),
                 "n": len(pattern["variables"]),
                 "variables": ", ".join(pattern["variables"]),
                 "bad": not pattern["uniform"],
@@ -372,7 +459,9 @@ def draw_presence_strips(patterns: list[dict], dives: list[int]) -> "Figure | No
     return fig
 
 
-def _dimension_rows(ledger: dict) -> list[dict[str, object]]:
+def _dimension_rows(
+    ledger: dict, dim_samples: dict[str, int] | None = None
+) -> list[dict[str, object]]:
     """Return one row per basestation dimension, plus a row for the dimensionless scalars.
 
     The dimensioned rows come from the ledger; a final ``(scalar)`` row accounts for the
@@ -384,14 +473,24 @@ def _dimension_rows(ledger: dict) -> list[dict[str, object]]:
     ----------
     ledger : dict
         The parsed ledger.
+    dim_samples : dict of str to int, optional
+        Samples summed over the input files for each dimension (from the conversion sidecar).
+        Shown in the Samples in column; ``"—"`` for any dimension absent from it and for the
+        scalar row. When omitted the column is ``"—"`` throughout.
 
     Returns
     -------
     list of dict
-        ``{"dimension", "fate", "n", "ended_on", "variables"}`` rows: the dimensions sorted,
-        then the scalar row.
+        ``{"dimension", "fate", "n", "samples_in", "ended_on", "variables"}`` rows: the
+        dimensions sorted, then the scalar row.
 
     """
+    dim_samples = dim_samples or {}
+
+    def samples(dim: str) -> str:
+        count = dim_samples.get(dim)
+        return f"{count:,}" if count is not None else "—"
+
     rows = []
     for dim in sorted(ledger["dimensions"]):
         info = ledger["dimensions"][dim]
@@ -401,6 +500,7 @@ def _dimension_rows(ledger: dict) -> list[dict[str, object]]:
                 "dimension": dim,
                 "fate": info["fate"],
                 "n": len(info["variables"]),
+                "samples_in": samples(dim),
                 "ended_on": ended_on,
                 "variables": ", ".join(info["variables"]),
             }
@@ -413,6 +513,7 @@ def _dimension_rows(ledger: dict) -> list[dict[str, object]]:
             "dimension": "(scalar)",
             "fate": "scalars",
             "n": len(scalars),
+            "samples_in": "—",
             "ended_on": "—",
             "variables": (
                 f"{n_constant} constant, {n_per_dive} per-dive — "
@@ -421,6 +522,30 @@ def _dimension_rows(ledger: dict) -> list[dict[str, object]]:
         }
     )
     return rows
+
+
+def _dimension_samples(inputs: list[dict] | None) -> dict[str, int]:
+    """Return each basestation dimension's samples summed over the input files.
+
+    Read from the conversion sidecar's per-file ``dimensions`` map; empty when the sidecar is
+    absent or predates that field (a schema-1 sidecar from before this column).
+
+    Parameters
+    ----------
+    inputs : list of dict or None
+        The sidecar's ``inputs`` records, each with a ``dimensions`` ``{name: length}`` map.
+
+    Returns
+    -------
+    dict of str to int
+        ``{dimension: total samples}`` over the inputs.
+
+    """
+    totals: dict[str, int] = {}
+    for record in inputs or []:
+        for name, length in record.get("dimensions", {}).items():
+            totals[str(name)] = totals.get(str(name), 0) + int(length)
+    return totals
 
 
 _COLUMNED_ATTRS = ("units", "standard_name", "long_name")
@@ -805,9 +930,8 @@ def _masthead_meta(ds: xr.Dataset, ledger: dict) -> list[tuple[str, str]]:
     if "file_version" in attrs:
         meta.append(("Basestation version", str(attrs["file_version"])))
     meta.append(("seagliderOG1 version", __version__))
-    meta.append(
-        ("Inputs → outputs", f"{ledger['input_variable_count']} → {len(ds.variables)}")
-    )
+    # The input → output variable counts are the first row of the Before → after table (§1),
+    # so the masthead no longer repeats them.
     return meta
 
 
@@ -851,6 +975,202 @@ def _page_nav(has_inventory: bool = False) -> dict:
     }
 
 
+def _format_bytes(total: int | None) -> str:
+    """Return a byte count as megabytes to two decimals, or ``"—"`` when unknown.
+
+    Parameters
+    ----------
+    total : int or None
+        A size in bytes, or None when it was not recorded.
+
+    Returns
+    -------
+    str
+        ``"1.22 MB"`` or ``"—"``.
+
+    """
+    if total is None:
+        return "—"
+    return f"{total / 1_000_000:.2f} MB"
+
+
+def _summary_rows(
+    ds: xr.Dataset,
+    ledger: dict,
+    inputs: list[dict] | None,
+    dim_samples: dict[str, int],
+    path: str | Path,
+    requirement_text: str,
+) -> list[dict[str, object]]:
+    """Return the Before → after rows: one quantity per row, basestation input and OG1 output.
+
+    The input column is read from the conversion sidecar (``inputs``) and the output column
+    from the OG1 file; a quantity the sidecar does not hold shows ``"—"`` in the input column.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The open OG1 dataset.
+    ledger : dict
+        The parsed ledger.
+    inputs : list of dict or None
+        The sidecar's input records, or None when the sidecar is absent.
+    dim_samples : dict of str to int
+        Each dimension's samples summed over the inputs (empty without the sidecar).
+    path : str or pathlib.Path
+        The OG1 file, for its size on disk.
+    requirement_text : str
+        The OG1-requirement summary line (its prefix is stripped for the cell).
+
+    Returns
+    -------
+    list of dict
+        ``{"quantity", "input", "output", "indent"}`` rows in display order.
+
+    """
+    if inputs:
+        dives = sorted(record["dive"] for record in inputs)
+    else:  # no sidecar: fall back to the per-dive scalar dives, as the masthead does
+        dives = sorted(
+            {
+                dive
+                for entry in ledger["scalar_parameters"].values()
+                if entry["storage"] == "per_dive_scalar"
+                for dive in entry.get("dives", [])
+            }
+        )
+    dive_span = (
+        "—"
+        if not dives
+        else (str(dives[0]) if dives[0] == dives[-1] else f"{dives[0]}–{dives[-1]}")
+    )
+    input_bytes = (
+        sum(record["bytes"] for record in inputs)
+        if inputs and all(record.get("bytes") is not None for record in inputs)
+        else None
+    )
+    backbone = next(
+        (d for d, info in ledger["dimensions"].items() if info["fate"] == "backbone"),
+        None,
+    )
+    axis_in = dim_samples.get(backbone) if backbone else None
+    axis_out = int(ds.sizes["N_MEASUREMENTS"]) if "N_MEASUREMENTS" in ds.sizes else None
+    counts = sorted({record["n_globals"] for record in inputs}) if inputs else []
+    if not counts:
+        globals_in = "—"
+    elif len(counts) == 1:
+        globals_in = str(counts[0])
+    else:
+        globals_in = f"{counts[0]}–{counts[-1]}"
+    n_scalars = len(ledger["scalar_parameters"])
+    time_span = _time_coverage_span(
+        ds.attrs.get("time_coverage_start"), ds.attrs.get("time_coverage_end")
+    )
+
+    def count(value: int | None) -> str:
+        return f"{value:,}" if value is not None else "—"
+
+    return [
+        {
+            "quantity": "Files",
+            "input": count(len(inputs)) if inputs else "—",
+            "output": "1",
+            "indent": False,
+        },
+        {"quantity": "Dives", "input": dive_span, "output": "same", "indent": False},
+        {
+            "quantity": "Size on disk",
+            "input": _format_bytes(input_bytes),
+            "output": _format_bytes(Path(path).stat().st_size),
+            "indent": False,
+        },
+        {
+            "quantity": "Samples on the axis",
+            "input": count(axis_in),
+            "output": count(axis_out),
+            "indent": False,
+        },
+        {
+            "quantity": "Variables",
+            "input": count(ledger["input_variable_count"]),
+            "output": count(len(ds.variables)),
+            "indent": False,
+        },
+        {
+            "quantity": "of which scalar parameters",
+            "input": count(n_scalars),
+            "output": count(n_scalars),
+            "indent": True,
+        },
+        {
+            "quantity": "Global attributes",
+            "input": globals_in,
+            "output": count(len(ds.attrs)),
+            "indent": False,
+        },
+        {
+            "quantity": "Time span",
+            "input": "—",
+            "output": time_span or "—",
+            "indent": False,
+        },
+        {
+            "quantity": "OG1 requirement",
+            "input": "—",
+            "output": requirement_text.removeprefix("OG1 requirement: "),
+            "indent": False,
+        },
+    ]
+
+
+def _verdict_clauses(
+    reconciliation: list[tuple[str, str, str]], ledger: dict, requirement_amber: bool
+) -> list[dict[str, object]]:
+    """Return the Before → after verdict clauses, each amber when false.
+
+    Parameters
+    ----------
+    reconciliation : list of (str, str, str)
+        The reconciliation rows; the last is the basestation input total.
+    ledger : dict
+        The parsed ledger.
+    requirement_amber : bool
+        Whether a mandatory OG1 global is missing.
+
+    Returns
+    -------
+    list of dict
+        ``{"text", "bad"}`` clauses in display order; ``bad`` styles the clause amber.
+
+    """
+    inputs = int(reconciliation[-1][1])
+    accounted = sum(int(row[1]) for row in reconciliation[:-1])
+    n_dropped = len(ledger["dropped"])
+    n_removed = len(ledger["removed"])
+    return [
+        {
+            "text": f"{accounted} of {inputs} inputs accounted for",
+            "bad": accounted != inputs,
+        },
+        {
+            "text": "nothing dropped"
+            if not n_dropped
+            else f"{n_dropped} dropped (keep_variables)",
+            "bad": bool(n_dropped),
+        },
+        {
+            "text": "nothing removed" if not n_removed else f"{n_removed} removed",
+            "bad": bool(n_removed),
+        },
+        {
+            "text": "OG1 mandatory complete"
+            if not requirement_amber
+            else "OG1 mandatory incomplete",
+            "bad": requirement_amber,
+        },
+    ]
+
+
 def render_conversion(path: str | Path, *, title: str | None = None) -> str:
     """Return the conversion page for an OG1 file as a self-contained HTML string.
 
@@ -872,10 +1192,32 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         If the file predates the conversion ledger (no ``conversion_dimensions``).
 
     """
+    # Several sections read the conversion sidecar beside the file (the before → after table,
+    # the Samples in column, the Valid % baseline); read it once here and say so loudly where
+    # it is missing. Which dives each variable came from is known only at conversion time.
+    sidecar = convert.conversion_sidecar(path)
+    inputs = sidecar.get("inputs") if sidecar else None
+    dim_samples = _dimension_samples(inputs)
+
     ds = xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False)
     try:
         ledger = convert.conversion_ledger(ds)
         groups, var_source = _variable_groups_by_original_dimension(ds)
+        # Each Variables group gets its own Valid % baseline caption (the share of the shared
+        # axis its dimension supplied), rendered one group at a time through the vendored macro.
+        axis_total = (
+            int(ds.sizes["N_MEASUREMENTS"]) if "N_MEASUREMENTS" in ds.sizes else None
+        )
+        variable_blocks = [
+            {
+                "title": title,
+                "rows": rows,
+                "caption": _variable_group_caption(
+                    title, rows, dim_samples, axis_total
+                ),
+            }
+            for title, rows in groups
+        ]
         reconciliation, reconciliation_caption = _reconciliation(ds, ledger)
         # The fate rows excluding the input-total row (the last), for the histogram.
         fate_histogram = figure_png.render_b64(
@@ -884,7 +1226,7 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
             source="conversion.py:draw_fate_histogram",
         )
         fate_histogram_source = figure_png.source_of(fate_histogram)
-        dimensions = _dimension_rows(ledger)
+        dimensions = _dimension_rows(ledger, dim_samples)
         # Scalar parameters as a vendored table, so each row's Attributes disclosure shows a
         # per-dive scalar's serialization / storage_type / original_name (how to decode it).
         all_scalars, scalar_source = nc_tables.scalars_rows(
@@ -916,14 +1258,15 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         )
         coverage_computed = _coverage_computed(ds)
         requirement_text, requirement_amber = _requirement_summary(ds)
+        summary_rows = _summary_rows(
+            ds, ledger, inputs, dim_samples, path, requirement_text
+        )
+        verdict_clauses = _verdict_clauses(reconciliation, ledger, requirement_amber)
         history_rows = _history_rows(ledger)
         masthead_meta = _masthead_meta(ds, ledger)
     finally:
         ds.close()
 
-    # Which dives each variable came from is known only at conversion time: read it from
-    # the sidecar beside the file, and say so loudly when it is not there.
-    sidecar = convert.conversion_sidecar(path)
     presence = sidecar.get("presence") if sidecar else None
     if presence:
         patterns = convert.presence_patterns(presence)
@@ -948,12 +1291,15 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
         masthead_meta=masthead_meta,
         page_nav=_page_nav(),
+        summary_rows=summary_rows,
+        verdict_clauses=verdict_clauses,
         reconciliation=reconciliation,
         reconciliation_caption=reconciliation_caption,
+        sidecar_present=sidecar is not None,
         fate_histogram=fate_histogram,
         fate_histogram_source=fate_histogram_source,
         dimensions=dimensions,
-        variable_groups=groups,
+        variable_blocks=variable_blocks,
         variables_source=var_source,
         scalar_groups=scalar_groups,
         scalar_source=scalar_source,

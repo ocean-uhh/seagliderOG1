@@ -10,6 +10,9 @@
 {{ css | safe }}
 section { margin: 1.4rem 0; }
 details.vars > summary { cursor: pointer; color: var(--muted); }
+details.scalar-group > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
+table.summary td.indent { padding-left: 1.4rem; color: var(--muted); }
+p.verdict span.cell-bad { padding: 0 0.3rem; }
 </style>
 </head>
 <body>
@@ -27,16 +30,40 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
   </dl>
   <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
 </div>
-<nav class="jump-nav"><a href="#reconciliation">Reconciliation</a> ·
-  <a href="#presence">Presence across dives</a> · <a href="#dimensions">Dimensions</a> · <a href="#variables">Variables</a> ·
-  <a href="#scalars">Scalar parameters</a> · <a href="#derived">Derived</a> ·
-  <a href="#dropped">Dropped</a> · <a href="#globals">Globals</a></nav>
+<nav class="jump-nav"><a href="#summary">Before → after</a> ·
+  <a href="#reconciliation">Reconciliation</a> · <a href="#presence">Presence across dives</a> ·
+  <a href="#dimensions">Dimensions</a> · <a href="#derived">Derived</a> ·
+  <a href="#dropped">Dropped</a> · <a href="#variables">Variables</a> ·
+  <a href="#globals">Globals</a> · <a href="#scalars">Scalar parameters</a></nav>
+
+<section id="summary">
+<h2>1. Before → after</h2>
+<p class="caption">What the conversion read and what it wrote. The basestation column is read from the conversion sidecar beside the file{% if not sidecar_present %}, which was not found, so its cells show "—"{% endif %}. "same" means the quantity is unchanged by conversion.</p>
+<table class="nc summary">
+<thead><tr><th>Quantity</th><th>Basestation input</th><th>OG1 output</th></tr></thead>
+<tbody>
+{%- for r in summary_rows %}
+<tr><td{% if r.indent %} class="indent"{% endif %}>{{ r.quantity }}</td><td>{{ r.input }}</td><td>{{ r.output }}</td></tr>
+{%- endfor %}
+</tbody></table>
+<p class="caption verdict">{% for c in verdict_clauses %}<span{% if c.bad %} class="cell-bad"{% endif %}>{{ c.text }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+</section>
 
 <section id="reconciliation">
-<h2>1. Reconciliation — where the variables went</h2>
+<h2>2. Reconciliation — where the variables went</h2>
 <div class="fig-row">
-<div class="slot-two-fifths">{{ t.properties_table(reconciliation, header=("Fate", "Count"),
-   caption=reconciliation_caption) }}</div>
+<div class="slot-two-fifths">
+<p class="caption">{{ reconciliation_caption }}</p>
+<table class="nc">
+<thead><tr><th>Fate</th><th>Count</th><th>Meaning</th></tr></thead>
+<tbody>
+{%- for label, count, meaning in reconciliation[:-1] %}
+<tr><td>{{ label }}</td><td>{{ count }}</td><td>{{ meaning }}</td></tr>
+{%- endfor %}
+</tbody>
+<tfoot><tr><th>{{ reconciliation[-1][0] }}</th><th>{{ reconciliation[-1][1] }}</th><th></th></tr></tfoot>
+</table>
+</div>
 {%- if fate_histogram %}
 <figure class="slot-three-fifths">
 <img alt="Bar chart of the variable counts per fate" src="data:image/png;base64,{{ fate_histogram }}">
@@ -47,15 +74,15 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 </section>
 
 <section id="presence">
-<h2>2. Presence across dives</h2>
+<h2>3. Presence across dives</h2>
 {%- if presence_rows %}
 <p class="caption{% if presence_rows|selectattr('bad')|list %} cell-bad{% endif %}">{{ presence_summary }}. The converter works from the union of the input files' variables.</p>
-<p class="caption">One row per pattern: the dives a group of variables has values in (Valid in) and, where it differs, the dives it exists in at all (Present in). Amber: has values on fewer than every input dive — a sensor switched on or off mid-mission, a quantity only computed after the first dive, or an occasional log entry.</p>
+<p class="caption">One row per pattern: the dives a group of variables has values in (Valid in) and the dives it exists in at all (Present in), each with its share of the input dives. Amber: a Valid % below 100 — has values on fewer than every input dive (a sensor switched on or off mid-mission, a quantity only computed after the first dive, or an occasional log entry). Each % is the share of the input dives.</p>
 <table class="nc presence sortable">
-<thead><tr><th>Pattern</th><th>Valid in</th><th>Present in</th><th>Variables</th></tr></thead>
+<thead><tr><th>Pattern</th><th>Valid in</th><th>Valid %</th><th>Present in</th><th>Present %</th><th>Variables</th></tr></thead>
 <tbody>
 {%- for r in presence_rows %}
-<tr><td{% if r.bad %} class="cell-bad"{% endif %}>{{ r.label }}</td><td>{{ r.valid }}</td><td>{{ r.present }}</td>
+<tr><td>{{ r.label }}</td><td>{{ r.valid }}</td><td{% if r.bad %} class="cell-bad"{% endif %}>{{ r.valid_pct }}</td><td>{{ r.present }}</td><td>{{ r.present_pct }}</td>
 <td>{{ r.n }} <details class="vars"><summary>list</summary>{{ r.variables }}</details></td></tr>
 {%- endfor %}
 </tbody></table>
@@ -71,39 +98,22 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 </section>
 
 <section id="dimensions">
-<h2>3. Dimensions</h2>
-<p class="caption">Orange: dimension skipped — no variable from it reaches this file. Fate is read from the output: a dimension with any surviving variable is merged, the CTD dimension is the backbone, the rest are skipped.</p>
+<h2>4. Dimensions</h2>
+<p class="caption">Amber: dimension skipped — no variable from it reaches this file. Fate is read from the output: backbone — the dimension whose samples define <code>N_MEASUREMENTS</code>; merged — its samples are added to <code>N_MEASUREMENTS</code> at their own times; skipped — not in the file. Samples in is that dimension's length summed over the input files ("—" when the sidecar is absent).</p>
 <table class="nc dims sortable">
-<thead><tr><th>Dimension</th><th>Fate</th><th>Variables</th><th>Ended on</th></tr></thead>
+<thead><tr><th>Original dimension</th><th>Fate</th><th>Variables</th><th>Samples in</th><th>Dimension after conversion</th></tr></thead>
 <tbody>
 {%- for d in dimensions %}
 <tr><td>{{ d.dimension }}</td><td{% if d.fate == "skipped" %} class="cell-bad"{% endif %}>{{ d.fate }}</td>
 <td>{{ d.n }} <details class="vars"><summary>list</summary>{{ d.variables }}</details></td>
+<td>{{ d.samples_in }}</td>
 <td>{{ d.ended_on }}</td></tr>
 {%- endfor %}
 </tbody></table>
 </section>
 
-<section id="variables">
-<h2>4. Variables (grouped by original dimension)</h2>
-{{ t.variables_tables(variable_groups, source=variables_source, numbered=True,
-   optional=("units", "minmax", "attrs", "stdname"),
-   caption="amber: Valid % < 100 — the variable sits at its own times on the shared axis (e.g. a GPS fix), not interpolated.") }}
-</section>
-
-<section id="scalars">
-<h2>5. Scalar parameters</h2>
-<p class="caption">Split by whether the converter renamed the scalar to an OG1 name, then by basestation prefix. A per-dive scalar's Value shows the decoded per-dive values; its raw JSON serialization stays in the Attributes disclosure.</p>
-{%- for g in scalar_groups %}
-<h3>{% if g.mono %}<code>{{ g.title }}</code>{% else %}{{ g.title }}{% endif %} ({{ g.rows|length }})</h3>
-{{ t.scalars_table(g.rows, source=(scalar_source if loop.last else None),
-   optional=("units", "attrs", "stdname"),
-   caption="amber: a numeric parameter with no units attribute") }}
-{%- endfor %}
-</section>
-
 <section id="derived">
-<h2>6. Derived variables</h2>
+<h2>5. Derived variables</h2>
 <p class="caption">Variables the converter built rather than renamed. Sources names the basestation variables consumed, or "(computed)" when built from other OG1 variables, vocabulary or global attributes.</p>
 {%- if derived_rows %}
 <table class="sortable var-table">
@@ -117,7 +127,7 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 </section>
 
 <section id="dropped">
-<h2>7. Dropped and removed variables</h2>
+<h2>6. Dropped and removed variables</h2>
 <h3>Dropped on request (keep_variables)</h3>
 {%- if dropped %}
 <p class="caption">Recorded here because nothing in the file carries them.</p>
@@ -127,7 +137,15 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
 {%- if removed %}
 <p class="caption">Basestation variables the converter always removes; recorded here because they leave no trace in the file.</p>
 <ul class="dropped">{% for name in removed %}<li><code>{{ name }}</code></li>{% endfor %}</ul>
-{%- else %}<p class="caption">Not applicable to this file: nothing was on the package drop list.</p>{% endif %}
+{%- else %}<p class="caption">Not applicable to this file: the package drop list is empty, so every basestation variable is retained.</p>{% endif %}
+</section>
+
+<section id="variables">
+<h2>7. Variables (grouped by original dimension)</h2>
+{%- for b in variable_blocks %}
+{{ t.variables_tables([(b.title, b.rows)], source=(variables_source if loop.last else None),
+   numbered=True, optional=("units", "minmax", "attrs", "stdname"), caption=b.caption) }}
+{%- endfor %}
 </section>
 
 <section id="globals">
@@ -137,6 +155,19 @@ details.vars > summary { cursor: pointer; color: var(--muted); }
    coverage_note="amber: the file's stated bound differs from the value recomputed from the data by more than the tolerance.") }}
 <h3>History</h3>
 {{ t.properties_table(history_rows, header=("#", "History")) }}
+</section>
+
+<section id="scalars">
+<h2>9. Scalar parameters</h2>
+<p class="caption">Split by whether the converter renamed the scalar to an OG1 name, then by basestation prefix. A per-dive scalar's Value shows the decoded per-dive values; its raw JSON serialization stays in the Attributes disclosure. The renamed group is open; expand the others as needed.</p>
+{%- for g in scalar_groups %}
+<details class="scalar-group"{% if loop.first %} open{% endif %}>
+<summary>{% if g.mono %}<code>{{ g.title }}</code>{% else %}{{ g.title }}{% endif %} ({{ g.rows|length }})</summary>
+{{ t.scalars_table(g.rows, source=(scalar_source if loop.last else None),
+   optional=("units", "attrs", "stdname"),
+   caption="amber: a numeric parameter with no units attribute") }}
+</details>
+{%- endfor %}
 </section>
 
 <footer>Generated by seagliderOG1 v{{ version }} &nbsp;&middot;&nbsp; {{ generated_at }}</footer>
