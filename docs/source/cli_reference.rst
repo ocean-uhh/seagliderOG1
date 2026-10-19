@@ -66,8 +66,10 @@ no ``mission.yaml``, to see what the basestation files hold before writing one. 
 ``<id>_draft_mission.yaml`` (the ``init`` template with ``raw_dir``, ``dives`` and the platform
 fields filled, and the derived id in a comment). None of these is an OG1 file: every name ends
 ``_draft``, the netCDF carries a ``draft`` global attribute, and its ``Conventions`` has no
-``OG-1.0``. The draft page shows the basestation files' own global attributes, marking those
-that differ between files, and what ``mission.yaml`` must still supply.
+``OG-1.0``. If any of the four files exists, ``draft`` writes nothing unless given ``--force``
+(the proposal may have been edited in place). The draft page shows the basestation files' own
+global attributes, marking those that differ between files, and what ``mission.yaml`` must
+still supply.
 
 Adding metadata later
 ---------------------
@@ -77,7 +79,13 @@ OG1 file without converting again — a DOI assigned after publication, or a cor
 ``deployment:`` / ``global_attributes:`` value. It changes the netCDF file, not the
 configuration: the globals are edited in place, ``date_modified`` is set, a ``history`` line
 names the keys, ``tracking_id`` is renewed, ``date_created`` is kept, and the sidecar is
-rebound. Reserving the DOI first and setting ``deployment.doi`` before ``process`` is the
+rebound. Values must be text, numbers or dates (a date is written as ISO 8601 text); every
+value is checked before the file is opened, so a refused one leaves the file unchanged.
+Replacing a different value already in the file warns with both values. ``deployment.id``
+cannot change: the file name and sidecar are bound to it, so a new id means converting again.
+The globals ``enrich`` writes itself (``date_modified``, ``history``, ``tracking_id``,
+``draft``) and the ``conversion_*`` records cannot be set.
+Reserving the DOI first and setting ``deployment.doi`` before ``process`` is the
 alternative.
 
 Listing the vocabulary

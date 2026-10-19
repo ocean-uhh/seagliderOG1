@@ -1,6 +1,7 @@
 import json
 import pathlib
 import sys
+import warnings
 
 import netCDF4
 import numpy as np
@@ -992,11 +993,78 @@ def test_sidecar_records_tracking_id_and_hash_and_warns_on_change(
     sidecar = json.loads(writers.conversion_path(path, ".json").read_text())
     with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
         assert sidecar["tracking_id"] == ds.attrs["tracking_id"]
+        # The writer's tracking_id is in the source ledger, so it names every global.
+        ledger = json.loads(ds.attrs["conversion_attribute_sources"])
+        assert "tracking_id" in ledger["derived"]
+        named = [name for names in ledger.values() for name in names]
+        assert sorted(named) == sorted(set(ds.attrs) - {"conversion_attribute_sources"})
     assert sidecar["sha256"] == writers.file_sha256(path)
     with netCDF4.Dataset(path, "a") as nc:
         nc.setncattr("comment", "edited by hand")
-    with pytest.warns(UserWarning, match="has changed since"):
+    # Hashing reads the whole file, so it runs only when asked (the report verb).
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
         assert convert.conversion_sidecar(path) is not None
+    with pytest.warns(UserWarning, match="has changed since"):
+        assert convert.conversion_sidecar(path, verify=True) is not None
+
+
+def test_enrich_checks_every_value_before_writing(tmp_path: pathlib.Path) -> None:
+    """A refused value or a changed id leaves the file byte-for-byte as it was."""
+    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    digest = writers.file_sha256(path)
+    with pytest.raises(ValueError, match="list cannot be a global attribute"):
+        convert.enrich(
+            path, doi="10.5281/zenodo.1", global_attributes={"keywords": ["a", "b"]}
+        )
+    with pytest.raises(ValueError, match="true/false"):
+        convert.enrich(path, global_attributes={"flag": True})
+    with pytest.raises(ValueError, match="differs from the file's id"):
+        convert.enrich(path, deployment={"id": "sg005_other"})
+    assert writers.file_sha256(path) == digest
+
+
+def test_enrich_warns_on_a_replaced_value_and_records_it(
+    tmp_path: pathlib.Path,
+) -> None:
+    """Replacing a value warns with both; a date becomes ISO text; the ledger says so."""
+    import datetime as dt
+
+    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    convert.enrich(path, deployment={"program": "MOOSE"})  # new key: no warning
+    with pytest.warns(UserWarning, match="enrich replaces program: 'MOOSE' -> 'OSNAP'"):
+        convert.enrich(
+            path,
+            deployment={"program": "OSNAP"},
+            global_attributes={"date_issued": dt.date(2026, 10, 19)},
+        )
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        assert ds.attrs["program"] == "OSNAP"
+        assert ds.attrs["date_issued"] == "2026-10-19"
+        ledger = json.loads(ds.attrs["conversion_attribute_sources"])
+        named = [name for names in ledger.values() for name in names]
+        assert sorted(named) == sorted(set(ds.attrs) - {"conversion_attribute_sources"})
+    assert ledger["enriched"] == ["date_issued", "program"]
+    assert {"date_modified", "tracking_id"} <= set(ledger["derived"])
+
+
+def test_process_mission_report_dir_checks_the_page_before_writing(
+    tmp_path: pathlib.Path,
+) -> None:
+    """report_dir puts the page in ROOT/<id>/; an existing page refuses before any write."""
+    out = tmp_path / "data"
+    site = tmp_path / "site"
+    path = convert.process_mission(
+        _SG005, out, dives=(1, 1), report=True, report_dir=site
+    )
+    page = site / path.stem / f"{path.stem}_conversion.html"
+    assert page.is_file()
+    assert not list(out.glob("*.html"))
+    path.unlink()
+    with pytest.raises(FileExistsError) as excinfo:
+        convert.process_mission(_SG005, out, dives=(1, 1), report=True, report_dir=site)
+    assert excinfo.value.filename == str(page)
+    assert not path.exists()  # refused before the .nc was written
 
 
 def test_raw_count_channels_keep_their_names_and_are_counts():

@@ -258,7 +258,7 @@ def global_rows() -> list[dict[str, str]]:
     return rows
 
 
-def _deployment_template_lines(values: dict[str, object] | None = None) -> list[str]:
+def _deployment_template_lines() -> list[str]:
     """Build the ``deployment:`` template block, tier comments from ``global_rows``.
 
     One source for the tiers: each key's ``(mandatory)`` / ``(highly desirable)`` /
@@ -266,11 +266,6 @@ def _deployment_template_lines(values: dict[str, object] | None = None) -> list[
     :func:`global_rows`, so the template cannot drift from the manual-sourced table.
     ``license`` and ``acknowledgment`` are ACDD globals with no OG1 tier and are marked
     ``(optional)``.
-
-    Parameters
-    ----------
-    values : dict of str to object or None, optional
-        Values to write instead of ``null`` (``draft`` proposes ``id``).
 
     Returns
     -------
@@ -290,7 +285,7 @@ def _deployment_template_lines(values: dict[str, object] | None = None) -> list[
         comment = f"{rows[key]['tier']} -> global attribute" + (
             f"; {hint}" if hint else ""
         )
-        lines.append(f"  {key}: {_scalar((values or {}).get(key))}   # {comment}")
+        lines.append(f"  {key}: null   # {comment}")
     return lines
 
 
@@ -412,7 +407,6 @@ def render_template(
     platform: dict[str, object] | None = None,
     raw_dir: str | None = None,
     dives: list[int] | None = None,
-    deployment: dict[str, object] | None = None,
 ) -> str:
     """Return ``mission.yaml`` text with the given platform block and guidance.
 
@@ -426,8 +420,6 @@ def render_template(
         fill; ``init --raw-dir DIR`` passes DIR so the template validates as written.
     dives : list of int or None, optional
         ``[first, last]`` for the ``dives`` key; None leaves it null (every file).
-    deployment : dict of str to object or None, optional
-        Values for ``deployment:`` keys; the rest stay null.
 
     Returns
     -------
@@ -458,7 +450,7 @@ def render_template(
         "",
         *_platform_template_lines(plat),
         "",
-        *_deployment_template_lines(deployment),
+        *_deployment_template_lines(),
         "",
         "global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above",
         "",

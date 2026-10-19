@@ -90,7 +90,6 @@ def run(args: argparse.Namespace) -> int:
     import json
 
     from seagliderOG1 import convert, writers
-    from seagliderOG1.cli import init as init_cmd
 
     raw_dir = pathlib.Path(args.raw_dir)
     if not raw_dir.is_dir():
@@ -115,18 +114,26 @@ def run(args: argparse.Namespace) -> int:
         print(f"FAILED {raw_dir}: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
 
-    # The proposal: what init writes, plus the dive range the draft read. The derived id
-    # goes in a comment, not in deployment.id: a fixed id would go stale if dives change.
-    sidecar = json.loads(writers.conversion_path(path, ".json").read_text())
-    dives = sidecar["presence"]["dives"]
+    # The proposal: what init writes, plus the dive range the draft read and the
+    # platform fields the converter derived from the files (from the sidecar).
+    # process_mission refused to start if it already existed (without --force). The
+    # derived id goes in a comment, not in deployment.id: a fixed id would go stale if
+    # dives change.
+    sidecar_path = writers.conversion_path(path, ".json")
     try:
-        platform = init_cmd._platform_from_file(str(raw_dir))
-    except (OSError, ValueError, KeyError):
-        platform = {}
-    proposal = path.with_name(f"{path.stem}_mission.yaml")
-    if proposal.exists() and not args.force:
-        print(f"error: {proposal} exists; use --force to overwrite", file=sys.stderr)
+        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        print(f"error: could not read {sidecar_path}: {exc}", file=sys.stderr)
         return 1
+    dives = sidecar["presence"]["dives"]
+    platform = sidecar.get("platform_from_file")
+    if platform is None:
+        print(
+            "warning: the sidecar has no platform_from_file; the proposed platform: "
+            "block is all null.",
+            file=sys.stderr,
+        )
+    proposal = writers.proposal_path(path)
     header = (
         f"# Proposed by seagliderOG1 draft from {len(dives)} dive files. With these dives "
         f"the derived id is\n# {path.stem.removesuffix('_draft')} (leave deployment.id "
@@ -135,12 +142,16 @@ def run(args: argparse.Namespace) -> int:
     template = _mission.render_template(
         platform, raw_dir=str(raw_dir.resolve()), dives=[dives[0], dives[-1]]
     )
-    proposal.write_text(header + template, encoding="utf-8")
+    try:
+        proposal.write_text(header + template, encoding="utf-8")
+    except OSError as exc:
+        print(f"error: could not write {proposal}: {exc}", file=sys.stderr)
+        return 1
 
     for written in (
         path,
         writers.conversion_path(path, ".html"),
-        writers.conversion_path(path, ".json"),
+        sidecar_path,
         proposal,
     ):
         print(f"wrote {written}")

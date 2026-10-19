@@ -124,7 +124,7 @@ def write_page(
     if target.exists() and not force:
         return f"{target} exists; use --force to overwrite"
     try:
-        html = render_conversion(nc_path, title=title)
+        html = render_conversion(nc_path, title=title, verify=True)
     except (MetadataError, OSError, ValueError) as exc:
         return f"{nc_path}: {type(exc).__name__}: {exc}"
     try:

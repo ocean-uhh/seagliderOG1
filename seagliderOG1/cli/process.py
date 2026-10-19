@@ -267,8 +267,8 @@ def run(args: argparse.Namespace) -> int:
                 keep_variables=keep_variables,
                 repair=repair,
                 overwrite=args.force,
-                # With --report-dir the page is written below, away from the data.
-                report=report and not args.report_dir,
+                report=report,
+                report_dir=args.report_dir,
             )
         except FileExistsError as exc:
             if args.skip_existing:
@@ -289,16 +289,6 @@ def run(args: argparse.Namespace) -> int:
             failed += 1
             continue
         print(f"wrote {out_path}")
-        if args.report_dir:
-            from seagliderOG1.cli import report as report_cmd
-
-            target = report_cmd.page_target(out_path, report_dir=args.report_dir)
-            error = report_cmd.write_page(out_path, target, force=args.force)
-            if error:
-                print(f"error: {error}", file=sys.stderr)
-                failed += 1
-                continue
-            print(f"wrote {target}")
         _print_presence(out_path, report, args.report_dir)
         converted += 1
 

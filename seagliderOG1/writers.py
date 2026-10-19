@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging
 import uuid
+from collections.abc import Iterable, MutableMapping
 from numbers import Number
 from pathlib import Path
 
@@ -14,7 +15,14 @@ from seagliderOG1 import __version__, tools
 
 _log = logging.getLogger(__name__)
 
-__all__ = ["write", "conversion_path", "file_sha256", "write_sidecar"]
+__all__ = [
+    "write",
+    "conversion_path",
+    "file_sha256",
+    "proposal_path",
+    "record_attribute_sources",
+    "write_sidecar",
+]
 
 # Version of the sidecar layout; bump when a reader would misread the old one.
 SIDECAR_SCHEMA = 1
@@ -108,6 +116,7 @@ def write(
     # A new identity for every written version of the file (ctdcast's tracking_id); the
     # sidecar binds to it, and enrich issues a new one.
     ds.attrs["tracking_id"] = str(uuid.uuid4())
+    record_attribute_sources(ds.attrs, ["tracking_id"], "derived")
 
     encoding = _compression_encoding(ds)
     for name, var in ds.variables.items():
@@ -175,6 +184,38 @@ def file_sha256(path: str | Path) -> str:
     return digest.hexdigest()
 
 
+def record_attribute_sources(
+    attrs: MutableMapping[str, object], names: Iterable[str], category: str
+) -> None:
+    """Move global names into one category of the ``conversion_attribute_sources`` ledger.
+
+    For a global written after the conversion built the ledger (``tracking_id`` here,
+    ``draft`` and ``enrich``'s keys in :mod:`seagliderOG1.convert`), so the ledger
+    still names every global exactly once. Does nothing when ``attrs`` carries no
+    ledger.
+
+    Parameters
+    ----------
+    attrs : collections.abc.MutableMapping
+        Global attributes holding the ledger as JSON; modified in place.
+    names : collections.abc.Iterable of str
+        The globals to record.
+    category : str
+        The ledger category they now belong to (e.g. ``"derived"``, ``"enriched"``).
+
+    """
+    if "conversion_attribute_sources" not in attrs:
+        return
+    names = set(names)
+    sources = json.loads(str(attrs["conversion_attribute_sources"]))
+    for members in sources.values():
+        members[:] = [name for name in members if name not in names]
+    sources[category] = sorted(set(sources.get(category, [])) | names)
+    attrs["conversion_attribute_sources"] = json.dumps(
+        {key: members for key, members in sources.items() if members}
+    )
+
+
 def write_sidecar(path: str | Path, attrs: dict, contents: dict) -> Path:
     """Write ``<stem>_conversion.json`` beside an OG1 file, bound to its current version.
 
@@ -235,6 +276,28 @@ def conversion_path(path: str | Path, suffix: str) -> Path:
     """
     path = Path(path)
     return path.with_name(f"{path.stem}_conversion{suffix}")
+
+
+def proposal_path(path: str | Path) -> Path:
+    """Return the proposed mission config beside a draft file: ``<stem>_mission.yaml``.
+
+    Written by the ``draft`` verb; named here, beside :func:`conversion_path`, so the
+    verb and :func:`seagliderOG1.convert.process_mission`'s existence check agree. Not
+    a ``_conversion`` name: it is a config for the next run, not a record of this one.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The draft netCDF file.
+
+    Returns
+    -------
+    pathlib.Path
+        The path, in the same directory as ``path``.
+
+    """
+    path = Path(path)
+    return path.with_name(f"{path.stem}_mission.yaml")
 
 
 def _compression_encoding(ds: xr.Dataset) -> dict[str, dict]:

@@ -1662,19 +1662,19 @@ def _conventions_check(ds: xr.Dataset) -> dict[str, object]:
 
 
 def _draft_snippets(
-    found: dict | None, dives: list[int] | None, og1_id: str
+    from_file: dict | None, dives: list[int] | None, og1_id: str
 ) -> list[dict[str, str]]:
     """Return the copyable ``mission.yaml`` lines a draft can fill from the files.
 
-    Only what the draft read: the dive range, and the platform fields the basestation
-    globals carry (from the first file's values, through the same
-    :func:`seagliderOG1.vocabularies.platform_from_file` that ``init`` uses). Required
-    fields the files cannot supply stay ``null`` for the user to fill.
+    Only what the draft read: the dive range, and the platform fields the converter
+    derived from the first basestation file (the sidecar's ``platform_from_file``,
+    the same :func:`seagliderOG1.vocabularies.platform_from_file` that ``init`` uses).
+    Required fields the files cannot supply stay ``null`` for the user to fill.
 
     Parameters
     ----------
-    found : dict or None
-        The sidecar's ``basestation_globals``.
+    from_file : dict or None
+        The sidecar's ``platform_from_file`` (OG1 platform field to value).
     dives : list of int or None
         The input dive numbers, in order.
     og1_id : str
@@ -1683,15 +1683,12 @@ def _draft_snippets(
     Returns
     -------
     list of dict
-        ``{"title", "text"}`` blocks, in ``mission.yaml`` order; empty without a sidecar.
+        ``{"title", "text"}`` blocks, in ``mission.yaml`` order; empty when the sidecar
+        lacks the dives or the platform fields.
 
     """
-    if not found or not dives:
+    if from_file is None or not dives:
         return []
-    first = {
-        name: entry["values"][0] for name, entry in found.items() if entry["values"]
-    }
-    from_file = vocabularies.platform_from_file(first)
     platform = {
         field: from_file.get(field)
         for field, spec in vocabularies.PLATFORM_FIELDS.items()
@@ -1756,7 +1753,9 @@ def _basestation_rows(found: dict | None, n_files: int) -> list[dict[str, object
     return rows
 
 
-def render_conversion(path: str | Path, *, title: str | None = None) -> str:
+def render_conversion(
+    path: str | Path, *, title: str | None = None, verify: bool = False
+) -> str:
     """Return the conversion page for an OG1 file as a self-contained HTML string.
 
     Parameters
@@ -1765,6 +1764,10 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         An OG1 netCDF file written by :func:`seagliderOG1.convert.to_og1`.
     title : str, optional
         The page title; defaults to the file name.
+    verify : bool, optional
+        Check the file against the SHA-256 in its sidecar and warn when it changed
+        (see :func:`seagliderOG1.convert.conversion_sidecar`). Default is False: a page
+        written straight after the conversion has nothing to check.
 
     Returns
     -------
@@ -1780,7 +1783,7 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
     # Several sections read the conversion sidecar beside the file (the before → after table,
     # the Samples in column, the Valid % baseline); read it once here and say so loudly where
     # it is missing. Which dives each variable came from is known only at conversion time.
-    sidecar = convert.conversion_sidecar(path)
+    sidecar = convert.conversion_sidecar(path, verify=verify)
     inputs = sidecar.get("inputs") if sidecar else None
     dim_samples = _dimension_samples(inputs)
 
@@ -1788,7 +1791,8 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
     try:
         # A draft (process_mission(draft=True), the draft verb) says so in a global; the
         # page then shows the basestation's own globals instead of the OG1 ones.
-        draft = "draft" in ds.attrs
+        # By value, not by name: a file could carry some other global called draft.
+        draft = ds.attrs.get("draft") == convert.DRAFT_NOTE
         ds_id = ds.attrs.get("id", "")
         conventions = _conventions_check(ds)
         ledger = convert.conversion_ledger(ds)
@@ -1934,7 +1938,7 @@ def render_conversion(path: str | Path, *, title: str | None = None) -> str:
         draft=draft,
         conventions=conventions,
         draft_snippets=_draft_snippets(
-            sidecar.get("basestation_globals") if sidecar else None,
+            sidecar.get("platform_from_file") if sidecar else None,
             (sidecar.get("presence") or {}).get("dives") if sidecar else None,
             str(ds_id),
         )

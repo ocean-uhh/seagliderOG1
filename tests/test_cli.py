@@ -1031,6 +1031,13 @@ def test_enrich_from_config_refuses_converter_owned_keys(
         tmp_path / "bad.yaml", global_attributes={"date_created": "20000101T000000"}
     )
     assert cli.main(["enrich", str(nc), str(bad)]) == 1
+    listed = _write_config(
+        tmp_path / "listed.yaml", global_attributes={"keywords": ["a", "b"]}
+    )
+    assert cli.main(["enrich", str(nc), str(listed)]) == 1  # refused, no traceback
+    for key in ("date_modified", "tracking_id", "history", "conversion_dimensions"):
+        owned = _write_config(tmp_path / "owned.yaml", global_attributes={key: "x"})
+        assert cli.main(["enrich", str(nc), str(owned)]) == 1, key
 
 
 def test_draft_writes_only_draft_files_and_a_draft_page(
@@ -1075,3 +1082,20 @@ def test_draft_writes_only_draft_files_and_a_draft_page(
     assert data["raw_dir"] == str(raw.resolve())
     assert data["deployment"]["id"] is None  # stays derived
     assert cli.main(["draft", "--raw-dir", str(raw), "-o", str(out)]) == 1  # exists
+    # The proposal is checked before anything is written, even with the .nc gone: the
+    # user is told to edit it in place. --force replaces it.
+    (out / f"{stem}.nc").unlink()
+    (out / f"{stem}_conversion.html").unlink()
+    (out / f"{stem}_conversion.json").unlink()
+    (out / f"{stem}_mission.yaml").write_text("edited\n", encoding="utf-8")
+    assert cli.main(["draft", "--raw-dir", str(raw), "-o", str(out)]) == 1
+    assert f"{stem}_mission.yaml exists" in capsys.readouterr().err
+    assert not (out / f"{stem}.nc").exists()  # refused before writing
+    argv = ["draft", "--raw-dir", str(raw), "-o", str(out), "--force"]
+    assert cli.main(argv) == 0
+    assert "edited" not in (out / f"{stem}_mission.yaml").read_text(encoding="utf-8")
+    # A proposal that cannot be written is one error line and exit 1, not a traceback.
+    (out / f"{stem}_mission.yaml").unlink()
+    (out / f"{stem}_mission.yaml").mkdir()
+    assert cli.main(argv) == 1
+    assert "could not write" in capsys.readouterr().err

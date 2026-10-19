@@ -8,6 +8,8 @@ logic are checked once each.
 import pathlib
 import sys
 
+import netCDF4
+
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
@@ -481,11 +483,10 @@ def test_conventions_check_counts_acdd_and_cf_units():
 
 def test_draft_snippets_fill_only_what_the_files_carry(tmp_path):
     """Pure logic: dives and file-derived platform fields filled; required ones null."""
-    found = {
-        "platform_id": {"values": ["SG005"], "n_files": 2},
-        "base_station_version": {"values": ["2.8"], "n_files": 2},
-    }
-    blocks = conversion._draft_snippets(found, [3, 4], "sg005_x_delayed_draft")
+    from_file = vocabularies.platform_from_file(
+        {"platform_id": "SG005", "base_station_version": "2.8"}
+    )
+    blocks = conversion._draft_snippets(from_file, [3, 4], "sg005_x_delayed_draft")
     text = "\n".join(block["text"] for block in blocks)
     assert "dives: [3, 4]" in text
     assert "PLATFORM_SERIAL_NUMBER: sg005" in text
@@ -493,6 +494,11 @@ def test_draft_snippets_fill_only_what_the_files_carry(tmp_path):
     assert "PLATFORM_MODEL: null" in text  # required, not in the files
     assert "sg005_x_delayed\n" in text and "id: null" in text  # derived id as a comment
     assert conversion._draft_snippets(None, [1], "x") == []
-    # An OG1 (non-draft) page gets none.
+    # An OG1 (non-draft) page gets none, also when some other global is called draft:
+    # the page knows a draft by the draft global's value.
     path = convert.process_mission(DATA, tmp_path, dives=(1, 1))
     assert "Suggested mission.yaml lines" not in conversion.render_conversion(path)
+    with netCDF4.Dataset(path, "a") as nc:
+        nc.setncattr("draft", "v2 of the cruise report")
+    html = conversion.render_conversion(path)
+    assert '<span class="masthead-type">conversion</span>' in html
