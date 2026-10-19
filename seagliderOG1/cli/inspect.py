@@ -322,12 +322,17 @@ def run(args: argparse.Namespace) -> int:
                 return 1
             from seagliderOG1 import writers
 
-            # A directory for -o writes <id>_conversion.html into it (as process does);
-            # a file path writes there verbatim.
+            # A directory for -o (existing, or named with a trailing /) writes
+            # <id>_conversion.html into it, as process does; a file path writes there.
             out_path = pathlib.Path(args.output)
-            if out_path.is_dir():
+            if out_path.is_dir() or args.output.endswith(("/", "\\")):
                 out_path = out_path / writers.conversion_path(args.file, ".html").name
-            out_path.write_text(html, encoding="utf-8")
+            try:
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(html, encoding="utf-8")
+            except OSError as exc:
+                print(f"error: could not write {out_path}: {exc}", file=sys.stderr)
+                return 1
             print(f"wrote {out_path}")
             return 0
 

@@ -116,6 +116,12 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - The "dimensions not merged" warning is read from the conversion ledger and names only
   dimensions whose variables are absent (it listed merged basestation-3 dimensions).
 - A unit pair with no conversion warns once, not once per dive.
+- A version attribute stored as a string is written as is (`"2.10"` stayed `2.10`, was `2.1`).
+- Conversion page: the Before → after verdict counts required OG1 variables as well as globals;
+  the Reconciliation Meaning texts name sections instead of numbers (they pointed one section
+  off after the reorder); the OG1-file caption names the Orig var / Orig dim columns.
+- `inspect --conversion -o DIR/` creates the directory, and a write error exits 1 with a message
+  instead of a traceback.
 - The `init` template's `id` line no longer says `init --from` proposes an id (it never did);
   null means the derived `<serial>_<start>_<mode>`.
 - `config/OG1_variable_attributes.yaml` no longer carries `platform_model_vocabulary` /

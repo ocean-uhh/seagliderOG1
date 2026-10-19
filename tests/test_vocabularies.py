@@ -112,5 +112,8 @@ def test_platform_from_file_versions_as_numbers_or_dotted_strings():
     new = vocabularies.platform_from_file(
         {"seaglider_software_version": "67.00", "base_station_version": "3.0.6"}
     )
-    assert new["GLIDER_FIRMWARE_VERSION"] == "seaglider 67"
+    # A string is written as is: "67.00" and "2.10" are not shortened as numbers would be.
+    assert new["GLIDER_FIRMWARE_VERSION"] == "seaglider 67.00"
     assert new["LANDSTATION_VERSION"] == "basestation v3.0.6"
+    two_part = vocabularies.platform_from_file({"base_station_version": "2.10"})
+    assert two_part["LANDSTATION_VERSION"] == "basestation v2.10"

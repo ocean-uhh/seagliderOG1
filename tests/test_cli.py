@@ -905,3 +905,14 @@ def test_bundled_example_config_validates_and_plans(
     out = capsys.readouterr().out
     assert "1 would convert" in out
     assert "outputs" in out
+
+
+def test_inspect_conversion_output_dir_is_created(tmp_path: pathlib.Path) -> None:
+    """-o new/ (trailing slash, not yet existing) writes <id>_conversion.html inside it."""
+    from seagliderOG1 import convert, readers, writers
+
+    nc = tmp_path / "og1.nc"
+    writers.write(convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 1)), str(nc))
+    out_dir = tmp_path / "reports"
+    assert cli.main(["inspect", str(nc), "--conversion", "-o", f"{out_dir}/"]) == 0
+    assert (out_dir / "og1_conversion.html").is_file()
