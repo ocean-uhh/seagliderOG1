@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.tools &mdash; seagliderOG1 0.0.2.post1.dev74 documentation</title>
+  <title>seagliderOG1.tools &mdash; seagliderOG1 0.0.2.post1.dev75 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=9de71f66"></script>
+      <script src="../../_static/documentation_options.js?v=399f9b7f"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -440,6 +440,10 @@
 
 
 
+<span class="c1"># Unit pairs already warned about (see convert_units_var).</span>
+<span class="n">_UNCONVERTED_UNITS</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+
 <div class="viewcode-block" id="convert_units_var">
 <a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.tools.convert_units_var">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_units_var</span><span class="p">(</span>
@@ -492,11 +496,14 @@
         <span class="n">converted_values</span> <span class="o">=</span> <span class="n">var_values</span> <span class="o">*</span> <span class="n">conversion</span><span class="p">[</span><span class="s2">"factor"</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">converted_values</span><span class="p">,</span> <span class="n">requested_unit</span>
 
-    <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-        <span class="s2">"No conversion information found for </span><span class="si">%r</span><span class="s2"> to </span><span class="si">%r</span><span class="s2">"</span><span class="p">,</span>
-        <span class="n">current_unit</span><span class="p">,</span>
-        <span class="n">requested_unit</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="c1"># Once per unit pair per session: the same pair recurs on every dive.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">current_unit</span><span class="p">,</span> <span class="n">requested_unit</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_UNCONVERTED_UNITS</span><span class="p">:</span>
+        <span class="n">_UNCONVERTED_UNITS</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">current_unit</span><span class="p">,</span> <span class="n">requested_unit</span><span class="p">))</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">"No conversion information found for </span><span class="si">%r</span><span class="s2"> to </span><span class="si">%r</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">current_unit</span><span class="p">,</span>
+            <span class="n">requested_unit</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">var_values</span><span class="p">,</span> <span class="n">current_unit</span></div>
 

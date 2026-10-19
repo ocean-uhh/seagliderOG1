@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev74 documentation</title>
+  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev75 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=9de71f66"></script>
+      <script src="../../_static/documentation_options.js?v=399f9b7f"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -199,7 +199,8 @@
 <span class="w">    </span><span class="sd">"""Return a formatter that writes a version attribute after ``prefix``.</span>
 
 <span class="sd">    Older basestation files store the versions as numbers (``66.03``, ``2.8``), newer</span>
-<span class="sd">    ones as dotted strings (``"3.0.6"``); a number is written compactly, a string as is.</span>
+<span class="sd">    ones as strings (``"3.0.6"``); a number is written compactly, a string as is — so</span>
+<span class="sd">    ``"2.10"`` stays ``2.10`` and is not read as the number 2.1.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -214,11 +215,11 @@
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">format_version</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="nb">float</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">"</span>
-        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">text</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="k">return</span> <span class="n">format_version</span>
 
@@ -314,6 +315,14 @@
     <span class="k">return</span> <span class="n">derived</span></div>
 
 
+
+<span class="c1"># Raw instrument count channels (WET Labs ECO pucks and similar): the basestation writes</span>
+<span class="c1"># them without units. They are counts, converted to physical units only with calibration</span>
+<span class="c1"># coefficients the file does not carry, so they keep their basestation names (not an OG1</span>
+<span class="c1"># backscatter or fluorescence name) and are labelled with RAW_COUNT_UNITS — the spelling</span>
+<span class="c1"># the package already writes on ROLL_CTL / PITCH_CTL.</span>
+<span class="n">RAW_COUNT_SUFFIXES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"redCount"</span><span class="p">,</span> <span class="s2">"blueCount"</span><span class="p">,</span> <span class="s2">"fluorCount"</span><span class="p">,</span> <span class="s2">"redRef"</span><span class="p">,</span> <span class="s2">"blueRef"</span><span class="p">)</span>
+<span class="n">RAW_COUNT_UNITS</span> <span class="o">=</span> <span class="s2">"counts"</span>
 
 <span class="c1"># Preferred units for OG1 format - conversion will be attempted if mapping exists</span>
 <span class="n">preferred_units</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"m s-1"</span><span class="p">,</span> <span class="s2">"dbar"</span><span class="p">,</span> <span class="s2">"S m-1"</span><span class="p">]</span>
@@ -416,8 +425,9 @@
 <span class="c1"># Variables and the dimension an OG1 file must carry to pass the OceanGliders format check.</span>
 <span class="c1"># Transcribed from the upstream checker (``ioos/cc-plugin-og``,</span>
 <span class="c1"># ``cc_plugin_og/checker.py`` ``check_mandatory_variables`` / ``check_dimensions``); the</span>
-<span class="c1"># conversion page's "OG1 required" tier reads this, and a CI test asserts it still matches the</span>
-<span class="c1"># installed checker (skipped when cc-plugin-og is absent) so the two cannot diverge unnoticed.</span>
+<span class="c1"># conversion page's "OG1 required" tier reads this. Nothing yet checks it against the installed</span>
+<span class="c1"># checker: re-transcribe when cc-plugin-og changes (the CI cc-plugin-og step, roadmap A6, is</span>
+<span class="c1"># where that comparison belongs).</span>
 <span class="n">OG1_REQUIRED_VARS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s2">"LATITUDE_GPS"</span><span class="p">,</span>
     <span class="s2">"LONGITUDE_GPS"</span><span class="p">,</span>

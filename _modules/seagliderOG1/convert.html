@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev74 documentation</title>
+  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev75 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=9de71f66"></script>
+      <script src="../../_static/documentation_options.js?v=399f9b7f"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -905,6 +905,26 @@
         <span class="n">sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"overridden"</span> <span class="k">if</span> <span class="n">replaced</span> <span class="k">else</span> <span class="s2">"mission"</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_raw_count</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">attrs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return True for a raw instrument count channel that carries no units.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Basestation variable name.</span>
+<span class="sd">    attrs : collections.abc.Mapping</span>
+<span class="sd">        Its attributes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        Whether ``name`` ends in one of :data:`vocabularies.RAW_COUNT_SUFFIXES` and</span>
+<span class="sd">        has no ``units`` attribute.</span>
+
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="s2">"units"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">attrs</span> <span class="ow">and</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">RAW_COUNT_SUFFIXES</span><span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_check_required_globals</span><span class="p">(</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Fail loud on a missing mandatory global; log missing highly-desirable ones.</span>
 
@@ -1196,22 +1216,6 @@
     <span class="c1"># Build the original-&gt;OG1 name lookup once; it is loop-invariant across dives.</span>
     <span class="n">name_lookup</span> <span class="o">=</span> <span class="n">og1_mapping</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"original_name"</span><span class="p">)[</span><span class="s2">"OG1_name"</span><span class="p">]</span>
 
-    <span class="c1"># Warn when a dimension group is dropped rather than merged, so a missing</span>
-    <span class="c1"># instrument is visible; name_mapping() returns the full basestation -&gt; OG1 table.</span>
-    <span class="c1"># gps_info is excluded: its fixes are folded onto the backbone by a dedicated path</span>
-    <span class="c1"># (add_gps_info_to_dataset), so the ledger records it as merged, not skipped — the</span>
-    <span class="c1"># warning must not contradict that.</span>
-    <span class="n">skipped_dims</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">all_dims</span> <span class="k">if</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">dims_to_merge</span><span class="p">)</span> <span class="ow">and</span> <span class="n">d</span> <span class="o">!=</span> <span class="s2">"gps_info"</span>
-    <span class="p">]</span>
-    <span class="k">if</span> <span class="n">skipped_dims</span><span class="p">:</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">"Dimensions not merged into the OG1 dataset: </span><span class="si">%s</span><span class="s2">. If instrument data "</span>
-            <span class="s2">"is missing, its dimension must be named '&lt;instrument&gt;_data_point' "</span>
-            <span class="s2">"(from ds.attrs['instrument'])."</span><span class="p">,</span>
-            <span class="n">skipped_dims</span><span class="p">,</span>
-        <span class="p">)</span>
-
     <span class="n">used_inputs</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">ds1_base</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Processing datasets"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"dataset"</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">provenance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1436,6 +1440,19 @@
     <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_dimensions"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_dimension_ledger</span><span class="p">(</span>
         <span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">ctd_dim</span><span class="p">,</span> <span class="n">all_dims</span><span class="p">,</span> <span class="n">ds_og1</span>
     <span class="p">)</span>
+    <span class="c1"># Warn from the ledger, so the warning names only dimensions whose variables are</span>
+    <span class="c1"># really absent (the merge list alone misses those placed by the retention path).</span>
+    <span class="n">skipped_dims</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">dim</span>
+        <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_dimensions"</span><span class="p">])</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">entry</span><span class="p">[</span><span class="s2">"fate"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"skipped"</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">skipped_dims</span><span class="p">:</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">"Dimensions not in the OG1 dataset: </span><span class="si">%s</span><span class="s2">; their variables are not written "</span>
+            <span class="s2">"(see conversion_dimensions)."</span><span class="p">,</span>
+            <span class="n">skipped_dims</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="c1"># Variables the converter created rather than renamed or passed through carry no</span>
     <span class="c1"># original_name. Record them as a map ``{derived: [source basestation names]}`` so the</span>
@@ -1887,8 +1904,11 @@
     <span class="k">for</span> <span class="n">original_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="n">output_name</span> <span class="o">=</span> <span class="n">output_names</span><span class="p">[</span><span class="n">original_name</span><span class="p">]</span>
 
-        <span class="c1"># Unmapped variables retain their values and attributes unchanged.</span>
+        <span class="c1"># Unmapped variables retain their values and attributes unchanged, except that</span>
+        <span class="c1"># a raw instrument count with no units is labelled as counts.</span>
         <span class="k">if</span> <span class="n">original_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mapped_variables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">_is_raw_count</span><span class="p">(</span><span class="n">original_name</span><span class="p">,</span> <span class="n">ds</span><span class="p">[</span><span class="n">original_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">):</span>
+                <span class="n">dsa</span><span class="p">[</span><span class="n">output_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">RAW_COUNT_UNITS</span>
             <span class="k">continue</span>
 
         <span class="n">og1_attributes</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
@@ -1902,6 +1922,10 @@
         <span class="c1"># Source attributes provide defaults; OG1 attributes take precedence.</span>
         <span class="n">attributes</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">original_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">attributes</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">og1_attributes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"units"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">attributes</span> <span class="ow">and</span> <span class="n">_is_raw_count</span><span class="p">(</span>
+            <span class="n">original_name</span><span class="p">,</span> <span class="n">ds</span><span class="p">[</span><span class="n">original_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="p">):</span>
+            <span class="n">attributes</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">RAW_COUNT_UNITS</span>
 
         <span class="k">if</span> <span class="s2">"units"</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">original_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="ow">and</span> <span class="s2">"units"</span> <span class="ow">in</span> <span class="n">og1_attributes</span><span class="p">:</span>
             <span class="n">original_unit</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">reformat_units_var</span><span class="p">(</span>
