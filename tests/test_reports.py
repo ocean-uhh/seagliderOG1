@@ -502,3 +502,24 @@ def test_draft_snippets_fill_only_what_the_files_carry(tmp_path):
         nc.setncattr("draft", "v2 of the cruise report")
     html = conversion.render_conversion(path)
     assert '<span class="masthead-type">conversion</span>' in html
+
+
+def test_importing_reports_pins_a_headless_backend() -> None:
+    """Importing the report layer forces a non-interactive backend, even with none set, so a
+    render (CLI, notebook, script or test) never blocks on a GUI window."""
+    import os
+    import subprocess
+
+    env = {k: v for k, v in os.environ.items() if k != "MPLBACKEND"}
+    code = (
+        "import matplotlib; from seagliderOG1 import reports; "
+        "assert matplotlib.get_backend().lower() == 'agg', matplotlib.get_backend()"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+    assert result.returncode == 0, result.stderr
