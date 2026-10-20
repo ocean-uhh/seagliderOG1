@@ -28,11 +28,16 @@ jobs:
         with: { python-version: "${{ matrix.python-version }}" }
       - run: python -m pip install --upgrade pip setuptools wheel
       - run: python -m pip install -e ".[test]" --prefer-binary
-            - name: Time netCDF opens (diagnostic, Windows)
+
+      # Diagnostic (Windows only): time netCDF opens, turn off real-time scanning,
+      # time them again. Remove these three steps once the cause is known.
+      - name: Time netCDF opens (diagnostic)
         if: runner.os == 'Windows'
         shell: python
         run: |
-          import time, netCDF4, xarray as xr
+          import time
+          import netCDF4
+          import xarray as xr
           for p in ("data/demo_sg005/p0050001_20080606.nc", "data/demo_single_test.nc"):
               t = time.perf_counter()
               for _ in range(5):
@@ -41,21 +46,26 @@ jobs:
               t = time.perf_counter()
               for _ in range(5):
                   xr.open_dataset(p, engine="netcdf4", decode_timedelta=False).close()
-              print(f"{p}: netCDF4 {a:.3f} s, xarray {(time.perf_counter() - t) / 5:.3f} s per open")
-      - name: Turn off real-time scanning (diagnostic, Windows)
+              b = (time.perf_counter() - t) / 5
+              print(f"{p}: netCDF4 {a:.3f} s, xarray {b:.3f} s per open")
+      - name: Turn off real-time scanning (diagnostic)
         if: runner.os == 'Windows'
+        continue-on-error: true
         shell: pwsh
         run: Set-MpPreference -DisableRealtimeMonitoring $true
-      - name: Time netCDF opens again (diagnostic, Windows)
+      - name: Time netCDF opens again (diagnostic)
         if: runner.os == 'Windows'
         shell: python
         run: |
-          import time, netCDF4, xarray as xr
+          import time
+          import xarray as xr
           for p in ("data/demo_sg005/p0050001_20080606.nc", "data/demo_single_test.nc"):
               t = time.perf_counter()
               for _ in range(5):
                   xr.open_dataset(p, engine="netcdf4", decode_timedelta=False).close()
-              print(f"{p}: xarray {(time.perf_counter() - t) / 5:.3f} s per open")
+              b = (time.perf_counter() - t) / 5
+              print(f"{p}: xarray {b:.3f} s per open")
+
       - run: pytest --durations=30
 
   lint:
