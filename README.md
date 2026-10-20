@@ -1,7 +1,8 @@
 # seagliderOG1
 
-[![Run tests](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml/badge.svg)](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml)
-[![Deploy Documentation](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/docs_deploy.yml/badge.svg)](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/docs_deploy.yml)
+[![License: MIT](https://img.shields.io/github/license/ocean-uhh/seagliderOG1.svg)](https://github.com/ocean-uhh/seagliderOG1/blob/main/LICENSE)
+[![Tests](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml/badge.svg)](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml)
+[![Documentation](https://img.shields.io/badge/docs-ocean--uhh.github.io-blue.svg)](https://ocean-uhh.github.io/seagliderOG1/)
 
 seagliderOG1 converts Seaglider basestation files (`pSSSDDDD*.nc`) into [OceanGliders OG1 format](https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html). One mission in, one OG1 file out; the platform, contributor and institution metadata come from a `mission.yaml` you keep with your data, never from defaults inside the package. Based on [votoutils](https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/glider/convert_to_og1.py)' `convert_to_og1`.
 
@@ -51,7 +52,7 @@ seagliderOG1 converts Seaglider basestation files into OceanGliders OG1 format, 
 
 Initial development was supported by Voice of the Ocean (VOTO) under the SEA-CODE project (SeaExplorer–Seaglider Cross-platform Open Diagnostics & Evaluation), which builds platform-independent, open-source diagnostics for glider data — with glidertest and seagliderOG1 as its core packages — and supports exchanges between the University of Hamburg and VOTO, and, at the University of Hamburg, by the DFG through the PycnMix project (Projektnummer 558671572).
 
-seagliderOG1 is an open community project and welcomes contributions from any group. Development was assisted by Claude Code (Anthropic) and GitHub Copilot code review.
+seagliderOG1 is an open community project; [CONTRIBUTING.md](CONTRIBUTING.md) covers licensing, credit and scope. Development was assisted by Claude Code (Anthropic) and GitHub Copilot code review.
 
 ## License
 

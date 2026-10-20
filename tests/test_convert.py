@@ -93,6 +93,40 @@ def test_get_contributors_demo_sg005_real_attrs():
     assert any("no role for contributor" in str(w.message) for w in caught)
 
 
+def test_get_contributors_drops_the_file_institution_with_config_institutions():
+    """With config institutions the basestation institution text is not written."""
+    ds = xr.Dataset(
+        attrs={
+            "institution": (
+                "School of Oceanography\nUniversity of Washington\n"
+                "Seattle, WA 98195-5351"
+            )
+        }
+    )
+    attrs = convert.get_contributors(
+        ds, institutions=[{"name": "No Such Institute", "role": "Operator"}]
+    )
+    assert attrs["contributing_institutions"] == "No Such Institute"
+    assert attrs["contributing_institutions_role"] == "Operator"
+
+
+def test_sidecar_records_the_file_institution_and_its_registry_match(
+    sg005_og1: pathlib.Path,
+) -> None:
+    """demo_sg005's postal-address institution resolves to EDMO 1434 in the sidecar."""
+    assert convert.conversion_sidecar(sg005_og1)["institution_from_file"] == {
+        "text": "School of Oceanography\nUniversity of Washington\nSeattle, WA 98195-5351",
+        "name": "University of Washington (School of Oceanography)",
+        "id": "https://edmo.seadatanet.org/report/1434",
+    }
+    assert convert._institution_from_file({}) is None
+    assert convert._institution_from_file({"institution": "Nowhere"}) == {
+        "text": "Nowhere",
+        "name": None,
+        "id": None,
+    }
+
+
 def test_get_contributors_config_fills_creator_role():
     """A config person matching the role-less creator gives one slot, email filled."""
     ds = xr.Dataset(

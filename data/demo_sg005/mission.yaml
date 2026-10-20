@@ -61,6 +61,6 @@ contributors:           # one entry per person per role
     role: PI
 
 institutions:           # at least one with role Operator; resolved via the EDMO registry
-  - name: University of Washington
+  - name: University of Washington School of Oceanography
     role: Operator
     id: null             # null resolves by name against the registry

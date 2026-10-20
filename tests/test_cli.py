@@ -1,5 +1,6 @@
 """Tests for the seagliderOG1 command-line interface (``init``, ``validate``)."""
 
+import json
 import os
 import pathlib
 import subprocess
@@ -1077,6 +1078,9 @@ def test_draft_writes_only_draft_files_and_a_draft_page(
     assert "What an OG1 file would hold" in html
     assert "Suggested mission.yaml lines" in html
     assert "dives: [1, 2]" in html and 'class="copy"' in html
+    assert "mission.yaml against the data" not in html  # a draft has no config
+    sidecar = json.loads((out / f"{stem}_conversion.json").read_text(encoding="utf-8"))
+    assert "config" not in sidecar
     proposal = (out / f"{stem}_mission.yaml").read_text(encoding="utf-8")
     assert stem.removesuffix("_draft") in proposal.splitlines()[1]
     data = yaml.safe_load(proposal)

@@ -17,6 +17,7 @@ when the ``<id>_conversion.json`` beside the file is missing.
 """
 
 import math
+import warnings
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -28,7 +29,7 @@ import yaml
 if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
-from seagliderOG1 import __version__, convert, vocabularies, writers
+from seagliderOG1 import __version__, contributors, convert, vocabularies, writers
 from seagliderOG1.reports import design
 from seagliderOG1.reports._env import get_template
 from seagliderOG1.reports._vendored import figure_png, nc_tables
@@ -1720,6 +1721,275 @@ def _draft_snippets(
     ]
 
 
+# ACDD globals the converter can compute from the data or knows as constants: missing ones
+# are a converter gap, not something to set in mission.yaml, so no box suggests them.
+_ACDD_FROM_THE_DATA = frozenset(
+    {
+        "geospatial_bounds",
+        "geospatial_bounds_crs",
+        "geospatial_bounds_vertical_crs",
+        "geospatial_vertical_positive",
+        "time_coverage_duration",
+        "time_coverage_resolution",
+        "standard_name_vocabulary",
+    }
+)
+
+
+def _platform_gaps(ds: xr.Dataset) -> dict[str, str]:
+    """Return the required or file-derivable platform fields the conversion could not fill.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open OG1 dataset.
+
+    Returns
+    -------
+    dict of str to str
+        Field to what was written: ``"written as UNK"`` or ``"omitted"`` (the numeric
+        ``PLATFORM_DEPTH_RATING``). Optional platform variables are not listed.
+
+    """
+    gaps = {}
+    for field, spec in vocabularies.PLATFORM_FIELDS.items():
+        if spec.kind == "optional_string":
+            continue
+        if field not in ds.variables:
+            gaps[field] = "omitted"
+        elif str(ds[field].values) == "UNK":
+            gaps[field] = "written as UNK"
+    return gaps
+
+
+def _yaml_block(key: str, value: object) -> str:
+    """Return ``{key: value}`` as ``mission.yaml`` text, in the given order."""
+    return yaml.safe_dump({key: value}, sort_keys=False, allow_unicode=True).strip()
+
+
+def _null_block(key: str, comments: dict[str, str]) -> str:
+    """Return a ``key:`` block with each field null and its comment."""
+    lines = [f"{key}:"] + [f"  {f}: null   # {c}" for f, c in comments.items()]
+    return "\n".join(lines)
+
+
+def _config_suggestions(
+    sidecar: dict | None,
+    platform_gaps: dict[str, str] | None = None,
+    acdd_missing: dict[str, str] | None = None,
+) -> list[dict[str, object]]:
+    """Return the ``mission.yaml`` blocks where the config and the output disagree or fall short.
+
+    Each check is shown only when it finds something:
+
+    - *Dive range*: the requested ``dives`` against the dives that reached the output.
+    - *Platform from the files*: each platform field the config set against the value
+      derived from the first basestation file
+      (:func:`seagliderOG1.vocabularies.platform_from_file`). The config wins by design,
+      so a pair is something to check, not an error.
+    - *Platform not filled*: required or file-derivable fields written as ``UNK`` or
+      omitted.
+    - *Institution ids*: config institutions with no ``id`` that the EDMO registry
+      resolved, as a block that pins the resolved name and id.
+    - *Institution in the basestation files*: the file's ``institution`` global, when
+      the registry matched it and no config institution resolved to the same id (the
+      converter drops it when the config lists institutions).
+    - *Missing ACDD globals*: under ``deployment:`` where they have a home there, else
+      under ``global_attributes:``; those the converter can compute are left out.
+
+    Parameters
+    ----------
+    sidecar : dict or None
+        The conversion sidecar; its ``config`` (written by
+        :func:`seagliderOG1.convert.process_mission`), ``presence``,
+        ``platform_from_file``, ``institution_from_file`` and
+        ``basestation_globals`` are read.
+    platform_gaps : dict of str to str, optional
+        From :func:`_platform_gaps`. Default is None.
+    acdd_missing : dict of str to str, optional
+        Missing ACDD 1.3 global to its level. Default is None.
+
+    Returns
+    -------
+    list of dict
+        ``{"title", "note", "boxes"}`` blocks; ``boxes`` is a list of ``{"label",
+        "text"}`` with ``text`` as ``mission.yaml`` lines.
+
+    """
+    sidecar = sidecar or {}
+    config = sidecar.get("config") or {}
+    blocks = []
+    requested = config.get("dives")
+    read = (sidecar.get("presence") or {}).get("dives") or []
+    if requested and read and [read[0], read[-1]] != list(requested):
+        missing = sorted(set(range(read[0], read[-1] + 1)) - set(read))
+        note = f"{len(read)} dives converted, {read[0]} to {read[-1]}"
+        if missing:
+            note += "; not converted: " + ", ".join(str(d) for d in missing)
+        blocks.append(
+            {
+                "title": "Dive range",
+                "note": note + ".",
+                "boxes": [
+                    {
+                        "label": "In the config",
+                        "text": f"dives: [{requested[0]}, {requested[1]}]",
+                    },
+                    {
+                        "label": "From the basestation files",
+                        "text": f"dives: [{read[0]}, {read[-1]}]",
+                    },
+                ],
+            }
+        )
+    from_file = sidecar.get("platform_from_file") or {}
+    found = sidecar.get("basestation_globals") or {}
+    current, suggested, varies = {}, {}, []
+    for field, value in (config.get("platform") or {}).items():
+        if field not in from_file or str(value) == str(from_file[field]):
+            continue
+        current[field] = value
+        suggested[field] = from_file[field]
+        source = vocabularies.PLATFORM_FIELDS[field].source
+        values = (found.get(source) or {}).get("values", [])
+        if len(values) > 1:
+            varies.append(f"{source} has {len(values)} values ({', '.join(values)})")
+    if current:
+        note = "From the first basestation file"
+        if varies:
+            note += "; across the files " + "; ".join(varies)
+        blocks.append(
+            {
+                "title": "Platform from the files",
+                "note": note + ".",
+                "boxes": [
+                    {
+                        "label": "In the config",
+                        "text": _yaml_block("platform", current),
+                    },
+                    {
+                        "label": "From the basestation files",
+                        "text": _yaml_block("platform", suggested),
+                    },
+                ],
+            }
+        )
+    if platform_gaps:
+        blocks.append(
+            {
+                "title": "Platform not filled",
+                "note": "Set in neither the config nor the basestation files.",
+                "boxes": [
+                    {"label": "To fill", "text": _null_block("platform", platform_gaps)}
+                ],
+            }
+        )
+    institutions = config.get("institutions") or []
+    # Silenced: the conversion already warned about the unmatched names.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        resolved = contributors.enrich_institutions(institutions)
+    if any(_is_null_id(record.get("id")) for record in institutions):
+        pinned = [
+            {"name": r["name"], "role": r["role"], "id": r["id"] or None}
+            for r in resolved
+        ]
+        newly = [
+            r["name"]
+            for r, record in zip(resolved, institutions, strict=True)
+            if r["id"] and _is_null_id(record.get("id"))
+        ]
+        if newly:
+            blocks.append(
+                {
+                    "title": "Institution ids",
+                    "note": (
+                        "Resolved by name against the package's EDMO registry: "
+                        + ", ".join(newly)
+                        + ". The block pins the registry name and id; an id left null "
+                        "had no registry match."
+                    ),
+                    "boxes": [
+                        {
+                            "label": "Resolved",
+                            "text": _yaml_block("institutions", pinned),
+                        }
+                    ],
+                }
+            )
+    from_file_institution = sidecar.get("institution_from_file") or {}
+    if (
+        institutions
+        and from_file_institution.get("id")
+        and from_file_institution["id"] not in {r["id"] for r in resolved}
+    ):
+        text = " ".join(from_file_institution["text"].split())
+        entry = "\n".join(
+            [
+                "institutions:",
+                f"- name: {from_file_institution['name']}",
+                "  role: null   # set the role",
+                f"  id: {from_file_institution['id']}",
+            ]
+        )
+        blocks.append(
+            {
+                "title": "Institution in the basestation files",
+                "note": (
+                    f"The basestation institution global ({text!r}) matches this "
+                    "registry entry. It is not written to the OG1 file because the "
+                    "config lists institutions; add it there, with its role, if it "
+                    "belongs."
+                ),
+                "boxes": [
+                    {
+                        "label": "From the basestation files",
+                        "text": entry,
+                    }
+                ],
+            }
+        )
+    acdd_missing = acdd_missing or {}
+    deployment = {
+        name: f"ACDD {level}"
+        for name, level in acdd_missing.items()
+        if name in vocabularies.DEPLOYMENT_GLOBALS
+    }
+    escape = {
+        name: f"ACDD {level}"
+        for name, level in acdd_missing.items()
+        if name not in deployment and name not in _ACDD_FROM_THE_DATA
+    }
+    boxes = []
+    if deployment:
+        boxes.append(
+            {"label": "deployment:", "text": _null_block("deployment", deployment)}
+        )
+    if escape:
+        boxes.append(
+            {
+                "label": "global_attributes:",
+                "text": _null_block("global_attributes", escape),
+            }
+        )
+    if boxes:
+        left = sorted(_ACDD_FROM_THE_DATA.intersection(acdd_missing))
+        note = "ACDD 1.3 globals the file does not carry."
+        if left:
+            note += (
+                " Not listed, because the converter should compute them from the data: "
+                + ", ".join(left)
+                + "."
+            )
+        blocks.append({"title": "Missing ACDD globals", "note": note, "boxes": boxes})
+    return blocks
+
+
+def _is_null_id(value: object) -> bool:
+    """Return True for an institution ``id`` the config left unset."""
+    return value in (None, "", "None")
+
+
 def _basestation_rows(found: dict | None, n_files: int) -> list[dict[str, object]]:
     """Return one row per basestation global attribute for the draft page.
 
@@ -1799,6 +2069,12 @@ def render_conversion(
         draft = ds.attrs.get("draft") == convert.DRAFT_NOTE
         ds_id = ds.attrs.get("id", "")
         conventions = _conventions_check(ds)
+        platform_gaps = _platform_gaps(ds)
+        acdd_missing = {
+            name: level["level"]
+            for level in conventions["acdd"]
+            for name in level["missing"]
+        }
         ledger = convert.conversion_ledger(ds)
         groups, var_source = _variable_groups_by_original_dimension(ds)
         # Each Variables group gets its own Valid % baseline caption (the share of the shared
@@ -1948,6 +2224,9 @@ def render_conversion(
         )
         if draft
         else [],
+        config_suggestions=[]
+        if draft
+        else _config_suggestions(sidecar, platform_gaps, acdd_missing),
         basestation_rows=_basestation_rows(
             sidecar.get("basestation_globals") if sidecar else None,
             len(inputs) if inputs else 0,

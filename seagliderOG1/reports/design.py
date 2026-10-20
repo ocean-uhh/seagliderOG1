@@ -87,6 +87,8 @@ ATTR_GROUP_EXTRAS: dict[str, tuple[str, ...]] = {
         "contributor_id",
         "contributor_role_vocabulary",
         "contributing_institutions_vocabulary",
+        "contributing_institutions_role",
+        "contributing_institutions_role_vocabulary",
         "contributor_email",
     ),
     "Rights & access": (

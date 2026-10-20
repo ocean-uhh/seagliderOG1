@@ -9,6 +9,7 @@ import pathlib
 import sys
 
 import netCDF4
+import yaml
 
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
@@ -143,6 +144,43 @@ def test_global_attribute_groups_are_the_five_conventions_no_other():
         "Provenance & processing",
     ]
     assert "Other" not in titles  # every global is placed by meaning
+
+
+def test_demo_config_institution_is_one_record_in_people_and_institutions():
+    """The demo mission.yaml's Operator merges with the file's institution, grouped right.
+
+    The basestation ``institution`` global is a postal address the registry knows; the
+    config name must resolve to the same registry entry, or the file writes two
+    institutions (one role-less, one without an EDMO id).
+    """
+    from seagliderOG1.reports import design
+    from seagliderOG1.reports._vendored import nc_tables
+
+    config = yaml.safe_load((pathlib.Path(DATA) / "mission.yaml").read_text())
+    ds = convert.to_og1(
+        readers.read_mission(DATA, 1, 1), institutions=config["institutions"]
+    )
+    assert ds.attrs["contributing_institutions"] == (
+        "University of Washington (School of Oceanography)"
+    )
+    assert ds.attrs["contributing_institutions_role"] == "Operator"
+    assert ds.attrs["contributing_institutions_vocabulary"].endswith("/report/1434")
+    groups, _source = nc_tables.globals_rows(
+        ds,
+        extras=design.ATTR_GROUP_EXTRAS,
+        exclude=["history", "conversion_attribute_sources"],
+    )
+    people = {
+        row[0]
+        for title, rows in groups
+        if title == "People & institutions"
+        for row in rows
+    }
+    assert {
+        "contributing_institutions_role",
+        "contributing_institutions_role_vocabulary",
+    } <= people
+    assert "Other" not in [title for title, _rows in groups]
 
 
 def test_requirement_summary_counts_the_mandatory_tier():
@@ -399,6 +437,7 @@ def test_page_section_order_and_scalars_collapsed(tmp_path) -> None:
     html = conversion.render_conversion(path)
     ids = re.findall(r'<section id="([^"]+)">', html)
     assert ids == [
+        "config-check",  # no platform given: PLATFORM_MODEL etc. are UNK
         "summary",
         "og1",
         "reconciliation",
@@ -498,6 +537,132 @@ def test_draft_snippets_fill_only_what_the_files_carry(sg005_og1_copy):
     # the page knows a draft by the draft global's value.
     path = sg005_og1_copy
     assert "Suggested mission.yaml lines" not in conversion.render_conversion(path)
+
+
+def _texts(block):
+    """Return the box texts of a config-suggestion block."""
+    return [box["text"] for box in block["boxes"]]
+
+
+def test_config_suggestions_pair_config_with_the_files(sg005_og1):
+    """Pure logic on the real sidecar: only the values that differ get a pair."""
+    sidecar = convert.conversion_sidecar(sg005_og1)
+    assert sidecar["config"] == {"dives": [1, 1], "platform": {}, "institutions": []}
+    assert conversion._config_suggestions(sidecar) == []  # nothing differs
+    assert conversion._config_suggestions(None) == []
+    edited = {
+        **sidecar,
+        "config": {
+            "dives": [1, 3],
+            "platform": {
+                "PLATFORM_SERIAL_NUMBER": "sg005",  # agrees with the file
+                "PLATFORM_MODEL": "a model",  # config-only field
+                "LANDSTATION_VERSION": "basestation v2.9",
+            },
+        },
+    }
+    dives, platform = conversion._config_suggestions(edited)
+    assert _texts(dives) == ["dives: [1, 3]", "dives: [1, 1]"]
+    assert _texts(platform) == [
+        "platform:\n  LANDSTATION_VERSION: basestation v2.9",
+        "platform:\n  LANDSTATION_VERSION: basestation v2.8",
+    ]
+    assert platform["note"] == "From the first basestation file."
+    # A source global that varies across the files is named in the note.
+    edited["basestation_globals"] = {
+        **sidecar["basestation_globals"],
+        "base_station_version": {"values": ["2.8", "2.9"], "n_files": 2},
+    }
+    note = conversion._config_suggestions(edited)[1]["note"]
+    assert "base_station_version has 2 values (2.8, 2.9)" in note
+    # Dives rejected inside the converted span are named; the range is the span.
+    edited["presence"] = {**sidecar["presence"], "dives": [1, 2, 4]}
+    edited["config"]["dives"] = [1, 5]
+    dives = conversion._config_suggestions(edited)[0]
+    assert _texts(dives)[1] == "dives: [1, 4]"
+    assert dives["note"] == "3 dives converted, 1 to 4; not converted: 3."
+
+
+def test_config_suggestions_fill_gaps_from_the_file(sg005_og1):
+    """The fixture (no platform, no institutions) has UNK and omitted platform fields."""
+    import xarray as xr
+
+    with xr.open_dataset(sg005_og1, engine="netcdf4") as ds:
+        gaps = conversion._platform_gaps(ds)
+        box = conversion._conventions_check(ds)
+    assert gaps == {
+        "PLATFORM_MODEL": "written as UNK",
+        "PLATFORM_DEPTH_RATING": "omitted",
+        "PLATFORM_MAKER": "written as UNK",
+        "WMO_IDENTIFIER": "written as UNK",
+    }
+    missing = {n: lv["level"] for lv in box["acdd"] for n in lv["missing"]}
+    blocks = conversion._config_suggestions(None, gaps, missing)
+    assert [b["title"] for b in blocks] == [
+        "Platform not filled",
+        "Missing ACDD globals",
+    ]
+    assert "  PLATFORM_DEPTH_RATING: null   # omitted" in _texts(blocks[0])[0]
+    deployment, escape = _texts(blocks[1])
+    assert deployment == "deployment:\n  comment: null   # ACDD recommended"
+    assert "  summary: null   # ACDD highly recommended" in escape
+    # Globals the converter can compute are named in the note, never boxed.
+    assert "geospatial_bounds" not in escape
+    assert "geospatial_vertical_positive" in blocks[1]["note"]
+
+
+def test_config_suggestions_pin_registry_institution_ids(sg005_og1):
+    """A config institution with no id that the registry matches gets a pinned block."""
+    sidecar = convert.conversion_sidecar(sg005_og1)
+    sidecar["config"]["institutions"] = [
+        {"name": "UW School of Oceanography", "role": "Operator", "id": None},
+        {"name": "No Such Institute", "role": "Owner"},
+    ]
+    (block,) = conversion._config_suggestions(sidecar)
+    assert block["title"] == "Institution ids"
+    assert yaml.safe_load(_texts(block)[0]) == {
+        "institutions": [
+            {
+                "name": "University of Washington (School of Oceanography)",
+                "role": "Operator",
+                "id": "https://edmo.seadatanet.org/report/1434",
+            },
+            {"name": "No Such Institute", "role": "Owner", "id": None},
+        ]
+    }
+    # Nothing in the config resolved: no ids block, but the file's institution (dropped
+    # by the converter because the config lists institutions) is offered instead.
+    sidecar["config"]["institutions"] = [{"name": "No Such Institute", "role": "Owner"}]
+    (block,) = conversion._config_suggestions(sidecar)
+    assert block["title"] == "Institution in the basestation files"
+    assert "Seattle, WA 98195-5351" in block["note"]
+    assert _texts(block) == [
+        "institutions:\n"
+        "- name: University of Washington (School of Oceanography)\n"
+        "  role: null   # set the role\n"
+        "  id: https://edmo.seadatanet.org/report/1434"
+    ]
+    # Without config institutions the converter keeps the file's: nothing to offer.
+    sidecar["config"]["institutions"] = []
+    assert conversion._config_suggestions(sidecar) == []
+
+
+def test_config_suggestions_on_the_page(tmp_path):
+    """A process_mission run whose dives and platform disagree with the files shows both."""
+    path = convert.process_mission(
+        DATA,
+        tmp_path,
+        dives=(4, 9),
+        platform={"LANDSTATION_VERSION": "basestation v2.9"},
+        report=True,
+    )
+    html = (tmp_path / f"{path.stem}_conversion.html").read_text(encoding="utf-8")
+    assert "mission.yaml against the data" in html
+    assert "2 dives converted, 4 to 5." in html
+    assert ">dives: [4, 9]</textarea>" in html and ">dives: [4, 5]</textarea>" in html
+    assert "LANDSTATION_VERSION: basestation v2.8</textarea>" in html
+    assert 'data-copy="config-2-2"' in html
+    assert "Platform not filled" in html  # the call set no PLATFORM_MODEL
     with netCDF4.Dataset(path, "a") as nc:
         nc.setncattr("draft", "v2 of the cruise report")
     html = conversion.render_conversion(path)
