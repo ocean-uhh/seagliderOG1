@@ -28,7 +28,17 @@ jobs:
         with: { python-version: "${{ matrix.python-version }}" }
       - run: python -m pip install --upgrade pip setuptools wheel
       - run: python -m pip install -e ".[test]" --prefer-binary
-      - run: pytest
+
+      - if: runner.os != 'Windows'
+        run: pytest --durations=30
+      # On Windows the netCDF4 wheel points HDF5 at its bundled filter plugins, and HDF5
+      # rescans that folder on every filter query: xarray queries each variable, so one
+      # OG1 file open took ~1.9 s (36 ms per variable) instead of ~0.03 s. The package
+      # writes zlib, which is built in, so the tests need no plugins.
+      - if: runner.os == 'Windows'
+        env:
+          HDF5_PLUGIN_PRELOAD: "::"
+        run: pytest --durations=30
 
   lint:
     name: Ruff lint and format

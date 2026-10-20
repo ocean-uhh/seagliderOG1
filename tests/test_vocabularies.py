@@ -90,6 +90,7 @@ def test_vocabulary_strings_have_no_edge_whitespace():
     for name in (
         "OG1_variable_attributes.yaml",
         "OG1_variable_names.yaml",
+        "OG1_sensor_names.yaml",
         "OG1_sensor_attributes.yaml",
         "OG1_global_attributes.yaml",
     ):

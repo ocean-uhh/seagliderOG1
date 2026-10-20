@@ -10,6 +10,12 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Breaking changes
 
+- The basestation sensor-string variables keep their names (`sbe41`, `sbe43`, `wlbb2f`); they
+  were written as `SeaBird SBE 41 CTD`, `Seabird SBE43F`, `Wetlabs BB2FL-VMT` (names with
+  spaces). The sensor-key map moved from `OG1_variable_names.yaml` to `OG1_sensor_names.yaml`
+  (`vocabularies.sensor_names`).
+- `writers.write` refuses an attribute netCDF cannot store (a dict, a bool) with a `TypeError`
+  naming it, before anything is written; it used to convert such attributes to text and retry.
 - CLI flags in the family shape: `init [dest]` (a directory gets `mission.yaml`, a `.yaml` path is
   that file) replaces `init -o FILE`; `--raw-dir` replaces `init --from` and `process --source`;
   the `mission.yaml` key is `raw_dir` (`source:` is read with a deprecation warning for one
@@ -102,6 +108,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Changed
 
+- The readers (`read_mission`, `read_file`, `list_files`, `discover_missions`,
+  `repair_files`) accept a `pathlib.Path` as well as a string.
 - `vocabularies.VARIABLES_TO_DROP` is empty: the 24 basestation variables it removed (e.g. `density`,
   `theta`, `dissolved_oxygen_sat`, the `*_gsm` flight-model set) are now in the output. `depth` and
   `eng_depth` map to `DEPTH`, which `ctd_depth` holds, and are written as `DEPTH_2` / `DEPTH_3`.
@@ -126,6 +134,20 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Fixed
 
+- `date_created` is the conversion time; the basestation files' own `date_created` (sg005:
+  2014-03-11) was written instead, because `OG1_global_attributes.yaml` kept it as-is.
+- `date_modified` (and so `date_created`) is UTC; it was the converting machine's local time.
+- `LATITUDE_GPS`, `LONGITUDE_GPS` and `TIME_GPS` carry `original_dimension: gps_info`;
+  `TIME_GPS` keeps its vocabulary `long_name` (all attributes were removed).
+- `PHASE`, `PROFILE_NUMBER` and `DIVE_NUMBER` take their attributes from the vocabulary
+  (`PHASE` and `PROFILE_NUMBER` had none);
+  `PHASE_QC`'s `long_name` was `" quality flag"`.
+- Conversion is about 2.5 times faster (sg005, 5 dives: 7.5 s → 2.9 s), output unchanged:
+  splitting a dive by dimension, the dtype pass and the scalar parameters rebuilt a dataset once
+  per variable.
+- The fate figure on the conversion page writes `->`, avoiding a missing-glyph warning.
+- A sensor key in the `instrument` global with no entry in `OG1_sensor_names.yaml` is skipped
+  with a warning (no `SENSOR_` variable); the conversion failed with `KeyError`.
 - `init --from` and the converter read dotted version strings (`base_station_version: "3.0.6"`)
   from newer basestation files instead of failing; `init --from` also accepts one
   `pSSSDDDD*.nc` file.

@@ -198,3 +198,10 @@ def test_read_file():
     assert len(dataset.longitude) == 53, (
         "Unexpected number of longitude values for first dataset"
     )
+
+
+def test_readers_accept_a_path() -> None:
+    """A pathlib.Path source reads the same files as its string."""
+    source = pathlib.Path(__file__).resolve().parent.parent / "data" / "demo_sg005"
+    assert readers.list_files(source) == readers.list_files(str(source))
+    assert len(readers.read_mission(source, 1, 2)) == 2

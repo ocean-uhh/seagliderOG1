@@ -71,6 +71,37 @@ def test_add_sensor_skips_instrument_absent_from_sensor_dict():
     assert "sensor" not in result["PRES2"].attrs
 
 
+def test_add_sensor_skips_instrument_without_catalogue_entry():
+    """An instrument present in sensor_dict but with no sensor_type (unknown key) is skipped."""
+    ds = xr.Dataset(
+        {
+            "TEMP": ("N_MEASUREMENTS", [1.0, 2.0]),
+            "PRES2": ("N_MEASUREMENTS", [3.0, 4.0]),
+        }
+    )
+    # 'wlbb2f' has no catalogue entry, so gather_sensor_info leaves it as {} (no
+    # sensor_type); a mapping row still names it. It must be skipped, not looked up.
+    sensor_dict = {
+        "sbe41": {
+            "sensor_type": "CTD",
+            "sensor_serial_number": "245201",
+            "sensor_model": "Sea-Bird SBE 41 CTD",
+        },
+        "wlbb2f": {},
+    }
+    og1_mapping = pd.DataFrame(
+        [
+            {"OG1_name": "TEMP", "instrument": "sbe41"},
+            {"OG1_name": "PRES2", "instrument": "wlbb2f"},
+        ]
+    )
+
+    result = _pipeline.add_sensor_to_dataset(ds, sensor_dict, og1_mapping)
+
+    assert result["TEMP"].attrs["sensor"] == "SENSOR_CTD_245201"
+    assert "sensor" not in result["PRES2"].attrs  # no KeyError, no sensor attr
+
+
 def test_convert_qc_flags_orphan_parent():
     """A QC variable whose parent is absent gets a generic long_name, no KeyError."""
     # 'TEMP_QC2' has no 'TEMP_' parent (qc_name[:-3] strips only the '_QC' suffix).

@@ -6,6 +6,7 @@ the data, only loads it into xarray datasets.
 """
 
 import logging
+import os
 import pathlib
 import re
 import shutil
@@ -217,7 +218,7 @@ def _mission_dives(directory: pathlib.Path) -> tuple[int, list[int]] | None:
     )
 
 
-def discover_missions(source: str) -> list[Mission]:
+def discover_missions(source: str | os.PathLike[str]) -> list[Mission]:
     """Discover Seaglider missions under a directory.
 
     A directory holding basestation files (``pSSSDDDD*.nc``) directly is one
@@ -227,7 +228,7 @@ def discover_missions(source: str) -> list[Mission]:
 
     Parameters
     ----------
-    source : str
+    source : str or os.PathLike
         A mission directory, or a root of ``SN/DATE`` mission directories.
 
     Returns
@@ -354,7 +355,7 @@ def filter_files_by_profile(
     return filtered_files
 
 
-def read_file(source: str) -> xr.Dataset:
+def read_file(source: str | os.PathLike[str]) -> xr.Dataset:
     """Load the first (alphabetically) basestation file from a source.
 
     Useful for quick examination of data structure and metadata from
@@ -362,7 +363,7 @@ def read_file(source: str) -> xr.Dataset:
 
     Parameters
     ----------
-    source : str
+    source : str or os.PathLike
         URL or local directory path containing NetCDF files.
 
     Returns
@@ -379,7 +380,7 @@ def read_file(source: str) -> xr.Dataset:
 
 
 def read_mission(
-    source: str,
+    source: str | os.PathLike[str],
     start_profile: int | None = None,
     end_profile: int | None = None,
     *,
@@ -392,7 +393,7 @@ def read_mission(
 
     Parameters
     ----------
-    source : str
+    source : str or os.PathLike
         Directory path containing Seaglider NetCDF files.
     start_profile : int, optional
         Minimum profile number to load.
@@ -430,7 +431,7 @@ def read_mission(
 
 
 def list_files(
-    source: str,
+    source: str | os.PathLike[str],
     _registry_loc: str = "seagliderOG1",
     _registry_name: str = "seaglider_registry.txt",
 ) -> list[str]:
@@ -441,7 +442,7 @@ def list_files(
 
     Parameters
     ----------
-    source : str
+    source : str or os.PathLike
         URL (http/https) or local directory path to scan for files.
     _registry_loc : str, optional
         Legacy parameter, not currently used.
@@ -459,6 +460,7 @@ def list_files(
         If source is neither a valid URL nor directory path.
 
     """
+    source = os.fspath(source)  # a pathlib.Path has no startswith
     if source.startswith(("http://", "https://")):
         # List all files in the URL directory
         response = requests.get(source)
@@ -487,7 +489,7 @@ def list_files(
 
 
 def repair_files(
-    source: str,
+    source: str | os.PathLike[str],
     start_profile: int | None = None,
     end_profile: int | None = None,
 ) -> None:
@@ -495,7 +497,7 @@ def repair_files(
 
     Parameters
     ----------
-    source : str
+    source : str or os.PathLike
         Directory path containing NetCDF files to scan and repair.
     start_profile : int, optional
         Minimum profile number to include (inclusive).

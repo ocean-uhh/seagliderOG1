@@ -58,10 +58,7 @@ def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Datase
     dive_var = xr.DataArray(
         np.full(ds.sizes["N_MEASUREMENTS"], dive_number),
         dims=["N_MEASUREMENTS"],
-        attrs={
-            "long_name": "dive number",
-            "units": "1",
-        },
+        attrs=dict(vocabularies.vocab_attrs["DIVE_NUMBER"]),
     )
     return ds.assign(DIVE_NUMBER=dive_var)
 
@@ -106,6 +103,9 @@ def add_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
         PROFILE_NUMBER=xr.DataArray(
             profile_numbers,
             dims=["N_MEASUREMENTS"],
+            # Built here, not mapped from a basestation variable, so the vocabulary
+            # attributes are applied here (copied: vocab_attrs is shared).
+            attrs=dict(vocabularies.vocab_attrs["PROFILE_NUMBER"]),
         )
     )
     ds["PROFILE_NUMBER"].encoding["_FillValue"] = fill_value
@@ -153,7 +153,11 @@ def add_phase(ds: xr.Dataset) -> xr.Dataset:
     else:
         raise ValueError("No valid dive number variable found in the dataset.")
     # Initialize the new variable with the same dimensions as dive_num
-    ds["PHASE"] = (["N_MEASUREMENTS"], np.full(ds.sizes["N_MEASUREMENTS"], np.nan))
+    ds["PHASE"] = (
+        ["N_MEASUREMENTS"],
+        np.full(ds.sizes["N_MEASUREMENTS"], np.nan),
+        dict(vocabularies.vocab_attrs["PHASE"]),
+    )
     # Initialize the new variable PHASE_QC with the same dimensions as dive_num
     ds["PHASE_QC"] = (
         ["N_MEASUREMENTS"],
@@ -248,22 +252,13 @@ def split_by_unique_dims(ds: xr.Dataset) -> dict:
         A dictionary mapping dimension tuples to datasets, each with variables sharing the same set of dimensions.
 
     """
-    # Dictionary to hold datasets with unique dimension sets
-    unique_dims_datasets = {}
-    # Iterate over the variables in the dataset
+    # Group the variables first and build each dataset once: adding variables one at a
+    # time re-aligns the growing dataset on every assignment (quadratic in the number
+    # of variables, about a second per basestation dive).
+    groups: dict[tuple, dict[str, xr.DataArray]] = {}
     for var_name, var_data in ds.data_vars.items():
-        # Get the dimensions of the variable
-        dims = tuple(var_data.sizes)
-
-        # If this dimension set is not in the dictionary, create a new dataset
-        if dims not in unique_dims_datasets:
-            unique_dims_datasets[dims] = xr.Dataset()
-
-        # Add the variable to the corresponding dataset
-        unique_dims_datasets[dims][var_name] = var_data
-
-    # Convert the dictionary values to a dictionary of datasets
-    return dict(unique_dims_datasets)
+        groups.setdefault(tuple(var_data.sizes), {})[var_name] = var_data
+    return {dims: xr.Dataset(variables) for dims, variables in groups.items()}
 
 
 def reformat_units_var(
@@ -457,11 +452,10 @@ def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
         # '_QC' suffix). Guard before dereferencing dsa[var_name].
         parent_present = var_name in dsa.variables
         # Add a long_name attribute to the QC variable
-        dsa[qc_name].attrs["long_name"] = (
-            (dsa[var_name].attrs.get("long_name", "") + " quality flag")
-            if parent_present
-            else "quality flag"
+        parent_long_name = (
+            dsa[var_name].attrs.get("long_name", "") if parent_present else ""
         )
+        dsa[qc_name].attrs["long_name"] = f"{parent_long_name} quality flag".strip()
         dsa[qc_name].attrs["standard_name"] = "status_flag"
         # Mention the QC variable in the parent's attributes, when the parent exists.
         if parent_present:

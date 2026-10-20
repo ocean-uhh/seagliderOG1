@@ -349,9 +349,6 @@ def _list_platform(search: str | None) -> int:
 def _variable_sources() -> dict[str, list[str]]:
     """Return OG1 variable name -> the basestation names that map to it.
 
-    Sensor keys in ``OG1_variable_names.yaml`` (``sbe41`` and the like) map to sensor
-    catalogue entries, not variables, and are left out.
-
     Returns
     -------
     dict of str to list of str
@@ -362,8 +359,6 @@ def _variable_sources() -> dict[str, list[str]]:
 
     sources: dict[str, list[str]] = {}
     for basestation, og1 in vocabularies.standard_names.items():
-        if og1 in vocabularies.sensor_vocabs:
-            continue
         sources.setdefault(og1, []).append(basestation)
     return sources
 

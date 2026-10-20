@@ -1,0 +1,21 @@
+################################################################################
+# OG1 SENSOR NAMES
+#
+# Maps the sensor keys found in a basestation file's `instrument` global attribute
+# (sbe41, wlbb2f, ...) to the section titles in OG1_sensor_attributes.yaml, where
+# the instrument metadata is (sourced from the NERC L22/SeaVoX catalogue).
+#
+# A lookup only: these keys are never applied as variable renames (a variable named
+# after a sensor key, such as the `sbe41` scalar, keeps its basestation name).
+################################################################################
+sbe41: SeaBird SBE 41 CTD # Instrument information in OG1_sensor_attributes.yaml
+wlbb2f: Wetlabs BB2FL-VMT # Instrument information in OG1_sensor_attributes.yaml
+wlbbfl2: Wetlabs BB2FL-VMT # There are so many. Don't know if the correct one
+wlbb2fl: Wetlabs BB2FL-VMT # There are so many. Don't know if the correct one
+sbe43: Seabird SBE43F # Instrument information in OG1_sensor_attributes.yaml
+legato: RBR legato CTD # Instrument information in OG1_sensor_attributes.yaml
+codaTODO: RBR coda TODO # Instrument information in OG1_sensor_attributes.yaml
+tridentebb700chla470fdom365: RBR tridente # Instrument information in OG1_sensor_attributes.yaml
+aa4330: Aanderaa 4330 # Instrument information in OG1_sensor_attributes.yaml
+aa4831: Aanderaa 4831 # Instrument information in OG1_sensor_attributes.yaml
+qsp2150: Biospherical QSP 2150 # Instrument information in OG1_sensor_attributes.yaml

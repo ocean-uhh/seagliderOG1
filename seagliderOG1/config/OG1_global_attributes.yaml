@@ -25,7 +25,6 @@ attr_as_is: !!set
   keywords_vocabulary: null
   geospatial_lon_max: null
   geospatial_lat_max: null
-  date_created: null
   license: null
   comment: null
 

@@ -221,7 +221,8 @@ def test_process_v_flag_controls_library_logging(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """``-v`` surfaces the library's INFO progress on stderr; without it, stderr stays quiet."""
-    cfg = _write_config(tmp_path / "mission.yaml")
+    # One dive: the test is about logging, not about the mission's length.
+    cfg = _write_config(tmp_path / "mission.yaml", dives=[1, 1])
 
     assert cli.main(["process", str(cfg), "-o", str(tmp_path / "quiet")]) == 0
     assert "Start converting" not in capsys.readouterr().err
@@ -984,7 +985,9 @@ def test_process_report_dir_writes_pages_apart_from_the_data(
 
 
 def test_enrich_sets_the_doi_and_rebinds_the_sidecar(
-    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: pathlib.Path,
+    sg005_og1_copy: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """enrich --doi edits the globals in place, keeps date_created, rebinds the sidecar."""
     import json
@@ -994,7 +997,7 @@ def test_enrich_sets_the_doi_and_rebinds_the_sidecar(
 
     from seagliderOG1 import convert, writers
 
-    nc = convert.process_mission(DATA_DIR, tmp_path, dives=(1, 1))
+    nc = sg005_og1_copy
     with xr.open_dataset(nc, engine="netcdf4", decode_timedelta=False) as ds:
         before = dict(ds.attrs)
         temp_before = ds["TEMP"].values.copy()
@@ -1016,13 +1019,12 @@ def test_enrich_sets_the_doi_and_rebinds_the_sidecar(
 
 def test_enrich_from_config_refuses_converter_owned_keys(
     tmp_path: pathlib.Path,
+    sg005_og1_copy: pathlib.Path,
 ) -> None:
     """enrich FILE CONFIG applies deployment:; a derived key in global_attributes fails."""
     import xarray as xr
 
-    from seagliderOG1 import convert
-
-    nc = convert.process_mission(DATA_DIR, tmp_path, dives=(1, 1))
+    nc = sg005_og1_copy
     good = _write_config(tmp_path / "good.yaml", deployment={"program": "MOOSE"})
     assert cli.main(["enrich", str(nc), str(good)]) == 0
     with xr.open_dataset(nc, engine="netcdf4", decode_timedelta=False) as ds:
