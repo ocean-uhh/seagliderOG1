@@ -28,6 +28,34 @@ jobs:
         with: { python-version: "${{ matrix.python-version }}" }
       - run: python -m pip install --upgrade pip setuptools wheel
       - run: python -m pip install -e ".[test]" --prefer-binary
+            - name: Time netCDF opens (diagnostic, Windows)
+        if: runner.os == 'Windows'
+        shell: python
+        run: |
+          import time, netCDF4, xarray as xr
+          for p in ("data/demo_sg005/p0050001_20080606.nc", "data/demo_single_test.nc"):
+              t = time.perf_counter()
+              for _ in range(5):
+                  netCDF4.Dataset(p).close()
+              a = (time.perf_counter() - t) / 5
+              t = time.perf_counter()
+              for _ in range(5):
+                  xr.open_dataset(p, engine="netcdf4", decode_timedelta=False).close()
+              print(f"{p}: netCDF4 {a:.3f} s, xarray {(time.perf_counter() - t) / 5:.3f} s per open")
+      - name: Turn off real-time scanning (diagnostic, Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Set-MpPreference -DisableRealtimeMonitoring $true
+      - name: Time netCDF opens again (diagnostic, Windows)
+        if: runner.os == 'Windows'
+        shell: python
+        run: |
+          import time, netCDF4, xarray as xr
+          for p in ("data/demo_sg005/p0050001_20080606.nc", "data/demo_single_test.nc"):
+              t = time.perf_counter()
+              for _ in range(5):
+                  xr.open_dataset(p, engine="netcdf4", decode_timedelta=False).close()
+              print(f"{p}: xarray {(time.perf_counter() - t) / 5:.3f} s per open")
       - run: pytest --durations=30
 
   lint:
