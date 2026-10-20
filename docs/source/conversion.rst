@@ -104,6 +104,26 @@ Output files target:
 
 The output carries ``featureType: trajectory`` (``config/OG1_global_attributes.yaml``).
 
+Two results of the OG1 checker (``ioos/cc-plugin-og``, ``compliance-checker --test og:1.0``) are
+expected on every file this package writes:
+
+* **Variable names should be capitalized** — a basestation variable with no OG1 name keeps its
+  basestation spelling (``log_D_TGT``, ``sg_cal_calibcomm``, ``sbe41``), so its name shows at a
+  glance that it is not an OG1 variable. The OG1 manual calls upper-case variable names "the OG1
+  convention" (in its sensor-variable section); keeping the basestation spelling is a deliberate
+  departure from it. Variables renamed to an OG1 name are upper case; a variable passed through
+  carries ``original_name`` equal to its name.
+* **Global attribute comment is missing** — when ``deployment.comment`` in ``mission.yaml`` is
+  null. The OG1 manual lists ``comment`` as *suggested* (cc-plugin-og 0.1.2 checks it as
+  mandatory), so the converter writes no default text; set ``deployment.comment`` to add one.
+
+Any other checker finding is a converter problem. To run the checker:
+
+.. code-block:: console
+
+   $ pip install cc-plugin-og
+   $ compliance-checker --test og:1.0 <output_dir>/<id>.nc
+
 Variables that differ between dives
 -----------------------------------
 
@@ -209,7 +229,8 @@ required platform fields, and that the contributor and institution records inclu
 one PI and one Operator. During conversion the input coordinates are checked.
 
 Neither step runs an OG1 compliance check on the output file. To check a finished OG1 file
-against the format, use `glidertest <https://github.com/OceanGlidersCommunity/glidertest>`_.
+against the format, run the OG1 checker (see `OG1 compliance`_), and use
+`glidertest <https://github.com/OceanGlidersCommunity/glidertest>`_ for the data themselves.
 
 Extended variables
 ------------------

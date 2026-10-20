@@ -8,6 +8,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-20
+
 ### Breaking changes
 
 - When the config lists `institutions`, the basestation `institution` global (free text, a postal
