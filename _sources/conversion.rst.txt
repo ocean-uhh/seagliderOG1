@@ -87,6 +87,7 @@ The package's own YAML files are not user settings; they hold the OG1 vocabulari
 mappings:
 
 * ``OG1_variable_names.yaml`` — variable name mappings;
+* ``OG1_sensor_names.yaml`` — sensor keys to sensor metadata entries;
 * ``OG1_variable_attributes.yaml`` — CF variable attributes;
 * ``OG1_sensor_attributes.yaml`` — sensor metadata;
 * ``OG1_global_attributes.yaml`` — global attribute templates;
@@ -114,9 +115,9 @@ and not others, and cannot say which dives that was.
 ``convert.process_mission`` (and so ``process``) records this in ``<id>_conversion.json`` beside
 the OG1 file. For each basestation variable it gives the runs of dives it is *present* in (the
 variable exists in the file) and *valid* in (present, with at least one non-missing value). The
-sidecar also lists the input files and carries the file's ``id`` and ``date_created``;
+sidecar also lists the input files and carries the file's ``id``, ``tracking_id`` and SHA-256;
 ``convert.conversion_sidecar`` reads it back and ignores a sidecar whose ``id`` or
-``date_created`` differs from the file's.
+``tracking_id`` differs from the file's (``seagliderOG1 report`` also checks the SHA-256).
 
 The conversion page groups the variables into patterns — ``every dive``, ``from dive k``,
 ``until dive k``, ``dive k only``, ``dives a–b``, ``sporadic`` — and shows each as a strip over

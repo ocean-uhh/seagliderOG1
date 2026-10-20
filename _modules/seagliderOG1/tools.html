@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.tools &mdash; seagliderOG1 0.0.2.post1.dev76 documentation</title>
+  <title>seagliderOG1.tools &mdash; seagliderOG1 0.0.2.post1.dev77 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=0e671115"></script>
+      <script src="../../_static/documentation_options.js?v=aa1f950c"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -155,10 +155,7 @@
     <span class="n">dive_var</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">dive_number</span><span class="p">),</span>
         <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
-        <span class="n">attrs</span><span class="o">=</span><span class="p">{</span>
-            <span class="s2">"long_name"</span><span class="p">:</span> <span class="s2">"dive number"</span><span class="p">,</span>
-            <span class="s2">"units"</span><span class="p">:</span> <span class="s2">"1"</span><span class="p">,</span>
-        <span class="p">},</span>
+        <span class="n">attrs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"DIVE_NUMBER"</span><span class="p">]),</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">DIVE_NUMBER</span><span class="o">=</span><span class="n">dive_var</span><span class="p">)</span></div>
 
@@ -206,6 +203,9 @@
         <span class="n">PROFILE_NUMBER</span><span class="o">=</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
             <span class="n">profile_numbers</span><span class="p">,</span>
             <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
+            <span class="c1"># Built here, not mapped from a basestation variable, so the vocabulary</span>
+            <span class="c1"># attributes are applied here (copied: vocab_attrs is shared).</span>
+            <span class="n">attrs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">]),</span>
         <span class="p">)</span>
     <span class="p">)</span>
     <span class="n">ds</span><span class="p">[</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"_FillValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_value</span>
@@ -256,7 +256,11 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No valid dive number variable found in the dataset."</span><span class="p">)</span>
     <span class="c1"># Initialize the new variable with the same dimensions as dive_num</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
+        <span class="nb">dict</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">]),</span>
+    <span class="p">)</span>
     <span class="c1"># Initialize the new variable PHASE_QC with the same dimensions as dive_num</span>
     <span class="n">ds</span><span class="p">[</span><span class="s2">"PHASE_QC"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
         <span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
@@ -357,22 +361,13 @@
 <span class="sd">        A dictionary mapping dimension tuples to datasets, each with variables sharing the same set of dimensions.</span>
 
 <span class="sd">    """</span>
-    <span class="c1"># Dictionary to hold datasets with unique dimension sets</span>
-    <span class="n">unique_dims_datasets</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="c1"># Iterate over the variables in the dataset</span>
+    <span class="c1"># Group the variables first and build each dataset once: adding variables one at a</span>
+    <span class="c1"># time re-aligns the growing dataset on every assignment (quadratic in the number</span>
+    <span class="c1"># of variables, about a second per basestation dive).</span>
+    <span class="n">groups</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">var_data</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="c1"># Get the dimensions of the variable</span>
-        <span class="n">dims</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">var_data</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
-
-        <span class="c1"># If this dimension set is not in the dictionary, create a new dataset</span>
-        <span class="k">if</span> <span class="n">dims</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">unique_dims_datasets</span><span class="p">:</span>
-            <span class="n">unique_dims_datasets</span><span class="p">[</span><span class="n">dims</span><span class="p">]</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
-
-        <span class="c1"># Add the variable to the corresponding dataset</span>
-        <span class="n">unique_dims_datasets</span><span class="p">[</span><span class="n">dims</span><span class="p">][</span><span class="n">var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_data</span>
-
-    <span class="c1"># Convert the dictionary values to a dictionary of datasets</span>
-    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">unique_dims_datasets</span><span class="p">)</span></div>
+        <span class="n">groups</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">var_data</span><span class="o">.</span><span class="n">sizes</span><span class="p">),</span> <span class="p">{})[</span><span class="n">var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_data</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">dims</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="k">for</span> <span class="n">dims</span><span class="p">,</span> <span class="n">variables</span> <span class="ow">in</span> <span class="n">groups</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
 
 
 
@@ -578,11 +573,10 @@
         <span class="c1"># '_QC' suffix). Guard before dereferencing dsa[var_name].</span>
         <span class="n">parent_present</span> <span class="o">=</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">dsa</span><span class="o">.</span><span class="n">variables</span>
         <span class="c1"># Add a long_name attribute to the QC variable</span>
-        <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"long_name"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="p">(</span><span class="n">dsa</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"long_name"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="o">+</span> <span class="s2">" quality flag"</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">parent_present</span>
-            <span class="k">else</span> <span class="s2">"quality flag"</span>
+        <span class="n">parent_long_name</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">dsa</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"long_name"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="k">if</span> <span class="n">parent_present</span> <span class="k">else</span> <span class="s2">""</span>
         <span class="p">)</span>
+        <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"long_name"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">parent_long_name</span><span class="si">}</span><span class="s2"> quality flag"</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="n">dsa</span><span class="p">[</span><span class="n">qc_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"standard_name"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"status_flag"</span>
         <span class="c1"># Mention the QC variable in the parent's attributes, when the parent exists.</span>
         <span class="k">if</span> <span class="n">parent_present</span><span class="p">:</span>

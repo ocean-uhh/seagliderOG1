@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev76 documentation</title>
+  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev77 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=0e671115"></script>
+      <script src="../../_static/documentation_options.js?v=aa1f950c"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -1330,10 +1330,12 @@
 <span class="sd">        A JSON object of ``dimension -&gt; {"fate", "variables"}``, keys sorted.</span>
 
 <span class="sd">    """</span>
+    <span class="c1"># ds.variables[name] is the bare Variable; ds[name] would build a DataArray with</span>
+    <span class="c1"># all its coordinates for every variable of every dive.</span>
     <span class="n">in_output</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="nb">str</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"original_dimension"</span><span class="p">])</span>
-        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">variables</span>
-        <span class="k">if</span> <span class="s2">"original_dimension"</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"original_dimension"</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s2">"original_dimension"</span> <span class="ow">in</span> <span class="n">var</span><span class="o">.</span><span class="n">attrs</span>
     <span class="p">}</span>
     <span class="n">ledger</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">all_dims</span><span class="p">:</span>
@@ -1347,8 +1349,8 @@
             <span class="p">{</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">list_of_datasets</span>
-                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span>
-                <span class="k">if</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">var</span><span class="o">.</span><span class="n">dims</span>
             <span class="p">}</span>
         <span class="p">)</span>
         <span class="n">ledger</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"fate"</span><span class="p">:</span> <span class="n">fate</span><span class="p">,</span> <span class="s2">"variables"</span><span class="p">:</span> <span class="n">names</span><span class="p">}</span>
@@ -1601,13 +1603,6 @@
         <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">"long_name"</span><span class="p">:</span> <span class="s2">"time of deployment"</span><span class="p">},</span>
     <span class="p">)</span>
 
-    <span class="c1"># Remove attributes from TIME_GPS, but keep the transient derived-sources stamp so the</span>
-    <span class="c1"># ledger can record that TIME_GPS came from log_gps_time; it is popped before the write.</span>
-    <span class="k">if</span> <span class="s2">"TIME_GPS"</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">gps_sources</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">)</span>
-        <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="p">{</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">:</span> <span class="n">gps_sources</span><span class="p">}</span> <span class="k">if</span> <span class="n">gps_sources</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
-        <span class="p">)</span>
     <span class="c1"># ---- -------------------------------------------- ----</span>
 
     <span class="c1"># Update time_coverage attributes</span>
@@ -1630,9 +1625,6 @@
     <span class="p">)</span>
     <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"time_coverage_end"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">tend_str</span>  <span class="c1"># ds_og1.TIME[-1].values.strftime('%Y%m%dT%H%M%S')</span>
-    <span class="p">)</span>
-    <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"date_created"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">_clean_time_string</span><span class="p">(</span>
-        <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"date_created"</span><span class="p">]</span>
     <span class="p">)</span>
 
     <span class="c1"># Update geospatial attributes</span>
@@ -2386,6 +2378,10 @@
     <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"LATITUDE_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_lat"</span><span class="p">])</span>
     <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"LONGITUDE_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_lon"</span><span class="p">])</span>
     <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_time"</span><span class="p">])</span>
+    <span class="c1"># Their source dimension, as every merged variable carries, so they group with</span>
+    <span class="c1"># gps_info. No original_name: a derived variable names its sources in the ledger.</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"LATITUDE_GPS"</span><span class="p">,</span> <span class="s2">"LONGITUDE_GPS"</span><span class="p">,</span> <span class="s2">"TIME_GPS"</span><span class="p">):</span>
+        <span class="n">gps_ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"original_dimension"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"gps_info"</span>
 
     <span class="c1"># Concatenate ds and gps_ds</span>
     <span class="n">datasets</span> <span class="o">=</span> <span class="p">[]</span>
@@ -2610,7 +2606,8 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">"-"</span> <span class="ow">in</span> <span class="n">val1</span> <span class="ow">or</span> <span class="s2">":"</span> <span class="ow">in</span> <span class="n">val1</span><span class="p">):</span>
                 <span class="n">val1</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">_clean_time_string</span><span class="p">(</span><span class="n">val1</span><span class="p">)</span>
             <span class="n">time_attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">val1</span>
-    <span class="n">time_attrs</span><span class="p">[</span><span class="s2">"date_modified"</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">T%H%M%S"</span><span class="p">)</span>
+    <span class="c1"># UTC, as every other time the package writes (enrich, history lines).</span>
+    <span class="n">time_attrs</span><span class="p">[</span><span class="s2">"date_modified"</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">UTC</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">T%H%M%S"</span><span class="p">)</span>
 
     <span class="c1"># Handle start_date attribute</span>
     <span class="k">if</span> <span class="s2">"start_time"</span> <span class="ow">in</span> <span class="n">time_attrs</span><span class="p">:</span>
@@ -2619,8 +2616,9 @@
         <span class="n">time_attrs</span><span class="p">[</span><span class="s2">"start_date"</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_attrs</span><span class="p">[</span><span class="s2">"time_coverage_start"</span><span class="p">]</span>
 
     <span class="c1"># date_created (ACDD) is the creation date of *this* OG1 file, so it is the</span>
-    <span class="c1"># conversion time, not whatever the basestation file recorded. A basestation</span>
-    <span class="c1"># creation date, if wanted, belongs in history (a later branch), not here.</span>
+    <span class="c1"># conversion time, not whatever the basestation file recorded. It must not be in</span>
+    <span class="c1"># attr_as_is (OG1_global_attributes.yaml): kept attributes are merged after these</span>
+    <span class="c1"># and would put the basestation's date back.</span>
     <span class="n">time_attrs</span><span class="p">[</span><span class="s2">"date_created"</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_attrs</span><span class="p">[</span><span class="s2">"date_modified"</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="n">time_attrs</span>

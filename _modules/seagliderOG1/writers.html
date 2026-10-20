@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.writers &mdash; seagliderOG1 0.0.2.post1.dev76 documentation</title>
+  <title>seagliderOG1.writers &mdash; seagliderOG1 0.0.2.post1.dev77 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=0e671115"></script>
+      <script src="../../_static/documentation_options.js?v=aa1f950c"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -149,10 +149,9 @@
 <span class="w">    </span><span class="sd">"""Write the dataset to a NetCDF file with lossless compression.</span>
 
 <span class="sd">    Every non-scalar numeric variable, coordinates included, is written with zlib</span>
-<span class="sd">    at level 4 and the shuffle filter. If a TypeError occurs due to invalid</span>
-<span class="sd">    attribute values, converts the invalid attributes to strings and retries the</span>
-<span class="sd">    save. The input dataset is copied first, so the caller's dataset is not</span>
-<span class="sd">    modified.</span>
+<span class="sd">    at level 4 and the shuffle filter. Attributes are checked before anything is</span>
+<span class="sd">    written: one netCDF cannot store is refused by name, never converted to text.</span>
+<span class="sd">    The input dataset is copied first, so the caller's dataset is not modified.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -166,7 +165,7 @@
 <span class="sd">    sidecar : dict, optional</span>
 <span class="sd">        Conversion provenance (as filled by ``to_og1(provenance=...)``) to write beside</span>
 <span class="sd">        the file as ``&lt;stem&gt;_conversion.json`` (:func:`conversion_path`), bound to it by the</span>
-<span class="sd">        dataset's ``id`` and ``date_created``; a sidecar already there is replaced.</span>
+<span class="sd">        dataset's ``id`` and ``tracking_id``; a sidecar already there is replaced.</span>
 <span class="sd">        Nothing from it is written into the NetCDF file. Default is None (no sidecar).</span>
 
 <span class="sd">    Returns</span>
@@ -180,11 +179,13 @@
 <span class="sd">        If ``path`` exists and ``overwrite`` is False.</span>
 <span class="sd">    ValueError</span>
 <span class="sd">        If the dataset carries a None-valued attribute.</span>
+<span class="sd">    TypeError</span>
+<span class="sd">        If an attribute (global or on a variable) has a type netCDF cannot store, such</span>
+<span class="sd">        as a dict or a bool; the message names each one. Nothing is written or removed.</span>
 <span class="sd">    """</span>
     <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
-    <span class="c1"># Refuse None-valued attributes by name rather than letting the stringify</span>
-    <span class="c1"># retry below turn them into the literal "None".</span>
+    <span class="c1"># Refuse None-valued attributes by name rather than writing the literal "None".</span>
     <span class="n">none_attrs</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">]</span>
     <span class="n">none_attrs</span> <span class="o">+=</span> <span class="p">[</span>
         <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span>
@@ -195,6 +196,18 @@
     <span class="k">if</span> <span class="n">none_attrs</span><span class="p">:</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"refusing to write None-valued attribute(s): </span><span class="si">{</span><span class="n">none_attrs</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="c1"># Checked here, before an existing file is removed: an attribute netCDF cannot</span>
+    <span class="c1"># store is the caller's to fix, so it is named, not converted to text.</span>
+    <span class="n">bad_attrs</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">owner</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="k">for</span> <span class="n">owner</span><span class="p">,</span> <span class="n">attrs</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"global"</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">)]</span>
+        <span class="o">+</span> <span class="p">[(</span><span class="nb">str</span><span class="p">(</span><span class="n">var_name</span><span class="p">),</span> <span class="n">var</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span> <span class="k">for</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_storable_attribute</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">bad_attrs</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"refusing to write attribute(s) netCDF cannot store: </span><span class="si">{</span><span class="n">bad_attrs</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
     <span class="c1"># Handle existing file</span>
     <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
@@ -207,8 +220,6 @@
                 <span class="sa">f</span><span class="s2">"Output file '</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">' already exists. "</span>
                 <span class="s2">"Use overwrite=True to replace it."</span>
             <span class="p">)</span>
-
-    <span class="n">valid_types</span> <span class="o">=</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Number</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span>
 
     <span class="c1"># A new identity for every written version of the file (ctdcast's tracking_id); the</span>
     <span class="c1"># sidecar binds to it, and enrich issues a new one.</span>
@@ -224,37 +235,8 @@
             <span class="n">var</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"calendar"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">encoding</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_TIME_ENCODING</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_write</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">ds</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"NETCDF4"</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">"netcdf4"</span><span class="p">)</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Dataset successfully saved to </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">_write</span><span class="p">()</span>
-    <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"TypeError saving dataset: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">varname</span><span class="p">,</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variable</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">valid_types</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
-                    <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"For variable '</span><span class="si">{</span><span class="n">varname</span><span class="si">}</span><span class="s2">': "</span>
-                        <span class="sa">f</span><span class="s2">"Converting attribute '</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">' with value '</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">' to string."</span>
-                    <span class="p">)</span>
-                    <span class="n">variable</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">_write</span><span class="p">()</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># I/O boundary: last-ditch save attempt</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to save dataset: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="n">datetime_vars</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="k">if</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">"datetime64[ns]"</span>
-            <span class="p">]</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Variables with dtype datetime64[ns]: </span><span class="si">{</span><span class="n">datetime_vars</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="n">float_attrs</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">attr</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">],</span> <span class="nb">float</span><span class="p">)</span>
-            <span class="p">]</span>
-            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Attributes with dtype float64: </span><span class="si">{</span><span class="n">float_attrs</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="k">raise</span>
+    <span class="n">ds</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"NETCDF4"</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">"netcdf4"</span><span class="p">)</span>
+    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Dataset successfully saved to </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">sidecar</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">write_sidecar</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">,</span> <span class="n">sidecar</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
@@ -386,6 +368,38 @@
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">stem</span><span class="si">}</span><span class="s2">_conversion</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_storable_attribute</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return whether netCDF can store ``value`` as an attribute unchanged.</span>
+
+<span class="sd">    Text, a number, or a sequence or array of text or numbers. Not a bool (netCDF has no</span>
+<span class="sd">    boolean attribute), None, a mapping, or a sequence holding any of those.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : object</span>
+<span class="sd">        The attribute value.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        True when it can be written as is.</span>
+
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">scalar</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="n">Number</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="c1"># netCDF attributes are scalar or 1-D; a 2-D array would pass a dtype-only check</span>
+        <span class="c1"># and then fail in to_netcdf after an existing output was already removed.</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s2">"iufcSU"</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">scalar</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scalar</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="proposal_path">

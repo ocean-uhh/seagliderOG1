@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev76 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev77 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=0e671115"></script>
+      <script src="_static/documentation_options.js?v=aa1f950c"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -116,6 +116,12 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 <section id="breaking-changes">
 <h3>Breaking changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>The basestation sensor-string variables keep their names (<code class="docutils literal notranslate"><span class="pre">sbe41</span></code>, <code class="docutils literal notranslate"><span class="pre">sbe43</span></code>, <code class="docutils literal notranslate"><span class="pre">wlbb2f</span></code>); they
+were written as <code class="docutils literal notranslate"><span class="pre">SeaBird</span> <span class="pre">SBE</span> <span class="pre">41</span> <span class="pre">CTD</span></code>, <code class="docutils literal notranslate"><span class="pre">Seabird</span> <span class="pre">SBE43F</span></code>, <code class="docutils literal notranslate"><span class="pre">Wetlabs</span> <span class="pre">BB2FL-VMT</span></code> (names with
+spaces). The sensor-key map moved from <code class="docutils literal notranslate"><span class="pre">OG1_variable_names.yaml</span></code> to <code class="docutils literal notranslate"><span class="pre">OG1_sensor_names.yaml</span></code>
+(<code class="docutils literal notranslate"><span class="pre">vocabularies.sensor_names</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">writers.write</span></code> refuses an attribute netCDF cannot store (a dict, a bool) with a <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>
+naming it, before anything is written; it used to convert such attributes to text and retry.</p></li>
 <li><p>CLI flags in the family shape: <code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">[dest]</span></code> (a directory gets <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>, a <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> path is
 that file) replaces <code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">-o</span> <span class="pre">FILE</span></code>; <code class="docutils literal notranslate"><span class="pre">--raw-dir</span></code> replaces <code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span></code> and <code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--source</span></code>;
 the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> key is <code class="docutils literal notranslate"><span class="pre">raw_dir</span></code> (<code class="docutils literal notranslate"><span class="pre">source:</span></code> is read with a deprecation warning for one
@@ -210,6 +216,8 @@ list) and <code class="docutils literal notranslate"><span class="pre">vocabular
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>The readers (<code class="docutils literal notranslate"><span class="pre">read_mission</span></code>, <code class="docutils literal notranslate"><span class="pre">read_file</span></code>, <code class="docutils literal notranslate"><span class="pre">list_files</span></code>, <code class="docutils literal notranslate"><span class="pre">discover_missions</span></code>,
+<code class="docutils literal notranslate"><span class="pre">repair_files</span></code>) accept a <code class="docutils literal notranslate"><span class="pre">pathlib.Path</span></code> as well as a string.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">vocabularies.VARIABLES_TO_DROP</span></code> is empty: the 24 basestation variables it removed (e.g. <code class="docutils literal notranslate"><span class="pre">density</span></code>,
 <code class="docutils literal notranslate"><span class="pre">theta</span></code>, <code class="docutils literal notranslate"><span class="pre">dissolved_oxygen_sat</span></code>, the <code class="docutils literal notranslate"><span class="pre">*_gsm</span></code> flight-model set) are now in the output. <code class="docutils literal notranslate"><span class="pre">depth</span></code> and
 <code class="docutils literal notranslate"><span class="pre">eng_depth</span></code> map to <code class="docutils literal notranslate"><span class="pre">DEPTH</span></code>, which <code class="docutils literal notranslate"><span class="pre">ctd_depth</span></code> holds, and are written as <code class="docutils literal notranslate"><span class="pre">DEPTH_2</span></code> / <code class="docutils literal notranslate"><span class="pre">DEPTH_3</span></code>.</p></li>
@@ -236,6 +244,20 @@ config, <code class="docutils literal notranslate"><span class="pre">ruff</span>
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">date_created</span></code> is the conversion time; the basestation files’ own <code class="docutils literal notranslate"><span class="pre">date_created</span></code> (sg005:
+2014-03-11) was written instead, because <code class="docutils literal notranslate"><span class="pre">OG1_global_attributes.yaml</span></code> kept it as-is.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">date_modified</span></code> (and so <code class="docutils literal notranslate"><span class="pre">date_created</span></code>) is UTC; it was the converting machine’s local time.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code> and <code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code> carry <code class="docutils literal notranslate"><span class="pre">original_dimension:</span> <span class="pre">gps_info</span></code>;
+<code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code> keeps its vocabulary <code class="docutils literal notranslate"><span class="pre">long_name</span></code> (all attributes were removed).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PHASE</span></code>, <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> and <code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code> take their attributes from the vocabulary
+(<code class="docutils literal notranslate"><span class="pre">PHASE</span></code> and <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> had none);
+<code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code>’s <code class="docutils literal notranslate"><span class="pre">long_name</span></code> was <code class="docutils literal notranslate"><span class="pre">&quot;</span> <span class="pre">quality</span> <span class="pre">flag&quot;</span></code>.</p></li>
+<li><p>Conversion is about 2.5 times faster (sg005, 5 dives: 7.5 s → 2.9 s), output unchanged:
+splitting a dive by dimension, the dtype pass and the scalar parameters rebuilt a dataset once
+per variable.</p></li>
+<li><p>The fate figure on the conversion page writes <code class="docutils literal notranslate"><span class="pre">-&gt;</span></code>, avoiding a missing-glyph warning.</p></li>
+<li><p>A sensor key in the <code class="docutils literal notranslate"><span class="pre">instrument</span></code> global with no entry in <code class="docutils literal notranslate"><span class="pre">OG1_sensor_names.yaml</span></code> is skipped
+with a warning (no <code class="docutils literal notranslate"><span class="pre">SENSOR_</span></code> variable); the conversion failed with <code class="docutils literal notranslate"><span class="pre">KeyError</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span></code> and the converter read dotted version strings (<code class="docutils literal notranslate"><span class="pre">base_station_version:</span> <span class="pre">&quot;3.0.6&quot;</span></code>)
 from newer basestation files instead of failing; <code class="docutils literal notranslate"><span class="pre">init</span> <span class="pre">--from</span></code> also accepts one
 <code class="docutils literal notranslate"><span class="pre">pSSSDDDD*.nc</span></code> file.</p></li>
