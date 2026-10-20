@@ -10,6 +10,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Breaking changes
 
+- When the config lists `institutions`, the basestation `institution` global (free text, a postal
+  address on sg005) is no longer written as a role-less contributing institution beside them;
+  the conversion page offers its registry match as an `institutions:` entry instead. Without
+  config institutions it is kept as before.
 - The basestation sensor-string variables keep their names (`sbe41`, `sbe43`, `wlbb2f`); they
   were written as `SeaBird SBE 41 CTD`, `Seabird SBE43F`, `Wetlabs BB2FL-VMT` (names with
   spaces). The sensor-key map moved from `OG1_variable_names.yaml` to `OG1_sensor_names.yaml`
@@ -54,6 +58,17 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Added
 
+- Conversion page: *mission.yaml against the data*, copyable `mission.yaml` lines where the
+  requested `dives` or a config platform field (serial, firmware, basestation version, WMO id)
+  differs from the basestation files, where platform fields were written as `UNK` or omitted,
+  where the EDMO registry resolved an institution id the config left null, and for missing ACDD
+  globals (under `deployment:` or `global_attributes:`). The sidecar records the `dives`,
+  `platform` and `institutions` values `process_mission` was given.
+- Three ACDD globals derived from the data: `geospatial_bounds` (lat/lon bounding box as a WKT
+  polygon, latitude first), `geospatial_vertical_positive` (`down` or `up`, from the sign of mean
+  DEPTH), and `time_coverage_duration`
+  (end − start as an ISO 8601 duration). Recorded as `derived` in `conversion_attribute_sources`.
+- `CONTRIBUTING.md`: licensing of contributions, credit and authorship, and scope.
 - `seagliderOG1 draft --raw-dir DIR`: convert with no config to see what the basestation files
   hold — `<id>_draft.nc` (a `draft` global, no `OG-1.0` in `Conventions`), a draft conversion
   page with the basestation's own global attributes, the sidecar, and a proposed
@@ -134,6 +149,11 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Fixed
 
+- `data/demo_sg005/mission.yaml` names its Operator `University of Washington School of
+  Oceanography`, a registry variant, so it carries the EDMO id; as `University of Washington` it
+  matched no registry entry.
+- Conversion page: `contributing_institutions_role` and `_role_vocabulary` are grouped under
+  People & institutions (were under Other).
 - `date_created` is the conversion time; the basestation files' own `date_created` (sg005:
   2014-03-11) was written instead, because `OG1_global_attributes.yaml` kept it as-is.
 - `date_modified` (and so `date_created`) is UTC; it was the converting machine's local time.

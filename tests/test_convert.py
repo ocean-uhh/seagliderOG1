@@ -93,6 +93,40 @@ def test_get_contributors_demo_sg005_real_attrs():
     assert any("no role for contributor" in str(w.message) for w in caught)
 
 
+def test_get_contributors_drops_the_file_institution_with_config_institutions():
+    """With config institutions the basestation institution text is not written."""
+    ds = xr.Dataset(
+        attrs={
+            "institution": (
+                "School of Oceanography\nUniversity of Washington\n"
+                "Seattle, WA 98195-5351"
+            )
+        }
+    )
+    attrs = convert.get_contributors(
+        ds, institutions=[{"name": "No Such Institute", "role": "Operator"}]
+    )
+    assert attrs["contributing_institutions"] == "No Such Institute"
+    assert attrs["contributing_institutions_role"] == "Operator"
+
+
+def test_sidecar_records_the_file_institution_and_its_registry_match(
+    sg005_og1: pathlib.Path,
+) -> None:
+    """demo_sg005's postal-address institution resolves to EDMO 1434 in the sidecar."""
+    assert convert.conversion_sidecar(sg005_og1)["institution_from_file"] == {
+        "text": "School of Oceanography\nUniversity of Washington\nSeattle, WA 98195-5351",
+        "name": "University of Washington (School of Oceanography)",
+        "id": "https://edmo.seadatanet.org/report/1434",
+    }
+    assert convert._institution_from_file({}) is None
+    assert convert._institution_from_file({"institution": "Nowhere"}) == {
+        "text": "Nowhere",
+        "name": None,
+        "id": None,
+    }
+
+
 def test_get_contributors_config_fills_creator_role():
     """A config person matching the role-less creator gives one slot, email filled."""
     ds = xr.Dataset(
@@ -352,6 +386,35 @@ def test_converted_globals_carry_no_placeholder():
     assert ds.attrs["featureType"] == "trajectory"
     assert ds.attrs["Conventions"] == "CF-1.10, ACDD-1.3, OG-1.0"
     assert ds.attrs["date_created"]  # mandatory, always present and non-empty
+
+
+def test_derived_acdd_globals_from_the_data():
+    """geospatial_bounds, geospatial_vertical_positive and time_coverage_duration are derived."""
+    import json
+    import re
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    # Bounding-box polygon, latitude first (EPSG:4326 axis order): corners match the min/max.
+    assert ds.attrs["geospatial_bounds"] == (
+        "POLYGON (("
+        f"{ds.attrs['geospatial_lat_max']:.6f} {ds.attrs['geospatial_lon_min']:.6f}, "
+        f"{ds.attrs['geospatial_lat_max']:.6f} {ds.attrs['geospatial_lon_max']:.6f}, "
+        f"{ds.attrs['geospatial_lat_min']:.6f} {ds.attrs['geospatial_lon_max']:.6f}, "
+        f"{ds.attrs['geospatial_lat_min']:.6f} {ds.attrs['geospatial_lon_min']:.6f}, "
+        f"{ds.attrs['geospatial_lat_max']:.6f} {ds.attrs['geospatial_lon_min']:.6f}))"
+    )
+    # "down" only because DEPTH increases downward (positive mean); the label follows the sign.
+    assert np.nanmean(ds.DEPTH.values) > 0
+    assert ds.attrs["geospatial_vertical_positive"] == "down"
+    # ISO 8601 duration, e.g. P1DT2H3M4.5S.
+    assert re.fullmatch(r"P\d+DT\d+H\d+M[\d.]+S", ds.attrs["time_coverage_duration"])
+    sources = json.loads(ds.attrs["conversion_attribute_sources"])
+    assert {
+        "geospatial_bounds",
+        "geospatial_vertical_positive",
+        "time_coverage_duration",
+    } <= set(sources["derived"])
 
 
 def test_deployment_globals_are_written():

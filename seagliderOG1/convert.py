@@ -67,6 +67,9 @@ _DERIVED_GLOBALS = frozenset(
         "geospatial_lon_max",
         "geospatial_vertical_min",
         "geospatial_vertical_max",
+        "geospatial_bounds",
+        "geospatial_vertical_positive",
+        "time_coverage_duration",
         "date_created",
         "start_date",
         "tracking_id",
@@ -772,6 +775,37 @@ def conversion_sidecar(path: str | os.PathLike, *, verify: bool = False) -> dict
 DRAFT_NOTE = "converted without a mission config; not an OG1 file"
 
 
+def _institution_from_file(attrs: Mapping) -> dict | None:
+    """Return a basestation file's ``institution`` global and its EDMO registry match.
+
+    Parameters
+    ----------
+    attrs : collections.abc.Mapping
+        The first basestation file's global attributes.
+
+    Returns
+    -------
+    dict or None
+        ``{"text", "name", "id"}``: the global as written, the registry
+        ``standard_name`` and EDMO URL (both None without a match); None when the file
+        has no ``institution`` global.
+
+    """
+    if "institution" not in attrs:
+        return None
+    text = str(attrs["institution"])
+    # Silenced: an unmatched name is already warned by get_contributors when it is used.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        (resolved,) = contributors.enrich_institutions([{"name": text, "role": ""}])
+    matched = bool(resolved["id"])
+    return {
+        "text": text,
+        "name": resolved["name"] if matched else None,
+        "id": resolved["id"] if matched else None,
+    }
+
+
 def _basestation_globals(list_of_datasets: Sequence[xr.Dataset]) -> dict:
     """Return each basestation global attribute's distinct values across the inputs.
 
@@ -1381,6 +1415,9 @@ def to_og1(
         provenance["platform_from_file"] = vocabularies.platform_from_file(
             list_of_datasets[0].attrs
         )
+        provenance["institution_from_file"] = _institution_from_file(
+            list_of_datasets[0].attrs
+        )
 
     ds_og1 = xr.concat(processed_datasets, dim="N_MEASUREMENTS")
     ds_og1 = ds_og1.sortby("TIME")
@@ -1523,6 +1560,38 @@ def to_og1(
     ds_og1.attrs["geospatial_vertical_min"] = depth_min
     ds_og1.attrs["geospatial_vertical_max"] = depth_max
 
+    # geospatial_bounds: the lat/lon bounding box as a WKT polygon, latitude first
+    # (EPSG:4326 axis order), matching the OceanGliders format checker's reference.
+    ds_og1.attrs["geospatial_bounds"] = (
+        "POLYGON (("
+        f"{lat_max:.6f} {lon_min:.6f}, "
+        f"{lat_max:.6f} {lon_max:.6f}, "
+        f"{lat_min:.6f} {lon_max:.6f}, "
+        f"{lat_min:.6f} {lon_min:.6f}, "
+        f"{lat_max:.6f} {lon_min:.6f}))"
+    )
+    # geospatial_vertical_positive: the direction of increasing DEPTH. DEPTH carries the
+    # CF standard name "depth" (positive downward), so a positive mean confirms "down";
+    # label by the data's sign, and warn rather than assert "down" over depths that do
+    # not increase downward.
+    depth = ds_og1.DEPTH.values
+    if np.all(np.isnan(depth)):
+        _log.warning("DEPTH is all-NaN; geospatial_vertical_positive not set.")
+    else:
+        depth_mean = np.nanmean(depth)
+        if depth_mean >= 0:
+            ds_og1.attrs["geospatial_vertical_positive"] = "down"
+        else:
+            _log.warning(
+                f"Mean DEPTH is negative ({depth_mean:.3f}); "
+                "geospatial_vertical_positive set to 'up', not 'down'."
+            )
+            ds_og1.attrs["geospatial_vertical_positive"] = "up"
+    # time_coverage_duration: end minus start as an ISO 8601 duration.
+    ds_og1.attrs["time_coverage_duration"] = pd.Timedelta(
+        tend_in_numpy_datetime64.values - tstart_in_numpy_datetime64.values
+    ).isoformat()
+
     # Construct the unique identifier attribute. The data-mode suffix (delayed/R)
     # is the only place OG1 records data mode; there is no data-mode attribute.
     id = (
@@ -1656,8 +1725,9 @@ def process_mission(
     The library form of ``seagliderOG1 process`` for a single mission: the CLI calls
     this once per selected mission. The file is written as ``<output_dir>/<id>.nc``,
     where ``id`` is the converter-derived (or ``deployment``-supplied) identifier, with
-    the conversion sidecar ``<id>_conversion.json`` beside it (the input files and which
-    dives each variable came from; see :func:`conversion_sidecar`).
+    the conversion sidecar ``<id>_conversion.json`` beside it (the input files, which
+    dives each variable came from and, except for a draft, the ``dives``, ``platform``
+    and ``institutions`` values this call was given; see :func:`conversion_sidecar`).
 
     Parameters
     ----------
@@ -1769,6 +1839,18 @@ def process_mission(
         mode=mode,
         provenance=provenance,
     )
+    if not draft:
+        # What this run was given, so the page can set it against what the files hold:
+        # the output cannot say which platform values came from the config.
+        provenance["config"] = {
+            "dives": list(dives) if dives is not None else None,
+            "platform": {
+                field: value
+                for field, value in (platform or {}).items()
+                if not _is_empty(value)
+            },
+            "institutions": [dict(record) for record in institutions or ()],
+        }
     if keep_variables:
         ds = _keep_variables(ds, list(keep_variables))
     if draft:
@@ -2361,8 +2443,9 @@ def get_contributors(
     """Build OG1 contributor and institution attributes.
 
     Contributors and institutions already on the dataset (``creator_*``,
-    ``contributor_*`` and the basestation ``institution`` string) are parsed into
-    records, the mission config's ``people`` and ``institutions`` are appended,
+    ``contributor_*`` and the basestation ``institution`` string, the last only when
+    the config gives no ``institutions``) are parsed into records, the mission
+    config's ``people`` and ``institutions`` are appended,
     duplicates are consolidated on (name, role) with empty-role fill-in,
     institutions are resolved against the EDMO registry, and everything is
     formatted once into aligned comma-separated lists. No role or EDMO id is ever
@@ -2414,7 +2497,11 @@ def get_contributors(
         )
 
     file_institutions = contributors.parse_institutions(ds.attrs)
-    if "institution" in ds.attrs:
+    # The basestation institution global is free text (a postal address on sg005) with no
+    # role. With config institutions it is dropped: kept, it is a role-less second record
+    # unless both names resolve to the same registry entry. The conversion page suggests
+    # its registry match for the config instead (institution_from_file).
+    if "institution" in ds.attrs and not institutions:
         file_institutions = [
             {"name": ds.attrs["institution"], "role": "", "id": ""},
             *file_institutions,
