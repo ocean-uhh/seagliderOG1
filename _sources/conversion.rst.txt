@@ -115,7 +115,9 @@ and not others, and cannot say which dives that was.
 ``convert.process_mission`` (and so ``process``) records this in ``<id>_conversion.json`` beside
 the OG1 file. For each basestation variable it gives the runs of dives it is *present* in (the
 variable exists in the file) and *valid* in (present, with at least one non-missing value). The
-sidecar also lists the input files and carries the file's ``id``, ``tracking_id`` and SHA-256;
+sidecar also lists the input files, records the ``dives``, ``platform`` and ``institutions`` values
+the conversion was given (not for a draft) and the basestation ``institution`` global's registry
+match, and carries the file's ``id``, ``tracking_id`` and SHA-256;
 ``convert.conversion_sidecar`` reads it back and ignores a sidecar whose ``id`` or
 ``tracking_id`` differs from the file's (``seagliderOG1 report`` also checks the SHA-256).
 
@@ -135,6 +137,36 @@ The conversion page
 ``seagliderOG1 report`` (and ``process --report``) writes an HTML page for the OG1 file. A
 draft (``seagliderOG1 draft``) gets the same page with its global attributes replaced by the
 basestation files' own.
+
+The page opens with **mission.yaml against the data** when the ``mission.yaml`` the conversion
+was given (``process``, or ``convert.process_mission``) and the output disagree or fall short, as
+copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds something:
+
+* *Dive range* — the requested ``dives`` against the first and last dive that reached the file
+  (a dive outside the files, or an end dive rejected as empty or invalid), naming dives inside
+  that span that were not converted;
+* *Platform from the files* — each platform field set in the config against the value the
+  converter derives from the first basestation file (``PLATFORM_SERIAL_NUMBER``,
+  ``GLIDER_FIRMWARE_VERSION``, ``LANDSTATION_VERSION``, ``WMO_IDENTIFIER``), naming the source
+  global when the files carry more than one value. The config wins by design, so a pair is a
+  value to check, not an error;
+* *Platform not filled* — required or file-derivable platform fields written as ``UNK`` or, for
+  the numeric ``PLATFORM_DEPTH_RATING``, omitted;
+* *Institution ids* — config institutions with no ``id`` that the package's EDMO registry
+  (``config/institution_registry.yaml``) matched by name, as an ``institutions:`` block with the
+  registry name and id filled in;
+* *Institution in the basestation files* — the basestation ``institution`` global's registry
+  match, when no config institution resolved to it. The converter does not write the file's
+  institution when the config lists institutions (it would be a second, role-less record), so
+  this is where it surfaces, with ``role: null`` to fill;
+* *Missing ACDD globals* — ACDD 1.3 globals the file does not carry, under ``deployment:`` where
+  they have a home there and ``global_attributes:`` otherwise. Globals the converter supplies
+  itself (``standard_name_vocabulary``, ``geospatial_bounds_crs``, ``time_coverage_resolution``,
+  …) are named, not boxed: they are not ``mission.yaml`` values.
+
+The dive, platform-pair and institution checks read the ``config`` the sidecar records, so a page
+for a file converted before it was recorded shows only the other two. A draft has no such section.
+
 Its sections, in order:
 
 #. **Before → after** — files, dives, size on disk, samples on the shared axis, variable and

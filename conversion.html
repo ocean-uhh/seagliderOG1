@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev77 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=aa1f950c"></script>
+      <script src="_static/documentation_options.js?v=420536ce"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -220,7 +220,9 @@ and not others, and cannot say which dives that was.</p>
 <p><code class="docutils literal notranslate"><span class="pre">convert.process_mission</span></code> (and so <code class="docutils literal notranslate"><span class="pre">process</span></code>) records this in <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside
 the OG1 file. For each basestation variable it gives the runs of dives it is <em>present</em> in (the
 variable exists in the file) and <em>valid</em> in (present, with at least one non-missing value). The
-sidecar also lists the input files and carries the file’s <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> and SHA-256;
+sidecar also lists the input files, records the <code class="docutils literal notranslate"><span class="pre">dives</span></code>, <code class="docutils literal notranslate"><span class="pre">platform</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> values
+the conversion was given (not for a draft) and the basestation <code class="docutils literal notranslate"><span class="pre">institution</span></code> global’s registry
+match, and carries the file’s <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> and SHA-256;
 <code class="docutils literal notranslate"><span class="pre">convert.conversion_sidecar</span></code> reads it back and ignores a sidecar whose <code class="docutils literal notranslate"><span class="pre">id</span></code> or
 <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> differs from the file’s (<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span></code> also checks the SHA-256).</p>
 <p>The conversion page groups the variables into patterns — <code class="docutils literal notranslate"><span class="pre">every</span> <span class="pre">dive</span></code>, <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">dive</span> <span class="pre">k</span></code>,
@@ -234,8 +236,36 @@ the four depth-averaged currents are present on every dive but have values from 
 <span id="conversion-page"></span><h2>The conversion page<a class="headerlink" href="#the-conversion-page" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span></code> (and <code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code>) writes an HTML page for the OG1 file. A
 draft (<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">draft</span></code>) gets the same page with its global attributes replaced by the
-basestation files’ own.
-Its sections, in order:</p>
+basestation files’ own.</p>
+<p>The page opens with <strong>mission.yaml against the data</strong> when the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> the conversion
+was given (<code class="docutils literal notranslate"><span class="pre">process</span></code>, or <code class="docutils literal notranslate"><span class="pre">convert.process_mission</span></code>) and the output disagree or fall short, as
+copyable boxes of <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> lines. Each check is shown only when it finds something:</p>
+<ul class="simple">
+<li><p><em>Dive range</em> — the requested <code class="docutils literal notranslate"><span class="pre">dives</span></code> against the first and last dive that reached the file
+(a dive outside the files, or an end dive rejected as empty or invalid), naming dives inside
+that span that were not converted;</p></li>
+<li><p><em>Platform from the files</em> — each platform field set in the config against the value the
+converter derives from the first basestation file (<code class="docutils literal notranslate"><span class="pre">PLATFORM_SERIAL_NUMBER</span></code>,
+<code class="docutils literal notranslate"><span class="pre">GLIDER_FIRMWARE_VERSION</span></code>, <code class="docutils literal notranslate"><span class="pre">LANDSTATION_VERSION</span></code>, <code class="docutils literal notranslate"><span class="pre">WMO_IDENTIFIER</span></code>), naming the source
+global when the files carry more than one value. The config wins by design, so a pair is a
+value to check, not an error;</p></li>
+<li><p><em>Platform not filled</em> — required or file-derivable platform fields written as <code class="docutils literal notranslate"><span class="pre">UNK</span></code> or, for
+the numeric <code class="docutils literal notranslate"><span class="pre">PLATFORM_DEPTH_RATING</span></code>, omitted;</p></li>
+<li><p><em>Institution ids</em> — config institutions with no <code class="docutils literal notranslate"><span class="pre">id</span></code> that the package’s EDMO registry
+(<code class="docutils literal notranslate"><span class="pre">config/institution_registry.yaml</span></code>) matched by name, as an <code class="docutils literal notranslate"><span class="pre">institutions:</span></code> block with the
+registry name and id filled in;</p></li>
+<li><p><em>Institution in the basestation files</em> — the basestation <code class="docutils literal notranslate"><span class="pre">institution</span></code> global’s registry
+match, when no config institution resolved to it. The converter does not write the file’s
+institution when the config lists institutions (it would be a second, role-less record), so
+this is where it surfaces, with <code class="docutils literal notranslate"><span class="pre">role:</span> <span class="pre">null</span></code> to fill;</p></li>
+<li><p><em>Missing ACDD globals</em> — ACDD 1.3 globals the file does not carry, under <code class="docutils literal notranslate"><span class="pre">deployment:</span></code> where
+they have a home there and <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code> otherwise. Globals the converter supplies
+itself (<code class="docutils literal notranslate"><span class="pre">standard_name_vocabulary</span></code>, <code class="docutils literal notranslate"><span class="pre">geospatial_bounds_crs</span></code>, <code class="docutils literal notranslate"><span class="pre">time_coverage_resolution</span></code>,
+…) are named, not boxed: they are not <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> values.</p></li>
+</ul>
+<p>The dive, platform-pair and institution checks read the <code class="docutils literal notranslate"><span class="pre">config</span></code> the sidecar records, so a page
+for a file converted before it was recorded shows only the other two. A draft has no such section.</p>
+<p>Its sections, in order:</p>
 <ol class="arabic simple">
 <li><p><strong>Before → after</strong> — files, dives, size on disk, samples on the shared axis, variable and
 global-attribute counts, time span and OG1-requirement coverage, basestation input beside

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev77 documentation</title>
+  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=aa1f950c"></script>
+      <script src="../../_static/documentation_options.js?v=420536ce"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -162,6 +162,9 @@
         <span class="s2">"geospatial_lon_max"</span><span class="p">,</span>
         <span class="s2">"geospatial_vertical_min"</span><span class="p">,</span>
         <span class="s2">"geospatial_vertical_max"</span><span class="p">,</span>
+        <span class="s2">"geospatial_bounds"</span><span class="p">,</span>
+        <span class="s2">"geospatial_vertical_positive"</span><span class="p">,</span>
+        <span class="s2">"time_coverage_duration"</span><span class="p">,</span>
         <span class="s2">"date_created"</span><span class="p">,</span>
         <span class="s2">"start_date"</span><span class="p">,</span>
         <span class="s2">"tracking_id"</span><span class="p">,</span>
@@ -885,6 +888,37 @@
 <span class="n">DRAFT_NOTE</span> <span class="o">=</span> <span class="s2">"converted without a mission config; not an OG1 file"</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_institution_from_file</span><span class="p">(</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return a basestation file's ``institution`` global and its EDMO registry match.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attrs : collections.abc.Mapping</span>
+<span class="sd">        The first basestation file's global attributes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict or None</span>
+<span class="sd">        ``{"text", "name", "id"}``: the global as written, the registry</span>
+<span class="sd">        ``standard_name`` and EDMO URL (both None without a match); None when the file</span>
+<span class="sd">        has no ``institution`` global.</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="s2">"institution"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"institution"</span><span class="p">])</span>
+    <span class="c1"># Silenced: an unmatched name is already warned by get_contributors when it is used.</span>
+    <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">resolved</span><span class="p">,)</span> <span class="o">=</span> <span class="n">contributors</span><span class="o">.</span><span class="n">enrich_institutions</span><span class="p">([{</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">""</span><span class="p">}])</span>
+    <span class="n">matched</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">resolved</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"text"</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span>
+        <span class="s2">"name"</span><span class="p">:</span> <span class="n">resolved</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="k">if</span> <span class="n">matched</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"id"</span><span class="p">:</span> <span class="n">resolved</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="k">if</span> <span class="n">matched</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">}</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_basestation_globals</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Return each basestation global attribute's distinct values across the inputs.</span>
 
@@ -1499,6 +1533,9 @@
         <span class="n">provenance</span><span class="p">[</span><span class="s2">"platform_from_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">platform_from_file</span><span class="p">(</span>
             <span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
         <span class="p">)</span>
+        <span class="n">provenance</span><span class="p">[</span><span class="s2">"institution_from_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_institution_from_file</span><span class="p">(</span>
+            <span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="p">)</span>
 
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">processed_datasets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">)</span>
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span>
@@ -1641,6 +1678,38 @@
     <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"geospatial_vertical_min"</span><span class="p">]</span> <span class="o">=</span> <span class="n">depth_min</span>
     <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"geospatial_vertical_max"</span><span class="p">]</span> <span class="o">=</span> <span class="n">depth_max</span>
 
+    <span class="c1"># geospatial_bounds: the lat/lon bounding box as a WKT polygon, latitude first</span>
+    <span class="c1"># (EPSG:4326 axis order), matching the OceanGliders format checker's reference.</span>
+    <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"geospatial_bounds"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">"POLYGON (("</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lat_max</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">lon_min</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lat_max</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">lon_max</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lat_min</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">lon_max</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lat_min</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">lon_min</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lat_max</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">lon_min</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">))"</span>
+    <span class="p">)</span>
+    <span class="c1"># geospatial_vertical_positive: the direction of increasing DEPTH. DEPTH carries the</span>
+    <span class="c1"># CF standard name "depth" (positive downward), so a positive mean confirms "down";</span>
+    <span class="c1"># label by the data's sign, and warn rather than assert "down" over depths that do</span>
+    <span class="c1"># not increase downward.</span>
+    <span class="n">depth</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">DEPTH</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">depth</span><span class="p">)):</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"DEPTH is all-NaN; geospatial_vertical_positive not set."</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">depth_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">depth</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">depth_mean</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"geospatial_vertical_positive"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"down"</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Mean DEPTH is negative (</span><span class="si">{</span><span class="n">depth_mean</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">); "</span>
+                <span class="s2">"geospatial_vertical_positive set to 'up', not 'down'."</span>
+            <span class="p">)</span>
+            <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"geospatial_vertical_positive"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"up"</span>
+    <span class="c1"># time_coverage_duration: end minus start as an ISO 8601 duration.</span>
+    <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"time_coverage_duration"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span>
+        <span class="n">tend_in_numpy_datetime64</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">tstart_in_numpy_datetime64</span><span class="o">.</span><span class="n">values</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
     <span class="c1"># Construct the unique identifier attribute. The data-mode suffix (delayed/R)</span>
     <span class="c1"># is the only place OG1 records data mode; there is no data-mode attribute.</span>
     <span class="nb">id</span> <span class="o">=</span> <span class="p">(</span>
@@ -1777,8 +1846,9 @@
 <span class="sd">    The library form of ``seagliderOG1 process`` for a single mission: the CLI calls</span>
 <span class="sd">    this once per selected mission. The file is written as ``&lt;output_dir&gt;/&lt;id&gt;.nc``,</span>
 <span class="sd">    where ``id`` is the converter-derived (or ``deployment``-supplied) identifier, with</span>
-<span class="sd">    the conversion sidecar ``&lt;id&gt;_conversion.json`` beside it (the input files and which</span>
-<span class="sd">    dives each variable came from; see :func:`conversion_sidecar`).</span>
+<span class="sd">    the conversion sidecar ``&lt;id&gt;_conversion.json`` beside it (the input files, which</span>
+<span class="sd">    dives each variable came from and, except for a draft, the ``dives``, ``platform``</span>
+<span class="sd">    and ``institutions`` values this call was given; see :func:`conversion_sidecar`).</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1890,6 +1960,18 @@
         <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
         <span class="n">provenance</span><span class="o">=</span><span class="n">provenance</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">draft</span><span class="p">:</span>
+        <span class="c1"># What this run was given, so the page can set it against what the files hold:</span>
+        <span class="c1"># the output cannot say which platform values came from the config.</span>
+        <span class="n">provenance</span><span class="p">[</span><span class="s2">"config"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"dives"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">dives</span><span class="p">)</span> <span class="k">if</span> <span class="n">dives</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">"platform"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="n">field</span><span class="p">:</span> <span class="n">value</span>
+                <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="n">platform</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_empty</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="p">},</span>
+            <span class="s2">"institutions"</span><span class="p">:</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">record</span><span class="p">)</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">institutions</span> <span class="ow">or</span> <span class="p">()],</span>
+        <span class="p">}</span>
     <span class="k">if</span> <span class="n">keep_variables</span><span class="p">:</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="n">_keep_variables</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">keep_variables</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">draft</span><span class="p">:</span>
@@ -2486,8 +2568,9 @@
 <span class="w">    </span><span class="sd">"""Build OG1 contributor and institution attributes.</span>
 
 <span class="sd">    Contributors and institutions already on the dataset (``creator_*``,</span>
-<span class="sd">    ``contributor_*`` and the basestation ``institution`` string) are parsed into</span>
-<span class="sd">    records, the mission config's ``people`` and ``institutions`` are appended,</span>
+<span class="sd">    ``contributor_*`` and the basestation ``institution`` string, the last only when</span>
+<span class="sd">    the config gives no ``institutions``) are parsed into records, the mission</span>
+<span class="sd">    config's ``people`` and ``institutions`` are appended,</span>
 <span class="sd">    duplicates are consolidated on (name, role) with empty-role fill-in,</span>
 <span class="sd">    institutions are resolved against the EDMO registry, and everything is</span>
 <span class="sd">    formatted once into aligned comma-separated lists. No role or EDMO id is ever</span>
@@ -2539,7 +2622,11 @@
         <span class="p">)</span>
 
     <span class="n">file_institutions</span> <span class="o">=</span> <span class="n">contributors</span><span class="o">.</span><span class="n">parse_institutions</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
-    <span class="k">if</span> <span class="s2">"institution"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+    <span class="c1"># The basestation institution global is free text (a postal address on sg005) with no</span>
+    <span class="c1"># role. With config institutions it is dropped: kept, it is a role-less second record</span>
+    <span class="c1"># unless both names resolve to the same registry entry. The conversion page suggests</span>
+    <span class="c1"># its registry match for the config instead (institution_from_file).</span>
+    <span class="k">if</span> <span class="s2">"institution"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">institutions</span><span class="p">:</span>
         <span class="n">file_institutions</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"institution"</span><span class="p">],</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"id"</span><span class="p">:</span> <span class="s2">""</span><span class="p">},</span>
             <span class="o">*</span><span class="n">file_institutions</span><span class="p">,</span>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev77 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=aa1f950c"></script>
+      <script src="_static/documentation_options.js?v=420536ce"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -116,6 +116,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 <section id="breaking-changes">
 <h3>Breaking changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>When the config lists <code class="docutils literal notranslate"><span class="pre">institutions</span></code>, the basestation <code class="docutils literal notranslate"><span class="pre">institution</span></code> global (free text, a postal
+address on sg005) is no longer written as a role-less contributing institution beside them;
+the conversion page offers its registry match as an <code class="docutils literal notranslate"><span class="pre">institutions:</span></code> entry instead. Without
+config institutions it is kept as before.</p></li>
 <li><p>The basestation sensor-string variables keep their names (<code class="docutils literal notranslate"><span class="pre">sbe41</span></code>, <code class="docutils literal notranslate"><span class="pre">sbe43</span></code>, <code class="docutils literal notranslate"><span class="pre">wlbb2f</span></code>); they
 were written as <code class="docutils literal notranslate"><span class="pre">SeaBird</span> <span class="pre">SBE</span> <span class="pre">41</span> <span class="pre">CTD</span></code>, <code class="docutils literal notranslate"><span class="pre">Seabird</span> <span class="pre">SBE43F</span></code>, <code class="docutils literal notranslate"><span class="pre">Wetlabs</span> <span class="pre">BB2FL-VMT</span></code> (names with
 spaces). The sensor-key map moved from <code class="docutils literal notranslate"><span class="pre">OG1_variable_names.yaml</span></code> to <code class="docutils literal notranslate"><span class="pre">OG1_sensor_names.yaml</span></code>
@@ -161,6 +165,17 @@ a key with a structured home in the new <code class="docutils literal notranslat
 <section id="added">
 <h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Conversion page: <em>mission.yaml against the data</em>, copyable <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> lines where the
+requested <code class="docutils literal notranslate"><span class="pre">dives</span></code> or a config platform field (serial, firmware, basestation version, WMO id)
+differs from the basestation files, where platform fields were written as <code class="docutils literal notranslate"><span class="pre">UNK</span></code> or omitted,
+where the EDMO registry resolved an institution id the config left null, and for missing ACDD
+globals (under <code class="docutils literal notranslate"><span class="pre">deployment:</span></code> or <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code>). The sidecar records the <code class="docutils literal notranslate"><span class="pre">dives</span></code>,
+<code class="docutils literal notranslate"><span class="pre">platform</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> values <code class="docutils literal notranslate"><span class="pre">process_mission</span></code> was given.</p></li>
+<li><p>Three ACDD globals derived from the data: <code class="docutils literal notranslate"><span class="pre">geospatial_bounds</span></code> (lat/lon bounding box as a WKT
+polygon, latitude first), <code class="docutils literal notranslate"><span class="pre">geospatial_vertical_positive</span></code> (<code class="docutils literal notranslate"><span class="pre">down</span></code> or <code class="docutils literal notranslate"><span class="pre">up</span></code>, from the sign of mean
+DEPTH), and <code class="docutils literal notranslate"><span class="pre">time_coverage_duration</span></code>
+(end − start as an ISO 8601 duration). Recorded as <code class="docutils literal notranslate"><span class="pre">derived</span></code> in <code class="docutils literal notranslate"><span class="pre">conversion_attribute_sources</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CONTRIBUTING.md</span></code>: licensing of contributions, credit and authorship, and scope.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">draft</span> <span class="pre">--raw-dir</span> <span class="pre">DIR</span></code>: convert with no config to see what the basestation files
 hold — <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_draft.nc</span></code> (a <code class="docutils literal notranslate"><span class="pre">draft</span></code> global, no <code class="docutils literal notranslate"><span class="pre">OG-1.0</span></code> in <code class="docutils literal notranslate"><span class="pre">Conventions</span></code>), a draft conversion
 page with the basestation’s own global attributes, the sidecar, and a proposed
@@ -244,6 +259,10 @@ config, <code class="docutils literal notranslate"><span class="pre">ruff</span>
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">data/demo_sg005/mission.yaml</span></code> names its Operator <code class="docutils literal notranslate"><span class="pre">University</span> <span class="pre">of</span> <span class="pre">Washington</span> <span class="pre">School</span> <span class="pre">of</span> <span class="pre">Oceanography</span></code>, a registry variant, so it carries the EDMO id; as <code class="docutils literal notranslate"><span class="pre">University</span> <span class="pre">of</span> <span class="pre">Washington</span></code> it
+matched no registry entry.</p></li>
+<li><p>Conversion page: <code class="docutils literal notranslate"><span class="pre">contributing_institutions_role</span></code> and <code class="docutils literal notranslate"><span class="pre">_role_vocabulary</span></code> are grouped under
+People &amp; institutions (were under Other).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">date_created</span></code> is the conversion time; the basestation files’ own <code class="docutils literal notranslate"><span class="pre">date_created</span></code> (sg005:
 2014-03-11) was written instead, because <code class="docutils literal notranslate"><span class="pre">OG1_global_attributes.yaml</span></code> kept it as-is.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">date_modified</span></code> (and so <code class="docutils literal notranslate"><span class="pre">date_created</span></code>) is UTC; it was the converting machine’s local time.</p></li>

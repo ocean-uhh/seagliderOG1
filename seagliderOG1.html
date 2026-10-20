@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1 API &mdash; seagliderOG1 0.0.2.post1.dev77 documentation</title>
+  <title>seagliderOG1 API &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=aa1f950c"></script>
+      <script src="_static/documentation_options.js?v=420536ce"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -425,8 +425,9 @@ or None when every variable has values on every dive.</p>
 <p>The library form of <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">process</span></code> for a single mission: the CLI calls
 this once per selected mission. The file is written as <code class="docutils literal notranslate"><span class="pre">&lt;output_dir&gt;/&lt;id&gt;.nc</span></code>,
 where <code class="docutils literal notranslate"><span class="pre">id</span></code> is the converter-derived (or <code class="docutils literal notranslate"><span class="pre">deployment</span></code>-supplied) identifier, with
-the conversion sidecar <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside it (the input files and which
-dives each variable came from; see <a class="reference internal" href="#seagliderOG1.convert.conversion_sidecar" title="seagliderOG1.convert.conversion_sidecar"><code class="xref py py-func docutils literal notranslate"><span class="pre">conversion_sidecar()</span></code></a>).</p>
+the conversion sidecar <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside it (the input files, which
+dives each variable came from and, except for a draft, the <code class="docutils literal notranslate"><span class="pre">dives</span></code>, <code class="docutils literal notranslate"><span class="pre">platform</span></code>
+and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> values this call was given; see <a class="reference internal" href="#seagliderOG1.convert.conversion_sidecar" title="seagliderOG1.convert.conversion_sidecar"><code class="xref py py-func docutils literal notranslate"><span class="pre">conversion_sidecar()</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
