@@ -29,48 +29,16 @@ jobs:
       - run: python -m pip install --upgrade pip setuptools wheel
       - run: python -m pip install -e ".[test]" --prefer-binary
 
-      # Diagnostic (Windows only): per-variable netCDF4 call cost and two HDF5 plugin
-      # settings. Remove this step once the cause is known.
-      - name: Time netCDF4 filter queries (diagnostic)
-        if: runner.os == 'Windows'
-        shell: python
-        run: |
-          import os
-          import subprocess
-          import sys
-          import tempfile
-
-          # Each case runs in a fresh interpreter: HDF5 reads its plugin settings when it loads.
-          probe = """
-          import time, netCDF4, xarray as xr
-          p = "data/demo_single_test.nc"
-          nc = netCDF4.Dataset(p)
-          variables = list(nc.variables.values())
-          for meth in ("filters", "chunking", "ncattrs"):
-              t = time.perf_counter()
-              for var in variables:
-                  getattr(var, meth)()
-              print(f"  {meth}: {(time.perf_counter() - t) * 1e3 / len(variables):.2f} ms per variable")
-          nc.close()
-          t = time.perf_counter()
-          xr.open_dataset(p, engine="netcdf4").close()
-          print(f"  xarray open: {time.perf_counter() - t:.3f} s")
-          print("  HDF5_PLUGIN_PATH =", repr(__import__('os').environ.get('HDF5_PLUGIN_PATH')))
-          """
-
-          empty = tempfile.mkdtemp()
-          cases = [
-              ("as installed", {}),
-              ("HDF5_PLUGIN_PRELOAD='::' (no dynamic filter plugins)", {"HDF5_PLUGIN_PRELOAD": "::"}),
-              ("HDF5_PLUGIN_PATH = an empty directory", {"HDF5_PLUGIN_PATH": empty}),
-          ]
-          for label, extra in cases:
-              print(label)
-              env = {**os.environ, **extra}
-              result = subprocess.run([sys.executable, "-c", probe], env=env, capture_output=True, text=True)
-              print(result.stdout.rstrip() or result.stderr.strip()[-800:])
-
-      - run: pytest --durations=30
+      - if: runner.os != 'Windows'
+        run: pytest --durations=30
+      # On Windows the netCDF4 wheel points HDF5 at its bundled filter plugins, and HDF5
+      # rescans that folder on every filter query: xarray queries each variable, so one
+      # OG1 file open took ~1.9 s (36 ms per variable) instead of ~0.03 s. The package
+      # writes zlib, which is built in, so the tests need no plugins.
+      - if: runner.os == 'Windows'
+        env:
+          HDF5_PLUGIN_PRELOAD: "::"
+        run: pytest --durations=30
 
   lint:
     name: Ruff lint and format
