@@ -29,42 +29,42 @@ jobs:
       - run: python -m pip install --upgrade pip setuptools wheel
       - run: python -m pip install -e ".[test]" --prefer-binary
 
-      # Diagnostic (Windows only): time netCDF opens, turn off real-time scanning,
-      # time them again. Remove these three steps once the cause is known.
-      - name: Time netCDF opens (diagnostic)
+      # Diagnostic (Windows only): where xarray spends an OG1 file open.
+      # Remove this step once the cause is known.
+      - name: Profile an xarray open (diagnostic)
         if: runner.os == 'Windows'
         shell: python
         run: |
+          import cProfile
+          import io
+          import pstats
           import time
-          import netCDF4
+
           import xarray as xr
-          for p in ("data/demo_sg005/p0050001_20080606.nc", "data/demo_single_test.nc"):
+
+          p = "data/demo_single_test.nc"
+
+
+          def timed(label, **kwargs):
               t = time.perf_counter()
-              for _ in range(5):
-                  netCDF4.Dataset(p).close()
-              a = (time.perf_counter() - t) / 5
-              t = time.perf_counter()
-              for _ in range(5):
-                  xr.open_dataset(p, engine="netcdf4", decode_timedelta=False).close()
-              b = (time.perf_counter() - t) / 5
-              print(f"{p}: netCDF4 {a:.3f} s, xarray {b:.3f} s per open")
-      - name: Turn off real-time scanning (diagnostic)
-        if: runner.os == 'Windows'
-        continue-on-error: true
-        shell: pwsh
-        run: Set-MpPreference -DisableRealtimeMonitoring $true
-      - name: Time netCDF opens again (diagnostic)
-        if: runner.os == 'Windows'
-        shell: python
-        run: |
-          import time
-          import xarray as xr
-          for p in ("data/demo_sg005/p0050001_20080606.nc", "data/demo_single_test.nc"):
-              t = time.perf_counter()
-              for _ in range(5):
-                  xr.open_dataset(p, engine="netcdf4", decode_timedelta=False).close()
-              b = (time.perf_counter() - t) / 5
-              print(f"{p}: xarray {b:.3f} s per open")
+              for _ in range(3):
+                  xr.open_dataset(p, engine="netcdf4", **kwargs).close()
+              print(f"{label}: {(time.perf_counter() - t) / 3:.3f} s per open")
+
+
+          timed("xarray open")
+          timed("xarray open, decode_times=False", decode_times=False)
+          timed("xarray open, decode_cf=False", decode_cf=False)
+
+          profile = cProfile.Profile()
+          profile.enable()
+          for _ in range(3):
+              xr.open_dataset(p, engine="netcdf4").close()
+          profile.disable()
+          for order in ("tottime", "cumulative"):
+              out = io.StringIO()
+              pstats.Stats(profile, stream=out).sort_stats(order).print_stats(20)
+              print(out.getvalue())
 
       - run: pytest --durations=30
 
