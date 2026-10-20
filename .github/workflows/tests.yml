@@ -28,7 +28,7 @@ jobs:
         with: { python-version: "${{ matrix.python-version }}" }
       - run: python -m pip install --upgrade pip setuptools wheel
       - run: python -m pip install -e ".[test]" --prefer-binary
-      - run: pytest
+      - run: pytest --durations=30
 
   lint:
     name: Ruff lint and format
