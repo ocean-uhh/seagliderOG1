@@ -104,8 +104,15 @@ def test_unwritable_attribute_is_refused_by_name(tmp_path: pathlib.Path) -> None
         writers.write(ds, str(out), overwrite=True)
     # Refused before the existing file is removed.
     assert out.read_text() == "previous version"
-    # Containers are checked by element: these pass a top-level type check.
-    for value in ([True, False], np.array([True]), ["a", None], [{"a": 1}]):
+    # Containers are checked by element, and a 2-D array (netCDF attrs are scalar or 1-D) is
+    # refused before the write rather than failing mid-to_netcdf after the file is removed.
+    for value in (
+        [True, False],
+        np.array([True]),
+        ["a", None],
+        [{"a": 1}],
+        np.zeros((2, 2)),
+    ):
         bad = _load_sample()
         bad["TEMP"].attrs["nested"] = value
         with pytest.raises(TypeError, match="TEMP:nested"):

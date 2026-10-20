@@ -284,7 +284,9 @@ def _storable_attribute(value: object) -> bool:
         return isinstance(item, str | bytes | Number | np.number)
 
     if isinstance(value, np.ndarray):
-        return value.dtype.kind in "iufcSU"
+        # netCDF attributes are scalar or 1-D; a 2-D array would pass a dtype-only check
+        # and then fail in to_netcdf after an existing output was already removed.
+        return value.ndim <= 1 and value.dtype.kind in "iufcSU"
     if isinstance(value, list | tuple):
         return all(scalar(item) for item in value)
     return scalar(value)

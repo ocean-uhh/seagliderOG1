@@ -680,9 +680,13 @@ def add_sensor_to_dataset(
             continue
 
         # Some instruments are deliberately absent from sensor_dict (gather_sensor_info
-        # skips e.g. 'magnetometer'), yet a mapping row can still name them. Skip rather
-        # than raise KeyError on sensor_dict[instrument].
-        if instrument not in sensor_dict:
+        # skips e.g. 'magnetometer'), yet a mapping row can still name them. A key with no
+        # catalogue entry is present but has no sensor_type (loop 1 skipped it for the same
+        # reason). Skip either rather than raise KeyError indexing sensor_type below.
+        if (
+            instrument not in sensor_dict
+            or "sensor_type" not in sensor_dict[instrument]
+        ):
             continue
 
         og1_name = str(og1_name)
