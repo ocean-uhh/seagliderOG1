@@ -606,9 +606,9 @@ def test_config_suggestions_fill_gaps_from_the_file(sg005_og1):
     deployment, escape = _texts(blocks[1])
     assert deployment == "deployment:\n  comment: null   # ACDD recommended"
     assert "  summary: null   # ACDD highly recommended" in escape
-    # Globals the converter can compute are named in the note, never boxed.
+    # Globals the converter supplies itself are named in the note, never boxed.
     assert "geospatial_bounds" not in escape
-    assert "geospatial_vertical_positive" in blocks[1]["note"]
+    assert "standard_name_vocabulary" in blocks[1]["note"]
 
 
 def test_config_suggestions_pin_registry_institution_ids(sg005_og1):

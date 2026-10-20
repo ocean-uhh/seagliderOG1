@@ -64,6 +64,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   where the EDMO registry resolved an institution id the config left null, and for missing ACDD
   globals (under `deployment:` or `global_attributes:`). The sidecar records the `dives`,
   `platform` and `institutions` values `process_mission` was given.
+- Three ACDD globals derived from the data: `geospatial_bounds` (lat/lon bounding box as a WKT
+  polygon, latitude first), `geospatial_vertical_positive` (`down` or `up`, from the sign of mean
+  DEPTH), and `time_coverage_duration`
+  (end − start as an ISO 8601 duration). Recorded as `derived` in `conversion_attribute_sources`.
 - `CONTRIBUTING.md`: licensing of contributions, credit and authorship, and scope.
 - `seagliderOG1 draft --raw-dir DIR`: convert with no config to see what the basestation files
   hold — `<id>_draft.nc` (a `draft` global, no `OG-1.0` in `Conventions`), a draft conversion

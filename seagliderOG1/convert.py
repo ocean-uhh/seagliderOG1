@@ -67,6 +67,9 @@ _DERIVED_GLOBALS = frozenset(
         "geospatial_lon_max",
         "geospatial_vertical_min",
         "geospatial_vertical_max",
+        "geospatial_bounds",
+        "geospatial_vertical_positive",
+        "time_coverage_duration",
         "date_created",
         "start_date",
         "tracking_id",
@@ -1556,6 +1559,38 @@ def to_og1(
     depth_max = ds_og1.DEPTH.max().values
     ds_og1.attrs["geospatial_vertical_min"] = depth_min
     ds_og1.attrs["geospatial_vertical_max"] = depth_max
+
+    # geospatial_bounds: the lat/lon bounding box as a WKT polygon, latitude first
+    # (EPSG:4326 axis order), matching the OceanGliders format checker's reference.
+    ds_og1.attrs["geospatial_bounds"] = (
+        "POLYGON (("
+        f"{lat_max:.6f} {lon_min:.6f}, "
+        f"{lat_max:.6f} {lon_max:.6f}, "
+        f"{lat_min:.6f} {lon_max:.6f}, "
+        f"{lat_min:.6f} {lon_min:.6f}, "
+        f"{lat_max:.6f} {lon_min:.6f}))"
+    )
+    # geospatial_vertical_positive: the direction of increasing DEPTH. DEPTH carries the
+    # CF standard name "depth" (positive downward), so a positive mean confirms "down";
+    # label by the data's sign, and warn rather than assert "down" over depths that do
+    # not increase downward.
+    depth = ds_og1.DEPTH.values
+    if np.all(np.isnan(depth)):
+        _log.warning("DEPTH is all-NaN; geospatial_vertical_positive not set.")
+    else:
+        depth_mean = np.nanmean(depth)
+        if depth_mean >= 0:
+            ds_og1.attrs["geospatial_vertical_positive"] = "down"
+        else:
+            _log.warning(
+                f"Mean DEPTH is negative ({depth_mean:.3f}); "
+                "geospatial_vertical_positive set to 'up', not 'down'."
+            )
+            ds_og1.attrs["geospatial_vertical_positive"] = "up"
+    # time_coverage_duration: end minus start as an ISO 8601 duration.
+    ds_og1.attrs["time_coverage_duration"] = pd.Timedelta(
+        tend_in_numpy_datetime64.values - tstart_in_numpy_datetime64.values
+    ).isoformat()
 
     # Construct the unique identifier attribute. The data-mode suffix (delayed/R)
     # is the only place OG1 records data mode; there is no data-mode attribute.

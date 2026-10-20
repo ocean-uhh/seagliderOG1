@@ -388,6 +388,35 @@ def test_converted_globals_carry_no_placeholder():
     assert ds.attrs["date_created"]  # mandatory, always present and non-empty
 
 
+def test_derived_acdd_globals_from_the_data():
+    """geospatial_bounds, geospatial_vertical_positive and time_coverage_duration are derived."""
+    import json
+    import re
+
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    ds = convert.to_og1(datasets)
+    # Bounding-box polygon, latitude first (EPSG:4326 axis order): corners match the min/max.
+    assert ds.attrs["geospatial_bounds"] == (
+        "POLYGON (("
+        f"{ds.attrs['geospatial_lat_max']:.6f} {ds.attrs['geospatial_lon_min']:.6f}, "
+        f"{ds.attrs['geospatial_lat_max']:.6f} {ds.attrs['geospatial_lon_max']:.6f}, "
+        f"{ds.attrs['geospatial_lat_min']:.6f} {ds.attrs['geospatial_lon_max']:.6f}, "
+        f"{ds.attrs['geospatial_lat_min']:.6f} {ds.attrs['geospatial_lon_min']:.6f}, "
+        f"{ds.attrs['geospatial_lat_max']:.6f} {ds.attrs['geospatial_lon_min']:.6f}))"
+    )
+    # "down" only because DEPTH increases downward (positive mean); the label follows the sign.
+    assert np.nanmean(ds.DEPTH.values) > 0
+    assert ds.attrs["geospatial_vertical_positive"] == "down"
+    # ISO 8601 duration, e.g. P1DT2H3M4.5S.
+    assert re.fullmatch(r"P\d+DT\d+H\d+M[\d.]+S", ds.attrs["time_coverage_duration"])
+    sources = json.loads(ds.attrs["conversion_attribute_sources"])
+    assert {
+        "geospatial_bounds",
+        "geospatial_vertical_positive",
+        "time_coverage_duration",
+    } <= set(sources["derived"])
+
+
 def test_deployment_globals_are_written():
     """deployment: block values become globals; a null deployment key is skipped."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)

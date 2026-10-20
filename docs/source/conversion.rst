@@ -160,9 +160,9 @@ copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds
   institution when the config lists institutions (it would be a second, role-less record), so
   this is where it surfaces, with ``role: null`` to fill;
 * *Missing ACDD globals* — ACDD 1.3 globals the file does not carry, under ``deployment:`` where
-  they have a home there and ``global_attributes:`` otherwise. Globals the converter can compute
-  from the data (``geospatial_bounds``, ``geospatial_vertical_positive``,
-  ``time_coverage_duration``, …) are named, not boxed: they are not ``mission.yaml`` values.
+  they have a home there and ``global_attributes:`` otherwise. Globals the converter supplies
+  itself (``standard_name_vocabulary``, ``geospatial_bounds_crs``, ``time_coverage_resolution``,
+  …) are named, not boxed: they are not ``mission.yaml`` values.
 
 The dive, platform-pair and institution checks read the ``config`` the sidecar records, so a page
 for a file converted before it was recorded shows only the other two. A draft has no such section.

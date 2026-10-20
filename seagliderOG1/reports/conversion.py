@@ -1977,9 +1977,8 @@ def _config_suggestions(
         note = "ACDD 1.3 globals the file does not carry."
         if left:
             note += (
-                " Not listed, because the converter should compute them from the data: "
-                + ", ".join(left)
-                + "."
+                " Not listed, because the converter should supply them "
+                "(computed from the data, or a constant): " + ", ".join(left) + "."
             )
         blocks.append({"title": "Missing ACDD globals", "note": note, "boxes": boxes})
     return blocks

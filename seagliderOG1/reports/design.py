@@ -83,6 +83,7 @@ ATTR_GROUP_EXTRAS: dict[str, tuple[str, ...]] = {
         "keywords",
         "keywords_vocabulary",
     ),
+    "Spatiotemporal coverage": ("geospatial_bounds",),
     "People & institutions": (
         "contributor_id",
         "contributor_role_vocabulary",
