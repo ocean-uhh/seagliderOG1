@@ -82,23 +82,37 @@ PLACEHOLDER_VALUES = frozenset({"", "None", "null", "null@null.com"})
 # deployment: block (one key per global). Ordered as the OG1 manual's global-attribute
 # table lists them (the order the `required:` block carries): mandatory, then highly
 # desirable, then suggested; `license` and `acknowledgment` are ACDD globals with no
-# OG1-table position and trail the tiered ones. The single list read by
-# convert.to_og1 (precedence, collision checks), the validate deployment check, and
-# the init template (which reads each key's tier from REQUIRED_GLOBALS).
-DEPLOYMENT_GLOBALS = (
-    "id",
-    "naming_authority",
-    "site",
-    "site_vocabulary",
-    "program",
-    "program_vocabulary",
-    "data_url",
-    "doi",
-    "project",
-    "network",
-    "comment",
-    "license",
-    "acknowledgment",
+# OG1-table position and trail the tiered ones.
+#
+# The user-set global attributes, grouped by the conversion page's convention group.
+# Each yaml section slug is this schema's own contract; it is NOT derived from the vendored
+# page label (ctdcast owns those). tests/test_reports.py asserts every key groups under the
+# matching page label. program/program_vocabulary/network are deliberately absent: they are
+# per-platform facts the platform registry supplies, not per-mission text
+# (notes/2026-10-21-platform-registry.md); until the registry lands they are set, if needed,
+# through global_attributes:.
+CONFIG_GLOBAL_SECTIONS = {
+    "identity_and_discovery": (
+        "id",
+        "naming_authority",
+        "site",
+        "site_vocabulary",
+        "data_url",
+        "project",
+    ),
+    "rights_and_access": (
+        "doi",
+        "license",
+        "acknowledgment",
+    ),
+    "provenance_and_processing": ("comment",),
+}
+
+# Flat union of the section keys, in section then template order. The single list read by
+# convert.to_og1 (precedence, collision checks) and the validate deployment check; the init
+# template reads CONFIG_GLOBAL_SECTIONS directly (each key's tier from REQUIRED_GLOBALS).
+DEPLOYMENT_GLOBALS = tuple(
+    key for keys in CONFIG_GLOBAL_SECTIONS.values() for key in keys
 )
 
 

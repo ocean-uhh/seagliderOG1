@@ -113,9 +113,9 @@ expected on every file this package writes:
   convention" (in its sensor-variable section); keeping the basestation spelling is a deliberate
   departure from it. Variables renamed to an OG1 name are upper case; a variable passed through
   carries ``original_name`` equal to its name.
-* **Global attribute comment is missing** — when ``deployment.comment`` in ``mission.yaml`` is
-  null. The OG1 manual lists ``comment`` as *suggested* (cc-plugin-og 0.1.2 checks it as
-  mandatory), so the converter writes no default text; set ``deployment.comment`` to add one.
+* **Global attribute comment is missing** — when ``provenance_and_processing.comment`` in
+  ``mission.yaml`` is null. The OG1 manual lists ``comment`` as *suggested* (cc-plugin-og 0.1.2
+  checks it as mandatory), so the converter writes no default text; set it to add one.
 
 Any other checker finding is a converter problem. To run the checker:
 
@@ -175,9 +175,9 @@ copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds
 * *Institution ids* — config institutions with no ``id`` that the package's EDMO registry
   (``config/institution_registry.yaml``) matched by name, as an ``institutions:`` block with the
   registry name and id filled in;
-* *Deployment id* — the derived ``id`` as a ``deployment.id`` line, when the conversion starts
-  at dive 1 and ``deployment.id`` is null: pinned, it survives a later conversion of part of the
-  mission, which would derive a later start time and so a different id;
+* *Deployment id* — the derived ``id`` as an ``identity_and_discovery.id`` line, when the
+  conversion starts at dive 1 and that ``id`` is null: pinned, it survives a later conversion of
+  part of the mission, which would derive a later start time and so a different id;
 * *Institution not in the registry* — a config institution the registry does not match
   exactly, with the registry entries whose names contain every word of it (``University of
   Hamburg`` → ``University of Hamburg (IfM)``, EDMO 1156);
@@ -186,8 +186,8 @@ copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds
   institution when the config lists institutions (it would be a second, role-less record), so
   this is where it surfaces, with ``role: null`` to fill;
 * *Missing globals* — OG1 highly-desirable globals (the ones ``validate`` warns about) and ACDD
-  1.3 globals the file does not carry, each labelled with its tier, under ``deployment:`` where
-  they have a home there and ``global_attributes:`` otherwise. Globals the converter supplies
+  1.3 globals the file does not carry, each labelled with its tier, under the global-attribute
+  section that sets it and ``global_attributes:`` otherwise. Globals the converter supplies
   itself (``standard_name_vocabulary``, ``geospatial_bounds_crs``, ``time_coverage_resolution``,
   …) are named, not boxed: they are not ``mission.yaml`` values. Nor are ``creator_*`` and
   ``publisher_*``: OG1 defines neither and records people and organisations in

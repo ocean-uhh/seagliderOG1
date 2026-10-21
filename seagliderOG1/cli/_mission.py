@@ -23,7 +23,10 @@ KNOWN_KEYS = frozenset(
         "keep_variables",
         "report",
         "platform",
-        "deployment",
+        "platform_registry",
+        "identity_and_discovery",
+        "rights_and_access",
+        "provenance_and_processing",
         "global_attributes",
         "sensors",
         "contributors",
@@ -141,6 +144,35 @@ def _normalise(data: dict) -> dict:
     return data
 
 
+def deployment_from_config(config: dict) -> dict:
+    """Merge the three global-attribute sections into one ``deployment`` mapping.
+
+    ``convert.to_og1`` / ``process_mission`` take a single ``deployment`` mapping; the
+    mission file splits those globals across ``identity_and_discovery:``,
+    ``rights_and_access:`` and ``provenance_and_processing:``. This flattens them back at
+    the CLI boundary, so the conversion engine is unchanged by the schema's shape.
+
+    Parameters
+    ----------
+    config : dict
+        The parsed mission configuration.
+
+    Returns
+    -------
+    dict
+        The merged section mappings; empty when none are present.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    merged: dict = {}
+    for slug in vocabularies.CONFIG_GLOBAL_SECTIONS:
+        block = config.get(slug)
+        if isinstance(block, dict):
+            merged.update(block)
+    return merged
+
+
 def _scalar(value: object) -> str:
     """Render a Python value as a YAML scalar for the template.
 
@@ -199,14 +231,16 @@ def _set_in(name: str, source: str) -> str:
     Returns
     -------
     str
-        ``deployment``, ``contributors``, ``institutions`` or ``global_attributes``; ""
-        for a derived or constant global that has no override.
+        the section slug (``identity_and_discovery`` / ``rights_and_access`` /
+        ``provenance_and_processing``), ``contributors``, ``institutions`` or
+        ``global_attributes``; "" for a derived or constant global that has no override.
 
     """
     from seagliderOG1 import vocabularies
 
-    if name in vocabularies.DEPLOYMENT_GLOBALS:
-        return "deployment"
+    for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items():
+        if name in keys:
+            return slug
     if source != "config":
         return ""
     if name.startswith("contributor_"):
@@ -220,8 +254,8 @@ def global_rows() -> list[dict[str, str]]:
     """Return one row per OG1 global the package knows a tier or a config home for.
 
     Every name in ``vocabularies.REQUIRED_GLOBALS``, in tier order, followed by the
-    ``deployment`` keys with no OG1 tier (``license``, ``acknowledgment``), marked
-    ``optional``. The single source for the ``deployment:`` template comments, the
+    global-section keys with no OG1 tier (``license``, ``acknowledgment``), marked
+    ``optional``. The single source for the global-section template comments, the
     ``validate`` highly-desirable check and ``list globals``.
 
     Returns
@@ -251,7 +285,7 @@ def global_rows() -> list[dict[str, str]]:
             "name": name,
             "tier": "optional",
             "source": "config",
-            "set_in": "deployment",
+            "set_in": _set_in(name, "config"),
             "note": _DEPLOYMENT_HINTS.get(name, ""),
         }
         for name in vocabularies.DEPLOYMENT_GLOBALS
@@ -260,34 +294,45 @@ def global_rows() -> list[dict[str, str]]:
     return rows
 
 
-def _deployment_template_lines() -> list[str]:
-    """Build the ``deployment:`` template block, tier comments from ``global_rows``.
+# Header comment per global-attribute section, printed above its keys in the template.
+_SECTION_HEADERS = {
+    "identity_and_discovery": "who and where: identity and discovery globals",
+    "rights_and_access": "rights and access globals",
+    "provenance_and_processing": "provenance globals",
+}
+
+
+def _global_section_lines() -> list[str]:
+    """Build the three global-attribute section blocks, tier comments from ``global_rows``.
 
     One source for the tiers: each key's ``(mandatory)`` / ``(highly desirable)`` /
     ``(suggested)`` comment comes from ``vocabularies.REQUIRED_GLOBALS`` through
     :func:`global_rows`, so the template cannot drift from the manual-sourced table.
     ``license`` and ``acknowledgment`` are ACDD globals with no OG1 tier and are marked
-    ``(optional)``.
+    ``(optional)``. The section names are the conversion page's convention groups, so a
+    user filling a key sees the page group it lands in.
 
     Returns
     -------
     list of str
-        The ``deployment:`` header line and one ``key: value`` line per global.
+        One header line per section and one ``key: value`` line per global, blocks in
+        :data:`vocabularies.CONFIG_GLOBAL_SECTIONS` order.
 
     """
     from seagliderOG1 import vocabularies
 
     rows = {row["name"]: row for row in global_rows()}
-    lines = [
-        "deployment:             # OG1 deployment identity; one key per global, "
-        "null = not written"
-    ]
-    for key in vocabularies.DEPLOYMENT_GLOBALS:
-        hint = rows[key]["note"]
-        comment = f"{rows[key]['tier']} -> global attribute" + (
-            f"; {hint}" if hint else ""
-        )
-        lines.append(f"  {key}: null   # {comment}")
+    lines: list[str] = []
+    for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items():
+        if lines:
+            lines.append("")
+        lines.append(f"{slug}:   # -> global attributes; {_SECTION_HEADERS[slug]}")
+        for key in keys:
+            hint = rows[key]["note"]
+            comment = f"{rows[key]['tier']} -> global attribute" + (
+                f"; {hint}" if hint else ""
+            )
+            lines.append(f"  {key}: null   # {comment}")
     return lines
 
 
@@ -440,7 +485,7 @@ def render_template(
         "#   seagliderOG1 validate this_file.yaml",
         "#   seagliderOG1 process  this_file.yaml",
         "",
-        "config_version: 2",
+        "config_version: 3",
         "",
         f"raw_dir: {_scalar(raw_dir)}           # basestation files: a mission dir (p*.nc inside) or a root of SN/DATE dirs",
         "output_dir: ./          # where OG1 files are written",
@@ -452,7 +497,9 @@ def render_template(
         "",
         *_platform_template_lines(plat),
         "",
-        *_deployment_template_lines(),
+        "platform_registry: null   # optional path to a serial -> per-platform registry; read once it lands",
+        "",
+        *_global_section_lines(),
         "",
         "global_attributes: {}   # any other OG1 global, written as given: replace {} with lines",
         '  #   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)',
@@ -874,48 +921,60 @@ def _validate_platform(platform: object) -> list[ValidationIssue]:
     return issues
 
 
-def _validate_deployment(deployment: object) -> list[ValidationIssue]:
-    """ERROR on a non-mapping deployment block or an unknown deployment key.
+def _validate_global_sections(data: dict[str, object]) -> list[ValidationIssue]:
+    """ERROR on a non-mapping global-attribute section or a key in the wrong place.
 
-    seagliderOG1 does not enforce OG1 completeness (the external cc-plugin-og checker
-    does), so a null identity global is not an error here; a typo'd key is, because it
-    would otherwise be silently ignored.
+    The three sections (``identity_and_discovery``, ``rights_and_access``,
+    ``provenance_and_processing``) each hold a fixed set of OG1 globals
+    (``vocabularies.CONFIG_GLOBAL_SECTIONS``). seagliderOG1 does not enforce OG1
+    completeness (the external cc-plugin-og checker does), so a null global is not an
+    error; a key in the wrong section, a converter-derived global, a platform variable,
+    or an unknown name is, each refused with the reason and where it belongs.
 
     Parameters
     ----------
-    deployment : object
-        The value of the ``deployment`` key.
+    data : dict of str to object
+        The parsed configuration.
 
     Returns
     -------
     list of ValidationIssue
-        Problems found; empty when the block is absent or well-formed.
+        Problems found; empty when the sections are absent or well-formed.
 
     """
-    if deployment in (None, {}, ""):
-        return []
-    if not isinstance(deployment, dict):
-        return [ValidationIssue("ERROR", "deployment must be a mapping.", "deployment")]
     from seagliderOG1 import vocabularies
 
-    allowed = set(vocabularies.DEPLOYMENT_GLOBALS)
+    sections = vocabularies.CONFIG_GLOBAL_SECTIONS
+    home = {key: slug for slug, keys in sections.items() for key in keys}
+    platform_keys = set(_PLATFORM_ORDER)
     issues: list[ValidationIssue] = []
-    for key in deployment:
-        if key in allowed:
+    for slug, keys in sections.items():
+        block = data.get(slug)
+        if block in (None, {}, ""):
             continue
-        hint = _case_hint(key, vocabularies.DEPLOYMENT_GLOBALS)
-        if hint is not None:
-            message = (
-                f"deployment.{key} is not a key; the OG1 global is {hint!r} "
-                "(keys are case-sensitive)."
-            )
-        else:
-            message = (
-                f"deployment.{key} is not an OG1 deployment global (allowed: "
-                f"{list(vocabularies.DEPLOYMENT_GLOBALS)}); put other globals under "
-                "global_attributes."
-            )
-        issues.append(ValidationIssue("ERROR", message, f"deployment.{key}"))
+        if not isinstance(block, dict):
+            issues.append(ValidationIssue("ERROR", f"{slug} must be a mapping.", slug))
+            continue
+        allowed = set(keys)
+        for key in block:
+            if key in allowed:
+                continue
+            where = f"{slug}.{key}"
+            if key in home:
+                message = f"{key} belongs under {home[key]}:, not {slug}:."
+            elif key in vocabularies.DERIVED_GLOBALS:
+                message = f"{key} is computed by the converter; do not set it."
+            elif key in platform_keys:
+                message = f"{key} is a platform variable; set it under platform:."
+            else:
+                hint = _case_hint(key, keys)
+                message = (
+                    f"{key} is not a key; did you mean {hint!r}? (keys are case-sensitive)."
+                    if hint is not None
+                    else f"{key} is not an OG1 global for {slug}:; put other globals "
+                    "under global_attributes:."
+                )
+            issues.append(ValidationIssue("ERROR", message, where))
     return issues
 
 
@@ -940,15 +999,21 @@ def _validate_global_attributes(extra: object) -> list[ValidationIssue]:
         return []
     from seagliderOG1 import vocabularies
 
+    home = {
+        key: slug
+        for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items()
+        for key in keys
+    }
     issues = []
     for key, value in extra.items():
         if value is None or not str(value).strip():
             continue
         where = f"global_attributes.{key}"
-        if key in vocabularies.DEPLOYMENT_GLOBALS:
+        if key in home:
+            slug = home[key]
             message = (
-                f"{key} has its own key under deployment:; move it there:\n"
-                f"    deployment:\n      {key}: {value}"
+                f"{key} has its own key under {slug}:; move it there:\n"
+                f"    {slug}:\n      {key}: {value}"
             )
         elif key in vocabularies.DERIVED_GLOBALS:
             message = (
@@ -965,7 +1030,7 @@ def _validate_highly_desirable(data: dict[str, object]) -> list[ValidationIssue]
 
     Advisory, not an error: seagliderOG1 does not enforce OG1 completeness. Checks the
     config-supplied highly-desirable globals that have a home validate can read without
-    the files — the ``deployment`` keys and ``internal_mission_identifier`` in
+    the files — the global-section keys and ``internal_mission_identifier`` in
     ``global_attributes``. Running ``validate`` on an unedited template surfaces these
     as the template telling the user what to fill. The derived and package-constant
     highly-desirable globals (``time_coverage_*``, ``institution``, ``rtqc_method_doi``)
@@ -984,12 +1049,16 @@ def _validate_highly_desirable(data: dict[str, object]) -> list[ValidationIssue]
         One WARNING per unset config-supplied highly-desirable global.
 
     """
-    deployment = data.get("deployment")
-    deployment = deployment if isinstance(deployment, dict) else {}
+    from seagliderOG1 import vocabularies
+
     extra = data.get("global_attributes")
     extra = extra if isinstance(extra, dict) else {}
+    blocks = {
+        slug: (data.get(slug) if isinstance(data.get(slug), dict) else {})
+        for slug in vocabularies.CONFIG_GLOBAL_SECTIONS
+    }
+    blocks["global_attributes"] = extra
     issues: list[ValidationIssue] = []
-    blocks = {"deployment": deployment, "global_attributes": extra}
     for row in global_rows():
         block = row["set_in"]
         # contributor/institution globals come from their records, validated there.
@@ -1067,10 +1136,25 @@ def validate_config(
                     "ERROR", f"required key {key!r} is missing or empty.", key
                 )
             )
-    if "config_version" not in data:
+    version = data.get("config_version")
+    if version != 3:
         issues.append(
             ValidationIssue(
-                "WARNING", "no config_version; assuming 1.", "config_version"
+                "ERROR",
+                "config_version must be 3. The single deployment: block was replaced by "
+                "identity_and_discovery:, rights_and_access: and provenance_and_processing: "
+                "(the conversion page's groups); run `seagliderOG1 init` to regenerate.",
+                "config_version",
+            )
+        )
+    if "deployment" in data:
+        issues.append(
+            ValidationIssue(
+                "ERROR",
+                "deployment: is no longer a key; its globals moved to "
+                "identity_and_discovery:, rights_and_access: and "
+                "provenance_and_processing:. Run `seagliderOG1 init` to regenerate.",
+                "deployment",
             )
         )
 
@@ -1122,7 +1206,7 @@ def validate_config(
 
     issues.extend(_validate_sensors(data.get("sensors")))
     issues.extend(_validate_global_attributes(data.get("global_attributes")))
-    issues.extend(_validate_deployment(data.get("deployment")))
+    issues.extend(_validate_global_sections(data))
     issues.extend(_validate_highly_desirable(data))
     issues.extend(_validate_platform(data.get("platform")))
     issues.extend(_validate_people(data.get("contributors"), "contributors", "PI"))

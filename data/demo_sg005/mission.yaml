@@ -6,7 +6,7 @@
 #   seagliderOG1 validate data/demo_sg005/mission.yaml
 #   seagliderOG1 process  data/demo_sg005/mission.yaml   # -> outputs/<id>.nc
 
-config_version: 2
+config_version: 3
 
 raw_dir: ./             # basestation files: a mission dir (p*.nc inside) or a root of SN/DATE dirs
 output_dir: ../../outputs/   # where OG1 files are written (gitignored)
@@ -32,19 +32,23 @@ platform:               # 'init --raw-dir' fills these; fill any null before val
   BATTERY_TYPE: null   # optional -> variable; see the OG1 battery_type vocabulary
   BATTERY_PACK: null   # optional -> variable; battery packaging
 
-deployment:             # OG1 deployment identity; one key per global, null = not written
+platform_registry: null   # optional path to a serial -> per-platform registry; read once it lands
+
+identity_and_discovery:   # -> global attributes; who and where: identity and discovery globals
   id: null   # mandatory -> global attribute; leave null for the derived <serial>_<start>_<mode>; set only to override it
+  naming_authority: null   # highly desirable -> global attribute; reverse-DNS of the institution naming the dataset, e.g. edu.ucsd.spray
   site: null   # highly desirable -> global attribute
   site_vocabulary: null   # highly desirable -> global attribute
-  program: null   # highly desirable -> global attribute
-  program_vocabulary: null   # highly desirable -> global attribute
   data_url: null   # highly desirable -> global attribute; where the OG1 file is hosted
-  doi: null   # highly desirable -> global attribute; e.g. https://doi.org/...
   project: null   # suggested -> global attribute
-  network: null   # suggested -> global attribute
-  comment: null   # suggested -> global attribute; overrides the comment derived from the file's history
+
+rights_and_access:   # -> global attributes; rights and access globals
+  doi: null   # highly desirable -> global attribute; e.g. https://doi.org/...
   license: null   # optional -> global attribute; e.g. CC-BY-4.0
   acknowledgment: null   # optional -> global attribute
+
+provenance_and_processing:   # -> global attributes; provenance globals
+  comment: null   # suggested -> global attribute; overrides a comment global the basestation files carry
 
 global_attributes: {}   # any other OG1 global, written as given: replace {} with lines
   #   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)

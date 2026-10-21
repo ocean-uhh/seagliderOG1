@@ -50,7 +50,7 @@ _log = logging.getLogger(__name__)
 
 # Global attributes the converter derives from the data; the mission config may
 # not set these through global_attributes (a collision is an error). ``id`` is not
-# here: it is derived by default but may be overridden via the deployment: block.
+# here: it is derived by default but may be overridden via the identity_and_discovery: section.
 # Transient per-variable attribute a derived-variable creation site stamps with the JSON
 # list of basestation variables its data came from; read and removed when the
 # conversion_derived_variables map is built, so it never reaches the file. Defined in
@@ -62,7 +62,8 @@ _DERIVED_SOURCES_ATTR = _pipeline.DERIVED_SOURCES_ATTR
 _DERIVED_GLOBALS = vocabularies.DERIVED_GLOBALS
 
 # OG1 deployment-identity globals the mission config sets through the structured
-# deployment: block (vocabularies.DEPLOYMENT_GLOBALS). A global_attributes key
+# global-attribute sections (vocabularies.DEPLOYMENT_GLOBALS is their flat union, merged from
+# the three mission.yaml sections at the CLI boundary). A global_attributes key
 # duplicating one of these is refused: the escape hatch is for everything else. ``id``
 # (derived) and ``comment`` (kept from the basestation files when they carry one) can
 # already be set, so a deployment value for them overrides with a warning naming both;
@@ -829,20 +830,19 @@ def _check_metadata_keys(
     Parameters
     ----------
     deployment : collections.abc.Mapping
-        The ``deployment:`` block.
+        The deployment mapping (the three ``mission.yaml`` global-attribute sections merged).
     global_attributes : collections.abc.Mapping
         The ``global_attributes:`` block.
 
     Raises
     ------
     ValueError
-        If ``global_attributes`` sets a converter-derived key or a key with a home in
-        ``deployment:``, or ``deployment:`` has an unknown key.
+        If ``global_attributes`` sets a converter-derived key or a key with a structured home
+        in a global-attribute section, or the deployment mapping has an unknown key.
 
     """
-    # Only a real (non-null) value collides; a null is skipped later, so a legacy
-    # config_version 1 template that lists reserved keys as null (the old init wrote
-    # global_attributes: {project: null, program: null, ...}) still converts.
+    # Only a real (non-null) value collides; a null is skipped later, so a template that
+    # lists reserved keys as null still converts.
     set_globals = {k for k, v in global_attributes.items() if not _is_empty(v)}
     collisions = _DERIVED_GLOBALS.intersection(set_globals)
     if collisions:
@@ -853,17 +853,23 @@ def _check_metadata_keys(
         raise ValueError(msg)
     structured = set(_DEPLOYMENT_GLOBALS).intersection(set_globals)
     if structured:
+        home = {
+            key: slug
+            for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items()
+            for key in keys
+        }
+        moves = "; ".join(f"{key} -> {home[key]}:" for key in sorted(structured))
         msg = (
-            "global_attributes may not set keys that have a structured home in the "
-            f"deployment: block: {sorted(structured)}. Move them under deployment:."
+            "global_attributes may not set keys that have a structured home in a "
+            f"global-attribute section: move {moves}."
         )
         raise ValueError(msg)
     unknown_deployment = set(deployment) - set(_DEPLOYMENT_GLOBALS)
     if unknown_deployment:
         msg = (
-            f"deployment: has unknown keys: {sorted(unknown_deployment)}. Allowed "
-            f"keys are {list(_DEPLOYMENT_GLOBALS)}; put anything else under "
-            "global_attributes:."
+            f"deployment has unknown keys: {sorted(unknown_deployment)}. Allowed "
+            f"keys are {list(_DEPLOYMENT_GLOBALS)}; set anything else under "
+            "global_attributes."
         )
         raise ValueError(msg)
 
@@ -922,7 +928,7 @@ def enrich(
     """Set global attributes on a written OG1 file without converting again.
 
     For metadata that exists only after the file is written — a DOI assigned on
-    publication — or a corrected ``deployment:`` / ``global_attributes:`` value. Only
+    publication — or a corrected global-attribute or ``global_attributes:`` value. Only
     global attributes change (edited in place; variables are not rewritten). The file
     gets ``date_modified`` set to now, a ``history`` line naming the keys, and a new
     ``tracking_id``; ``date_created`` is kept. Every value is checked before the file
@@ -936,7 +942,7 @@ def enrich(
     path : str or os.PathLike
         The OG1 netCDF file.
     deployment : collections.abc.Mapping, optional
-        ``deployment:`` keys to set (as in :func:`to_og1`); null values are skipped.
+        Deployment-identity globals to set (as in :func:`to_og1`); null values are skipped.
     global_attributes : collections.abc.Mapping, optional
         ``global_attributes:`` keys to set (as in :func:`to_og1`).
     doi : str, optional
@@ -1045,7 +1051,7 @@ def _apply_deployment(
     deployment: Mapping[str, object],
     sources: dict[str, str],
 ) -> None:
-    """Write the deployment: block globals, overriding a derived value with a warning.
+    """Write the deployment-identity globals, overriding a derived value with a warning.
 
     Mission config takes precedence over a converter-derived global, so a deployment
     value that differs from one already on the dataset (``id`` and ``comment`` are the
@@ -1460,6 +1466,19 @@ def to_og1(
     platform_fields = _resolve_platform(list_of_datasets[0], platform)
     platform_serial_number = platform_fields["PLATFORM_SERIAL_NUMBER"]
 
+    # If the config renamed the serial (a local nickname replacing the basestation
+    # platform_id), record the replaced value so it survives in the file, as a sensor
+    # serial correction does in the sensor's comment.
+    file_serial = vocabularies.platform_from_file(list_of_datasets[0].attrs).get(
+        "PLATFORM_SERIAL_NUMBER"
+    )
+    serial_comment = (
+        f"mission config PLATFORM_SERIAL_NUMBER; the basestation platform_id was "
+        f"{file_serial!r}."
+        if not _is_empty(file_serial) and str(file_serial) != str(platform_serial_number)
+        else None
+    )
+
     # Mandatory OG1 platform string variables and their long_names.
     platform_long_names = {
         "PLATFORM_SERIAL_NUMBER": "glider serial number",
@@ -1472,6 +1491,8 @@ def to_og1(
     for field, long_name in platform_long_names.items():
         ds_og1[field] = platform_fields[field]
         ds_og1[field].attrs["long_name"] = long_name
+    if serial_comment is not None:
+        ds_og1["PLATFORM_SERIAL_NUMBER"].attrs["comment"] = serial_comment
 
     if "platform_model_vocabulary" in platform_fields:
         ds_og1["PLATFORM_MODEL"].attrs["platform_model_vocabulary"] = platform_fields[

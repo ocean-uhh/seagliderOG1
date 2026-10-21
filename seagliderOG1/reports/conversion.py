@@ -1786,7 +1786,7 @@ def _draft_snippets(
             "title": "Deployment id",
             "text": (
                 f"# derived for these dives: {derived_id}\n"
-                "deployment:\n  id: null   # leave null to keep it derived"
+                "identity_and_discovery:\n  id: null   # leave null to keep it derived"
             ),
         },
     ]
@@ -1887,11 +1887,12 @@ def _config_suggestions(
       the registry matched it and no config institution resolved to the same id (the
       converter drops it when the config lists institutions).
     - *Deployment id*: the derived ``id`` when the conversion starts at dive 1 and the
-      config left ``deployment.id`` null, so a later conversion of part of the mission
-      (which would derive a later start time) keeps it.
-    - *Missing globals*: OG1 highly-desirable and ACDD 1.3 globals the file lacks, under
-      ``deployment:`` where they have a home there, else
-      under ``global_attributes:``; those the converter can compute, and the
+      config left ``identity_and_discovery.id`` null, so a later conversion of part of the
+      mission (which would derive a later start time) keeps it.
+    - *Missing globals*: OG1 highly-desirable and ACDD 1.3 globals the file lacks, each
+      under the global-attribute section that sets it (``identity_and_discovery:`` /
+      ``rights_and_access:`` / ``provenance_and_processing:``), else under
+      ``global_attributes:``; those the converter can compute, and the
       ``creator_*`` / ``publisher_*`` globals OG1 replaces with its contributor
       attributes, are left out.
 
@@ -1907,8 +1908,8 @@ def _config_suggestions(
     acdd_missing : dict of str to str, optional
         Missing ACDD 1.3 global to its level. Default is None.
     og1_id : str, optional
-        The file's ``id``, offered as ``deployment.id`` when the conversion starts at
-        dive 1 and the config left ``id`` null. Default is None.
+        The file's ``id``, offered as ``identity_and_discovery.id`` when the conversion
+        starts at dive 1 and the config left ``id`` null. Default is None.
     og1_missing : list of str, optional
         OG1 highly-desirable globals the user supplies (tier ``config``) that the file
         lacks: the ones ``validate`` warns about. Default is None.
@@ -1965,7 +1966,7 @@ def _config_suggestions(
                 "boxes": [
                     {
                         "label": "Derived from dive 1",
-                        "text": f"deployment:\n  id: {og1_id}",
+                        "text": f"identity_and_discovery:\n  id: {og1_id}",
                     }
                 ],
             }
@@ -2117,23 +2118,23 @@ def _config_suggestions(
     for name, level in acdd_missing.items():
         acdd = f"ACDD {level}"
         labels[name] = f"{labels[name]}; {acdd}" if name in labels else acdd
-    deployment = {
-        name: label
-        for name, label in labels.items()
-        if name in vocabularies.DEPLOYMENT_GLOBALS
-    }
+    # One box per mission.yaml section that sets a missing global; the rest go under
+    # global_attributes:. program/program_vocabulary/network have no section (the platform
+    # registry supplies them), so they fall to global_attributes: here.
+    boxes = []
+    boxed: set[str] = set()
+    for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items():
+        block = {name: labels[name] for name in keys if name in labels}
+        if block:
+            boxes.append({"label": f"{slug}:", "text": _null_block(slug, block)})
+            boxed.update(block)
     escape = {
         name: label
         for name, label in labels.items()
-        if name not in deployment
+        if name not in boxed
         and name not in _ACDD_FROM_THE_DATA
         and name not in _ACDD_COVERED_BY_OG1
     }
-    boxes = []
-    if deployment:
-        boxes.append(
-            {"label": "deployment:", "text": _null_block("deployment", deployment)}
-        )
     if escape:
         boxes.append(
             {

@@ -25,10 +25,10 @@ Keys
      - Notes
    * - ``config_version``
      - int
-     - ``2``
-     - Schema version; a missing value warns and assumes ``1``. Version 2 adds the
-       ``deployment`` block and the optional platform variables. A version 1 file still
-       converts.
+     - ``3``
+     - Schema version; must be ``3``. Version 3 replaced the single ``deployment`` block with
+       the three global-attribute sections below. ``validate`` errors on an older version and
+       names the sections; ``seagliderOG1 init`` regenerates a file.
    * - ``raw_dir``
      - str
      - *(required)*
@@ -72,21 +72,31 @@ Keys
      - *(see below)*
      - OG1 platform fields. The required fields must be non-null when a platform block is
        present.
-   * - ``deployment``
+   * - ``identity_and_discovery``,
+       ``rights_and_access``,
+       ``provenance_and_processing``
      - mapping
      - *(see below)*
-     - OG1 deployment-identity globals (``id``, ``program``, ``license``, ``doi``, ...), one
-       key per global, written when set and skipped when null. ``validate`` errors on an
-       unknown key.
+     - The OG1 global attributes a mission supplies, grouped by the conversion page's
+       convention groups: identity (``id``, ``naming_authority``, ``site``, ``data_url``,
+       ``project``), rights (``doi``, ``license``, ``acknowledgment``) and provenance
+       (``comment``). One key per global, written when set and skipped when null.
+       ``validate`` errors on a key in the wrong section or an unknown one. ``program``,
+       ``program_vocabulary`` and ``network`` are not here — they are per-platform facts the
+       platform registry supplies; until it lands, set them under ``global_attributes``.
+   * - ``platform_registry``
+     - str or null
+     - ``null``
+     - Optional path to a serial → per-platform registry. Reserved now; read once the registry
+       lands. An accepted-and-ignored key until then.
    * - ``global_attributes``
      - mapping or null
      - ``null``
      - Verbatim escape hatch written into the OG1 file (null values are skipped). You may not
        set keys the converter derives (``time_coverage_start``/``_end``, the ``geospatial_*``
-       bounds, ``date_created``, ``start_date``) or keys with a structured home in
-       ``deployment`` (``id``, ``naming_authority``, ``program``, ...); ``validate`` reports
-       either as an error, naming where the key goes. Replace the ``{}`` with an indented
-       block:
+       bounds, ``date_created``, ``start_date``) or keys with a structured home in a section
+       (``id``, ``naming_authority``, ``doi``, ...); ``validate`` reports either as an error,
+       naming where the key goes. Replace the ``{}`` with an indented block:
 
        .. code-block:: yaml
 
@@ -124,11 +134,15 @@ glider. For a University of Washington Seaglider M1, as in ``data/demo_sg005/mis
 ``https://vocab.nerc.ac.uk/collection/B76/current/B7600024/`` and
 ``https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/``.
 
-Deployment fields
------------------
+Global-attribute fields
+-----------------------
 
-The ``deployment`` block carries the OG1 globals that identify the deployment, one key per
-global. A null key is not written; seagliderOG1 lets you supply OG1 metadata but does not
+The three sections ``identity_and_discovery``, ``rights_and_access`` and
+``provenance_and_processing`` carry the OG1 globals a mission supplies, grouped by the
+conversion page's convention groups so the key you fill names the page group it lands in. The
+correspondence is one-directional: every key here appears in the matching page group, but a
+page group also holds globals the converter derives or reads from ``platform:``, which have no
+key here. A null key is not written; seagliderOG1 lets you supply OG1 metadata but does not
 enforce the format (the external ``cc-plugin-og`` checker does that). The OG1 requirement tier
 is from the manual, v1.0.0; ``optional`` marks ACDD globals with no OG1 tier.
 ``seagliderOG1 list globals`` lists every OG1 global, including the ones the converter derives.
@@ -172,7 +186,7 @@ The template ``init`` writes (fill the nulls before ``validate``):
 
 .. code-block:: yaml
 
-   config_version: 2
+   config_version: 3
 
    raw_dir: /data/005/20080606  # basestation files: a mission dir (p*.nc inside) or a root of SN/DATE dirs
    output_dir: ./          # where OG1 files are written
@@ -198,19 +212,23 @@ The template ``init`` writes (fill the nulls before ``validate``):
      BATTERY_TYPE: null   # optional -> variable
      BATTERY_PACK: null   # optional -> variable
 
-   deployment:             # each key -> a global attribute; null = not written
-     id: null              # mandatory -> global attribute; overrides the derived id
+   platform_registry: null   # optional path to a serial -> per-platform registry; read once it lands
+
+   identity_and_discovery:   # -> global attributes
+     id: null              # mandatory -> global attribute; null keeps the derived id
+     naming_authority: null # highly desirable -> global attribute
      site: null            # highly desirable -> global attribute
      site_vocabulary: null # highly desirable -> global attribute
-     program: null         # highly desirable -> global attribute
-     program_vocabulary: null  # highly desirable -> global attribute
      data_url: null        # highly desirable -> global attribute
-     doi: null             # highly desirable -> global attribute
      project: null         # suggested -> global attribute
-     network: null         # suggested -> global attribute
-     comment: null         # suggested -> global attribute
+
+   rights_and_access:        # -> global attributes
+     doi: null             # highly desirable -> global attribute
      license: null         # optional -> global attribute
      acknowledgment: null  # optional -> global attribute
+
+   provenance_and_processing:  # -> global attributes
+     comment: null         # suggested -> global attribute
 
    global_attributes: {}   # any other OG1 global, written as given: replace {} with lines
      #   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)

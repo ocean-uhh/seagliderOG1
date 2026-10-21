@@ -613,12 +613,14 @@ def test_config_suggestions_fill_gaps_from_the_file(sg005_og1):
         "Missing globals",
     ]
     assert "  PLATFORM_DEPTH_RATING: null   # omitted" in _texts(blocks[0])[0]
-    deployment, escape = _texts(blocks[1])
-    assert deployment == (
-        "deployment:\n"
-        "  naming_authority: null   # ACDD recommended\n"
-        "  comment: null   # ACDD recommended"
+    texts = {b["label"]: b["text"] for b in blocks[1]["boxes"]}
+    assert texts["identity_and_discovery:"] == (
+        "identity_and_discovery:\n  naming_authority: null   # ACDD recommended"
     )
+    assert texts["provenance_and_processing:"] == (
+        "provenance_and_processing:\n  comment: null   # ACDD recommended"
+    )
+    escape = texts["global_attributes:"]
     # OG1 records people in contributor_*: no creator_* / publisher_* box.
     assert "creator_name" not in escape and "publisher_name" not in escape
     assert "creator_name" in blocks[1]["note"]
@@ -685,9 +687,10 @@ def test_missing_globals_include_what_validate_warns_about():
         acdd_missing={"summary": "highly recommended", "doi": "recommended"},
         og1_missing=["doi", "internal_mission_identifier", "program"],
     )
-    deployment, escape = (b["text"] for b in block["boxes"])
-    assert "  doi: null   # OG1 highly desirable; ACDD recommended" in deployment
-    assert "  program: null   # OG1 highly desirable" in deployment
+    rights, escape = (b["text"] for b in block["boxes"])
+    assert "  doi: null   # OG1 highly desirable; ACDD recommended" in rights
+    # program has no section (registry-supplied), so it joins global_attributes.
+    assert "  program: null   # OG1 highly desirable" in escape
     assert "  internal_mission_identifier: null   # OG1 highly desirable" in escape
     assert "  summary: null   # ACDD highly recommended" in escape
 
@@ -697,13 +700,49 @@ def test_config_suggestions_offer_the_id_from_dive_1(sg005_og1):
     sidecar = convert.conversion_sidecar(sg005_og1)
     (block,) = conversion._config_suggestions(sidecar, og1_id="sg005_x_R")
     assert block["title"] == "Deployment id"
-    assert block["boxes"][0]["text"] == "deployment:\n  id: sg005_x_R"
+    assert block["boxes"][0]["text"] == "identity_and_discovery:\n  id: sg005_x_R"
     # Not from a later dive (the derived start is not the deployment's), and not when set.
     later = {**sidecar, "presence": {**sidecar["presence"], "dives": [2, 3]}}
     titles = [b["title"] for b in conversion._config_suggestions(later, og1_id="x")]
     assert "Deployment id" not in titles
     pinned = {**sidecar, "config": {**sidecar["config"], "deployment_id": "sg005_x_R"}}
     assert conversion._config_suggestions(pinned, og1_id="sg005_x_R") == []
+
+
+# The yaml section slugs are this schema's own names, not derived from the vendored page
+# labels (which ctdcast owns). This maps each to the page group it must correspond to; a
+# vendored relabel or regroup breaks this test, never a user's mission.yaml.
+_LABEL_BY_SECTION = {
+    "identity_and_discovery": "Identity & discovery",
+    "rights_and_access": "Rights & access",
+    "provenance_and_processing": "Provenance & processing",
+}
+
+
+def test_config_global_sections_correspond_to_the_page_groups():
+    """Every section key groups under its page label; the map is complete (no vacuous pass)."""
+    from seagliderOG1 import vocabularies
+    from seagliderOG1.reports import design
+    from seagliderOG1.reports._vendored import nc_tables
+
+    # (1) the map covers exactly the sections — adding a section cannot silently skip the check.
+    assert set(_LABEL_BY_SECTION) == set(vocabularies.CONFIG_GLOBAL_SECTIONS)
+    # (2) every label is a real page group (vendored ATTR_GROUPS or the package extras).
+    page_labels = {label for label, _ in nc_tables.ATTR_GROUPS} | set(
+        design.ATTR_GROUP_EXTRAS
+    )
+    assert set(_LABEL_BY_SECTION.values()) <= page_labels
+    # (3) per-key correspondence, resolved as the report resolves it (vendored then extras).
+    group_of: dict[str, str] = {}
+    for label, names in nc_tables.ATTR_GROUPS:
+        for name in names:
+            group_of[name] = label
+    for label, names in design.ATTR_GROUP_EXTRAS.items():
+        for name in names:
+            group_of.setdefault(name, label)
+    for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items():
+        for key in keys:
+            assert group_of.get(key) == _LABEL_BY_SECTION[slug], (slug, key)
 
 
 def test_basestation_identity_globals_are_not_carried(sg005_og1):

@@ -60,10 +60,19 @@ def _write_generated_tables() -> None:
             platform,
         )
     )
-    deployment = [r for r in _mission.global_rows() if r["set_in"] == "deployment"]
+    from seagliderOG1 import vocabularies
+
+    section_slugs = set(vocabularies.CONFIG_GLOBAL_SECTIONS)
+    sectioned = [r for r in _mission.global_rows() if r["set_in"] in section_slugs]
     (_GENERATED / "deployment_fields.inc").write_text(
         _list_table(
-            [("name", "Key"), ("tier", "OG1 tier"), ("note", "Note")], deployment
+            [
+                ("name", "Key"),
+                ("set_in", "Section"),
+                ("tier", "OG1 tier"),
+                ("note", "Note"),
+            ],
+            sectioned,
         )
     )
 

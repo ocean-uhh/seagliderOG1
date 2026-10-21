@@ -117,8 +117,8 @@ def run(args: argparse.Namespace) -> int:
     # The proposal: what init writes, plus the dive range the draft read and the
     # platform fields the converter derived from the files (from the sidecar).
     # process_mission refused to start if it already existed (without --force). The
-    # derived id goes in a comment, not in deployment.id: a fixed id would go stale if
-    # dives change.
+    # derived id goes in a comment, not in identity_and_discovery.id: a fixed id would go
+    # stale if dives change.
     sidecar_path = writers.conversion_path(path, ".json")
     try:
         sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
@@ -136,8 +136,8 @@ def run(args: argparse.Namespace) -> int:
     proposal = writers.proposal_path(path)
     header = (
         f"# Proposed by seagliderOG1 draft from {len(dives)} dive files. With these dives "
-        f"the derived id is\n# {path.stem.removesuffix('_draft')} (leave deployment.id "
-        "null to keep it derived).\n"
+        f"the derived id is\n# {path.stem.removesuffix('_draft')} (leave "
+        "identity_and_discovery.id null to keep it derived).\n"
     )
     template = _mission.render_template(
         platform, raw_dir=str(raw_dir.resolve()), dives=[dives[0], dives[-1]]

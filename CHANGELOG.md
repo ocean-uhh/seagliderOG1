@@ -12,13 +12,22 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Breaking changes
 
+- `mission.yaml` groups the user-set global attributes into three sections named for the
+  conversion page's convention groups — `identity_and_discovery:`, `rights_and_access:`,
+  `provenance_and_processing:` — replacing the single `deployment:` block, so the keys you fill
+  name the page group they land in. `config_version` is now `3`; `validate` rejects an older
+  version (and a stray `deployment:` block), naming the sections, and `seagliderOG1 init`
+  regenerates a file. `program`, `program_vocabulary` and `network` leave the sections for the
+  forthcoming platform registry (set them under `global_attributes:` until it lands); a
+  `platform_registry:` key is reserved (accepted and ignored for now). `to_og1` /
+  `process_mission` keep their single `deployment=` mapping argument.
 - The data mode defaults to `realtime` (id and file name suffix `R`) when neither the config
   nor `process --mode` sets it; it was `delayed`. `to_og1` / `process_mission` default to
   `mode="realtime"`, and `init` writes `mode: realtime`. Set `mode: delayed` for a delayed-mode file.
 - The basestation `naming_authority` (`edu.washington.apl`), `uuid` (one dive file's, written as
   `uri`), `summary` (written as `site`) and `file_version` are no longer carried into the OG1
-  file: they describe the basestation files, not the OG1 dataset. `naming_authority` is a
-  `deployment:` key (written by `init`).
+  file: they describe the basestation files, not the OG1 dataset. `naming_authority` is an
+  `identity_and_discovery:` key (written by `init`).
 - When the config lists `institutions`, the basestation `institution` global (free text, a postal
   address on sg005) is no longer written as a role-less contributing institution beside them;
   the conversion page offers its registry match as an `institutions:` entry instead. Without
