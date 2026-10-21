@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Getting started &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
+  <title>Getting started &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=420536ce"></script>
+      <script src="_static/documentation_options.js?v=e67db2d7"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -156,9 +156,10 @@ file and its conversion page to <code class="docutils literal notranslate"><span
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>It takes the same values as <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> (<code class="docutils literal notranslate"><span class="pre">dives</span></code>, <code class="docutils literal notranslate"><span class="pre">platform</span></code>, <code class="docutils literal notranslate"><span class="pre">deployment</span></code>,
-<code class="docutils literal notranslate"><span class="pre">global_attributes</span></code>, <code class="docutils literal notranslate"><span class="pre">mode</span></code>, <code class="docutils literal notranslate"><span class="pre">keep_variables</span></code>, <code class="docutils literal notranslate"><span class="pre">repair</span></code>) as keyword arguments, and
-raises <code class="docutils literal notranslate"><span class="pre">FileExistsError</span></code> rather than overwrite unless <code class="docutils literal notranslate"><span class="pre">overwrite=True</span></code>.</p>
+<p>It takes <code class="docutils literal notranslate"><span class="pre">dives</span></code>, <code class="docutils literal notranslate"><span class="pre">platform</span></code>, <code class="docutils literal notranslate"><span class="pre">deployment</span></code> (one mapping of the identity, rights and
+provenance globals the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> sections split apart), <code class="docutils literal notranslate"><span class="pre">global_attributes</span></code>, <code class="docutils literal notranslate"><span class="pre">mode</span></code>,
+<code class="docutils literal notranslate"><span class="pre">keep_variables</span></code> and <code class="docutils literal notranslate"><span class="pre">repair</span></code> as keyword arguments, and raises <code class="docutils literal notranslate"><span class="pre">FileExistsError</span></code> rather
+than overwrite unless <code class="docutils literal notranslate"><span class="pre">overwrite=True</span></code>.</p>
 <section id="step-by-step">
 <h3>Step by step<a class="headerlink" href="#step-by-step" title="Link to this heading"></a></h3>
 <p>The same pipeline as three calls, for when you want the dataset in hand before writing:</p>

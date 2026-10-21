@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
+  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=420536ce"></script>
+      <script src="_static/documentation_options.js?v=e67db2d7"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -59,7 +59,8 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">mission.yaml reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#keys">Keys</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#platform-fields">Platform fields</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#deployment-fields">Deployment fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#global-attribute-fields">Global-attribute fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sensor-corrections">Sensor corrections</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#contributor-and-institution-records">Contributor and institution records</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
 </ul>
@@ -130,10 +131,10 @@ on a mis-cased key (<code class="docutils literal notranslate"><span class="pre"
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">config_version</span></code></p></td>
 <td><p>int</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">2</span></code></p></td>
-<td><p>Schema version; a missing value warns and assumes <code class="docutils literal notranslate"><span class="pre">1</span></code>. Version 2 adds the
-<code class="docutils literal notranslate"><span class="pre">deployment</span></code> block and the optional platform variables. A version 1 file still
-converts.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">3</span></code></p></td>
+<td><p>Schema version; must be <code class="docutils literal notranslate"><span class="pre">3</span></code>. Version 3 replaced the single <code class="docutils literal notranslate"><span class="pre">deployment</span></code> block with
+the three global-attribute sections below. <code class="docutils literal notranslate"><span class="pre">validate</span></code> errors on an older version and
+names the sections; <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">init</span></code> regenerates a file.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">raw_dir</span></code></p></td>
 <td><p>str</p></td>
@@ -152,8 +153,9 @@ hold basestation files.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">mode</span></code></p></td>
 <td><p>str</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">delayed</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">realtime</span></code> or <code class="docutils literal notranslate"><span class="pre">delayed</span></code>; sets the id data-mode suffix (<code class="docutils literal notranslate"><span class="pre">R</span></code> or <code class="docutils literal notranslate"><span class="pre">delayed</span></code>).</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">realtime</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">realtime</span></code> or <code class="docutils literal notranslate"><span class="pre">delayed</span></code>; sets the id data-mode suffix (<code class="docutils literal notranslate"><span class="pre">R</span></code> or <code class="docutils literal notranslate"><span class="pre">delayed</span></code>). A file
+is delayed mode only when the config (or <code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--mode</span></code>) says so.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dives</span></code></p></td>
 <td><p>list or null</p></td>
@@ -185,20 +187,47 @@ for a <code class="docutils literal notranslate"><span class="pre">SN/DATE</span
 <td><p>OG1 platform fields. The required fields must be non-null when a platform block is
 present.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deployment</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">identity_and_discovery</span></code>,
+<code class="docutils literal notranslate"><span class="pre">rights_and_access</span></code>,
+<code class="docutils literal notranslate"><span class="pre">provenance_and_processing</span></code></p></td>
 <td><p>mapping</p></td>
 <td><p><em>(see below)</em></p></td>
-<td><p>OG1 deployment-identity globals (<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">program</span></code>, <code class="docutils literal notranslate"><span class="pre">license</span></code>, <code class="docutils literal notranslate"><span class="pre">doi</span></code>, …), one
-key per global, written when set and skipped when null. <code class="docutils literal notranslate"><span class="pre">validate</span></code> errors on an
-unknown key.</p></td>
+<td><p>The OG1 global attributes a mission supplies, grouped by the conversion page’s
+convention groups: identity (<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">naming_authority</span></code>, <code class="docutils literal notranslate"><span class="pre">site</span></code>, <code class="docutils literal notranslate"><span class="pre">data_url</span></code>,
+<code class="docutils literal notranslate"><span class="pre">project</span></code>), rights (<code class="docutils literal notranslate"><span class="pre">doi</span></code>, <code class="docutils literal notranslate"><span class="pre">license</span></code>, <code class="docutils literal notranslate"><span class="pre">acknowledgment</span></code>) and provenance
+(<code class="docutils literal notranslate"><span class="pre">comment</span></code>). One key per global, written when set and skipped when null.
+<code class="docutils literal notranslate"><span class="pre">validate</span></code> errors on a key in the wrong section or an unknown one. <code class="docutils literal notranslate"><span class="pre">program</span></code>,
+<code class="docutils literal notranslate"><span class="pre">program_vocabulary</span></code> and <code class="docutils literal notranslate"><span class="pre">network</span></code> are not here — they are per-platform facts a
+local-config overlay will supply; until it lands, set them under <code class="docutils literal notranslate"><span class="pre">global_attributes</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">global_attributes</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">local_config</span></code></p></td>
+<td><p>str or null</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
+<td><p>Optional path to a directory of local config overrides. Reserved for a coming release and
+not read yet, so it must be <code class="docutils literal notranslate"><span class="pre">null</span></code>; <code class="docutils literal notranslate"><span class="pre">validate</span></code> errors on a non-null value (a dropped
+override would produce a wrong file that looks right). No <code class="docutils literal notranslate"><span class="pre">config_version</span></code> bump when the
+feature lands — the key is already declared and optional.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">global_attributes</span></code></p></td>
 <td><p>mapping or null</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
 <td><p>Verbatim escape hatch written into the OG1 file (null values are skipped). You may not
 set keys the converter derives (<code class="docutils literal notranslate"><span class="pre">time_coverage_start</span></code>/<code class="docutils literal notranslate"><span class="pre">_end</span></code>, the <code class="docutils literal notranslate"><span class="pre">geospatial_*</span></code>
-bounds, <code class="docutils literal notranslate"><span class="pre">date_created</span></code>, <code class="docutils literal notranslate"><span class="pre">start_date</span></code>) or keys with a structured home in
-<code class="docutils literal notranslate"><span class="pre">deployment</span></code> (<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">program</span></code>, …); <code class="docutils literal notranslate"><span class="pre">process</span></code> raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if you do.</p></td>
+bounds, <code class="docutils literal notranslate"><span class="pre">date_created</span></code>, <code class="docutils literal notranslate"><span class="pre">start_date</span></code>) or keys with a structured home in a section
+(<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">naming_authority</span></code>, <code class="docutils literal notranslate"><span class="pre">doi</span></code>, …); <code class="docutils literal notranslate"><span class="pre">validate</span></code> reports either as an error,
+naming where the key goes. Replace the <code class="docutils literal notranslate"><span class="pre">{}</span></code> with an indented block:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">global_attributes</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">institution</span><span class="p">:</span><span class="w"> </span><span class="s">"University</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">Hamburg</span><span class="nv"> </span><span class="s">(IfM)"</span>
+</pre></div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sensors</span></code></p></td>
+<td><p>mapping or null</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
+<td><p>Corrections to a basestation sensor record, keyed by the sensor’s name in the files’
+<code class="docutils literal notranslate"><span class="pre">instrument</span></code> global (<code class="docutils literal notranslate"><span class="pre">legato</span></code>, <code class="docutils literal notranslate"><span class="pre">tridentebb700chla470fdom365</span></code>, <code class="docutils literal notranslate"><span class="pre">sbe41</span></code>, …):
+<code class="docutils literal notranslate"><span class="pre">serial_number</span></code> and <code class="docutils literal notranslate"><span class="pre">calibration_date</span></code>. See <a class="reference internal" href="#sensor-corrections">Sensor corrections</a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contributors</span></code></p></td>
 <td><p>list</p></td>
@@ -307,71 +336,96 @@ glider. For a University of Washington Seaglider M1, as in <code class="docutils
 <code class="docutils literal notranslate"><span class="pre">https://vocab.nerc.ac.uk/collection/B76/current/B7600024/</span></code> and
 <code class="docutils literal notranslate"><span class="pre">https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/</span></code>.</p>
 </section>
-<section id="deployment-fields">
-<h2>Deployment fields<a class="headerlink" href="#deployment-fields" title="Link to this heading"></a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">deployment</span></code> block carries the OG1 globals that identify the deployment, one key per
-global. A null key is not written; seagliderOG1 lets you supply OG1 metadata but does not
+<section id="global-attribute-fields">
+<h2>Global-attribute fields<a class="headerlink" href="#global-attribute-fields" title="Link to this heading"></a></h2>
+<p>The three sections <code class="docutils literal notranslate"><span class="pre">identity_and_discovery</span></code>, <code class="docutils literal notranslate"><span class="pre">rights_and_access</span></code> and
+<code class="docutils literal notranslate"><span class="pre">provenance_and_processing</span></code> carry the OG1 globals a mission supplies, grouped by the
+conversion page’s convention groups so the key you fill names the page group it lands in. The
+correspondence is one-directional: every key here appears in the matching page group, but a
+page group also holds globals the converter derives or reads from <code class="docutils literal notranslate"><span class="pre">platform:</span></code>, which have no
+key here. A null key is not written; seagliderOG1 lets you supply OG1 metadata but does not
 enforce the format (the external <code class="docutils literal notranslate"><span class="pre">cc-plugin-og</span></code> checker does that). The OG1 requirement tier
 is from the manual, v1.0.0; <code class="docutils literal notranslate"><span class="pre">optional</span></code> marks ACDD globals with no OG1 tier.
 <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">list</span> <span class="pre">globals</span></code> lists every OG1 global, including the ones the converter derives.</p>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Section</p></th>
 <th class="head"><p>OG1 tier</p></th>
 <th class="head"><p>Note</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p>identity_and_discovery</p></td>
 <td><p>mandatory</p></td>
 <td><p>leave null for the derived &lt;serial&gt;_&lt;start&gt;_&lt;mode&gt;; set only to override it</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">site</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">naming_authority</span></code></p></td>
+<td><p>identity_and_discovery</p></td>
+<td><p>highly desirable</p></td>
+<td><p>reverse-DNS of the institution naming the dataset, e.g. edu.ucsd.spray</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">site</span></code></p></td>
+<td><p>identity_and_discovery</p></td>
 <td><p>highly desirable</p></td>
 <td><p>—</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">site_vocabulary</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">site_vocabulary</span></code></p></td>
+<td><p>identity_and_discovery</p></td>
 <td><p>highly desirable</p></td>
 <td><p>—</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">program</span></code></p></td>
-<td><p>highly desirable</p></td>
-<td><p>—</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">program_vocabulary</span></code></p></td>
-<td><p>highly desirable</p></td>
-<td><p>—</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">data_url</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">data_url</span></code></p></td>
+<td><p>identity_and_discovery</p></td>
 <td><p>highly desirable</p></td>
 <td><p>where the OG1 file is hosted</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">doi</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">doi</span></code></p></td>
+<td><p>rights_and_access</p></td>
 <td><p>highly desirable</p></td>
 <td><p>e.g. <a class="reference external" href="https://doi.org/">https://doi.org/</a>…</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">project</span></code></p></td>
-<td><p>suggested</p></td>
-<td><p>—</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">network</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">project</span></code></p></td>
+<td><p>identity_and_discovery</p></td>
 <td><p>suggested</p></td>
 <td><p>—</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">comment</span></code></p></td>
+<td><p>provenance_and_processing</p></td>
 <td><p>suggested</p></td>
-<td><p>overrides the comment derived from the file’s history</p></td>
+<td><p>overrides a comment global the basestation files carry</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">license</span></code></p></td>
+<td><p>rights_and_access</p></td>
 <td><p>optional</p></td>
 <td><p>e.g. CC-BY-4.0</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">acknowledgment</span></code></p></td>
+<td><p>rights_and_access</p></td>
 <td><p>optional</p></td>
 <td><p>—</p></td>
 </tr>
 </tbody>
 </table>
+</section>
+<section id="sensor-corrections">
+<h2>Sensor corrections<a class="headerlink" href="#sensor-corrections" title="Link to this heading"></a></h2>
+<p>The serial number and calibration date of each sensor come from the basestation calibration
+comments (<code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm*</span></code>, set in <code class="docutils literal notranslate"><span class="pre">sg_calib_constants.m</span></code>). When one is wrong — a
+comment copied from another instrument, or a placeholder <code class="docutils literal notranslate"><span class="pre">0000</span></code> — correct it here rather
+than in the basestation files:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">sensors</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">tridentebb700chla470fdom365</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">serial_number</span><span class="p">:</span><span class="w"> </span><span class="s">"237998"</span>
+<span class="w">    </span><span class="nt">calibration_date</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2025-03-11</span>
+</pre></div>
+</div>
+<p>The corrected serial names the <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable and the <code class="docutils literal notranslate"><span class="pre">sensor</span></code> attribute of every
+variable from that instrument. The sensor variable’s <code class="docutils literal notranslate"><span class="pre">comment</span></code> records the value each
+correction replaced, so the change can be read back from the file. A key that is not one of
+the mission’s sensors stops the conversion with the list of keys; the conversion page’s
+<em>Sensors named by OG1</em> table shows the serials and dates in use.</p>
 </section>
 <section id="contributor-and-institution-records">
 <h2>Contributor and institution records<a class="headerlink" href="#contributor-and-institution-records" title="Link to this heading"></a></h2>
@@ -384,11 +438,11 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
 <p>The template <code class="docutils literal notranslate"><span class="pre">init</span></code> writes (fill the nulls before <code class="docutils literal notranslate"><span class="pre">validate</span></code>):</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">config_version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">config_version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
 
 <span class="nt">raw_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/data/005/20080606</span><span class="w">  </span><span class="c1"># basestation files: a mission dir (p*.nc inside) or a root of SN/DATE dirs</span>
 <span class="nt">output_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./</span><span class="w">          </span><span class="c1"># where OG1 files are written</span>
-<span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">delayed</span><span class="w">           </span><span class="c1"># realtime | delayed</span>
+<span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">realtime</span><span class="w">          </span><span class="c1"># realtime (id suffix R) | delayed</span>
 <span class="nt">dives</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">             </span><span class="c1"># [first, last] dive numbers; null = all files present</span>
 <span class="nt">repair</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">           </span><span class="c1"># run repair_files on the basestation files (writes the raw_dir tree)</span>
 <span class="nt">keep_variables</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">    </span><span class="c1"># optional list of science variables to keep; null = all</span>
@@ -410,21 +464,26 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
 <span class="w">  </span><span class="nt">BATTERY_TYPE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable</span>
 <span class="w">  </span><span class="nt">BATTERY_PACK</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional -&gt; variable</span>
 
-<span class="nt">deployment</span><span class="p">:</span><span class="w">             </span><span class="c1"># each key -&gt; a global attribute; null = not written</span>
-<span class="w">  </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">              </span><span class="c1"># mandatory -&gt; global attribute; overrides the derived id</span>
+<span class="nt">local_config</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">   </span><span class="c1"># optional path to a directory of local config overrides; read once the feature lands</span>
+
+<span class="nt">identity_and_discovery</span><span class="p">:</span><span class="w">   </span><span class="c1"># -&gt; global attributes</span>
+<span class="w">  </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">              </span><span class="c1"># mandatory -&gt; global attribute; null keeps the derived id</span>
+<span class="w">  </span><span class="nt">naming_authority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w"> </span><span class="c1"># highly desirable -&gt; global attribute</span>
 <span class="w">  </span><span class="nt">site</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">            </span><span class="c1"># highly desirable -&gt; global attribute</span>
 <span class="w">  </span><span class="nt">site_vocabulary</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w"> </span><span class="c1"># highly desirable -&gt; global attribute</span>
-<span class="w">  </span><span class="nt">program</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># highly desirable -&gt; global attribute</span>
-<span class="w">  </span><span class="nt">program_vocabulary</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">  </span><span class="c1"># highly desirable -&gt; global attribute</span>
 <span class="w">  </span><span class="nt">data_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">        </span><span class="c1"># highly desirable -&gt; global attribute</span>
-<span class="w">  </span><span class="nt">doi</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">             </span><span class="c1"># highly desirable -&gt; global attribute</span>
 <span class="w">  </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># suggested -&gt; global attribute</span>
-<span class="w">  </span><span class="nt">network</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># suggested -&gt; global attribute</span>
-<span class="w">  </span><span class="nt">comment</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># suggested -&gt; global attribute</span>
+
+<span class="nt">rights_and_access</span><span class="p">:</span><span class="w">        </span><span class="c1"># -&gt; global attributes</span>
+<span class="w">  </span><span class="nt">doi</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">             </span><span class="c1"># highly desirable -&gt; global attribute</span>
 <span class="w">  </span><span class="nt">license</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># optional -&gt; global attribute</span>
 <span class="w">  </span><span class="nt">acknowledgment</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">  </span><span class="c1"># optional -&gt; global attribute</span>
 
-<span class="nt">global_attributes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w">   </span><span class="c1"># verbatim escape hatch for any OG1 global without a home above</span>
+<span class="nt">provenance_and_processing</span><span class="p">:</span><span class="w">  </span><span class="c1"># -&gt; global attributes</span>
+<span class="w">  </span><span class="nt">comment</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># suggested -&gt; global attribute</span>
+
+<span class="nt">global_attributes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w">   </span><span class="c1"># any other OG1 global, written as given: replace {} with lines</span>
+<span class="w">  </span><span class="c1">#   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)</span>
 
 <span class="nt">contributors</span><span class="p">:</span><span class="w">           </span><span class="c1"># one entry per person per role; at least one PI</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Jane Doe</span><span class="w">       </span><span class="c1"># no commas in a name</span>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=420536ce"></script>
+      <script src="_static/documentation_options.js?v=e67db2d7"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -210,6 +210,24 @@ mappings:</p>
 <li><p><a class="reference external" href="https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery">ACDD Conventions</a></p></li>
 </ul>
 <p>The output carries <code class="docutils literal notranslate"><span class="pre">featureType:</span> <span class="pre">trajectory</span></code> (<code class="docutils literal notranslate"><span class="pre">config/OG1_global_attributes.yaml</span></code>).</p>
+<p>Two results of the OG1 checker (<code class="docutils literal notranslate"><span class="pre">ioos/cc-plugin-og</span></code>, <code class="docutils literal notranslate"><span class="pre">compliance-checker</span> <span class="pre">--test</span> <span class="pre">og:1.0</span></code>) are
+expected on every file this package writes:</p>
+<ul class="simple">
+<li><p><strong>Variable names should be capitalized</strong> — a basestation variable with no OG1 name keeps its
+basestation spelling (<code class="docutils literal notranslate"><span class="pre">log_D_TGT</span></code>, <code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm</span></code>, <code class="docutils literal notranslate"><span class="pre">sbe41</span></code>), so its name shows at a
+glance that it is not an OG1 variable. The OG1 manual calls upper-case variable names “the OG1
+convention” (in its sensor-variable section); keeping the basestation spelling is a deliberate
+departure from it. Variables renamed to an OG1 name are upper case; a variable passed through
+carries <code class="docutils literal notranslate"><span class="pre">original_name</span></code> equal to its name.</p></li>
+<li><p><strong>Global attribute comment is missing</strong> — when <code class="docutils literal notranslate"><span class="pre">provenance_and_processing.comment</span></code> in
+<code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> is null. The OG1 manual lists <code class="docutils literal notranslate"><span class="pre">comment</span></code> as <em>suggested</em> (cc-plugin-og 0.1.2
+checks it as mandatory), so the converter writes no default text; set it to add one.</p></li>
+</ul>
+<p>Any other checker finding is a converter problem. To run the checker:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>cc-plugin-og
+<span class="gp">$ </span>compliance-checker<span class="w"> </span>--test<span class="w"> </span>og:1.0<span class="w"> </span>&lt;output_dir&gt;/&lt;id&gt;.nc
+</pre></div>
+</div>
 </section>
 <section id="variables-that-differ-between-dives">
 <h2>Variables that differ between dives<a class="headerlink" href="#variables-that-differ-between-dives" title="Link to this heading"></a></h2>
@@ -254,14 +272,23 @@ the numeric <code class="docutils literal notranslate"><span class="pre">PLATFOR
 <li><p><em>Institution ids</em> — config institutions with no <code class="docutils literal notranslate"><span class="pre">id</span></code> that the package’s EDMO registry
 (<code class="docutils literal notranslate"><span class="pre">config/institution_registry.yaml</span></code>) matched by name, as an <code class="docutils literal notranslate"><span class="pre">institutions:</span></code> block with the
 registry name and id filled in;</p></li>
+<li><p><em>Deployment id</em> — the derived <code class="docutils literal notranslate"><span class="pre">id</span></code> as an <code class="docutils literal notranslate"><span class="pre">identity_and_discovery.id</span></code> line, when the
+conversion starts at dive 1 and that <code class="docutils literal notranslate"><span class="pre">id</span></code> is null: pinned, it survives a later conversion of
+part of the mission, which would derive a later start time and so a different id;</p></li>
+<li><p><em>Institution not in the registry</em> — a config institution the registry does not match
+exactly, with the registry entries whose names contain every word of it (<code class="docutils literal notranslate"><span class="pre">University</span> <span class="pre">of</span>
+<span class="pre">Hamburg</span></code> → <code class="docutils literal notranslate"><span class="pre">University</span> <span class="pre">of</span> <span class="pre">Hamburg</span> <span class="pre">(IfM)</span></code>, EDMO 1156);</p></li>
 <li><p><em>Institution in the basestation files</em> — the basestation <code class="docutils literal notranslate"><span class="pre">institution</span></code> global’s registry
 match, when no config institution resolved to it. The converter does not write the file’s
 institution when the config lists institutions (it would be a second, role-less record), so
 this is where it surfaces, with <code class="docutils literal notranslate"><span class="pre">role:</span> <span class="pre">null</span></code> to fill;</p></li>
-<li><p><em>Missing ACDD globals</em> — ACDD 1.3 globals the file does not carry, under <code class="docutils literal notranslate"><span class="pre">deployment:</span></code> where
-they have a home there and <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code> otherwise. Globals the converter supplies
+<li><p><em>Missing globals</em> — OG1 highly-desirable globals (the ones <code class="docutils literal notranslate"><span class="pre">validate</span></code> warns about) and ACDD
+1.3 globals the file does not carry, each labelled with its tier, under the global-attribute
+section that sets it and <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code> otherwise. Globals the converter supplies
 itself (<code class="docutils literal notranslate"><span class="pre">standard_name_vocabulary</span></code>, <code class="docutils literal notranslate"><span class="pre">geospatial_bounds_crs</span></code>, <code class="docutils literal notranslate"><span class="pre">time_coverage_resolution</span></code>,
-…) are named, not boxed: they are not <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> values.</p></li>
+…) are named, not boxed: they are not <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> values. Nor are <code class="docutils literal notranslate"><span class="pre">creator_*</span></code> and
+<code class="docutils literal notranslate"><span class="pre">publisher_*</span></code>: OG1 defines neither and records people and organisations in
+<code class="docutils literal notranslate"><span class="pre">contributor_*</span></code> and <code class="docutils literal notranslate"><span class="pre">contributing_institutions_*</span></code>.</p></li>
 </ul>
 <p>The dive, platform-pair and institution checks read the <code class="docutils literal notranslate"><span class="pre">config</span></code> the sidecar records, so a page
 for a file converted before it was recorded shows only the other two. A draft has no such section.</p>
@@ -277,7 +304,12 @@ came from, with an <em>Orig var</em> / <em>Orig dim</em> column pair naming the 
 <li><p><em>Required by OG1</em> — the variables (and the <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> dimension) a valid OG1 file
 must carry, present/absent, from <code class="xref py py-data docutils literal notranslate"><span class="pre">seagliderOG1.vocabularies.OG1_REQUIRED_VARS</span></code> (the
 upstream <code class="docutils literal notranslate"><span class="pre">ioos/cc-plugin-og</span></code> checker list).</p></li>
-<li><p><em>Named by OG1</em> — variables OG1 defines but does not require (science, phase, sensor, QC).</p></li>
+<li><p><em>Sensors named by OG1</em> — one row per <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable: type, maker, model, serial
+number, calibration date, and the variables whose <code class="docutils literal notranslate"><span class="pre">sensor</span></code> attribute names it. Amber: a
+placeholder serial or date (empty, or every digit zero), or a serial shared by two sensors
+(a calibration comment copied between instruments); correct either with <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> in
+<code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>.</p></li>
+<li><p><em>Named by OG1</em> — variables OG1 defines but does not require (science, phase, QC).</p></li>
 <li><p><em>Candidate for OG1</em> — variables the project proposes to canonise, from
 <code class="xref py py-data docutils literal notranslate"><span class="pre">seagliderOG1.vocabularies.OG1_CANDIDATE_VARS</span></code> (e.g. the flight-model inputs and
 outputs), shown present/absent; edit that list as candidates are agreed.</p></li>
@@ -308,7 +340,8 @@ required keys, that <code class="docutils literal notranslate"><span class="pre"
 required platform fields, and that the contributor and institution records include at least
 one PI and one Operator. During conversion the input coordinates are checked.</p>
 <p>Neither step runs an OG1 compliance check on the output file. To check a finished OG1 file
-against the format, use <a class="reference external" href="https://github.com/OceanGlidersCommunity/glidertest">glidertest</a>.</p>
+against the format, run the OG1 checker (see <a class="reference internal" href="#og1-compliance">OG1 compliance</a>), and use
+<a class="reference external" href="https://github.com/OceanGlidersCommunity/glidertest">glidertest</a> for the data themselves.</p>
 </section>
 <section id="extended-variables">
 <h2>Extended variables<a class="headerlink" href="#extended-variables" title="Link to this heading"></a></h2>

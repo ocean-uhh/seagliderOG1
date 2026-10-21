@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
+  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=420536ce"></script>
+      <script src="../../_static/documentation_options.js?v=e67db2d7"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -177,23 +177,77 @@
 <span class="c1"># deployment: block (one key per global). Ordered as the OG1 manual's global-attribute</span>
 <span class="c1"># table lists them (the order the `required:` block carries): mandatory, then highly</span>
 <span class="c1"># desirable, then suggested; `license` and `acknowledgment` are ACDD globals with no</span>
-<span class="c1"># OG1-table position and trail the tiered ones. The single list read by</span>
-<span class="c1"># convert.to_og1 (precedence, collision checks), the validate deployment check, and</span>
-<span class="c1"># the init template (which reads each key's tier from REQUIRED_GLOBALS).</span>
-<span class="n">DEPLOYMENT_GLOBALS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"id"</span><span class="p">,</span>
-    <span class="s2">"site"</span><span class="p">,</span>
-    <span class="s2">"site_vocabulary"</span><span class="p">,</span>
-    <span class="s2">"program"</span><span class="p">,</span>
-    <span class="s2">"program_vocabulary"</span><span class="p">,</span>
-    <span class="s2">"data_url"</span><span class="p">,</span>
-    <span class="s2">"doi"</span><span class="p">,</span>
-    <span class="s2">"project"</span><span class="p">,</span>
-    <span class="s2">"network"</span><span class="p">,</span>
-    <span class="s2">"comment"</span><span class="p">,</span>
-    <span class="s2">"license"</span><span class="p">,</span>
-    <span class="s2">"acknowledgment"</span><span class="p">,</span>
+<span class="c1"># OG1-table position and trail the tiered ones.</span>
+<span class="c1">#</span>
+<span class="c1"># The user-set global attributes, grouped by the conversion page's convention group.</span>
+<span class="c1"># Each yaml section slug is this schema's own contract; it is NOT derived from the vendored</span>
+<span class="c1"># page label (ctdcast owns those). tests/test_reports.py asserts every key groups under the</span>
+<span class="c1"># matching page label. program/program_vocabulary/network are deliberately absent: they are</span>
+<span class="c1"># per-platform facts a local-config overlay supplies, not per-mission text</span>
+<span class="c1"># (notes/2026-10-21-platform-registry.md); until the registry lands they are set, if needed,</span>
+<span class="c1"># through global_attributes:.</span>
+<span class="n">CONFIG_GLOBAL_SECTIONS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"identity_and_discovery"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">"id"</span><span class="p">,</span>
+        <span class="s2">"naming_authority"</span><span class="p">,</span>
+        <span class="s2">"site"</span><span class="p">,</span>
+        <span class="s2">"site_vocabulary"</span><span class="p">,</span>
+        <span class="s2">"data_url"</span><span class="p">,</span>
+        <span class="s2">"project"</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">"rights_and_access"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">"doi"</span><span class="p">,</span>
+        <span class="s2">"license"</span><span class="p">,</span>
+        <span class="s2">"acknowledgment"</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">"provenance_and_processing"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"comment"</span><span class="p">,),</span>
+<span class="p">}</span>
+
+<span class="c1"># Flat union of the section keys, in section then template order. The single list read by</span>
+<span class="c1"># convert.to_og1 (precedence, collision checks) and the validate deployment check; the init</span>
+<span class="c1"># template reads CONFIG_GLOBAL_SECTIONS directly (each key's tier from REQUIRED_GLOBALS).</span>
+<span class="n">DEPLOYMENT_GLOBALS</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+    <span class="n">key</span> <span class="k">for</span> <span class="n">keys</span> <span class="ow">in</span> <span class="n">CONFIG_GLOBAL_SECTIONS</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span>
 <span class="p">)</span>
+
+<span class="c1"># Each sectioned global mapped to the slug of the section that sets it. The one inverse of</span>
+<span class="c1"># CONFIG_GLOBAL_SECTIONS: read by validate (wrong-section and collision messages), the</span>
+<span class="c1"># converter's collision/override messages, and the init template, so "which section owns</span>
+<span class="c1"># this key" has a single definition.</span>
+<span class="n">CONFIG_GLOBAL_HOME</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">key</span><span class="p">:</span> <span class="n">slug</span> <span class="k">for</span> <span class="n">slug</span><span class="p">,</span> <span class="n">keys</span> <span class="ow">in</span> <span class="n">CONFIG_GLOBAL_SECTIONS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span>
+<span class="p">}</span>
+
+
+<span class="c1"># Globals the converter computes from the data (or at conversion time). A mission config</span>
+<span class="c1"># may not set them: convert.to_og1 refuses them in global_attributes, and validate says so first.</span>
+<span class="n">DERIVED_GLOBALS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">"time_coverage_start"</span><span class="p">,</span>
+        <span class="s2">"time_coverage_end"</span><span class="p">,</span>
+        <span class="s2">"geospatial_lat_min"</span><span class="p">,</span>
+        <span class="s2">"geospatial_lat_max"</span><span class="p">,</span>
+        <span class="s2">"geospatial_lon_min"</span><span class="p">,</span>
+        <span class="s2">"geospatial_lon_max"</span><span class="p">,</span>
+        <span class="s2">"geospatial_vertical_min"</span><span class="p">,</span>
+        <span class="s2">"geospatial_vertical_max"</span><span class="p">,</span>
+        <span class="s2">"geospatial_bounds"</span><span class="p">,</span>
+        <span class="s2">"geospatial_vertical_positive"</span><span class="p">,</span>
+        <span class="s2">"time_coverage_duration"</span><span class="p">,</span>
+        <span class="s2">"date_created"</span><span class="p">,</span>
+        <span class="s2">"start_date"</span><span class="p">,</span>
+        <span class="s2">"tracking_id"</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+
+<span class="c1"># Fields a mission config's sensors: block may correct, keyed by the basestation sensor key</span>
+<span class="c1"># (a name in the instrument global), mapped to the sensor attribute each one sets. Read by</span>
+<span class="c1"># the converter (_pipeline.gather_sensor_info) and by validate.</span>
+<span class="n">SENSOR_OVERRIDE_FIELDS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"serial_number"</span><span class="p">:</span> <span class="s2">"sensor_serial_number"</span><span class="p">,</span>
+    <span class="s2">"calibration_date"</span><span class="p">:</span> <span class="s2">"sensor_calibration_date"</span><span class="p">,</span>
+<span class="p">}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_version</span><span class="p">(</span><span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">object</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>

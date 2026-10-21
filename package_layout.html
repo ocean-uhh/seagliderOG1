@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Package layout and defaults &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
+  <title>Package layout and defaults &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=420536ce"></script>
+      <script src="_static/documentation_options.js?v=e67db2d7"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -144,9 +144,11 @@ conversion factors.</p></li>
 basestation variable is retained.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ROLE_VOCABULARY</span></code>, <code class="docutils literal notranslate"><span class="pre">ROLE_ALIASES</span></code> — the W08 contributor roles and the accepted aliases.</p></li>
 </ul>
-<p>To change what the conversion writes, edit these — not a copy in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>. The
-<code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> carries only the per-deployment metadata (platform, contributors, institutions,
-source and range).</p>
+<p>These are the packaged defaults, read-only for an installed package — do not edit them in place
+(a pip install puts them under <code class="docutils literal notranslate"><span class="pre">site-packages</span></code>, and an edit is lost on upgrade). A local-override
+mechanism (<code class="docutils literal notranslate"><span class="pre">local_config</span></code>) is planned; until it lands, changing the mappings means an editable
+checkout. The <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> carries only the per-deployment metadata (platform, contributors,
+institutions, raw_dir and range), not a copy of these.</p>
 </section>
 </section>
 

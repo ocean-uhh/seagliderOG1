@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
+  <title>seagliderOG1.convert &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=420536ce"></script>
+      <script src="../../_static/documentation_options.js?v=e67db2d7"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -145,37 +145,24 @@
 
 <span class="c1"># Global attributes the converter derives from the data; the mission config may</span>
 <span class="c1"># not set these through global_attributes (a collision is an error). ``id`` is not</span>
-<span class="c1"># here: it is derived by default but may be overridden via the deployment: block.</span>
+<span class="c1"># here: it is derived by default but may be overridden via the identity_and_discovery: section.</span>
 <span class="c1"># Transient per-variable attribute a derived-variable creation site stamps with the JSON</span>
 <span class="c1"># list of basestation variables its data came from; read and removed when the</span>
 <span class="c1"># conversion_derived_variables map is built, so it never reaches the file. Defined in</span>
 <span class="c1"># _pipeline (which also stamps the TIME axis) and aliased here for the local creation sites.</span>
 <span class="n">_DERIVED_SOURCES_ATTR</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">DERIVED_SOURCES_ATTR</span>
 
-<span class="n">_DERIVED_GLOBALS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
-    <span class="p">{</span>
-        <span class="s2">"time_coverage_start"</span><span class="p">,</span>
-        <span class="s2">"time_coverage_end"</span><span class="p">,</span>
-        <span class="s2">"geospatial_lat_min"</span><span class="p">,</span>
-        <span class="s2">"geospatial_lat_max"</span><span class="p">,</span>
-        <span class="s2">"geospatial_lon_min"</span><span class="p">,</span>
-        <span class="s2">"geospatial_lon_max"</span><span class="p">,</span>
-        <span class="s2">"geospatial_vertical_min"</span><span class="p">,</span>
-        <span class="s2">"geospatial_vertical_max"</span><span class="p">,</span>
-        <span class="s2">"geospatial_bounds"</span><span class="p">,</span>
-        <span class="s2">"geospatial_vertical_positive"</span><span class="p">,</span>
-        <span class="s2">"time_coverage_duration"</span><span class="p">,</span>
-        <span class="s2">"date_created"</span><span class="p">,</span>
-        <span class="s2">"start_date"</span><span class="p">,</span>
-        <span class="s2">"tracking_id"</span><span class="p">,</span>
-    <span class="p">}</span>
-<span class="p">)</span>
+<span class="c1"># The globals the converter computes; the mission config may not set them. One list in</span>
+<span class="c1"># vocabularies, read here and by validate.</span>
+<span class="n">_DERIVED_GLOBALS</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">DERIVED_GLOBALS</span>
 
 <span class="c1"># OG1 deployment-identity globals the mission config sets through the structured</span>
-<span class="c1"># deployment: block (vocabularies.DEPLOYMENT_GLOBALS). A global_attributes key</span>
+<span class="c1"># global-attribute sections (vocabularies.DEPLOYMENT_GLOBALS is their flat union, merged from</span>
+<span class="c1"># the three mission.yaml sections at the CLI boundary). A global_attributes key</span>
 <span class="c1"># duplicating one of these is refused: the escape hatch is for everything else. ``id``</span>
-<span class="c1"># and ``comment`` also have a converter-derived default, so a deployment value for</span>
-<span class="c1"># them overrides with a warning naming both; the rest are config-only.</span>
+<span class="c1"># (derived) and ``comment`` (kept from the basestation files when they carry one) can</span>
+<span class="c1"># already be set, so a deployment value for them overrides with a warning naming both;</span>
+<span class="c1"># the rest are config-only.</span>
 <span class="n">_DEPLOYMENT_GLOBALS</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">DEPLOYMENT_GLOBALS</span>
 
 <span class="c1"># String platform fields, resolved in order config -&gt; file -&gt; "UNK", derived from</span>
@@ -956,20 +943,19 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    deployment : collections.abc.Mapping</span>
-<span class="sd">        The ``deployment:`` block.</span>
+<span class="sd">        The deployment mapping (the three ``mission.yaml`` global-attribute sections merged).</span>
 <span class="sd">    global_attributes : collections.abc.Mapping</span>
 <span class="sd">        The ``global_attributes:`` block.</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
-<span class="sd">        If ``global_attributes`` sets a converter-derived key or a key with a home in</span>
-<span class="sd">        ``deployment:``, or ``deployment:`` has an unknown key.</span>
+<span class="sd">        If ``global_attributes`` sets a converter-derived key or a key with a structured home</span>
+<span class="sd">        in a global-attribute section, or the deployment mapping has an unknown key.</span>
 
 <span class="sd">    """</span>
-    <span class="c1"># Only a real (non-null) value collides; a null is skipped later, so a legacy</span>
-    <span class="c1"># config_version 1 template that lists reserved keys as null (the old init wrote</span>
-    <span class="c1"># global_attributes: {project: null, program: null, ...}) still converts.</span>
+    <span class="c1"># Only a real (non-null) value collides; a null is skipped later, so a template that</span>
+    <span class="c1"># lists reserved keys as null still converts.</span>
     <span class="n">set_globals</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">global_attributes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_empty</span><span class="p">(</span><span class="n">v</span><span class="p">)}</span>
     <span class="n">collisions</span> <span class="o">=</span> <span class="n">_DERIVED_GLOBALS</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">set_globals</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">collisions</span><span class="p">:</span>
@@ -980,17 +966,19 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
     <span class="n">structured</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_DEPLOYMENT_GLOBALS</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">set_globals</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">structured</span><span class="p">:</span>
+        <span class="n">home</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">CONFIG_GLOBAL_HOME</span>
+        <span class="n">moves</span> <span class="o">=</span> <span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">home</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">:"</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">structured</span><span class="p">))</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">"global_attributes may not set keys that have a structured home in the "</span>
-            <span class="sa">f</span><span class="s2">"deployment: block: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">structured</span><span class="p">)</span><span class="si">}</span><span class="s2">. Move them under deployment:."</span>
+            <span class="s2">"global_attributes may not set keys that have a structured home in a "</span>
+            <span class="sa">f</span><span class="s2">"global-attribute section: move </span><span class="si">{</span><span class="n">moves</span><span class="si">}</span><span class="s2">."</span>
         <span class="p">)</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
     <span class="n">unknown_deployment</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">deployment</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">_DEPLOYMENT_GLOBALS</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">unknown_deployment</span><span class="p">:</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"deployment: has unknown keys: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown_deployment</span><span class="p">)</span><span class="si">}</span><span class="s2">. Allowed "</span>
-            <span class="sa">f</span><span class="s2">"keys are </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_DEPLOYMENT_GLOBALS</span><span class="p">)</span><span class="si">}</span><span class="s2">; put anything else under "</span>
-            <span class="s2">"global_attributes:."</span>
+            <span class="sa">f</span><span class="s2">"deployment has unknown keys: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown_deployment</span><span class="p">)</span><span class="si">}</span><span class="s2">. Allowed "</span>
+            <span class="sa">f</span><span class="s2">"keys are </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_DEPLOYMENT_GLOBALS</span><span class="p">)</span><span class="si">}</span><span class="s2">; set anything else under "</span>
+            <span class="s2">"global_attributes."</span>
         <span class="p">)</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
@@ -1051,7 +1039,7 @@
 <span class="w">    </span><span class="sd">"""Set global attributes on a written OG1 file without converting again.</span>
 
 <span class="sd">    For metadata that exists only after the file is written — a DOI assigned on</span>
-<span class="sd">    publication — or a corrected ``deployment:`` / ``global_attributes:`` value. Only</span>
+<span class="sd">    publication — or a corrected global-attribute or ``global_attributes:`` value. Only</span>
 <span class="sd">    global attributes change (edited in place; variables are not rewritten). The file</span>
 <span class="sd">    gets ``date_modified`` set to now, a ``history`` line naming the keys, and a new</span>
 <span class="sd">    ``tracking_id``; ``date_created`` is kept. Every value is checked before the file</span>
@@ -1065,7 +1053,7 @@
 <span class="sd">    path : str or os.PathLike</span>
 <span class="sd">        The OG1 netCDF file.</span>
 <span class="sd">    deployment : collections.abc.Mapping, optional</span>
-<span class="sd">        ``deployment:`` keys to set (as in :func:`to_og1`); null values are skipped.</span>
+<span class="sd">        Deployment-identity globals to set (as in :func:`to_og1`); null values are skipped.</span>
 <span class="sd">    global_attributes : collections.abc.Mapping, optional</span>
 <span class="sd">        ``global_attributes:`` keys to set (as in :func:`to_og1`).</span>
 <span class="sd">    doi : str, optional</span>
@@ -1175,7 +1163,7 @@
     <span class="n">deployment</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span>
     <span class="n">sources</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Write the deployment: block globals, overriding a derived value with a warning.</span>
+<span class="w">    </span><span class="sd">"""Write the deployment-identity globals, overriding a derived value with a warning.</span>
 
 <span class="sd">    Mission config takes precedence over a converter-derived global, so a deployment</span>
 <span class="sd">    value that differs from one already on the dataset (``id`` and ``comment`` are the</span>
@@ -1203,8 +1191,9 @@
         <span class="n">existing</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="n">replaced</span> <span class="o">=</span> <span class="n">existing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">replaced</span><span class="p">:</span>
+            <span class="n">location</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">CONFIG_GLOBAL_HOME</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">"deployment"</span><span class="p">)</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"deployment.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> overrides the converter value </span><span class="si">{</span><span class="n">existing</span><span class="si">!r}</span><span class="s2"> with "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">location</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> overrides the converter value </span><span class="si">{</span><span class="n">existing</span><span class="si">!r}</span><span class="s2"> with "</span>
                 <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">."</span><span class="p">,</span>
                 <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
             <span class="p">)</span>
@@ -1401,7 +1390,8 @@
     <span class="n">platform</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">deployment</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">global_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"delayed"</span><span class="p">,</span>
+    <span class="n">sensors</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"realtime"</span><span class="p">,</span>
     <span class="n">provenance</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Convert Seaglider basestation datasets to OG1 format.</span>
@@ -1432,16 +1422,23 @@
 <span class="sd">    deployment : dict of str to object, optional</span>
 <span class="sd">        The deployment-identity globals from the mission config ``deployment`` block</span>
 <span class="sd">        (``id``, ``program``, ``license``, ``doi``, ``site``, ...). Written as global</span>
-<span class="sd">        attributes; a value for ``id`` or ``comment`` overrides the converter-derived</span>
-<span class="sd">        default with a warning. Nulls skipped. Default is None.</span>
+<span class="sd">        attributes; a value for ``id`` (derived) or ``comment`` (kept from the</span>
+<span class="sd">        basestation files when they carry one) overrides it with a warning. Nulls skipped. Default is None.</span>
 <span class="sd">    global_attributes : dict of str to object, optional</span>
 <span class="sd">        Global attributes written verbatim into the output (nulls skipped). A key</span>
 <span class="sd">        that collides with a converter-derived global, or with a key that has a</span>
 <span class="sd">        structured home in ``deployment``, raises. Default is None.</span>
+<span class="sd">    sensors : collections.abc.Mapping, optional</span>
+<span class="sd">        Corrections to the basestation sensor records, from the mission config</span>
+<span class="sd">        ``sensors:`` block: sensor key (a name in the ``instrument`` global) to</span>
+<span class="sd">        ``{"serial_number": ..., "calibration_date": ...}``. A corrected serial names the</span>
+<span class="sd">        ``SENSOR_*`` variable; the sensor's ``comment`` records the value it replaced.</span>
+<span class="sd">        Default is None.</span>
 <span class="sd">    mode : str, optional</span>
-<span class="sd">        Data mode, ``"delayed"`` (default) or ``"realtime"``. Sets the ``id``</span>
-<span class="sd">        suffix (``delayed`` or ``R``) and so the output filename, per the OG1</span>
-<span class="sd">        manual, which defines no separate data-mode attribute. Default is "delayed".</span>
+<span class="sd">        Data mode, ``"realtime"`` (default) or ``"delayed"``. Sets the ``id``</span>
+<span class="sd">        suffix (``R`` or ``delayed``) and so the output filename, per the OG1</span>
+<span class="sd">        manual, which defines no separate data-mode attribute. Default is "realtime":</span>
+<span class="sd">        a file is delayed mode only when the user says so.</span>
 <span class="sd">    provenance : dict, optional</span>
 <span class="sd">        When given, filled in place with what the output file cannot record about its own</span>
 <span class="sd">        conversion: ``inputs`` (one ``{"path", "bytes", "dive"}`` per input file) and</span>
@@ -1542,7 +1539,7 @@
 
     <span class="c1"># Add sensor information to the dataset - can be done on the concatenated data</span>
     <span class="c1"># -----------------------------------------------------------------------------</span>
-    <span class="n">sensor_dict</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">gather_sensor_info</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">)</span>
+    <span class="n">sensor_dict</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">gather_sensor_info</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">overrides</span><span class="o">=</span><span class="n">sensors</span><span class="p">)</span>
     <span class="c1"># delete old sensor attribute if it exists and add new one</span>
     <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">"sensor"</span> <span class="ow">in</span> <span class="n">ds_og1</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
@@ -1584,6 +1581,21 @@
     <span class="n">platform_fields</span> <span class="o">=</span> <span class="n">_resolve_platform</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">platform</span><span class="p">)</span>
     <span class="n">platform_serial_number</span> <span class="o">=</span> <span class="n">platform_fields</span><span class="p">[</span><span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">]</span>
 
+    <span class="c1"># If the config renamed the serial (a local nickname replacing the basestation</span>
+    <span class="c1"># platform_id), record the replaced value so it survives in the file, as a sensor</span>
+    <span class="c1"># serial correction does in the sensor's comment.</span>
+    <span class="n">file_serial</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">platform_from_file</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="s2">"PLATFORM_SERIAL_NUMBER"</span>
+    <span class="p">)</span>
+    <span class="n">serial_comment</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"mission config PLATFORM_SERIAL_NUMBER; the basestation platform_id was "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">file_serial</span><span class="si">!r}</span><span class="s2">."</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_empty</span><span class="p">(</span><span class="n">file_serial</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_serial</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="o">!=</span> <span class="nb">str</span><span class="p">(</span><span class="n">platform_serial_number</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
+
     <span class="c1"># Mandatory OG1 platform string variables and their long_names.</span>
     <span class="n">platform_long_names</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">:</span> <span class="s2">"glider serial number"</span><span class="p">,</span>
@@ -1596,6 +1608,8 @@
     <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">long_name</span> <span class="ow">in</span> <span class="n">platform_long_names</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">ds_og1</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">platform_fields</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
         <span class="n">ds_og1</span><span class="p">[</span><span class="n">field</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"long_name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long_name</span>
+    <span class="k">if</span> <span class="n">serial_comment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"PLATFORM_SERIAL_NUMBER"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"comment"</span><span class="p">]</span> <span class="o">=</span> <span class="n">serial_comment</span>
 
     <span class="k">if</span> <span class="s2">"platform_model_vocabulary"</span> <span class="ow">in</span> <span class="n">platform_fields</span><span class="p">:</span>
         <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"PLATFORM_MODEL"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"platform_model_vocabulary"</span><span class="p">]</span> <span class="o">=</span> <span class="n">platform_fields</span><span class="p">[</span>
@@ -1833,7 +1847,8 @@
     <span class="n">platform</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">deployment</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">global_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"delayed"</span><span class="p">,</span>
+    <span class="n">sensors</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"realtime"</span><span class="p">,</span>
     <span class="n">keep_variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">repair</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1870,9 +1885,11 @@
 <span class="sd">        Deployment-identity globals, as for :func:`to_og1`. Default is None.</span>
 <span class="sd">    global_attributes : dict of str to object, optional</span>
 <span class="sd">        Global attributes written verbatim, as for :func:`to_og1`. Default is None.</span>
+<span class="sd">    sensors : collections.abc.Mapping, optional</span>
+<span class="sd">        Sensor-record corrections, as for :func:`to_og1`. Default is None.</span>
 <span class="sd">    mode : str, optional</span>
-<span class="sd">        Data mode, ``"delayed"`` (default) or ``"realtime"``; sets the ``id`` suffix</span>
-<span class="sd">        and so the filename. Default is "delayed".</span>
+<span class="sd">        Data mode, ``"realtime"`` (default) or ``"delayed"``; sets the ``id`` suffix</span>
+<span class="sd">        and so the filename. Default is "realtime".</span>
 <span class="sd">    keep_variables : sequence of str, optional</span>
 <span class="sd">        Science variables to keep (see :func:`keep_variables`); OG1-mandatory</span>
 <span class="sd">        variables always survive. Default is None (keep all).</span>
@@ -1957,6 +1974,7 @@
         <span class="n">platform</span><span class="o">=</span><span class="n">platform</span><span class="p">,</span>
         <span class="n">deployment</span><span class="o">=</span><span class="n">deployment</span><span class="p">,</span>
         <span class="n">global_attributes</span><span class="o">=</span><span class="n">global_attributes</span><span class="p">,</span>
+        <span class="n">sensors</span><span class="o">=</span><span class="n">sensors</span><span class="p">,</span>
         <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
         <span class="n">provenance</span><span class="o">=</span><span class="n">provenance</span><span class="p">,</span>
     <span class="p">)</span>
@@ -1970,6 +1988,9 @@
                 <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="n">platform</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_empty</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="p">},</span>
+            <span class="s2">"deployment_id"</span><span class="p">:</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">_is_empty</span><span class="p">((</span><span class="n">deployment</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">))</span>
+            <span class="k">else</span> <span class="p">(</span><span class="n">deployment</span> <span class="ow">or</span> <span class="p">{})[</span><span class="s2">"id"</span><span class="p">],</span>
             <span class="s2">"institutions"</span><span class="p">:</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">record</span><span class="p">)</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">institutions</span> <span class="ow">or</span> <span class="p">()],</span>
         <span class="p">}</span>
     <span class="k">if</span> <span class="n">keep_variables</span><span class="p">:</span>

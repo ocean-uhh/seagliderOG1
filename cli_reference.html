@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
+  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=420536ce"></script>
+      <script src="_static/documentation_options.js?v=e67db2d7"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -141,7 +141,8 @@ read-only helpers.</p>
 <h2>Data mode<a class="headerlink" href="#data-mode" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--mode</span></code> (and the <code class="docutils literal notranslate"><span class="pre">mode</span></code> key in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>) sets the OG1 data mode, which
 determines the data-mode suffix of the output id: <code class="docutils literal notranslate"><span class="pre">realtime</span></code> gives the suffix <code class="docutils literal notranslate"><span class="pre">R</span></code> and
-<code class="docutils literal notranslate"><span class="pre">delayed</span></code> gives <code class="docutils literal notranslate"><span class="pre">delayed</span></code> (<code class="docutils literal notranslate"><span class="pre">vocabularies.MODE_SUFFIX</span></code>).</p>
+<code class="docutils literal notranslate"><span class="pre">delayed</span></code> gives <code class="docutils literal notranslate"><span class="pre">delayed</span></code> (<code class="docutils literal notranslate"><span class="pre">vocabularies.MODE_SUFFIX</span></code>). With neither set the mode is
+<code class="docutils literal notranslate"><span class="pre">realtime</span></code>: a file is delayed mode only when you say so.</p>
 </section>
 <section id="conversion-page">
 <h2>Conversion page<a class="headerlink" href="#conversion-page" title="Link to this heading"></a></h2>
@@ -182,16 +183,16 @@ still supply.</p>
 <h2>Adding metadata later<a class="headerlink" href="#adding-metadata-later" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">enrich</span> <span class="pre">FILE.nc</span> <span class="pre">[mission.yaml]</span> <span class="pre">[--doi</span> <span class="pre">DOI]</span></code> sets global attributes on a written
 OG1 file without converting again — a DOI assigned after publication, or a corrected
-<code class="docutils literal notranslate"><span class="pre">deployment:</span></code> / <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code> value. It changes the netCDF file, not the
+global-attribute section or <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code> value. It changes the netCDF file, not the
 configuration: the globals are edited in place, <code class="docutils literal notranslate"><span class="pre">date_modified</span></code> is set, a <code class="docutils literal notranslate"><span class="pre">history</span></code> line
 names the keys, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> is renewed, <code class="docutils literal notranslate"><span class="pre">date_created</span></code> is kept, and the sidecar is
 rebound. Values must be text, numbers or dates (a date is written as ISO 8601 text); every
 value is checked before the file is opened, so a refused one leaves the file unchanged.
-Replacing a different value already in the file warns with both values. <code class="docutils literal notranslate"><span class="pre">deployment.id</span></code>
+Replacing a different value already in the file warns with both values. <code class="docutils literal notranslate"><span class="pre">id</span></code>
 cannot change: the file name and sidecar are bound to it, so a new id means converting again.
 The globals <code class="docutils literal notranslate"><span class="pre">enrich</span></code> writes itself (<code class="docutils literal notranslate"><span class="pre">date_modified</span></code>, <code class="docutils literal notranslate"><span class="pre">history</span></code>, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code>,
 <code class="docutils literal notranslate"><span class="pre">draft</span></code>) and the <code class="docutils literal notranslate"><span class="pre">conversion_*</span></code> records cannot be set.
-Reserving the DOI first and setting <code class="docutils literal notranslate"><span class="pre">deployment.doi</span></code> before <code class="docutils literal notranslate"><span class="pre">process</span></code> is the
+Reserving the DOI first and setting <code class="docutils literal notranslate"><span class="pre">rights_and_access.doi</span></code> before <code class="docutils literal notranslate"><span class="pre">process</span></code> is the
 alternative.</p>
 </section>
 <section id="listing-the-vocabulary">
@@ -445,7 +446,7 @@ seagliderOG1 report out/&lt;id&gt;.nc –report-dir site/    into site/&lt;id&gt
 <dd><p>the OG1 netCDF file</p>
 </dd>
 <dt><kbd>config</kbd></dt>
-<dd><p>mission.yaml whose deployment: and global_attributes: are applied</p>
+<dd><p>mission.yaml whose global-attribute sections and global_attributes: are applied</p>
 </dd>
 </dl>
 </section>

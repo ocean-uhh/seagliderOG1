@@ -29,7 +29,8 @@ Data mode
 
 ``process --mode`` (and the ``mode`` key in ``mission.yaml``) sets the OG1 data mode, which
 determines the data-mode suffix of the output id: ``realtime`` gives the suffix ``R`` and
-``delayed`` gives ``delayed`` (``vocabularies.MODE_SUFFIX``).
+``delayed`` gives ``delayed`` (``vocabularies.MODE_SUFFIX``). With neither set the mode is
+``realtime``: a file is delayed mode only when you say so.
 
 Conversion page
 ---------------
@@ -76,16 +77,16 @@ Adding metadata later
 
 ``seagliderOG1 enrich FILE.nc [mission.yaml] [--doi DOI]`` sets global attributes on a written
 OG1 file without converting again — a DOI assigned after publication, or a corrected
-``deployment:`` / ``global_attributes:`` value. It changes the netCDF file, not the
+global-attribute section or ``global_attributes:`` value. It changes the netCDF file, not the
 configuration: the globals are edited in place, ``date_modified`` is set, a ``history`` line
 names the keys, ``tracking_id`` is renewed, ``date_created`` is kept, and the sidecar is
 rebound. Values must be text, numbers or dates (a date is written as ISO 8601 text); every
 value is checked before the file is opened, so a refused one leaves the file unchanged.
-Replacing a different value already in the file warns with both values. ``deployment.id``
+Replacing a different value already in the file warns with both values. ``id``
 cannot change: the file name and sidecar are bound to it, so a new id means converting again.
 The globals ``enrich`` writes itself (``date_modified``, ``history``, ``tracking_id``,
 ``draft``) and the ``conversion_*`` records cannot be set.
-Reserving the DOI first and setting ``deployment.doi`` before ``process`` is the
+Reserving the DOI first and setting ``rights_and_access.doi`` before ``process`` is the
 alternative.
 
 Listing the vocabulary

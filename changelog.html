@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev78 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=420536ce"></script>
+      <script src="_static/documentation_options.js?v=e67db2d7"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -116,6 +116,23 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 <section id="breaking-changes">
 <h3>Breaking changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> groups the user-set global attributes into three sections named for the
+conversion page’s convention groups — <code class="docutils literal notranslate"><span class="pre">identity_and_discovery:</span></code>, <code class="docutils literal notranslate"><span class="pre">rights_and_access:</span></code>,
+<code class="docutils literal notranslate"><span class="pre">provenance_and_processing:</span></code> — replacing the single <code class="docutils literal notranslate"><span class="pre">deployment:</span></code> block, so the keys you fill
+name the page group they land in. <code class="docutils literal notranslate"><span class="pre">config_version</span></code> is now <code class="docutils literal notranslate"><span class="pre">3</span></code>; <code class="docutils literal notranslate"><span class="pre">validate</span></code> rejects an older
+version (and a stray <code class="docutils literal notranslate"><span class="pre">deployment:</span></code> block), naming the sections, and <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">init</span></code>
+regenerates a file. <code class="docutils literal notranslate"><span class="pre">program</span></code>, <code class="docutils literal notranslate"><span class="pre">program_vocabulary</span></code> and <code class="docutils literal notranslate"><span class="pre">network</span></code> leave the sections for the
+forthcoming local-config overlay (set them under <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code> until it lands); a
+<code class="docutils literal notranslate"><span class="pre">local_config:</span></code> key is reserved (must be <code class="docutils literal notranslate"><span class="pre">null</span></code> — <code class="docutils literal notranslate"><span class="pre">validate</span></code> errors on a non-null value,
+since a dropped override would make a wrong file; no <code class="docutils literal notranslate"><span class="pre">config_version</span></code> bump when the feature
+lands). <code class="docutils literal notranslate"><span class="pre">to_og1</span></code> / <code class="docutils literal notranslate"><span class="pre">process_mission</span></code> keep their single <code class="docutils literal notranslate"><span class="pre">deployment=</span></code> mapping argument.</p></li>
+<li><p>The data mode defaults to <code class="docutils literal notranslate"><span class="pre">realtime</span></code> (id and file name suffix <code class="docutils literal notranslate"><span class="pre">R</span></code>) when neither the config
+nor <code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--mode</span></code> sets it; it was <code class="docutils literal notranslate"><span class="pre">delayed</span></code>. <code class="docutils literal notranslate"><span class="pre">to_og1</span></code> / <code class="docutils literal notranslate"><span class="pre">process_mission</span></code> default to
+<code class="docutils literal notranslate"><span class="pre">mode=&quot;realtime&quot;</span></code>, and <code class="docutils literal notranslate"><span class="pre">init</span></code> writes <code class="docutils literal notranslate"><span class="pre">mode:</span> <span class="pre">realtime</span></code>. Set <code class="docutils literal notranslate"><span class="pre">mode:</span> <span class="pre">delayed</span></code> for a delayed-mode file.</p></li>
+<li><p>The basestation <code class="docutils literal notranslate"><span class="pre">naming_authority</span></code> (<code class="docutils literal notranslate"><span class="pre">edu.washington.apl</span></code>), <code class="docutils literal notranslate"><span class="pre">uuid</span></code> (one dive file’s, written as
+<code class="docutils literal notranslate"><span class="pre">uri</span></code>), <code class="docutils literal notranslate"><span class="pre">summary</span></code> (written as <code class="docutils literal notranslate"><span class="pre">site</span></code>) and <code class="docutils literal notranslate"><span class="pre">file_version</span></code> are no longer carried into the OG1
+file: they describe the basestation files, not the OG1 dataset. <code class="docutils literal notranslate"><span class="pre">naming_authority</span></code> is an
+<code class="docutils literal notranslate"><span class="pre">identity_and_discovery:</span></code> key (written by <code class="docutils literal notranslate"><span class="pre">init</span></code>).</p></li>
 <li><p>When the config lists <code class="docutils literal notranslate"><span class="pre">institutions</span></code>, the basestation <code class="docutils literal notranslate"><span class="pre">institution</span></code> global (free text, a postal
 address on sg005) is no longer written as a role-less contributing institution beside them;
 the conversion page offers its registry match as an <code class="docutils literal notranslate"><span class="pre">institutions:</span></code> entry instead. Without
@@ -156,8 +173,9 @@ warning (was <code class="docutils literal notranslate"><span class="pre">000000
 <li><p>A missing OG1-mandatory global is no longer written as a placeholder (<code class="docutils literal notranslate"><span class="pre">null</span></code> / <code class="docutils literal notranslate"><span class="pre">null&#64;null.com</span></code>);
 <code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code> raises <code class="docutils literal notranslate"><span class="pre">MetadataError</span></code>. A config that relied on the fabricated email must set a
 real <code class="docutils literal notranslate"><span class="pre">contributor_email</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> is <code class="docutils literal notranslate"><span class="pre">config_version:</span> <span class="pre">2</span></code> (a v1 file still converts). <code class="docutils literal notranslate"><span class="pre">global_attributes</span></code> may not set
-a key with a structured home in the new <code class="docutils literal notranslate"><span class="pre">deployment:</span></code> block; <code class="docutils literal notranslate"><span class="pre">id</span></code> is config-overridable there.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">global_attributes</span></code> may not set a key with a structured home in one of the three global-attribute
+sections (<code class="docutils literal notranslate"><span class="pre">validate</span></code> and the converter refuse it, naming the section); <code class="docutils literal notranslate"><span class="pre">id</span></code> is overridable under
+<code class="docutils literal notranslate"><span class="pre">identity_and_discovery:</span></code>.</p></li>
 <li><p>Per-dive-varying scalars are written as a JSON-string scalar variable instead of broadcast onto
 <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> (#117); decode the JSON to read them.</p></li>
 </ul>
@@ -165,11 +183,23 @@ a key with a structured home in the new <code class="docutils literal notranslat
 <section id="added">
 <h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">sensors:</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> (<code class="docutils literal notranslate"><span class="pre">to_og1(sensors=...)</span></code>): correct a basestation sensor record’s
+<code class="docutils literal notranslate"><span class="pre">serial_number</span></code> and <code class="docutils literal notranslate"><span class="pre">calibration_date</span></code> by its sensor key; the corrected serial names the
+<code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable, and its <code class="docutils literal notranslate"><span class="pre">comment</span></code> records the replaced value.</p></li>
+<li><p>Conversion page: a <em>Sensors named by OG1</em> table (type, maker, model, serial, calibration date,
+the variables using each sensor; amber for a placeholder or shared serial); suggestions for a
+<code class="docutils literal notranslate"><span class="pre">identity_and_discovery.id</span></code> from a conversion starting at dive 1, and for registry entries close to an
+unmatched institution name. <code class="docutils literal notranslate"><span class="pre">creator_*</span></code> / <code class="docutils literal notranslate"><span class="pre">publisher_*</span></code> are no longer suggested (OG1 uses
+<code class="docutils literal notranslate"><span class="pre">contributor_*</span></code>). The missing-globals box also lists the OG1 highly-desirable globals
+<code class="docutils literal notranslate"><span class="pre">validate</span></code> warns about, each labelled with its tier.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">validate</span></code> reports a <code class="docutils literal notranslate"><span class="pre">global_attributes</span></code> key that belongs in a global-attribute section (naming the
+section and the lines to write) or that the converter computes, before any file is read; <code class="docutils literal notranslate"><span class="pre">process</span></code> used to
+refuse it only after loading the mission.</p></li>
 <li><p>Conversion page: <em>mission.yaml against the data</em>, copyable <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> lines where the
 requested <code class="docutils literal notranslate"><span class="pre">dives</span></code> or a config platform field (serial, firmware, basestation version, WMO id)
 differs from the basestation files, where platform fields were written as <code class="docutils literal notranslate"><span class="pre">UNK</span></code> or omitted,
 where the EDMO registry resolved an institution id the config left null, and for missing ACDD
-globals (under <code class="docutils literal notranslate"><span class="pre">deployment:</span></code> or <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code>). The sidecar records the <code class="docutils literal notranslate"><span class="pre">dives</span></code>,
+globals (under a global-attribute section or <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code>). The sidecar records the <code class="docutils literal notranslate"><span class="pre">dives</span></code>,
 <code class="docutils literal notranslate"><span class="pre">platform</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> values <code class="docutils literal notranslate"><span class="pre">process_mission</span></code> was given.</p></li>
 <li><p>Three ACDD globals derived from the data: <code class="docutils literal notranslate"><span class="pre">geospatial_bounds</span></code> (lat/lon bounding box as a WKT
 polygon, latitude first), <code class="docutils literal notranslate"><span class="pre">geospatial_vertical_positive</span></code> (<code class="docutils literal notranslate"><span class="pre">down</span></code> or <code class="docutils literal notranslate"><span class="pre">up</span></code>, from the sign of mean
@@ -193,7 +223,8 @@ dimensioned floating-point variables without <code class="docutils literal notra
 <li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1.contributors</span></code> module and <code class="docutils literal notranslate"><span class="pre">config/institution_registry.yaml</span></code> (EDMO codes).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">convert.to_og1</span></code> gains <code class="docutils literal notranslate"><span class="pre">contributors=</span></code>, <code class="docutils literal notranslate"><span class="pre">institutions=</span></code>, <code class="docutils literal notranslate"><span class="pre">platform=</span></code>, <code class="docutils literal notranslate"><span class="pre">deployment=</span></code>,
 <code class="docutils literal notranslate"><span class="pre">global_attributes=</span></code>, <code class="docutils literal notranslate"><span class="pre">mode=</span></code>; <code class="docutils literal notranslate"><span class="pre">convert.name_mapping(datasets)</span></code> returns the variable-mapping table.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">deployment:</span></code> block in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> (OG1 identity globals) with <code class="docutils literal notranslate"><span class="pre">config_version:</span> <span class="pre">2</span></code>.</p></li>
+<li><p>Three global-attribute sections in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> — <code class="docutils literal notranslate"><span class="pre">identity_and_discovery:</span></code>, <code class="docutils literal notranslate"><span class="pre">rights_and_access:</span></code>,
+<code class="docutils literal notranslate"><span class="pre">provenance_and_processing:</span></code> — with <code class="docutils literal notranslate"><span class="pre">config_version:</span> <span class="pre">3</span></code>.</p></li>
 <li><p>Optional platform variables: <code class="docutils literal notranslate"><span class="pre">PLATFORM_NAME</span></code>, <code class="docutils literal notranslate"><span class="pre">TELECOM_TYPE</span></code>, <code class="docutils literal notranslate"><span class="pre">TRACKING_SYSTEM</span></code>, <code class="docutils literal notranslate"><span class="pre">BATTERY_TYPE</span></code>,
 <code class="docutils literal notranslate"><span class="pre">BATTERY_PACK</span></code>, <code class="docutils literal notranslate"><span class="pre">platform_maker_vocabulary</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">required:</span></code> tier block in <code class="docutils literal notranslate"><span class="pre">config/OG1_global_attributes.yaml</span></code> → <code class="docutils literal notranslate"><span class="pre">vocabularies.REQUIRED_GLOBALS</span></code>.</p></li>
@@ -259,6 +290,10 @@ config, <code class="docutils literal notranslate"><span class="pre">ruff</span>
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Conversion page: the presence-strips colorbar sits in its own column; it overlapped the strips
+(and warned “Axes that are not compatible with tight_layout”).</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">init</span></code> template no longer says <code class="docutils literal notranslate"><span class="pre">provenance_and_processing.comment</span></code> overrides a comment “derived
+from the file’s history”: none is derived; it overrides a <code class="docutils literal notranslate"><span class="pre">comment</span></code> global the basestation files carry.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">data/demo_sg005/mission.yaml</span></code> names its Operator <code class="docutils literal notranslate"><span class="pre">University</span> <span class="pre">of</span> <span class="pre">Washington</span> <span class="pre">School</span> <span class="pre">of</span> <span class="pre">Oceanography</span></code>, a registry variant, so it carries the EDMO id; as <code class="docutils literal notranslate"><span class="pre">University</span> <span class="pre">of</span> <span class="pre">Washington</span></code> it
 matched no registry entry.</p></li>
 <li><p>Conversion page: <code class="docutils literal notranslate"><span class="pre">contributing_institutions_role</span></code> and <code class="docutils literal notranslate"><span class="pre">_role_vocabulary</span></code> are grouped under
