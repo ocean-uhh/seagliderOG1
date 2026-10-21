@@ -8,8 +8,6 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-10-20
-
 ### Breaking changes
 
 - `mission.yaml` groups the user-set global attributes into three sections named for the
@@ -70,8 +68,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - A missing OG1-mandatory global is no longer written as a placeholder (`null` / `null@null.com`);
   `convert.to_og1` raises `MetadataError`. A config that relied on the fabricated email must set a
   real `contributor_email`.
-- `mission.yaml` is `config_version: 2` (a v1 file still converts). `global_attributes` may not set
-  a key with a structured home in the new `deployment:` block; `id` is config-overridable there.
+- `global_attributes` may not set a key with a structured home in one of the three global-attribute
+  sections (`validate` and the converter refuse it, naming the section); `id` is overridable under
+  `identity_and_discovery:`.
 - Per-dive-varying scalars are written as a JSON-string scalar variable instead of broadcast onto
   `N_MEASUREMENTS` (#117); decode the JSON to read them.
 
@@ -82,18 +81,18 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   `SENSOR_*` variable, and its `comment` records the replaced value.
 - Conversion page: a *Sensors named by OG1* table (type, maker, model, serial, calibration date,
   the variables using each sensor; amber for a placeholder or shared serial); suggestions for a
-  `deployment.id` from a conversion starting at dive 1, and for registry entries close to an
+  `identity_and_discovery.id` from a conversion starting at dive 1, and for registry entries close to an
   unmatched institution name. `creator_*` / `publisher_*` are no longer suggested (OG1 uses
   `contributor_*`). The missing-globals box also lists the OG1 highly-desirable globals
   `validate` warns about, each labelled with its tier.
-- `validate` reports a `global_attributes` key that belongs under `deployment:` (naming the
-  lines to write) or that the converter computes, before any file is read; `process` used to
+- `validate` reports a `global_attributes` key that belongs in a global-attribute section (naming the
+  section and the lines to write) or that the converter computes, before any file is read; `process` used to
   refuse it only after loading the mission.
 - Conversion page: *mission.yaml against the data*, copyable `mission.yaml` lines where the
   requested `dives` or a config platform field (serial, firmware, basestation version, WMO id)
   differs from the basestation files, where platform fields were written as `UNK` or omitted,
   where the EDMO registry resolved an institution id the config left null, and for missing ACDD
-  globals (under `deployment:` or `global_attributes:`). The sidecar records the `dives`,
+  globals (under a global-attribute section or `global_attributes:`). The sidecar records the `dives`,
   `platform` and `institutions` values `process_mission` was given.
 - Three ACDD globals derived from the data: `geospatial_bounds` (lat/lon bounding box as a WKT
   polygon, latitude first), `geospatial_vertical_positive` (`down` or `up`, from the sign of mean
@@ -117,7 +116,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - `seagliderOG1.contributors` module and `config/institution_registry.yaml` (EDMO codes).
 - `convert.to_og1` gains `contributors=`, `institutions=`, `platform=`, `deployment=`,
   `global_attributes=`, `mode=`; `convert.name_mapping(datasets)` returns the variable-mapping table.
-- `deployment:` block in `mission.yaml` (OG1 identity globals) with `config_version: 2`.
+- Three global-attribute sections in `mission.yaml` — `identity_and_discovery:`, `rights_and_access:`,
+  `provenance_and_processing:` — with `config_version: 3`.
 - Optional platform variables: `PLATFORM_NAME`, `TELECOM_TYPE`, `TRACKING_SYSTEM`, `BATTERY_TYPE`,
   `BATTERY_PACK`, `platform_maker_vocabulary`.
 - `required:` tier block in `config/OG1_global_attributes.yaml` → `vocabularies.REQUIRED_GLOBALS`.
@@ -182,8 +182,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 - Conversion page: the presence-strips colorbar sits in its own column; it overlapped the strips
   (and warned "Axes that are not compatible with tight_layout").
-- The `init` template no longer says `deployment.comment` overrides a comment "derived from the
-  file's history": none is derived; it overrides a `comment` global the basestation files carry.
+- The `init` template no longer says `provenance_and_processing.comment` overrides a comment "derived
+  from the file's history": none is derived; it overrides a `comment` global the basestation files carry.
 - `data/demo_sg005/mission.yaml` names its Operator `University of Washington School of
   Oceanography`, a registry variant, so it carries the EDMO id; as `University of Washington` it
   matched no registry entry.
