@@ -10,6 +10,23 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Breaking changes
 
+- `mission.yaml` groups the user-set global attributes into three sections named for the
+  conversion page's convention groups — `identity_and_discovery:`, `rights_and_access:`,
+  `provenance_and_processing:` — replacing the single `deployment:` block, so the keys you fill
+  name the page group they land in. `config_version` is now `3`; `validate` rejects an older
+  version (and a stray `deployment:` block), naming the sections, and `seagliderOG1 init`
+  regenerates a file. `program`, `program_vocabulary` and `network` leave the sections for the
+  forthcoming local-config overlay (set them under `global_attributes:` until it lands); a
+  `local_config:` key is reserved (must be `null` — `validate` errors on a non-null value,
+  since a dropped override would make a wrong file; no `config_version` bump when the feature
+  lands). `to_og1` / `process_mission` keep their single `deployment=` mapping argument.
+- The data mode defaults to `realtime` (id and file name suffix `R`) when neither the config
+  nor `process --mode` sets it; it was `delayed`. `to_og1` / `process_mission` default to
+  `mode="realtime"`, and `init` writes `mode: realtime`. Set `mode: delayed` for a delayed-mode file.
+- The basestation `naming_authority` (`edu.washington.apl`), `uuid` (one dive file's, written as
+  `uri`), `summary` (written as `site`) and `file_version` are no longer carried into the OG1
+  file: they describe the basestation files, not the OG1 dataset. `naming_authority` is an
+  `identity_and_discovery:` key (written by `init`).
 - When the config lists `institutions`, the basestation `institution` global (free text, a postal
   address on sg005) is no longer written as a role-less contributing institution beside them;
   the conversion page offers its registry match as an `institutions:` entry instead. Without
@@ -51,18 +68,31 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - A missing OG1-mandatory global is no longer written as a placeholder (`null` / `null@null.com`);
   `convert.to_og1` raises `MetadataError`. A config that relied on the fabricated email must set a
   real `contributor_email`.
-- `mission.yaml` is `config_version: 2` (a v1 file still converts). `global_attributes` may not set
-  a key with a structured home in the new `deployment:` block; `id` is config-overridable there.
+- `global_attributes` may not set a key with a structured home in one of the three global-attribute
+  sections (`validate` and the converter refuse it, naming the section); `id` is overridable under
+  `identity_and_discovery:`.
 - Per-dive-varying scalars are written as a JSON-string scalar variable instead of broadcast onto
   `N_MEASUREMENTS` (#117); decode the JSON to read them.
 
 ### Added
 
+- `sensors:` in `mission.yaml` (`to_og1(sensors=...)`): correct a basestation sensor record's
+  `serial_number` and `calibration_date` by its sensor key; the corrected serial names the
+  `SENSOR_*` variable, and its `comment` records the replaced value.
+- Conversion page: a *Sensors named by OG1* table (type, maker, model, serial, calibration date,
+  the variables using each sensor; amber for a placeholder or shared serial); suggestions for a
+  `identity_and_discovery.id` from a conversion starting at dive 1, and for registry entries close to an
+  unmatched institution name. `creator_*` / `publisher_*` are no longer suggested (OG1 uses
+  `contributor_*`). The missing-globals box also lists the OG1 highly-desirable globals
+  `validate` warns about, each labelled with its tier.
+- `validate` reports a `global_attributes` key that belongs in a global-attribute section (naming the
+  section and the lines to write) or that the converter computes, before any file is read; `process` used to
+  refuse it only after loading the mission.
 - Conversion page: *mission.yaml against the data*, copyable `mission.yaml` lines where the
   requested `dives` or a config platform field (serial, firmware, basestation version, WMO id)
   differs from the basestation files, where platform fields were written as `UNK` or omitted,
   where the EDMO registry resolved an institution id the config left null, and for missing ACDD
-  globals (under `deployment:` or `global_attributes:`). The sidecar records the `dives`,
+  globals (under a global-attribute section or `global_attributes:`). The sidecar records the `dives`,
   `platform` and `institutions` values `process_mission` was given.
 - Three ACDD globals derived from the data: `geospatial_bounds` (lat/lon bounding box as a WKT
   polygon, latitude first), `geospatial_vertical_positive` (`down` or `up`, from the sign of mean
@@ -86,7 +116,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - `seagliderOG1.contributors` module and `config/institution_registry.yaml` (EDMO codes).
 - `convert.to_og1` gains `contributors=`, `institutions=`, `platform=`, `deployment=`,
   `global_attributes=`, `mode=`; `convert.name_mapping(datasets)` returns the variable-mapping table.
-- `deployment:` block in `mission.yaml` (OG1 identity globals) with `config_version: 2`.
+- Three global-attribute sections in `mission.yaml` — `identity_and_discovery:`, `rights_and_access:`,
+  `provenance_and_processing:` — with `config_version: 3`.
 - Optional platform variables: `PLATFORM_NAME`, `TELECOM_TYPE`, `TRACKING_SYSTEM`, `BATTERY_TYPE`,
   `BATTERY_PACK`, `platform_maker_vocabulary`.
 - `required:` tier block in `config/OG1_global_attributes.yaml` → `vocabularies.REQUIRED_GLOBALS`.
@@ -149,6 +180,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Fixed
 
+- Conversion page: the presence-strips colorbar sits in its own column; it overlapped the strips
+  (and warned "Axes that are not compatible with tight_layout").
+- The `init` template no longer says `provenance_and_processing.comment` overrides a comment "derived
+  from the file's history": none is derived; it overrides a `comment` global the basestation files carry.
 - `data/demo_sg005/mission.yaml` names its Operator `University of Washington School of
   Oceanography`, a registry variant, so it carries the EDMO id; as `University of Washington` it
   matched no registry entry.

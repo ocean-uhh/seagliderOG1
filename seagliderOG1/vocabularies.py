@@ -82,23 +82,77 @@ PLACEHOLDER_VALUES = frozenset({"", "None", "null", "null@null.com"})
 # deployment: block (one key per global). Ordered as the OG1 manual's global-attribute
 # table lists them (the order the `required:` block carries): mandatory, then highly
 # desirable, then suggested; `license` and `acknowledgment` are ACDD globals with no
-# OG1-table position and trail the tiered ones. The single list read by
-# convert.to_og1 (precedence, collision checks), the validate deployment check, and
-# the init template (which reads each key's tier from REQUIRED_GLOBALS).
-DEPLOYMENT_GLOBALS = (
-    "id",
-    "site",
-    "site_vocabulary",
-    "program",
-    "program_vocabulary",
-    "data_url",
-    "doi",
-    "project",
-    "network",
-    "comment",
-    "license",
-    "acknowledgment",
+# OG1-table position and trail the tiered ones.
+#
+# The user-set global attributes, grouped by the conversion page's convention group.
+# Each yaml section slug is this schema's own contract; it is NOT derived from the vendored
+# page label (ctdcast owns those). tests/test_reports.py asserts every key groups under the
+# matching page label. program/program_vocabulary/network are deliberately absent: they are
+# per-platform facts a local-config overlay supplies, not per-mission text
+# (notes/2026-10-21-platform-registry.md); until the registry lands they are set, if needed,
+# through global_attributes:.
+CONFIG_GLOBAL_SECTIONS = {
+    "identity_and_discovery": (
+        "id",
+        "naming_authority",
+        "site",
+        "site_vocabulary",
+        "data_url",
+        "project",
+    ),
+    "rights_and_access": (
+        "doi",
+        "license",
+        "acknowledgment",
+    ),
+    "provenance_and_processing": ("comment",),
+}
+
+# Flat union of the section keys, in section then template order. The single list read by
+# convert.to_og1 (precedence, collision checks) and the validate deployment check; the init
+# template reads CONFIG_GLOBAL_SECTIONS directly (each key's tier from REQUIRED_GLOBALS).
+DEPLOYMENT_GLOBALS = tuple(
+    key for keys in CONFIG_GLOBAL_SECTIONS.values() for key in keys
 )
+
+# Each sectioned global mapped to the slug of the section that sets it. The one inverse of
+# CONFIG_GLOBAL_SECTIONS: read by validate (wrong-section and collision messages), the
+# converter's collision/override messages, and the init template, so "which section owns
+# this key" has a single definition.
+CONFIG_GLOBAL_HOME = {
+    key: slug for slug, keys in CONFIG_GLOBAL_SECTIONS.items() for key in keys
+}
+
+
+# Globals the converter computes from the data (or at conversion time). A mission config
+# may not set them: convert.to_og1 refuses them in global_attributes, and validate says so first.
+DERIVED_GLOBALS = frozenset(
+    {
+        "time_coverage_start",
+        "time_coverage_end",
+        "geospatial_lat_min",
+        "geospatial_lat_max",
+        "geospatial_lon_min",
+        "geospatial_lon_max",
+        "geospatial_vertical_min",
+        "geospatial_vertical_max",
+        "geospatial_bounds",
+        "geospatial_vertical_positive",
+        "time_coverage_duration",
+        "date_created",
+        "start_date",
+        "tracking_id",
+    }
+)
+
+
+# Fields a mission config's sensors: block may correct, keyed by the basestation sensor key
+# (a name in the instrument global), mapped to the sensor attribute each one sets. Read by
+# the converter (_pipeline.gather_sensor_info) and by validate.
+SENSOR_OVERRIDE_FIELDS = {
+    "serial_number": "sensor_serial_number",
+    "calibration_date": "sensor_calibration_date",
+}
 
 
 def _version(prefix: str) -> Callable[[object], str]:

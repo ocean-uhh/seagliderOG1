@@ -48,6 +48,8 @@ Tables in ``vocabularies.py``:
   basestation variable is retained.
 * ``ROLE_VOCABULARY``, ``ROLE_ALIASES`` — the W08 contributor roles and the accepted aliases.
 
-To change what the conversion writes, edit these — not a copy in ``mission.yaml``. The
-``mission.yaml`` carries only the per-deployment metadata (platform, contributors, institutions,
-source and range).
+These are the packaged defaults, read-only for an installed package — do not edit them in place
+(a pip install puts them under ``site-packages``, and an edit is lost on upgrade). A local-override
+mechanism (``local_config``) is planned; until it lands, changing the mappings means an editable
+checkout. The ``mission.yaml`` carries only the per-deployment metadata (platform, contributors,
+institutions, raw_dir and range), not a copy of these.

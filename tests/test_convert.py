@@ -60,6 +60,21 @@ def test_resolve_platform_missing_serial_raises():
         raise AssertionError("expected ValueError for missing serial")
 
 
+def test_renamed_serial_records_the_basestation_value_in_a_comment():
+    """A config serial that renames the basestation platform_id is noted in a comment."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    ds = convert.to_og1(datasets, platform={"PLATFORM_SERIAL_NUMBER": "orca"})
+    assert str(ds["PLATFORM_SERIAL_NUMBER"].values) == "orca"
+    assert "sg005" in ds["PLATFORM_SERIAL_NUMBER"].attrs["comment"]
+
+
+def test_unrenamed_serial_has_no_override_comment():
+    """When the config serial matches the basestation value, no override comment is written."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    ds = convert.to_og1(datasets, platform={"PLATFORM_SERIAL_NUMBER": "sg005"})
+    assert "comment" not in ds["PLATFORM_SERIAL_NUMBER"].attrs
+
+
 def test_get_contributors_demo_sg005_real_attrs():
     """demo_sg005: role-less creator kept + warned; PI alias; institution -> EDMO 1434."""
     import warnings
@@ -418,21 +433,21 @@ def test_derived_acdd_globals_from_the_data():
 
 
 def test_deployment_globals_are_written():
-    """deployment: block values become globals; a null deployment key is skipped."""
+    """Global-section values become globals; a null one is skipped; globals elsewhere too."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
     ds = convert.to_og1(
         datasets,
         deployment={
-            "program": "MOOSE",
             "license": "CC-BY-4.0",
             "doi": "https://doi.org/10.0000/x",
-            "network": None,
+            "site": None,
         },
+        global_attributes={"program": "MOOSE"},
     )
-    assert ds.attrs["program"] == "MOOSE"
+    assert ds.attrs["program"] == "MOOSE"  # program is an ordinary global now
     assert ds.attrs["license"] == "CC-BY-4.0"
     assert ds.attrs["doi"] == "https://doi.org/10.0000/x"
-    assert "network" not in ds.attrs  # null deployment key is skipped
+    assert "site" not in ds.attrs  # null section value is skipped
 
 
 def test_deployment_id_overrides_derived_with_warning():
@@ -444,17 +459,17 @@ def test_deployment_id_overrides_derived_with_warning():
         warnings.simplefilter("always")
         ds = convert.to_og1(datasets, deployment={"id": "my_custom_id"})
     assert ds.attrs["id"] == "my_custom_id"
-    assert any("deployment.id overrides" in str(w.message) for w in caught)
+    assert any("identity_and_discovery.id overrides" in str(w.message) for w in caught)
 
 
-def test_global_attributes_refuses_a_deployment_key():
-    """A global_attributes key with a structured home in deployment: is an error."""
+def test_global_attributes_refuses_a_sectioned_key():
+    """A global_attributes key with a structured home in a section is an error, naming it."""
     try:
-        convert.to_og1([], global_attributes={"program": "x"})
+        convert.to_og1([], global_attributes={"doi": "x"})
     except ValueError as exc:
-        assert "program" in str(exc) and "deployment" in str(exc)
+        assert "doi" in str(exc) and "rights_and_access:" in str(exc)
     else:
-        raise AssertionError("expected ValueError for a deployment key in globals")
+        raise AssertionError("expected ValueError for a sectioned key in globals")
 
 
 def test_global_attributes_null_reserved_key_is_tolerated():
@@ -542,7 +557,11 @@ def test_conversion_attribute_sources_ledger():
     import json
 
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
-    ds = convert.to_og1(datasets, deployment={"program": "MOOSE", "id": "custom_id"})
+    ds = convert.to_og1(
+        datasets,
+        deployment={"id": "custom_id"},
+        global_attributes={"program": "MOOSE"},
+    )
     ledger = json.loads(ds.attrs["conversion_attribute_sources"])
     written = [k for k in ds.attrs if k != "conversion_attribute_sources"]
     categorised = [name for names in ledger.values() for name in names]
@@ -1101,12 +1120,14 @@ def test_enrich_warns_on_a_replaced_value_and_records_it(
     import datetime as dt
 
     path = sg005_og1_copy
-    convert.enrich(path, deployment={"program": "MOOSE"})  # new key: no warning
+    convert.enrich(path, global_attributes={"program": "MOOSE"})  # new key: no warning
     with pytest.warns(UserWarning, match="enrich replaces program: 'MOOSE' -> 'OSNAP'"):
         convert.enrich(
             path,
-            deployment={"program": "OSNAP"},
-            global_attributes={"date_issued": dt.date(2026, 10, 19)},
+            global_attributes={
+                "program": "OSNAP",
+                "date_issued": dt.date(2026, 10, 19),
+            },
         )
     with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
         assert ds.attrs["program"] == "OSNAP"
@@ -1265,3 +1286,25 @@ def test_unknown_sensor_key_is_skipped_not_fatal() -> None:
     ds = convert.to_og1(datasets)
     assert not [name for name in ds.variables if "XYZ" in str(name).upper()]
     assert [name for name in ds.variables if str(name).startswith("SENSOR_CTD_")]
+
+
+def test_sensors_config_corrects_a_basestation_sensor_record() -> None:
+    """demo_sg005: a corrected wlbb2f serial names the sensor; the comment keeps the old one."""
+    import pytest
+
+    datasets = readers.read_mission(str(_SG005), 1, 1)
+    ds = convert.to_og1(
+        datasets,
+        sensors={"wlbb2f": {"serial_number": "1234", "calibration_date": "2008-02-01"}},
+    )
+    assert "SENSOR_FLUOROMETER_0000" not in ds.variables
+    sensor = ds["SENSOR_FLUOROMETER_1234"]
+    assert sensor.attrs["sensor_serial_number"] == "1234"
+    assert sensor.attrs["sensor_calibration_date"] == "2008-02-01"
+    assert "(basestation calibration comment: 0000)" in sensor.attrs["comment"]
+    users = [v for v in ds.variables if ds[v].attrs.get("sensor") == sensor.name]
+    assert "FLUOCHLA" in users
+    with pytest.raises(ValueError, match="sensor keys .* are .*'wlbb2f'"):
+        convert.to_og1(datasets, sensors={"tridente": {"serial_number": "1"}})
+    with pytest.raises(ValueError, match="unknown field 'serial'"):
+        convert.to_og1(datasets, sensors={"wlbb2f": {"serial": "1"}})

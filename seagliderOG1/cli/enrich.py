@@ -47,7 +47,7 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
         "config",
         nargs="?",
         type=pathlib.Path,
-        help="mission.yaml whose deployment: and global_attributes: are applied",
+        help="mission.yaml whose global-attribute sections and global_attributes: are applied",
     )
     parser.add_argument("--doi", metavar="DOI", help="set the doi global")
     parser.set_defaults(func=run)
@@ -55,7 +55,7 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
 
 
 def run(args: argparse.Namespace) -> int:
-    """Apply the config's deployment / global_attributes and ``--doi`` to the file.
+    """Apply the config's global-attribute sections / global_attributes and ``--doi`` to the file.
 
     Parameters
     ----------
@@ -81,7 +81,7 @@ def run(args: argparse.Namespace) -> int:
         except (OSError, ValueError) as exc:
             print(f"error: {args.config}: {exc}", file=sys.stderr)
             return 1
-        deployment = config.get("deployment") or {}
+        deployment = _mission.deployment_from_config(config)
         global_attributes = config.get("global_attributes") or {}
     try:
         path = convert.enrich(

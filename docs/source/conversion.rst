@@ -104,6 +104,26 @@ Output files target:
 
 The output carries ``featureType: trajectory`` (``config/OG1_global_attributes.yaml``).
 
+Two results of the OG1 checker (``ioos/cc-plugin-og``, ``compliance-checker --test og:1.0``) are
+expected on every file this package writes:
+
+* **Variable names should be capitalized** — a basestation variable with no OG1 name keeps its
+  basestation spelling (``log_D_TGT``, ``sg_cal_calibcomm``, ``sbe41``), so its name shows at a
+  glance that it is not an OG1 variable. The OG1 manual calls upper-case variable names "the OG1
+  convention" (in its sensor-variable section); keeping the basestation spelling is a deliberate
+  departure from it. Variables renamed to an OG1 name are upper case; a variable passed through
+  carries ``original_name`` equal to its name.
+* **Global attribute comment is missing** — when ``provenance_and_processing.comment`` in
+  ``mission.yaml`` is null. The OG1 manual lists ``comment`` as *suggested* (cc-plugin-og 0.1.2
+  checks it as mandatory), so the converter writes no default text; set it to add one.
+
+Any other checker finding is a converter problem. To run the checker:
+
+.. code-block:: console
+
+   $ pip install cc-plugin-og
+   $ compliance-checker --test og:1.0 <output_dir>/<id>.nc
+
 Variables that differ between dives
 -----------------------------------
 
@@ -155,14 +175,23 @@ copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds
 * *Institution ids* — config institutions with no ``id`` that the package's EDMO registry
   (``config/institution_registry.yaml``) matched by name, as an ``institutions:`` block with the
   registry name and id filled in;
+* *Deployment id* — the derived ``id`` as an ``identity_and_discovery.id`` line, when the
+  conversion starts at dive 1 and that ``id`` is null: pinned, it survives a later conversion of
+  part of the mission, which would derive a later start time and so a different id;
+* *Institution not in the registry* — a config institution the registry does not match
+  exactly, with the registry entries whose names contain every word of it (``University of
+  Hamburg`` → ``University of Hamburg (IfM)``, EDMO 1156);
 * *Institution in the basestation files* — the basestation ``institution`` global's registry
   match, when no config institution resolved to it. The converter does not write the file's
   institution when the config lists institutions (it would be a second, role-less record), so
   this is where it surfaces, with ``role: null`` to fill;
-* *Missing ACDD globals* — ACDD 1.3 globals the file does not carry, under ``deployment:`` where
-  they have a home there and ``global_attributes:`` otherwise. Globals the converter supplies
+* *Missing globals* — OG1 highly-desirable globals (the ones ``validate`` warns about) and ACDD
+  1.3 globals the file does not carry, each labelled with its tier, under the global-attribute
+  section that sets it and ``global_attributes:`` otherwise. Globals the converter supplies
   itself (``standard_name_vocabulary``, ``geospatial_bounds_crs``, ``time_coverage_resolution``,
-  …) are named, not boxed: they are not ``mission.yaml`` values.
+  …) are named, not boxed: they are not ``mission.yaml`` values. Nor are ``creator_*`` and
+  ``publisher_*``: OG1 defines neither and records people and organisations in
+  ``contributor_*`` and ``contributing_institutions_*``.
 
 The dive, platform-pair and institution checks read the ``config`` the sidecar records, so a page
 for a file converted before it was recorded shows only the other two. A draft has no such section.
@@ -179,7 +208,12 @@ Its sections, in order:
    * *Required by OG1* — the variables (and the ``N_MEASUREMENTS`` dimension) a valid OG1 file
      must carry, present/absent, from :data:`seagliderOG1.vocabularies.OG1_REQUIRED_VARS` (the
      upstream ``ioos/cc-plugin-og`` checker list).
-   * *Named by OG1* — variables OG1 defines but does not require (science, phase, sensor, QC).
+   * *Sensors named by OG1* — one row per ``SENSOR_*`` variable: type, maker, model, serial
+     number, calibration date, and the variables whose ``sensor`` attribute names it. Amber: a
+     placeholder serial or date (empty, or every digit zero), or a serial shared by two sensors
+     (a calibration comment copied between instruments); correct either with ``sensors:`` in
+     ``mission.yaml``.
+   * *Named by OG1* — variables OG1 defines but does not require (science, phase, QC).
    * *Candidate for OG1* — variables the project proposes to canonise, from
      :data:`seagliderOG1.vocabularies.OG1_CANDIDATE_VARS` (e.g. the flight-model inputs and
      outputs), shown present/absent; edit that list as candidates are agreed.
@@ -209,7 +243,8 @@ required platform fields, and that the contributor and institution records inclu
 one PI and one Operator. During conversion the input coordinates are checked.
 
 Neither step runs an OG1 compliance check on the output file. To check a finished OG1 file
-against the format, use `glidertest <https://github.com/OceanGlidersCommunity/glidertest>`_.
+against the format, run the OG1 checker (see `OG1 compliance`_), and use
+`glidertest <https://github.com/OceanGlidersCommunity/glidertest>`_ for the data themselves.
 
 Extended variables
 ------------------

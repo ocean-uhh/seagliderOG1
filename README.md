@@ -1,5 +1,7 @@
 # seagliderOG1
 
+[![PyPI](https://img.shields.io/pypi/v/seagliderOG1.svg)](https://pypi.org/project/seagliderOG1/)
+[![Python versions](https://img.shields.io/pypi/pyversions/seagliderOG1.svg)](https://pypi.org/project/seagliderOG1/)
 [![License: MIT](https://img.shields.io/github/license/ocean-uhh/seagliderOG1.svg)](https://github.com/ocean-uhh/seagliderOG1/blob/main/LICENSE)
 [![Tests](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml/badge.svg)](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml)
 [![Documentation](https://img.shields.io/badge/docs-ocean--uhh.github.io-blue.svg)](https://ocean-uhh.github.io/seagliderOG1/)

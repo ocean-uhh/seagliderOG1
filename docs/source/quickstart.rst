@@ -66,9 +66,10 @@ One call does what ``process`` does for one mission — read, convert, write
        report=True,  # also write output/<id>_conversion.html
    )
 
-It takes the same values as ``mission.yaml`` (``dives``, ``platform``, ``deployment``,
-``global_attributes``, ``mode``, ``keep_variables``, ``repair``) as keyword arguments, and
-raises ``FileExistsError`` rather than overwrite unless ``overwrite=True``.
+It takes ``dives``, ``platform``, ``deployment`` (one mapping of the identity, rights and
+provenance globals the ``mission.yaml`` sections split apart), ``global_attributes``, ``mode``,
+``keep_variables`` and ``repair`` as keyword arguments, and raises ``FileExistsError`` rather
+than overwrite unless ``overwrite=True``.
 
 Step by step
 ^^^^^^^^^^^^

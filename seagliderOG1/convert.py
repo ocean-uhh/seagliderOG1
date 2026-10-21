@@ -50,37 +50,24 @@ _log = logging.getLogger(__name__)
 
 # Global attributes the converter derives from the data; the mission config may
 # not set these through global_attributes (a collision is an error). ``id`` is not
-# here: it is derived by default but may be overridden via the deployment: block.
+# here: it is derived by default but may be overridden via the identity_and_discovery: section.
 # Transient per-variable attribute a derived-variable creation site stamps with the JSON
 # list of basestation variables its data came from; read and removed when the
 # conversion_derived_variables map is built, so it never reaches the file. Defined in
 # _pipeline (which also stamps the TIME axis) and aliased here for the local creation sites.
 _DERIVED_SOURCES_ATTR = _pipeline.DERIVED_SOURCES_ATTR
 
-_DERIVED_GLOBALS = frozenset(
-    {
-        "time_coverage_start",
-        "time_coverage_end",
-        "geospatial_lat_min",
-        "geospatial_lat_max",
-        "geospatial_lon_min",
-        "geospatial_lon_max",
-        "geospatial_vertical_min",
-        "geospatial_vertical_max",
-        "geospatial_bounds",
-        "geospatial_vertical_positive",
-        "time_coverage_duration",
-        "date_created",
-        "start_date",
-        "tracking_id",
-    }
-)
+# The globals the converter computes; the mission config may not set them. One list in
+# vocabularies, read here and by validate.
+_DERIVED_GLOBALS = vocabularies.DERIVED_GLOBALS
 
 # OG1 deployment-identity globals the mission config sets through the structured
-# deployment: block (vocabularies.DEPLOYMENT_GLOBALS). A global_attributes key
+# global-attribute sections (vocabularies.DEPLOYMENT_GLOBALS is their flat union, merged from
+# the three mission.yaml sections at the CLI boundary). A global_attributes key
 # duplicating one of these is refused: the escape hatch is for everything else. ``id``
-# and ``comment`` also have a converter-derived default, so a deployment value for
-# them overrides with a warning naming both; the rest are config-only.
+# (derived) and ``comment`` (kept from the basestation files when they carry one) can
+# already be set, so a deployment value for them overrides with a warning naming both;
+# the rest are config-only.
 _DEPLOYMENT_GLOBALS = vocabularies.DEPLOYMENT_GLOBALS
 
 # String platform fields, resolved in order config -> file -> "UNK", derived from
@@ -843,20 +830,19 @@ def _check_metadata_keys(
     Parameters
     ----------
     deployment : collections.abc.Mapping
-        The ``deployment:`` block.
+        The deployment mapping (the three ``mission.yaml`` global-attribute sections merged).
     global_attributes : collections.abc.Mapping
         The ``global_attributes:`` block.
 
     Raises
     ------
     ValueError
-        If ``global_attributes`` sets a converter-derived key or a key with a home in
-        ``deployment:``, or ``deployment:`` has an unknown key.
+        If ``global_attributes`` sets a converter-derived key or a key with a structured home
+        in a global-attribute section, or the deployment mapping has an unknown key.
 
     """
-    # Only a real (non-null) value collides; a null is skipped later, so a legacy
-    # config_version 1 template that lists reserved keys as null (the old init wrote
-    # global_attributes: {project: null, program: null, ...}) still converts.
+    # Only a real (non-null) value collides; a null is skipped later, so a template that
+    # lists reserved keys as null still converts.
     set_globals = {k for k, v in global_attributes.items() if not _is_empty(v)}
     collisions = _DERIVED_GLOBALS.intersection(set_globals)
     if collisions:
@@ -867,17 +853,19 @@ def _check_metadata_keys(
         raise ValueError(msg)
     structured = set(_DEPLOYMENT_GLOBALS).intersection(set_globals)
     if structured:
+        home = vocabularies.CONFIG_GLOBAL_HOME
+        moves = "; ".join(f"{key} -> {home[key]}:" for key in sorted(structured))
         msg = (
-            "global_attributes may not set keys that have a structured home in the "
-            f"deployment: block: {sorted(structured)}. Move them under deployment:."
+            "global_attributes may not set keys that have a structured home in a "
+            f"global-attribute section: move {moves}."
         )
         raise ValueError(msg)
     unknown_deployment = set(deployment) - set(_DEPLOYMENT_GLOBALS)
     if unknown_deployment:
         msg = (
-            f"deployment: has unknown keys: {sorted(unknown_deployment)}. Allowed "
-            f"keys are {list(_DEPLOYMENT_GLOBALS)}; put anything else under "
-            "global_attributes:."
+            f"deployment has unknown keys: {sorted(unknown_deployment)}. Allowed "
+            f"keys are {list(_DEPLOYMENT_GLOBALS)}; set anything else under "
+            "global_attributes."
         )
         raise ValueError(msg)
 
@@ -936,7 +924,7 @@ def enrich(
     """Set global attributes on a written OG1 file without converting again.
 
     For metadata that exists only after the file is written — a DOI assigned on
-    publication — or a corrected ``deployment:`` / ``global_attributes:`` value. Only
+    publication — or a corrected global-attribute or ``global_attributes:`` value. Only
     global attributes change (edited in place; variables are not rewritten). The file
     gets ``date_modified`` set to now, a ``history`` line naming the keys, and a new
     ``tracking_id``; ``date_created`` is kept. Every value is checked before the file
@@ -950,7 +938,7 @@ def enrich(
     path : str or os.PathLike
         The OG1 netCDF file.
     deployment : collections.abc.Mapping, optional
-        ``deployment:`` keys to set (as in :func:`to_og1`); null values are skipped.
+        Deployment-identity globals to set (as in :func:`to_og1`); null values are skipped.
     global_attributes : collections.abc.Mapping, optional
         ``global_attributes:`` keys to set (as in :func:`to_og1`).
     doi : str, optional
@@ -1059,7 +1047,7 @@ def _apply_deployment(
     deployment: Mapping[str, object],
     sources: dict[str, str],
 ) -> None:
-    """Write the deployment: block globals, overriding a derived value with a warning.
+    """Write the deployment-identity globals, overriding a derived value with a warning.
 
     Mission config takes precedence over a converter-derived global, so a deployment
     value that differs from one already on the dataset (``id`` and ``comment`` are the
@@ -1087,8 +1075,9 @@ def _apply_deployment(
         existing = ds_og1.attrs.get(key)
         replaced = existing is not None and str(existing) != str(value)
         if replaced:
+            location = vocabularies.CONFIG_GLOBAL_HOME.get(key, "deployment")
             warnings.warn(
-                f"deployment.{key} overrides the converter value {existing!r} with "
+                f"{location}.{key} overrides the converter value {existing!r} with "
                 f"{value!r}.",
                 stacklevel=2,
             )
@@ -1283,7 +1272,8 @@ def to_og1(
     platform: dict[str, object] | None = None,
     deployment: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
-    mode: str = "delayed",
+    sensors: Mapping[str, Mapping[str, object]] | None = None,
+    mode: str = "realtime",
     provenance: dict | None = None,
 ) -> xr.Dataset:
     """Convert Seaglider basestation datasets to OG1 format.
@@ -1314,16 +1304,23 @@ def to_og1(
     deployment : dict of str to object, optional
         The deployment-identity globals from the mission config ``deployment`` block
         (``id``, ``program``, ``license``, ``doi``, ``site``, ...). Written as global
-        attributes; a value for ``id`` or ``comment`` overrides the converter-derived
-        default with a warning. Nulls skipped. Default is None.
+        attributes; a value for ``id`` (derived) or ``comment`` (kept from the
+        basestation files when they carry one) overrides it with a warning. Nulls skipped. Default is None.
     global_attributes : dict of str to object, optional
         Global attributes written verbatim into the output (nulls skipped). A key
         that collides with a converter-derived global, or with a key that has a
         structured home in ``deployment``, raises. Default is None.
+    sensors : collections.abc.Mapping, optional
+        Corrections to the basestation sensor records, from the mission config
+        ``sensors:`` block: sensor key (a name in the ``instrument`` global) to
+        ``{"serial_number": ..., "calibration_date": ...}``. A corrected serial names the
+        ``SENSOR_*`` variable; the sensor's ``comment`` records the value it replaced.
+        Default is None.
     mode : str, optional
-        Data mode, ``"delayed"`` (default) or ``"realtime"``. Sets the ``id``
-        suffix (``delayed`` or ``R``) and so the output filename, per the OG1
-        manual, which defines no separate data-mode attribute. Default is "delayed".
+        Data mode, ``"realtime"`` (default) or ``"delayed"``. Sets the ``id``
+        suffix (``R`` or ``delayed``) and so the output filename, per the OG1
+        manual, which defines no separate data-mode attribute. Default is "realtime":
+        a file is delayed mode only when the user says so.
     provenance : dict, optional
         When given, filled in place with what the output file cannot record about its own
         conversion: ``inputs`` (one ``{"path", "bytes", "dive"}`` per input file) and
@@ -1424,7 +1421,7 @@ def to_og1(
 
     # Add sensor information to the dataset - can be done on the concatenated data
     # -----------------------------------------------------------------------------
-    sensor_dict = _pipeline.gather_sensor_info(list_of_datasets)
+    sensor_dict = _pipeline.gather_sensor_info(list_of_datasets, overrides=sensors)
     # delete old sensor attribute if it exists and add new one
     for var in ds_og1.data_vars:
         if "sensor" in ds_og1[var].attrs:
@@ -1466,6 +1463,21 @@ def to_og1(
     platform_fields = _resolve_platform(list_of_datasets[0], platform)
     platform_serial_number = platform_fields["PLATFORM_SERIAL_NUMBER"]
 
+    # If the config renamed the serial (a local nickname replacing the basestation
+    # platform_id), record the replaced value so it survives in the file, as a sensor
+    # serial correction does in the sensor's comment.
+    file_serial = vocabularies.platform_from_file(list_of_datasets[0].attrs).get(
+        "PLATFORM_SERIAL_NUMBER"
+    )
+    serial_comment = (
+        f"mission config PLATFORM_SERIAL_NUMBER; the basestation platform_id was "
+        f"{file_serial!r}."
+        if not _is_empty(file_serial)
+        and str(file_serial).strip().lower()
+        != str(platform_serial_number).strip().lower()
+        else None
+    )
+
     # Mandatory OG1 platform string variables and their long_names.
     platform_long_names = {
         "PLATFORM_SERIAL_NUMBER": "glider serial number",
@@ -1478,6 +1490,8 @@ def to_og1(
     for field, long_name in platform_long_names.items():
         ds_og1[field] = platform_fields[field]
         ds_og1[field].attrs["long_name"] = long_name
+    if serial_comment is not None:
+        ds_og1["PLATFORM_SERIAL_NUMBER"].attrs["comment"] = serial_comment
 
     if "platform_model_vocabulary" in platform_fields:
         ds_og1["PLATFORM_MODEL"].attrs["platform_model_vocabulary"] = platform_fields[
@@ -1712,7 +1726,8 @@ def process_mission(
     platform: dict[str, object] | None = None,
     deployment: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
-    mode: str = "delayed",
+    sensors: Mapping[str, Mapping[str, object]] | None = None,
+    mode: str = "realtime",
     keep_variables: Sequence[str] | None = None,
     repair: bool = False,
     overwrite: bool = False,
@@ -1749,9 +1764,11 @@ def process_mission(
         Deployment-identity globals, as for :func:`to_og1`. Default is None.
     global_attributes : dict of str to object, optional
         Global attributes written verbatim, as for :func:`to_og1`. Default is None.
+    sensors : collections.abc.Mapping, optional
+        Sensor-record corrections, as for :func:`to_og1`. Default is None.
     mode : str, optional
-        Data mode, ``"delayed"`` (default) or ``"realtime"``; sets the ``id`` suffix
-        and so the filename. Default is "delayed".
+        Data mode, ``"realtime"`` (default) or ``"delayed"``; sets the ``id`` suffix
+        and so the filename. Default is "realtime".
     keep_variables : sequence of str, optional
         Science variables to keep (see :func:`keep_variables`); OG1-mandatory
         variables always survive. Default is None (keep all).
@@ -1836,6 +1853,7 @@ def process_mission(
         platform=platform,
         deployment=deployment,
         global_attributes=global_attributes,
+        sensors=sensors,
         mode=mode,
         provenance=provenance,
     )
@@ -1849,6 +1867,9 @@ def process_mission(
                 for field, value in (platform or {}).items()
                 if not _is_empty(value)
             },
+            "deployment_id": None
+            if _is_empty((deployment or {}).get("id"))
+            else (deployment or {})["id"],
             "institutions": [dict(record) for record in institutions or ()],
         }
     if keep_variables:

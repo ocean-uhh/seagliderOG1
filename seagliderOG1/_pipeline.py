@@ -8,6 +8,7 @@ validation/parsing helpers. Public, user-facing utilities live in :mod:`seaglide
 import json
 import logging
 import re
+from collections.abc import Mapping
 from datetime import date
 
 import numpy as np
@@ -405,7 +406,9 @@ def og1_name_mapping(
     return result, time_variables
 
 
-def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
+def gather_sensor_info(
+    list_of_datasets: list[xr.Dataset], overrides: Mapping | None = None
+) -> dict:
     """Gathers sensor information from a list of OG1 base datasets.
 
     Extracts:
@@ -418,15 +421,30 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
     dates are reported, and the first nonempty value is retained.
     Calibration variables not belonging to any listed sensor are reported.
 
+    The mission config can correct what the calibration comments say: ``overrides``
+    maps a sensor key to ``serial_number`` / ``calibration_date`` values
+    (:data:`seagliderOG1.vocabularies.SENSOR_OVERRIDE_FIELDS`), applied last. A value
+    that changes the record is noted in the sensor's ``comment`` with the basestation
+    value it replaced.
+
     Parameters
     ----------
     list_of_datasets : iterable of xarray.Dataset
         The raw base datasets containing sensor metadata.
+    overrides : collections.abc.Mapping, optional
+        Sensor key to ``{field: value}`` from the mission config ``sensors:`` block.
+        Default is None.
 
     Returns
     -------
     dict
         Dictionary with one key per sensor, each containing metadata.
+
+    Raises
+    ------
+    ValueError
+        If ``overrides`` names a sensor key the mission does not carry (or one with no
+        catalogue entry), or a field other than those in ``SENSOR_OVERRIDE_FIELDS``.
 
     """
     datasets = list(list_of_datasets)
@@ -590,6 +608,40 @@ def gather_sensor_info(list_of_datasets: list[xr.Dataset]) -> dict:
                 reason,
                 sensor,
                 available_calibcomm,
+            )
+
+    # --- Corrections from the mission config --------------------------------------
+    for sensor, fields in (overrides or {}).items():
+        if sensor not in sensor_dict or "sensor_type" not in sensor_dict[sensor]:
+            known = sorted(k for k, v in sensor_dict.items() if "sensor_type" in v)
+            msg = (
+                f"sensors: {sensor!r} is not a sensor of this mission; the sensor keys "
+                f"(from the instrument global) are {known}."
+            )
+            raise ValueError(msg)
+        metadata = sensor_dict[sensor]
+        notes = []
+        for field, value in (fields or {}).items():
+            if field not in vocabularies.SENSOR_OVERRIDE_FIELDS:
+                msg = (
+                    f"sensors.{sensor}: unknown field {field!r}; allowed fields are "
+                    f"{list(vocabularies.SENSOR_OVERRIDE_FIELDS)}."
+                )
+                raise ValueError(msg)
+            attr = vocabularies.SENSOR_OVERRIDE_FIELDS[field]
+            previous = metadata.get(attr)
+            metadata[attr] = str(value)
+            if str(previous) != str(value):
+                notes.append(
+                    f"{attr} {value} from the mission config "
+                    f"(basestation calibration comment: {previous})"
+                )
+        if notes:
+            correction = "; ".join(notes) + "."
+            existing = metadata.get("comment")
+            metadata["comment"] = f"{existing} {correction}" if existing else correction
+            _log.info(
+                "Sensor '%s' corrected from the mission config: %s", sensor, notes
             )
 
     # --- Report calibcomms that do not belong to any listed sensor --------------

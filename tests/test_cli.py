@@ -16,15 +16,35 @@ DATA_DIR = pathlib.Path(__file__).resolve().parent.parent / "data" / "demo_sg005
 
 
 def _write_config(path: pathlib.Path, **overrides: object) -> pathlib.Path:
-    """Write a minimal valid mission config, applying overrides, and return its path."""
+    """Write a minimal valid mission config, applying overrides, and return its path.
+
+    A ``deployment=`` override is split across the three global-attribute sections
+    (config_version 3); a key with no section (e.g. ``program``) goes to
+    ``global_attributes``, its interim home until the platform registry lands.
+    """
+    from seagliderOG1 import vocabularies
+
     config: dict[str, object] = {
-        "config_version": 1,
+        "config_version": 3,
         "raw_dir": str(DATA_DIR),
         "output_dir": "./",
         "contributors": [{"name": "Jane Doe", "role": "PI"}],
         "institutions": [{"name": "Your Institution", "role": "Operator"}],
     }
+    deployment = overrides.pop("deployment", None)
     config.update(overrides)
+    if deployment:
+        placed = set()
+        for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items():
+            block = {k: v for k, v in deployment.items() if k in keys}
+            if block:
+                config[slug] = block
+                placed.update(block)
+        homeless = {k: v for k, v in deployment.items() if k not in placed}
+        if homeless:
+            extra = dict(config.get("global_attributes") or {})
+            extra.update(homeless)
+            config["global_attributes"] = extra
     path.write_text(yaml.safe_dump(config))
     return path
 
@@ -85,7 +105,8 @@ def test_init_writes_template(tmp_path: pathlib.Path) -> None:
     assert cli.main(["init", str(out)]) == 0
     data = yaml.safe_load(out.read_text(encoding="utf-8"))
     assert set(data) >= {"raw_dir", "contributors", "platform", "mode"}
-    assert data["mode"] == "delayed"
+    assert data["mode"] == "realtime"
+    assert "naming_authority" in data["identity_and_discovery"]  # OG1 highly desirable
 
 
 def test_init_refuses_overwrite_without_force(tmp_path: pathlib.Path) -> None:
@@ -126,7 +147,7 @@ def test_init_template_does_not_promise_an_id(tmp_path: pathlib.Path) -> None:
     assert cli.main(["init", str(out), "--raw-dir", str(DATA_DIR)]) == 0
     text = out.read_text(encoding="utf-8")
     assert "proposes" not in text
-    assert yaml.safe_load(text)["deployment"]["id"] is None
+    assert yaml.safe_load(text)["identity_and_discovery"]["id"] is None
 
 
 def test_init_from_fills_raw_dir_and_serial(tmp_path: pathlib.Path) -> None:
@@ -155,12 +176,86 @@ def test_validate_errors_on_null_platform_fields_then_passes(
     assert cli.main(["validate", str(out)]) == 0
 
 
-def test_validate_rejects_unknown_deployment_key(tmp_path: pathlib.Path) -> None:
-    """A typo'd deployment key errors; known keys validate."""
+def test_validate_rejects_unknown_global_section_key(tmp_path: pathlib.Path) -> None:
+    """A typo'd key in a global-attribute section errors."""
     cfg = _write_config(
-        tmp_path / "mission.yaml", deployment={"program": "X", "nonsense": "y"}
+        tmp_path / "mission.yaml", identity_and_discovery={"nonsense": "y"}
     )
     assert cli.main(["validate", str(cfg)]) == 1
+
+
+def test_validate_names_the_home_of_a_refused_global(tmp_path: pathlib.Path) -> None:
+    """A deployment key or a derived global in global_attributes errors before conversion."""
+    cfg = _write_config(
+        tmp_path / "mission.yaml",
+        global_attributes={
+            "naming_authority": "de.uni-hamburg",
+            "date_created": "x",
+            "institution": "University of Hamburg (IfM)",  # no other home: allowed
+        },
+    )
+    issues = {
+        i.key: i.message
+        for i in _mission.validate_config(cfg)
+        if (i.key or "").startswith("global_attributes")
+    }
+    assert set(issues) == {
+        "global_attributes.naming_authority",
+        "global_attributes.date_created",
+    }
+    assert (
+        "identity_and_discovery:\n      naming_authority: de.uni-hamburg"
+        in (issues["global_attributes.naming_authority"])
+    )
+    assert cli.main(["process", str(cfg)]) == 1  # refused by validate, nothing read
+
+
+def test_validate_placeholder_in_global_attributes_is_unset_not_misplaced(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A placeholder ("null") under a sectioned key in global_attributes is unset, not an error.
+
+    The converter drops placeholder values, so validate must not flag one as a misplaced key.
+    """
+    cfg = _write_config(tmp_path / "mission.yaml", global_attributes={"doi": "null"})
+    issues = [
+        i
+        for i in _mission.validate_config(cfg)
+        if (i.key or "").startswith("global_attributes")
+    ]
+    assert issues == []
+
+
+def test_validate_errors_on_a_set_local_config(tmp_path: pathlib.Path) -> None:
+    """local_config is reserved and unread; a non-null value is an ERROR (null is legal)."""
+    cfg = _write_config(tmp_path / "mission.yaml", local_config="local/")
+    bad = [i for i in _mission.validate_config(cfg) if i.key == "local_config"]
+    assert bad and all(i.level == "ERROR" for i in bad)
+    assert (
+        cli.main(["validate", str(cfg)]) == 1
+    )  # a dropped override makes a wrong file
+    # null is legal, so the template's reserved key validates.
+    ok = _write_config(tmp_path / "ok.yaml", local_config=None)
+    assert [i for i in _mission.validate_config(ok) if i.key == "local_config"] == []
+
+
+def test_validate_checks_the_sensors_block_shape(tmp_path: pathlib.Path) -> None:
+    """sensors: fields must be serial_number / calibration_date and non-empty."""
+    good = {"wlbb2f": {"serial_number": "1234", "calibration_date": "2008-02-01"}}
+    assert not [
+        i
+        for i in _mission.validate_config(
+            _write_config(tmp_path / "good.yaml", sensors=good)
+        )
+        if (i.key or "").startswith("sensors")
+    ]
+    for bad in ({"wlbb2f": {"serial": "1"}}, {"wlbb2f": {"serial_number": None}}, [1]):
+        issues = _mission.validate_config(
+            _write_config(tmp_path / "bad.yaml", sensors=bad)
+        )
+        assert any(
+            i.level == "ERROR" and (i.key or "").startswith("sensors") for i in issues
+        )
 
 
 def test_validate_accepts_known_deployment_keys(tmp_path: pathlib.Path) -> None:
@@ -191,13 +286,11 @@ def test_case_hint_helper() -> None:
     assert _mission._case_hint("xyz", ["id", "program"]) is None
 
 
-def test_validate_case_hint_for_miscased_deployment_key() -> None:
-    """A mis-cased deployment key errors naming the exact spelling."""
-    issues = _mission._validate_deployment({"Program": "X"})
+def test_validate_case_hint_for_miscased_section_key() -> None:
+    """A mis-cased key in a global-attribute section errors naming the exact spelling."""
+    issues = _mission._validate_global_sections({"rights_and_access": {"Doi": "X"}})
     assert any(
-        i.level == "ERROR"
-        and "'program'" in i.message
-        and "case-sensitive" in i.message
+        i.level == "ERROR" and "'doi'" in i.message and "case-sensitive" in i.message
         for i in issues
     )
 
@@ -209,9 +302,11 @@ def test_validate_case_hint_for_miscased_platform_key() -> None:
 
 
 def test_validate_warns_on_unset_highly_desirable_global() -> None:
-    """A null highly-desirable deployment global is a WARNING, not an ERROR."""
-    issues = _mission._validate_highly_desirable({"deployment": {"program": None}})
-    assert any(i.key == "program" for i in issues)
+    """A null highly-desirable section global is a WARNING, not an ERROR."""
+    issues = _mission._validate_highly_desirable(
+        {"identity_and_discovery": {"site": None}}
+    )
+    assert any(i.key == "site" for i in issues)
     assert all(i.level == "WARNING" for i in issues)  # advisory only, never ERROR
 
 
@@ -423,7 +518,7 @@ def test_process_writes_output(
         tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
     )
     assert cli.main(["process", str(config)]) == 0
-    assert (out / "sg005_delayed.nc").is_file()
+    assert (out / "sg005_R.nc").is_file()  # no mode in the config: realtime
 
 
 def test_process_dry_run_writes_nothing(
@@ -696,7 +791,7 @@ def test_list_without_registry_names_them(capsys: pytest.CaptureFixture[str]) ->
 def test_list_globals_matches_required_globals(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """``list globals`` has a row for every tiered global and every deployment key."""
+    """``list globals`` has a row for every tiered global and every section key."""
     from seagliderOG1 import vocabularies
 
     assert cli.main(["list", "globals"]) == 0
@@ -708,15 +803,20 @@ def test_list_globals_matches_required_globals(
     for names in vocabularies.REQUIRED_GLOBALS.values():
         for name in names:
             assert name in rows
-    for name in vocabularies.DEPLOYMENT_GLOBALS:
-        assert rows[name][-1] == "deployment"
+    home = {
+        key: slug
+        for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items()
+        for key in keys
+    }
+    for name, slug in home.items():
+        assert rows[name][-1] == slug
 
 
 def test_global_rows_set_in() -> None:
     """Each user-set global names the mission.yaml block it is set in."""
     rows = {row["name"]: row for row in _mission.global_rows()}
-    assert rows["site"]["set_in"] == "deployment"
-    assert rows["id"]["set_in"] == "deployment"  # derived, overridable
+    assert rows["site"]["set_in"] == "identity_and_discovery"
+    assert rows["id"]["set_in"] == "identity_and_discovery"  # derived, overridable
     assert rows["internal_mission_identifier"]["set_in"] == "global_attributes"
     assert rows["contributor_id"]["set_in"] == "contributors"
     assert rows["contributing_institutions_vocabulary"]["set_in"] == "institutions"
@@ -1086,7 +1186,7 @@ def test_draft_writes_only_draft_files_and_a_draft_page(
     data = yaml.safe_load(proposal)
     assert data["dives"] == [1, 2]
     assert data["raw_dir"] == str(raw.resolve())
-    assert data["deployment"]["id"] is None  # stays derived
+    assert data["identity_and_discovery"]["id"] is None  # stays derived
     assert cli.main(["draft", "--raw-dir", str(raw), "-o", str(out)]) == 1  # exists
     # The proposal is checked before anything is written, even with the .nc gone: the
     # user is told to edit it in place. --force replaces it.
