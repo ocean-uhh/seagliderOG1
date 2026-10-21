@@ -46,7 +46,8 @@ deployment:             # OG1 deployment identity; one key per global, null = no
   license: null   # optional -> global attribute; e.g. CC-BY-4.0
   acknowledgment: null   # optional -> global attribute
 
-global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above
+global_attributes: {}   # any other OG1 global, written as given: replace {} with lines
+  #   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)
 
 contributors:           # one entry per person per role
   # role is a W08 term: Manufacturer, Owner, Operator, PI, Technical Coordinator,

@@ -175,14 +175,23 @@ copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds
 * *Institution ids* — config institutions with no ``id`` that the package's EDMO registry
   (``config/institution_registry.yaml``) matched by name, as an ``institutions:`` block with the
   registry name and id filled in;
+* *Deployment id* — the derived ``id`` as a ``deployment.id`` line, when the conversion starts
+  at dive 1 and ``deployment.id`` is null: pinned, it survives a later conversion of part of the
+  mission, which would derive a later start time and so a different id;
+* *Institution not in the registry* — a config institution the registry does not match
+  exactly, with the registry entries whose names contain every word of it (``University of
+  Hamburg`` → ``University of Hamburg (IfM)``, EDMO 1156);
 * *Institution in the basestation files* — the basestation ``institution`` global's registry
   match, when no config institution resolved to it. The converter does not write the file's
   institution when the config lists institutions (it would be a second, role-less record), so
   this is where it surfaces, with ``role: null`` to fill;
-* *Missing ACDD globals* — ACDD 1.3 globals the file does not carry, under ``deployment:`` where
+* *Missing globals* — OG1 highly-desirable globals (the ones ``validate`` warns about) and ACDD
+  1.3 globals the file does not carry, each labelled with its tier, under ``deployment:`` where
   they have a home there and ``global_attributes:`` otherwise. Globals the converter supplies
   itself (``standard_name_vocabulary``, ``geospatial_bounds_crs``, ``time_coverage_resolution``,
-  …) are named, not boxed: they are not ``mission.yaml`` values.
+  …) are named, not boxed: they are not ``mission.yaml`` values. Nor are ``creator_*`` and
+  ``publisher_*``: OG1 defines neither and records people and organisations in
+  ``contributor_*`` and ``contributing_institutions_*``.
 
 The dive, platform-pair and institution checks read the ``config`` the sidecar records, so a page
 for a file converted before it was recorded shows only the other two. A draft has no such section.
@@ -199,7 +208,12 @@ Its sections, in order:
    * *Required by OG1* — the variables (and the ``N_MEASUREMENTS`` dimension) a valid OG1 file
      must carry, present/absent, from :data:`seagliderOG1.vocabularies.OG1_REQUIRED_VARS` (the
      upstream ``ioos/cc-plugin-og`` checker list).
-   * *Named by OG1* — variables OG1 defines but does not require (science, phase, sensor, QC).
+   * *Sensors named by OG1* — one row per ``SENSOR_*`` variable: type, maker, model, serial
+     number, calibration date, and the variables whose ``sensor`` attribute names it. Amber: a
+     placeholder serial or date (empty, or every digit zero), or a serial shared by two sensors
+     (a calibration comment copied between instruments); correct either with ``sensors:`` in
+     ``mission.yaml``.
+   * *Named by OG1* — variables OG1 defines but does not require (science, phase, QC).
    * *Candidate for OG1* — variables the project proposes to canonise, from
      :data:`seagliderOG1.vocabularies.OG1_CANDIDATE_VARS` (e.g. the flight-model inputs and
      outputs), shown present/absent; edit that list as candidates are agreed.

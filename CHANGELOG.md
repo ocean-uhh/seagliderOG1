@@ -12,6 +12,13 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Breaking changes
 
+- The data mode defaults to `realtime` (id and file name suffix `R`) when neither the config
+  nor `process --mode` sets it; it was `delayed`. `to_og1` / `process_mission` default to
+  `mode="realtime"`, and `init` writes `mode: realtime`. Set `mode: delayed` for a delayed-mode file.
+- The basestation `naming_authority` (`edu.washington.apl`), `uuid` (one dive file's, written as
+  `uri`), `summary` (written as `site`) and `file_version` are no longer carried into the OG1
+  file: they describe the basestation files, not the OG1 dataset. `naming_authority` is a
+  `deployment:` key (written by `init`).
 - When the config lists `institutions`, the basestation `institution` global (free text, a postal
   address on sg005) is no longer written as a role-less contributing institution beside them;
   the conversion page offers its registry match as an `institutions:` entry instead. Without
@@ -60,6 +67,18 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Added
 
+- `sensors:` in `mission.yaml` (`to_og1(sensors=...)`): correct a basestation sensor record's
+  `serial_number` and `calibration_date` by its sensor key; the corrected serial names the
+  `SENSOR_*` variable, and its `comment` records the replaced value.
+- Conversion page: a *Sensors named by OG1* table (type, maker, model, serial, calibration date,
+  the variables using each sensor; amber for a placeholder or shared serial); suggestions for a
+  `deployment.id` from a conversion starting at dive 1, and for registry entries close to an
+  unmatched institution name. `creator_*` / `publisher_*` are no longer suggested (OG1 uses
+  `contributor_*`). The missing-globals box also lists the OG1 highly-desirable globals
+  `validate` warns about, each labelled with its tier.
+- `validate` reports a `global_attributes` key that belongs under `deployment:` (naming the
+  lines to write) or that the converter computes, before any file is read; `process` used to
+  refuse it only after loading the mission.
 - Conversion page: *mission.yaml against the data*, copyable `mission.yaml` lines where the
   requested `dives` or a config platform field (serial, firmware, basestation version, WMO id)
   differs from the basestation files, where platform fields were written as `UNK` or omitted,
@@ -151,6 +170,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Fixed
 
+- Conversion page: the presence-strips colorbar sits in its own column; it overlapped the strips
+  (and warned "Axes that are not compatible with tight_layout").
+- The `init` template no longer says `deployment.comment` overrides a comment "derived from the
+  file's history": none is derived; it overrides a `comment` global the basestation files carry.
 - `data/demo_sg005/mission.yaml` names its Operator `University of Washington School of
   Oceanography`, a registry variant, so it carries the EDMO id; as `University of Washington` it
   matched no registry entry.

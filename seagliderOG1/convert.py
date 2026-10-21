@@ -57,30 +57,16 @@ _log = logging.getLogger(__name__)
 # _pipeline (which also stamps the TIME axis) and aliased here for the local creation sites.
 _DERIVED_SOURCES_ATTR = _pipeline.DERIVED_SOURCES_ATTR
 
-_DERIVED_GLOBALS = frozenset(
-    {
-        "time_coverage_start",
-        "time_coverage_end",
-        "geospatial_lat_min",
-        "geospatial_lat_max",
-        "geospatial_lon_min",
-        "geospatial_lon_max",
-        "geospatial_vertical_min",
-        "geospatial_vertical_max",
-        "geospatial_bounds",
-        "geospatial_vertical_positive",
-        "time_coverage_duration",
-        "date_created",
-        "start_date",
-        "tracking_id",
-    }
-)
+# The globals the converter computes; the mission config may not set them. One list in
+# vocabularies, read here and by validate.
+_DERIVED_GLOBALS = vocabularies.DERIVED_GLOBALS
 
 # OG1 deployment-identity globals the mission config sets through the structured
 # deployment: block (vocabularies.DEPLOYMENT_GLOBALS). A global_attributes key
 # duplicating one of these is refused: the escape hatch is for everything else. ``id``
-# and ``comment`` also have a converter-derived default, so a deployment value for
-# them overrides with a warning naming both; the rest are config-only.
+# (derived) and ``comment`` (kept from the basestation files when they carry one) can
+# already be set, so a deployment value for them overrides with a warning naming both;
+# the rest are config-only.
 _DEPLOYMENT_GLOBALS = vocabularies.DEPLOYMENT_GLOBALS
 
 # String platform fields, resolved in order config -> file -> "UNK", derived from
@@ -1283,7 +1269,8 @@ def to_og1(
     platform: dict[str, object] | None = None,
     deployment: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
-    mode: str = "delayed",
+    sensors: Mapping[str, Mapping[str, object]] | None = None,
+    mode: str = "realtime",
     provenance: dict | None = None,
 ) -> xr.Dataset:
     """Convert Seaglider basestation datasets to OG1 format.
@@ -1314,16 +1301,23 @@ def to_og1(
     deployment : dict of str to object, optional
         The deployment-identity globals from the mission config ``deployment`` block
         (``id``, ``program``, ``license``, ``doi``, ``site``, ...). Written as global
-        attributes; a value for ``id`` or ``comment`` overrides the converter-derived
-        default with a warning. Nulls skipped. Default is None.
+        attributes; a value for ``id`` (derived) or ``comment`` (kept from the
+        basestation files when they carry one) overrides it with a warning. Nulls skipped. Default is None.
     global_attributes : dict of str to object, optional
         Global attributes written verbatim into the output (nulls skipped). A key
         that collides with a converter-derived global, or with a key that has a
         structured home in ``deployment``, raises. Default is None.
+    sensors : collections.abc.Mapping, optional
+        Corrections to the basestation sensor records, from the mission config
+        ``sensors:`` block: sensor key (a name in the ``instrument`` global) to
+        ``{"serial_number": ..., "calibration_date": ...}``. A corrected serial names the
+        ``SENSOR_*`` variable; the sensor's ``comment`` records the value it replaced.
+        Default is None.
     mode : str, optional
-        Data mode, ``"delayed"`` (default) or ``"realtime"``. Sets the ``id``
-        suffix (``delayed`` or ``R``) and so the output filename, per the OG1
-        manual, which defines no separate data-mode attribute. Default is "delayed".
+        Data mode, ``"realtime"`` (default) or ``"delayed"``. Sets the ``id``
+        suffix (``R`` or ``delayed``) and so the output filename, per the OG1
+        manual, which defines no separate data-mode attribute. Default is "realtime":
+        a file is delayed mode only when the user says so.
     provenance : dict, optional
         When given, filled in place with what the output file cannot record about its own
         conversion: ``inputs`` (one ``{"path", "bytes", "dive"}`` per input file) and
@@ -1424,7 +1418,7 @@ def to_og1(
 
     # Add sensor information to the dataset - can be done on the concatenated data
     # -----------------------------------------------------------------------------
-    sensor_dict = _pipeline.gather_sensor_info(list_of_datasets)
+    sensor_dict = _pipeline.gather_sensor_info(list_of_datasets, overrides=sensors)
     # delete old sensor attribute if it exists and add new one
     for var in ds_og1.data_vars:
         if "sensor" in ds_og1[var].attrs:
@@ -1712,7 +1706,8 @@ def process_mission(
     platform: dict[str, object] | None = None,
     deployment: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
-    mode: str = "delayed",
+    sensors: Mapping[str, Mapping[str, object]] | None = None,
+    mode: str = "realtime",
     keep_variables: Sequence[str] | None = None,
     repair: bool = False,
     overwrite: bool = False,
@@ -1749,9 +1744,11 @@ def process_mission(
         Deployment-identity globals, as for :func:`to_og1`. Default is None.
     global_attributes : dict of str to object, optional
         Global attributes written verbatim, as for :func:`to_og1`. Default is None.
+    sensors : collections.abc.Mapping, optional
+        Sensor-record corrections, as for :func:`to_og1`. Default is None.
     mode : str, optional
-        Data mode, ``"delayed"`` (default) or ``"realtime"``; sets the ``id`` suffix
-        and so the filename. Default is "delayed".
+        Data mode, ``"realtime"`` (default) or ``"delayed"``; sets the ``id`` suffix
+        and so the filename. Default is "realtime".
     keep_variables : sequence of str, optional
         Science variables to keep (see :func:`keep_variables`); OG1-mandatory
         variables always survive. Default is None (keep all).
@@ -1836,6 +1833,7 @@ def process_mission(
         platform=platform,
         deployment=deployment,
         global_attributes=global_attributes,
+        sensors=sensors,
         mode=mode,
         provenance=provenance,
     )
@@ -1849,6 +1847,9 @@ def process_mission(
                 for field, value in (platform or {}).items()
                 if not _is_empty(value)
             },
+            "deployment_id": None
+            if _is_empty((deployment or {}).get("id"))
+            else (deployment or {})["id"],
             "institutions": [dict(record) for record in institutions or ()],
         }
     if keep_variables:

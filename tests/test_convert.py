@@ -1265,3 +1265,25 @@ def test_unknown_sensor_key_is_skipped_not_fatal() -> None:
     ds = convert.to_og1(datasets)
     assert not [name for name in ds.variables if "XYZ" in str(name).upper()]
     assert [name for name in ds.variables if str(name).startswith("SENSOR_CTD_")]
+
+
+def test_sensors_config_corrects_a_basestation_sensor_record() -> None:
+    """demo_sg005: a corrected wlbb2f serial names the sensor; the comment keeps the old one."""
+    import pytest
+
+    datasets = readers.read_mission(str(_SG005), 1, 1)
+    ds = convert.to_og1(
+        datasets,
+        sensors={"wlbb2f": {"serial_number": "1234", "calibration_date": "2008-02-01"}},
+    )
+    assert "SENSOR_FLUOROMETER_0000" not in ds.variables
+    sensor = ds["SENSOR_FLUOROMETER_1234"]
+    assert sensor.attrs["sensor_serial_number"] == "1234"
+    assert sensor.attrs["sensor_calibration_date"] == "2008-02-01"
+    assert "(basestation calibration comment: 0000)" in sensor.attrs["comment"]
+    users = [v for v in ds.variables if ds[v].attrs.get("sensor") == sensor.name]
+    assert "FLUOCHLA" in users
+    with pytest.raises(ValueError, match="sensor keys .* are .*'wlbb2f'"):
+        convert.to_og1(datasets, sensors={"tridente": {"serial_number": "1"}})
+    with pytest.raises(ValueError, match="unknown field 'serial'"):
+        convert.to_og1(datasets, sensors={"wlbb2f": {"serial": "1"}})

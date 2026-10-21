@@ -44,8 +44,9 @@ Keys
      - Where OG1 files are written.
    * - ``mode``
      - str
-     - ``delayed``
-     - ``realtime`` or ``delayed``; sets the id data-mode suffix (``R`` or ``delayed``).
+     - ``realtime``
+     - ``realtime`` or ``delayed``; sets the id data-mode suffix (``R`` or ``delayed``). A file
+       is delayed mode only when the config (or ``process --mode``) says so.
    * - ``dives``
      - list or null
      - ``null``
@@ -83,7 +84,20 @@ Keys
      - Verbatim escape hatch written into the OG1 file (null values are skipped). You may not
        set keys the converter derives (``time_coverage_start``/``_end``, the ``geospatial_*``
        bounds, ``date_created``, ``start_date``) or keys with a structured home in
-       ``deployment`` (``id``, ``program``, ...); ``process`` raises a ``ValueError`` if you do.
+       ``deployment`` (``id``, ``naming_authority``, ``program``, ...); ``validate`` reports
+       either as an error, naming where the key goes. Replace the ``{}`` with an indented
+       block:
+
+       .. code-block:: yaml
+
+          global_attributes:
+            institution: "University of Hamburg (IfM)"
+   * - ``sensors``
+     - mapping or null
+     - ``null``
+     - Corrections to a basestation sensor record, keyed by the sensor's name in the files'
+       ``instrument`` global (``legato``, ``tridentebb700chla470fdom365``, ``sbe41``, ...):
+       ``serial_number`` and ``calibration_date``. See `Sensor corrections`_.
    * - ``contributors``
      - list
      - *(required)*
@@ -121,6 +135,27 @@ is from the manual, v1.0.0; ``optional`` marks ACDD globals with no OG1 tier.
 
 .. include:: _generated/deployment_fields.inc
 
+Sensor corrections
+------------------
+
+The serial number and calibration date of each sensor come from the basestation calibration
+comments (``sg_cal_calibcomm*``, set in ``sg_calib_constants.m``). When one is wrong — a
+comment copied from another instrument, or a placeholder ``0000`` — correct it here rather
+than in the basestation files:
+
+.. code-block:: yaml
+
+   sensors:
+     tridentebb700chla470fdom365:
+       serial_number: "237998"
+       calibration_date: 2025-03-11
+
+The corrected serial names the ``SENSOR_*`` variable and the ``sensor`` attribute of every
+variable from that instrument. The sensor variable's ``comment`` records the value each
+correction replaced, so the change can be read back from the file. A key that is not one of
+the mission's sensors stops the conversion with the list of keys; the conversion page's
+*Sensors named by OG1* table shows the serials and dates in use.
+
 Contributor and institution records
 ------------------------------------
 
@@ -141,7 +176,7 @@ The template ``init`` writes (fill the nulls before ``validate``):
 
    raw_dir: /data/005/20080606  # basestation files: a mission dir (p*.nc inside) or a root of SN/DATE dirs
    output_dir: ./          # where OG1 files are written
-   mode: delayed           # realtime | delayed
+   mode: realtime          # realtime (id suffix R) | delayed
    dives: null             # [first, last] dive numbers; null = all files present
    repair: false           # run repair_files on the basestation files (writes the raw_dir tree)
    keep_variables: null    # optional list of science variables to keep; null = all
@@ -177,7 +212,8 @@ The template ``init`` writes (fill the nulls before ``validate``):
      license: null         # optional -> global attribute
      acknowledgment: null  # optional -> global attribute
 
-   global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above
+   global_attributes: {}   # any other OG1 global, written as given: replace {} with lines
+     #   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)
 
    contributors:           # one entry per person per role; at least one PI
      - name: Jane Doe       # no commas in a name

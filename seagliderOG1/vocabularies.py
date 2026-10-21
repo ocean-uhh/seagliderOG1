@@ -87,6 +87,7 @@ PLACEHOLDER_VALUES = frozenset({"", "None", "null", "null@null.com"})
 # the init template (which reads each key's tier from REQUIRED_GLOBALS).
 DEPLOYMENT_GLOBALS = (
     "id",
+    "naming_authority",
     "site",
     "site_vocabulary",
     "program",
@@ -99,6 +100,37 @@ DEPLOYMENT_GLOBALS = (
     "license",
     "acknowledgment",
 )
+
+
+# Globals the converter computes from the data (or at conversion time). A mission config
+# may not set them: convert.to_og1 refuses them in global_attributes, and validate says so first.
+DERIVED_GLOBALS = frozenset(
+    {
+        "time_coverage_start",
+        "time_coverage_end",
+        "geospatial_lat_min",
+        "geospatial_lat_max",
+        "geospatial_lon_min",
+        "geospatial_lon_max",
+        "geospatial_vertical_min",
+        "geospatial_vertical_max",
+        "geospatial_bounds",
+        "geospatial_vertical_positive",
+        "time_coverage_duration",
+        "date_created",
+        "start_date",
+        "tracking_id",
+    }
+)
+
+
+# Fields a mission config's sensors: block may correct, keyed by the basestation sensor key
+# (a name in the instrument global), mapped to the sensor attribute each one sets. Read by
+# the converter (_pipeline.gather_sensor_info) and by validate.
+SENSOR_OVERRIDE_FIELDS = {
+    "serial_number": "sensor_serial_number",
+    "calibration_date": "sensor_calibration_date",
+}
 
 
 def _version(prefix: str) -> Callable[[object], str]:

@@ -29,7 +29,8 @@ Data mode
 
 ``process --mode`` (and the ``mode`` key in ``mission.yaml``) sets the OG1 data mode, which
 determines the data-mode suffix of the output id: ``realtime`` gives the suffix ``R`` and
-``delayed`` gives ``delayed`` (``vocabularies.MODE_SUFFIX``).
+``delayed`` gives ``delayed`` (``vocabularies.MODE_SUFFIX``). With neither set the mode is
+``realtime``: a file is delayed mode only when you say so.
 
 Conversion page
 ---------------

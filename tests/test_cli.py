@@ -85,7 +85,8 @@ def test_init_writes_template(tmp_path: pathlib.Path) -> None:
     assert cli.main(["init", str(out)]) == 0
     data = yaml.safe_load(out.read_text(encoding="utf-8"))
     assert set(data) >= {"raw_dir", "contributors", "platform", "mode"}
-    assert data["mode"] == "delayed"
+    assert data["mode"] == "realtime"
+    assert "naming_authority" in data["deployment"]  # OG1 highly desirable, user-set
 
 
 def test_init_refuses_overwrite_without_force(tmp_path: pathlib.Path) -> None:
@@ -161,6 +162,51 @@ def test_validate_rejects_unknown_deployment_key(tmp_path: pathlib.Path) -> None
         tmp_path / "mission.yaml", deployment={"program": "X", "nonsense": "y"}
     )
     assert cli.main(["validate", str(cfg)]) == 1
+
+
+def test_validate_names_the_home_of_a_refused_global(tmp_path: pathlib.Path) -> None:
+    """A deployment key or a derived global in global_attributes errors before conversion."""
+    cfg = _write_config(
+        tmp_path / "mission.yaml",
+        global_attributes={
+            "naming_authority": "de.uni-hamburg",
+            "date_created": "x",
+            "institution": "University of Hamburg (IfM)",  # no other home: allowed
+        },
+    )
+    issues = {
+        i.key: i.message
+        for i in _mission.validate_config(cfg)
+        if (i.key or "").startswith("global_attributes")
+    }
+    assert set(issues) == {
+        "global_attributes.naming_authority",
+        "global_attributes.date_created",
+    }
+    assert (
+        "deployment:\n      naming_authority: de.uni-hamburg"
+        in (issues["global_attributes.naming_authority"])
+    )
+    assert cli.main(["process", str(cfg)]) == 1  # refused by validate, nothing read
+
+
+def test_validate_checks_the_sensors_block_shape(tmp_path: pathlib.Path) -> None:
+    """sensors: fields must be serial_number / calibration_date and non-empty."""
+    good = {"wlbb2f": {"serial_number": "1234", "calibration_date": "2008-02-01"}}
+    assert not [
+        i
+        for i in _mission.validate_config(
+            _write_config(tmp_path / "good.yaml", sensors=good)
+        )
+        if (i.key or "").startswith("sensors")
+    ]
+    for bad in ({"wlbb2f": {"serial": "1"}}, {"wlbb2f": {"serial_number": None}}, [1]):
+        issues = _mission.validate_config(
+            _write_config(tmp_path / "bad.yaml", sensors=bad)
+        )
+        assert any(
+            i.level == "ERROR" and (i.key or "").startswith("sensors") for i in issues
+        )
 
 
 def test_validate_accepts_known_deployment_keys(tmp_path: pathlib.Path) -> None:
@@ -423,7 +469,7 @@ def test_process_writes_output(
         tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
     )
     assert cli.main(["process", str(config)]) == 0
-    assert (out / "sg005_delayed.nc").is_file()
+    assert (out / "sg005_R.nc").is_file()  # no mode in the config: realtime
 
 
 def test_process_dry_run_writes_nothing(

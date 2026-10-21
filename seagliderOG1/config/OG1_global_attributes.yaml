@@ -14,14 +14,12 @@ attr_as_is: !!set
   institution: null
   disclaimer: null
   id: null
-  file_version: null
   geospatial_vertical_max: null
   geospatial_vertical_min: null
   project: null
   keywords: null
   acknowledgment: null
   geospatial_lat_min: null
-  naming_authority: null
   keywords_vocabulary: null
   geospatial_lon_max: null
   geospatial_lat_max: null
@@ -29,9 +27,6 @@ attr_as_is: !!set
   comment: null
 
 attr_to_rename:
-  site: summary
-  uri: uuid
-  uri_comment: UUID
   platform_id: PLATFORM_SERIAL_NUMBER
 
 attr_to_var:
@@ -66,7 +61,7 @@ required:
     featureType: constant
     Conventions: constant
   highly_desirable:
-    naming_authority: derived
+    naming_authority: config
     institution: derived
     internal_mission_identifier: config
     time_coverage_start: derived

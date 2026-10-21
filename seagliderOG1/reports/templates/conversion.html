@@ -106,9 +106,21 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 {%- endfor %}
 </tbody></table>
 
+<h3>Sensors named by OG1 (not required)</h3>
+{%- if og1_sensors %}
+<p class="caption">{{ og1_sensors|length }} <code>SENSOR_*</code> variables, from the basestation calibration comments and <code>config/OG1_sensor_attributes.yaml</code>. Used by lists the variables whose <code>sensor</code> attribute names the sensor. Amber: the serial number or calibration date is a placeholder (empty, or every digit zero), so the basestation configuration did not record it; or two sensors share a serial number, which usually means a calibration comment was copied from another instrument. Both come from the basestation <code>sg_calib_constants</code>; check them against the calibration sheets.</p>
+<table class="nc sortable">
+<thead><tr><th>Sensor</th><th>Type</th><th>Maker</th><th>Model</th><th>Serial</th><th>Calibration</th><th>Used by</th></tr></thead>
+<tbody>
+{%- for r in og1_sensors %}
+<tr{% if r.bad %} class="cell-bad"{% endif %}><td>{{ r.name }}</td><td>{{ r.type }}</td><td>{{ r.maker }}</td><td>{{ r.model }}</td><td>{{ r.serial }}{% if r.shared %} (shared){% endif %}</td><td>{{ r.calibration }}</td><td class="cell-wrap">{{ r.n_used }}: {{ r.used_by }}</td></tr>
+{%- endfor %}
+</tbody></table>
+{%- else %}<p class="caption">Not applicable to this file: no <code>SENSOR_*</code> variables.</p>{% endif %}
+
 <h3>Named by OG1 (not required)</h3>
 {%- if og1_named %}
-<p class="caption">{{ og1_named|length }} variables OG1 has a defined name and meaning for, present but not required — the science payload, phase, profile and sensor variables, and QC flags.</p>
+<p class="caption">{{ og1_named|length }} variables OG1 has a defined name and meaning for, present but not required — the science payload, phase and profile variables, and QC flags (the sensors are in the table above).</p>
 <table class="nc sortable">
 <thead><tr><th>Variable</th><th>Orig var</th><th>Orig dim</th><th>Dims</th><th>Units</th><th>Valid %</th></tr></thead>
 <tbody>

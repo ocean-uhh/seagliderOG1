@@ -17,6 +17,7 @@ when the ``<id>_conversion.json`` beside the file is missing.
 """
 
 import math
+import re
 import warnings
 from datetime import UTC, datetime
 from pathlib import Path
@@ -294,8 +295,8 @@ def _og1_tiers(
     """Return the "named by OG1" rows and the "carried through" family summary.
 
     A variable not in :data:`seagliderOG1.vocabularies.OG1_REQUIRED_VARS` is "named by OG1"
-    when it has an OG1 attribute vocabulary, is a ``SENSOR_*`` instance, or is an OG1 ``*_QC``
-    flag; everything else is carried through and summarised by basestation family so the ~300
+    when it has an OG1 attribute vocabulary or is an OG1 ``*_QC`` flag (``SENSOR_*`` variables
+    have their own table, :func:`_og1_sensor_rows`); everything else is carried through and summarised by basestation family so the ~300
     engineering/log leftovers read as a handful of rows.
 
     Parameters
@@ -326,7 +327,9 @@ def _og1_tiers(
             name in required or name in candidates
         ):  # candidates are their own group (2.5)
             continue
-        if name in og1_named or name.startswith("SENSOR_") or name.endswith("_QC"):
+        if design.is_sensor(name):  # their own table (_og1_sensor_rows)
+            continue
+        if name in og1_named or name.endswith("_QC"):
             v = ds[name]
             valid = valid_by_name.get(name)
             orig_var, orig_dim = _origin(ds, name, derived)
@@ -352,6 +355,66 @@ def _og1_tiers(
         entry["count"] = len(names)  # type: ignore[arg-type]
         entry["names"] = ", ".join(names)  # type: ignore[arg-type]
     return named, rows
+
+
+def _is_placeholder(value: str) -> bool:
+    """Return True for an empty value or one whose digits are all zero (``0000``, ``00-00-0000``)."""
+    digits = [c for c in value if c.isdigit()]
+    return not value.strip() or (bool(digits) and set(digits) == {"0"})
+
+
+def _og1_sensor_rows(ds: xr.Dataset) -> list[dict[str, object]]:
+    """Return one row per ``SENSOR_*`` variable: what the sensor is and which variables use it.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open OG1 dataset.
+
+    Returns
+    -------
+    list of dict
+        ``{"name", "type", "maker", "model", "serial", "calibration", "used_by", "n_used",
+        "shared", "bad"}`` rows, name-sorted; ``used_by`` names the variables whose
+        ``sensor`` attribute is this sensor; ``shared`` when another sensor has the same
+        serial number (a basestation calibration comment copied between instruments);
+        ``bad`` when the serial or calibration date is a placeholder (empty, or every digit
+        zero) or the serial is shared.
+
+    """
+    users: dict[str, list[str]] = {}
+    for name, var in ds.variables.items():
+        sensor = var.attrs.get("sensor")
+        if sensor:
+            users.setdefault(str(sensor), []).append(str(name))
+    names = sorted(str(n) for n in ds.variables if design.is_sensor(str(n)))
+    serials: dict[str, int] = {}
+    for name in names:
+        serial = str(ds[name].attrs.get("sensor_serial_number", ""))
+        serials[serial] = serials.get(serial, 0) + 1
+    rows = []
+    for name in names:
+        attrs = ds[name].attrs
+        serial = str(attrs.get("sensor_serial_number", ""))
+        calibration = str(attrs.get("sensor_calibration_date", ""))
+        used = sorted(users.get(name, []))
+        rows.append(
+            {
+                "name": name,
+                "type": str(attrs.get("sensor_type", "")),
+                "maker": str(attrs.get("sensor_maker", "")),
+                "model": str(attrs.get("sensor_model", "")),
+                "serial": serial,
+                "calibration": calibration,
+                "used_by": ", ".join(used),
+                "n_used": len(used),
+                "shared": serials[serial] > 1 and not _is_placeholder(serial),
+                "bad": _is_placeholder(serial)
+                or _is_placeholder(calibration)
+                or serials[serial] > 1,
+            }
+        )
+    return rows
 
 
 def _og1_candidate_groups(
@@ -850,7 +913,15 @@ def draw_presence_strips(patterns: list[dict], dives: list[int]) -> "Figure | No
     norm = BoundaryNorm(levels, cmap.N)
     n = len(dives)
     height = 1.2 + 0.32 * 2 * len(labels)
-    fig, axes = plt.subplots(2, 1, figsize=(W_FULL, height), sharex=True)
+    # The colorbar gets its own grid column: the renderer calls tight_layout, which cannot
+    # place a colorbar that steals space from the strips (fig.colorbar(ax=...)).
+    fig = plt.figure(figsize=(W_FULL, height))
+    grid = fig.add_gridspec(
+        2, 2 if has_density else 1, width_ratios=[40, 1][: 2 if has_density else 1]
+    )
+    top = fig.add_subplot(grid[0, 0])
+    axes = [top, fig.add_subplot(grid[1, 0], sharex=top)]
+    plt.setp(top.get_xticklabels(), visible=False)
     extent = (-0.5, n - 0.5, len(labels) - 0.5, -0.5)
     for ax, matrix, title in (
         (axes[0], present, "present in the file"),
@@ -875,7 +946,7 @@ def draw_presence_strips(patterns: list[dict], dives: list[int]) -> "Figure | No
     if has_density:
         fig.colorbar(
             image,
-            ax=axes,
+            cax=fig.add_subplot(grid[:, 1]),
             ticks=levels,
             label="fraction of the sporadic row's variables",
         )
@@ -1736,6 +1807,25 @@ _ACDD_FROM_THE_DATA = frozenset(
 )
 
 
+# ACDD people and publisher globals: OG1 defines no creator or publisher and records people
+# and organisations in contributor_* / contributing_institutions_* instead, so a missing
+# one is covered there and no box suggests it.
+_ACDD_COVERED_BY_OG1 = frozenset(
+    {
+        "creator_name",
+        "creator_email",
+        "creator_url",
+        "creator_type",
+        "creator_institution",
+        "publisher_name",
+        "publisher_email",
+        "publisher_url",
+        "publisher_type",
+        "publisher_institution",
+    }
+)
+
+
 def _platform_gaps(ds: xr.Dataset) -> dict[str, str]:
     """Return the required or file-derivable platform fields the conversion could not fill.
 
@@ -1777,6 +1867,8 @@ def _config_suggestions(
     sidecar: dict | None,
     platform_gaps: dict[str, str] | None = None,
     acdd_missing: dict[str, str] | None = None,
+    og1_id: str | None = None,
+    og1_missing: list[str] | None = None,
 ) -> list[dict[str, object]]:
     """Return the ``mission.yaml`` blocks where the config and the output disagree or fall short.
 
@@ -1794,8 +1886,14 @@ def _config_suggestions(
     - *Institution in the basestation files*: the file's ``institution`` global, when
       the registry matched it and no config institution resolved to the same id (the
       converter drops it when the config lists institutions).
-    - *Missing ACDD globals*: under ``deployment:`` where they have a home there, else
-      under ``global_attributes:``; those the converter can compute are left out.
+    - *Deployment id*: the derived ``id`` when the conversion starts at dive 1 and the
+      config left ``deployment.id`` null, so a later conversion of part of the mission
+      (which would derive a later start time) keeps it.
+    - *Missing globals*: OG1 highly-desirable and ACDD 1.3 globals the file lacks, under
+      ``deployment:`` where they have a home there, else
+      under ``global_attributes:``; those the converter can compute, and the
+      ``creator_*`` / ``publisher_*`` globals OG1 replaces with its contributor
+      attributes, are left out.
 
     Parameters
     ----------
@@ -1808,6 +1906,12 @@ def _config_suggestions(
         From :func:`_platform_gaps`. Default is None.
     acdd_missing : dict of str to str, optional
         Missing ACDD 1.3 global to its level. Default is None.
+    og1_id : str, optional
+        The file's ``id``, offered as ``deployment.id`` when the conversion starts at
+        dive 1 and the config left ``id`` null. Default is None.
+    og1_missing : list of str, optional
+        OG1 highly-desirable globals the user supplies (tier ``config``) that the file
+        lacks: the ones ``validate`` warns about. Default is None.
 
     Returns
     -------
@@ -1839,6 +1943,30 @@ def _config_suggestions(
                         "label": "From the basestation files",
                         "text": f"dives: [{read[0]}, {read[-1]}]",
                     },
+                ],
+            }
+        )
+    if (
+        og1_id
+        and read
+        and read[0] == 1
+        and "deployment_id" in config
+        and config["deployment_id"] is None
+    ):
+        blocks.append(
+            {
+                "title": "Deployment id",
+                "note": (
+                    "This conversion starts at dive 1, so the derived id names the "
+                    "deployment start. Pin it: a later conversion of part of the mission "
+                    "(dives starting after 1) would derive a later start time and so a "
+                    "different id."
+                ),
+                "boxes": [
+                    {
+                        "label": "Derived from dive 1",
+                        "text": f"deployment:\n  id: {og1_id}",
+                    }
                 ],
             }
         )
@@ -1917,6 +2045,40 @@ def _config_suggestions(
                     ],
                 }
             )
+    unmatched = [
+        (str(record.get("name") or ""), record.get("role") or None)
+        for r, record in zip(resolved, institutions, strict=True)
+        if not r["id"] and _is_null_id(record.get("id"))
+    ]
+    for name, role in unmatched:
+        near = _registry_candidates(name)
+        if not near:
+            continue
+        blocks.append(
+            {
+                "title": "Institution not in the registry",
+                "note": (
+                    f"{name!r} matches no entry of the package's EDMO registry exactly, so it "
+                    "is written with no id. Registry entries whose names contain every word of "
+                    "it are below; use one if it is the same institution (the name resolves to "
+                    "its id), or add the name to config/institution_registry.yaml."
+                ),
+                "boxes": [
+                    {
+                        "label": f"EDMO {code}",
+                        "text": "\n".join(
+                            [
+                                "institutions:",
+                                f"- name: {standard}",
+                                f"  role: {role or 'null'}",
+                                "  id: null   # resolves by name",
+                            ]
+                        ),
+                    }
+                    for code, standard in near
+                ],
+            }
+        )
     from_file_institution = sidecar.get("institution_from_file") or {}
     if (
         institutions
@@ -1950,15 +2112,22 @@ def _config_suggestions(
             }
         )
     acdd_missing = acdd_missing or {}
+    # One label per missing global: OG1's own tier first (validate warns on it), then ACDD.
+    labels = dict.fromkeys(og1_missing or (), "OG1 highly desirable")
+    for name, level in acdd_missing.items():
+        acdd = f"ACDD {level}"
+        labels[name] = f"{labels[name]}; {acdd}" if name in labels else acdd
     deployment = {
-        name: f"ACDD {level}"
-        for name, level in acdd_missing.items()
+        name: label
+        for name, label in labels.items()
         if name in vocabularies.DEPLOYMENT_GLOBALS
     }
     escape = {
-        name: f"ACDD {level}"
-        for name, level in acdd_missing.items()
-        if name not in deployment and name not in _ACDD_FROM_THE_DATA
+        name: label
+        for name, label in labels.items()
+        if name not in deployment
+        and name not in _ACDD_FROM_THE_DATA
+        and name not in _ACDD_COVERED_BY_OG1
     }
     boxes = []
     if deployment:
@@ -1974,14 +2143,50 @@ def _config_suggestions(
         )
     if boxes:
         left = sorted(_ACDD_FROM_THE_DATA.intersection(acdd_missing))
-        note = "ACDD 1.3 globals the file does not carry."
+        note = (
+            "OG1 highly desirable and ACDD 1.3 globals the file does not carry (the "
+            "OG1 ones are those validate warns about)."
+        )
         if left:
             note += (
                 " Not listed, because the converter should supply them "
                 "(computed from the data, or a constant): " + ", ".join(left) + "."
             )
-        blocks.append({"title": "Missing ACDD globals", "note": note, "boxes": boxes})
+        covered = sorted(_ACDD_COVERED_BY_OG1.intersection(acdd_missing))
+        if covered:
+            note += (
+                " Not listed, because OG1 records people and organisations in "
+                "contributor_* and contributing_institutions_* instead: "
+                + ", ".join(covered)
+                + "."
+            )
+        blocks.append({"title": "Missing globals", "note": note, "boxes": boxes})
     return blocks
+
+
+def _registry_candidates(name: str, limit: int = 3) -> list[tuple[str, str]]:
+    """Return registry entries with a name containing every word of ``name``.
+
+    Parameters
+    ----------
+    name : str
+        An institution name the registry did not match exactly.
+    limit : int, optional
+        At most this many entries, by EDMO code. Default is 3.
+
+    Returns
+    -------
+    list of (str, str)
+        ``(EDMO code, standard_name)`` pairs.
+
+    """
+    words = set(re.findall(r"\w+", name.lower()))
+    found = []
+    for code, entry in contributors.institution_registry().items():
+        names = [entry["standard_name"], *entry.get("name_variants", [])]
+        if any(words <= set(re.findall(r"\w+", n.lower())) for n in names):
+            found.append((str(code), entry["standard_name"]))
+    return sorted(found, key=lambda pair: int(pair[0]))[:limit]
 
 
 def _is_null_id(value: object) -> bool:
@@ -2074,6 +2279,13 @@ def render_conversion(
             for level in conventions["acdd"]
             for name in level["missing"]
         }
+        og1_missing = [
+            name
+            for name, source in vocabularies.REQUIRED_GLOBALS[
+                "highly_desirable"
+            ].items()
+            if source == "config" and not str(ds.attrs.get(name, "")).strip()
+        ]
         ledger = convert.conversion_ledger(ds)
         groups, var_source = _variable_groups_by_original_dimension(ds)
         # Each Variables group gets its own Valid % baseline caption (the share of the shared
@@ -2105,6 +2317,7 @@ def render_conversion(
         )
         og1_candidate_groups = _og1_candidate_groups(ds, ledger, valid_by_name)
         og1_named, og1_carried = _og1_tiers(ds, ledger, valid_by_name)
+        og1_sensors = _og1_sensor_rows(ds)
         duplicate_groups = _duplicate_groups(ds)
         reconciliation, reconciliation_caption = _reconciliation(ds, ledger)
         # The fate rows excluding the input-total row (the last), for the histogram.
@@ -2188,6 +2401,7 @@ def render_conversion(
         og1_required_incomplete=og1_required_incomplete,
         og1_candidate_groups=og1_candidate_groups,
         og1_named=og1_named,
+        og1_sensors=og1_sensors,
         og1_carried=og1_carried,
         duplicate_groups=duplicate_groups,
         reconciliation=reconciliation,
@@ -2225,7 +2439,9 @@ def render_conversion(
         else [],
         config_suggestions=[]
         if draft
-        else _config_suggestions(sidecar, platform_gaps, acdd_missing),
+        else _config_suggestions(
+            sidecar, platform_gaps, acdd_missing, str(ds_id), og1_missing
+        ),
         basestation_rows=_basestation_rows(
             sidecar.get("basestation_globals") if sidecar else None,
             len(inputs) if inputs else 0,

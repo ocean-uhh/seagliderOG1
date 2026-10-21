@@ -207,7 +207,7 @@ def run(args: argparse.Namespace) -> int:
         if args.output_dir
         else (base / str(config.get("output_dir", "."))).resolve()
     )
-    mode = args.mode or config.get("mode") or "delayed"
+    mode = args.mode or config.get("mode") or "realtime"
     config_dives = config.get("dives")
     dives = tuple(args.dives) if args.dives else config_dives
     first, last = (dives[0], dives[1]) if dives else (None, None)
@@ -263,6 +263,7 @@ def run(args: argparse.Namespace) -> int:
                 platform=config.get("platform"),
                 deployment=config.get("deployment"),
                 global_attributes=config.get("global_attributes"),
+                sensors=config.get("sensors"),
                 mode=mode,
                 keep_variables=keep_variables,
                 repair=repair,

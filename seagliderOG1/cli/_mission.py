@@ -25,6 +25,7 @@ KNOWN_KEYS = frozenset(
         "platform",
         "deployment",
         "global_attributes",
+        "sensors",
         "contributors",
         "institutions",
     }
@@ -177,7 +178,8 @@ _TIER_LABELS = {
 # Notes on deployment keys whose value overrides something the converter derives.
 _DEPLOYMENT_HINTS = {
     "id": "leave null for the derived <serial>_<start>_<mode>; set only to override it",
-    "comment": "overrides the comment derived from the file's history",
+    "naming_authority": "reverse-DNS of the institution naming the dataset, e.g. edu.ucsd.spray",
+    "comment": "overrides a comment global the basestation files carry",
     "license": "e.g. CC-BY-4.0",
     "doi": "e.g. https://doi.org/...",
     "data_url": "where the OG1 file is hosted",
@@ -442,7 +444,7 @@ def render_template(
         "",
         f"raw_dir: {_scalar(raw_dir)}           # basestation files: a mission dir (p*.nc inside) or a root of SN/DATE dirs",
         "output_dir: ./          # where OG1 files are written",
-        "mode: delayed           # realtime | delayed",
+        "mode: realtime          # realtime (id suffix R) | delayed",
         f"dives: {_scalar(dives) if dives else 'null'}             # [first, last] dive numbers; null = all files present",
         "repair: false           # run repair_files on the basestation files (writes the raw_dir tree)",
         "keep_variables: null    # optional list of science variables to keep; null = all",
@@ -452,7 +454,12 @@ def render_template(
         "",
         *_deployment_template_lines(),
         "",
-        "global_attributes: {}   # verbatim escape hatch for any OG1 global without a home above",
+        "global_attributes: {}   # any other OG1 global, written as given: replace {} with lines",
+        '  #   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)',
+        "",
+        "sensors: {}            # corrections to a basestation sensor record, by its key in the",
+        "  # instrument global; fields serial_number, calibration_date. e.g.",
+        '  # tridentebb700chla470fdom365: {serial_number: "237998", calibration_date: 2025-03-11}',
         "",
         "contributors:           # one entry per person per role; replace this example",
         "  # role is a W08 term: Manufacturer, Owner, Operator, PI, Technical Coordinator,",
@@ -469,6 +476,61 @@ def render_template(
         "",
     ]
     return "\n".join(lines)
+
+
+def _validate_sensors(sensors: object) -> list[ValidationIssue]:
+    """Check the ``sensors:`` block shape: sensor key to a mapping of known fields.
+
+    Whether a key names a sensor of the mission is checked at conversion, which reads
+    the ``instrument`` global.
+
+    Parameters
+    ----------
+    sensors : object
+        The ``sensors`` value from the config (None when absent).
+
+    Returns
+    -------
+    list of ValidationIssue
+        One ERROR per malformed entry; empty when the block is absent or well formed.
+
+    """
+    from seagliderOG1 import vocabularies
+
+    if sensors is None:
+        return []
+    if not isinstance(sensors, dict):
+        return [ValidationIssue("ERROR", "sensors must be a mapping.", "sensors")]
+    issues = []
+    allowed = list(vocabularies.SENSOR_OVERRIDE_FIELDS)
+    for key, fields in sensors.items():
+        where = f"sensors.{key}"
+        if not isinstance(fields, dict) or not fields:
+            issues.append(
+                ValidationIssue(
+                    "ERROR", f"{where} must map fields {allowed} to values.", where
+                )
+            )
+            continue
+        for field, value in fields.items():
+            if field not in allowed:
+                issues.append(
+                    ValidationIssue(
+                        "ERROR",
+                        f"{where}: unknown field {field!r}; allowed: {allowed}.",
+                        where,
+                    )
+                )
+            elif value is None or not str(value).strip():
+                issues.append(
+                    ValidationIssue(
+                        "ERROR",
+                        f"{where}.{field} is empty; remove the line to keep the "
+                        "basestation value.",
+                        where,
+                    )
+                )
+    return issues
 
 
 def _is_dive_pair(dives: object) -> bool:
@@ -857,6 +919,47 @@ def _validate_deployment(deployment: object) -> list[ValidationIssue]:
     return issues
 
 
+def _validate_global_attributes(extra: object) -> list[ValidationIssue]:
+    """ERROR on a global_attributes key that has a home elsewhere or that the converter sets.
+
+    ``process`` refuses both (``convert.to_og1``); this says so before any file is read,
+    and names where the key goes.
+
+    Parameters
+    ----------
+    extra : object
+        The value of the ``global_attributes`` key.
+
+    Returns
+    -------
+    list of ValidationIssue
+        One ERROR per refused key with a value; empty otherwise.
+
+    """
+    if not isinstance(extra, dict):
+        return []
+    from seagliderOG1 import vocabularies
+
+    issues = []
+    for key, value in extra.items():
+        if value is None or not str(value).strip():
+            continue
+        where = f"global_attributes.{key}"
+        if key in vocabularies.DEPLOYMENT_GLOBALS:
+            message = (
+                f"{key} has its own key under deployment:; move it there:\n"
+                f"    deployment:\n      {key}: {value}"
+            )
+        elif key in vocabularies.DERIVED_GLOBALS:
+            message = (
+                f"{key} is computed by the converter; remove it from global_attributes."
+            )
+        else:
+            continue
+        issues.append(ValidationIssue("ERROR", message, where))
+    return issues
+
+
 def _validate_highly_desirable(data: dict[str, object]) -> list[ValidationIssue]:
     """WARN for each OG1 highly-desirable global the config leaves unset.
 
@@ -1017,6 +1120,8 @@ def validate_config(
             )
         )
 
+    issues.extend(_validate_sensors(data.get("sensors")))
+    issues.extend(_validate_global_attributes(data.get("global_attributes")))
     issues.extend(_validate_deployment(data.get("deployment")))
     issues.extend(_validate_highly_desirable(data))
     issues.extend(_validate_platform(data.get("platform")))
