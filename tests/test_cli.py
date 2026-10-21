@@ -210,6 +210,35 @@ def test_validate_names_the_home_of_a_refused_global(tmp_path: pathlib.Path) -> 
     assert cli.main(["process", str(cfg)]) == 1  # refused by validate, nothing read
 
 
+def test_validate_placeholder_in_global_attributes_is_unset_not_misplaced(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A placeholder ("null") under a sectioned key in global_attributes is unset, not an error.
+
+    The converter drops placeholder values, so validate must not flag one as a misplaced key.
+    """
+    cfg = _write_config(tmp_path / "mission.yaml", global_attributes={"doi": "null"})
+    issues = [
+        i
+        for i in _mission.validate_config(cfg)
+        if (i.key or "").startswith("global_attributes")
+    ]
+    assert issues == []
+
+
+def test_validate_errors_on_a_set_local_config(tmp_path: pathlib.Path) -> None:
+    """local_config is reserved and unread; a non-null value is an ERROR (null is legal)."""
+    cfg = _write_config(tmp_path / "mission.yaml", local_config="local/")
+    bad = [i for i in _mission.validate_config(cfg) if i.key == "local_config"]
+    assert bad and all(i.level == "ERROR" for i in bad)
+    assert (
+        cli.main(["validate", str(cfg)]) == 1
+    )  # a dropped override makes a wrong file
+    # null is legal, so the template's reserved key validates.
+    ok = _write_config(tmp_path / "ok.yaml", local_config=None)
+    assert [i for i in _mission.validate_config(ok) if i.key == "local_config"] == []
+
+
 def test_validate_checks_the_sensors_block_shape(tmp_path: pathlib.Path) -> None:
     """sensors: fields must be serial_number / calibration_date and non-empty."""
     good = {"wlbb2f": {"serial_number": "1234", "calibration_date": "2008-02-01"}}

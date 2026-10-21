@@ -18,9 +18,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   name the page group they land in. `config_version` is now `3`; `validate` rejects an older
   version (and a stray `deployment:` block), naming the sections, and `seagliderOG1 init`
   regenerates a file. `program`, `program_vocabulary` and `network` leave the sections for the
-  forthcoming platform registry (set them under `global_attributes:` until it lands); a
-  `platform_registry:` key is reserved (accepted and ignored for now). `to_og1` /
-  `process_mission` keep their single `deployment=` mapping argument.
+  forthcoming local-config overlay (set them under `global_attributes:` until it lands); a
+  `local_config:` key is reserved (must be `null` — `validate` errors on a non-null value,
+  since a dropped override would make a wrong file; no `config_version` bump when the feature
+  lands). `to_og1` / `process_mission` keep their single `deployment=` mapping argument.
 - The data mode defaults to `realtime` (id and file name suffix `R`) when neither the config
   nor `process --mode` sets it; it was `delayed`. `to_og1` / `process_mission` default to
   `mode="realtime"`, and `init` writes `mode: realtime`. Set `mode: delayed` for a delayed-mode file.

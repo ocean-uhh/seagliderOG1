@@ -32,7 +32,7 @@ platform:               # 'init --raw-dir' fills these; fill any null before val
   BATTERY_TYPE: null   # optional -> variable; see the OG1 battery_type vocabulary
   BATTERY_PACK: null   # optional -> variable; battery packaging
 
-platform_registry: null   # optional path to a serial -> per-platform registry; read once it lands
+local_config: null   # optional path to a directory of local config overrides; read once the feature lands
 
 identity_and_discovery:   # -> global attributes; who and where: identity and discovery globals
   id: null   # mandatory -> global attribute; leave null for the derived <serial>_<start>_<mode>; set only to override it

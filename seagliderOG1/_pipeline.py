@@ -637,7 +637,9 @@ def gather_sensor_info(
                     f"(basestation calibration comment: {previous})"
                 )
         if notes:
-            metadata["comment"] = "; ".join(notes) + "."
+            correction = "; ".join(notes) + "."
+            existing = metadata.get("comment")
+            metadata["comment"] = f"{existing} {correction}" if existing else correction
             _log.info(
                 "Sensor '%s' corrected from the mission config: %s", sensor, notes
             )

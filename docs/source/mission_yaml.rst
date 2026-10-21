@@ -82,13 +82,15 @@ Keys
        ``project``), rights (``doi``, ``license``, ``acknowledgment``) and provenance
        (``comment``). One key per global, written when set and skipped when null.
        ``validate`` errors on a key in the wrong section or an unknown one. ``program``,
-       ``program_vocabulary`` and ``network`` are not here — they are per-platform facts the
-       platform registry supplies; until it lands, set them under ``global_attributes``.
-   * - ``platform_registry``
+       ``program_vocabulary`` and ``network`` are not here — they are per-platform facts a
+       local-config overlay will supply; until it lands, set them under ``global_attributes``.
+   * - ``local_config``
      - str or null
      - ``null``
-     - Optional path to a serial → per-platform registry. Reserved now; read once the registry
-       lands. An accepted-and-ignored key until then.
+     - Optional path to a directory of local config overrides. Reserved for a coming release and
+       not read yet, so it must be ``null``; ``validate`` errors on a non-null value (a dropped
+       override would produce a wrong file that looks right). No ``config_version`` bump when the
+       feature lands — the key is already declared and optional.
    * - ``global_attributes``
      - mapping or null
      - ``null``
@@ -212,7 +214,7 @@ The template ``init`` writes (fill the nulls before ``validate``):
      BATTERY_TYPE: null   # optional -> variable
      BATTERY_PACK: null   # optional -> variable
 
-   platform_registry: null   # optional path to a serial -> per-platform registry; read once it lands
+   local_config: null   # optional path to a directory of local config overrides; read once the feature lands
 
    identity_and_discovery:   # -> global attributes
      id: null              # mandatory -> global attribute; null keeps the derived id

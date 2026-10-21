@@ -459,7 +459,7 @@ def test_deployment_id_overrides_derived_with_warning():
         warnings.simplefilter("always")
         ds = convert.to_og1(datasets, deployment={"id": "my_custom_id"})
     assert ds.attrs["id"] == "my_custom_id"
-    assert any("deployment.id overrides" in str(w.message) for w in caught)
+    assert any("identity_and_discovery.id overrides" in str(w.message) for w in caught)
 
 
 def test_global_attributes_refuses_a_sectioned_key():

@@ -2119,8 +2119,8 @@ def _config_suggestions(
         acdd = f"ACDD {level}"
         labels[name] = f"{labels[name]}; {acdd}" if name in labels else acdd
     # One box per mission.yaml section that sets a missing global; the rest go under
-    # global_attributes:. program/program_vocabulary/network have no section (the platform
-    # registry supplies them), so they fall to global_attributes: here.
+    # global_attributes:. program/program_vocabulary/network have no section (a local-config
+    # overlay will supply them), so they fall to global_attributes: here.
     boxes = []
     boxed: set[str] = set()
     for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items():

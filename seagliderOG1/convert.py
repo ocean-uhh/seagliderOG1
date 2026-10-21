@@ -853,11 +853,7 @@ def _check_metadata_keys(
         raise ValueError(msg)
     structured = set(_DEPLOYMENT_GLOBALS).intersection(set_globals)
     if structured:
-        home = {
-            key: slug
-            for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items()
-            for key in keys
-        }
+        home = vocabularies.CONFIG_GLOBAL_HOME
         moves = "; ".join(f"{key} -> {home[key]}:" for key in sorted(structured))
         msg = (
             "global_attributes may not set keys that have a structured home in a "
@@ -1079,8 +1075,9 @@ def _apply_deployment(
         existing = ds_og1.attrs.get(key)
         replaced = existing is not None and str(existing) != str(value)
         if replaced:
+            location = vocabularies.CONFIG_GLOBAL_HOME.get(key, "deployment")
             warnings.warn(
-                f"deployment.{key} overrides the converter value {existing!r} with "
+                f"{location}.{key} overrides the converter value {existing!r} with "
                 f"{value!r}.",
                 stacklevel=2,
             )
@@ -1475,7 +1472,9 @@ def to_og1(
     serial_comment = (
         f"mission config PLATFORM_SERIAL_NUMBER; the basestation platform_id was "
         f"{file_serial!r}."
-        if not _is_empty(file_serial) and str(file_serial) != str(platform_serial_number)
+        if not _is_empty(file_serial)
+        and str(file_serial).strip().lower()
+        != str(platform_serial_number).strip().lower()
         else None
     )
 

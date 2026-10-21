@@ -88,7 +88,7 @@ PLACEHOLDER_VALUES = frozenset({"", "None", "null", "null@null.com"})
 # Each yaml section slug is this schema's own contract; it is NOT derived from the vendored
 # page label (ctdcast owns those). tests/test_reports.py asserts every key groups under the
 # matching page label. program/program_vocabulary/network are deliberately absent: they are
-# per-platform facts the platform registry supplies, not per-mission text
+# per-platform facts a local-config overlay supplies, not per-mission text
 # (notes/2026-10-21-platform-registry.md); until the registry lands they are set, if needed,
 # through global_attributes:.
 CONFIG_GLOBAL_SECTIONS = {
@@ -114,6 +114,14 @@ CONFIG_GLOBAL_SECTIONS = {
 DEPLOYMENT_GLOBALS = tuple(
     key for keys in CONFIG_GLOBAL_SECTIONS.values() for key in keys
 )
+
+# Each sectioned global mapped to the slug of the section that sets it. The one inverse of
+# CONFIG_GLOBAL_SECTIONS: read by validate (wrong-section and collision messages), the
+# converter's collision/override messages, and the init template, so "which section owns
+# this key" has a single definition.
+CONFIG_GLOBAL_HOME = {
+    key: slug for slug, keys in CONFIG_GLOBAL_SECTIONS.items() for key in keys
+}
 
 
 # Globals the converter computes from the data (or at conversion time). A mission config

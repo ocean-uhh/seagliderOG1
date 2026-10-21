@@ -23,7 +23,7 @@ KNOWN_KEYS = frozenset(
         "keep_variables",
         "report",
         "platform",
-        "platform_registry",
+        "local_config",
         "identity_and_discovery",
         "rights_and_access",
         "provenance_and_processing",
@@ -173,6 +173,16 @@ def deployment_from_config(config: dict) -> dict:
     return merged
 
 
+def _package_version() -> str:
+    """Return the installed seagliderOG1 version, or a placeholder when unknown."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("seagliderOG1")
+    except PackageNotFoundError:
+        return "(unknown version)"
+
+
 def _scalar(value: object) -> str:
     """Render a Python value as a YAML scalar for the template.
 
@@ -238,9 +248,9 @@ def _set_in(name: str, source: str) -> str:
     """
     from seagliderOG1 import vocabularies
 
-    for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items():
-        if name in keys:
-            return slug
+    slug = vocabularies.CONFIG_GLOBAL_HOME.get(name)
+    if slug is not None:
+        return slug
     if source != "config":
         return ""
     if name.startswith("contributor_"):
@@ -497,7 +507,7 @@ def render_template(
         "",
         *_platform_template_lines(plat),
         "",
-        "platform_registry: null   # optional path to a serial -> per-platform registry; read once it lands",
+        "local_config: null   # optional path to a directory of local config overrides; read once the feature lands",
         "",
         *_global_section_lines(),
         "",
@@ -945,7 +955,7 @@ def _validate_global_sections(data: dict[str, object]) -> list[ValidationIssue]:
     from seagliderOG1 import vocabularies
 
     sections = vocabularies.CONFIG_GLOBAL_SECTIONS
-    home = {key: slug for slug, keys in sections.items() for key in keys}
+    home = vocabularies.CONFIG_GLOBAL_HOME
     platform_keys = set(_PLATFORM_ORDER)
     issues: list[ValidationIssue] = []
     for slug, keys in sections.items():
@@ -999,14 +1009,10 @@ def _validate_global_attributes(extra: object) -> list[ValidationIssue]:
         return []
     from seagliderOG1 import vocabularies
 
-    home = {
-        key: slug
-        for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items()
-        for key in keys
-    }
+    home = vocabularies.CONFIG_GLOBAL_HOME
     issues = []
     for key, value in extra.items():
-        if value is None or not str(value).strip():
+        if _is_placeholder(value):
             continue
         where = f"global_attributes.{key}"
         if key in home:
@@ -1177,6 +1183,16 @@ def validate_config(
     if "report" in data and not isinstance(data["report"], bool):
         issues.append(
             ValidationIssue("ERROR", "report must be true or false.", "report")
+        )
+    if not _is_placeholder(data.get("local_config")):
+        issues.append(
+            ValidationIssue(
+                "ERROR",
+                f"local_config is not read by seagliderOG1 {_package_version()}; a "
+                "non-null value would be silently ignored, so remove it (set null) or "
+                "upgrade to a version that supports it.",
+                "local_config",
+            )
         )
 
     dives = data.get("dives")
