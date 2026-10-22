@@ -662,21 +662,23 @@ def test_sensor_rows_list_each_sensor_its_users_and_placeholders(sg005_og1):
 
 def test_config_suggestions_offer_registry_entries_for_an_unmatched_name():
     """A config name the registry does not match exactly gets entries containing its words."""
-    assert conversion._registry_candidates("University of Hamburg") == [
-        ("1156", "University of Hamburg (IfM)")
+    assert conversion._registry_candidates("University of Hamburg Oceanography") == [
+        ("3323", "University of Hamburg")
     ]
     assert conversion._registry_candidates("No Such Institute") == []
     sidecar = {
         "config": {
-            "institutions": [{"name": "University of Hamburg", "role": "Operator"}]
+            "institutions": [
+                {"name": "University of Hamburg Oceanography", "role": "Operator"}
+            ]
         }
     }
     (block,) = conversion._config_suggestions(sidecar)
     assert block["title"] == "Institution not in the registry"
-    assert [b["label"] for b in block["boxes"]] == ["EDMO 1156"]
+    assert [b["label"] for b in block["boxes"]] == ["EDMO 3323"]
     assert yaml.safe_load(block["boxes"][0]["text"]) == {
         "institutions": [
-            {"name": "University of Hamburg (IfM)", "role": "Operator", "id": None}
+            {"name": "University of Hamburg", "role": "Operator", "id": None}
         ]
     }
 

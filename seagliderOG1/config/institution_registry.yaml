@@ -298,17 +298,20 @@ institutions:
     id_url: "https://edmo.seadatanet.org/report/4766"
     website: "https://www.hafogvatn.is"
 
-  "1156":  # University of Hamburg, Institute of Oceanography
-    standard_name: "University of Hamburg (IfM)"
+  "3323":  # University of Hamburg (UHH)
+    standard_name: "University of Hamburg"
     name_variants:
+      - "Universität Hamburg"
+      - "UHH"
       - "University of Hamburg, Institute of Oceanography"
       - "University of Hamburg Institute of Oceanography"
       - "University of Hamburg Institute of Oceanography (IfM)"
+      - "University of Hamburg (IfM)"
       - "IfM Hamburg"
       - "Institut für Meereskunde Hamburg"
     country: "Germany"
-    id_url: "https://edmo.seadatanet.org/report/1156"
-    website: "https://www.ifm.uni-hamburg.de"
+    id_url: "https://edmo.seadatanet.org/report/3323"
+    website: "https://www.uni-hamburg.de"
 
   "1586":  # Balearic Islands University, Department of Physics
     standard_name: "Balearic Islands University (Department of Physics)"

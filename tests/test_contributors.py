@@ -103,7 +103,7 @@ def test_institutions_format_and_parse() -> None:
         {
             "name": "Uni Hamburg",
             "role": "operating agency",
-            "id": "https://edmo.seadatanet.org/report/1156",
+            "id": "https://edmo.seadatanet.org/report/3323",
         },
         {"name": "Second Inst", "role": "funder", "id": None},
     ]
@@ -112,7 +112,7 @@ def test_institutions_format_and_parse() -> None:
     assert contributors.split_aligned(
         attrs["contributing_institutions_vocabulary"]
     ) == [
-        "https://edmo.seadatanet.org/report/1156",
+        "https://edmo.seadatanet.org/report/3323",
         "",
     ]
     roundtrip = contributors.parse_institutions(attrs)
@@ -170,7 +170,7 @@ def test_enrich_institutions_config_id_wins_and_unknown_warns() -> None:
     hit = contributors.enrich_institutions(
         [
             {
-                "name": "University of Hamburg (IfM)",
+                "name": "University of Hamburg",
                 "role": "Operator",
                 "id": "https://ror.org/x",
             }

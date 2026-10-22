@@ -37,7 +37,7 @@ datasets = readers.read_mission(source, first, last)
 ds = convert.to_og1(
     datasets,
     contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
-    institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],
+    institutions=[{"name": "University of Hamburg", "role": "Operator"}],
 )
 writers.write(ds, out)
 ```

@@ -51,7 +51,7 @@ provenance_and_processing:   # -> global attributes; provenance globals
   comment: null   # suggested -> global attribute; overrides a comment global the basestation files carry
 
 global_attributes: {}   # any other OG1 global, written as given: replace {} with lines
-  #   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)
+  #   institution: "University of Hamburg"   (a key above goes under its own block)
 
 contributors:           # one entry per person per role
   # role is a W08 term: Manufacturer, Owner, Operator, PI, Technical Coordinator,

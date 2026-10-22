@@ -180,7 +180,7 @@ copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds
   part of the mission, which would derive a later start time and so a different id;
 * *Institution not in the registry* — a config institution the registry does not match
   exactly, with the registry entries whose names contain every word of it (``University of
-  Hamburg`` → ``University of Hamburg (IfM)``, EDMO 1156);
+  Hamburg Oceanography`` → ``University of Hamburg``, EDMO 3323);
 * *Institution in the basestation files* — the basestation ``institution`` global's registry
   match, when no config institution resolved to it. The converter does not write the file's
   institution when the config lists institutions (it would be a second, role-less record), so
@@ -274,7 +274,7 @@ or from Python:
    ds = sg.convert(
        datasets,
        contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
-       institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],
+       institutions=[{"name": "University of Hamburg", "role": "Operator"}],
    )
    sg.write(ds, out)
 
