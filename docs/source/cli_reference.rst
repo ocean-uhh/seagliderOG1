@@ -51,8 +51,8 @@ The page reads it for its *Presence across dives* and *Before → after* section
 
 .. code-block:: console
 
-   wrote outputs/sg005_20080606T180256_delayed.nc
-     sg005_20080606T180256_delayed: 343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns) — see seagliderOG1 report outputs/sg005_20080606T180256_delayed.nc
+   wrote outputs/sg271_20260302T193828_R.nc
+     sg271_20260302T193828_R: 542 variables over 3 dives; 500 on every dive, 42 on some (5 patterns) — see seagliderOG1 report outputs/sg271_20260302T193828_R.nc
 
 The conversion record belongs to its OG1 file: it is replaced whenever the file is written. It records
 the file's ``tracking_id`` (a new UUID on every write) and the SHA-256 of its bytes; ``report``

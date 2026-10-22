@@ -29,12 +29,21 @@ __all__ = [
     "read_file",
     "read_mission",
     "repair_files",
+    "sample_mission_dir",
     "validate_filename",
 ]
 
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
+
+# The packaged sample mission (sg271 Drygalski Trough, PycnMix), shipped inside the package so the
+# demo runs from a pip install; see sample_mission_dir() and ``seagliderOG1 init --example``.
+SAMPLE_DIR = script_dir / "data" / "sg271"
+SAMPLE_CONFIG = SAMPLE_DIR / "sg271_drygalski_2026.yaml"
+#: The sample's OG1 conversion id. One source for `init --example`'s default output name and the
+#: docs workflows' hosted-report filename, so swapping the bundled sample is a single edit here.
+SAMPLE_ID = "sg271_20260302T193828_R"
 
 # readers.py: Will only read files.  Not manipulate them.
 
@@ -71,19 +80,34 @@ data_source_og = pooch.create(
 # Instead of loading from the server, we will load from a local directory for testing and development purposes.
 # The local directory will contain the same files as the server, but we will not use pooch to manage them.
 # Instead, we will just read them directly from the filesystem.
-def load_sample_basestation(
-    file_path: str = str(parent_dir / "data/demo_sg005/p0050001_20080606.nc"),
-) -> xr.Dataset:
-    """Open the demo sample Seaglider basestation file from the source repository.
+def sample_mission_dir() -> pathlib.Path:
+    """Return the packaged sample mission directory.
 
-    The sample lives under the repository's ``data/demo_sg005`` directory and is not shipped in
-    the installed package, so it resolves only from a source checkout.
+    The directory holds the bundled sg271 sample — three dives of the Drygalski Trough
+    PycnMix mission — and its ``mission.yaml``, shipped inside the installed package.
+
+    Returns
+    -------
+    pathlib.Path
+        The ``seagliderOG1/data/sg271`` directory.
+
+    """
+    return SAMPLE_DIR
+
+
+def load_sample_basestation(
+    file_path: str = str(SAMPLE_DIR / "p2710001.nc"),
+) -> xr.Dataset:
+    """Open a bundled sample Seaglider basestation file.
+
+    The sample is the sg271 Drygalski Trough mission (PycnMix), three dives shipped inside the
+    package, so it loads from an installed package as well as a source checkout.
 
     Parameters
     ----------
     file_path : str, optional
-        Path to the sample basestation file to load. Default is the demo sg005
-        dive 1 file under the repository's ``data/demo_sg005``.
+        Path to the sample basestation file to load. Default is the bundled sg271 dive 1 file
+        (``seagliderOG1/data/sg271/p2710001.nc``).
 
     Returns
     -------
@@ -98,7 +122,13 @@ def load_sample_basestation(
     """
     if pathlib.Path(file_path).is_file():
         return xr.open_dataset(file_path, engine="netcdf4", decode_timedelta=False)
-    available = [p.name for p in (parent_dir / "data/demo_sg005").iterdir()]
+    if not SAMPLE_DIR.is_dir():
+        msg = (
+            f"The packaged sample directory {SAMPLE_DIR} is missing; the sg271 sample was not "
+            "installed with the package."
+        )
+        raise FileNotFoundError(msg)
+    available = [p.name for p in SAMPLE_DIR.iterdir()]
     msg = f"Requested sample dataset {file_path} not known. Available datasets are: {available}"
     raise KeyError(msg)
 

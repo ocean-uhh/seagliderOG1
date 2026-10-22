@@ -98,10 +98,10 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 <h3>Required by OG1</h3>
 <p class="caption{% if og1_required_incomplete %} cell-bad{% endif %}">{{ og1_required_caption }}. The list is the upstream checker's (<code>ioos/cc-plugin-og</code>); amber: a required variable or the required dimension is absent.</p>
 <table class="nc sortable">
-<thead><tr><th>Required</th><th>Present</th><th>Orig var</th><th>Orig dim</th><th>Dims</th><th>Units</th><th>Valid %</th></tr></thead>
+<thead><tr><th>Required</th><th>Orig var</th><th>Orig dim</th><th>Dims</th><th>Units</th><th>Valid %</th></tr></thead>
 <tbody>
 {%- for r in og1_required %}
-<tr><td>{{ r.name }}</td><td{% if not r.present %} class="cell-bad"{% endif %}>{{ "yes" if r.present else "no" }}</td>
+<tr{% if not r.present %} class="cell-bad"{% endif %}><td>{{ r.name }}</td>
 <td>{{ r.orig_var }}</td><td>{{ r.orig_dim }}</td><td>{{ r.dims }}</td><td>{{ r.units }}</td><td>{{ r.valid }}</td></tr>
 {%- endfor %}
 </tbody></table>
@@ -110,10 +110,11 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 {%- if og1_sensors %}
 <p class="caption">{{ og1_sensors|length }} <code>SENSOR_*</code> variables, from the basestation calibration comments and <code>config/OG1_sensor_attributes.yaml</code>. Used by lists the variables whose <code>sensor</code> attribute names the sensor. Amber: the serial number or calibration date is a placeholder (empty, or every digit zero), so the basestation configuration did not record it; or two sensors share a serial number, which usually means a calibration comment was copied from another instrument. Both come from the basestation <code>sg_calib_constants</code>; check them against the calibration sheets.</p>
 <table class="nc sortable">
+<colgroup><col style="width:15%"><col style="width:7%"><col style="width:7%"><col style="width:16%"><col style="width:9%"><col style="width:11%"><col style="width:35%"></colgroup>
 <thead><tr><th>Sensor</th><th>Type</th><th>Maker</th><th>Model</th><th>Serial</th><th>Calibration</th><th>Used by</th></tr></thead>
 <tbody>
 {%- for r in og1_sensors %}
-<tr{% if r.bad %} class="cell-bad"{% endif %}><td>{{ r.name }}</td><td>{{ r.type }}</td><td>{{ r.maker }}</td><td>{{ r.model }}</td><td>{{ r.serial }}{% if r.shared %} (shared){% endif %}</td><td>{{ r.calibration }}</td><td class="cell-wrap">{{ r.n_used }}: {{ r.used_by }}</td></tr>
+<tr{% if r.bad %} class="cell-bad"{% endif %}><td class="cell-wrap">{{ r.name }}</td><td>{{ r.type }}</td><td>{{ r.maker }}</td><td>{{ r.model }}</td><td>{{ r.serial }}{% if r.shared %} (shared){% endif %}</td><td>{{ r.calibration }}</td><td class="cell-wrap">{{ r.n_used }}: {{ r.used_by }}</td></tr>
 {%- endfor %}
 </tbody></table>
 {%- else %}<p class="caption">Not applicable to this file: no <code>SENSOR_*</code> variables.</p>{% endif %}
@@ -132,12 +133,12 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 
 {%- for g in og1_candidate_groups %}
 <h3>Candidate for OG1 — {{ g.label }}</h3>
-<p class="caption">{{ g.n_present }} of {{ g.n_total }} present. Variables the project proposes to canonise (not yet in the OG1 vocabulary); recorded in <code>vocabularies.OG1_CANDIDATE_VARS</code>. Present/absent is informational — a file may predate a candidate.</p>
+<p class="caption">{{ g.n_present }} of {{ g.n_total }} present. Variables the project proposes to canonise (not yet in the OG1 vocabulary); recorded in <code>vocabularies.OG1_CANDIDATE_VARS</code>. An absent candidate (amber) is informational — a file may predate it.</p>
 <table class="nc sortable">
-<thead><tr><th>Candidate</th><th>Present</th><th>Orig var</th><th>Orig dim</th><th>Dims</th><th>Units</th><th>Valid %</th></tr></thead>
+<thead><tr><th>Candidate</th><th>Orig var</th><th>Orig dim</th><th>Dims</th><th>Units</th><th>Valid %</th></tr></thead>
 <tbody>
 {%- for r in g.rows %}
-<tr><td>{{ r.name }}</td><td>{{ "yes" if r.present else "no" }}</td>
+<tr{% if not r.present %} class="cell-bad"{% endif %}><td>{{ r.name }}</td>
 <td>{{ r.orig_var }}</td><td>{{ r.orig_dim }}</td><td>{{ r.dims }}</td><td>{{ r.units }}</td><td>{{ r.valid }}</td></tr>
 {%- endfor %}
 </tbody></table>

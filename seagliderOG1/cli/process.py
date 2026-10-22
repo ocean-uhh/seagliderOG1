@@ -261,6 +261,7 @@ def run(args: argparse.Namespace) -> int:
                 institutions=config.get("institutions"),
                 platform=config.get("platform"),
                 deployment=missionlib._merge_sections(config),
+                deployment_information=config.get("deployment_information"),
                 global_attributes=config.get("global_attributes"),
                 sensors=config.get("sensors"),
                 mode=mode,

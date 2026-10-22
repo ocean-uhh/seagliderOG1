@@ -254,7 +254,7 @@ def test_set_best_dtype_restores_depth_coord() -> None:
 
 
 def test_og1_name_mapping_sample_dataset():
-    ds1 = readers.load_sample_basestation()
+    ds1 = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)[0]
 
     mapping, time_variables = _pipeline.og1_name_mapping([ds1])
 

@@ -72,6 +72,12 @@ Keys
      - *(see below)*
      - OG1 platform fields. The required fields must be non-null when a platform block is
        present.
+   * - ``deployment_information``
+     - mapping or null
+     - ``null``
+     - The OG1 deployment variables ``DEPLOYMENT_TIME`` / ``DEPLOYMENT_LATITUDE`` /
+       ``DEPLOYMENT_LONGITUDE`` (*see below*). Any key left null is derived from the first
+       in-water fix. ``validate`` checks the lat/lon ranges and a timezone-bearing ISO time.
    * - ``identity_and_discovery``,
        ``rights_and_access``,
        ``provenance_and_processing``
@@ -135,6 +141,23 @@ maker (collection B75); the package supplies no default, because the right term 
 glider. For a University of Washington Seaglider M1, as in ``data/demo_sg005/mission.yaml``:
 ``https://vocab.nerc.ac.uk/collection/B76/current/B7600024/`` and
 ``https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/``.
+
+Deployment information
+----------------------
+
+The ``deployment_information`` block sets the OG1 deployment variables — the cruise-level
+position and time the glider went in the water:
+
+.. code-block:: yaml
+
+   deployment_information:
+     DEPLOYMENT_TIME: 2026-03-02T19:24:00Z   # ISO UTC; must precede the first data sample
+     DEPLOYMENT_LATITUDE: -72.98             # decimal degrees north
+     DEPLOYMENT_LONGITUDE: 171.4083          # decimal degrees east
+
+These are OG1 mandatory variables. Any key left null (or the whole block omitted) is derived
+from the first in-water fix instead, which is later than the true deployment; a
+``DEPLOYMENT_TIME`` after the first data sample warns.
 
 Global-attribute fields
 -----------------------

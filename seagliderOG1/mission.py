@@ -55,6 +55,7 @@ KNOWN_KEYS = frozenset(
         "keep_variables",
         "report",
         "platform",
+        "deployment_information",
         "local_config",
         "identity_and_discovery",
         "rights_and_access",
@@ -385,8 +386,11 @@ _PLATFORM_HINTS = {
     "WMO_IDENTIFIER": "from wmo_identifier",
     "PLATFORM_NAME": "local or nickname of the glider",
     "TELECOM_TYPE": "e.g. Iridium (comma-separated for several)",
-    "TRACKING_SYSTEM": "e.g. ARGOS, GPS",
-    "BATTERY_TYPE": "see the OG1 battery_type vocabulary",
+    "TRACKING_SYSTEM": "OG1 tracking_system: gps | argos doppler | Beidou | acoustic",
+    "BATTERY_TYPE": (
+        "OG1 battery_type: lithium | alkaline | lithium rechargeable | "
+        "alkaline rechargeable | alkaline + lithium | lithium primary"
+    ),
     "BATTERY_PACK": "battery packaging",
 }
 
@@ -773,6 +777,97 @@ def _validate_raw_dir(
     return issues
 
 
+_DEPLOYMENT_KEYS = ("DEPLOYMENT_TIME", "DEPLOYMENT_LATITUDE", "DEPLOYMENT_LONGITUDE")
+
+
+def _validate_deployment_information(block: object) -> list[ValidationIssue]:
+    """Validate the optional ``deployment_information`` block.
+
+    Checks that the block is a mapping with only the three ``DEPLOYMENT_*`` keys, that
+    latitude and longitude are numbers in range, and that ``DEPLOYMENT_TIME`` parses and
+    carries a timezone (a naive time against the UTC data clock is refused, not assumed UTC).
+    The "not after the first data sample" check needs the data and stays in the converter.
+
+    Parameters
+    ----------
+    block : object
+        The value of the ``deployment_information`` key, or None.
+
+    Returns
+    -------
+    list of ValidationIssue
+        One ERROR per malformed field; empty when the block is absent or valid.
+
+    """
+    where = "deployment_information"
+    if block in (None, {}, ""):
+        return []
+    if not isinstance(block, Mapping):
+        return [ValidationIssue("ERROR", f"{where} must be a mapping.", where)]
+    issues: list[ValidationIssue] = []
+    unknown = set(block) - set(_DEPLOYMENT_KEYS)
+    if unknown:
+        issues.append(
+            ValidationIssue(
+                "ERROR",
+                f"{where} has unknown keys {sorted(unknown)}; allowed are "
+                f"{list(_DEPLOYMENT_KEYS)}.",
+                where,
+            )
+        )
+    for key, low, high in (
+        ("DEPLOYMENT_LATITUDE", -90.0, 90.0),
+        ("DEPLOYMENT_LONGITUDE", -180.0, 180.0),
+    ):
+        value = block.get(key)
+        if value is None:
+            continue
+        where_key = f"{where}.{key}"
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            issues.append(
+                ValidationIssue(
+                    "ERROR", f"{where_key} must be a number, got {value!r}.", where_key
+                )
+            )
+            continue
+        if not low <= number <= high:
+            issues.append(
+                ValidationIssue(
+                    "ERROR",
+                    f"{where_key} must be between {low} and {high}, got {number}.",
+                    where_key,
+                )
+            )
+    time_value = block.get("DEPLOYMENT_TIME")
+    if time_value is not None:
+        import pandas as pd
+
+        where_key = f"{where}.DEPLOYMENT_TIME"
+        try:
+            stamp = pd.Timestamp(time_value)
+        except (ValueError, TypeError):
+            issues.append(
+                ValidationIssue(
+                    "ERROR",
+                    f"{where_key} is not a valid date/time: {time_value!r}.",
+                    where_key,
+                )
+            )
+        else:
+            if stamp.tzinfo is None:
+                issues.append(
+                    ValidationIssue(
+                        "ERROR",
+                        f"{where_key} must carry a timezone (a trailing 'Z' for UTC, or an "
+                        f"explicit offset); got {time_value!r}.",
+                        where_key,
+                    )
+                )
+    return issues
+
+
 def _validate_platform(platform: object) -> list[ValidationIssue]:
     """ERROR on a null required platform field when a platform block is present.
 
@@ -1126,6 +1221,7 @@ def _validate(
     issues.extend(_validate_global_sections(data))
     issues.extend(_validate_highly_desirable(data))
     issues.extend(_validate_platform(data.get("platform")))
+    issues.extend(_validate_deployment_information(data.get("deployment_information")))
     issues.extend(_validate_people(data.get("contributors"), "contributors", "PI"))
     issues.extend(
         _validate_people(data.get("institutions"), "institutions", "Operator")

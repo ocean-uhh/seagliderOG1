@@ -161,9 +161,8 @@ the conversion-record reader reads it back and ignores a conversion record whose
 
 The conversion page groups the variables into patterns — ``every dive``, ``from dive k``,
 ``until dive k``, ``dive k only``, ``dives a–b``, ``sporadic`` — and shows each as a strip over
-the dives. On the bundled ``demo_sg005`` sample (dives 1–5), 338 variables are on every dive,
-the four depth-averaged currents are present on every dive but have values from dive 2, and
-``log_ALTIM_BOTTOM_PING`` is on dive 4 only.
+the dives. On the bundled ``sg271`` sample (three dives), 500 of the 542 variables are on every
+dive and 42 vary across the dives, in five patterns.
 
 Nothing about this is added to the OG1 file.
 

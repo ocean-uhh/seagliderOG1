@@ -85,6 +85,13 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Added
 
+- A bundled sg271 sample mission (three dives, Drygalski Trough, PycnMix) ships inside the package:
+  `readers.load_sample_basestation()` returns it, `readers.sample_mission_dir()` gives its path, and
+  `seagliderOG1 init --example` writes its config pointing at the packaged dives so the demo runs from
+  a `pip install`. The `init` template lists the OG1 `tracking_system` and `battery_type` vocabularies.
+- A `deployment_information:` block in `mission.yaml` (`DEPLOYMENT_TIME`, `DEPLOYMENT_LATITUDE`,
+  `DEPLOYMENT_LONGITUDE`) sets the OG1 deployment variables from the cruise log instead of deriving
+  them from the first in-water fix; a `DEPLOYMENT_TIME` after the first data sample warns.
 - The v0.0.2 names are importable for one release and warn: a renamed name (e.g.
   `readers.load_basestation_files`, `convertOG1.convert_to_OG1`, `writers.save_dataset`)
   delegates to its 0.1.0 spelling and emits a `SeagliderDeprecationWarning` naming it; a removed
