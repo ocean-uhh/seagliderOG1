@@ -299,13 +299,13 @@ def test_process_dataset():
 
     ctd_dim, merge_dims, all_dims = _pipeline._get_merge_dimensions([ds1])
 
-    # create og1_mapping for standardise_og1
+    # create og1_mapping for apply_og1_vocabulary
     og1_mapping, time_variables = _pipeline.og1_name_mapping([ds1])
 
     merged_ds = _pipeline.merge_datasets_along_time(split_ds, time_variables)
 
     # Check initial variables are reformatted
-    dsa = _convert.standardise_og1(merged_ds, og1_mapping=og1_mapping)
+    dsa = _convert.apply_og1_vocabulary(merged_ds, og1_mapping=og1_mapping)
     varlist = list(dsa.data_vars)
     coordlist = list(dsa.coords)
     combined_list = varlist + coordlist

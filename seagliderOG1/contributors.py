@@ -445,3 +445,19 @@ def enrich_institutions(institutions: Sequence[Mapping]) -> list[dict[str, str]]
                 )
         enriched.append({"name": name, "role": role, "id": institution_id})
     return enriched
+
+
+# --- deprecated v0.0.2 names (removed in 0.3.0; see seagliderOG1._deprecated) ----------
+from seagliderOG1 import _deprecated  # noqa: E402  # shims follow the definitions above
+
+registry_institutions = _deprecated._renamed(
+    institution_registry,
+    "contributors.registry_institutions",
+    "contributors.institution_registry",
+)
+normalize_orcid = _deprecated._renamed(
+    canonical_orcid, "contributors.normalize_orcid", "contributors.canonical_orcid"
+)
+normalize_role = _deprecated._renamed(
+    canonical_role, "contributors.normalize_role", "contributors.canonical_role"
+)

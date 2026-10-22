@@ -85,6 +85,12 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Added
 
+- The v0.0.2 names are importable for one release and warn: a renamed name (e.g.
+  `readers.load_basestation_files`, `convertOG1.convert_to_OG1`, `writers.save_dataset`)
+  delegates to its 0.1.0 spelling and emits a `SeagliderDeprecationWarning` naming it; a removed
+  name (e.g. `convertOG1.process_and_save_data`, `vocabularies.load_default_contributors`) raises
+  with a message pointing at the migration guide. All of it is removed in 0.3.0. See *Migrating
+  to 0.1.0*.
 - `sensors:` in `mission.yaml` (`to_og1(sensors=...)`): correct a basestation sensor record's
   `serial_number` and `calibration_date` by its sensor key; the corrected serial names the
   `SENSOR_*` variable, and its `comment` records the replaced value.

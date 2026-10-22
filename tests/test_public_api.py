@@ -64,6 +64,26 @@ def test_pipeline_not_advertised():
         assert "_pipeline" not in getattr(mod, "__all__", [])
 
 
+def test_deprecation_shims_are_not_advertised():
+    """The shim module declares nothing public, and no public __all__ lists a shim name.
+
+    The shim names come from the single list ``_deprecated.SHIM_NAMES`` (not a copy here),
+    so this guard cannot drift from the actual shims.
+    """
+    deprecated = importlib.import_module("seagliderOG1._deprecated")
+    assert deprecated.__all__ == []
+    shim_names = set(deprecated.SHIM_NAMES)
+    for name in PUBLIC_MODULES:
+        advertised = set(
+            getattr(importlib.import_module(f"seagliderOG1.{name}"), "__all__", [])
+        )
+        leaked = advertised & shim_names
+        assert not leaked, f"{name}.__all__ advertises deprecated shim(s): {leaked}"
+    import seagliderOG1 as sg
+
+    assert not (set(sg.__all__) & shim_names)
+
+
 def test_no_external_private_imports():
     """Shipped notebooks and docs must not reach into seagliderOG1._pipeline."""
     offenders = []

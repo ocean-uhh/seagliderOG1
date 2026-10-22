@@ -651,3 +651,47 @@ def repair_time_metadata(
 
     tmp_path.replace(path)
     return fixed_vars
+
+
+# --- deprecated v0.0.2 names (removed in 0.3.0; see seagliderOG1._deprecated) ----------
+from seagliderOG1 import _deprecated  # noqa: E402  # shims follow the definitions above
+
+load_basestation_files = _deprecated._renamed(
+    read_mission,
+    "readers.load_basestation_files",
+    "seagliderOG1.read / readers.read_mission",
+)
+load_first_basestation_file = _deprecated._renamed(
+    read_file, "readers.load_first_basestation_file", "readers.read_file"
+)
+scan_and_repair_files = _deprecated._renamed(
+    repair_files, "readers.scan_and_repair_files", "readers.repair_files"
+)
+repair_netcdf_time_metadata_inplace = _deprecated._renamed(
+    repair_time_metadata,
+    "readers.repair_netcdf_time_metadata_inplace",
+    "readers.repair_time_metadata",
+)
+profnum_from_filename = _deprecated._renamed(
+    profile_number_from_filename,
+    "readers.profnum_from_filename",
+    "readers.profile_number_from_filename",
+)
+glider_sn_from_filename = _deprecated._renamed(
+    serial_from_filename,
+    "readers.glider_sn_from_filename",
+    "readers.serial_from_filename",
+)
+
+# load_sample_dataset is tier C: v0.0.2 fetched a named sample from an online pooch
+# registry, which was removed, so there is nothing to delegate to (returning the bundled
+# sample for any key would be a silent substitution).
+_deprecated.install_removed(
+    globals(),
+    {
+        "load_sample_dataset": (
+            "the online sample registry was removed in 0.1.0; the bundled sample is "
+            "readers.load_sample_basestation(), and any file is readers.read_file(path)."
+        ),
+    },
+)
