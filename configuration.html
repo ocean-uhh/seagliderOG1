@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Configuration &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
+  <title>Overview &mdash; seagliderOG1 0.0.2.post1.dev83 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=8794b28d"></script>
+      <script src="_static/documentation_options.js?v=23ec3694"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -22,7 +22,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="mission.yaml reference" href="mission_yaml.html" />
-    <link rel="prev" title="The conversion page" href="conversion_page.html" /> 
+    <link rel="prev" title="Example report" href="example_report.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -48,20 +48,24 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg271 sample</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_report.html">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#packaged-not-yours-to-set">Packaged, not yours to set</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#reused-across-missions">Reused across missions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#per-mission">Per mission</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#package-defaults">Package defaults</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fleet-level-config">Fleet-level config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mission-level-config">Mission-level config</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#generating-a-starting-configuration">Generating a starting configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#what-the-conversion-report-checks">What the conversion report checks</a></li>
 </ul>
@@ -98,7 +102,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Configuration</li>
+      <li class="breadcrumb-item active">Overview</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/configuration.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -108,28 +112,27 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="configuration">
-<span id="id1"></span><h1>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h1>
+  <section id="overview">
+<span id="configuration"></span><h1>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h1>
 <p>Converting a Seaglider mission to OG1 needs metadata the basestation files do not carry, carry
 only in part, or carry wrongly. That configuration sits at three levels, from fixed to
 per-mission.</p>
-<section id="packaged-not-yours-to-set">
-<h2>Packaged, not yours to set<a class="headerlink" href="#packaged-not-yours-to-set" title="Link to this heading"></a></h2>
-<p>Units, the basestation → OG1 variable-name mappings, and the OG1 controlled vocabularies are
-fixed by the OG1 format and shipped with the package. They are the same for every mission and
+<section id="package-defaults">
+<h2>Package defaults<a class="headerlink" href="#package-defaults" title="Link to this heading"></a></h2>
+<p>Some default mappings are shipped with the package including canonical units and conversion, the mapping from specific basestation variables to OG1 variables, and the OG1 controlled vocabularies.   They are the same for every mission and
 are not user configuration; see <a class="reference internal" href="defaults.html#defaults"><span class="std std-ref">Packaged defaults and your local tables</span></a>. A variable OG1 does not specify keeps its
-basestation name — the one place a local vocabulary choice may later matter (below).</p>
+basestation name — in this case, you can set a local vocabulary choice (see below).</p>
 </section>
-<section id="reused-across-missions">
-<h2>Reused across missions<a class="headerlink" href="#reused-across-missions" title="Link to this heading"></a></h2>
-<p>Some metadata rarely changes between deployments: your institution and its EDMO code, and, in
-future, vocabulary choices for variables OG1 does not specify. Today the institution and
+<section id="fleet-level-config">
+<h2>Fleet-level config<a class="headerlink" href="#fleet-level-config" title="Link to this heading"></a></h2>
+<p>Some metadata rarely changes between deployments: your institution and its EDMO code, and, in the
+future, vocabulary choices for variables OG1 does not specify. At the moment, the institution and
 contributor records are repeated in each mission’s <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>. A future <code class="docutils literal notranslate"><span class="pre">fleet.yaml</span></code>
 will hold them once for a fleet or institution, set in one place rather than per mission (see
 the tip on <a class="reference internal" href="defaults.html#defaults"><span class="std std-ref">Packaged defaults and your local tables</span></a>).</p>
 </section>
-<section id="per-mission">
-<h2>Per mission<a class="headerlink" href="#per-mission" title="Link to this heading"></a></h2>
+<section id="mission-level-config">
+<h2>Mission-level config<a class="headerlink" href="#mission-level-config" title="Link to this heading"></a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> you keep beside the data carries everything specific to one deployment (see
 <a class="reference internal" href="mission_yaml.html#mission-yaml"><span class="std std-ref">mission.yaml reference</span></a> for every key). The file name is yours — <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> is only the default
 <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">init</span></code> writes, and <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">process</span> <span class="pre">my_mission.yaml</span></code> works just as well; the
@@ -169,7 +172,7 @@ See <a class="reference internal" href="conversion_page.html#conversion-page"><s
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="conversion_page.html" class="btn btn-neutral float-left" title="The conversion page" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="example_report.html" class="btn btn-neutral float-left" title="Example report" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="mission_yaml.html" class="btn btn-neutral float-right" title="mission.yaml reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.readers &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
+  <title>seagliderOG1.readers &mdash; seagliderOG1 0.0.2.post1.dev83 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=8794b28d"></script>
+      <script src="../../_static/documentation_options.js?v=23ec3694"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -45,17 +45,21 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo.html">Demo: the sg271 sample</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">Demo notebook</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_report.html">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
@@ -130,12 +134,21 @@
     <span class="s2">"read_file"</span><span class="p">,</span>
     <span class="s2">"read_mission"</span><span class="p">,</span>
     <span class="s2">"repair_files"</span><span class="p">,</span>
+    <span class="s2">"sample_mission_dir"</span><span class="p">,</span>
     <span class="s2">"validate_filename"</span><span class="p">,</span>
 <span class="p">]</span>
 
 <span class="n">script_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
 <span class="n">parent_dir</span> <span class="o">=</span> <span class="n">script_dir</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">parent_dir</span><span class="p">))</span>
+
+<span class="c1"># The packaged sample mission (sg271 Drygalski Trough, PycnMix), shipped inside the package so the</span>
+<span class="c1"># demo runs from a pip install; see sample_mission_dir() and ``seagliderOG1 init --example``.</span>
+<span class="n">SAMPLE_DIR</span> <span class="o">=</span> <span class="n">script_dir</span> <span class="o">/</span> <span class="s2">"data"</span> <span class="o">/</span> <span class="s2">"sg271"</span>
+<span class="n">SAMPLE_CONFIG</span> <span class="o">=</span> <span class="n">SAMPLE_DIR</span> <span class="o">/</span> <span class="s2">"sg271_drygalski_2026.yaml"</span>
+<span class="c1">#: The sample's OG1 conversion id. One source for `init --example`'s default output name and the</span>
+<span class="c1">#: docs workflows' hosted-report filename, so swapping the bundled sample is a single edit here.</span>
+<span class="n">SAMPLE_ID</span> <span class="o">=</span> <span class="s2">"sg271_20260302T193828_R"</span>
 
 <span class="c1"># readers.py: Will only read files.  Not manipulate them.</span>
 
@@ -172,21 +185,39 @@
 <span class="c1"># Instead of loading from the server, we will load from a local directory for testing and development purposes.</span>
 <span class="c1"># The local directory will contain the same files as the server, but we will not use pooch to manage them.</span>
 <span class="c1"># Instead, we will just read them directly from the filesystem.</span>
+<div class="viewcode-block" id="sample_mission_dir">
+<a class="viewcode-back" href="../../api.html#seagliderOG1.sample_mission_dir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sample_mission_dir</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the packaged sample mission directory.</span>
+
+<span class="sd">    The directory holds the bundled sg271 sample — three dives of the Drygalski Trough</span>
+<span class="sd">    PycnMix mission — and its ``mission.yaml``, shipped inside the installed package.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pathlib.Path</span>
+<span class="sd">        The ``seagliderOG1/data/sg271`` directory.</span>
+
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">SAMPLE_DIR</span></div>
+
+
+
 <div class="viewcode-block" id="load_sample_basestation">
 <a class="viewcode-back" href="../../api.html#seagliderOG1.load_sample_basestation">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_sample_basestation</span><span class="p">(</span>
-    <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">parent_dir</span> <span class="o">/</span> <span class="s2">"data/demo_sg005/p0050001_20080606.nc"</span><span class="p">),</span>
+    <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">SAMPLE_DIR</span> <span class="o">/</span> <span class="s2">"p2710001.nc"</span><span class="p">),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Open the demo sample Seaglider basestation file from the source repository.</span>
+<span class="w">    </span><span class="sd">"""Open a bundled sample Seaglider basestation file.</span>
 
-<span class="sd">    The sample lives under the repository's ``data/demo_sg005`` directory and is not shipped in</span>
-<span class="sd">    the installed package, so it resolves only from a source checkout.</span>
+<span class="sd">    The sample is the sg271 Drygalski Trough mission (PycnMix), three dives shipped inside the</span>
+<span class="sd">    package, so it loads from an installed package as well as a source checkout.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    file_path : str, optional</span>
-<span class="sd">        Path to the sample basestation file to load. Default is the demo sg005</span>
-<span class="sd">        dive 1 file under the repository's ``data/demo_sg005``.</span>
+<span class="sd">        Path to the sample basestation file to load. Default is the bundled sg271 dive 1 file</span>
+<span class="sd">        (``seagliderOG1/data/sg271/p2710001.nc``).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -201,7 +232,13 @@
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">"netcdf4"</span><span class="p">,</span> <span class="n">decode_timedelta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">available</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="n">parent_dir</span> <span class="o">/</span> <span class="s2">"data/demo_sg005"</span><span class="p">)</span><span class="o">.</span><span class="n">iterdir</span><span class="p">()]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">SAMPLE_DIR</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"The packaged sample directory </span><span class="si">{</span><span class="n">SAMPLE_DIR</span><span class="si">}</span><span class="s2"> is missing; the sg271 sample was not "</span>
+            <span class="s2">"installed with the package."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="n">available</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">SAMPLE_DIR</span><span class="o">.</span><span class="n">iterdir</span><span class="p">()]</span>
     <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Requested sample dataset </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2"> not known. Available datasets are: </span><span class="si">{</span><span class="n">available</span><span class="si">}</span><span class="s2">"</span>
     <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
 

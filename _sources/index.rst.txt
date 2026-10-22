@@ -22,7 +22,13 @@ https://github.com/ocean-uhh/seagliderOG1/issues/new.
    :caption: The conversion
 
    conversion
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Report
+
    conversion_page
+   example_report
 
 .. toctree::
    :maxdepth: 2

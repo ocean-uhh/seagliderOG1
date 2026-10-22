@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.mission &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
+  <title>seagliderOG1.mission &mdash; seagliderOG1 0.0.2.post1.dev83 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=8794b28d"></script>
+      <script src="../../_static/documentation_options.js?v=23ec3694"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -45,17 +45,21 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo.html">Demo: the sg271 sample</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">Demo notebook</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_report.html">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
@@ -156,6 +160,7 @@
         <span class="s2">"keep_variables"</span><span class="p">,</span>
         <span class="s2">"report"</span><span class="p">,</span>
         <span class="s2">"platform"</span><span class="p">,</span>
+        <span class="s2">"deployment_information"</span><span class="p">,</span>
         <span class="s2">"local_config"</span><span class="p">,</span>
         <span class="s2">"identity_and_discovery"</span><span class="p">,</span>
         <span class="s2">"rights_and_access"</span><span class="p">,</span>
@@ -492,8 +497,11 @@
     <span class="s2">"WMO_IDENTIFIER"</span><span class="p">:</span> <span class="s2">"from wmo_identifier"</span><span class="p">,</span>
     <span class="s2">"PLATFORM_NAME"</span><span class="p">:</span> <span class="s2">"local or nickname of the glider"</span><span class="p">,</span>
     <span class="s2">"TELECOM_TYPE"</span><span class="p">:</span> <span class="s2">"e.g. Iridium (comma-separated for several)"</span><span class="p">,</span>
-    <span class="s2">"TRACKING_SYSTEM"</span><span class="p">:</span> <span class="s2">"e.g. ARGOS, GPS"</span><span class="p">,</span>
-    <span class="s2">"BATTERY_TYPE"</span><span class="p">:</span> <span class="s2">"see the OG1 battery_type vocabulary"</span><span class="p">,</span>
+    <span class="s2">"TRACKING_SYSTEM"</span><span class="p">:</span> <span class="s2">"OG1 tracking_system: gps | argos doppler | Beidou | acoustic"</span><span class="p">,</span>
+    <span class="s2">"BATTERY_TYPE"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">"OG1 battery_type: lithium | alkaline | lithium rechargeable | "</span>
+        <span class="s2">"alkaline rechargeable | alkaline + lithium | lithium primary"</span>
+    <span class="p">),</span>
     <span class="s2">"BATTERY_PACK"</span><span class="p">:</span> <span class="s2">"battery packaging"</span><span class="p">,</span>
 <span class="p">}</span>
 
@@ -883,6 +891,97 @@
     <span class="k">return</span> <span class="n">issues</span>
 
 
+<span class="n">_DEPLOYMENT_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"DEPLOYMENT_TIME"</span><span class="p">,</span> <span class="s2">"DEPLOYMENT_LATITUDE"</span><span class="p">,</span> <span class="s2">"DEPLOYMENT_LONGITUDE"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_deployment_information</span><span class="p">(</span><span class="n">block</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ValidationIssue</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Validate the optional ``deployment_information`` block.</span>
+
+<span class="sd">    Checks that the block is a mapping with only the three ``DEPLOYMENT_*`` keys, that</span>
+<span class="sd">    latitude and longitude are numbers in range, and that ``DEPLOYMENT_TIME`` parses and</span>
+<span class="sd">    carries a timezone (a naive time against the UTC data clock is refused, not assumed UTC).</span>
+<span class="sd">    The "not after the first data sample" check needs the data and stays in the converter.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    block : object</span>
+<span class="sd">        The value of the ``deployment_information`` key, or None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of ValidationIssue</span>
+<span class="sd">        One ERROR per malformed field; empty when the block is absent or valid.</span>
+
+<span class="sd">    """</span>
+    <span class="n">where</span> <span class="o">=</span> <span class="s2">"deployment_information"</span>
+    <span class="k">if</span> <span class="n">block</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">""</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">ValidationIssue</span><span class="p">(</span><span class="s2">"ERROR"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2"> must be a mapping."</span><span class="p">,</span> <span class="n">where</span><span class="p">)]</span>
+    <span class="n">issues</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ValidationIssue</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">unknown</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">block</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">_DEPLOYMENT_KEYS</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+        <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">ValidationIssue</span><span class="p">(</span>
+                <span class="s2">"ERROR"</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2"> has unknown keys </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span><span class="si">}</span><span class="s2">; allowed are "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_DEPLOYMENT_KEYS</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">,</span>
+                <span class="n">where</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">low</span><span class="p">,</span> <span class="n">high</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="p">(</span><span class="s2">"DEPLOYMENT_LATITUDE"</span><span class="p">,</span> <span class="o">-</span><span class="mf">90.0</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"DEPLOYMENT_LONGITUDE"</span><span class="p">,</span> <span class="o">-</span><span class="mf">180.0</span><span class="p">,</span> <span class="mf">180.0</span><span class="p">),</span>
+    <span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">where_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">number</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="s2">"ERROR"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where_key</span><span class="si">}</span><span class="s2"> must be a number, got </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">."</span><span class="p">,</span> <span class="n">where_key</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">low</span> <span class="o">&lt;=</span> <span class="n">number</span> <span class="o">&lt;=</span> <span class="n">high</span><span class="p">:</span>
+            <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="s2">"ERROR"</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where_key</span><span class="si">}</span><span class="s2"> must be between </span><span class="si">{</span><span class="n">low</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">high</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">."</span><span class="p">,</span>
+                    <span class="n">where_key</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+    <span class="n">time_value</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"DEPLOYMENT_TIME"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">time_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+        <span class="n">where_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">.DEPLOYMENT_TIME"</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">stamp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">time_value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="s2">"ERROR"</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where_key</span><span class="si">}</span><span class="s2"> is not a valid date/time: </span><span class="si">{</span><span class="n">time_value</span><span class="si">!r}</span><span class="s2">."</span><span class="p">,</span>
+                    <span class="n">where_key</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">stamp</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">ValidationIssue</span><span class="p">(</span>
+                        <span class="s2">"ERROR"</span><span class="p">,</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where_key</span><span class="si">}</span><span class="s2"> must carry a timezone (a trailing 'Z' for UTC, or an "</span>
+                        <span class="sa">f</span><span class="s2">"explicit offset); got </span><span class="si">{</span><span class="n">time_value</span><span class="si">!r}</span><span class="s2">."</span><span class="p">,</span>
+                        <span class="n">where_key</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+    <span class="k">return</span> <span class="n">issues</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_validate_platform</span><span class="p">(</span><span class="n">platform</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ValidationIssue</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""ERROR on a null required platform field when a platform block is present.</span>
 
@@ -1236,6 +1335,7 @@
     <span class="n">issues</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_validate_global_sections</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
     <span class="n">issues</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_validate_highly_desirable</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
     <span class="n">issues</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_validate_platform</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"platform"</span><span class="p">)))</span>
+    <span class="n">issues</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_validate_deployment_information</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deployment_information"</span><span class="p">)))</span>
     <span class="n">issues</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_validate_people</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"contributors"</span><span class="p">),</span> <span class="s2">"contributors"</span><span class="p">,</span> <span class="s2">"PI"</span><span class="p">))</span>
     <span class="n">issues</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
         <span class="n">_validate_people</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"institutions"</span><span class="p">),</span> <span class="s2">"institutions"</span><span class="p">,</span> <span class="s2">"Operator"</span><span class="p">)</span>

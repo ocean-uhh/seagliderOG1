@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
+  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev83 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=8794b28d"></script>
+      <script src="_static/documentation_options.js?v=23ec3694"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -22,7 +22,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Packaged defaults and your local tables" href="defaults.html" />
-    <link rel="prev" title="Configuration" href="configuration.html" /> 
+    <link rel="prev" title="Overview" href="configuration.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -48,20 +48,25 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg271 sample</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_report.html">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Overview</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">mission.yaml reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#keys">Keys</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#platform-fields">Platform fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deployment-information">Deployment information</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#global-attribute-fields">Global-attribute fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sensor-corrections">Sensor corrections</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#contributor-and-institution-records">Contributor and institution records</a></li>
@@ -193,7 +198,14 @@ for a <code class="docutils literal notranslate"><span class="pre">SN/DATE</span
 <td><p>OG1 platform fields. The required fields must be non-null when a platform block is
 present.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">identity_and_discovery</span></code>,
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deployment_information</span></code></p></td>
+<td><p>mapping or null</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
+<td><p>The OG1 deployment variables <code class="docutils literal notranslate"><span class="pre">DEPLOYMENT_TIME</span></code> / <code class="docutils literal notranslate"><span class="pre">DEPLOYMENT_LATITUDE</span></code> /
+<code class="docutils literal notranslate"><span class="pre">DEPLOYMENT_LONGITUDE</span></code> (<em>see below</em>). Any key left null is derived from the first
+in-water fix. <code class="docutils literal notranslate"><span class="pre">validate</span></code> checks the lat/lon ranges and a timezone-bearing ISO time.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">identity_and_discovery</span></code>,
 <code class="docutils literal notranslate"><span class="pre">rights_and_access</span></code>,
 <code class="docutils literal notranslate"><span class="pre">provenance_and_processing</span></code></p></td>
 <td><p>mapping</p></td>
@@ -206,7 +218,7 @@ convention groups: identity (<code class="docutils literal notranslate"><span cl
 <code class="docutils literal notranslate"><span class="pre">program_vocabulary</span></code> and <code class="docutils literal notranslate"><span class="pre">network</span></code> are not here — they are per-platform facts a
 local-config overlay will supply; until it lands, set them under <code class="docutils literal notranslate"><span class="pre">global_attributes</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">local_config</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">local_config</span></code></p></td>
 <td><p>str or null</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
 <td><p>Optional path to a directory of local config overrides. Reserved for a coming release and
@@ -214,7 +226,7 @@ not read yet, so it must be <code class="docutils literal notranslate"><span cla
 override would produce a wrong file that looks right). No <code class="docutils literal notranslate"><span class="pre">config_version</span></code> bump when the
 feature lands — the key is already declared and optional.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">global_attributes</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">global_attributes</span></code></p></td>
 <td><p>mapping or null</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
 <td><p>Verbatim escape hatch written into the OG1 file (null values are skipped). You may not
@@ -228,19 +240,19 @@ naming where the key goes. Replace the <code class="docutils literal notranslate
 </div>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sensors</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sensors</span></code></p></td>
 <td><p>mapping or null</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
 <td><p>Corrections to a basestation sensor record, keyed by the sensor’s name in the files’
 <code class="docutils literal notranslate"><span class="pre">instrument</span></code> global (<code class="docutils literal notranslate"><span class="pre">legato</span></code>, <code class="docutils literal notranslate"><span class="pre">tridentebb700chla470fdom365</span></code>, <code class="docutils literal notranslate"><span class="pre">sbe41</span></code>, …):
 <code class="docutils literal notranslate"><span class="pre">serial_number</span></code> and <code class="docutils literal notranslate"><span class="pre">calibration_date</span></code>. See <a class="reference internal" href="#sensor-corrections">Sensor corrections</a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contributors</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors</span></code></p></td>
 <td><p>list</p></td>
 <td><p><em>(required)</em></p></td>
 <td><p>One record per person per role; at least one with role <code class="docutils literal notranslate"><span class="pre">PI</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">institutions</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">institutions</span></code></p></td>
 <td><p>list</p></td>
 <td><p><em>(required)</em></p></td>
 <td><p>One record per institution per role; at least one with role <code class="docutils literal notranslate"><span class="pre">Operator</span></code>; resolved
@@ -341,6 +353,20 @@ maker (collection B75); the package supplies no default, because the right term 
 glider. For a University of Washington Seaglider M1, as in <code class="docutils literal notranslate"><span class="pre">data/demo_sg005/mission.yaml</span></code>:
 <code class="docutils literal notranslate"><span class="pre">https://vocab.nerc.ac.uk/collection/B76/current/B7600024/</span></code> and
 <code class="docutils literal notranslate"><span class="pre">https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/</span></code>.</p>
+</section>
+<section id="deployment-information">
+<h2>Deployment information<a class="headerlink" href="#deployment-information" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">deployment_information</span></code> block sets the OG1 deployment variables — the cruise-level
+position and time the glider went in the water:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">deployment_information</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">DEPLOYMENT_TIME</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2026-03-02T19:24:00Z</span><span class="w">   </span><span class="c1"># ISO UTC; must precede the first data sample</span>
+<span class="w">  </span><span class="nt">DEPLOYMENT_LATITUDE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-72.98</span><span class="w">             </span><span class="c1"># decimal degrees north</span>
+<span class="w">  </span><span class="nt">DEPLOYMENT_LONGITUDE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">171.4083</span><span class="w">          </span><span class="c1"># decimal degrees east</span>
+</pre></div>
+</div>
+<p>These are OG1 mandatory variables. Any key left null (or the whole block omitted) is derived
+from the first in-water fix instead, which is later than the true deployment; a
+<code class="docutils literal notranslate"><span class="pre">DEPLOYMENT_TIME</span></code> after the first data sample warns.</p>
 </section>
 <section id="global-attribute-fields">
 <h2>Global-attribute fields<a class="headerlink" href="#global-attribute-fields" title="Link to this heading"></a></h2>
@@ -510,7 +536,7 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="configuration.html" class="btn btn-neutral float-left" title="Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="configuration.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="defaults.html" class="btn btn-neutral float-right" title="Packaged defaults and your local tables" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

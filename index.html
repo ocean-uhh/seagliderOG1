@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1 &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
+  <title>seagliderOG1 &mdash; seagliderOG1 0.0.2.post1.dev83 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=8794b28d"></script>
+      <script src="_static/documentation_options.js?v=23ec3694"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -47,17 +47,21 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg271 sample</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_report.html">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
@@ -117,7 +121,7 @@ mission in, one OG1 file out; the platform, contributor and institution metadata
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#from-python">From Python</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg271 sample</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="demo.html#the-sample">The sample</a></li>
 <li class="toctree-l2"><a class="reference internal" href="demo.html#run-it">Run it</a></li>
 </ul>
@@ -142,19 +146,25 @@ mission in, one OG1 file out; the platform, contributor and institution metadata
 <li class="toctree-l2"><a class="reference internal" href="conversion.html#checking-the-output">Checking the output</a></li>
 </ul>
 </li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="conversion_page.html#what-the-conversion-records">What the conversion records</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="example_report.html">Example report</a></li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="configuration.html#packaged-not-yours-to-set">Packaged, not yours to set</a></li>
-<li class="toctree-l2"><a class="reference internal" href="configuration.html#reused-across-missions">Reused across missions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="configuration.html#per-mission">Per mission</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#package-defaults">Package defaults</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#fleet-level-config">Fleet-level config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#mission-level-config">Mission-level config</a></li>
 <li class="toctree-l2"><a class="reference internal" href="configuration.html#generating-a-starting-configuration">Generating a starting configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="configuration.html#what-the-conversion-report-checks">What the conversion report checks</a></li>
 </ul>
@@ -162,6 +172,7 @@ mission in, one OG1 file out; the platform, contributor and institution metadata
 <li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="mission_yaml.html#keys">Keys</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mission_yaml.html#platform-fields">Platform fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mission_yaml.html#deployment-information">Deployment information</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mission_yaml.html#global-attribute-fields">Global-attribute fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mission_yaml.html#sensor-corrections">Sensor corrections</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mission_yaml.html#contributor-and-institution-records">Contributor and institution records</a></li>

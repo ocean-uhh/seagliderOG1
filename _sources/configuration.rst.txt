@@ -1,31 +1,30 @@
 .. _configuration:
 
-Configuration
-=============
+Overview
+========
 
 Converting a Seaglider mission to OG1 needs metadata the basestation files do not carry, carry
 only in part, or carry wrongly. That configuration sits at three levels, from fixed to
 per-mission.
 
-Packaged, not yours to set
---------------------------
+Package defaults
+----------------
 
-Units, the basestation → OG1 variable-name mappings, and the OG1 controlled vocabularies are
-fixed by the OG1 format and shipped with the package. They are the same for every mission and
+Some default mappings are shipped with the package including canonical units and conversion, the mapping from specific basestation variables to OG1 variables, and the OG1 controlled vocabularies.   They are the same for every mission and
 are not user configuration; see :ref:`defaults`. A variable OG1 does not specify keeps its
-basestation name — the one place a local vocabulary choice may later matter (below).
+basestation name — in this case, you can set a local vocabulary choice (see below).
 
-Reused across missions
-----------------------
+Fleet-level config
+------------------
 
-Some metadata rarely changes between deployments: your institution and its EDMO code, and, in
-future, vocabulary choices for variables OG1 does not specify. Today the institution and
+Some metadata rarely changes between deployments: your institution and its EDMO code, and, in the 
+future, vocabulary choices for variables OG1 does not specify. At the moment, the institution and
 contributor records are repeated in each mission's ``mission.yaml``. A future ``fleet.yaml``
 will hold them once for a fleet or institution, set in one place rather than per mission (see
 the tip on :ref:`defaults`).
 
-Per mission
------------
+Mission-level config
+--------------------
 
 The ``mission.yaml`` you keep beside the data carries everything specific to one deployment (see
 :ref:`mission_yaml` for every key). The file name is yours — ``mission.yaml`` is only the default

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1._convert &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
+  <title>seagliderOG1._convert &mdash; seagliderOG1 0.0.2.post1.dev83 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=8794b28d"></script>
+      <script src="../../_static/documentation_options.js?v=23ec3694"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -45,17 +45,21 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo.html">Demo: the sg271 sample</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">Demo notebook</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_report.html">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
@@ -817,6 +821,7 @@
     <span class="n">institutions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">platform</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">deployment</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">deployment_information</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">global_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">sensors</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -861,6 +866,12 @@
 <span class="sd">        (``id``, ``program``, ``license``, ``doi``, ``site``, ...). Written as global</span>
 <span class="sd">        attributes; a value for ``id`` (derived) or ``comment`` (kept from the</span>
 <span class="sd">        basestation files when they carry one) overrides it with a warning. Nulls skipped. Default is None.</span>
+<span class="sd">    deployment_information : dict of str to object, optional</span>
+<span class="sd">        The cruise-level deployment position and time from the mission config</span>
+<span class="sd">        ``deployment_information`` block (``DEPLOYMENT_TIME``, ``DEPLOYMENT_LATITUDE``,</span>
+<span class="sd">        ``DEPLOYMENT_LONGITUDE``). When given they set the OG1 ``DEPLOYMENT_*`` variables;</span>
+<span class="sd">        otherwise they are derived from the first in-water fix. ``DEPLOYMENT_TIME`` after</span>
+<span class="sd">        the first data sample warns. Default is None.</span>
 <span class="sd">    global_attributes : dict of str to object, optional</span>
 <span class="sd">        Global attributes written verbatim into the output (nulls skipped). A key</span>
 <span class="sd">        that collides with a converter-derived global, or with a key that has a</span>
@@ -921,6 +932,8 @@
             <span class="n">platform</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"platform"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">deployment</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">deployment</span> <span class="o">=</span> <span class="n">_config</span><span class="o">.</span><span class="n">_merge_sections</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">deployment_information</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">deployment_information</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deployment_information"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">global_attributes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">global_attributes</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"global_attributes"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">sensors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1101,17 +1114,51 @@
     <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"TRAJECTORY"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"long_name"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"trajectory name"</span>
     <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"TRAJECTORY"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"cf_role"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"trajectory_id"</span>
 
+    <span class="c1"># DEPLOYMENT_* are the cruise-level deployment position and time. OG1 wants the true</span>
+    <span class="c1"># deployment, which precedes the first data; take them from the mission config's</span>
+    <span class="c1"># deployment_information block when given, else fall back to the first in-water fix.</span>
+    <span class="c1"># Each fallback (the first in-water fix) is computed only when the config omits that</span>
+    <span class="c1"># field, so a block that supplies all three does not index an all-NaN array.</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">deployment_information</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">dep_lat</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">"DEPLOYMENT_LATITUDE"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"DEPLOYMENT_LATITUDE"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">LATITUDE</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">LATITUDE</span><span class="p">)][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="n">dep_lon</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">"DEPLOYMENT_LONGITUDE"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"DEPLOYMENT_LONGITUDE"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="p">)][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"DEPLOYMENT_TIME"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">stamp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">"DEPLOYMENT_TIME"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">stamp</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># A naive time against the UTC data clock is a silent timezone substitution; refuse it.</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">"deployment_information.DEPLOYMENT_TIME must carry a timezone (a trailing 'Z' "</span>
+                <span class="sa">f</span><span class="s2">"for UTC, or an explicit offset); got </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">'DEPLOYMENT_TIME'</span><span class="p">]</span><span class="si">!r}</span><span class="s2">."</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="n">MetadataError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">dep_time</span> <span class="o">=</span> <span class="n">stamp</span><span class="o">.</span><span class="n">tz_convert</span><span class="p">(</span><span class="s2">"UTC"</span><span class="p">)</span><span class="o">.</span><span class="n">tz_localize</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span><span class="o">.</span><span class="n">to_datetime64</span><span class="p">()</span>
+        <span class="n">valid_times</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">TIME</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">TIME</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_times</span><span class="p">)</span> <span class="ow">and</span> <span class="n">dep_time</span> <span class="o">&gt;</span> <span class="n">valid_times</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">"deployment_information.DEPLOYMENT_TIME "</span>
+                <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">datetime_as_string</span><span class="p">(</span><span class="n">dep_time</span><span class="p">,</span><span class="w"> </span><span class="n">unit</span><span class="o">=</span><span class="s1">'s'</span><span class="p">)</span><span class="si">}</span><span class="s2">) is after the first data "</span>
+                <span class="sa">f</span><span class="s2">"sample (</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">datetime_as_string</span><span class="p">(</span><span class="n">valid_times</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">unit</span><span class="o">=</span><span class="s1">'s'</span><span class="p">)</span><span class="si">}</span><span class="s2">); the deployment "</span>
+                <span class="s2">"should precede the data."</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dep_time</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">TIME</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">TIME</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"DEPLOYMENT_LATITUDE"</span><span class="p">]</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
-        <span class="n">ds_og1</span><span class="o">.</span><span class="n">LATITUDE</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">LATITUDE</span><span class="p">)][</span><span class="mi">0</span><span class="p">],</span>
-        <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">"long_name"</span><span class="p">:</span> <span class="s2">"latitude of deployment"</span><span class="p">},</span>
+        <span class="n">dep_lat</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">"long_name"</span><span class="p">:</span> <span class="s2">"latitude of deployment"</span><span class="p">}</span>
     <span class="p">)</span>
     <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"DEPLOYMENT_LONGITUDE"</span><span class="p">]</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
-        <span class="n">ds_og1</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="p">)][</span><span class="mi">0</span><span class="p">],</span>
-        <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">"long_name"</span><span class="p">:</span> <span class="s2">"longitude of deployment"</span><span class="p">},</span>
+        <span class="n">dep_lon</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">"long_name"</span><span class="p">:</span> <span class="s2">"longitude of deployment"</span><span class="p">}</span>
     <span class="p">)</span>
     <span class="n">ds_og1</span><span class="p">[</span><span class="s2">"DEPLOYMENT_TIME"</span><span class="p">]</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
-        <span class="n">ds_og1</span><span class="o">.</span><span class="n">TIME</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds_og1</span><span class="o">.</span><span class="n">TIME</span><span class="p">)][</span><span class="mi">0</span><span class="p">],</span>
-        <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">"long_name"</span><span class="p">:</span> <span class="s2">"time of deployment"</span><span class="p">},</span>
+        <span class="n">dep_time</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">"long_name"</span><span class="p">:</span> <span class="s2">"time of deployment"</span><span class="p">}</span>
     <span class="p">)</span>
 
     <span class="c1"># ---- -------------------------------------------- ----</span>
@@ -1430,6 +1477,7 @@
         <span class="n">institutions</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"institutions"</span><span class="p">),</span>
         <span class="n">platform</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"platform"</span><span class="p">),</span>
         <span class="n">deployment</span><span class="o">=</span><span class="n">_config</span><span class="o">.</span><span class="n">_merge_sections</span><span class="p">(</span><span class="n">cfg</span><span class="p">),</span>
+        <span class="n">deployment_information</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deployment_information"</span><span class="p">),</span>
         <span class="n">global_attributes</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"global_attributes"</span><span class="p">),</span>
         <span class="n">sensors</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sensors"</span><span class="p">),</span>
         <span class="n">mode</span><span class="o">=</span><span class="n">mode</span> <span class="k">if</span> <span class="n">mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"mode"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"realtime"</span><span class="p">),</span>
@@ -1509,6 +1557,7 @@
         <span class="s2">"institutions"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"institutions"</span><span class="p">),</span>
         <span class="s2">"platform"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"platform"</span><span class="p">),</span>
         <span class="s2">"deployment"</span><span class="p">:</span> <span class="n">_config</span><span class="o">.</span><span class="n">_merge_sections</span><span class="p">(</span><span class="n">cfg</span><span class="p">),</span>
+        <span class="s2">"deployment_information"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deployment_information"</span><span class="p">),</span>
         <span class="s2">"global_attributes"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"global_attributes"</span><span class="p">),</span>
         <span class="s2">"sensors"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sensors"</span><span class="p">),</span>
         <span class="s2">"mode"</span><span class="p">:</span> <span class="n">mode</span> <span class="k">if</span> <span class="n">mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"mode"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"realtime"</span><span class="p">),</span>
@@ -1532,6 +1581,7 @@
     <span class="n">institutions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">platform</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">deployment</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">deployment_information</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">global_attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">sensors</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"realtime"</span><span class="p">,</span>
@@ -1567,6 +1617,9 @@
 <span class="sd">        Platform fields, as for :func:`convert`. Default is None.</span>
 <span class="sd">    deployment : dict of str to object, optional</span>
 <span class="sd">        Deployment-identity globals, as for :func:`convert`. Default is None.</span>
+<span class="sd">    deployment_information : dict of str to object, optional</span>
+<span class="sd">        Deployment position/time (``DEPLOYMENT_TIME``/``LATITUDE``/``LONGITUDE``), as for</span>
+<span class="sd">        :func:`convert`. Default is None.</span>
 <span class="sd">    global_attributes : dict of str to object, optional</span>
 <span class="sd">        Global attributes written verbatim, as for :func:`convert`. Default is None.</span>
 <span class="sd">    sensors : collections.abc.Mapping, optional</span>
@@ -1632,6 +1685,7 @@
         <span class="n">institutions</span><span class="o">=</span><span class="n">institutions</span><span class="p">,</span>
         <span class="n">platform</span><span class="o">=</span><span class="n">platform</span><span class="p">,</span>
         <span class="n">deployment</span><span class="o">=</span><span class="n">deployment</span><span class="p">,</span>
+        <span class="n">deployment_information</span><span class="o">=</span><span class="n">deployment_information</span><span class="p">,</span>
         <span class="n">global_attributes</span><span class="o">=</span><span class="n">global_attributes</span><span class="p">,</span>
         <span class="n">sensors</span><span class="o">=</span><span class="n">sensors</span><span class="p">,</span>
         <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>

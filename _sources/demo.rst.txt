@@ -1,41 +1,36 @@
 .. _demo:
 
-Demo: the sg005 sample
+Demo: the sg271 sample
 ======================
 
-The repository bundles one short Seaglider mission so the conversion can be run end to end
-without downloading data: ``data/demo_sg005/``.
+The package ships one short Seaglider mission inside the wheel, so the conversion runs end to end
+from a ``pip install`` — nothing to download.
 
 The sample
 ----------
 
-``sg005`` (``SG005``) is a University of Washington Seaglider. The bundled mission is five
-dive-climb cycles — ``p0050001``–``p0050005`` — from 6–7 June 2008, on the Iceland–Scotland
-(Faroe–Iceland) Ridge in the North Atlantic. It was operated by the University of Washington
-School of Oceanography; the principal investigators are Charlie Eriksen and Peter Rhines.
-
-The mission configuration beside the files, ``data/demo_sg005/mission.yaml``, carries the
-platform block, the contributor and institution records, and the output directory. It is the
-file every ``seagliderOG1`` command takes.
+``sg271`` is a University of Washington Seaglider (model SGX), operated by the University of
+Hamburg. The bundled sample is three dive-climb cycles — ``p2710001``–``p2710003`` — from the
+PycnMix deployment in the Drygalski Trough (Ross Sea, Antarctica). The glider went in the water at
+19:24 UTC on 2 March 2026, at 72°58.8′S, 171°24.5′E. The principal investigator is Eleanor
+Frajka-Williams. The three dives are released for demonstration under CC-BY-4.0; the full mission
+dataset is embargoed.
 
 Run it
 ------
 
-The sample ships with the source repository, not the PyPI wheel, so running the demo needs a
-source checkout:
+``init --example`` writes the sample's configuration with ``raw_dir`` pointing at the packaged
+dives; ``process`` then converts them and writes the OG1 file and its report into your current
+directory:
 
 .. code-block:: console
 
-   $ git clone https://github.com/ocean-uhh/seagliderOG1
-   $ cd seagliderOG1
-   $ pip install -e .
-   $ seagliderOG1 process data/demo_sg005/mission.yaml --report
+   $ seagliderOG1 init --example        # writes ./sg271.yaml
+   $ seagliderOG1 process sg271.yaml    # writes the OG1 file and its conversion page
 
-This reads the five dive files, converts them to one OG1 file, and writes it — with its HTML
-conversion page beside it — under the configuration's ``output_dir`` (``outputs/``): the OG1
-file ``outputs/<id>.nc`` and the page ``outputs/<id>_conversion.html``, where ``<id>`` is
-derived from the serial and the mission start.
+The output is ``sg271_20260302T193828_R.nc`` with ``sg271_20260302T193828_R_conversion.html``
+beside it. The hosted copy of that report is :ref:`example_report`; the same run as an executed
+notebook is :doc:`the demo notebook <demo-output>`.
 
-Installed from PyPI the sample is not on disk, so to see the result without running it use the
-hosted conversion page `here <_static/demo/conversion.html>`_ or :doc:`the demo notebook
-<demo-output>`.
+From Python, ``readers.load_sample_basestation()`` returns the first dive of this sample as an
+xarray dataset, and ``readers.sample_mission_dir()`` gives the packaged directory.

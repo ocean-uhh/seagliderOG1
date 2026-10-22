@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
+  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev83 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=8794b28d"></script>
+      <script src="_static/documentation_options.js?v=23ec3694"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -48,17 +48,21 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg271 sample</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_report.html">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
@@ -164,8 +168,8 @@ size, dive number, dimension lengths and global-attribute count) and which dives
 basestation variable was present in and had values in.
 The page reads it for its <em>Presence across dives</em> and <em>Before → after</em> sections. When the input dives disagree,
 <code class="docutils literal notranslate"><span class="pre">process</span></code> prints one line per mission after <code class="docutils literal notranslate"><span class="pre">wrote</span></code>:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">wrote outputs/sg005_20080606T180256_delayed.nc</span>
-<span class="go">  sg005_20080606T180256_delayed: 343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns) — see seagliderOG1 report outputs/sg005_20080606T180256_delayed.nc</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">wrote outputs/sg271_20260302T193828_R.nc</span>
+<span class="go">  sg271_20260302T193828_R: 542 variables over 3 dives; 500 on every dive, 42 on some (5 patterns) — see seagliderOG1 report outputs/sg271_20260302T193828_R.nc</span>
 </pre></div>
 </div>
 <p>The conversion record belongs to its OG1 file: it is replaced whenever the file is written. It records
@@ -277,7 +281,7 @@ drafts/&lt;id&gt;_draft_mission.yaml, validate it and process it.</p>
 <section id="seagliderOG1-init">
 <span id="init"></span><h4>init<a class="headerlink" href="#seagliderOG1-init" title="Link to this heading"></a></h4>
 <p>Write a commented mission.yaml. dest is a directory (mission.yaml is written inside) or a .yaml file name; default the current directory.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">init</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">raw</span><span class="o">-</span><span class="nb">dir</span> <span class="n">PATH</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span><span class="p">]</span> <span class="p">[</span><span class="n">dest</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">init</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">raw</span><span class="o">-</span><span class="nb">dir</span> <span class="n">PATH</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">example</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span><span class="p">]</span> <span class="p">[</span><span class="n">dest</span><span class="p">]</span>
 </pre></div>
 </div>
 <section id="seagliderOG1-init-positional-arguments">
@@ -295,6 +299,10 @@ drafts/&lt;id&gt;_draft_mission.yaml, validate it and process it.</p>
 <dt><kbd>--raw-dir</kbd></dt>
 <dd><p>basestation directory, or one pSSSDDDD*.nc file in it, to fill raw_dir and the platform block from</p>
 </dd>
+<dt><kbd>--example</kbd></dt>
+<dd><p>write the bundled sg271 sample config (raw_dir set to the packaged dives); then <cite>seagliderOG1 process &lt;dest&gt;</cite> runs the demo. dest default: ./sg271.yaml</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
 <dt><kbd>--force</kbd></dt>
 <dd><p>overwrite an existing file</p>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
@@ -303,6 +311,7 @@ drafts/&lt;id&gt;_draft_mission.yaml, validate it and process it.</p>
 </section>
 <dl class="simple">
 <dt>examples:</dt><dd><p>seagliderOG1 init                                  ./mission.yaml
+seagliderOG1 init –example                        ./sg271.yaml (the bundled sample)
 seagliderOG1 init outputs/ –raw-dir /data/005/    outputs/mission.yaml
 seagliderOG1 init sg005.yaml –raw-dir /data/005/  that file</p>
 </dd>
