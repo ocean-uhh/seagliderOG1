@@ -1350,3 +1350,13 @@ def test_deployment_time_after_first_sample_warns() -> None:
             datasets,
             deployment_information={"DEPLOYMENT_TIME": "2008-06-07T00:00:00Z"},
         )
+
+
+def test_deployment_time_without_timezone_is_refused() -> None:
+    """A naive DEPLOYMENT_TIME is refused, not silently assumed UTC."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    with pytest.raises(_convert.MetadataError, match="must carry a timezone"):
+        _convert.convert(
+            datasets,
+            deployment_information={"DEPLOYMENT_TIME": "2008-06-06T00:00:00"},
+        )

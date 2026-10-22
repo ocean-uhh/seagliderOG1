@@ -1010,34 +1010,40 @@ def convert(
     # DEPLOYMENT_* are the cruise-level deployment position and time. OG1 wants the true
     # deployment, which precedes the first data; take them from the mission config's
     # deployment_information block when given, else fall back to the first in-water fix.
+    # Each fallback (the first in-water fix) is computed only when the config omits that
+    # field, so a block that supplies all three does not index an all-NaN array.
     info = deployment_information or {}
-    first_lat = float(ds_og1.LATITUDE.values[~np.isnan(ds_og1.LATITUDE)][0])
-    first_lon = float(ds_og1.LONGITUDE.values[~np.isnan(ds_og1.LONGITUDE)][0])
-    first_time = ds_og1.TIME.values[~np.isnan(ds_og1.TIME)][0]
     dep_lat = (
         float(info["DEPLOYMENT_LATITUDE"])
         if info.get("DEPLOYMENT_LATITUDE") is not None
-        else first_lat
+        else float(ds_og1.LATITUDE.values[~np.isnan(ds_og1.LATITUDE)][0])
     )
     dep_lon = (
         float(info["DEPLOYMENT_LONGITUDE"])
         if info.get("DEPLOYMENT_LONGITUDE") is not None
-        else first_lon
+        else float(ds_og1.LONGITUDE.values[~np.isnan(ds_og1.LONGITUDE)][0])
     )
     if info.get("DEPLOYMENT_TIME") is not None:
         stamp = pd.Timestamp(info["DEPLOYMENT_TIME"])
-        stamp = stamp.tz_convert("UTC").tz_localize(None) if stamp.tzinfo else stamp
-        dep_time = stamp.to_datetime64()
-        if dep_time > first_time:
+        if stamp.tzinfo is None:
+            # A naive time against the UTC data clock is a silent timezone substitution; refuse it.
+            msg = (
+                "deployment_information.DEPLOYMENT_TIME must carry a timezone (a trailing 'Z' "
+                f"for UTC, or an explicit offset); got {info['DEPLOYMENT_TIME']!r}."
+            )
+            raise MetadataError(msg)
+        dep_time = stamp.tz_convert("UTC").tz_localize(None).to_datetime64()
+        valid_times = ds_og1.TIME.values[~np.isnan(ds_og1.TIME)]
+        if len(valid_times) and dep_time > valid_times[0]:
             warnings.warn(
                 "deployment_information.DEPLOYMENT_TIME "
                 f"({np.datetime_as_string(dep_time, unit='s')}) is after the first data "
-                f"sample ({np.datetime_as_string(first_time, unit='s')}); the deployment "
+                f"sample ({np.datetime_as_string(valid_times[0], unit='s')}); the deployment "
                 "should precede the data.",
                 stacklevel=2,
             )
     else:
-        dep_time = first_time
+        dep_time = ds_og1.TIME.values[~np.isnan(ds_og1.TIME)][0]
     ds_og1["DEPLOYMENT_LATITUDE"] = xr.DataArray(
         dep_lat, attrs={"long_name": "latitude of deployment"}
     )
@@ -1438,6 +1444,7 @@ def process_missions(
         "institutions": cfg.get("institutions"),
         "platform": cfg.get("platform"),
         "deployment": _config._merge_sections(cfg),
+        "deployment_information": cfg.get("deployment_information"),
         "global_attributes": cfg.get("global_attributes"),
         "sensors": cfg.get("sensors"),
         "mode": mode if mode is not None else (cfg.get("mode") or "realtime"),

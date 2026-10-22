@@ -72,6 +72,12 @@ Keys
      - *(see below)*
      - OG1 platform fields. The required fields must be non-null when a platform block is
        present.
+   * - ``deployment_information``
+     - mapping or null
+     - ``null``
+     - The OG1 deployment variables ``DEPLOYMENT_TIME`` / ``DEPLOYMENT_LATITUDE`` /
+       ``DEPLOYMENT_LONGITUDE`` (*see below*). Any key left null is derived from the first
+       in-water fix. ``validate`` checks the lat/lon ranges and a timezone-bearing ISO time.
    * - ``identity_and_discovery``,
        ``rights_and_access``,
        ``provenance_and_processing``

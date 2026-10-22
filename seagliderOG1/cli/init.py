@@ -115,7 +115,7 @@ def _platform_from_file(source: str) -> dict[str, object]:
         ds.close()
 
 
-def _config_target(dest: str) -> pathlib.Path:
+def _config_target(dest: str, default: str = "mission.yaml") -> pathlib.Path:
     """Return the file ``init`` writes for ``dest``.
 
     Parameters
@@ -123,37 +123,20 @@ def _config_target(dest: str) -> pathlib.Path:
     dest : str
         A directory (existing, or a path not ending in ``.yaml``/``.yml``) or a
         ``.yaml`` file name.
+    default : str, optional
+        The file name written inside a directory ``dest``. Default is ``"mission.yaml"``;
+        ``init --example`` passes the sample's name.
 
     Returns
     -------
     pathlib.Path
-        ``dest/mission.yaml`` for a directory, else ``dest``.
+        ``dest/default`` for a directory, else ``dest``.
 
     """
     path = pathlib.Path(dest)
     if path.suffix.lower() in (".yaml", ".yml") and not path.is_dir():
         return path
-    return path / "mission.yaml"
-
-
-def _example_target(dest: str) -> pathlib.Path:
-    """Return the file ``init --example`` writes for ``dest`` (default ``./sg271.yaml``).
-
-    Parameters
-    ----------
-    dest : str
-        A directory, or a ``.yaml`` file name.
-
-    Returns
-    -------
-    pathlib.Path
-        ``dest/sg271.yaml`` for a directory, else ``dest``.
-
-    """
-    path = pathlib.Path(dest)
-    if path.suffix.lower() in (".yaml", ".yml") and not path.is_dir():
-        return path
-    return path / "sg271.yaml"
+    return path / default
 
 
 def _write_example(dest: str, *, force: bool) -> int:
@@ -180,19 +163,16 @@ def _write_example(dest: str, *, force: bool) -> int:
 
     from seagliderOG1 import readers
 
-    out = _example_target(dest)
+    out = _config_target(dest, default=f"{readers.SAMPLE_ID.split('_')[0]}.yaml")
     if out.exists() and not force:
         print(f"error: {out} exists; use --force to overwrite.", file=sys.stderr)
         return 1
     text = readers.SAMPLE_CONFIG.read_text(encoding="utf-8")
     raw = str(readers.sample_mission_dir().resolve())
-    text = re.sub(
-        r"^raw_dir:.*$",
-        f"raw_dir: {raw}   # the packaged sample; point this at your own dives to convert them",
-        text,
-        count=1,
-        flags=re.MULTILINE,
-    )
+    # A replacement function (not a string) so a Windows path's backslashes are not read as
+    # regex escape sequences by re.sub.
+    line = f"raw_dir: {raw}   # the packaged sample; point this at your own dives to convert them"
+    text = re.sub(r"^raw_dir:.*$", lambda _m: line, text, count=1, flags=re.MULTILINE)
     try:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(text, encoding="utf-8")

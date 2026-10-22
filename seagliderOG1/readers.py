@@ -41,6 +41,9 @@ sys.path.append(str(parent_dir))
 # demo runs from a pip install; see sample_mission_dir() and ``seagliderOG1 init --example``.
 SAMPLE_DIR = script_dir / "data" / "sg271"
 SAMPLE_CONFIG = SAMPLE_DIR / "sg271_drygalski_2026.yaml"
+#: The sample's OG1 conversion id. One source for `init --example`'s default output name and the
+#: docs workflows' hosted-report filename, so swapping the bundled sample is a single edit here.
+SAMPLE_ID = "sg271_20260302T193828_R"
 
 # readers.py: Will only read files.  Not manipulate them.
 
@@ -119,6 +122,12 @@ def load_sample_basestation(
     """
     if pathlib.Path(file_path).is_file():
         return xr.open_dataset(file_path, engine="netcdf4", decode_timedelta=False)
+    if not SAMPLE_DIR.is_dir():
+        msg = (
+            f"The packaged sample directory {SAMPLE_DIR} is missing; the sg271 sample was not "
+            "installed with the package."
+        )
+        raise FileNotFoundError(msg)
     available = [p.name for p in SAMPLE_DIR.iterdir()]
     msg = f"Requested sample dataset {file_path} not known. Available datasets are: {available}"
     raise KeyError(msg)

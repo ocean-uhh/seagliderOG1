@@ -52,10 +52,14 @@ rights_and_access:   # -> global attributes; rights and access globals
   acknowledgment: "Funded by the Deutsche Forschungsgemeinschaft (DFG) under the grant numbers 558671572 and 544335393."
 
 provenance_and_processing:   # -> global attributes; provenance globals
-  comment: "Three-dive sample of the sg271 Drygalski Trough mission (PycnMix) released for demonstration; the full dataset is embargoed until 2028-03-08."   # suggested -> global attribute
+  comment: "Three-dive sample of the sg271 Drygalski Trough mission (PycnMix) released for demonstration; the full dataset is embargoed until 2028-03-18 (two years after the mission ended)."   # suggested -> global attribute
 
 global_attributes:  # any other OG1 global, written as given
   institution: "University of Hamburg"
+
+sensors:                # corrections to a basestation sensor record, by its instrument key
+  tridentebb700chla470fdom365:
+    serial_number: "237998"   # the chlorophyll/Tridente serial (the basestation comment parsed 237790)
 
 contributors:           # one entry per person per role; replace this example
   # role is a W08 term: Manufacturer, Owner, Operator, PI, Technical Coordinator,

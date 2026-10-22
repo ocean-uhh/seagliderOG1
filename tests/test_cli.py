@@ -222,6 +222,25 @@ def test_validate_names_the_home_of_a_refused_global(tmp_path: pathlib.Path) -> 
     assert cli.main(["process", str(cfg)]) == 1  # refused by validate, nothing read
 
 
+def test_validate_checks_deployment_information(tmp_path: pathlib.Path) -> None:
+    """A bad deployment_information block errors at validate: out-of-range lat and a naive time."""
+    cfg = _write_config(
+        tmp_path / "mission.yaml",
+        deployment_information={
+            "DEPLOYMENT_LATITUDE": -200.0,
+            "DEPLOYMENT_TIME": "2026-03-02T19:24:00",  # naive: no timezone
+        },
+    )
+    keys = {
+        i.key
+        for i in mission.check(cfg)
+        if (i.key or "").startswith("deployment_information")
+    }
+    assert "deployment_information.DEPLOYMENT_LATITUDE" in keys
+    assert "deployment_information.DEPLOYMENT_TIME" in keys
+    assert cli.main(["validate", str(cfg)]) == 1
+
+
 def test_validate_placeholder_in_global_attributes_is_unset_not_misplaced(
     tmp_path: pathlib.Path,
 ) -> None:

@@ -98,10 +98,10 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 <h3>Required by OG1</h3>
 <p class="caption{% if og1_required_incomplete %} cell-bad{% endif %}">{{ og1_required_caption }}. The list is the upstream checker's (<code>ioos/cc-plugin-og</code>); amber: a required variable or the required dimension is absent.</p>
 <table class="nc sortable">
-<thead><tr><th>Required</th><th>Present</th><th>Orig var</th><th>Orig dim</th><th>Dims</th><th>Units</th><th>Valid %</th></tr></thead>
+<thead><tr><th>Required</th><th>Orig var</th><th>Orig dim</th><th>Dims</th><th>Units</th><th>Valid %</th></tr></thead>
 <tbody>
 {%- for r in og1_required %}
-<tr><td>{{ r.name }}</td><td{% if not r.present %} class="cell-bad"{% endif %}>{{ "yes" if r.present else "no" }}</td>
+<tr{% if not r.present %} class="cell-bad"{% endif %}><td>{{ r.name }}</td>
 <td>{{ r.orig_var }}</td><td>{{ r.orig_dim }}</td><td>{{ r.dims }}</td><td>{{ r.units }}</td><td>{{ r.valid }}</td></tr>
 {%- endfor %}
 </tbody></table>
@@ -133,12 +133,12 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 
 {%- for g in og1_candidate_groups %}
 <h3>Candidate for OG1 — {{ g.label }}</h3>
-<p class="caption">{{ g.n_present }} of {{ g.n_total }} present. Variables the project proposes to canonise (not yet in the OG1 vocabulary); recorded in <code>vocabularies.OG1_CANDIDATE_VARS</code>. Present/absent is informational — a file may predate a candidate.</p>
+<p class="caption">{{ g.n_present }} of {{ g.n_total }} present. Variables the project proposes to canonise (not yet in the OG1 vocabulary); recorded in <code>vocabularies.OG1_CANDIDATE_VARS</code>. An absent candidate (amber) is informational — a file may predate it.</p>
 <table class="nc sortable">
 <thead><tr><th>Candidate</th><th>Orig var</th><th>Orig dim</th><th>Dims</th><th>Units</th><th>Valid %</th></tr></thead>
 <tbody>
 {%- for r in g.rows %}
-<tr><td>{{ r.name }}</td>
+<tr{% if not r.present %} class="cell-bad"{% endif %}><td>{{ r.name }}</td>
 <td>{{ r.orig_var }}</td><td>{{ r.orig_dim }}</td><td>{{ r.dims }}</td><td>{{ r.units }}</td><td>{{ r.valid }}</td></tr>
 {%- endfor %}
 </tbody></table>
