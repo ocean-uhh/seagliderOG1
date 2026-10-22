@@ -98,11 +98,9 @@ OPTIONAL_PLATFORM_VARS: dict[str, tuple[str, str | None, str | None]] = {
 def _is_empty(value: object) -> bool:
     """Return True for a missing or placeholder value.
 
-    None, or a string that is empty or one of the placeholders the old
-    ``attr_mandatory`` fill wrote (``vocabularies.PLACEHOLDER_VALUES``: ``""``,
-    ``"None"``, ``"null"``, ``"null@null.com"``). One definition for platform fields,
-    deployment globals and the escape-hatch globals, so none of them can leak a
-    placeholder that another path would have dropped.
+    Delegates to :func:`seagliderOG1.vocabularies.is_placeholder`, the one definition
+    the converter and the validator share, so platform fields, deployment globals and
+    the escape-hatch globals cannot leak a placeholder that another path would drop.
 
     Parameters
     ----------
@@ -115,9 +113,7 @@ def _is_empty(value: object) -> bool:
         True when the value counts as unset.
 
     """
-    return value is None or (
-        isinstance(value, str) and value.strip() in vocabularies.PLACEHOLDER_VALUES
-    )
+    return vocabularies.is_placeholder(value)
 
 
 def _resolve_platform(
@@ -428,10 +424,6 @@ def _presence_by_dive(list_of_datasets: Sequence[xr.Dataset]) -> dict:
     return {"dives": dives, "variables": variables}
 
 
-# The one sentence a draft carries in its ``draft`` global (see _convert_mission).
-DRAFT_NOTE = "converted without a mission config; not an OG1 file"
-
-
 def _institution_from_file(attrs: Mapping) -> dict | None:
     """Return a basestation file's ``institution`` global and its EDMO registry match.
 
@@ -724,7 +716,7 @@ def convert(
     deployment: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
     sensors: Mapping[str, Mapping[str, object]] | None = None,
-    mode: str = "realtime",
+    mode: str | None = None,
     record: dict | None = None,
 ) -> xr.Dataset:
     """Convert Seaglider basestation datasets to OG1 format.
@@ -745,8 +737,9 @@ def convert(
         global-attribute sections (merged into ``deployment``), ``global_attributes``,
         ``sensors``, ``contributors``, ``institutions`` and ``mode`` are used; the
         ``raw_dir`` / ``output_dir`` / ``dives`` keys are ignored (``convert`` works on
-        datasets already read). An explicit keyword below overrides the mission value.
-        Default is None.
+        datasets already read). An explicit keyword below overrides the mission value —
+        including an explicit empty mapping (``platform={}``), which overrides the
+        mission's block with nothing rather than falling back to it. Default is None.
     contributors : sequence of dict, optional
         Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)
         merged with those already on the files. When None, contributors come from
@@ -775,11 +768,12 @@ def convert(
         ``{"serial_number": ..., "calibration_date": ...}``. A corrected serial names the
         ``SENSOR_*`` variable; the sensor's ``comment`` records the value it replaced.
         Default is None.
-    mode : str, optional
-        Data mode, ``"realtime"`` (default) or ``"delayed"``. Sets the ``id``
-        suffix (``R`` or ``delayed``) and so the output filename, per the OG1
-        manual, which defines no separate data-mode attribute. Default is "realtime":
-        a file is delayed mode only when the user says so.
+    mode : str or None, optional
+        Data mode, ``"realtime"`` or ``"delayed"``. Sets the ``id`` suffix (``R`` or
+        ``delayed``) and so the output filename, per the OG1 manual, which defines no
+        separate data-mode attribute. Default is None: the mission's ``mode`` if it has
+        one, else ``"realtime"``. An explicit value (including ``"realtime"``) always
+        wins over the mission's.
     record : dict, optional
         When given, filled in place with what the output file cannot record about its own
         conversion: ``inputs`` (one ``{"path", "bytes", "dive"}`` per input file) and
@@ -828,8 +822,13 @@ def convert(
             global_attributes = cfg.get("global_attributes")
         if sensors is None:
             sensors = cfg.get("sensors")
-        if mode == "realtime" and cfg.get("mode"):
-            mode = cfg["mode"]
+        if mode is None:
+            mode = cfg.get("mode")
+    # None means "not set": the mission's mode if it had one, else the realtime default.
+    # A parameter's default is never the not-set sentinel, so an explicit mode (including
+    # "realtime") always wins over the mission's.
+    if mode is None:
+        mode = "realtime"
 
     global_attributes = global_attributes or {}
     deployment = deployment or {}
@@ -1192,12 +1191,57 @@ def convert(
     return _pipeline.set_best_dtype(ds_og1)
 
 
+def _load_mission_config(
+    mission: str | os.PathLike | Mapping[str, object],
+    raw_dir: str | os.PathLike | None,
+) -> dict:
+    """Load and validate a mission config, applying a ``raw_dir`` override before validation.
+
+    ``process --raw-dir`` overrides the config's ``raw_dir``; the library ``process`` /
+    ``process_missions`` mirror it. The override is resolved relative to the config file
+    (or the current directory for an already-loaded mapping) and injected, then the
+    result is validated by :func:`seagliderOG1.mission.load` — so an override converts the
+    directory the caller named even when the config's own ``raw_dir`` is stale.
+
+    Parameters
+    ----------
+    mission : str or os.PathLike or collections.abc.Mapping
+        A ``mission.yaml`` path or a loaded mapping.
+    raw_dir : str or os.PathLike or None
+        The override, or None to use the config's own ``raw_dir``.
+
+    Returns
+    -------
+    dict
+        The loaded, validated, path-resolved configuration.
+
+    """
+    if raw_dir is None:
+        return _config.load(mission)
+    if isinstance(mission, Mapping):
+        base = pathlib.Path.cwd()
+        cfg_in = dict(mission)
+    else:
+        base = pathlib.Path(mission).parent
+        cfg_in = _config._load_raw(pathlib.Path(mission))
+        # load() treats the resulting mapping as base-less, so resolve the file's other
+        # paths to its parent before handing them over.
+        for key in ("output_dir", "local_config"):
+            value = cfg_in.get(key)
+            if value not in (None, "") and not pathlib.Path(str(value)).is_absolute():
+                cfg_in[key] = str((base / str(value)).resolve())
+    cfg_in["raw_dir"] = str((base / str(raw_dir)).resolve())
+    return _config.load(cfg_in)
+
+
 def process(
     mission: str | os.PathLike | Mapping[str, object],
     *,
+    raw_dir: str | os.PathLike | None = None,
     output_dir: str | os.PathLike | None = None,
     dives: tuple[int, int] | None = None,
     mode: str | None = None,
+    repair: bool | None = None,
     report: bool = False,
     report_dir: str | os.PathLike | None = None,
     overwrite: bool = False,
@@ -1216,6 +1260,9 @@ def process(
         A ``mission.yaml`` path, or a loaded mapping. Its ``raw_dir`` must be a single
         mission directory; a root of ``SN/DATE`` missions raises (use
         :func:`process_missions`).
+    raw_dir : str or os.PathLike, optional
+        The directory of basestation files to convert; overrides the configuration's
+        ``raw_dir`` (as ``process --raw-dir`` does). Default is None.
     output_dir : str or os.PathLike, optional
         Directory the OG1 file is written to; created if missing. Overrides the
         configuration's ``output_dir``. Default is None (use the configuration's).
@@ -1225,6 +1272,9 @@ def process(
     mode : str, optional
         Data mode, ``"realtime"`` or ``"delayed"``; overrides the configuration's.
         Default is None.
+    repair : bool, optional
+        Repair basestation time metadata before loading (rewrites the raw_dir tree);
+        overrides the configuration's ``repair``. Default is None.
     report : bool, optional
         Also write the HTML conversion page beside the file. ORed with the
         configuration's ``report``. Default is False.
@@ -1251,15 +1301,15 @@ def process(
         As raised by :func:`convert`.
 
     """
-    cfg = _config.load(mission)
-    raw_dir = cfg["raw_dir"]
-    discovered = readers.discover_missions(str(raw_dir))
+    cfg = _load_mission_config(mission, raw_dir)
+    source = cfg["raw_dir"]
+    discovered = readers.discover_missions(str(source))
     if not discovered:
-        msg = f"no basestation files (pSSSDDDD*.nc) found in {raw_dir}"
+        msg = f"no basestation files (pSSSDDDD*.nc) found in {source}"
         raise MissionError(msg)
     if readers.is_root(discovered):
         msg = (
-            f"{raw_dir} is a root of SN/DATE missions; process converts one mission. "
+            f"{source} is a root of SN/DATE missions; process converts one mission. "
             "Use process_missions to convert a root."
         )
         raise MissionError(msg)
@@ -1267,7 +1317,7 @@ def process(
         cfg_dives = cfg.get("dives")
         dives = tuple(cfg_dives) if cfg_dives else None
     return _convert_mission(
-        raw_dir,
+        source,
         output_dir if output_dir is not None else (cfg.get("output_dir") or "."),
         dives=dives,
         contributors=cfg.get("contributors"),
@@ -1278,7 +1328,7 @@ def process(
         sensors=cfg.get("sensors"),
         mode=mode if mode is not None else (cfg.get("mode") or "realtime"),
         keep_variables=cfg.get("keep_variables"),
-        repair=bool(cfg.get("repair", False)),
+        repair=repair if repair is not None else bool(cfg.get("repair", False)),
         overwrite=overwrite,
         report=report or bool(cfg.get("report", False)),
         report_dir=report_dir,
@@ -1289,8 +1339,10 @@ def process_missions(
     mission: str | os.PathLike | Mapping[str, object],
     *,
     select: str | None = None,
+    raw_dir: str | os.PathLike | None = None,
     output_dir: str | os.PathLike | None = None,
     mode: str | None = None,
+    repair: bool | None = None,
     report: bool = False,
     report_dir: str | os.PathLike | None = None,
     overwrite: bool = False,
@@ -1309,11 +1361,17 @@ def process_missions(
     select : str or None, optional
         A glob over each mission's ``SN/DATE`` path; ``"*/*"`` selects every mission.
         Required for a root. Default is None.
+    raw_dir : str or os.PathLike, optional
+        The root of ``SN/DATE`` missions; overrides the configuration's ``raw_dir``.
+        Default is None.
     output_dir : str or os.PathLike, optional
         Directory the OG1 files are written to. Overrides the configuration's. Default
         is None.
     mode : str, optional
         Data mode; overrides the configuration's. Default is None.
+    repair : bool, optional
+        Repair basestation time metadata before loading; overrides the configuration's
+        ``repair``. Default is None.
     report : bool, optional
         Also write each HTML conversion page. ORed with the configuration's ``report``.
         Default is False.
@@ -1335,7 +1393,7 @@ def process_missions(
         If ``select`` matches no mission, or is omitted for a root.
 
     """
-    cfg = _config.load(mission)
+    cfg = _load_mission_config(mission, raw_dir)
     selected = _config.select_missions(cfg["raw_dir"], select)
     shared = {
         "contributors": cfg.get("contributors"),
@@ -1346,7 +1404,7 @@ def process_missions(
         "sensors": cfg.get("sensors"),
         "mode": mode if mode is not None else (cfg.get("mode") or "realtime"),
         "keep_variables": cfg.get("keep_variables"),
-        "repair": bool(cfg.get("repair", False)),
+        "repair": repair if repair is not None else bool(cfg.get("repair", False)),
         "overwrite": overwrite,
         "report": report or bool(cfg.get("report", False)),
         "report_dir": report_dir,
@@ -1488,7 +1546,7 @@ def _convert_mission(
         ds = _keep_variables(ds, list(keep_variables))
     if draft:
         ds.attrs["id"] = f"{ds.attrs['id']}_draft"
-        ds.attrs["draft"] = DRAFT_NOTE
+        ds.attrs["draft"] = vocabularies.DRAFT_NOTE
         writers.record_attribute_sources(ds.attrs, ["draft"], "derived")
         conventions = [
             part.strip()

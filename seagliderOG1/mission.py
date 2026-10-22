@@ -71,7 +71,9 @@ REQUIRED_KEYS = ("raw_dir",)
 DEPRECATED_KEYS = {"source": "raw_dir"}
 
 # Keys whose value load() resolves to an absolute path relative to the config file.
-_PATH_KEYS = ("raw_dir", "output_dir")
+# local_config is a path once the fleet-config overlay reads it; load resolves it now so
+# that overlay needs no change (it is null until then, and a null is skipped here).
+_PATH_KEYS = ("raw_dir", "output_dir", "local_config")
 
 # The valid data modes, the platform defaults, and the required platform fields all
 # derive from the one platform/mode table in ``vocabularies`` (imported lazily so the
@@ -478,9 +480,7 @@ def _is_placeholder(value: object) -> bool:
     """
     from seagliderOG1 import vocabularies
 
-    return value is None or (
-        isinstance(value, str) and value.strip() in vocabularies.PLACEHOLDER_VALUES
-    )
+    return vocabularies.is_placeholder(value)
 
 
 def _case_hint(key: str, known: object) -> str | None:

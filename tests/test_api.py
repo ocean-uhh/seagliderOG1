@@ -100,6 +100,16 @@ def test_process_mode_override_beats_the_config(tmp_path: pathlib.Path):
     assert path.stem.endswith("_delayed")
 
 
+def test_process_raw_dir_override_beats_the_config(tmp_path: pathlib.Path):
+    """process(raw_dir=...) converts that directory even when the config's raw_dir is wrong."""
+    cfg = mission.load(DEMO_YAML)
+    cfg["raw_dir"] = str(tmp_path / "does_not_exist")
+    path = sg.process(
+        cfg, raw_dir=DATA_DIR, output_dir=tmp_path, dives=(1, 1), overwrite=True
+    )
+    assert path.exists()
+
+
 def _root(tmp_path: pathlib.Path) -> pathlib.Path:
     """Build a two-mission SN/DATE root under tmp_path and a mission.yaml for it."""
     import yaml
@@ -161,6 +171,20 @@ def test_convert_explicit_kwarg_overrides_the_mission(tmp_path: pathlib.Path):
     datasets = sg.read(DATA_DIR, dives=(1, 1))
     ds = sg.convert(datasets, DEMO_YAML, mode="delayed")
     assert ds.attrs["id"].endswith("delayed")
+
+
+def test_convert_explicit_realtime_overrides_a_delayed_mission(tmp_path: pathlib.Path):
+    """An explicit mode='realtime' wins over a mission mode='delayed'.
+
+    The regression direction: because 'realtime' was once the default, an explicit
+    realtime request used to be indistinguishable from "not set" and lost to the config.
+    """
+    cfg = mission.load(DEMO_YAML)
+    cfg["mode"] = "delayed"
+    datasets = sg.read(DATA_DIR, dives=(1, 1))
+    assert sg.convert(datasets, cfg, mode="realtime").attrs["id"].endswith("_R")
+    # and with no explicit mode, the mission's delayed is honoured
+    assert sg.convert(datasets, cfg).attrs["id"].endswith("delayed")
 
 
 # --- write(record=) / report / reports.record --------------------------------

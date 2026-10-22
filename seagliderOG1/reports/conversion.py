@@ -30,7 +30,7 @@ import yaml
 if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
-from seagliderOG1 import __version__, _convert, contributors, vocabularies, writers
+from seagliderOG1 import __version__, contributors, vocabularies, writers
 from seagliderOG1.reports import _record, design
 from seagliderOG1.reports._env import get_template
 from seagliderOG1.reports._vendored import figure_png, nc_tables
@@ -2268,10 +2268,10 @@ def render_conversion(
 
     ds = xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False)
     try:
-        # A draft (process_mission(draft=True), the draft verb) says so in a global; the
+        # A draft (the draft verb, the draft verb) says so in a global; the
         # page then shows the basestation's own globals instead of the OG1 ones.
         # By value, not by name: a file could carry some other global called draft.
-        draft = ds.attrs.get("draft") == _convert.DRAFT_NOTE
+        draft = ds.attrs.get("draft") == vocabularies.DRAFT_NOTE
         ds_id = ds.attrs.get("id", "")
         conventions = _conventions_check(ds)
         platform_gaps = _platform_gaps(ds)
