@@ -14,19 +14,20 @@ parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
 
 from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
+    _convert,
     _pipeline,
-    convert,
     readers,
     tools,
     vocabularies,
     writers,
 )
+from seagliderOG1.reports import _record  # noqa: E402
 
 
 def test_resolve_platform_serial_from_file():
     """Serial comes from platform_id; string fields fall back to UNK; depth omitted."""
     ds = xr.Dataset(attrs={"platform_id": "SG005"})
-    resolved = convert._resolve_platform(ds, None)
+    resolved = _convert._resolve_platform(ds, None)
     assert resolved["PLATFORM_SERIAL_NUMBER"] == "sg005"
     assert resolved["PLATFORM_MODEL"] == "UNK"
     assert resolved["WMO_IDENTIFIER"] == "UNK"
@@ -43,7 +44,7 @@ def test_resolve_platform_config_overrides_and_numeric_depth():
         "PLATFORM_DEPTH_RATING": 1000,
         "platform_model_vocabulary": "http://vocab.example/model",
     }
-    resolved = convert._resolve_platform(ds, platform)
+    resolved = _convert._resolve_platform(ds, platform)
     assert resolved["PLATFORM_SERIAL_NUMBER"] == "orca"
     assert resolved["PLATFORM_MODEL"] == "Slocum G3"
     assert resolved["PLATFORM_DEPTH_RATING"] == 1000
@@ -53,7 +54,7 @@ def test_resolve_platform_config_overrides_and_numeric_depth():
 def test_resolve_platform_missing_serial_raises():
     """No platform_id and no config serial is a hard error (it names the output)."""
     try:
-        convert._resolve_platform(xr.Dataset(), None)
+        _convert._resolve_platform(xr.Dataset(), None)
     except ValueError as exc:
         assert "PLATFORM_SERIAL_NUMBER" in str(exc)
     else:
@@ -63,7 +64,7 @@ def test_resolve_platform_missing_serial_raises():
 def test_renamed_serial_records_the_basestation_value_in_a_comment():
     """A config serial that renames the basestation platform_id is noted in a comment."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
-    ds = convert.to_og1(datasets, platform={"PLATFORM_SERIAL_NUMBER": "orca"})
+    ds = _convert.convert(datasets, platform={"PLATFORM_SERIAL_NUMBER": "orca"})
     assert str(ds["PLATFORM_SERIAL_NUMBER"].values) == "orca"
     assert "sg005" in ds["PLATFORM_SERIAL_NUMBER"].attrs["comment"]
 
@@ -71,7 +72,7 @@ def test_renamed_serial_records_the_basestation_value_in_a_comment():
 def test_unrenamed_serial_has_no_override_comment():
     """When the config serial matches the basestation value, no override comment is written."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
-    ds = convert.to_og1(datasets, platform={"PLATFORM_SERIAL_NUMBER": "sg005"})
+    ds = _convert.convert(datasets, platform={"PLATFORM_SERIAL_NUMBER": "sg005"})
     assert "comment" not in ds["PLATFORM_SERIAL_NUMBER"].attrs
 
 
@@ -93,7 +94,7 @@ def test_get_contributors_demo_sg005_real_attrs():
     )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        attrs = convert.get_contributors(ds)
+        attrs = _convert.get_contributors(ds)
     assert attrs["contributor_name"] == "Charlie Eriksen, Peter Rhines"
     assert attrs["contributor_role"] == ", PI"  # Eriksen role-less; Rhines normalised
     assert attrs["contributor_email"] == "eriksen@uw.edu, "
@@ -118,7 +119,7 @@ def test_get_contributors_drops_the_file_institution_with_config_institutions():
             )
         }
     )
-    attrs = convert.get_contributors(
+    attrs = _convert.get_contributors(
         ds, institutions=[{"name": "No Such Institute", "role": "Operator"}]
     )
     assert attrs["contributing_institutions"] == "No Such Institute"
@@ -129,13 +130,13 @@ def test_sidecar_records_the_file_institution_and_its_registry_match(
     sg005_og1: pathlib.Path,
 ) -> None:
     """demo_sg005's postal-address institution resolves to EDMO 1434 in the sidecar."""
-    assert convert.conversion_sidecar(sg005_og1)["institution_from_file"] == {
+    assert _record.conversion_sidecar(sg005_og1)["institution_from_file"] == {
         "text": "School of Oceanography\nUniversity of Washington\nSeattle, WA 98195-5351",
         "name": "University of Washington (School of Oceanography)",
         "id": "https://edmo.seadatanet.org/report/1434",
     }
-    assert convert._institution_from_file({}) is None
-    assert convert._institution_from_file({"institution": "Nowhere"}) == {
+    assert _convert._institution_from_file({}) is None
+    assert _convert._institution_from_file({"institution": "Nowhere"}) == {
         "text": "Nowhere",
         "name": None,
         "id": None,
@@ -147,7 +148,7 @@ def test_get_contributors_config_fills_creator_role():
     ds = xr.Dataset(
         attrs={"creator_name": "Charlie Eriksen", "creator_email": "eriksen@uw.edu"}
     )
-    attrs = convert.get_contributors(
+    attrs = _convert.get_contributors(
         ds, people=[{"name": "Charlie Eriksen", "role": "PI"}]
     )
     assert attrs["contributor_name"] == "Charlie Eriksen"
@@ -158,7 +159,7 @@ def test_get_contributors_config_fills_creator_role():
 def test_global_attributes_collision_raises():
     """A global_attributes key that collides with a derived global is an error."""
     try:
-        convert.to_og1([], global_attributes={"id": "x"})
+        _convert.convert([], global_attributes={"id": "x"})
     except ValueError as exc:
         assert "id" in str(exc)
     else:
@@ -168,17 +169,17 @@ def test_global_attributes_collision_raises():
 def test_start_date_global_attribute_collision_raises():
     """start_date is converter-derived (names id/TRAJECTORY); a config override is rejected."""
     try:
-        convert.to_og1([], global_attributes={"start_date": "20080606T000000"})
+        _convert.convert([], global_attributes={"start_date": "20080606T000000"})
     except ValueError as exc:
         assert "start_date" in str(exc)
     else:
         raise AssertionError("expected ValueError for start_date collision")
 
 
-def test_to_og1_options_are_keyword_only():
-    """A positional second argument is rejected; options must be keyword."""
+def test_convert_options_are_keyword_only():
+    """``mission`` may be positional, but the metadata options after it must be keyword."""
     try:
-        convert.to_og1([], {})
+        _convert.convert([], {}, {})  # a third positional is not allowed
     except TypeError:
         pass
     else:
@@ -188,7 +189,7 @@ def test_to_og1_options_are_keyword_only():
 def test_name_mapping_returns_the_mapping_table():
     """name_mapping returns the basestation->OG1 table; a bare Dataset is rejected."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
-    mapping = convert.name_mapping(datasets)
+    mapping = _convert.name_mapping(datasets)
     assert list(mapping.columns) == [
         "original_name",
         "OG1_name",
@@ -201,7 +202,7 @@ def test_name_mapping_returns_the_mapping_table():
     assert "TIME" in set(mapping["OG1_name"])
 
     try:
-        convert.name_mapping(datasets[0])
+        _convert.name_mapping(datasets[0])
     except TypeError:
         pass
     else:
@@ -224,7 +225,7 @@ def test_keep_variables_retains_mandatory_and_qc():
     )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        out = convert.keep_variables(ds, ["TEMP"])
+        out = _convert.keep_variables(ds, ["TEMP"])
     assert "TEMP" in out.variables and "TEMP_QC" in out.variables  # ask + its QC
     assert "PLATFORM_SERIAL_NUMBER" in out.variables  # mandatory family
     assert "WMO_IDENTIFIER" in out.variables  # mandatory
@@ -247,8 +248,8 @@ def test_keep_variables_records_dropped_in_ledger():
     )
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        first = convert.keep_variables(ds, ["TEMP", "PSAL"])  # drops GLIDE_SPEED
-        second = convert.keep_variables(first, ["TEMP"])  # then drops PSAL
+        first = _convert.keep_variables(ds, ["TEMP", "PSAL"])  # drops GLIDE_SPEED
+        second = _convert.keep_variables(first, ["TEMP"])  # then drops PSAL
     assert set(json.loads(first.attrs["conversion_dropped_variables"])) == {
         "GLIDE_SPEED"
     }
@@ -264,10 +265,12 @@ def test_keep_variables_keeps_source_ledger_complete():
     import json
     import warnings
 
-    ds = convert.to_og1(readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1))
+    ds = _convert.convert(
+        readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    )
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        subset = convert.keep_variables(ds, ["TEMP"])
+        subset = _convert.keep_variables(ds, ["TEMP"])
     sources = json.loads(subset.attrs["conversion_attribute_sources"])
     assert "conversion_dropped_variables" in sources["derived"]
     # Still categorised exactly once across all categories.
@@ -288,7 +291,7 @@ def test_process_dataset():
 
     gps_info = split_ds[("gps_info",)]
 
-    sg_cal, dc_log, dc_other = convert.extract_variables(split_ds[()])
+    sg_cal, dc_log, dc_other = _convert.extract_variables(split_ds[()])
     tmp = dc_log.log_GPS.values.tobytes().decode("utf-8")
 
     assert sg_cal["mass"].values > 50 and sg_cal["mass"].values < 60
@@ -302,7 +305,7 @@ def test_process_dataset():
     merged_ds = _pipeline.merge_datasets_along_time(split_ds, time_variables)
 
     # Check initial variables are reformatted
-    dsa = convert.standardise_og1(merged_ds, og1_mapping=og1_mapping)
+    dsa = _convert.standardise_og1(merged_ds, og1_mapping=og1_mapping)
     varlist = list(dsa.data_vars)
     coordlist = list(dsa.coords)
     combined_list = varlist + coordlist
@@ -317,7 +320,7 @@ def test_process_dataset():
     for var in og1_varlist:
         assert var in combined_list
 
-    ds_new = convert.add_gps_info_to_dataset(dsa, gps_info)
+    ds_new = _convert.add_gps_info_to_dataset(dsa, gps_info)
     assert "LATITUDE_GPS" in list(ds_new.variables)
     assert "LONGITUDE_GPS" in list(ds_new.variables)
 
@@ -340,7 +343,7 @@ def test_output_dtypes_end_to_end(tmp_path: pathlib.Path) -> None:
     """
     source = str(parent_dir / "data/demo_sg005")
     datasets = readers.read_mission(source, 1, 5)
-    ds = convert.to_og1(datasets)
+    ds = _convert.convert(datasets)
     out = tmp_path / "out.nc"
 
     assert writers.write(ds, str(out)) == out
@@ -363,8 +366,8 @@ def test_check_required_globals_raises_on_missing_mandatory():
     attrs = dict.fromkeys(vocabularies.REQUIRED_GLOBALS["mandatory"], "x")
     del attrs["id"]
     try:
-        convert._check_required_globals(attrs)
-    except convert.MetadataError as exc:
+        _convert._check_required_globals(attrs)
+    except _convert.MetadataError as exc:
         assert "id" in str(exc)
     else:
         raise AssertionError("expected MetadataError for a missing mandatory global")
@@ -378,8 +381,8 @@ def test_check_required_globals_treats_placeholder_as_unset():
     attrs["title"] = ""
     attrs["Conventions"] = "null"
     try:
-        convert._check_required_globals(attrs)
-    except convert.MetadataError as exc:
+        _convert._check_required_globals(attrs)
+    except _convert.MetadataError as exc:
         assert "title" in str(exc) and "Conventions" in str(exc)
     else:
         raise AssertionError("expected MetadataError for placeholder globals")
@@ -388,7 +391,7 @@ def test_check_required_globals_treats_placeholder_as_unset():
 def test_converted_globals_carry_no_placeholder():
     """Conversion never writes '', 'null' or 'null@null.com' into a global attribute."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
-    ds = convert.to_og1(datasets)
+    ds = _convert.convert(datasets)
     placeholders = {"", "null", "null@null.com", "None"}
     offenders = {
         key: value
@@ -409,7 +412,7 @@ def test_derived_acdd_globals_from_the_data():
     import re
 
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
-    ds = convert.to_og1(datasets)
+    ds = _convert.convert(datasets)
     # Bounding-box polygon, latitude first (EPSG:4326 axis order): corners match the min/max.
     assert ds.attrs["geospatial_bounds"] == (
         "POLYGON (("
@@ -435,7 +438,7 @@ def test_derived_acdd_globals_from_the_data():
 def test_deployment_globals_are_written():
     """Global-section values become globals; a null one is skipped; globals elsewhere too."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
-    ds = convert.to_og1(
+    ds = _convert.convert(
         datasets,
         deployment={
             "license": "CC-BY-4.0",
@@ -457,7 +460,7 @@ def test_deployment_id_overrides_derived_with_warning():
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        ds = convert.to_og1(datasets, deployment={"id": "my_custom_id"})
+        ds = _convert.convert(datasets, deployment={"id": "my_custom_id"})
     assert ds.attrs["id"] == "my_custom_id"
     assert any("identity_and_discovery.id overrides" in str(w.message) for w in caught)
 
@@ -465,7 +468,7 @@ def test_deployment_id_overrides_derived_with_warning():
 def test_global_attributes_refuses_a_sectioned_key():
     """A global_attributes key with a structured home in a section is an error, naming it."""
     try:
-        convert.to_og1([], global_attributes={"doi": "x"})
+        _convert.convert([], global_attributes={"doi": "x"})
     except ValueError as exc:
         assert "doi" in str(exc) and "rights_and_access:" in str(exc)
     else:
@@ -476,7 +479,7 @@ def test_global_attributes_null_reserved_key_is_tolerated():
     """A legacy v1 template listing reserved keys as null still converts (nulls skipped)."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
     # project/program have a deployment home, date_created is derived; all null -> no collision.
-    ds = convert.to_og1(
+    ds = _convert.convert(
         datasets,
         global_attributes={"project": None, "program": None, "date_created": None},
     )
@@ -486,7 +489,7 @@ def test_global_attributes_null_reserved_key_is_tolerated():
 def test_deployment_unknown_key_raises():
     """An unknown deployment: key is rejected, naming the key."""
     try:
-        convert.to_og1([], deployment={"nonsense": "x"})
+        _convert.convert([], deployment={"nonsense": "x"})
     except ValueError as exc:
         assert "nonsense" in str(exc)
     else:
@@ -497,17 +500,17 @@ def test_literal_null_platform_value_is_treated_as_unset():
     """A literal 'null'/'null@null.com' string counts as unset, like None (one rule)."""
     ds = xr.Dataset(attrs={"platform_id": "SG005"})
     platform = {"PLATFORM_MODEL": "null", "PLATFORM_NAME": "null@null.com"}
-    resolved = convert._resolve_platform(ds, platform)
+    resolved = _convert._resolve_platform(ds, platform)
     assert resolved["PLATFORM_MODEL"] == "UNK"  # "null" is unset -> UNK, not literal
     assert "PLATFORM_NAME" not in resolved  # optional, unset -> omitted
-    assert convert._is_empty("null") and convert._is_empty("null@null.com")
+    assert _convert._is_empty("null") and _convert._is_empty("null@null.com")
 
 
 def test_resolve_platform_optional_fields_omitted_when_null():
     """Optional platform variables are absent from the resolved dict when unset."""
     ds = xr.Dataset(attrs={"platform_id": "SG005"})
-    resolved = convert._resolve_platform(ds, None)
-    for field in convert.OPTIONAL_PLATFORM_VARS:
+    resolved = _convert._resolve_platform(ds, None)
+    for field in _convert.OPTIONAL_PLATFORM_VARS:
         assert field not in resolved
     assert "platform_maker_vocabulary" not in resolved
 
@@ -520,7 +523,7 @@ def test_resolve_platform_optional_fields_written_when_set():
         "TELECOM_TYPE": "Iridium",
         "platform_maker_vocabulary": "http://vocab.example/maker",
     }
-    resolved = convert._resolve_platform(ds, platform)
+    resolved = _convert._resolve_platform(ds, platform)
     assert resolved["PLATFORM_NAME"] == "Orca"
     assert resolved["TELECOM_TYPE"] == "Iridium"
     assert resolved["platform_maker_vocabulary"] == "http://vocab.example/maker"
@@ -530,7 +533,7 @@ def test_resolve_platform_optional_fields_written_when_set():
 def test_optional_platform_variables_written_with_long_name_and_vocab():
     """Set optional platform fields become variables with long_name and vocabulary."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
-    ds = convert.to_og1(
+    ds = _convert.convert(
         datasets,
         platform={
             "PLATFORM_SERIAL_NUMBER": "sg005",
@@ -557,7 +560,7 @@ def test_conversion_attribute_sources_ledger():
     import json
 
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
-    ds = convert.to_og1(
+    ds = _convert.convert(
         datasets,
         deployment={"id": "custom_id"},
         global_attributes={"program": "MOOSE"},
@@ -578,7 +581,7 @@ def test_original_name_on_every_basestation_variable():
     import json
 
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
-    ds = convert.to_og1(datasets)
+    ds = _convert.convert(datasets)
     derived = set(json.loads(ds.attrs["conversion_derived_variables"]))
     for name in ds.variables:
         named = "original_name" in ds[name].attrs
@@ -599,7 +602,7 @@ def test_conversion_dimensions_ledger():
     import json
 
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
-    ds = convert.to_og1(datasets)
+    ds = _convert.convert(datasets)
     dims = json.loads(ds.attrs["conversion_dimensions"])
     # The CTD dimension is the backbone that becomes N_MEASUREMENTS.
     assert dims["sg_data_point"]["fate"] == "backbone"
@@ -617,7 +620,7 @@ def test_basestation_comment_is_kept_not_renamed():
     """A basestation comment is carried to the output unchanged, not folded into history."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
     datasets[0].attrs["comment"] = "deployed off the shelf break"
-    ds = convert.to_og1(datasets)
+    ds = _convert.convert(datasets)
     assert ds.attrs.get("comment") == "deployed off the shelf break"
     assert "deployed off the shelf break" not in ds.attrs["history"]
 
@@ -628,7 +631,7 @@ def test_history_is_one_provenance_line():
 
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
     base = datasets[0].attrs["history"].strip()
-    ds = convert.to_og1(datasets)
+    ds = _convert.convert(datasets)
     history = ds.attrs["history"].strip()
     # Exactly one line, and not the multi-line basestation per-dive QC log.
     assert "\n" not in history
@@ -636,7 +639,7 @@ def test_history_is_one_provenance_line():
     # Its shape is asserted, never its timestamp value (not reproducible).
     assert re.match(
         r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00 seagliderOG1 \S+: "
-        r"basestation to OG1 \(to_og1\)$",
+        r"basestation to OG1 \(convert\)$",
         history,
     )
 
@@ -646,7 +649,7 @@ def test_scalar_parameters_storage_and_dimension():
     import json
 
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
-    ds = convert.to_og1(datasets)
+    ds = _convert.convert(datasets)
     # No variable carries an empty original_dimension placeholder (it is omitted instead).
     assert all(ds[v].attrs.get("original_dimension", "x") != "" for v in ds.variables)
     # Both scalar cases declare their storage, so the ledger view infers nothing.
@@ -666,7 +669,7 @@ def test_scalar_parameters_storage_and_dimension():
 def test_formerly_dropped_variables_reach_the_file():
     """Variables the package drop list used to remove are now in the output, by original_name."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
-    ds = convert.to_og1(datasets)
+    ds = _convert.convert(datasets)
     written = {ds[v].attrs.get("original_name"): v for v in ds.variables}
     assert vocabularies.VARIABLES_TO_DROP == []
     assert written["density"] == "density"  # passed through
@@ -679,7 +682,9 @@ def test_formerly_dropped_variables_reach_the_file():
 
 def test_vbd_min_cnts_has_one_source():
     """VBD_MIN_CNTS is the calibration constant; the dive-log value keeps its own name."""
-    ds = convert.to_og1(readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1))
+    ds = _convert.convert(
+        readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    )
     assert ds["VBD_MIN_CNTS"].attrs["original_name"] == "sg_cal_vbd_min_cnts"
     assert ds["log_VBD_MIN"].attrs["original_name"] == "log_VBD_MIN"
     assert not [v for v in ds.variables if str(v).startswith("VBD_MIN_CNTS_")]
@@ -688,7 +693,7 @@ def test_vbd_min_cnts_has_one_source():
 def test_conversion_ledger_parses_the_file():
     """conversion_ledger returns the parsed ledger; a pre-ledger file raises MetadataError."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
-    ledger = convert.conversion_ledger(convert.to_og1(datasets))
+    ledger = _record.conversion_ledger(_convert.convert(datasets))
     assert set(ledger) == {
         "dimensions",
         "derived",
@@ -722,8 +727,8 @@ def test_conversion_ledger_parses_the_file():
     assert per_dive
     assert sorted(ledger["scalar_parameters"][per_dive[0]]["dives"]) == [1, 2]
     try:
-        convert.conversion_ledger(readers.load_sample_basestation())
-    except convert.MetadataError:
+        _record.conversion_ledger(readers.load_sample_basestation())
+    except _convert.MetadataError:
         pass
     else:
         raise AssertionError("expected MetadataError on a pre-ledger file")
@@ -733,8 +738,8 @@ def test_reconciliation_fates_sum_to_input_count():
     """Every basestation variable has exactly one fate; the six buckets sum to the input count."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
     inputs = {str(v) for ds in datasets for v in ds.variables}
-    ds = convert.to_og1(datasets)
-    ledger = convert.conversion_ledger(ds)
+    ds = _convert.convert(datasets)
+    ledger = _record.conversion_ledger(ds)
     renamed = {
         str(ds[n].attrs["original_name"])
         for n in ds.variables
@@ -765,8 +770,8 @@ def test_reconciliation_fates_sum_to_input_count():
 def test_dimension_fate_agrees_with_output_variables():
     """A dimension's fate is read from the output: merged iff a variable survives on it."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
-    ds = convert.to_og1(datasets)
-    dims = convert.conversion_ledger(ds)["dimensions"]
+    ds = _convert.convert(datasets)
+    dims = _record.conversion_ledger(ds)["dimensions"]
     in_output = {
         str(ds[n].attrs["original_dimension"])
         for n in ds.variables
@@ -788,7 +793,7 @@ def test_dimension_fate_agrees_with_output_variables():
 def test_derived_sources_stamp_never_reaches_the_file(tmp_path: pathlib.Path) -> None:
     """The transient _derived_sources attr is consumed into the ledger, not written to disk."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
-    ds = convert.to_og1(datasets)
+    ds = _convert.convert(datasets)
     assert not [
         n for n in ds.variables if _pipeline.DERIVED_SOURCES_ATTR in ds[n].attrs
     ]
@@ -809,8 +814,8 @@ def test_derived_sources_stamp_never_reaches_the_file(tmp_path: pathlib.Path) ->
 def test_start_date_is_earliest_time_regardless_of_input_order():
     """start_date/id/TRAJECTORY come from the earliest TIME, not the input order."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 3)
-    forward = convert.to_og1(datasets)
-    reverse = convert.to_og1(list(reversed(datasets)))
+    forward = _convert.convert(datasets)
+    reverse = _convert.convert(list(reversed(datasets)))
     # start_date is the deployment time and agrees with the first measurement time.
     assert forward.attrs["start_date"] == forward.attrs["time_coverage_start"]
     # The identity globals are stable under a permutation of the input.
@@ -840,7 +845,7 @@ def test_process_mission_writes_then_refuses_then_overwrites(
         "institutions": _SG005_INSTITUTIONS,
         "platform": {"PLATFORM_MAKER": "University of Washington"},
     }
-    path = convert.process_mission(_SG005, out, **kwargs)
+    path = _convert._convert_mission(_SG005, out, **kwargs)
     assert path.parent == out
     with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
         assert path.name == f"{ds.attrs['id']}.nc"
@@ -848,16 +853,16 @@ def test_process_mission_writes_then_refuses_then_overwrites(
         assert str(ds["PLATFORM_MAKER"].values) == "University of Washington"
 
     with pytest.raises(FileExistsError) as exc:
-        convert.process_mission(_SG005, out, **kwargs)
+        _convert._convert_mission(_SG005, out, **kwargs)
     assert exc.value.filename == str(path)
 
-    assert convert.process_mission(_SG005, out, overwrite=True, **kwargs) == path
+    assert _convert._convert_mission(_SG005, out, overwrite=True, **kwargs) == path
 
 
 def test_process_mission_dives_and_keep_variables(tmp_path: pathlib.Path) -> None:
     """dives limits the dives read; keep_variables subsets and records what it dropped."""
     with pytest.warns(UserWarning, match="keep_variables dropped"):
-        path = convert.process_mission(
+        path = _convert._convert_mission(
             _SG005, tmp_path, dives=(2, 2), keep_variables=["TEMP", "DIVE_NUMBER"]
         )
     with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
@@ -876,23 +881,23 @@ def test_process_mission_refuses_a_root_and_an_empty_dir(
     for nc in _SG005.glob("p*.nc"):
         (mission / nc.name).write_bytes(nc.read_bytes())
     with pytest.raises(ValueError, match="root of SN/DATE missions"):
-        convert.process_mission(tmp_path / "root", tmp_path / "out")
+        _convert._convert_mission(tmp_path / "root", tmp_path / "out")
     empty = tmp_path / "empty"
     empty.mkdir()
     with pytest.raises(ValueError, match="no basestation files"):
-        convert.process_mission(empty, tmp_path / "out")
+        _convert._convert_mission(empty, tmp_path / "out")
 
 
 def test_process_mission_report_writes_the_page(tmp_path: pathlib.Path) -> None:
     """report=True writes <id>_conversion.html beside the file; an existing page is refused."""
-    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1), report=True)
+    path = _convert._convert_mission(_SG005, tmp_path, dives=(1, 1), report=True)
     page = tmp_path / f"{path.stem}_conversion.html"
     assert page.is_file()
     assert path.stem in page.read_text(encoding="utf-8")
 
     path.unlink()  # only the page is left: still refused, and nothing is written
     with pytest.raises(FileExistsError) as exc:
-        convert.process_mission(_SG005, tmp_path, dives=(1, 1), report=True)
+        _convert._convert_mission(_SG005, tmp_path, dives=(1, 1), report=True)
     assert exc.value.filename == str(page)
     assert not path.exists()
 
@@ -902,7 +907,7 @@ def test_bundled_example_writes_platform_vocabularies(tmp_path: pathlib.Path) ->
     import yaml
 
     config = yaml.safe_load((_SG005 / "mission.yaml").read_text())
-    path = convert.process_mission(
+    path = _convert._convert_mission(
         _SG005,
         tmp_path,
         dives=(1, 1),
@@ -927,14 +932,14 @@ def test_bundled_example_writes_platform_vocabularies(tmp_path: pathlib.Path) ->
 
 def test_presence_by_dive_on_sg005() -> None:
     """sg005 shows three patterns: every dive, valid from dive 2, and dive 4 only."""
-    presence = convert.presence_by_dive(readers.read_mission(str(_SG005)))
+    presence = _convert._presence_by_dive(readers.read_mission(str(_SG005)))
     assert presence["dives"] == [1, 2, 3, 4, 5]
     current = presence["variables"]["depth_avg_curr_east"]
     assert current == {"present": [[1, 5]], "valid": [[2, 5]]}  # empty until dive 2
     assert presence["variables"]["log_ALTIM_BOTTOM_PING"]["present"] == [[4, 4]]
-    labels = [row["label"] for row in convert.presence_patterns(presence)]
+    labels = [row["label"] for row in _record.presence_patterns(presence)]
     assert labels == ["every dive", "from dive 2", "dive 4 only"]
-    assert convert.presence_summary(presence) == (
+    assert _record.presence_summary(presence) == (
         "343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns)"
     )
 
@@ -942,7 +947,7 @@ def test_presence_by_dive_on_sg005() -> None:
 def test_presence_pattern_labels() -> None:
     """The run classifier names every pattern class (pure logic; sg005 lacks until/range)."""
     dives = [1, 2, 3, 4, 5, 7]  # dive 6 missing: runs follow file order, not numbering
-    label = convert._run_label
+    label = _record._run_label
     assert label([[1, 7]], dives) == "every dive"
     assert label([[3, 7]], dives) == "from dive 3"
     assert label([[1, 4]], dives) == "until dive 4"
@@ -950,7 +955,7 @@ def test_presence_pattern_labels() -> None:
     assert label([[5, 5]], dives) == "dive 5 only"
     assert label([[1, 2], [5, 7]], dives) == "sporadic"
     assert label([], dives) == "never"
-    assert convert._dive_runs([True, True, False, True], [1, 2, 3, 4]) == [
+    assert _convert._dive_runs([True, True, False, True], [1, 2, 3, 4]) == [
         [1, 2],
         [4, 4],
     ]
@@ -978,19 +983,19 @@ def test_presence_counts_blank_text_and_nat_as_no_values() -> None:
             attrs={"dive_number": 2},
         ),
     ]
-    variables = convert.presence_by_dive(dives)["variables"]
+    variables = _convert._presence_by_dive(dives)["variables"]
     for name in ("t", "s", "o"):
         assert variables[name] == {"present": [[1, 2]], "valid": [[2, 2]]}, name
 
 
-def test_to_og1_provenance_leaves_out_a_rejected_dive() -> None:
+def test_convert_record_leaves_out_a_rejected_dive() -> None:
     """A dive the converter rejects (no ctd_time) is not recorded as contributing."""
     datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 3)
     datasets[1] = datasets[1].drop_vars("ctd_time")
-    provenance: dict = {}
-    convert.to_og1(datasets, provenance=provenance)
-    assert provenance["presence"]["dives"] == [1, 3]
-    assert [entry["dive"] for entry in provenance["inputs"]] == [1, 3]
+    record: dict = {}
+    _convert.convert(datasets, record=record)
+    assert record["presence"]["dives"] == [1, 3]
+    assert [entry["dive"] for entry in record["inputs"]] == [1, 3]
 
 
 def test_conversion_sidecar_ignores_an_unreadable_or_foreign_sidecar(
@@ -1003,10 +1008,10 @@ def test_conversion_sidecar_ignores_an_unreadable_or_foreign_sidecar(
     payload = json.loads(sidecar_file.read_text())
     sidecar_file.write_text(json.dumps({**payload, "schema": 99}))
     with pytest.warns(UserWarning, match="not a schema-1"):
-        assert convert.conversion_sidecar(path) is None
+        assert _record.conversion_sidecar(path) is None
     sidecar_file.write_text('{"schema": 1, "id"')
     with pytest.warns(UserWarning, match="could not be read"):
-        assert convert.conversion_sidecar(path) is None
+        assert _record.conversion_sidecar(path) is None
 
 
 def test_presence_summary_none_when_dives_agree() -> None:
@@ -1015,15 +1020,15 @@ def test_presence_summary_none_when_dives_agree() -> None:
         "dives": [1, 2],
         "variables": {"a": {"present": [[1, 2]], "valid": [[1, 2]]}},
     }
-    assert convert.presence_summary(presence) is None
+    assert _record.presence_summary(presence) is None
 
 
 def test_process_mission_writes_the_sidecar_bound_to_the_file(
     tmp_path: pathlib.Path,
 ) -> None:
     """The sidecar sits beside the file, binds by id/date_created, and adds nothing to it."""
-    path = convert.process_mission(_SG005, tmp_path, dives=(1, 2))
-    sidecar = convert.conversion_sidecar(path)
+    path = _convert._convert_mission(_SG005, tmp_path, dives=(1, 2))
+    sidecar = _record.conversion_sidecar(path)
     assert sidecar is not None
     assert [entry["dive"] for entry in sidecar["inputs"]] == [1, 2]
     assert all(entry["path"].startswith("p005") for entry in sidecar["inputs"])
@@ -1038,8 +1043,8 @@ def test_sidecar_inputs_record_dimension_lengths_and_global_count(
 ) -> None:
     """Each input record carries the file's dimension lengths and global-attribute count."""
     datasets = readers.read_mission(str(_SG005), 1, 2)
-    path = convert.process_mission(_SG005, tmp_path, dives=(1, 2))
-    inputs = convert.conversion_sidecar(path)["inputs"]
+    path = _convert._convert_mission(_SG005, tmp_path, dives=(1, 2))
+    inputs = _record.conversion_sidecar(path)["inputs"]
     by_dive = {entry["dive"]: entry for entry in inputs}
     for ds in datasets:
         entry = by_dive[int(ds.attrs["dive_number"])]
@@ -1049,8 +1054,8 @@ def test_sidecar_inputs_record_dimension_lengths_and_global_count(
 
     # A sidecar left beside a deleted file is stale: it is replaced, not refused.
     path.unlink()
-    assert convert.process_mission(_SG005, tmp_path, dives=(1, 1)) == path
-    assert convert.conversion_sidecar(path)["presence"]["dives"] == [1]
+    assert _convert._convert_mission(_SG005, tmp_path, dives=(1, 1)) == path
+    assert _record.conversion_sidecar(path)["presence"]["dives"] == [1]
 
 
 def test_conversion_sidecar_ignores_another_conversion(
@@ -1063,11 +1068,11 @@ def test_conversion_sidecar_ignores_another_conversion(
     payload["tracking_id"] = "not-this-file"
     sidecar_file.write_text(json.dumps(payload))
     with pytest.warns(UserWarning, match="belongs to another conversion"):
-        assert convert.conversion_sidecar(path) is None
+        assert _record.conversion_sidecar(path) is None
     # A sidecar written before tracking_id binds by id + date_created, as it did.
     del payload["tracking_id"]
     sidecar_file.write_text(json.dumps(payload))
-    assert convert.conversion_sidecar(path) is not None
+    assert _record.conversion_sidecar(path) is not None
 
 
 def test_sidecar_records_tracking_id_and_hash_and_warns_on_change(
@@ -1090,9 +1095,9 @@ def test_sidecar_records_tracking_id_and_hash_and_warns_on_change(
     # Hashing reads the whole file, so it runs only when asked (the report verb).
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        assert convert.conversion_sidecar(path) is not None
+        assert _record.conversion_sidecar(path) is not None
     with pytest.warns(UserWarning, match="has changed since"):
-        assert convert.conversion_sidecar(path, verify=True) is not None
+        assert _record.conversion_sidecar(path, verify=True) is not None
 
 
 def test_enrich_checks_every_value_before_writing(
@@ -1102,13 +1107,13 @@ def test_enrich_checks_every_value_before_writing(
     path = sg005_og1_copy
     digest = writers.file_sha256(path)
     with pytest.raises(ValueError, match="list cannot be a global attribute"):
-        convert.enrich(
+        writers.enrich(
             path, doi="10.5281/zenodo.1", global_attributes={"keywords": ["a", "b"]}
         )
     with pytest.raises(ValueError, match="true/false"):
-        convert.enrich(path, global_attributes={"flag": True})
+        writers.enrich(path, global_attributes={"flag": True})
     with pytest.raises(ValueError, match="differs from the file's id"):
-        convert.enrich(path, deployment={"id": "sg005_other"})
+        writers.enrich(path, deployment={"id": "sg005_other"})
     assert writers.file_sha256(path) == digest
 
 
@@ -1120,9 +1125,9 @@ def test_enrich_warns_on_a_replaced_value_and_records_it(
     import datetime as dt
 
     path = sg005_og1_copy
-    convert.enrich(path, global_attributes={"program": "MOOSE"})  # new key: no warning
+    writers.enrich(path, global_attributes={"program": "MOOSE"})  # new key: no warning
     with pytest.warns(UserWarning, match="enrich replaces program: 'MOOSE' -> 'OSNAP'"):
-        convert.enrich(
+        writers.enrich(
             path,
             global_attributes={
                 "program": "OSNAP",
@@ -1145,7 +1150,7 @@ def test_process_mission_report_dir_checks_the_page_before_writing(
     """report_dir puts the page in ROOT/<id>/; an existing page refuses before any write."""
     out = tmp_path / "data"
     site = tmp_path / "site"
-    path = convert.process_mission(
+    path = _convert._convert_mission(
         _SG005, out, dives=(1, 1), report=True, report_dir=site
     )
     page = site / path.stem / f"{path.stem}_conversion.html"
@@ -1153,14 +1158,18 @@ def test_process_mission_report_dir_checks_the_page_before_writing(
     assert not list(out.glob("*.html"))
     path.unlink()
     with pytest.raises(FileExistsError) as excinfo:
-        convert.process_mission(_SG005, out, dives=(1, 1), report=True, report_dir=site)
+        _convert._convert_mission(
+            _SG005, out, dives=(1, 1), report=True, report_dir=site
+        )
     assert excinfo.value.filename == str(page)
     assert not path.exists()  # refused before the .nc was written
 
 
 def test_raw_count_channels_keep_their_names_and_are_counts():
     """WET Labs counts are not written as BBP700/BBP470; counts get units 'counts'."""
-    ds = convert.to_og1(readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2))
+    ds = _convert.convert(
+        readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 2)
+    )
     assert "BBP700" not in ds and "BBP470" not in ds
     for name in ("eng_wlbb2f_redCount", "eng_wlbb2f_blueCount"):
         assert ds[name].attrs["units"] == "counts", name
@@ -1196,7 +1205,7 @@ def test_tridente_bb700_keeps_its_name_and_units():
     )  # prefix stripping is live
     assert pd.isna(og1["tridentebb700chla470fdom365_bb700"])  # passes through by name
     # Its stated units are kept: the counts label applies only to unit-less raw counts.
-    assert not convert._is_raw_count(
+    assert not _convert._is_raw_count(
         "tridentebb700chla470fdom365_bb700", {"units": units}
     )
     # The three uncalibrated sources unmapped here stay unmapped (computed backscatter
@@ -1207,9 +1216,9 @@ def test_tridente_bb700_keeps_its_name_and_units():
 
 def test_is_raw_count_needs_the_suffix_and_no_units():
     """Pure logic: a stated unit is never overwritten."""
-    assert convert._is_raw_count("eng_wlbb2f_redCount", {})
-    assert not convert._is_raw_count("eng_wlbb2f_redCount", {"units": "m-1"})
-    assert not convert._is_raw_count("eng_rollCtl", {})
+    assert _convert._is_raw_count("eng_wlbb2f_redCount", {})
+    assert not _convert._is_raw_count("eng_wlbb2f_redCount", {"units": "m-1"})
+    assert not _convert._is_raw_count("eng_rollCtl", {})
 
 
 def test_skipped_dimension_warning_names_only_absent_dimensions(caplog):
@@ -1217,7 +1226,9 @@ def test_skipped_dimension_warning_names_only_absent_dimensions(caplog):
     import logging
 
     with caplog.at_level(logging.WARNING, logger="seagliderOG1.convert"):
-        convert.to_og1(readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1))
+        _convert.convert(
+            readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+        )
     lines = [
         r.getMessage()
         for r in caplog.records
@@ -1233,7 +1244,7 @@ def test_date_created_is_the_conversion_time_in_utc(tmp_path: pathlib.Path) -> N
     from datetime import UTC, datetime, timedelta
 
     start = datetime.now(UTC).replace(microsecond=0)
-    path = convert.process_mission(_SG005, tmp_path, dives=(1, 1))
+    path = _convert._convert_mission(_SG005, tmp_path, dives=(1, 1))
     with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
         created = datetime.strptime(ds.attrs["date_created"], "%Y%m%dT%H%M%S")
         assert ds.attrs["date_modified"] == ds.attrs["date_created"]
@@ -1283,7 +1294,7 @@ def test_unknown_sensor_key_is_skipped_not_fatal() -> None:
     """A sensor key with no catalogue entry warns and gets no SENSOR_ variable."""
     datasets = readers.read_mission(str(_SG005), 1, 1)
     datasets[0].attrs["instrument"] = f"{datasets[0].attrs['instrument']} xyzsensor"
-    ds = convert.to_og1(datasets)
+    ds = _convert.convert(datasets)
     assert not [name for name in ds.variables if "XYZ" in str(name).upper()]
     assert [name for name in ds.variables if str(name).startswith("SENSOR_CTD_")]
 
@@ -1293,7 +1304,7 @@ def test_sensors_config_corrects_a_basestation_sensor_record() -> None:
     import pytest
 
     datasets = readers.read_mission(str(_SG005), 1, 1)
-    ds = convert.to_og1(
+    ds = _convert.convert(
         datasets,
         sensors={"wlbb2f": {"serial_number": "1234", "calibration_date": "2008-02-01"}},
     )
@@ -1305,6 +1316,6 @@ def test_sensors_config_corrects_a_basestation_sensor_record() -> None:
     users = [v for v in ds.variables if ds[v].attrs.get("sensor") == sensor.name]
     assert "FLUOCHLA" in users
     with pytest.raises(ValueError, match="sensor keys .* are .*'wlbb2f'"):
-        convert.to_og1(datasets, sensors={"tridente": {"serial_number": "1"}})
+        _convert.convert(datasets, sensors={"tridente": {"serial_number": "1"}})
     with pytest.raises(ValueError, match="unknown field 'serial'"):
-        convert.to_og1(datasets, sensors={"wlbb2f": {"serial": "1"}})
+        _convert.convert(datasets, sensors={"wlbb2f": {"serial": "1"}})

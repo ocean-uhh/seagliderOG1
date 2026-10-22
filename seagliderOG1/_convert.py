@@ -10,12 +10,10 @@ import json
 import logging
 import os
 import pathlib
-import uuid
 import warnings
 from collections.abc import Mapping, Sequence
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 
-import netCDF4
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -30,20 +28,15 @@ from seagliderOG1 import (
     vocabularies,
     writers,
 )
-from seagliderOG1.exceptions import MetadataError
+from seagliderOG1 import mission as _config
+from seagliderOG1.exceptions import MetadataError, MissionError
 
 __all__ = [
-    "process_mission",
-    "to_og1",
-    "name_mapping",
+    "convert",
     "keep_variables",
-    "conversion_ledger",
-    "conversion_sidecar",
-    "presence_by_dive",
-    "presence_patterns",
-    "presence_summary",
-    "enrich",
-    "MetadataError",
+    "name_mapping",
+    "process",
+    "process_missions",
 ]
 
 _log = logging.getLogger(__name__)
@@ -60,15 +53,6 @@ _DERIVED_SOURCES_ATTR = _pipeline.DERIVED_SOURCES_ATTR
 # The globals the converter computes; the mission config may not set them. One list in
 # vocabularies, read here and by validate.
 _DERIVED_GLOBALS = vocabularies.DERIVED_GLOBALS
-
-# OG1 deployment-identity globals the mission config sets through the structured
-# global-attribute sections (vocabularies.DEPLOYMENT_GLOBALS is their flat union, merged from
-# the three mission.yaml sections at the CLI boundary). A global_attributes key
-# duplicating one of these is refused: the escape hatch is for everything else. ``id``
-# (derived) and ``comment`` (kept from the basestation files when they carry one) can
-# already be set, so a deployment value for them overrides with a warning naming both;
-# the rest are config-only.
-_DEPLOYMENT_GLOBALS = vocabularies.DEPLOYMENT_GLOBALS
 
 # String platform fields, resolved in order config -> file -> "UNK", derived from
 # the one platform table in vocabularies (serial raises when absent, numeric fields
@@ -300,117 +284,6 @@ def keep_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
 _keep_variables = keep_variables
 
 
-def _decode_per_dive(ds: xr.Dataset, name: str) -> dict:
-    """Return the decoded per-dive JSON payload for variable ``name``.
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        The OG1 dataset.
-    name : str
-        A variable whose ``storage_type`` is ``per_dive_scalar``.
-
-    Returns
-    -------
-    dict
-        The decoded ``{"dives": [...], "values": [...]}`` payload.
-
-    Raises
-    ------
-    MetadataError
-        If the stored value is not the per-dive JSON this package writes.
-
-    """
-    note = (
-        f"{name}: storage_type is 'per_dive_scalar' but the value is not the per-dive "
-        "JSON this package writes"
-    )
-    try:
-        payload = json.loads(str(ds[name].values))
-    except (json.JSONDecodeError, TypeError) as exc:
-        raise MetadataError(f"{note} ({exc}).") from exc
-    # Require the object shape the writer produces: a dict with equal-length dives and
-    # values lists, so a non-object or ragged payload fails loudly here rather than as a
-    # later AttributeError or zip mismatch.
-    if (
-        not isinstance(payload, dict)
-        or not isinstance(payload.get("dives"), list)
-        or not isinstance(payload.get("values"), list)
-    ):
-        raise MetadataError(f"{note} (expected an object with 'dives' and 'values').")
-    if len(payload["dives"]) != len(payload["values"]):
-        raise MetadataError(
-            f"{note} ('dives' and 'values' have different lengths: "
-            f"{len(payload['dives'])} vs {len(payload['values'])})."
-        )
-    return payload
-
-
-def conversion_ledger(ds: xr.Dataset) -> dict:
-    """Return what the conversion recorded in a file, read from the file alone.
-
-    Parses the conversion-ledger globals and the per-scalar storage once, so a caller
-    (the ``inspect`` text view, the HTML page) does not re-decode the JSON or re-walk
-    the variables. Everything returned is reconstructable from the file; nothing is
-    read from conversion-time state.
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        An OG1 dataset written by :func:`to_og1`.
-
-    Returns
-    -------
-    dict
-        Keys ``dimensions`` (dimension to ``{"fate", "variables"}``), ``derived``
-        (derived-variable name to its list of source basestation names), ``dropped``
-        (list of names), ``removed`` (list of names), ``input_variable_count`` (int),
-        ``attribute_sources`` (category to names), ``history`` (str) and
-        ``scalar_parameters`` (name to ``{"storage", "original_name", "units"}``, plus
-        ``"dives"`` and ``"values"`` for a per-dive scalar).
-
-    Raises
-    ------
-    MetadataError
-        If ``ds`` predates the ledger (no ``conversion_dimensions``), or a per-dive
-        scalar's value is not the per-dive JSON this package writes.
-
-    """
-    if "conversion_dimensions" not in ds.attrs:
-        msg = (
-            "no conversion ledger: the file has no 'conversion_dimensions' global, so "
-            "it predates the ledger (not written by this version of to_og1)."
-        )
-        raise MetadataError(msg)
-
-    scalar_parameters: dict[str, dict] = {}
-    for name in ds.variables:
-        storage = ds[name].attrs.get("storage_type")
-        if storage not in ("constant_scalar", "per_dive_scalar"):
-            continue
-        entry = {
-            "storage": storage,
-            "original_name": ds[name].attrs.get("original_name"),
-            "units": ds[name].attrs.get("units", ""),
-        }
-        if storage == "per_dive_scalar":
-            payload = _decode_per_dive(ds, name)
-            entry["dives"] = payload.get("dives", [])
-            entry["values"] = payload.get("values", [])
-        scalar_parameters[str(name)] = entry
-
-    return {
-        "dimensions": json.loads(ds.attrs["conversion_dimensions"]),
-        "derived": json.loads(ds.attrs.get("conversion_derived_variables", "{}")),
-        "dropped": json.loads(ds.attrs.get("conversion_dropped_variables", "[]")),
-        "removed": json.loads(ds.attrs.get("conversion_removed_variables", "[]")),
-        "input_variable_count": int(ds.attrs.get("conversion_input_variable_count", 0)),
-        "attribute_sources": json.loads(ds.attrs["conversion_attribute_sources"]),
-        "history": str(ds.attrs.get("history", "")),
-        "scalar_parameters": scalar_parameters,
-    }
-
-
 def _input_record(ds: xr.Dataset) -> dict[str, object]:
     """Return ``{"path", "bytes", "dive", "dimensions", "n_globals"}`` for one input dataset.
 
@@ -516,7 +389,7 @@ def _has_values(var: xr.Variable) -> bool:
     return True
 
 
-def presence_by_dive(list_of_datasets: Sequence[xr.Dataset]) -> dict:
+def _presence_by_dive(list_of_datasets: Sequence[xr.Dataset]) -> dict:
     """Return the dives each basestation variable is present in, and has values in.
 
     A sensor switched on part-way through a mission, or one that is present but off,
@@ -555,210 +428,7 @@ def presence_by_dive(list_of_datasets: Sequence[xr.Dataset]) -> dict:
     return {"dives": dives, "variables": variables}
 
 
-def _run_label(runs: list[list[int]], dives: Sequence[int]) -> str:
-    """Return a dive-range label: ``every dive``, ``from dive 12``, ``dives 3–7``, ...
-
-    Parameters
-    ----------
-    runs : list of [int, int]
-        Dive ranges from :func:`presence_by_dive`.
-    dives : sequence of int
-        The input dive numbers, in order.
-
-    Returns
-    -------
-    str
-        One of ``every dive``, ``never``, ``from dive k``, ``until dive k``,
-        ``dive k only``, ``dives a–b`` or ``sporadic``.
-
-    """
-    if not runs:
-        return "never"
-    if len(runs) > 1:
-        return "sporadic"
-    first, last = runs[0]
-    if first == dives[0] and last == dives[-1]:
-        return "every dive"
-    if first == last:
-        return f"dive {first} only"
-    if last == dives[-1]:
-        return f"from dive {first}"
-    if first == dives[0]:
-        return f"until dive {last}"
-    return f"dives {first}–{last}"
-
-
-def _run_mask(runs: list[list[int]], dives: Sequence[int]) -> list[bool]:
-    """Return one flag per input file: whether it falls inside ``runs``.
-
-    The inverse of :func:`_dive_runs`.
-
-    Parameters
-    ----------
-    runs : list of [int, int]
-        Dive ranges.
-    dives : sequence of int
-        The input dive numbers, in order.
-
-    Returns
-    -------
-    list of bool
-        One flag per input dive.
-
-    """
-    return [any(a <= d <= b for a, b in runs) for d in dives]
-
-
-def presence_patterns(presence: dict) -> list[dict]:
-    """Group variables by the dives they are valid in, then present in — the page's rows.
-
-    Hundreds of variables over hundreds of dives is a table of patterns, not of
-    variables: on a normal mission a handful of patterns cover everything ("every dive",
-    "from dive 12", "until dive 40", "sporadic").
-
-    Parameters
-    ----------
-    presence : dict
-        As returned by :func:`presence_by_dive`.
-
-    Returns
-    -------
-    list of dict
-        One per distinct ``(valid, present)`` pair, the ``every dive`` row first, then
-        by variable count: ``label`` (from the valid runs), ``valid`` and ``present``
-        (runs), ``valid_mask`` / ``present_mask`` (one flag per input dive),
-        ``n_valid`` / ``n_present`` (dives covered), ``uniform`` (valid on every dive),
-        and ``variables`` (sorted names).
-
-    """
-    dives = presence["dives"]
-    groups: dict[tuple, list[str]] = {}
-    for name, entry in presence["variables"].items():
-        key = (
-            tuple(map(tuple, entry["valid"])),
-            tuple(map(tuple, entry["present"])),
-        )
-        groups.setdefault(key, []).append(name)
-    rows = []
-    for (valid, present), names in groups.items():
-        valid_runs = [list(run) for run in valid]
-        present_runs = [list(run) for run in present]
-        label = _run_label(valid_runs, dives)
-        valid_mask = _run_mask(valid_runs, dives)
-        present_mask = _run_mask(present_runs, dives)
-        rows.append(
-            {
-                "label": label,
-                "valid": valid_runs,
-                "present": present_runs,
-                "valid_mask": valid_mask,
-                "present_mask": present_mask,
-                "n_valid": sum(valid_mask),
-                "n_present": sum(present_mask),
-                "uniform": label == "every dive",
-                "variables": sorted(names),
-            }
-        )
-    rows.sort(
-        key=lambda row: (not row["uniform"], -len(row["variables"]), row["label"])
-    )
-    return rows
-
-
-def presence_summary(presence: dict) -> str | None:
-    """Return a one-line summary when the input dives disagree, else None.
-
-    Parameters
-    ----------
-    presence : dict
-        As returned by :func:`presence_by_dive`.
-
-    Returns
-    -------
-    str or None
-        e.g. ``"343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns)"``,
-        or None when every variable has values on every dive.
-
-    """
-    patterns = presence_patterns(presence)
-    if all(row["uniform"] for row in patterns):
-        return None
-    total = sum(len(row["variables"]) for row in patterns)
-    every = sum(len(row["variables"]) for row in patterns if row["uniform"])
-    n_dives = len(presence["dives"])
-    return (
-        f"{total} variables over {n_dives} dives; {every} on every dive, "
-        f"{total - every} on some ({len(patterns)} patterns)"
-    )
-
-
-def conversion_sidecar(path: str | os.PathLike, *, verify: bool = False) -> dict | None:
-    """Return the conversion sidecar written beside an OG1 file, or None.
-
-    The sidecar (``<id>_conversion.json``, see :func:`seagliderOG1.writers.write`)
-    holds what the file cannot say about its own conversion. It is bound to the file by
-    ``id`` and ``tracking_id`` (``id`` and ``date_created`` for a sidecar written
-    before ``tracking_id``); a sidecar from another conversion is not returned. With
-    ``verify``, the file's SHA-256 is compared with the one recorded and a mismatch
-    warns that the file changed after the sidecar was written (the sidecar is still
-    returned).
-
-    Parameters
-    ----------
-    path : str or os.PathLike
-        The OG1 netCDF file.
-    verify : bool, optional
-        Hash the file and compare (reads the whole file). Default is False.
-
-    Returns
-    -------
-    dict or None
-        The sidecar contents, or None when it is missing, unreadable, of another
-        schema, or belongs to another conversion (each but the first warned).
-
-    """
-    path = pathlib.Path(path)
-    sidecar_path = writers.conversion_path(path, ".json")
-    if not sidecar_path.is_file():
-        return None
-    try:
-        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        warnings.warn(
-            f"{sidecar_path.name} could not be read ({exc}); ignoring it.", stacklevel=2
-        )
-        return None
-    if not isinstance(sidecar, dict) or sidecar.get("schema") != writers.SIDECAR_SCHEMA:
-        warnings.warn(
-            f"{sidecar_path.name} is not a schema-{writers.SIDECAR_SCHEMA} conversion "
-            "sidecar; ignoring it.",
-            stacklevel=2,
-        )
-        return None
-    keys = ("id", "tracking_id") if "tracking_id" in sidecar else ("id", "date_created")
-    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
-        binding = {key: ds.attrs.get(key) for key in keys}
-    if {key: sidecar.get(key) for key in binding} != binding:
-        warnings.warn(
-            f"{sidecar_path.name} belongs to another conversion "
-            f"({'/'.join(keys)} differ from {path.name}); ignoring it.",
-            stacklevel=2,
-        )
-        return None
-    if (
-        verify
-        and "sha256" in sidecar
-        and sidecar["sha256"] != writers.file_sha256(path)
-    ):
-        warnings.warn(
-            f"{path.name} has changed since {sidecar_path.name} was written "
-            "(SHA-256 differs).",
-            stacklevel=2,
-        )
-    return sidecar
-
-
-# The one sentence a draft carries in its ``draft`` global (see process_mission).
+# The one sentence a draft carries in its ``draft`` global (see _convert_mission).
 DRAFT_NOTE = "converted without a mission config; not an OG1 file"
 
 
@@ -820,226 +490,6 @@ def _basestation_globals(list_of_datasets: Sequence[xr.Dataset]) -> dict:
             if text not in entry["values"]:
                 entry["values"].append(text)
     return {name: found[name] for name in sorted(found)}
-
-
-def _check_metadata_keys(
-    deployment: Mapping[str, object], global_attributes: Mapping[str, object]
-) -> None:
-    """Raise on a mission-config global the converter owns or that has another home.
-
-    Parameters
-    ----------
-    deployment : collections.abc.Mapping
-        The deployment mapping (the three ``mission.yaml`` global-attribute sections merged).
-    global_attributes : collections.abc.Mapping
-        The ``global_attributes:`` block.
-
-    Raises
-    ------
-    ValueError
-        If ``global_attributes`` sets a converter-derived key or a key with a structured home
-        in a global-attribute section, or the deployment mapping has an unknown key.
-
-    """
-    # Only a real (non-null) value collides; a null is skipped later, so a template that
-    # lists reserved keys as null still converts.
-    set_globals = {k for k, v in global_attributes.items() if not _is_empty(v)}
-    collisions = _DERIVED_GLOBALS.intersection(set_globals)
-    if collisions:
-        msg = (
-            "global_attributes may not set converter-derived keys: "
-            f"{sorted(collisions)}. Remove them from the mission config."
-        )
-        raise ValueError(msg)
-    structured = set(_DEPLOYMENT_GLOBALS).intersection(set_globals)
-    if structured:
-        home = vocabularies.CONFIG_GLOBAL_HOME
-        moves = "; ".join(f"{key} -> {home[key]}:" for key in sorted(structured))
-        msg = (
-            "global_attributes may not set keys that have a structured home in a "
-            f"global-attribute section: move {moves}."
-        )
-        raise ValueError(msg)
-    unknown_deployment = set(deployment) - set(_DEPLOYMENT_GLOBALS)
-    if unknown_deployment:
-        msg = (
-            f"deployment has unknown keys: {sorted(unknown_deployment)}. Allowed "
-            f"keys are {list(_DEPLOYMENT_GLOBALS)}; set anything else under "
-            "global_attributes."
-        )
-        raise ValueError(msg)
-
-
-# Globals enrich writes itself (besides the converter-owned _DERIVED_GLOBALS): a
-# config may not set them, or the file's own record of the edit would be overwritten.
-_ENRICH_OWNED = frozenset(
-    {"date_modified", "history", "draft", "conversion_attribute_sources"}
-)
-
-
-def _enrich_value(key: str, value: object) -> str | int | float:
-    """Return ``value`` as a netCDF global attribute value, or raise.
-
-    Parameters
-    ----------
-    key : str
-        The global's name (for the error message).
-    value : object
-        The value from the config or the command line.
-
-    Returns
-    -------
-    str or int or float
-        Text and numbers unchanged; a date or datetime as ISO 8601 text (YAML reads an
-        unquoted ``2024-05-01`` as a date).
-
-    Raises
-    ------
-    ValueError
-        If the value is a bool, a list, a mapping or any other type netCDF cannot
-        store as a global attribute unchanged.
-
-    """
-    if isinstance(value, bool):
-        msg = f"{key}: a true/false value cannot be a global attribute; quote it."
-        raise ValueError(msg)
-    if isinstance(value, str | int | float | np.integer | np.floating):
-        return value
-    if isinstance(value, date):
-        return value.isoformat()
-    msg = (
-        f"{key}: a {type(value).__name__} cannot be a global attribute; give text or "
-        "a number."
-    )
-    raise ValueError(msg)
-
-
-def enrich(
-    path: str | os.PathLike,
-    *,
-    deployment: Mapping[str, object] | None = None,
-    global_attributes: Mapping[str, object] | None = None,
-    doi: str | None = None,
-) -> pathlib.Path:
-    """Set global attributes on a written OG1 file without converting again.
-
-    For metadata that exists only after the file is written — a DOI assigned on
-    publication — or a corrected global-attribute or ``global_attributes:`` value. Only
-    global attributes change (edited in place; variables are not rewritten). The file
-    gets ``date_modified`` set to now, a ``history`` line naming the keys, and a new
-    ``tracking_id``; ``date_created`` is kept. Every value is checked before the file
-    is opened for writing, so a refused value leaves the file as it was. Replacing a
-    different value already in the file warns with both values. The set keys move to
-    the ``enriched`` category of ``conversion_attribute_sources``. A sidecar beside the
-    file is rebound to the new ``tracking_id`` and SHA-256.
-
-    Parameters
-    ----------
-    path : str or os.PathLike
-        The OG1 netCDF file.
-    deployment : collections.abc.Mapping, optional
-        Deployment-identity globals to set (as in :func:`to_og1`); null values are skipped.
-    global_attributes : collections.abc.Mapping, optional
-        ``global_attributes:`` keys to set (as in :func:`to_og1`).
-    doi : str, optional
-        The DOI, written as the ``doi`` global (wins over ``deployment["doi"]``).
-
-    Returns
-    -------
-    pathlib.Path
-        The enriched file.
-
-    Raises
-    ------
-    ValueError
-        If nothing is given to set; a key is one the converter owns or that belongs in
-        the other block (as for :func:`to_og1`); a value is not text, a number or a
-        date; a key is one ``enrich`` writes itself (``date_modified``, ``history``,
-        ``tracking_id``, ``draft``) or a ``conversion_*`` record; or
-        ``deployment["id"]`` differs from the file's ``id`` (the file name and the
-        sidecar are bound to it: convert again to change it).
-    FileNotFoundError
-        If ``path`` does not exist.
-
-    """
-    path = pathlib.Path(path)
-    if not path.is_file():
-        raise FileNotFoundError(errno.ENOENT, "no such OG1 file", str(path))
-    deployment = dict(deployment or {})
-    global_attributes = dict(global_attributes or {})
-    _check_metadata_keys(deployment, global_attributes)
-    owned = sorted(
-        key
-        for key, value in global_attributes.items()
-        if not _is_empty(value)
-        and (key in _ENRICH_OWNED or key.startswith("conversion_"))
-    )
-    if owned:
-        msg = (
-            f"enrich writes {owned} itself (or they are the conversion record); "
-            "remove them from global_attributes."
-        )
-        raise ValueError(msg)
-    if doi is not None:
-        deployment["doi"] = doi
-    updates = {
-        key: _enrich_value(key, value)
-        for block in (deployment, global_attributes)
-        for key, value in block.items()
-        if not _is_empty(value)
-    }
-    if not updates:
-        msg = "nothing to enrich: no deployment, global_attributes or doi value given."
-        raise ValueError(msg)
-
-    with netCDF4.Dataset(path, "r") as nc:
-        current = {key: nc.getncattr(key) for key in nc.ncattrs()}
-    if "id" in updates and str(updates["id"]) != str(current.get("id")):
-        msg = (
-            f"deployment id {updates['id']!r} differs from the file's id "
-            f"{current.get('id')!r}; the file name and sidecar are bound to the id, so "
-            "convert again (process) to change it."
-        )
-        raise ValueError(msg)
-    for key, value in updates.items():
-        if key in current and str(current[key]) != str(value):
-            warnings.warn(
-                f"enrich replaces {key}: {current[key]!r} -> {value!r}", stacklevel=2
-            )
-
-    now = datetime.now(UTC)
-    line = (
-        f"{now.isoformat(timespec='seconds')} seagliderOG1 {__version__}: "
-        f"enrich set {', '.join(sorted(updates))}"
-    )
-    history = str(current.get("history", "")).strip()
-    attrs = {
-        **current,
-        **updates,
-        "date_modified": now.strftime("%Y%m%dT%H%M%S"),
-        "history": f"{history}\n{line}" if history else line,
-        "tracking_id": str(uuid.uuid4()),
-    }
-    writers.record_attribute_sources(attrs, updates, "enriched")
-    writers.record_attribute_sources(attrs, ["date_modified", "tracking_id"], "derived")
-    with netCDF4.Dataset(path, "a") as nc:
-        for key, value in attrs.items():
-            if key not in current or current[key] is not value:
-                nc.setncattr(key, value)
-
-    sidecar_file = writers.conversion_path(path, ".json")
-    if sidecar_file.is_file():
-        try:
-            contents = json.loads(sidecar_file.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-            warnings.warn(
-                f"{sidecar_file.name} could not be read ({exc}); not rebound.",
-                stacklevel=2,
-            )
-        else:
-            writers.write_sidecar(path, attrs, contents)
-    _log.info("enriched %s: %s", path, sorted(updates))
-    return path
 
 
 def _apply_deployment(
@@ -1264,8 +714,9 @@ def _dimension_ledger(
     return json.dumps(ledger, sort_keys=True)
 
 
-def to_og1(
+def convert(
     list_of_datasets: Sequence[xr.Dataset],
+    mission: str | os.PathLike | Mapping[str, object] | None = None,
     *,
     contributors: Sequence[dict] | None = None,
     institutions: Sequence[dict] | None = None,
@@ -1274,7 +725,7 @@ def to_og1(
     global_attributes: dict[str, object] | None = None,
     sensors: Mapping[str, Mapping[str, object]] | None = None,
     mode: str = "realtime",
-    provenance: dict | None = None,
+    record: dict | None = None,
 ) -> xr.Dataset:
     """Convert Seaglider basestation datasets to OG1 format.
 
@@ -1288,6 +739,14 @@ def to_og1(
         concatenated and sorted by time, so the input order does not matter:
         ``start_date``, ``TRAJECTORY`` and the output ``id`` are seeded from the
         earliest measurement time and so always agree with ``time_coverage_start``.
+    mission : str or os.PathLike or collections.abc.Mapping, optional
+        A ``mission.yaml`` path or an already-loaded mapping (from
+        :func:`seagliderOG1.mission.load`). Its ``platform``, the three
+        global-attribute sections (merged into ``deployment``), ``global_attributes``,
+        ``sensors``, ``contributors``, ``institutions`` and ``mode`` are used; the
+        ``raw_dir`` / ``output_dir`` / ``dives`` keys are ignored (``convert`` works on
+        datasets already read). An explicit keyword below overrides the mission value.
+        Default is None.
     contributors : sequence of dict, optional
         Contributor records (``name``, ``role`` and optional ``email``, ``orcid``)
         merged with those already on the files. When None, contributors come from
@@ -1321,11 +780,11 @@ def to_og1(
         suffix (``R`` or ``delayed``) and so the output filename, per the OG1
         manual, which defines no separate data-mode attribute. Default is "realtime":
         a file is delayed mode only when the user says so.
-    provenance : dict, optional
+    record : dict, optional
         When given, filled in place with what the output file cannot record about its own
         conversion: ``inputs`` (one ``{"path", "bytes", "dive"}`` per input file) and
-        ``presence`` (:func:`presence_by_dive`). Pass it to
-        ``writers.write(..., sidecar=provenance)`` to write it beside the file. Default
+        ``presence`` (which dives each variable is present and valid in). Pass it to
+        ``writers.write(..., record=record)`` to write it beside the file. Default
         is None.
 
     Returns
@@ -1345,19 +804,36 @@ def to_og1(
 
     """
     if isinstance(list_of_datasets, xr.Dataset):
-        msg = "to_og1 takes a sequence of datasets; pass a sequence, e.g. [ds]."
+        msg = "convert takes a sequence of datasets; pass a sequence, e.g. [ds]."
         raise TypeError(msg)
     if isinstance(contributors, Mapping):
         msg = (
-            "to_og1(contributors=...) is now a list of records "
+            "convert(contributors=...) is now a list of records "
             "[{'name': ..., 'role': ..., 'email': ..., 'orcid': ...}], not a dict "
             "of OG1 attributes. See CHANGELOG."
         )
         raise TypeError(msg)
 
+    if mission is not None:
+        cfg = dict(mission) if isinstance(mission, Mapping) else _config.load(mission)
+        if contributors is None:
+            contributors = cfg.get("contributors")
+        if institutions is None:
+            institutions = cfg.get("institutions")
+        if platform is None:
+            platform = cfg.get("platform")
+        if deployment is None:
+            deployment = _config._merge_sections(cfg)
+        if global_attributes is None:
+            global_attributes = cfg.get("global_attributes")
+        if sensors is None:
+            sensors = cfg.get("sensors")
+        if mode == "realtime" and cfg.get("mode"):
+            mode = cfg["mode"]
+
     global_attributes = global_attributes or {}
     deployment = deployment or {}
-    _check_metadata_keys(deployment, global_attributes)
+    _config._check_global_keys(deployment, global_attributes)
 
     if mode not in vocabularies.MODE_SUFFIX:
         msg = f"mode must be one of {sorted(vocabularies.MODE_SUFFIX)}, not {mode!r}."
@@ -1382,7 +858,7 @@ def to_og1(
 
     used_inputs = []
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
-        if provenance is not None:
+        if record is not None:
             # Presence reads every variable; loading the file once here lets both it
             # and the conversion work from memory instead of reading the file twice.
             ds1_base.load()
@@ -1403,16 +879,16 @@ def to_og1(
             "and the warnings from coordinate validation."
         )
 
-    if provenance is not None:
+    if record is not None:
         # Only the dives that reach the output: a rejected dive contributed nothing.
-        provenance["inputs"] = [_input_record(ds) for ds in used_inputs]
-        provenance["presence"] = presence_by_dive(used_inputs)
-        provenance["basestation_globals"] = _basestation_globals(used_inputs)
+        record["inputs"] = [_input_record(ds) for ds in used_inputs]
+        record["presence"] = _presence_by_dive(used_inputs)
+        record["basestation_globals"] = _basestation_globals(used_inputs)
         # What init would propose for platform:, from the file the resolver reads.
-        provenance["platform_from_file"] = vocabularies.platform_from_file(
+        record["platform_from_file"] = vocabularies.platform_from_file(
             list_of_datasets[0].attrs
         )
-        provenance["institution_from_file"] = _institution_from_file(
+        record["institution_from_file"] = _institution_from_file(
             list_of_datasets[0].attrs
         )
 
@@ -1637,7 +1113,7 @@ def to_og1(
     # not carried here — carrying one dive's log would assert that dive's QC story for the file.
     conversion_line = (
         f"{datetime.now(UTC).isoformat(timespec='seconds')} "
-        f"seagliderOG1 {__version__}: basestation to OG1 (to_og1)"
+        f"seagliderOG1 {__version__}: basestation to OG1 (convert)"
     )
     existing_history = str(ds_og1.attrs.get("history", "")).strip()
     ds_og1.attrs["history"] = (
@@ -1716,8 +1192,171 @@ def to_og1(
     return _pipeline.set_best_dtype(ds_og1)
 
 
-def process_mission(
-    source: str | os.PathLike,
+def process(
+    mission: str | os.PathLike | Mapping[str, object],
+    *,
+    output_dir: str | os.PathLike | None = None,
+    dives: tuple[int, int] | None = None,
+    mode: str | None = None,
+    report: bool = False,
+    report_dir: str | os.PathLike | None = None,
+    overwrite: bool = False,
+) -> pathlib.Path:
+    """Convert one mission from its configuration and write the OG1 file.
+
+    Loads and validates ``mission`` (a ``mission.yaml`` path or a mapping from
+    :func:`seagliderOG1.mission.load`), then reads, converts and writes it. The file is
+    ``<output_dir>/<id>.nc`` with the conversion record ``<id>_conversion.json`` beside
+    it. The keyword arguments override the configuration's ``output_dir``, ``dives``,
+    ``mode`` and ``report``.
+
+    Parameters
+    ----------
+    mission : str or os.PathLike or collections.abc.Mapping
+        A ``mission.yaml`` path, or a loaded mapping. Its ``raw_dir`` must be a single
+        mission directory; a root of ``SN/DATE`` missions raises (use
+        :func:`process_missions`).
+    output_dir : str or os.PathLike, optional
+        Directory the OG1 file is written to; created if missing. Overrides the
+        configuration's ``output_dir``. Default is None (use the configuration's).
+    dives : tuple of (int, int), optional
+        First and last dive to convert, inclusive. Overrides the configuration's
+        ``dives``. Default is None (use the configuration's, else every dive).
+    mode : str, optional
+        Data mode, ``"realtime"`` or ``"delayed"``; overrides the configuration's.
+        Default is None.
+    report : bool, optional
+        Also write the HTML conversion page beside the file. ORed with the
+        configuration's ``report``. Default is False.
+    report_dir : str or os.PathLike, optional
+        With ``report``, write the page under ``<report_dir>/<id>/`` instead of beside
+        the file. Default is None.
+    overwrite : bool, optional
+        Replace an existing output file (and, with ``report``, the page). Default is
+        False.
+
+    Returns
+    -------
+    pathlib.Path
+        The path of the written OG1 file.
+
+    Raises
+    ------
+    MissionError
+        If the configuration is invalid, or its ``raw_dir`` is a root of ``SN/DATE``
+        missions (use :func:`process_missions`).
+    FileExistsError
+        If the output file or page exists and ``overwrite`` is False.
+    MetadataError
+        As raised by :func:`convert`.
+
+    """
+    cfg = _config.load(mission)
+    raw_dir = cfg["raw_dir"]
+    discovered = readers.discover_missions(str(raw_dir))
+    if not discovered:
+        msg = f"no basestation files (pSSSDDDD*.nc) found in {raw_dir}"
+        raise MissionError(msg)
+    if readers.is_root(discovered):
+        msg = (
+            f"{raw_dir} is a root of SN/DATE missions; process converts one mission. "
+            "Use process_missions to convert a root."
+        )
+        raise MissionError(msg)
+    if dives is None:
+        cfg_dives = cfg.get("dives")
+        dives = tuple(cfg_dives) if cfg_dives else None
+    return _convert_mission(
+        raw_dir,
+        output_dir if output_dir is not None else (cfg.get("output_dir") or "."),
+        dives=dives,
+        contributors=cfg.get("contributors"),
+        institutions=cfg.get("institutions"),
+        platform=cfg.get("platform"),
+        deployment=_config._merge_sections(cfg),
+        global_attributes=cfg.get("global_attributes"),
+        sensors=cfg.get("sensors"),
+        mode=mode if mode is not None else (cfg.get("mode") or "realtime"),
+        keep_variables=cfg.get("keep_variables"),
+        repair=bool(cfg.get("repair", False)),
+        overwrite=overwrite,
+        report=report or bool(cfg.get("report", False)),
+        report_dir=report_dir,
+    )
+
+
+def process_missions(
+    mission: str | os.PathLike | Mapping[str, object],
+    *,
+    select: str | None = None,
+    output_dir: str | os.PathLike | None = None,
+    mode: str | None = None,
+    report: bool = False,
+    report_dir: str | os.PathLike | None = None,
+    overwrite: bool = False,
+) -> list[pathlib.Path]:
+    """Convert every selected mission under a root, from one configuration.
+
+    For a ``mission.yaml`` whose ``raw_dir`` is a root of ``SN/DATE`` mission
+    directories: the configuration's metadata applies to every mission selected. A
+    single range of ``dives`` cannot span missions, so there is no ``dives`` argument.
+
+    Parameters
+    ----------
+    mission : str or os.PathLike or collections.abc.Mapping
+        A ``mission.yaml`` path, or a loaded mapping, whose ``raw_dir`` is a root of
+        ``SN/DATE`` missions.
+    select : str or None, optional
+        A glob over each mission's ``SN/DATE`` path; ``"*/*"`` selects every mission.
+        Required for a root. Default is None.
+    output_dir : str or os.PathLike, optional
+        Directory the OG1 files are written to. Overrides the configuration's. Default
+        is None.
+    mode : str, optional
+        Data mode; overrides the configuration's. Default is None.
+    report : bool, optional
+        Also write each HTML conversion page. ORed with the configuration's ``report``.
+        Default is False.
+    report_dir : str or os.PathLike, optional
+        With ``report``, write each page under ``<report_dir>/<id>/``. Default is None.
+    overwrite : bool, optional
+        Replace existing output files. Default is False.
+
+    Returns
+    -------
+    list of pathlib.Path
+        One path per selected mission, in selection order.
+
+    Raises
+    ------
+    MissionError
+        If the configuration is invalid.
+    ValueError
+        If ``select`` matches no mission, or is omitted for a root.
+
+    """
+    cfg = _config.load(mission)
+    selected = _config.select_missions(cfg["raw_dir"], select)
+    shared = {
+        "contributors": cfg.get("contributors"),
+        "institutions": cfg.get("institutions"),
+        "platform": cfg.get("platform"),
+        "deployment": _config._merge_sections(cfg),
+        "global_attributes": cfg.get("global_attributes"),
+        "sensors": cfg.get("sensors"),
+        "mode": mode if mode is not None else (cfg.get("mode") or "realtime"),
+        "keep_variables": cfg.get("keep_variables"),
+        "repair": bool(cfg.get("repair", False)),
+        "overwrite": overwrite,
+        "report": report or bool(cfg.get("report", False)),
+        "report_dir": report_dir,
+    }
+    out = output_dir if output_dir is not None else (cfg.get("output_dir") or ".")
+    return [_convert_mission(m.path, out, **shared) for m in selected]
+
+
+def _convert_mission(
+    raw_dir: str | os.PathLike,
     output_dir: str | os.PathLike,
     *,
     dives: tuple[int, int] | None = None,
@@ -1735,37 +1374,35 @@ def process_mission(
     report_dir: str | os.PathLike | None = None,
     draft: bool = False,
 ) -> pathlib.Path:
-    """Convert one Seaglider mission to an OG1 file: read, convert, subset, write.
+    """Convert one mission directory to an OG1 file: read, convert, subset, write.
 
-    The library form of ``seagliderOG1 process`` for a single mission: the CLI calls
-    this once per selected mission. The file is written as ``<output_dir>/<id>.nc``,
-    where ``id`` is the converter-derived (or ``deployment``-supplied) identifier, with
-    the conversion sidecar ``<id>_conversion.json`` beside it (the input files, which
-    dives each variable came from and, except for a draft, the ``dives``, ``platform``
-    and ``institutions`` values this call was given; see :func:`conversion_sidecar`).
+    The internal primitive behind :func:`process` and the CLI ``process`` loop, taking
+    the metadata already merged (not a mission configuration). The file is written as
+    ``<output_dir>/<id>.nc``, where ``id`` is the converter-derived (or
+    ``deployment``-supplied) identifier, with the conversion record
+    ``<id>_conversion.json`` beside it.
 
     Parameters
     ----------
-    source : str or os.PathLike
+    raw_dir : str or os.PathLike
         One mission directory holding basestation files (``pSSSDDDD*.nc``). A root of
-        ``SN/DATE`` missions is refused; select one with
-        :func:`seagliderOG1.readers.discover_missions` and pass its ``path``.
+        ``SN/DATE`` missions is refused.
     output_dir : str or os.PathLike
         Directory the OG1 file is written to; created if missing.
     dives : tuple of (int, int), optional
         First and last dive to convert, inclusive. Default is None (every dive).
     contributors : sequence of dict, optional
-        Contributor records, as for :func:`to_og1`. Default is None.
+        Contributor records, as for :func:`convert`. Default is None.
     institutions : sequence of dict, optional
-        Institution records, as for :func:`to_og1`. Default is None.
+        Institution records, as for :func:`convert`. Default is None.
     platform : dict of str to object, optional
-        Platform fields, as for :func:`to_og1`. Default is None.
+        Platform fields, as for :func:`convert`. Default is None.
     deployment : dict of str to object, optional
-        Deployment-identity globals, as for :func:`to_og1`. Default is None.
+        Deployment-identity globals, as for :func:`convert`. Default is None.
     global_attributes : dict of str to object, optional
-        Global attributes written verbatim, as for :func:`to_og1`. Default is None.
+        Global attributes written verbatim, as for :func:`convert`. Default is None.
     sensors : collections.abc.Mapping, optional
-        Sensor-record corrections, as for :func:`to_og1`. Default is None.
+        Sensor-record corrections, as for :func:`convert`. Default is None.
     mode : str, optional
         Data mode, ``"realtime"`` (default) or ``"delayed"``; sets the ``id`` suffix
         and so the filename. Default is "realtime".
@@ -1779,13 +1416,11 @@ def process_mission(
         Replace an existing output file (and, with ``report``, the page). Default is
         False.
     report : bool, optional
-        Also write the HTML conversion page
-        (:func:`seagliderOG1.reports.conversion.render_conversion`) beside the file
-        as ``<output_dir>/<id>_conversion.html``. Default is False.
+        Also write the HTML conversion page beside the file as
+        ``<output_dir>/<id>_conversion.html``. Default is False.
     report_dir : str or os.PathLike, optional
         With ``report``, write the page to ``<report_dir>/<id>/`` instead of beside
-        the file, so pages can live apart from the archived data (the sidecar stays
-        beside the file). Default is None.
+        the file. Default is None.
     draft : bool, optional
         Mark the output as a draft, not an OG1 file — for a conversion run with no
         mission config, to see what the basestation files hold. The ``id`` (and so
@@ -1800,53 +1435,30 @@ def process_mission(
     Raises
     ------
     ValueError
-        If ``source`` is not a directory, holds no basestation files, or is a root of
-        ``SN/DATE`` missions; or as raised by :func:`to_og1`.
+        If ``raw_dir`` is not a directory, holds no basestation files, or is a root of
+        ``SN/DATE`` missions; or as raised by :func:`convert`.
     FileExistsError
         If the output file or (with ``report``) the page exists and ``overwrite`` is
-        False; with ``draft``, also the sidecar or the proposed
-        ``<id>_mission.yaml`` (:func:`seagliderOG1.writers.proposal_path`). Otherwise a
-        sidecar left beside a missing file is replaced, not refused. Nothing is
-        written; ``filename`` is the existing path. The conversion has already run by
-        then: the file name derives from the converted ``id``.
+        False.
     MetadataError
-        As raised by :func:`to_og1`.
-
-    Notes
-    -----
-    With ``report=True`` the page is rendered from the written file. If the render
-    fails, the OG1 file stays written and the error propagates.
-
-    See Also
-    --------
-    to_og1 : The conversion step alone, on datasets already read.
-
-    Examples
-    --------
-    >>> from seagliderOG1 import convert
-    >>> path = convert.process_mission(
-    ...     "data/demo_sg005",
-    ...     "output",
-    ...     contributors=[{"name": "Charlie Eriksen", "role": "PI"}],
-    ...     institutions=[{"name": "University of Washington", "role": "Operator"}],
-    ... )  # doctest: +SKIP
+        As raised by :func:`convert`.
 
     """
-    missions = readers.discover_missions(str(source))
+    missions = readers.discover_missions(str(raw_dir))
     if not missions:
-        msg = f"no basestation files (pSSSDDDD*.nc) found in {source}"
+        msg = f"no basestation files (pSSSDDDD*.nc) found in {raw_dir}"
         raise ValueError(msg)
     if readers.is_root(missions):
         msg = (
-            f"{source} is a root of SN/DATE missions; process_mission converts one "
-            "mission. Select one with readers.discover_missions and pass its path."
+            f"{raw_dir} is a root of SN/DATE missions; convert one mission. Select one "
+            "with readers.discover_missions and pass its path, or use process_missions."
         )
         raise ValueError(msg)
 
     first, last = dives if dives is not None else (None, None)
-    datasets = readers.read_mission(str(source), first, last, repair=repair)
-    provenance: dict = {}
-    ds = to_og1(
+    datasets = readers.read_mission(str(raw_dir), first, last, repair=repair)
+    record: dict = {}
+    ds = convert(
         datasets,
         contributors=contributors,
         institutions=institutions,
@@ -1855,12 +1467,12 @@ def process_mission(
         global_attributes=global_attributes,
         sensors=sensors,
         mode=mode,
-        provenance=provenance,
+        record=record,
     )
     if not draft:
         # What this run was given, so the page can set it against what the files hold:
         # the output cannot say which platform values came from the config.
-        provenance["config"] = {
+        record["config"] = {
             "dives": list(dives) if dives is not None else None,
             "platform": {
                 field: value
@@ -1870,7 +1482,7 @@ def process_mission(
             "deployment_id": None
             if _is_empty((deployment or {}).get("id"))
             else (deployment or {})["id"],
-            "institutions": [dict(record) for record in institutions or ()],
+            "institutions": [dict(record_i) for record_i in institutions or ()],
         }
     if keep_variables:
         ds = _keep_variables(ds, list(keep_variables))
@@ -1906,7 +1518,7 @@ def process_mission(
                     str(target),
                 )
     output_dir.mkdir(parents=True, exist_ok=True)
-    writers.write(ds, path, overwrite=overwrite, sidecar=provenance)
+    writers.write(ds, path, overwrite=overwrite, record=record)
     _log.info("wrote %s", path)
     if report:
         # Lazy: reports.conversion imports this module at load time.
@@ -1921,7 +1533,7 @@ def process_mission(
 def name_mapping(list_of_datasets: Sequence[xr.Dataset]) -> pd.DataFrame:
     """Return the basestation-to-OG1 variable-name mapping for the given datasets.
 
-    The table ``to_og1`` builds internally: one row per unique input variable
+    The table ``convert`` builds internally: one row per unique input variable
     with its OG1 name (empty when unmapped), instrument, dimensions and whether
     OG1 vocabulary attributes were found. Shows which basestation variables carry
     through to OG1 and which are dropped, without running a conversion.
@@ -1929,7 +1541,7 @@ def name_mapping(list_of_datasets: Sequence[xr.Dataset]) -> pd.DataFrame:
     Parameters
     ----------
     list_of_datasets : sequence of xarray.Dataset
-        Basestation datasets, as passed to :func:`to_og1`.
+        Basestation datasets, as passed to :func:`convert`.
 
     Returns
     -------
@@ -1967,7 +1579,7 @@ def process_dataset(
         A dictionary mapping dimension names to lists of time variables.
     name_lookup : pandas.Series or None, optional
         Precomputed ``original_name`` -> ``OG1_name`` lookup. Built from
-        ``og1_mapping`` when None; :func:`to_og1` passes it in so it is not
+        ``og1_mapping`` when None; :func:`convert` passes it in so it is not
         rebuilt per dive. Default is None.
 
     Returns
@@ -2236,7 +1848,7 @@ def standardise_og1(
     if "TIME" in dsa.variables:
         dsa = tools.encode_times_og1(dsa)
 
-    # Optimize dtypes after concatenating datasets in to_og1.
+    # Optimize dtypes after concatenating datasets in convert.
     return dsa
 
 
@@ -2352,7 +1964,7 @@ def add_gps_info_to_dataset(ds: xr.Dataset, gps_ds: xr.Dataset) -> xr.Dataset:
     )
     # Record each GPS variable's basestation source for the conversion ledger; the
     # transient attr is consumed into conversion_derived_variables before the file is
-    # written (see to_og1) and never reaches the output.
+    # written (see convert) and never reaches the output.
     gps_ds["LATITUDE_GPS"].attrs[_DERIVED_SOURCES_ATTR] = json.dumps(["log_gps_lat"])
     gps_ds["LONGITUDE_GPS"].attrs[_DERIVED_SOURCES_ATTR] = json.dumps(["log_gps_lon"])
     gps_ds["TIME_GPS"].attrs[_DERIVED_SOURCES_ATTR] = json.dumps(["log_gps_time"])
@@ -2572,7 +2184,7 @@ def get_time_attributes(ds: xr.Dataset) -> dict[str, str]:
 
     """
     time_attrs = {}
-    # time_coverage_start/end are recomputed authoritatively in to_og1 from the
+    # time_coverage_start/end are recomputed authoritatively in convert from the
     # concatenated TIME. time_coverage_start also seeds the start_date fallback
     # below, so it is needed here; the per-dive time_coverage_end is overwritten
     # there and otherwise unused.

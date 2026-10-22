@@ -9,14 +9,18 @@ Where the code and the built-in defaults live. The user's own configuration is a
 Modules
 -------
 
-* ``readers.py`` — read basestation files from a server or a local directory.
-* ``convert.py`` — ``to_og1`` orchestrates mapping, standardisation, concat and the
-  single post-concat dtype pass.
-* ``writers.py`` — write OG1 files.
-* ``tools.py`` — user-facing utilities (the conversion internals and validation
-  helpers live in a private module).
+* ``__init__.py`` — the public verbs (``read``, ``convert``, ``write``, ``report``,
+  ``enrich``, ``process``, ``process_missions``), re-exported from the modules below.
+* ``readers.py`` — ``read`` basestation files from a server or a local directory.
+* ``_convert.py`` — ``convert`` orchestrates mapping, standardisation, concat and the
+  single post-concat dtype pass; ``process`` / ``process_missions`` run the pipeline from a
+  configuration. Private: not imported directly.
+* ``writers.py`` — ``write`` OG1 files and ``enrich`` a written file's globals.
+* ``mission.py`` — the ``mission.yaml`` schema: ``load``, ``check``.
+* ``tools.py`` — user-facing utilities.
 * ``vocabularies.py`` — vocabulary and mapping tables (the defaults; see below).
 * ``plotters.py`` — plotting. ``contributors.py`` — contributor/institution record handling.
+* ``reports/`` — the HTML conversion page (``report``) and the reader behind it.
 * ``cli/`` — the ``seagliderOG1`` command, one module per verb.
 * ``config/*.yaml`` — the OG1 mappings and vocabularies (see below).
 

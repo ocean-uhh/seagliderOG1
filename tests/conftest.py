@@ -11,7 +11,7 @@ import shutil
 
 import pytest
 
-from seagliderOG1 import convert, writers
+from seagliderOG1 import _convert, writers
 
 SG005 = pathlib.Path(__file__).resolve().parent.parent / "data" / "demo_sg005"
 
@@ -19,7 +19,7 @@ SG005 = pathlib.Path(__file__).resolve().parent.parent / "data" / "demo_sg005"
 @pytest.fixture(scope="session")
 def sg005_og1(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
     """Return an OG1 file converted from sg005 dive 1, with its sidecar; do not edit."""
-    return convert.process_mission(
+    return _convert._convert_mission(
         SG005, tmp_path_factory.mktemp("sg005_og1"), dives=(1, 1)
     )
 

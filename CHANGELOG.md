@@ -10,6 +10,15 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Breaking changes
 
+- The public API is a config-first set of verbs on the top-level package: `read`, `convert`,
+  `write`, `report`, `enrich`, `process`, `process_missions`, plus `mission.load` / `mission.check`.
+  `process("mission.yaml")` loads a configuration and runs read + convert + write (+ report) for
+  one mission, so a Python user no longer hand-merges the three global-attribute sections or
+  passes a dozen keyword arguments. `to_og1` is renamed `convert` and takes a `mission=` path or
+  mapping; `enrich` moved to the package (and `writers`) and takes `mission=`; the batch primitive
+  `process_mission` is now internal. The conversion module `convert.py` is renamed `_convert.py`,
+  the mission-config schema moved to a new `seagliderOG1.mission`, and the conversion-record
+  readers are no longer a public API. See the migration guide.
 - `mission.yaml` groups the user-set global attributes into three sections named for the
   conversion page's convention groups — `identity_and_discovery:`, `rights_and_access:`,
   `provenance_and_processing:` — replacing the single `deployment:` block, so the keys you fill
@@ -19,10 +28,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   forthcoming local-config overlay (set them under `global_attributes:` until it lands); a
   `local_config:` key is reserved (must be `null` — `validate` errors on a non-null value,
   since a dropped override would make a wrong file; no `config_version` bump when the feature
-  lands). `to_og1` / `process_mission` keep their single `deployment=` mapping argument.
+  lands). `convert` / `enrich` keep their single `deployment=` mapping argument.
 - The data mode defaults to `realtime` (id and file name suffix `R`) when neither the config
-  nor `process --mode` sets it; it was `delayed`. `to_og1` / `process_mission` default to
-  `mode="realtime"`, and `init` writes `mode: realtime`. Set `mode: delayed` for a delayed-mode file.
+  nor `process --mode` sets it; it was `delayed`. `convert` defaults to `mode="realtime"`,
+  and `init` writes `mode: realtime`. Set `mode: delayed` for a delayed-mode file.
 - The basestation `naming_authority` (`edu.washington.apl`), `uuid` (one dive file's, written as
   `uri`), `summary` (written as `site`) and `file_version` are no longer carried into the OG1
   file: they describe the basestation files, not the OG1 dataset. `naming_authority` is an
@@ -42,8 +51,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   the `mission.yaml` key is `raw_dir` (`source:` is read with a deprecation warning for one
   release; both set is an error). `inspect` prints text only: the HTML page is `seagliderOG1
   report` (`inspect -o` / `--title` exit 2 and say so).
-- The conversion sidecar binds to its file by `id` + `tracking_id` (was `id` + `date_created`; an
-  older sidecar is still read) and records the file's SHA-256.
+- The conversion record binds to its file by `id` + `tracking_id` (was `id` + `date_created`; an
+  older conversion record is still read) and records the file's SHA-256.
 - Raw WET Labs counts are no longer written as `BBP700` / `BBP470` (they were labelled m-1); they
   keep their basestation names (`eng_wlbb2f_redCount`, `eng_wlbb2f_blueCount`) with `units: counts`.
   A volume scattering function (`*_bb700`, m-1 sr-1) is no longer written as `BBP700` either.
@@ -92,7 +101,7 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   requested `dives` or a config platform field (serial, firmware, basestation version, WMO id)
   differs from the basestation files, where platform fields were written as `UNK` or omitted,
   where the EDMO registry resolved an institution id the config left null, and for missing ACDD
-  globals (under a global-attribute section or `global_attributes:`). The sidecar records the `dives`,
+  globals (under a global-attribute section or `global_attributes:`). The conversion record records the `dives`,
   `platform` and `institutions` values `process_mission` was given.
 - Three ACDD globals derived from the data: `geospatial_bounds` (lat/lon bounding box as a WKT
   polygon, latitude first), `geospatial_vertical_positive` (`down` or `up`, from the sign of mean
@@ -101,13 +110,13 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - `CONTRIBUTING.md`: licensing of contributions, credit and authorship, and scope.
 - `seagliderOG1 draft --raw-dir DIR`: convert with no config to see what the basestation files
   hold — `<id>_draft.nc` (a `draft` global, no `OG-1.0` in `Conventions`), a draft conversion
-  page with the basestation's own global attributes, the sidecar, and a proposed
+  page with the basestation's own global attributes, the conversion record, and a proposed
   `<id>_draft_mission.yaml`. `convert.process_mission(draft=True)`.
 - `seagliderOG1 report FILE.nc [-o DIR | --report-dir ROOT]` writes the conversion page;
   `process --report-dir ROOT` writes it to `ROOT/<id>/`, apart from the data.
 - `seagliderOG1 enrich FILE.nc [CONFIG] [--doi DOI]` / `convert.enrich`: set globals (e.g. a DOI)
   on a written file in place; sets `date_modified`, appends `history`, renews `tracking_id`,
-  keeps `date_created`, rebinds the sidecar.
+  keeps `date_created`, rebinds the conversion record.
 - A `tracking_id` global (UUID, new on every write); `writers.file_sha256`, `writers.write_sidecar`.
 - Conversion page: a conventions box under the global attributes — what `Conventions` claims, ACDD
   1.3 highly recommended / recommended present (lists from the IOOS compliance-checker 6.1.0), and
@@ -123,7 +132,7 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - `required:` tier block in `config/OG1_global_attributes.yaml` → `vocabularies.REQUIRED_GLOBALS`.
 - `seagliderOG1.exceptions.MetadataError`.
 - `conversion_attribute_sources` global: JSON provenance of each written global (names only).
-- Conversion ledger: per-variable `original_name` on every variable, and the `conversion_dimensions`,
+- Conversion record: per-variable `original_name` on every variable, and the `conversion_dimensions`,
   `conversion_derived_variables` and `conversion_dropped_variables` globals record each dimension's
   fate, the converter-created variables, and any `keep_variables` drops; `inspect --conversion`
   prints them from the file.
@@ -163,7 +172,7 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   with a Meaning column first, scalar parameters last and collapsed; Presence and Dimensions
   gain percentage and Samples in columns, and each Variables group states the Valid % baseline
   its dimension sets. `<id>_conversion.json` input records gain each file's dimension lengths
-  and global-attribute count (additive; an older sidecar still renders).
+  and global-attribute count (additive; an older conversion record still renders).
 - `seagliderOG1 list` prints each registry as an aligned table with a header and a one-line
   summary; bare `seagliderOG1 list` names the registries; `--search TEXT` filters rows.
 - Packaged config files and `vocabularies` tables renamed to whole words (package data, no API
@@ -210,7 +219,7 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   (was a file path only, failing with `IsADirectoryError`).
 - Raw instrument count channels with no units (`*redCount`, `*blueCount`, `*fluorCount`, `*redRef`,
   `*blueRef`) are written with `units: counts`.
-- The "dimensions not merged" warning is read from the conversion ledger and names only
+- The "dimensions not merged" warning is read from the conversion record and names only
   dimensions whose variables are absent (it listed merged basestation-3 dimensions).
 - A unit pair with no conversion warns once, not once per dive.
 - A version attribute stored as a string is written as is (`"2.10"` stayed `2.10`, was `2.1`).

@@ -2,14 +2,12 @@
 
 For what exists only after the file is written (a DOI assigned on publication) or a
 corrected config value. Edits the **netCDF file's** global attributes in place
-(:func:`seagliderOG1.convert.enrich`); the mission config is read, never changed.
+(:func:`seagliderOG1.enrich`); the mission config is read, never changed.
 """
 
 import argparse
 import pathlib
 import sys
-
-from seagliderOG1.cli import _mission
 
 
 def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentParser:
@@ -33,7 +31,7 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
             "Set global attributes on a written OG1 file, without converting again. "
             "Changes the netCDF file (not the config): sets date_modified, adds a "
             "history line and a new tracking_id, keeps date_created, and rebinds the "
-            "sidecar beside it."
+            "conversion record beside it."
         ),
         epilog=(
             "examples:\n"
@@ -68,28 +66,13 @@ def run(args: argparse.Namespace) -> int:
         0 on success, 1 on a handled error, 2 when nothing is given to set.
 
     """
-    from seagliderOG1 import convert
+    from seagliderOG1 import writers
 
     if args.config is None and args.doi is None:
         print("error: give a mission.yaml, --doi, or both.", file=sys.stderr)
         return 2
-    deployment: dict = {}
-    global_attributes: dict = {}
-    if args.config is not None:
-        try:
-            config = _mission.load_config(args.config)
-        except (OSError, ValueError) as exc:
-            print(f"error: {args.config}: {exc}", file=sys.stderr)
-            return 1
-        deployment = _mission.deployment_from_config(config)
-        global_attributes = config.get("global_attributes") or {}
     try:
-        path = convert.enrich(
-            args.file,
-            deployment=deployment,
-            global_attributes=global_attributes,
-            doi=args.doi,
-        )
+        path = writers.enrich(args.file, mission=args.config, doi=args.doi)
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

@@ -292,9 +292,9 @@ def _list_globals(search: str | None) -> int:
         0.
 
     """
-    from seagliderOG1.cli import _mission
+    from seagliderOG1 import mission
 
-    rows = [r for r in _mission.global_rows() if _matches(search, r)]
+    rows = [r for r in mission.global_rows() if _matches(search, r)]
     _print_table(
         rows,
         [
@@ -326,9 +326,9 @@ def _list_platform(search: str | None) -> int:
         0.
 
     """
-    from seagliderOG1.cli import _mission
+    from seagliderOG1 import mission
 
-    rows = [r for r in _mission.platform_rows() if _matches(search, r)]
+    rows = [r for r in mission.platform_rows() if _matches(search, r)]
     _print_table(
         rows,
         [

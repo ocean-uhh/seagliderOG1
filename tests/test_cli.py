@@ -9,7 +9,7 @@ import sys
 import pytest
 import yaml
 
-from seagliderOG1 import cli
+from seagliderOG1 import cli, mission
 from seagliderOG1.cli import _mission
 
 DATA_DIR = pathlib.Path(__file__).resolve().parent.parent / "data" / "demo_sg005"
@@ -196,7 +196,7 @@ def test_validate_names_the_home_of_a_refused_global(tmp_path: pathlib.Path) -> 
     )
     issues = {
         i.key: i.message
-        for i in _mission.validate_config(cfg)
+        for i in mission.check(cfg)
         if (i.key or "").startswith("global_attributes")
     }
     assert set(issues) == {
@@ -219,9 +219,7 @@ def test_validate_placeholder_in_global_attributes_is_unset_not_misplaced(
     """
     cfg = _write_config(tmp_path / "mission.yaml", global_attributes={"doi": "null"})
     issues = [
-        i
-        for i in _mission.validate_config(cfg)
-        if (i.key or "").startswith("global_attributes")
+        i for i in mission.check(cfg) if (i.key or "").startswith("global_attributes")
     ]
     assert issues == []
 
@@ -229,14 +227,14 @@ def test_validate_placeholder_in_global_attributes_is_unset_not_misplaced(
 def test_validate_errors_on_a_set_local_config(tmp_path: pathlib.Path) -> None:
     """local_config is reserved and unread; a non-null value is an ERROR (null is legal)."""
     cfg = _write_config(tmp_path / "mission.yaml", local_config="local/")
-    bad = [i for i in _mission.validate_config(cfg) if i.key == "local_config"]
+    bad = [i for i in mission.check(cfg) if i.key == "local_config"]
     assert bad and all(i.level == "ERROR" for i in bad)
     assert (
         cli.main(["validate", str(cfg)]) == 1
     )  # a dropped override makes a wrong file
     # null is legal, so the template's reserved key validates.
     ok = _write_config(tmp_path / "ok.yaml", local_config=None)
-    assert [i for i in _mission.validate_config(ok) if i.key == "local_config"] == []
+    assert [i for i in mission.check(ok) if i.key == "local_config"] == []
 
 
 def test_validate_checks_the_sensors_block_shape(tmp_path: pathlib.Path) -> None:
@@ -244,15 +242,11 @@ def test_validate_checks_the_sensors_block_shape(tmp_path: pathlib.Path) -> None
     good = {"wlbb2f": {"serial_number": "1234", "calibration_date": "2008-02-01"}}
     assert not [
         i
-        for i in _mission.validate_config(
-            _write_config(tmp_path / "good.yaml", sensors=good)
-        )
+        for i in mission.check(_write_config(tmp_path / "good.yaml", sensors=good))
         if (i.key or "").startswith("sensors")
     ]
     for bad in ({"wlbb2f": {"serial": "1"}}, {"wlbb2f": {"serial_number": None}}, [1]):
-        issues = _mission.validate_config(
-            _write_config(tmp_path / "bad.yaml", sensors=bad)
-        )
+        issues = mission.check(_write_config(tmp_path / "bad.yaml", sensors=bad))
         assert any(
             i.level == "ERROR" and (i.key or "").startswith("sensors") for i in issues
         )
@@ -281,14 +275,14 @@ def test_template_comments_name_the_destination() -> None:
 
 def test_case_hint_helper() -> None:
     """_case_hint returns a correctly-cased match only for a mis-cased key."""
-    assert _mission._case_hint("program", ["id", "program"]) is None  # exact: no hint
-    assert _mission._case_hint("Program", ["id", "program"]) == "program"
-    assert _mission._case_hint("xyz", ["id", "program"]) is None
+    assert mission._case_hint("program", ["id", "program"]) is None  # exact: no hint
+    assert mission._case_hint("Program", ["id", "program"]) == "program"
+    assert mission._case_hint("xyz", ["id", "program"]) is None
 
 
 def test_validate_case_hint_for_miscased_section_key() -> None:
     """A mis-cased key in a global-attribute section errors naming the exact spelling."""
-    issues = _mission._validate_global_sections({"rights_and_access": {"Doi": "X"}})
+    issues = mission._validate_global_sections({"rights_and_access": {"Doi": "X"}})
     assert any(
         i.level == "ERROR" and "'doi'" in i.message and "case-sensitive" in i.message
         for i in issues
@@ -297,13 +291,13 @@ def test_validate_case_hint_for_miscased_section_key() -> None:
 
 def test_validate_case_hint_for_miscased_platform_key() -> None:
     """A lower-cased platform variable name errors naming the UPPER spelling."""
-    issues = _mission._validate_platform({"platform_model": "Seaglider"})
+    issues = mission._validate_platform({"platform_model": "Seaglider"})
     assert any(i.level == "ERROR" and "'PLATFORM_MODEL'" in i.message for i in issues)
 
 
 def test_validate_warns_on_unset_highly_desirable_global() -> None:
     """A null highly-desirable section global is a WARNING, not an ERROR."""
-    issues = _mission._validate_highly_desirable(
+    issues = mission._validate_highly_desirable(
         {"identity_and_discovery": {"site": None}}
     )
     assert any(i.key == "site" for i in issues)
@@ -335,9 +329,9 @@ def test_inspect_conversion_shows_ledger(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """inspect --conversion prints the ledger sections read from the OG1 file."""
-    from seagliderOG1 import convert, readers, writers
+    from seagliderOG1 import _convert, readers, writers
 
-    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 1))
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 1))
     nc = tmp_path / "og1.nc"
     writers.write(ds, str(nc), overwrite=True)
     assert cli.main(["inspect", str(nc), "--conversion"]) == 0
@@ -361,9 +355,9 @@ def test_inspect_conversion_lists_scalar_parameters(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """--conversion has a Scalar parameters section naming the per-dive JSON storage."""
-    from seagliderOG1 import convert, readers, writers
+    from seagliderOG1 import _convert, readers, writers
 
-    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
     nc = tmp_path / "og1.nc"
     writers.write(ds, str(nc), overwrite=True)
     assert cli.main(["inspect", str(nc), "--conversion"]) == 0
@@ -386,9 +380,9 @@ def test_inspect_parameter_decodes_per_dive_scalar(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """--parameter decodes one per-dive JSON scalar; a non-per-dive variable is an error."""
-    from seagliderOG1 import convert, readers, writers
+    from seagliderOG1 import _convert, readers, writers
 
-    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
     per_dive = next(
         v for v in ds.data_vars if ds[v].attrs.get("storage_type") == "per_dive_scalar"
     )
@@ -404,9 +398,9 @@ def test_report_writes_html_page(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """report writes a self-contained HTML conversion page beside the file."""
-    from seagliderOG1 import convert, readers, writers
+    from seagliderOG1 import _convert, readers, writers
 
-    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
     nc = tmp_path / "og1.nc"
     writers.write(ds, str(nc), overwrite=True)
     out = tmp_path / "og1_conversion.html"
@@ -452,9 +446,9 @@ def test_report_output_dir_and_report_dir(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """report -o DIR writes into DIR; --report-dir ROOT into ROOT/<id>/; no overwrite."""
-    from seagliderOG1 import convert, readers, writers
+    from seagliderOG1 import _convert, readers, writers
 
-    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 2))
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
     nc = tmp_path / "og1.nc"
     writers.write(ds, str(nc), overwrite=True)
     out_dir = tmp_path / "pages"
@@ -473,9 +467,9 @@ def test_inspect_output_points_at_report(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """inspect prints text only: -o/--title exit 2 and name the report verb."""
-    from seagliderOG1 import convert, readers, writers
+    from seagliderOG1 import _convert, readers, writers
 
-    ds = convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 1))
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 1))
     nc = tmp_path / "og1.nc"
     writers.write(ds, str(nc), overwrite=True)
     out = tmp_path / "x.html"
@@ -510,9 +504,9 @@ def test_process_writes_output(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Process converts the mission and writes <id>.nc under the output dir."""
-    from seagliderOG1 import convert
+    from seagliderOG1 import _convert
 
-    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
+    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
         tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
@@ -525,9 +519,9 @@ def test_process_dry_run_writes_nothing(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """-n prints the target path but writes no file."""
-    from seagliderOG1 import convert
+    from seagliderOG1 import _convert
 
-    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
+    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
         tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
@@ -540,9 +534,9 @@ def test_process_mode_realtime_sets_suffix(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """--mode realtime names the output with the R data-mode suffix."""
-    from seagliderOG1 import convert
+    from seagliderOG1 import _convert
 
-    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
+    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
         tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
@@ -555,9 +549,9 @@ def test_process_existing_output_refused_then_force_and_skip(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """An existing output is refused by default, overwritten with --force, skipped with --skip-existing."""
-    from seagliderOG1 import convert
+    from seagliderOG1 import _convert
 
-    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
+    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
         tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
@@ -572,7 +566,7 @@ def test_process_root_all_converts_each(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A root with --all converts every SN/DATE mission (distinct ids per mission)."""
-    from seagliderOG1 import convert
+    from seagliderOG1 import _convert
 
     counter = {"n": 0}
 
@@ -582,7 +576,7 @@ def test_process_root_all_converts_each(
         counter["n"] += 1
         return xr.Dataset({"x": ("n", [1.0])}, attrs={"id": f"sg005_m{counter['n']}"})
 
-    monkeypatch.setattr(convert, "to_og1", counting_fake)
+    monkeypatch.setattr(_convert, "convert", counting_fake)
     root = _build_root(tmp_path / "root")
     out = tmp_path / "out"
     config = _write_config(
@@ -596,9 +590,9 @@ def test_process_root_requires_selection(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A root without --all/--mission is an error."""
-    from seagliderOG1 import convert
+    from seagliderOG1 import _convert
 
-    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
+    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     root = _build_root(tmp_path / "root")
     config = _write_config(
         tmp_path / "mission.yaml", raw_dir=str(root), output_dir=str(tmp_path / "out")
@@ -610,13 +604,13 @@ def test_process_failing_mission_exits_one(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A mission that raises is counted as failed and the run exits 1."""
-    from seagliderOG1 import convert
+    from seagliderOG1 import _convert
 
     def failing(_datasets: object, **_kwargs: object) -> tuple:
         msg = "boom"
         raise ValueError(msg)
 
-    monkeypatch.setattr(convert, "to_og1", failing)
+    monkeypatch.setattr(_convert, "convert", failing)
     config = _write_config(
         tmp_path / "mission.yaml",
         raw_dir=str(DATA_DIR),
@@ -629,9 +623,9 @@ def test_process_dry_run_ignores_existing_output(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """-n previews and exits 0 even when the output exists (no act-phase check)."""
-    from seagliderOG1 import convert
+    from seagliderOG1 import _convert
 
-    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
+    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     out = tmp_path / "out"
     out.mkdir()
     (out / "sg005_delayed.nc").write_text("existing")
@@ -666,9 +660,9 @@ def test_process_report_writes_page_and_refuses_existing(
 def test_validate_report_must_be_bool(tmp_path: pathlib.Path) -> None:
     """The report: key is known and must be a boolean."""
     good = _write_config(tmp_path / "good.yaml", report=True)
-    assert not [i for i in _mission.validate_config(good) if i.level == "ERROR"]
+    assert not [i for i in mission.check(good) if i.level == "ERROR"]
     bad = _write_config(tmp_path / "bad.yaml", report="yes")
-    assert any(i.key == "report" for i in _mission.validate_config(bad))
+    assert any(i.key == "report" for i in mission.check(bad))
 
 
 def test_process_prints_presence_line_when_dives_disagree(
@@ -685,12 +679,12 @@ def test_process_save_failure_counts_as_failed(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A write failure (it raises) is a mission failure (exit 1), not silent success."""
-    from seagliderOG1 import convert, writers
+    from seagliderOG1 import _convert, writers
 
     def _raise(*_a: object, **_k: object) -> object:
         raise OSError("disk full")
 
-    monkeypatch.setattr(convert, "to_og1", _simple_fake_convert)
+    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     monkeypatch.setattr(writers, "write", _raise)
     config = _write_config(
         tmp_path / "mission.yaml",
@@ -713,8 +707,8 @@ def test_validate_raw_dir_override_rescues_missing_config_raw_dir(
             }
         )
     )
-    assert any(i.key == "raw_dir" for i in _mission.validate_config(path))
-    issues = _mission.validate_config(path, raw_dir_override=str(DATA_DIR))
+    assert any(i.key == "raw_dir" for i in mission.check(path))
+    issues = mission.check(path, raw_dir_override=str(DATA_DIR))
     assert not any(i.key == "raw_dir" for i in issues)
 
 
@@ -814,7 +808,7 @@ def test_list_globals_matches_required_globals(
 
 def test_global_rows_set_in() -> None:
     """Each user-set global names the mission.yaml block it is set in."""
-    rows = {row["name"]: row for row in _mission.global_rows()}
+    rows = {row["name"]: row for row in mission.global_rows()}
     assert rows["site"]["set_in"] == "identity_and_discovery"
     assert rows["id"]["set_in"] == "identity_and_discovery"  # derived, overridable
     assert rows["internal_mission_identifier"]["set_in"] == "global_attributes"
@@ -898,7 +892,7 @@ def test_validate_role_and_roles_together_is_error(tmp_path: pathlib.Path) -> No
         raw_dir=str(tmp_path),
         contributors=[{"name": "Ann", "role": "PI", "roles": ["Operator"]}],
     )
-    issues = _mission.validate_config(config)
+    issues = mission.check(config)
     assert any(
         i.level == "ERROR" and "both role: and roles:" in i.message for i in issues
     )
@@ -908,7 +902,7 @@ def test_validate_rejects_unknown_key(tmp_path: pathlib.Path) -> None:
     """An unknown top-level key is an ERROR (pure schema check, no real data)."""
     config = _write_config(tmp_path / "mission.yaml", raw_dir=str(tmp_path), nonsense=1)
     assert cli.main(["validate", str(config)]) == 1
-    issues = _mission.validate_config(config)
+    issues = mission.check(config)
     assert any(i.level == "ERROR" and i.key == "nonsense" for i in issues)
 
 
@@ -921,7 +915,7 @@ def test_validate_rejects_bad_types(tmp_path: pathlib.Path) -> None:
         dives="all",
         keep_variables="TEMP",
     )
-    bad = {i.key for i in _mission.validate_config(config) if i.level == "ERROR"}
+    bad = {i.key for i in mission.check(config) if i.level == "ERROR"}
     assert {"mode", "dives", "keep_variables"} <= bad
 
 
@@ -932,10 +926,7 @@ def test_validate_rejects_non_w08_role(tmp_path: pathlib.Path) -> None:
         raw_dir=str(tmp_path),
         contributors=[{"name": "Ann", "role": "Chief Wrangler"}],
     )
-    assert any(
-        i.level == "ERROR" and "W08" in i.message
-        for i in _mission.validate_config(config)
-    )
+    assert any(i.level == "ERROR" and "W08" in i.message for i in mission.check(config))
 
 
 def test_validate_rejects_name_with_comma(tmp_path: pathlib.Path) -> None:
@@ -946,8 +937,7 @@ def test_validate_rejects_name_with_comma(tmp_path: pathlib.Path) -> None:
         contributors=[{"name": "Doe, Jane", "role": "PI"}],
     )
     assert any(
-        i.level == "ERROR" and "comma" in i.message
-        for i in _mission.validate_config(config)
+        i.level == "ERROR" and "comma" in i.message for i in mission.check(config)
     )
 
 
@@ -959,7 +949,7 @@ def test_validate_requires_pi_and_operator(tmp_path: pathlib.Path) -> None:
         contributors=[{"name": "Ann", "role": "Data scientist"}],
         institutions=[{"name": "Inst", "role": "Owner"}],
     )
-    errors = [i.message for i in _mission.validate_config(config) if i.level == "ERROR"]
+    errors = [i.message for i in mission.check(config) if i.level == "ERROR"]
     assert any("PI" in message for message in errors)
     assert any("Operator" in message for message in errors)
 
@@ -971,7 +961,7 @@ def test_validate_warns_on_roles_list(tmp_path: pathlib.Path) -> None:
         raw_dir=str(tmp_path),
         contributors=[{"name": "Ann", "roles": ["PI"]}],
     )
-    issues = _mission.validate_config(config)
+    issues = mission.check(config)
     assert any(i.level == "WARNING" and "roles:" in i.message for i in issues)
     assert not any(
         i.level == "ERROR" and (i.key or "").startswith("contributors") for i in issues
@@ -998,23 +988,21 @@ def test_process_missing_config_is_exit_one(tmp_path: pathlib.Path) -> None:
 def test_validate_dives_out_of_range(tmp_path: pathlib.Path) -> None:
     """A ``dives`` range beyond the files present is an ERROR."""
     config = _write_config(tmp_path / "mission.yaml", dives=[1, 99])
-    issues = _mission.validate_config(config)
+    issues = mission.check(config)
     assert any(i.level == "ERROR" and i.key == "dives" for i in issues)
 
 
 def test_validate_strict_flags_gap(tmp_path: pathlib.Path) -> None:
     """``--strict`` reports a dive missing from the range."""
-    mission = tmp_path / "mission_dir"
-    mission.mkdir()
+    mission_dir = tmp_path / "mission_dir"
+    mission_dir.mkdir()
     for name in ("p0050001_20080606.nc", "p0050003_20080606.nc"):
-        (mission / name).write_bytes((DATA_DIR / name).read_bytes())
+        (mission_dir / name).write_bytes((DATA_DIR / name).read_bytes())
     config = _write_config(
-        tmp_path / "mission.yaml", raw_dir=str(mission), dives=[1, 3]
+        tmp_path / "mission.yaml", raw_dir=str(mission_dir), dives=[1, 3]
     )
-    assert not [
-        i for i in _mission.validate_config(config, strict=False) if i.key == "dives"
-    ]
-    strict = _mission.validate_config(config, strict=True)
+    assert not [i for i in mission.check(config, strict=False) if i.key == "dives"]
+    strict = mission.check(config, strict=True)
     assert any(i.level == "ERROR" and "missing" in i.message for i in strict)
 
 
@@ -1032,10 +1020,10 @@ def test_bundled_example_config_validates_and_plans(
 
 def test_report_output_dir_is_created(tmp_path: pathlib.Path) -> None:
     """report -o new/ (not yet existing) writes <id>_conversion.html inside it."""
-    from seagliderOG1 import convert, readers, writers
+    from seagliderOG1 import _convert, readers, writers
 
     nc = tmp_path / "og1.nc"
-    writers.write(convert.to_og1(readers.read_mission(str(DATA_DIR), 1, 1)), str(nc))
+    writers.write(_convert.convert(readers.read_mission(str(DATA_DIR), 1, 1)), str(nc))
     out_dir = tmp_path / "reports"
     assert cli.main(["report", str(nc), "-o", f"{out_dir}/"]) == 0
     assert (out_dir / "og1_conversion.html").is_file()
@@ -1049,15 +1037,15 @@ def test_deprecated_source_key_is_read_as_raw_dir_with_a_warning(
     data = yaml.safe_load(config.read_text())
     data["source"] = data.pop("raw_dir")
     config.write_text(yaml.safe_dump(data))
-    issues = _mission.validate_config(config)
+    issues = mission.check(config)
     assert [i.level for i in issues if i.key == "source"] == ["WARNING"]
     assert not [i for i in issues if i.level == "ERROR"]
-    assert _mission.load_config(config)["raw_dir"] == str(DATA_DIR)
+    assert mission._load_raw(config)["raw_dir"] == str(DATA_DIR)
     data["raw_dir"] = str(DATA_DIR)
     config.write_text(yaml.safe_dump(data))
     assert any(
         i.level == "ERROR" and "both 'raw_dir'" in i.message
-        for i in _mission.validate_config(config)
+        for i in mission.check(config)
     )
 
 
@@ -1096,7 +1084,8 @@ def test_enrich_sets_the_doi_and_rebinds_the_sidecar(
     import numpy as np
     import xarray as xr
 
-    from seagliderOG1 import convert, writers
+    from seagliderOG1 import writers
+    from seagliderOG1.reports import _record
 
     nc = sg005_og1_copy
     with xr.open_dataset(nc, engine="netcdf4", decode_timedelta=False) as ds:
@@ -1115,7 +1104,7 @@ def test_enrich_sets_the_doi_and_rebinds_the_sidecar(
     sidecar = json.loads(writers.conversion_path(nc, ".json").read_text())
     assert sidecar["tracking_id"] == after["tracking_id"]
     assert sidecar["sha256"] == writers.file_sha256(nc)
-    assert convert.conversion_sidecar(nc)["presence"]  # still bound, no warning
+    assert _record.conversion_sidecar(nc)["presence"]  # still bound, no warning
 
 
 def test_enrich_from_config_refuses_converter_owned_keys(

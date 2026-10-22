@@ -14,3 +14,7 @@ import matplotlib
 # backend (macOS defaults to `macosx`). Set here, before any submodule imports pyplot, so it
 # covers every entry point into rendering, not just the CLI (which also sets MPLBACKEND).
 matplotlib.use("Agg")
+
+from seagliderOG1.reports._record import record, report
+
+__all__ = ["record", "report"]
