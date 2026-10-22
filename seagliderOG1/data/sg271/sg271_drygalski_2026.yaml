@@ -31,6 +31,11 @@ platform:               # 'init --from' fills these; fill any null before valida
   BATTERY_TYPE: lithium   # optional -> variable; see the OG1 battery_type vocabulary
   BATTERY_PACK: "3 x 15V battery"   # optional -> variable; battery packaging
 
+deployment_information:   # -> variables; where and when the glider went in the water
+  DEPLOYMENT_TIME: 2026-03-02T19:24:00Z   # cruise log; precedes the first data sample (19:38:28)
+  DEPLOYMENT_LATITUDE: -72.98      # 72 deg 58.8' S
+  DEPLOYMENT_LONGITUDE: 171.4083   # 171 deg 24.5' E
+
 local_config: null   # optional path to a directory of local config overrides; read once the feature lands
 
 identity_and_discovery:   # -> global attributes; who and where: identity and discovery globals

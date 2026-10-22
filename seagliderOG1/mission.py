@@ -55,6 +55,7 @@ KNOWN_KEYS = frozenset(
         "keep_variables",
         "report",
         "platform",
+        "deployment_information",
         "local_config",
         "identity_and_discovery",
         "rights_and_access",

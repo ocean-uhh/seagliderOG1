@@ -714,6 +714,7 @@ def convert(
     institutions: Sequence[dict] | None = None,
     platform: dict[str, object] | None = None,
     deployment: dict[str, object] | None = None,
+    deployment_information: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
     sensors: Mapping[str, Mapping[str, object]] | None = None,
     mode: str | None = None,
@@ -758,6 +759,12 @@ def convert(
         (``id``, ``program``, ``license``, ``doi``, ``site``, ...). Written as global
         attributes; a value for ``id`` (derived) or ``comment`` (kept from the
         basestation files when they carry one) overrides it with a warning. Nulls skipped. Default is None.
+    deployment_information : dict of str to object, optional
+        The cruise-level deployment position and time from the mission config
+        ``deployment_information`` block (``DEPLOYMENT_TIME``, ``DEPLOYMENT_LATITUDE``,
+        ``DEPLOYMENT_LONGITUDE``). When given they set the OG1 ``DEPLOYMENT_*`` variables;
+        otherwise they are derived from the first in-water fix. ``DEPLOYMENT_TIME`` after
+        the first data sample warns. Default is None.
     global_attributes : dict of str to object, optional
         Global attributes written verbatim into the output (nulls skipped). A key
         that collides with a converter-derived global, or with a key that has a
@@ -818,6 +825,8 @@ def convert(
             platform = cfg.get("platform")
         if deployment is None:
             deployment = _config._merge_sections(cfg)
+        if deployment_information is None:
+            deployment_information = cfg.get("deployment_information")
         if global_attributes is None:
             global_attributes = cfg.get("global_attributes")
         if sensors is None:
@@ -998,17 +1007,45 @@ def convert(
     ds_og1["TRAJECTORY"].attrs["long_name"] = "trajectory name"
     ds_og1["TRAJECTORY"].attrs["cf_role"] = "trajectory_id"
 
+    # DEPLOYMENT_* are the cruise-level deployment position and time. OG1 wants the true
+    # deployment, which precedes the first data; take them from the mission config's
+    # deployment_information block when given, else fall back to the first in-water fix.
+    info = deployment_information or {}
+    first_lat = float(ds_og1.LATITUDE.values[~np.isnan(ds_og1.LATITUDE)][0])
+    first_lon = float(ds_og1.LONGITUDE.values[~np.isnan(ds_og1.LONGITUDE)][0])
+    first_time = ds_og1.TIME.values[~np.isnan(ds_og1.TIME)][0]
+    dep_lat = (
+        float(info["DEPLOYMENT_LATITUDE"])
+        if info.get("DEPLOYMENT_LATITUDE") is not None
+        else first_lat
+    )
+    dep_lon = (
+        float(info["DEPLOYMENT_LONGITUDE"])
+        if info.get("DEPLOYMENT_LONGITUDE") is not None
+        else first_lon
+    )
+    if info.get("DEPLOYMENT_TIME") is not None:
+        stamp = pd.Timestamp(info["DEPLOYMENT_TIME"])
+        stamp = stamp.tz_convert("UTC").tz_localize(None) if stamp.tzinfo else stamp
+        dep_time = stamp.to_datetime64()
+        if dep_time > first_time:
+            warnings.warn(
+                "deployment_information.DEPLOYMENT_TIME "
+                f"({np.datetime_as_string(dep_time, unit='s')}) is after the first data "
+                f"sample ({np.datetime_as_string(first_time, unit='s')}); the deployment "
+                "should precede the data.",
+                stacklevel=2,
+            )
+    else:
+        dep_time = first_time
     ds_og1["DEPLOYMENT_LATITUDE"] = xr.DataArray(
-        ds_og1.LATITUDE.values[~np.isnan(ds_og1.LATITUDE)][0],
-        attrs={"long_name": "latitude of deployment"},
+        dep_lat, attrs={"long_name": "latitude of deployment"}
     )
     ds_og1["DEPLOYMENT_LONGITUDE"] = xr.DataArray(
-        ds_og1.LONGITUDE.values[~np.isnan(ds_og1.LONGITUDE)][0],
-        attrs={"long_name": "longitude of deployment"},
+        dep_lon, attrs={"long_name": "longitude of deployment"}
     )
     ds_og1["DEPLOYMENT_TIME"] = xr.DataArray(
-        ds_og1.TIME.values[~np.isnan(ds_og1.TIME)][0],
-        attrs={"long_name": "time of deployment"},
+        dep_time, attrs={"long_name": "time of deployment"}
     )
 
     # ---- -------------------------------------------- ----
@@ -1324,6 +1361,7 @@ def process(
         institutions=cfg.get("institutions"),
         platform=cfg.get("platform"),
         deployment=_config._merge_sections(cfg),
+        deployment_information=cfg.get("deployment_information"),
         global_attributes=cfg.get("global_attributes"),
         sensors=cfg.get("sensors"),
         mode=mode if mode is not None else (cfg.get("mode") or "realtime"),
@@ -1422,6 +1460,7 @@ def _convert_mission(
     institutions: Sequence[dict] | None = None,
     platform: dict[str, object] | None = None,
     deployment: dict[str, object] | None = None,
+    deployment_information: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
     sensors: Mapping[str, Mapping[str, object]] | None = None,
     mode: str = "realtime",
@@ -1457,6 +1496,9 @@ def _convert_mission(
         Platform fields, as for :func:`convert`. Default is None.
     deployment : dict of str to object, optional
         Deployment-identity globals, as for :func:`convert`. Default is None.
+    deployment_information : dict of str to object, optional
+        Deployment position/time (``DEPLOYMENT_TIME``/``LATITUDE``/``LONGITUDE``), as for
+        :func:`convert`. Default is None.
     global_attributes : dict of str to object, optional
         Global attributes written verbatim, as for :func:`convert`. Default is None.
     sensors : collections.abc.Mapping, optional
@@ -1522,6 +1564,7 @@ def _convert_mission(
         institutions=institutions,
         platform=platform,
         deployment=deployment,
+        deployment_information=deployment_information,
         global_attributes=global_attributes,
         sensors=sensors,
         mode=mode,

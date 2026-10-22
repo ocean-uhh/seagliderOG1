@@ -1321,3 +1321,32 @@ def test_sensors_config_corrects_a_basestation_sensor_record() -> None:
         _convert.convert(datasets, sensors={"tridente": {"serial_number": "1"}})
     with pytest.raises(ValueError, match="unknown field 'serial'"):
         _convert.convert(datasets, sensors={"wlbb2f": {"serial": "1"}})
+
+
+def test_deployment_information_overrides_the_derived_fix() -> None:
+    """A deployment_information block sets DEPLOYMENT_* instead of the first in-water fix."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    ds = _convert.convert(
+        datasets,
+        deployment_information={
+            "DEPLOYMENT_TIME": "2008-06-06T00:00:00Z",  # before the first sample (18:06:18)
+            "DEPLOYMENT_LATITUDE": -60.0,
+            "DEPLOYMENT_LONGITUDE": -8.0,
+        },
+    )
+    assert float(ds["DEPLOYMENT_LATITUDE"]) == -60.0
+    assert float(ds["DEPLOYMENT_LONGITUDE"]) == -8.0
+    assert (
+        np.datetime_as_string(ds["DEPLOYMENT_TIME"].values, unit="s")
+        == "2008-06-06T00:00:00"
+    )
+
+
+def test_deployment_time_after_first_sample_warns() -> None:
+    """A DEPLOYMENT_TIME later than the first data sample warns (it should precede the data)."""
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    with pytest.warns(UserWarning, match="after the first data sample"):
+        _convert.convert(
+            datasets,
+            deployment_information={"DEPLOYMENT_TIME": "2008-06-07T00:00:00Z"},
+        )
