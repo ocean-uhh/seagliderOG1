@@ -136,6 +136,23 @@ glider. For a University of Washington Seaglider M1, as in ``data/demo_sg005/mis
 ``https://vocab.nerc.ac.uk/collection/B76/current/B7600024/`` and
 ``https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/``.
 
+Deployment information
+----------------------
+
+The ``deployment_information`` block sets the OG1 deployment variables — the cruise-level
+position and time the glider went in the water:
+
+.. code-block:: yaml
+
+   deployment_information:
+     DEPLOYMENT_TIME: 2026-03-02T19:24:00Z   # ISO UTC; must precede the first data sample
+     DEPLOYMENT_LATITUDE: -72.98             # decimal degrees north
+     DEPLOYMENT_LONGITUDE: 171.4083          # decimal degrees east
+
+These are OG1 mandatory variables. Any key left null (or the whole block omitted) is derived
+from the first in-water fix instead, which is later than the true deployment; a
+``DEPLOYMENT_TIME`` after the first data sample warns.
+
 Global-attribute fields
 -----------------------
 

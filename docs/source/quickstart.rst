@@ -37,9 +37,9 @@ directories, point ``raw_dir`` at the root and select with ``--all`` or ``--miss
 previews without writing. Paths in ``sg005.yaml`` resolve relative to the file. See
 :ref:`mission_yaml` for every key and :ref:`cli_reference` for every flag.
 
-A filled-in example for the bundled sample ships as ``data/demo_sg005/mission.yaml``; from the
-repository root, ``seagliderOG1 process data/demo_sg005/mission.yaml --report`` writes the OG1
-file and its conversion page to ``outputs/``.
+A filled-in example ships inside the package: ``seagliderOG1 init --example`` writes
+``sg271.yaml`` pointing at the bundled sg271 dives, and ``seagliderOG1 process sg271.yaml``
+writes the OG1 file and its conversion page to ``outputs/`` (see :ref:`demo`).
 
 From Python
 -----------
@@ -84,4 +84,4 @@ The same pipeline as separate calls, for when you want the dataset in hand befor
    sg.report(out)
 
 The worked example in :doc:`the demo notebook <demo-output>` runs this end to end on the
-bundled ``sg005`` sample data.
+bundled ``sg271`` sample data.
