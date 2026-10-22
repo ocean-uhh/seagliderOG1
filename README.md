@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/github/license/ocean-uhh/seagliderOG1.svg)](https://github.com/ocean-uhh/seagliderOG1/blob/main/LICENSE)
 [![Tests](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml/badge.svg)](https://github.com/ocean-uhh/seagliderOG1/actions/workflows/tests.yml)
 [![Documentation](https://img.shields.io/badge/docs-ocean--uhh.github.io-blue.svg)](https://ocean-uhh.github.io/seagliderOG1/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23574871.svg)](https://doi.org/10.5281/zenodo.23574871)
 
 seagliderOG1 converts Seaglider basestation files (`pSSSDDDD*.nc`) into [OceanGliders OG1 format](https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html). One mission in, one OG1 file out; the platform, contributor and institution metadata come from a `mission.yaml` you keep with your data, never from defaults inside the package. Based on [votoutils](https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/glider/convert_to_og1.py)' `convert_to_og1`.
 
