@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
+  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev80 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=e67db2d7"></script>
+      <script src="_static/documentation_options.js?v=1414bcfe"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -162,7 +162,7 @@ The page reads it for its <em>Presence across dives</em> and <em>Before → afte
 <span class="go">  sg005_20080606T180256_delayed: 343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns) — see seagliderOG1 report outputs/sg005_20080606T180256_delayed.nc</span>
 </pre></div>
 </div>
-<p>The sidecar belongs to its OG1 file: it is replaced whenever the file is written. It records
+<p>The conversion record belongs to its OG1 file: it is replaced whenever the file is written. It records
 the file’s <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> (a new UUID on every write) and the SHA-256 of its bytes; <code class="docutils literal notranslate"><span class="pre">report</span></code>
 warns when the file beside it has changed since.</p>
 </section>
@@ -185,11 +185,11 @@ still supply.</p>
 OG1 file without converting again — a DOI assigned after publication, or a corrected
 global-attribute section or <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code> value. It changes the netCDF file, not the
 configuration: the globals are edited in place, <code class="docutils literal notranslate"><span class="pre">date_modified</span></code> is set, a <code class="docutils literal notranslate"><span class="pre">history</span></code> line
-names the keys, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> is renewed, <code class="docutils literal notranslate"><span class="pre">date_created</span></code> is kept, and the sidecar is
+names the keys, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> is renewed, <code class="docutils literal notranslate"><span class="pre">date_created</span></code> is kept, and the conversion record is
 rebound. Values must be text, numbers or dates (a date is written as ISO 8601 text); every
 value is checked before the file is opened, so a refused one leaves the file unchanged.
 Replacing a different value already in the file warns with both values. <code class="docutils literal notranslate"><span class="pre">id</span></code>
-cannot change: the file name and sidecar are bound to it, so a new id means converting again.
+cannot change: the file name and conversion record are bound to it, so a new id means converting again.
 The globals <code class="docutils literal notranslate"><span class="pre">enrich</span></code> writes itself (<code class="docutils literal notranslate"><span class="pre">date_modified</span></code>, <code class="docutils literal notranslate"><span class="pre">history</span></code>, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code>,
 <code class="docutils literal notranslate"><span class="pre">draft</span></code>) and the <code class="docutils literal notranslate"><span class="pre">conversion_*</span></code> records cannot be set.
 Reserving the DOI first and setting <code class="docutils literal notranslate"><span class="pre">rights_and_access.doi</span></code> before <code class="docutils literal notranslate"><span class="pre">process</span></code> is the
@@ -435,7 +435,7 @@ seagliderOG1 report out/&lt;id&gt;.nc –report-dir site/    into site/&lt;id&gt
 </section>
 <section id="seagliderOG1-enrich">
 <span id="enrich"></span><h4>enrich<a class="headerlink" href="#seagliderOG1-enrich" title="Link to this heading"></a></h4>
-<p>Set global attributes on a written OG1 file, without converting again. Changes the netCDF file (not the config): sets date_modified, adds a history line and a new tracking_id, keeps date_created, and rebinds the sidecar beside it.</p>
+<p>Set global attributes on a written OG1 file, without converting again. Changes the netCDF file (not the config): sets date_modified, adds a history line and a new tracking_id, keeps date_created, and rebinds the conversion record beside it.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">enrich</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">doi</span> <span class="n">DOI</span><span class="p">]</span> <span class="n">file</span> <span class="p">[</span><span class="n">config</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -466,7 +466,7 @@ seagliderOG1 enrich out/&lt;id&gt;.nc mission.yaml</p>
 </section>
 <section id="seagliderOG1-inspect">
 <span id="inspect"></span><h4>inspect<a class="headerlink" href="#seagliderOG1-inspect" title="Link to this heading"></a></h4>
-<p>Show the inventory of one basestation or OG1 netCDF file as a text table. With –conversion, print the conversion ledger; with –conversion -o, write the HTML conversion page.</p>
+<p>Show the inventory of one basestation or OG1 netCDF file as a text table. With –conversion, print the conversion record; with –conversion -o, write the HTML conversion page.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">inspect</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">--</span><span class="n">attrs</span> <span class="o">|</span> <span class="o">--</span><span class="n">variables</span> <span class="o">|</span> <span class="o">--</span><span class="n">by</span><span class="o">-</span><span class="n">dimension</span> <span class="n">DIM</span> <span class="o">|</span> <span class="o">--</span><span class="n">conversion</span> <span class="o">|</span> <span class="o">--</span><span class="n">parameter</span> <span class="n">NAME</span><span class="p">]</span>
                      <span class="p">[</span><span class="o">--</span><span class="nb">all</span><span class="p">]</span>

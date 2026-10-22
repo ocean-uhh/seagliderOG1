@@ -132,13 +132,13 @@ part-way through, or present but off, makes the files disagree. The converter wo
 union of the variables, so the OG1 file has one variable where the inputs had it on some dives
 and not others, and cannot say which dives that was.
 
-``convert.process_mission`` (and so ``process``) records this in ``<id>_conversion.json`` beside
+``seagliderOG1.process`` (and the ``process`` CLI) records this in ``<id>_conversion.json`` beside
 the OG1 file. For each basestation variable it gives the runs of dives it is *present* in (the
 variable exists in the file) and *valid* in (present, with at least one non-missing value). The
-sidecar also lists the input files, records the ``dives``, ``platform`` and ``institutions`` values
+conversion record also lists the input files, records the ``dives``, ``platform`` and ``institutions`` values
 the conversion was given (not for a draft) and the basestation ``institution`` global's registry
 match, and carries the file's ``id``, ``tracking_id`` and SHA-256;
-``convert.conversion_sidecar`` reads it back and ignores a sidecar whose ``id`` or
+the conversion-record reader reads it back and ignores a conversion record whose ``id`` or
 ``tracking_id`` differs from the file's (``seagliderOG1 report`` also checks the SHA-256).
 
 The conversion page groups the variables into patterns — ``every dive``, ``from dive k``,
@@ -159,7 +159,7 @@ draft (``seagliderOG1 draft``) gets the same page with its global attributes rep
 basestation files' own.
 
 The page opens with **mission.yaml against the data** when the ``mission.yaml`` the conversion
-was given (``process``, or ``convert.process_mission``) and the output disagree or fall short, as
+was given (``process``, or ``seagliderOG1.process``) and the output disagree or fall short, as
 copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds something:
 
 * *Dive range* — the requested ``dives`` against the first and last dive that reached the file
@@ -193,15 +193,15 @@ copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds
   ``publisher_*``: OG1 defines neither and records people and organisations in
   ``contributor_*`` and ``contributing_institutions_*``.
 
-The dive, platform-pair and institution checks read the ``config`` the sidecar records, so a page
+The dive, platform-pair and institution checks read the ``config`` the conversion record records, so a page
 for a file converted before it was recorded shows only the other two. A draft has no such section.
 
 Its sections, in order:
 
 #. **Before → after** — files, dives, size on disk, samples on the shared axis, variable and
    global-attribute counts, time span and OG1-requirement coverage, basestation input beside
-   OG1 output, with a one-line verdict. The input column reads the sidecar; its cells show
-   ``—`` when the sidecar is absent.
+   OG1 output, with a one-line verdict. The input column reads the conversion record; its cells show
+   ``—`` when the conversion record is absent.
 #. **The OG1 file** — the output read by what OG1 says about each variable, not by where it
    came from, with an *Orig var* / *Orig dim* column pair naming the basestation source:
 
@@ -268,15 +268,15 @@ or from Python:
 
 .. code-block:: python
 
-   from seagliderOG1 import convert, readers, writers
+   import seagliderOG1 as sg
 
-   datasets = readers.read_mission(source, first, last)
-   ds = convert.to_og1(
+   datasets = sg.read(raw_dir, dives=(first, last))
+   ds = sg.convert(
        datasets,
        contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
        institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],
    )
-   writers.write(ds, out)
+   sg.write(ds, out)
 
 The ``contributors`` and ``institutions`` arguments are lists of records, one entry per person
 (or institution) per role; a conversion with no PI warns. See :ref:`cli_reference`.

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
+  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.0.2.post1.dev80 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e67db2d7"></script>
+      <script src="../../_static/documentation_options.js?v=1414bcfe"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -172,6 +172,36 @@
 <span class="c1"># fill used to write. One definition so the converter and validate agree on what counts</span>
 <span class="c1"># as unset (a value here is never written to the output, and validate treats it as null).</span>
 <span class="n">PLACEHOLDER_VALUES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"null"</span><span class="p">,</span> <span class="s2">"null@null.com"</span><span class="p">})</span>
+
+<span class="c1"># The one sentence a draft output carries in its ``draft`` global (shared by the</span>
+<span class="c1"># converter, which writes it, and the report, which reads it to mark the page a draft).</span>
+<span class="n">DRAFT_NOTE</span> <span class="o">=</span> <span class="s2">"converted without a mission config; not an OG1 file"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">is_placeholder</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return True for a null or placeholder value, so every path agrees on "unset".</span>
+
+<span class="sd">    The one definition behind the converter's ``_is_empty`` and the validator's</span>
+<span class="sd">    ``_is_placeholder``: None, or a string that is empty or one of</span>
+<span class="sd">    :data:`PLACEHOLDER_VALUES` (``""``, ``"None"``, ``"null"``, ``"null@null.com"``). A</span>
+<span class="sd">    value this returns True for is never written to the output and is treated as null by</span>
+<span class="sd">    ``validate``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : object</span>
+<span class="sd">        The value to test.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        True when the value counts as unset.</span>
+
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">in</span> <span class="n">PLACEHOLDER_VALUES</span>
+    <span class="p">)</span>
+
 
 <span class="c1"># OG1 deployment-identity globals the mission config sets through the structured</span>
 <span class="c1"># deployment: block (one key per global). Ordered as the OG1 manual's global-attribute</span>

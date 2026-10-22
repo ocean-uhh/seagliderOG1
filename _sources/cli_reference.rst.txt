@@ -54,7 +54,7 @@ The page reads it for its *Presence across dives* and *Before → after* section
    wrote outputs/sg005_20080606T180256_delayed.nc
      sg005_20080606T180256_delayed: 343 variables over 5 dives; 338 on every dive, 5 on some (3 patterns) — see seagliderOG1 report outputs/sg005_20080606T180256_delayed.nc
 
-The sidecar belongs to its OG1 file: it is replaced whenever the file is written. It records
+The conversion record belongs to its OG1 file: it is replaced whenever the file is written. It records
 the file's ``tracking_id`` (a new UUID on every write) and the SHA-256 of its bytes; ``report``
 warns when the file beside it has changed since.
 
@@ -79,11 +79,11 @@ Adding metadata later
 OG1 file without converting again — a DOI assigned after publication, or a corrected
 global-attribute section or ``global_attributes:`` value. It changes the netCDF file, not the
 configuration: the globals are edited in place, ``date_modified`` is set, a ``history`` line
-names the keys, ``tracking_id`` is renewed, ``date_created`` is kept, and the sidecar is
+names the keys, ``tracking_id`` is renewed, ``date_created`` is kept, and the conversion record is
 rebound. Values must be text, numbers or dates (a date is written as ISO 8601 text); every
 value is checked before the file is opened, so a refused one leaves the file unchanged.
 Replacing a different value already in the file warns with both values. ``id``
-cannot change: the file name and sidecar are bound to it, so a new id means converting again.
+cannot change: the file name and conversion record are bound to it, so a new id means converting again.
 The globals ``enrich`` writes itself (``date_modified``, ``history``, ``tracking_id``,
 ``draft``) and the ``conversion_*`` records cannot be set.
 Reserving the DOI first and setting ``rights_and_access.doi`` before ``process`` is the

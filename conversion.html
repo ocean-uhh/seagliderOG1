@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev80 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=e67db2d7"></script>
+      <script src="_static/documentation_options.js?v=1414bcfe"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -235,13 +235,13 @@ checks it as mandatory), so the converter writes no default text; set it to add 
 part-way through, or present but off, makes the files disagree. The converter works from the
 union of the variables, so the OG1 file has one variable where the inputs had it on some dives
 and not others, and cannot say which dives that was.</p>
-<p><code class="docutils literal notranslate"><span class="pre">convert.process_mission</span></code> (and so <code class="docutils literal notranslate"><span class="pre">process</span></code>) records this in <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1.process</span></code> (and the <code class="docutils literal notranslate"><span class="pre">process</span></code> CLI) records this in <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside
 the OG1 file. For each basestation variable it gives the runs of dives it is <em>present</em> in (the
 variable exists in the file) and <em>valid</em> in (present, with at least one non-missing value). The
-sidecar also lists the input files, records the <code class="docutils literal notranslate"><span class="pre">dives</span></code>, <code class="docutils literal notranslate"><span class="pre">platform</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> values
+conversion record also lists the input files, records the <code class="docutils literal notranslate"><span class="pre">dives</span></code>, <code class="docutils literal notranslate"><span class="pre">platform</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> values
 the conversion was given (not for a draft) and the basestation <code class="docutils literal notranslate"><span class="pre">institution</span></code> global’s registry
 match, and carries the file’s <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> and SHA-256;
-<code class="docutils literal notranslate"><span class="pre">convert.conversion_sidecar</span></code> reads it back and ignores a sidecar whose <code class="docutils literal notranslate"><span class="pre">id</span></code> or
+the conversion-record reader reads it back and ignores a conversion record whose <code class="docutils literal notranslate"><span class="pre">id</span></code> or
 <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> differs from the file’s (<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span></code> also checks the SHA-256).</p>
 <p>The conversion page groups the variables into patterns — <code class="docutils literal notranslate"><span class="pre">every</span> <span class="pre">dive</span></code>, <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">dive</span> <span class="pre">k</span></code>,
 <code class="docutils literal notranslate"><span class="pre">until</span> <span class="pre">dive</span> <span class="pre">k</span></code>, <code class="docutils literal notranslate"><span class="pre">dive</span> <span class="pre">k</span> <span class="pre">only</span></code>, <code class="docutils literal notranslate"><span class="pre">dives</span> <span class="pre">a–b</span></code>, <code class="docutils literal notranslate"><span class="pre">sporadic</span></code> — and shows each as a strip over
@@ -256,7 +256,7 @@ the four depth-averaged currents are present on every dive but have values from 
 draft (<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">draft</span></code>) gets the same page with its global attributes replaced by the
 basestation files’ own.</p>
 <p>The page opens with <strong>mission.yaml against the data</strong> when the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> the conversion
-was given (<code class="docutils literal notranslate"><span class="pre">process</span></code>, or <code class="docutils literal notranslate"><span class="pre">convert.process_mission</span></code>) and the output disagree or fall short, as
+was given (<code class="docutils literal notranslate"><span class="pre">process</span></code>, or <code class="docutils literal notranslate"><span class="pre">seagliderOG1.process</span></code>) and the output disagree or fall short, as
 copyable boxes of <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> lines. Each check is shown only when it finds something:</p>
 <ul class="simple">
 <li><p><em>Dive range</em> — the requested <code class="docutils literal notranslate"><span class="pre">dives</span></code> against the first and last dive that reached the file
@@ -290,14 +290,14 @@ itself (<code class="docutils literal notranslate"><span class="pre">standard_na
 <code class="docutils literal notranslate"><span class="pre">publisher_*</span></code>: OG1 defines neither and records people and organisations in
 <code class="docutils literal notranslate"><span class="pre">contributor_*</span></code> and <code class="docutils literal notranslate"><span class="pre">contributing_institutions_*</span></code>.</p></li>
 </ul>
-<p>The dive, platform-pair and institution checks read the <code class="docutils literal notranslate"><span class="pre">config</span></code> the sidecar records, so a page
+<p>The dive, platform-pair and institution checks read the <code class="docutils literal notranslate"><span class="pre">config</span></code> the conversion record records, so a page
 for a file converted before it was recorded shows only the other two. A draft has no such section.</p>
 <p>Its sections, in order:</p>
 <ol class="arabic simple">
 <li><p><strong>Before → after</strong> — files, dives, size on disk, samples on the shared axis, variable and
 global-attribute counts, time span and OG1-requirement coverage, basestation input beside
-OG1 output, with a one-line verdict. The input column reads the sidecar; its cells show
-<code class="docutils literal notranslate"><span class="pre">—</span></code> when the sidecar is absent.</p></li>
+OG1 output, with a one-line verdict. The input column reads the conversion record; its cells show
+<code class="docutils literal notranslate"><span class="pre">—</span></code> when the conversion record is absent.</p></li>
 <li><p><strong>The OG1 file</strong> — the output read by what OG1 says about each variable, not by where it
 came from, with an <em>Orig var</em> / <em>Orig dim</em> column pair naming the basestation source:</p>
 <ul class="simple">
@@ -359,15 +359,15 @@ against the format, run the OG1 checker (see <a class="reference internal" href=
 </pre></div>
 </div>
 <p>or from Python:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">writers</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sg</span>
 
-<span class="n">datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">read_mission</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">)</span>
-<span class="n">ds</span> <span class="o">=</span> <span class="n">convert</span><span class="o">.</span><span class="n">to_og1</span><span class="p">(</span>
+<span class="n">datasets</span> <span class="o">=</span> <span class="n">sg</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">raw_dir</span><span class="p">,</span> <span class="n">dives</span><span class="o">=</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">))</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">sg</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span>
     <span class="n">datasets</span><span class="p">,</span>
     <span class="n">contributors</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"Jane Doe"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"PI"</span><span class="p">,</span> <span class="s2">"email"</span><span class="p">:</span> <span class="s2">"jane@example.org"</span><span class="p">}],</span>
     <span class="n">institutions</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"University of Hamburg (IfM)"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"Operator"</span><span class="p">}],</span>
 <span class="p">)</span>
-<span class="n">writers</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+<span class="n">sg</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">contributors</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> arguments are lists of records, one entry per person

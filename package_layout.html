@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Package layout and defaults &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
+  <title>Package layout and defaults &mdash; seagliderOG1 0.0.2.post1.dev80 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=e67db2d7"></script>
+      <script src="_static/documentation_options.js?v=1414bcfe"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -106,14 +106,18 @@
 <section id="modules">
 <h2>Modules<a class="headerlink" href="#modules" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">readers.py</span></code> — read basestation files from a server or a local directory.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">convert.py</span></code> — <code class="docutils literal notranslate"><span class="pre">to_og1</span></code> orchestrates mapping, standardisation, concat and the
-single post-concat dtype pass.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">writers.py</span></code> — write OG1 files.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tools.py</span></code> — user-facing utilities (the conversion internals and validation
-helpers live in a private module).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> — the public verbs (<code class="docutils literal notranslate"><span class="pre">read</span></code>, <code class="docutils literal notranslate"><span class="pre">convert</span></code>, <code class="docutils literal notranslate"><span class="pre">write</span></code>, <code class="docutils literal notranslate"><span class="pre">report</span></code>,
+<code class="docutils literal notranslate"><span class="pre">enrich</span></code>, <code class="docutils literal notranslate"><span class="pre">process</span></code>, <code class="docutils literal notranslate"><span class="pre">process_missions</span></code>), re-exported from the modules below.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">readers.py</span></code> — <code class="docutils literal notranslate"><span class="pre">read</span></code> basestation files from a server or a local directory.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">_convert.py</span></code> — <code class="docutils literal notranslate"><span class="pre">convert</span></code> orchestrates mapping, standardisation, concat and the
+single post-concat dtype pass; <code class="docutils literal notranslate"><span class="pre">process</span></code> / <code class="docutils literal notranslate"><span class="pre">process_missions</span></code> run the pipeline from a
+configuration. Private: not imported directly.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">writers.py</span></code> — <code class="docutils literal notranslate"><span class="pre">write</span></code> OG1 files and <code class="docutils literal notranslate"><span class="pre">enrich</span></code> a written file’s globals.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mission.py</span></code> — the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> schema: <code class="docutils literal notranslate"><span class="pre">load</span></code>, <code class="docutils literal notranslate"><span class="pre">check</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tools.py</span></code> — user-facing utilities.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">vocabularies.py</span></code> — vocabulary and mapping tables (the defaults; see below).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">plotters.py</span></code> — plotting. <code class="docutils literal notranslate"><span class="pre">contributors.py</span></code> — contributor/institution record handling.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reports/</span></code> — the HTML conversion page (<code class="docutils literal notranslate"><span class="pre">report</span></code>) and the reader behind it.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">cli/</span></code> — the <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> command, one module per verb.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">config/*.yaml</span></code> — the OG1 mappings and vocabularies (see below).</p></li>
 </ul>

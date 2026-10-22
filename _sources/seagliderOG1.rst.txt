@@ -1,21 +1,35 @@
 :mod:`seagliderOG1 API`
 -----------------------
 
-At a glance, in pipeline order:
+The public API is a set of verbs on the top-level package:
 
-- ``convert.process_mission`` — the whole pipeline for one mission: read, convert, write
-  (and optionally the HTML conversion page). The calls below are its steps.
-- ``readers.read_mission`` — read a mission's basestation files into a list of datasets.
-- ``convert.to_og1`` — convert that list into one OG1 dataset.
-- ``convert.keep_variables`` — optionally subset to a science-variable allow-list.
-- ``writers.write`` — write the OG1 dataset to netCDF.
-- ``tools.add_depth`` / ``add_phase`` / ``add_profile_number`` — add derived variables.
-- ``plotters.plot_*`` / ``plotters.show_*`` — quick-look figures and text tables.
-- ``vocabularies`` and ``contributors`` — the metadata vocabularies and contributor/institution records.
+- ``seagliderOG1.read`` — read a mission's basestation files into a list of datasets.
+- ``seagliderOG1.convert`` — convert that list into one OG1 dataset.
+- ``seagliderOG1.write`` — write the OG1 dataset to netCDF.
+- ``seagliderOG1.report`` — write the HTML conversion page for a written file.
+- ``seagliderOG1.enrich`` — set global attributes on a written file, in place.
+- ``seagliderOG1.process`` — load a mission configuration and run read + convert + write
+  (and optionally the page) for one mission.
+- ``seagliderOG1.process_missions`` — the same across a root of several missions.
+- ``seagliderOG1.mission`` — load and check a ``mission.yaml`` (``mission.load`` /
+  ``mission.check``).
 
-convert
+plus the exceptions ``seagliderOG1.MissionError`` and ``seagliderOG1.MetadataError``, and the
+supporting modules ``tools``, ``plotters``, ``vocabularies`` and ``contributors``.
+
+verbs
+=====
+.. autofunction:: seagliderOG1.read
+.. autofunction:: seagliderOG1.convert
+.. autofunction:: seagliderOG1.write
+.. autofunction:: seagliderOG1.report
+.. autofunction:: seagliderOG1.enrich
+.. autofunction:: seagliderOG1.process
+.. autofunction:: seagliderOG1.process_missions
+
+mission
 =======
-.. automodule:: seagliderOG1.convert
+.. automodule:: seagliderOG1.mission
    :members:
 
 vocabularies

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Getting started &mdash; seagliderOG1 0.0.2.post1.dev79 documentation</title>
+  <title>Getting started &mdash; seagliderOG1 0.0.2.post1.dev80 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=e67db2d7"></script>
+      <script src="_static/documentation_options.js?v=1414bcfe"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -144,34 +144,34 @@ file and its conversion page to <code class="docutils literal notranslate"><span
 <section id="from-python">
 <h2>From Python<a class="headerlink" href="#from-python" title="Link to this heading"></a></h2>
 <p>One call does what <code class="docutils literal notranslate"><span class="pre">process</span></code> does for one mission — read, convert, write
-<code class="docutils literal notranslate"><span class="pre">&lt;output_dir&gt;/&lt;id&gt;.nc</span></code> — and returns the path written:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert</span>
+<code class="docutils literal notranslate"><span class="pre">&lt;output_dir&gt;/&lt;id&gt;.nc</span></code> — taking the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> as its only argument and returning the
+path written:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sg</span>
 
-<span class="n">path</span> <span class="o">=</span> <span class="n">convert</span><span class="o">.</span><span class="n">process_mission</span><span class="p">(</span>
-    <span class="s2">"/data/005/20080606"</span><span class="p">,</span>
-    <span class="s2">"output"</span><span class="p">,</span>
-    <span class="n">contributors</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"Jane Doe"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"PI"</span><span class="p">,</span> <span class="s2">"email"</span><span class="p">:</span> <span class="s2">"jane@example.org"</span><span class="p">}],</span>
-    <span class="n">institutions</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"University of Hamburg (IfM)"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"Operator"</span><span class="p">}],</span>
-    <span class="n">report</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># also write output/&lt;id&gt;_conversion.html</span>
-<span class="p">)</span>
+<span class="n">path</span> <span class="o">=</span> <span class="n">sg</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s2">"sg005.yaml"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>It takes <code class="docutils literal notranslate"><span class="pre">dives</span></code>, <code class="docutils literal notranslate"><span class="pre">platform</span></code>, <code class="docutils literal notranslate"><span class="pre">deployment</span></code> (one mapping of the identity, rights and
-provenance globals the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> sections split apart), <code class="docutils literal notranslate"><span class="pre">global_attributes</span></code>, <code class="docutils literal notranslate"><span class="pre">mode</span></code>,
-<code class="docutils literal notranslate"><span class="pre">keep_variables</span></code> and <code class="docutils literal notranslate"><span class="pre">repair</span></code> as keyword arguments, and raises <code class="docutils literal notranslate"><span class="pre">FileExistsError</span></code> rather
-than overwrite unless <code class="docutils literal notranslate"><span class="pre">overwrite=True</span></code>.</p>
+<p>To inspect or adjust the configuration before converting, load it, change a value and pass the
+mapping:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sg</span>
+
+<span class="n">cfg</span> <span class="o">=</span> <span class="n">sg</span><span class="o">.</span><span class="n">mission</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"sg005.yaml"</span><span class="p">)</span>
+<span class="n">cfg</span><span class="p">[</span><span class="s2">"rights_and_access"</span><span class="p">][</span><span class="s2">"doi"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"10.5281/zenodo.0000000"</span>
+<span class="n">path</span> <span class="o">=</span> <span class="n">sg</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">process</span></code> takes <code class="docutils literal notranslate"><span class="pre">output_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">dives</span></code>, <code class="docutils literal notranslate"><span class="pre">mode</span></code>, <code class="docutils literal notranslate"><span class="pre">report</span></code> and <code class="docutils literal notranslate"><span class="pre">report_dir</span></code> as keyword
+overrides of the configuration, and raises <code class="docutils literal notranslate"><span class="pre">FileExistsError</span></code> rather than overwrite unless
+<code class="docutils literal notranslate"><span class="pre">overwrite=True</span></code>.</p>
 <section id="step-by-step">
 <h3>Step by step<a class="headerlink" href="#step-by-step" title="Link to this heading"></a></h3>
-<p>The same pipeline as three calls, for when you want the dataset in hand before writing:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert</span><span class="p">,</span> <span class="n">readers</span><span class="p">,</span> <span class="n">writers</span>
+<p>The same pipeline as separate calls, for when you want the dataset in hand before writing:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sg</span>
 
-<span class="n">datasets</span> <span class="o">=</span> <span class="n">readers</span><span class="o">.</span><span class="n">read_mission</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">)</span>
-<span class="n">ds</span> <span class="o">=</span> <span class="n">convert</span><span class="o">.</span><span class="n">to_og1</span><span class="p">(</span>
-    <span class="n">datasets</span><span class="p">,</span>
-    <span class="n">contributors</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"Jane Doe"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"PI"</span><span class="p">,</span> <span class="s2">"email"</span><span class="p">:</span> <span class="s2">"jane@example.org"</span><span class="p">}],</span>
-    <span class="n">institutions</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"University of Hamburg (IfM)"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"Operator"</span><span class="p">}],</span>
-<span class="p">)</span>
-<span class="n">writers</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+<span class="n">cfg</span> <span class="o">=</span> <span class="n">sg</span><span class="o">.</span><span class="n">mission</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"sg005.yaml"</span><span class="p">)</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">sg</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="n">sg</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">cfg</span><span class="p">[</span><span class="s2">"raw_dir"</span><span class="p">],</span> <span class="n">dives</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dives"</span><span class="p">)),</span> <span class="n">cfg</span><span class="p">)</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">sg</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="s2">"output/out.nc"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">sg</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The worked example in <a class="reference internal" href="demo-output.html"><span class="doc">the demo notebook</span></a> runs this end to end on the
