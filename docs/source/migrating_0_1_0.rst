@@ -3,8 +3,8 @@
 Migrating to 0.1.0
 ==================
 
-0.1.0 reshapes the public API into the OceanGliders family's verbs and changes the output
-format. To ease the move, the pre-0.1.0 names are kept for one release: most are **still
+0.1.0 reshapes the public API into a small set of verbs and changes the output format. To ease
+the move, the pre-0.1.0 names are kept for one release: most are **still
 importable and warn**, a few are **removed and raise** with a message that points back here.
 ("Pre-0.1.0" because a few of these names never shipped in a tagged release — they lived on
 ``main`` between 0.0.2 and 0.1.0; they are marked where they appear.)
@@ -211,6 +211,10 @@ Output-format changes
 - **TEMP units** are ``degree_Celsius`` (CF spelling) rather than ``Celsius``; values unchanged.
 - **featureType / Conventions.** ``featureType`` is ``trajectory`` (was ``trajectoryProfile``);
   ``Conventions`` is ``CF-1.10, ACDD-1.3, OG-1.0`` (was ``CF-1.10,OG-1.0``).
+- **Data mode in the id.** The file id's suffix follows ``mode`` in the ``mission.yaml``
+  (``realtime`` → ``R``, ``delayed`` → ``delayed``) and defaults to ``realtime``; v0.0.2 hard-coded
+  ``_delayed``. A file that was ``sg005_..._delayed`` is now ``sg005_..._R`` unless you set
+  ``mode: delayed``.
 - **No placeholders.** A missing mandatory global is no longer written as ``null`` /
   ``null@null.com``; a config that relied on the fabricated email must set a real
   ``contributor_email``. ``seagliderOG1.convert`` raises ``MetadataError`` on a missing mandatory global.

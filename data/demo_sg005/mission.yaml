@@ -1,7 +1,7 @@
 # seagliderOG1 mission configuration.
 # UPPER keys become OG1 variables, lower keys become attributes or globals;
 # the comment on each line says which. You fill the values.
-# The worked example for the bundled sg005 sample (two dives, June 2008).
+# The worked example for the bundled sg005 sample (five dives, 6-7 June 2008).
 # Paths are resolved relative to this file. From the repository root:
 #   seagliderOG1 validate data/demo_sg005/mission.yaml
 #   seagliderOG1 process  data/demo_sg005/mission.yaml   # -> outputs/<id>.nc
@@ -51,7 +51,7 @@ provenance_and_processing:   # -> global attributes; provenance globals
   comment: null   # suggested -> global attribute; overrides a comment global the basestation files carry
 
 global_attributes: {}   # any other OG1 global, written as given: replace {} with lines
-  #   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)
+  #   institution: "University of Hamburg"   (a key above goes under its own block)
 
 contributors:           # one entry per person per role
   # role is a W08 term: Manufacturer, Owner, Operator, PI, Technical Coordinator,

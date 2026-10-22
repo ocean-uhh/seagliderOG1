@@ -191,7 +191,7 @@ def test_validate_names_the_home_of_a_refused_global(tmp_path: pathlib.Path) -> 
         global_attributes={
             "naming_authority": "de.uni-hamburg",
             "date_created": "x",
-            "institution": "University of Hamburg (IfM)",  # no other home: allowed
+            "institution": "University of Hamburg",  # no other home: allowed
         },
     )
     issues = {

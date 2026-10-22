@@ -167,7 +167,7 @@ def render_template(
         *_global_section_lines(),
         "",
         "global_attributes: {}   # any other OG1 global, written as given: replace {} with lines",
-        '  #   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)',
+        '  #   institution: "University of Hamburg"   (a key above goes under its own block)',
         "",
         "sensors: {}            # corrections to a basestation sensor record, by its key in the",
         "  # instrument global; fields serial_number, calibration_date. e.g.",

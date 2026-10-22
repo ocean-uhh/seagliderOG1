@@ -202,6 +202,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - `data/demo_sg005/mission.yaml` names its Operator `University of Washington School of
   Oceanography`, a registry variant, so it carries the EDMO id; as `University of Washington` it
   matched no registry entry.
+- The EDMO registry resolves `University of Hamburg` to EDMO 3323 (the current university) rather
+  than 1156 (the dissolved Institute of Oceanography); the institute names remain as aliases.
 - Conversion page: `contributing_institutions_role` and `_role_vocabulary` are grouped under
   People & institutions (were under Other).
 - `date_created` is the conversion time; the basestation files' own `date_created` (sg005:
