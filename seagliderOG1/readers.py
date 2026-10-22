@@ -651,3 +651,35 @@ def repair_time_metadata(
 
     tmp_path.replace(path)
     return fixed_vars
+
+
+# --- deprecated v0.0.2 names (removed in 0.3.0; see seagliderOG1._deprecated) ----------
+from seagliderOG1 import _deprecated  # noqa: E402  # shims follow the definitions above
+
+load_basestation_files = _deprecated._renamed(
+    read_mission,
+    "readers.load_basestation_files",
+    "seagliderOG1.read / readers.read_mission",
+)
+load_first_basestation_file = _deprecated._renamed(
+    read_file, "readers.load_first_basestation_file", "readers.read_file"
+)
+scan_and_repair_files = _deprecated._renamed(
+    repair_files, "readers.scan_and_repair_files", "readers.repair_files"
+)
+repair_netcdf_time_metadata_inplace = _deprecated._renamed(
+    repair_time_metadata,
+    "readers.repair_netcdf_time_metadata_inplace",
+    "readers.repair_time_metadata",
+)
+profnum_from_filename = _deprecated._renamed(
+    profile_number_from_filename,
+    "readers.profnum_from_filename",
+    "readers.profile_number_from_filename",
+)
+glider_sn_from_filename = _deprecated._renamed(
+    serial_from_filename,
+    "readers.glider_sn_from_filename",
+    "readers.serial_from_filename",
+)
+load_sample_dataset = _deprecated.load_sample_dataset

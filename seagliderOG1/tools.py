@@ -507,3 +507,46 @@ def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
 # ===============================================================================
 # Unused functions
 # ===============================================================================
+
+
+# --- deprecated v0.0.2 names (removed in 0.3.0; see seagliderOG1._deprecated) ----------
+from seagliderOG1 import _deprecated  # noqa: E402  # shims follow the definitions above
+
+calc_Z = _deprecated._renamed(add_depth, "tools.calc_Z", "tools.add_depth")
+assign_phase = _deprecated._renamed(add_phase, "tools.assign_phase", "tools.add_phase")
+assign_profile_number = _deprecated._renamed(
+    add_profile_number, "tools.assign_profile_number", "tools.add_profile_number"
+)
+
+_REMOVED_TOOLS = {
+    "OG1_name_mapping": (
+        "the basestation -> OG1 name mapping is built inside seagliderOG1.convert; "
+        "'seagliderOG1 inspect --conversion FILE.nc' prints what was renamed."
+    ),
+    "print_OG1_mapping_summary": (
+        "the mapping is built inside seagliderOG1.convert; "
+        "'seagliderOG1 inspect --conversion FILE.nc' prints what was renamed."
+    ),
+}
+_REMOVED_TOOLS.update(
+    dict.fromkeys(
+        (
+            "og1_name_mapping",
+            "gather_sensor_info",
+            "add_sensor_to_dataset",
+            "merge_datasets_along_time",
+            "extract_scalar_parameters",
+            "add_scalar_parameters",
+            "set_best_dtype",
+        ),
+        "a conversion-pipeline internal, private since 0.1.0; call seagliderOG1.convert.",
+    )
+)
+
+
+def __getattr__(name: str) -> object:
+    """Raise for a v0.0.2 name removed in 0.1.0, else the normal AttributeError."""
+    if name in _REMOVED_TOOLS:
+        _deprecated._removed(f"tools.{name}", _REMOVED_TOOLS[name])
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)

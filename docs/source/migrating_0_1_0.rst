@@ -3,78 +3,191 @@
 Migrating to 0.1.0
 ==================
 
-0.1.0 is a breaking release: the public API was reshaped to the OceanGliders family
-convention (a clean break, no deprecation shims), and the output format changed. This page
-is the "what you need to change" reference; the :doc:`changelog` lists the changes tersely.
+0.1.0 reshapes the public API into the OceanGliders family's verbs and changes the output
+format. To ease the move, the v0.0.2 names are kept for one release: most are **still
+importable and warn**, a few are **removed and raise** with a message that points back here.
 
-Renamed functions, modules and arguments
------------------------------------------
+This page is organised by what you do in a notebook — load, convert, write, plot, metadata —
+so you can find the line you have and read the line to write. Each old name is marked:
+
+- *(warns)* — still importable until 0.3.0. It works, delegates to the new name, and prints a
+  ``DeprecationWarning`` naming the new spelling. Change it at your leisure before 0.3.0.
+- *(raises)* — removed. Importing or calling it raises with a message that says why and what
+  to use instead (the same text as the relevant section below).
+- *(changed)* — not shimmed: the call shape changed, so update it now.
+
+The shims are removed in 0.3.0; see the :doc:`changelog`.
+
+The whole mission in one call
+-----------------------------
+
+Most of what a conversion notebook does is read a mission, convert it, and write the file.
+That is now one call that takes a ``mission.yaml`` (see :doc:`mission_yaml`).
+
+Before (v0.0.2):
+
+.. code-block:: python
+
+   from seagliderOG1 import readers, convertOG1, writers
+
+   list_datasets = readers.load_basestation_files(input_dir, start_profile=1, end_profile=5)
+   ds_OG1, var_list = convertOG1.convert_to_OG1(list_datasets)
+   writers.save_dataset(ds_OG1, output_file="out.nc")
+
+After (0.1.0):
+
+.. code-block:: python
+
+   import seagliderOG1 as sg
+
+   path = sg.process("mission.yaml", overwrite=True, report=True)  # read + convert + write (+ page)
+
+``process`` reads the raw directory, dive range, platform, contributors and global attributes
+from the ``mission.yaml``; there is no separate metadata argument. For a root of ``SN/DATE``
+missions, ``sg.process_missions("mission.yaml", select="*/*")``.
+
+Load dive files
+---------------
+
+``load_basestation_files`` *(warns)* → ``read`` (``read_mission`` keeps the old positionals):
+
+.. code-block:: python
+
+   # before
+   list_datasets = readers.load_basestation_files(input_dir, start_profile=1, end_profile=5)
+   ds = readers.load_sample_dataset()           # load_sample_dataset (warns)
+
+   # after
+   list_datasets = sg.read(input_dir, dives=(1, 5))
+   ds = readers.load_sample_basestation()       # a local sample path, not a registry key
+
+``read`` takes a ``dives=(first, last)`` tuple; ``readers.read_mission(source, start, end)`` is
+the same function with the old positional arguments if you prefer them.
+
+Convert
+-------
+
+``convertOG1.convert_to_OG1`` *(warns)* → ``convert``. The old module ``convertOG1.py`` is a
+tombstone that warns on import; the conversion lives in the top-level verb now. ``convert``
+returns a single ``Dataset`` (not a ``(dataset, var_list)`` tuple) and takes a sequence:
+
+.. code-block:: python
+
+   # before
+   ds_OG1, var_list = convertOG1.convert_to_OG1(list_datasets)
+
+   # after — a sequence in, one Dataset out
+   ds_OG1 = sg.convert(list_datasets)
+
+To apply a ``mission.yaml``'s metadata without writing a file, pass it: ``sg.convert(list_datasets,
+mission="mission.yaml")``. ``convert`` builds the basestation → OG1 name mapping internally;
+``tools.OG1_name_mapping`` / ``print_OG1_mapping_summary`` are gone (see below).
+
+Write
+-----
+
+``writers.save_dataset`` *(warns)* → ``write``. The old default path (``../test.nc``) is not
+reproduced — ``path`` is required — and ``write`` returns the ``pathlib.Path`` written rather
+than a bool:
+
+.. code-block:: python
+
+   # before
+   writers.save_dataset(ds_OG1, output_file="out.nc")   # -> bool
+
+   # after
+   path = sg.write(ds_OG1, "out.nc", overwrite=True)     # -> pathlib.Path
+
+To write the HTML conversion page for a file, ``sg.report("out.nc")``.
+
+Plot
+----
+
+``plotters.show_*(path_or_dataset)`` *(warns)* now takes a Dataset only; pass an open dataset.
+``plotters.plot_*`` *(changed)* returns ``(fig, ax)`` and no longer calls ``plt.show()`` — this
+one is not shimmed, because a function cannot both return a value and not:
+
+.. code-block:: python
+
+   # before — returned None, drew to the screen
+   plotters.plot_profile_depth(ds_OG1)
+
+   # after — returns the figure and axes; show it yourself
+   fig, ax = plotters.plot_profile_depth(ds_OG1)
+   fig.show()
+
+Metadata: contributors, institutions, platform
+-----------------------------------------------
+
+This is the one change in kind. In v0.0.2 the platform, contributor and institution metadata
+came from package defaults (a bundled ``OG1_author.yaml``, a default EDMO code, a default PI
+role). In 0.1.0 that metadata comes from a ``mission.yaml`` you keep beside your data, so no
+file is ever written with someone else's identity. Get one and fill it in:
+
+.. code-block:: console
+
+   $ seagliderOG1 init mission.yaml --raw-dir /path/to/dives   # writes a commented template
+   $ seagliderOG1 validate mission.yaml                        # check it before converting
+
+Then convert from it (``sg.process("mission.yaml")`` above). A missing
+``PLATFORM_SERIAL_NUMBER`` (none in the files, none in the config) now raises rather than
+defaulting to ``sg000``; a missing contributor role is no longer defaulted to ``PI``; an
+unrecognised institution is no longer stamped with a default EDMO code. The removed
+``vocabularies.load_default_contributors`` / ``contrib_to_append`` / ``config/OG1_author.yaml``
+*(raises)* say so.
+
+Names that no longer exist, and why
+-----------------------------------
+
+These are *(raises)*: calling or importing one raises with the message below rather than
+returning something different from what it used to.
+
+- ``convertOG1.process_and_save_data`` — it filled platform, contributor and institution
+  metadata from package defaults, which were removed so no file is written with someone else's
+  identity. Use a ``mission.yaml``: ``seagliderOG1 init out.yaml --raw-dir DIR``, fill it, then
+  ``seagliderOG1.process("out.yaml")``.
+- ``vocabularies.load_default_contributors`` / ``vocabularies.contrib_to_append`` /
+  ``config/OG1_author.yaml`` — contributors come from the ``mission.yaml`` ``contributors:``
+  block now.
+- ``tools.OG1_name_mapping`` / ``tools.print_OG1_mapping_summary`` — the mapping is built inside
+  ``convert``; ``seagliderOG1 inspect --conversion FILE.nc`` prints what was renamed.
+- ``tools.og1_name_mapping``, ``gather_sensor_info``, ``add_sensor_to_dataset``,
+  ``merge_datasets_along_time``, ``extract_scalar_parameters`` / ``add_scalar_parameters``,
+  ``set_best_dtype``, and the ``seagliderOG1.utilities`` module — pipeline internals, private
+  since 0.1.0; call ``seagliderOG1.convert``.
+- ``standardise_OG10`` (and its ``OG1_mapping`` argument) — the OG1 name/attribute/unit step is
+  internal to ``seagliderOG1.convert`` since 0.1.0; call ``seagliderOG1.convert``.
+
+Other renamed names
+-------------------
+
+All *(warns)* — importable until 0.3.0, delegating to the new name:
 
 .. list-table::
    :header-rows: 1
-   :widths: 48 52
+   :widths: 50 50
 
-   * - was
-     - now
-   * - ``ds, varlist = convert_to_OG1(ds_or_list)``
-     - ``ds = seagliderOG1.convert(sequence_of_datasets)`` — returns the Dataset; takes a sequence
-       (wrap a single dataset as ``[ds]``)
-   * - ``from seagliderOG1 import convertOG1`` → ``convertOG1.convert_to_OG1(...)``
-     - ``import seagliderOG1 as sg`` → ``sg.convert(...)`` — the module ``convertOG1.py`` became the
-       private ``_convert.py``; the public entry is the top-level verb ``seagliderOG1.convert``
-   * - ``convertOG1.process_and_save_data(directory)`` (convert a mission directory and write
-       its OG1 file)
-     - ``seagliderOG1.process(mission, *, output_dir=, dives=, mode=, report=, overwrite=) ->
-       Path`` for one mission, or ``seagliderOG1 process mission.yaml`` from the command line —
-       ``mission`` is the ``mission.yaml`` path or a loaded mapping; the output path and all
-       metadata come from it, not from keyword arguments. ``seagliderOG1.process_missions`` runs
-       it across a root of ``SN/DATE`` missions
-   * - ``writers.save_dataset(ds, output_file="../test.nc") -> bool``
-     - ``writers.write(ds, path, *, overwrite=False) -> pathlib.Path`` — ``path: str | Path``,
-       no default; returns the path written; raises instead of returning ``False``
-   * - ``plotters.plot_*(…)`` returned ``None`` and called ``plt.show()``
-     - ``plotters.plot_*(…, ax=None) -> (fig, ax)``; no ``plt.show()``
-   * - ``plotters.show_*(path_or_dataset)``
-     - ``plotters.show_*(dataset)`` — Dataset only (the file-path branch is gone)
-   * - ``readers.load_sample_dataset()``
-     - ``readers.load_sample_basestation()``
-   * - ``standardise_OG10`` and its ``OG1_mapping`` argument
-     - ``standardise_og1`` and ``og1_mapping`` — ``og1`` lower-case in names; the package name
-       keeps its spelling
-   * - ``tools.OG1_name_mapping(...)`` / ``print_OG1_mapping_summary(...)``
-     - the basestation → OG1 name mapping is built internally by ``seagliderOG1.convert``; the
-       internal ``og1_name_mapping`` and the former ``name_mapping`` helper moved to the private
-       conversion module, and ``print_OG1_mapping_summary`` was removed
-   * - ``tools`` pipeline internals (``og1_name_mapping``, ``gather_sensor_info``,
-       ``add_sensor_to_dataset``, ``merge_datasets_along_time``, ``extract_scalar_parameters`` /
-       ``add_scalar_parameters``, ``set_best_dtype``, …) and the ``seagliderOG1.utilities`` module
-     - moved to a private module (not part of the public API); ``tools`` keeps the user-facing
-       utilities (``add_depth``, ``add_phase``, ``convert_units_var``, ``convert_qc_flags``,
-       ``encode_times_og1``, …)
-   * - ``firstrun=`` parameters (e.g. ``tools.convert_units_var(..., firstrun=...)``)
-     - removed; progress and diagnostics go through ``logging.getLogger("seagliderOG1...")``
-       (set the level, e.g. the CLI ``-v``)
-   * - ``readers.load_basestation_files(dir, first, last, repair=)``
-     - ``readers.read_mission(source, start_profile=None, end_profile=None, *, repair=False)``
+   * - v0.0.2
+     - 0.1.0
    * - ``readers.load_first_basestation_file``
      - ``readers.read_file``
    * - ``readers.scan_and_repair_files``
      - ``readers.repair_files``
-   * - ``readers.profnum_from_filename`` / ``readers.glider_sn_from_filename``
-     - ``readers.profile_number_from_filename`` / ``readers.serial_from_filename``
    * - ``readers.repair_netcdf_time_metadata_inplace``
      - ``readers.repair_time_metadata``
+   * - ``readers.profnum_from_filename`` / ``glider_sn_from_filename``
+     - ``readers.profile_number_from_filename`` / ``serial_from_filename``
+   * - ``tools.calc_Z`` / ``assign_phase`` / ``assign_profile_number``
+     - ``tools.add_depth`` / ``add_phase`` / ``add_profile_number``
    * - ``convert.apply_keep_variables(ds, keep)``
-     - ``convert.keep_variables(ds, names)``
-   * - ``tools.calc_Z`` / ``tools.assign_phase`` / ``tools.assign_profile_number``
-     - ``tools.add_depth`` / ``tools.add_phase`` / ``tools.add_profile_number``
-   * - ``contributors.registry_institutions()``
-     - ``contributors.institution_registry()``
-   * - ``contributors.normalize_orcid`` / ``contributors.normalize_role``
-     - ``contributors.canonical_orcid`` / ``contributors.canonical_role``
-   * - ``vocabularies.load_default_contributors``, ``vocabularies.contrib_to_append``,
-       ``config/OG1_author.yaml``
-     - removed — contributors come from ``mission.yaml``; no packaged default-identity block
+     - ``keep_variables(ds, names)``
+   * - ``contributors.registry_institutions``
+     - ``contributors.institution_registry``
+   * - ``contributors.normalize_orcid`` / ``normalize_role``
+     - ``contributors.canonical_orcid`` / ``canonical_role``
+   * - ``firstrun=`` keyword (e.g. ``tools.convert_units_var(..., firstrun=...)``)
+     - removed; accepted and ignored with a warning. Progress goes through
+       ``logging.getLogger("seagliderOG1")`` (the CLI ``-v`` sets the level)
 
 Output-format changes
 ----------------------
@@ -97,29 +210,15 @@ Output-format changes
   ``HD_C``) are written as a JSON-string scalar variable
   (``{"dives": [...], "values": [...]}``, tagged ``serialization: json``) instead of broadcast
   onto ``N_MEASUREMENTS``. Decode the JSON to read them.
-- **Conversion provenance in the output.** Every variable carries ``original_name`` (its
+- **Conversion record in the output.** Every variable carries ``original_name`` (its
   basestation name; equal to the OG1 name when it passed through unrenamed), and merged variables
   also carry ``original_dimension``. New globals record the conversion: ``conversion_dimensions``
   (each basestation dimension's fate and the variables it carried), ``conversion_derived_variables``
   (the converter-created variables mapped to the basestation variables they consumed),
   ``conversion_dropped_variables``, ``conversion_removed_variables``,
   ``conversion_input_variable_count`` and ``conversion_attribute_sources``.
-  ``seagliderOG1 inspect --conversion`` reads them back and
-  prints them (``-o`` writes an HTML page). The attribute is ``original_name`` — code that read
-  the development-only ``original_variable_name`` must use ``original_name``.
-- **history** is a single conversion provenance line; the basestation ``comment`` is no longer
-  renamed to ``history``. A reader that parsed the old per-dive processing log out of ``history``
-  must adapt.
-
-Metadata now comes from the mission config
--------------------------------------------
-
-Platform, contributor, institution and deployment metadata are supplied in ``mission.yaml`` (see
-:doc:`mission_yaml`), not defaulted inside the package:
-
-- A missing ``PLATFORM_SERIAL_NUMBER`` (no file ``platform_id``, none in the config) raises
-  instead of defaulting to ``sg000``; other platform fields are written ``"UNK"`` with a warning
-  rather than ``0000000`` or a hard-coded model.
-- ``seagliderOG1.convert`` takes ``contributors=``, ``institutions=``, ``platform=``, ``deployment=``,
-  ``global_attributes=`` as lists/dicts from the config. A missing contributor role is no longer
-  defaulted to ``PI``; an unrecognised institution is no longer stamped with a default EDMO code.
+  ``seagliderOG1 inspect --conversion`` reads them back and prints them (``-o`` writes an HTML
+  page). The attribute is ``original_name`` — code that read the development-only
+  ``original_variable_name`` must use ``original_name``.
+- **history** is a single conversion line; the basestation ``comment`` is no longer renamed to
+  ``history``. A reader that parsed the old per-dive processing log out of ``history`` must adapt.

@@ -1692,7 +1692,7 @@ def process_dataset(
     # Must be after split_ds
     # map the original variable names to the OG1 variable names, and get the instrument type for each variable
 
-    ds_new = standardise_og1(merged_ds, og1_mapping, name_lookup=name_lookup)
+    ds_new = apply_og1_vocabulary(merged_ds, og1_mapping, name_lookup=name_lookup)
 
     # Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)
     # -----------------------------------------------------------------------
@@ -1723,7 +1723,7 @@ def process_dataset(
     return ds_new, attr_warnings
 
 
-def standardise_og1(
+def apply_og1_vocabulary(
     ds: xr.Dataset,
     og1_mapping: pd.DataFrame,
     unit_format: dict[str, str] = vocabularies.unit_str_format,

@@ -546,3 +546,9 @@ def _compression_encoding(ds: xr.Dataset) -> dict[str, dict]:
             if var.ndim == 1 and var.size > 0:
                 enc["chunksizes"] = (min(var.size, 65_536),)
     return encoding
+
+
+# --- deprecated v0.0.2 names (removed in 0.3.0; see seagliderOG1._deprecated) ----------
+from seagliderOG1 import _deprecated  # noqa: E402  # shim follows the definitions above
+
+save_dataset = _deprecated.save_dataset

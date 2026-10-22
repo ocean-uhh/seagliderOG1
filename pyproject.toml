@@ -128,3 +128,9 @@ convention = "numpy"
 # by check.py; it is not measured here (consumers do not measure vendored coverage).
 source = ["seagliderOG1"]
 omit = ["seagliderOG1/reports/_vendored/*"]
+
+[tool.pytest.ini_options]
+# The shim layer gates itself: SeagliderDeprecationWarning becomes an error, so the suite
+# fails if the package ever calls its own v0.0.2 shims. The category is scoped, so
+# third-party DeprecationWarnings (netCDF4/xarray/NumPy) stay warnings. See _deprecated.py.
+filterwarnings = ["error::seagliderOG1._deprecated.SeagliderDeprecationWarning"]

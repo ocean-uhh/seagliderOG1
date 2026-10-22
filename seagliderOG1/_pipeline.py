@@ -79,7 +79,7 @@ def og1_name_mapping(
     Parameters
     ----------
     list_of_datasets
-        Datasets immediately before calling ``standardise_og1``.
+        Datasets immediately before calling ``apply_og1_vocabulary``.
         Instruments are collected from every dataset's global ``instrument``
         attribute, preserving first-seen order.
 
@@ -958,7 +958,7 @@ def merge_datasets_along_time(
 
     Merge dimensions listed in ``time_variables``, retaining original
     variable names. Replace individual time variables with ``time``.
-    OG1 conversion is handled separately by ``standardise_og1``.
+    OG1 conversion is handled separately by ``apply_og1_vocabulary``.
 
     Always use ``time`` for ``sg_data_point``. Other dimensions use their
     listed candidates. Time variables must contain datetime64 values and

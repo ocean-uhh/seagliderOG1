@@ -475,3 +475,14 @@ def plot_ctd_depth_vs_time(
     ax.set_title("CTD Depth vs Time")
     ax.invert_yaxis()  # Invert y-axis to have depth increasing downwards
     return fig, ax
+
+
+# --- deprecated v0.0.2 path arguments (removed in 0.3.0; see seagliderOG1._deprecated) --
+from seagliderOG1 import _deprecated  # noqa: E402  # shims follow the definitions above
+
+show_contents = _deprecated._accept_path(show_contents, "show_contents")
+show_variables = _deprecated._accept_path(show_variables, "show_variables")
+show_attributes = _deprecated._accept_path(show_attributes, "show_attributes")
+show_variables_by_dimension = _deprecated._accept_path(
+    show_variables_by_dimension, "show_variables_by_dimension"
+)
