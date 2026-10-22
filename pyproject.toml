@@ -71,7 +71,7 @@ packages = [
 include-package-data = true
 
 [tool.setuptools.package-data]
-seagliderOG1 = ["config/*.yaml", "config/*.yml"]
+seagliderOG1 = ["config/*.yaml", "config/*.yml", "data/sg271/*.nc", "data/sg271/*.yaml"]
 "seagliderOG1.reports._vendored" = [
   "MANIFEST.txt",
   "README.md",

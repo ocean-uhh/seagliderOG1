@@ -1,0 +1,86 @@
+# seagliderOG1 mission configuration.
+# UPPER keys become OG1 variables, lower keys become attributes or globals;
+# the comment on each line says which. You fill the values.
+# Paths are resolved relative to this file. Edit the values, then:
+#   seagliderOG1 validate this_file.yaml
+#   seagliderOG1 process  this_file.yaml
+
+config_version: 3
+
+raw_dir: ./             # the dive files (p*.nc) sit beside this config
+output_dir: ./          # OG1 file written beside this config (copy the example out first; see `seagliderOG1 example`)
+mode: realtime           # realtime | delayed
+dives: null             # [first, last] dive numbers; null = all files present
+repair: false           # run repair_files on the basestation files (writes the raw_dir tree)
+keep_variables: null    # optional list of science variables to keep; null = all
+report: true           # also write <id>_conversion.html beside each file
+
+platform:               # 'init --from' fills these; fill any null before validate
+  PLATFORM_SERIAL_NUMBER: sg271   # required -> variable; from platform_id; a serial or a local nickname
+  PLATFORM_MODEL: "University of Washington Seaglider SGX glider"   # required -> variable; e.g. University of Washington Seaglider M1 glider
+  platform_model_vocabulary: https://vocab.nerc.ac.uk/collection/B76/current/B7600034/   # optional -> attribute on PLATFORM_MODEL; e.g. https://vocab.nerc.ac.uk/collection/B76/current/B7600024/
+  PLATFORM_DEPTH_RATING: 1000   # required -> variable; e.g. 1000 (metres)
+  PLATFORM_MAKER: "University of Washington, Applied Physics Lab"   # required -> variable; e.g. University of Washington, School of Oceanography
+  platform_maker_vocabulary: https://vocab.nerc.ac.uk/collection/B75/current/ORG00202/   # optional -> attribute on PLATFORM_MAKER; e.g. https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/
+  GLIDER_FIRMWARE_VERSION: seaglider 67.01   # optional -> variable; from seaglider_software_version
+  LANDSTATION_VERSION: basestation v3.0.6   # optional -> variable; from base_station_version
+  WMO_IDENTIFIER: 0-22000-0-8901140   # optional -> variable; from wmo_identifier
+  #PLATFORM_NAME: null   # optional -> variable; local or nickname of the glider
+  TELECOM_TYPE: Iridium   # optional -> variable; e.g. Iridium (comma-separated for several)
+  TRACKING_SYSTEM: Argos   # optional -> variable; e.g. ARGOS, GPS
+  BATTERY_TYPE: null   # optional -> variable; see the OG1 battery_type vocabulary
+  BATTERY_PACK: null   # optional -> variable; battery packaging
+
+local_config: null   # optional path to a directory of local config overrides; read once the feature lands
+
+identity_and_discovery:   # -> global attributes; who and where: identity and discovery globals
+  id: sg271_20260302T193828_R   # mandatory -> global attribute; leave null for the derived <serial>_<start>_<mode>; set only to override it
+  naming_authority: de.uni-hamburg   # highly desirable -> global attribute
+  site: Drygalski Trough   # highly desirable -> global attribute
+  site_vocabulary: null   # highly desirable -> global attribute
+  data_url: null   # highly desirable -> global attribute; where the OG1 file is hosted
+  project: PycnMix   # suggested -> global attribute
+
+rights_and_access:   # -> global attributes; rights and access globals
+  doi: null   # highly desirable -> global attribute; e.g. https://doi.org/...
+  license: "Sample of three dives released for demonstration under CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/); the full sg271 dataset is embargoed until 2028-03-08."
+  acknowledgment: "Funded by the Deutsche Forschungsgemeinschaft (DFG) under the grant numbers 558671572 and 544335393."
+
+provenance_and_processing:   # -> global attributes; provenance globals
+  comment: null   # suggested -> global attribute; overrides a comment global the basestation files carry
+
+global_attributes:  # any other OG1 global, written as given
+  institution: "University of Hamburg"
+
+contributors:           # one entry per person per role; replace this example
+  # role is a W08 term: Manufacturer, Owner, Operator, PI, Technical Coordinator,
+  # Data scientist, Service Provider. List a person once per role. At least one PI.
+  - name: Eleanor Frajka-Williams       # no commas in a name (commas separate people)
+    email: eleanor.frajka@uni-hamburg.de
+    orcid: https://orcid.org/0000-0001-8773-7838          # bare ORCID or full https://orcid.org/ URL
+    role: PI
+  - name: Chiara Monforte
+    email: 
+    orcid: https://orcid.org/0009-0003-5019-3410
+    role: Technical coordinator
+  - name: Till Moritz
+    email:
+    orcid: https://orcid.org/0000-0002-7056-355X
+    role: Operator
+  - name: Emelie Breunig
+    email:
+    orcid: https://orcid.org/0009-0001-9263-3352
+    role: Operator
+  - name: Joel Bracamontes Ramirez
+    email:
+    orcid: https://orcid.org/0000-0001-7520-9296
+    role: Operator
+  - name: Isabelle Schmitz
+    email:
+    orcid: https://orcid.org/0009-0009-1369-1748
+    role: Operator
+
+institutions:           # at least one with role Operator; resolved via the EDMO registry
+  - name: University of Hamburg
+    role: Operator
+    id: https://edmo.seadatanet.org/report/3323             # University of Hamburg (EDMO 3323)
