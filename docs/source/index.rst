@@ -14,29 +14,37 @@ https://github.com/ocean-uhh/seagliderOG1/issues/new.
    :caption: Getting started
 
    quickstart
+   demo
+   demo-output.ipynb
 
 .. toctree::
    :maxdepth: 2
-   :caption: Demo
+   :caption: The conversion
 
-   demo-output.ipynb
+   conversion
+   conversion_page
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Configuration
+
+   configuration
+   mission_yaml
+   defaults
 
 .. toctree::
    :maxdepth: 2
    :caption: Reference
 
    cli_reference
-   mission_yaml
-   conversion
-   package_layout
-   migrating_0_1_0
-   changelog
+   api
 
 .. toctree::
    :maxdepth: 2
-   :caption: API
+   :caption: Changelog / Migration
 
-   seagliderOG1
+   migrating_0_1_0
+   changelog
 
 .. toctree::
    :maxdepth: 1

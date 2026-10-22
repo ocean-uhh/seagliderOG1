@@ -6,22 +6,15 @@ Getting started
 Install
 -------
 
-.. note::
+.. code-block:: bash
 
-   Until ``0.1.0`` is published to PyPI, install from source — the version on PyPI
-   (``0.0.2``) has no command-line interface.
+   pip install seagliderOG1
 
-From source:
+Or the latest development version from source:
 
 .. code-block:: bash
 
    pip install git+https://github.com/ocean-uhh/seagliderOG1.git
-
-Once ``0.1.0`` is on PyPI:
-
-.. code-block:: bash
-
-   pip install seagliderOG1
 
 For a development install, see ``CONTRIBUTING.md`` in the repository.
 

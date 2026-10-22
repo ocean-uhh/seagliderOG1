@@ -1,5 +1,5 @@
-:mod:`seagliderOG1 API`
------------------------
+API reference
+-------------
 
 The public API is a set of verbs on the top-level package:
 
@@ -16,6 +16,24 @@ The public API is a set of verbs on the top-level package:
 
 plus the exceptions ``seagliderOG1.MissionError`` and ``seagliderOG1.MetadataError``, and the
 supporting modules ``tools``, ``plotters``, ``vocabularies`` and ``contributors``.
+
+Modules
+=======
+
+* ``__init__.py`` — the public verbs (``read``, ``convert``, ``write``, ``report``,
+  ``enrich``, ``process``, ``process_missions``), re-exported from the modules below.
+* ``readers.py`` — ``read`` basestation files from a server or a local directory.
+* ``_convert.py`` — ``convert`` orchestrates mapping, standardisation, concat and the
+  single post-concat dtype pass; ``process`` / ``process_missions`` run the pipeline from a
+  configuration. Private: not imported directly.
+* ``writers.py`` — ``write`` OG1 files and ``enrich`` a written file's globals.
+* ``mission.py`` — the ``mission.yaml`` schema: ``load``, ``check``.
+* ``tools.py`` — user-facing utilities.
+* ``vocabularies.py`` — vocabulary and mapping tables (the defaults; see :ref:`defaults`).
+* ``plotters.py`` — plotting. ``contributors.py`` — contributor/institution record handling.
+* ``reports/`` — the HTML conversion page (``report``) and the reader behind it.
+* ``cli/`` — the ``seagliderOG1`` command, one module per verb.
+* ``config/*.yaml`` — the OG1 mappings and vocabularies (see :ref:`defaults`).
 
 verbs
 =====

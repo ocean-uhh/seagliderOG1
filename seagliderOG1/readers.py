@@ -74,13 +74,16 @@ data_source_og = pooch.create(
 def load_sample_basestation(
     file_path: str = str(parent_dir / "data/demo_sg005/p0050001_20080606.nc"),
 ) -> xr.Dataset:
-    """Open a bundled sample Seaglider basestation file.
+    """Open the demo sample Seaglider basestation file from the source repository.
+
+    The sample lives under the repository's ``data/demo_sg005`` directory and is not shipped in
+    the installed package, so it resolves only from a source checkout.
 
     Parameters
     ----------
     file_path : str, optional
         Path to the sample basestation file to load. Default is the demo sg005
-        dive 1 file bundled under ``data/demo_sg005``.
+        dive 1 file under the repository's ``data/demo_sg005``.
 
     Returns
     -------
