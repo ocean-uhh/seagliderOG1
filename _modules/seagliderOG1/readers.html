@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.readers &mdash; seagliderOG1 0.0.2.post1.dev81 documentation</title>
+  <title>seagliderOG1.readers &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=b06c38e7"></script>
+      <script src="../../_static/documentation_options.js?v=8794b28d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -45,23 +45,29 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">Demo notebook</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Demo</span></p>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">seagliderOG1 demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conversion_page.html">The conversion page</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../cli_reference.html">CLI reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Links</span></p>
 <ul>
@@ -167,17 +173,20 @@
 <span class="c1"># The local directory will contain the same files as the server, but we will not use pooch to manage them.</span>
 <span class="c1"># Instead, we will just read them directly from the filesystem.</span>
 <div class="viewcode-block" id="load_sample_basestation">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.load_sample_basestation">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.load_sample_basestation">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_sample_basestation</span><span class="p">(</span>
     <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">parent_dir</span> <span class="o">/</span> <span class="s2">"data/demo_sg005/p0050001_20080606.nc"</span><span class="p">),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Open a bundled sample Seaglider basestation file.</span>
+<span class="w">    </span><span class="sd">"""Open the demo sample Seaglider basestation file from the source repository.</span>
+
+<span class="sd">    The sample lives under the repository's ``data/demo_sg005`` directory and is not shipped in</span>
+<span class="sd">    the installed package, so it resolves only from a source checkout.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    file_path : str, optional</span>
 <span class="sd">        Path to the sample basestation file to load. Default is the demo sg005</span>
-<span class="sd">        dive 1 file bundled under ``data/demo_sg005``.</span>
+<span class="sd">        dive 1 file under the repository's ``data/demo_sg005``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -199,7 +208,7 @@
 
 
 <div class="viewcode-block" id="validate_filename">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.validate_filename">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.validate_filename">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Validate if filename matches expected Seaglider basestation patterns.</span>
 
@@ -321,7 +330,7 @@
 
 
 <div class="viewcode-block" id="discover_missions">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.discover_missions">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.discover_missions">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">discover_missions</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Mission</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Discover Seaglider missions under a directory.</span>
 
@@ -461,7 +470,7 @@
 
 
 <div class="viewcode-block" id="read_file">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.read_file">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.read_file">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">read_file</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Load the first (alphabetically) basestation file from a source.</span>
 
@@ -488,7 +497,7 @@
 
 
 <div class="viewcode-block" id="read">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.read">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.read">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span>
     <span class="n">raw_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">dives</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -521,7 +530,7 @@
 
 
 <div class="viewcode-block" id="read_mission">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.read_mission">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.read_mission">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">read_mission</span><span class="p">(</span>
     <span class="n">source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">start_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -633,7 +642,7 @@
 
 
 <div class="viewcode-block" id="repair_files">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.repair_files">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.repair_files">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">repair_files</span><span class="p">(</span>
     <span class="n">source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">start_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>

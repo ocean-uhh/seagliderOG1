@@ -103,7 +103,7 @@ Keys
        .. code-block:: yaml
 
           global_attributes:
-            institution: "University of Hamburg (IfM)"
+            institution: "University of Hamburg"
    * - ``sensors``
      - mapping or null
      - ``null``
@@ -233,7 +233,7 @@ The template ``init`` writes (fill the nulls before ``validate``):
      comment: null         # suggested -> global attribute
 
    global_attributes: {}   # any other OG1 global, written as given: replace {} with lines
-     #   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)
+     #   institution: "University of Hamburg"   (a key above goes under its own block)
 
    contributors:           # one entry per person per role; at least one PI
      - name: Jane Doe       # no commas in a name

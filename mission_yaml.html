@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev81 documentation</title>
+  <title>mission.yaml reference &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,15 +14,15 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=b06c38e7"></script>
+      <script src="_static/documentation_options.js?v=8794b28d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="What the conversion does" href="conversion.html" />
-    <link rel="prev" title="CLI reference" href="cli_reference.html" /> 
+    <link rel="next" title="Packaged defaults and your local tables" href="defaults.html" />
+    <link rel="prev" title="Configuration" href="configuration.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -48,14 +48,17 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Demo</span></p>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demo-output.html">seagliderOG1 demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">mission.yaml reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#keys">Keys</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#platform-fields">Platform fields</a></li>
@@ -65,14 +68,17 @@
 <li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
-<li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Links</span></p>
 <ul>
@@ -217,7 +223,7 @@ bounds, <code class="docutils literal notranslate"><span class="pre">date_create
 (<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">naming_authority</span></code>, <code class="docutils literal notranslate"><span class="pre">doi</span></code>, …); <code class="docutils literal notranslate"><span class="pre">validate</span></code> reports either as an error,
 naming where the key goes. Replace the <code class="docutils literal notranslate"><span class="pre">{}</span></code> with an indented block:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">global_attributes</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">institution</span><span class="p">:</span><span class="w"> </span><span class="s">"University</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">Hamburg</span><span class="nv"> </span><span class="s">(IfM)"</span>
+<span class="w">  </span><span class="nt">institution</span><span class="p">:</span><span class="w"> </span><span class="s">"University</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">Hamburg"</span>
 </pre></div>
 </div>
 </td>
@@ -483,7 +489,7 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
 <span class="w">  </span><span class="nt">comment</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># suggested -&gt; global attribute</span>
 
 <span class="nt">global_attributes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w">   </span><span class="c1"># any other OG1 global, written as given: replace {} with lines</span>
-<span class="w">  </span><span class="c1">#   institution: "University of Hamburg (IfM)"   (a key above goes under its own block)</span>
+<span class="w">  </span><span class="c1">#   institution: "University of Hamburg"   (a key above goes under its own block)</span>
 
 <span class="nt">contributors</span><span class="p">:</span><span class="w">           </span><span class="c1"># one entry per person per role; at least one PI</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Jane Doe</span><span class="w">       </span><span class="c1"># no commas in a name</span>
@@ -504,8 +510,8 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="cli_reference.html" class="btn btn-neutral float-left" title="CLI reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="conversion.html" class="btn btn-neutral float-right" title="What the conversion does" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="configuration.html" class="btn btn-neutral float-left" title="Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="defaults.html" class="btn btn-neutral float-right" title="Packaged defaults and your local tables" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Getting started &mdash; seagliderOG1 0.0.2.post1.dev81 documentation</title>
+  <title>Getting started &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,14 +14,14 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=b06c38e7"></script>
+      <script src="_static/documentation_options.js?v=8794b28d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="seagliderOG1 demo" href="demo-output.html" />
+    <link rel="next" title="Demo: the sg005 sample" href="demo.html" />
     <link rel="prev" title="seagliderOG1" href="index.html" /> 
 </head>
 
@@ -56,23 +56,29 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Demo</span></p>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demo-output.html">seagliderOG1 demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
-<li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Links</span></p>
 <ul>
@@ -107,17 +113,11 @@
 <span id="quickstart"></span><h1>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
 <section id="install">
 <h2>Install<a class="headerlink" href="#install" title="Link to this heading"></a></h2>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Until <code class="docutils literal notranslate"><span class="pre">0.1.0</span></code> is published to PyPI, install from source — the version on PyPI
-(<code class="docutils literal notranslate"><span class="pre">0.0.2</span></code>) has no command-line interface.</p>
-</div>
-<p>From source:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/ocean-uhh/seagliderOG1.git
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>seagliderOG1
 </pre></div>
 </div>
-<p>Once <code class="docutils literal notranslate"><span class="pre">0.1.0</span></code> is on PyPI:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>seagliderOG1
+<p>Or the latest development version from source:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/ocean-uhh/seagliderOG1.git
 </pre></div>
 </div>
 <p>For a development install, see <code class="docutils literal notranslate"><span class="pre">CONTRIBUTING.md</span></code> in the repository.</p>
@@ -185,7 +185,7 @@ bundled <code class="docutils literal notranslate"><span class="pre">sg005</span
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="seagliderOG1" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="demo-output.html" class="btn btn-neutral float-right" title="seagliderOG1 demo" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="demo.html" class="btn btn-neutral float-right" title="Demo: the sg005 sample" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

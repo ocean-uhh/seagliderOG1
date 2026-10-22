@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.mission &mdash; seagliderOG1 0.0.2.post1.dev81 documentation</title>
+  <title>seagliderOG1.mission &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=b06c38e7"></script>
+      <script src="../../_static/documentation_options.js?v=8794b28d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -45,23 +45,29 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">Demo notebook</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Demo</span></p>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">seagliderOG1 demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conversion_page.html">The conversion page</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../cli_reference.html">CLI reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Links</span></p>
 <ul>
@@ -176,7 +182,7 @@
 
 
 <div class="viewcode-block" id="ValidationIssue">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.mission.ValidationIssue">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.mission.ValidationIssue">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ValidationIssue</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""A single problem found in a mission configuration.</span>
 
@@ -427,7 +433,7 @@
 
 
 <div class="viewcode-block" id="global_rows">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.mission.global_rows">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.mission.global_rows">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">global_rows</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Return one row per OG1 global the package knows a tier or a config home for.</span>
 
@@ -517,7 +523,7 @@
 
 
 <div class="viewcode-block" id="platform_rows">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.mission.platform_rows">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.mission.platform_rows">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">platform_rows</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">"""Return one row per ``platform:`` key, in template order.</span>
 
@@ -1239,7 +1245,7 @@
 
 
 <div class="viewcode-block" id="check">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.mission.check">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.mission.check">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">check</span><span class="p">(</span>
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -1277,7 +1283,7 @@
 
 
 <div class="viewcode-block" id="load">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.mission.load">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.mission.load">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Load and validate a mission configuration, returning it with resolved paths.</span>
 
@@ -1357,7 +1363,7 @@
 
 
 <div class="viewcode-block" id="select_missions">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.mission.select_missions">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.mission.select_missions">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">select_missions</span><span class="p">(</span><span class="n">root</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span> <span class="n">select</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Return the missions under ``root`` to convert.</span>
 

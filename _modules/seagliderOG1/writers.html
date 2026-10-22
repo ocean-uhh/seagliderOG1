@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.writers &mdash; seagliderOG1 0.0.2.post1.dev81 documentation</title>
+  <title>seagliderOG1.writers &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=b06c38e7"></script>
+      <script src="../../_static/documentation_options.js?v=8794b28d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -45,23 +45,29 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">Demo notebook</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Demo</span></p>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../demo-output.html">seagliderOG1 demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conversion_page.html">The conversion page</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../cli_reference.html">CLI reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Links</span></p>
 <ul>
@@ -144,7 +150,7 @@
 
 
 <div class="viewcode-block" id="write">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.write">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.write">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span>
     <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
@@ -250,7 +256,7 @@
 
 
 <div class="viewcode-block" id="file_sha256">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.file_sha256">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.file_sha256">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">file_sha256</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Return the SHA-256 hex digest of a file's bytes.</span>
 
@@ -274,7 +280,7 @@
 
 
 <div class="viewcode-block" id="record_attribute_sources">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.record_attribute_sources">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.record_attribute_sources">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">record_attribute_sources</span><span class="p">(</span>
     <span class="n">attrs</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span> <span class="n">names</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">category</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -308,7 +314,7 @@
 
 
 <div class="viewcode-block" id="write_record">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.write_record">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.write_record">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">write_record</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">attrs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">contents</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Write the conversion record ``&lt;stem&gt;_conversion.json`` beside an OG1 file.</span>
 
@@ -351,7 +357,7 @@
 
 
 <div class="viewcode-block" id="conversion_path">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.conversion_path">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.conversion_path">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">conversion_path</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">suffix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Return a conversion output beside an OG1 file: ``&lt;stem&gt;_conversion&lt;suffix&gt;``.</span>
 
@@ -409,7 +415,7 @@
 
 
 <div class="viewcode-block" id="proposal_path">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.proposal_path">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.proposal_path">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">proposal_path</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Return the proposed mission config beside a draft file: ``&lt;stem&gt;_mission.yaml``.</span>
 
@@ -478,7 +484,7 @@
 
 
 <div class="viewcode-block" id="enrich">
-<a class="viewcode-back" href="../../seagliderOG1.html#seagliderOG1.enrich">[docs]</a>
+<a class="viewcode-back" href="../../api.html#seagliderOG1.enrich">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">enrich</span><span class="p">(</span>
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>

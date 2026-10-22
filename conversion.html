@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev81 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,15 +14,15 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=b06c38e7"></script>
+      <script src="_static/documentation_options.js?v=8794b28d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Package layout and defaults" href="package_layout.html" />
-    <link rel="prev" title="mission.yaml reference" href="mission_yaml.html" /> 
+    <link rel="next" title="The conversion page" href="conversion_page.html" />
+    <link rel="prev" title="Demo notebook" href="demo-output.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -48,39 +48,43 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Demo</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="demo-output.html">seagliderOG1 demo</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">What the conversion does</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#purpose">Purpose</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#data-structure">Data structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#variable-names">Variable names</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#metadata-added">Metadata added</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#gps-data">GPS data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#units">Units</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#og1-compliance">OG1 compliance</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#variables-that-differ-between-dives">Variables that differ between dives</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#the-conversion-page">The conversion page</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#validation">Validation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#extended-variables">Extended variables</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#what-the-conversion-records">What the conversion records</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-steps">The steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-changes">What changes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#variable-names">Variable names</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#units">Units</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gps-data">GPS data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sensors-global-attributes-and-qc">Sensors, global attributes and QC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#extended-variables">Extended variables</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#variables-that-differ-between-dives">Variables that differ between dives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#checking-the-output">Checking the output</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Links</span></p>
 <ul>
@@ -117,30 +121,76 @@
 basestation files (<code class="docutils literal notranslate"><span class="pre">pSSSDDDD*.nc</span></code>) into <a class="reference external" href="https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html">OG1 format</a>, the
 OceanGliders community format for glider data exchange. This page describes what changes
 between the input and the output.</p>
-<section id="purpose">
-<h2>Purpose<a class="headerlink" href="#purpose" title="Link to this heading"></a></h2>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
 <p>Seaglider data is produced in a basestation format that varies between deployments and has
-changed over time. OG1 is a single, CF-compliant layout for sharing glider data. The
-conversion:</p>
+changed over time. OG1 is a single, CF-compliant layout for sharing glider data.</p>
+<p><strong>Inputs</strong></p>
 <ul class="simple">
-<li><p>concatenates the per-dive basestation files of one mission into a single trajectory file;</p></li>
-<li><p>renames variables, standardises units, and attaches CF and OG1 attributes;</p></li>
-<li><p>adds platform, sensor, contributor and institution metadata from a <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> the
-user keeps with the data;</p></li>
-<li><p>adds GPS fixes, dive and profile numbering, and dive phase.</p></li>
+<li><p>the per-dive basestation files of one mission (<code class="docutils literal notranslate"><span class="pre">pSSSDDDD_YYYYMMDD.nc</span></code>, one file per
+dive-climb cycle);</p></li>
+<li><p>a <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> — the per-deployment metadata you supply (platform, contributors,
+institutions, raw-data directory, dive range, mode; see <a class="reference internal" href="configuration.html#configuration"><span class="std std-ref">Configuration</span></a>);</p></li>
+<li><p>the packaged OG1 mappings and vocabularies, the same for every mission (see <a class="reference internal" href="defaults.html#defaults"><span class="std std-ref">Packaged defaults and your local tables</span></a>).</p></li>
 </ul>
-</section>
-<section id="data-structure">
-<h2>Data structure<a class="headerlink" href="#data-structure" title="Link to this heading"></a></h2>
+<p><strong>Outputs</strong></p>
 <ul class="simple">
-<li><p><strong>Input</strong>: one file per dive-climb cycle (<code class="docutils literal notranslate"><span class="pre">pSSSDDDD_YYYYMMDD.nc</span></code>).</p></li>
-<li><p><strong>Output</strong>: one file per mission, all cycles concatenated.</p></li>
-<li><p><strong>Dimension</strong>: <code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> becomes <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>.</p></li>
+<li><p>one OG1 file per mission, all dive-climb cycles concatenated onto a single measurement axis
+(<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> becomes <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>);</p></li>
+<li><p>a conversion record <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside it (what was renamed, merged and dropped,
+and each variable’s per-dive presence);</p></li>
+<li><p>optionally an HTML conversion page (see <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">The conversion page</span></a>).</p></li>
 </ul>
+<p><strong>Overall action</strong> — concatenate the dives onto one measurement axis; rename variables to OG1,
+attach CF and OG1 attributes, and convert units; add platform, sensor, contributor and
+institution metadata from the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>; and add GPS fixes, dive and profile numbering,
+and dive phase. A basestation variable OG1 does not name is passed through under its own name.</p>
 </section>
+<section id="the-steps">
+<h2>The steps<a class="headerlink" href="#the-steps" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1.convert</span></code> turns the dive files of one mission into one OG1 dataset. In order:</p>
+<ol class="arabic">
+<li><p><strong>Plan the merge.</strong> Read every dive file’s dimensions and decide which merge onto the
+measurement axis (<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> becomes <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>) and which are carried as
+scalars. Build the basestation → OG1 name mapping once, across all files, so a variable
+present in only some dives gets the same name everywhere.
+<em>Page:</em> Dimensions; Reconciliation.</p></li>
+<li><p><strong>Per dive file:</strong></p>
+<ul class="simple">
+<li><p>merge that file’s dimensions onto the measurement axis;</p></li>
+<li><p>append the GPS fixes as extra rows (<code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code>);</p></li>
+<li><p>add <code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code>, <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> and <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>;</p></li>
+<li><p>apply the OG1 vocabulary: rename, attach the OG1 attributes, convert units, mark the
+coordinates, encode time. A variable with no OG1 name keeps its basestation name.</p></li>
+</ul>
+<p><em>Page:</em> Derived variables; Variables.</p>
+</li>
+<li><p><strong>Concatenate</strong> the dives on <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> and sort by <code class="docutils literal notranslate"><span class="pre">TIME</span></code>.
+<em>Page:</em> Before → after (samples on the shared axis).</p></li>
+<li><p><strong>Sensors.</strong> Gather each instrument’s record from the calibration comments, apply the
+<code class="docutils literal notranslate"><span class="pre">sensors:</span></code> corrections from the mission file, write one <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable per instrument
+and point each measured variable’s <code class="docutils literal notranslate"><span class="pre">sensor</span></code> attribute at it.
+<em>Mission file:</em> <code class="docutils literal notranslate"><span class="pre">sensors:</span></code>. <em>Page:</em> Sensors named by OG1.</p></li>
+<li><p><strong>Scalars.</strong> Collect the per-dive parameters (<code class="docutils literal notranslate"><span class="pre">log_*</span></code>, <code class="docutils literal notranslate"><span class="pre">sg_cal_*</span></code>, <code class="docutils literal notranslate"><span class="pre">gc_*</span></code>); a value
+constant across the mission is stored as a scalar, one that varies is stored per dive.
+<em>Page:</em> Scalar parameters.</p></li>
+<li><p><strong>Identity and metadata.</strong> Resolve the platform fields (mission file over the first dive
+file’s attributes), add <code class="docutils literal notranslate"><span class="pre">TRAJECTORY</span></code>, apply the global attributes from the three sections,
+the contributor and institution records, the coverage bounds computed from the data, and the
+conversion record.
+<em>Mission file:</em> <code class="docutils literal notranslate"><span class="pre">platform:</span></code>, <code class="docutils literal notranslate"><span class="pre">identity_and_discovery:</span></code>, <code class="docutils literal notranslate"><span class="pre">rights_and_access:</span></code>,
+<code class="docutils literal notranslate"><span class="pre">provenance_and_processing:</span></code>, <code class="docutils literal notranslate"><span class="pre">contributors:</span></code>, <code class="docutils literal notranslate"><span class="pre">institutions:</span></code>.
+<em>Page:</em> mission.yaml against the data; Global attributes.</p></li>
+</ol>
+<p>Steps 1 and 3–6 run once per mission; step 2 runs once per dive file. Each <em>Page:</em> note names the
+section of the <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">The conversion page</span></a> that shows that step’s result.</p>
+</section>
+<section id="what-changes">
+<h2>What changes<a class="headerlink" href="#what-changes" title="Link to this heading"></a></h2>
+<p>The steps above apply these transformations; each is detailed below.</p>
 <section id="variable-names">
-<h2>Variable names<a class="headerlink" href="#variable-names" title="Link to this heading"></a></h2>
-<p>Variable names are mapped to OG1 (full mapping in <code class="docutils literal notranslate"><span class="pre">config/OG1_variable_names.yaml</span></code>):</p>
+<h3>Variable names<a class="headerlink" href="#variable-names" title="Link to this heading"></a></h3>
+<p>Variable names are mapped to OG1 (full mapping in <a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/config/OG1_variable_names.yaml">OG1_variable_names.yaml</a>):</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Basestation   OG1
 ----------------------------
 latitude      LATITUDE
@@ -154,8 +204,27 @@ ctd_depth     DEPTH
 </pre></div>
 </div>
 </section>
-<section id="metadata-added">
-<h2>Metadata added<a class="headerlink" href="#metadata-added" title="Link to this heading"></a></h2>
+<section id="units">
+<h3>Units<a class="headerlink" href="#units" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Units are converted to the OG1 preferred units where a mapping exists (for example cm/s to
+m/s); the mappings are in <code class="docutils literal notranslate"><span class="pre">vocabularies.py</span></code>.</p></li>
+<li><p>Variables carry <code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, <code class="docutils literal notranslate"><span class="pre">long_name</span></code> and <code class="docutils literal notranslate"><span class="pre">units</span></code>.</p></li>
+<li><p>Controlled vocabularies come from <a class="reference external" href="http://vocab.nerc.ac.uk/">NERC</a>.</p></li>
+</ul>
+</section>
+<section id="gps-data">
+<h3>GPS data<a class="headerlink" href="#gps-data" title="Link to this heading"></a></h3>
+<p>GPS fixes are <strong>appended to the dataset as extra rows along</strong> <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> (increasing its
+length), not interpolated onto the measurement times:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code> and <code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code> hold the fix values, non-NaN only at the
+appended GPS rows;</p></li>
+<li><p>the dataset is sorted by <code class="docutils literal notranslate"><span class="pre">TIME</span></code> after the fixes are added.</p></li>
+</ul>
+</section>
+<section id="sensors-global-attributes-and-qc">
+<h3>Sensors, global attributes and QC<a class="headerlink" href="#sensors-global-attributes-and-qc" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Sensors</strong>: sensor information and calibration coefficients are catalogued from the
 basestation attributes and written as OG1 sensor variables.</p></li>
@@ -166,43 +235,44 @@ through as the OG1 <code class="docutils literal notranslate"><span class="pre">
 do not gain one (<code class="docutils literal notranslate"><span class="pre">convert.py</span></code>).</p></li>
 </ul>
 </section>
-<section id="gps-data">
-<h2>GPS data<a class="headerlink" href="#gps-data" title="Link to this heading"></a></h2>
-<p>GPS fixes are <strong>appended to the dataset as extra rows along</strong> <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> (increasing its
-length), not interpolated onto the measurement times:</p>
+<section id="extended-variables">
+<h3>Extended variables<a class="headerlink" href="#extended-variables" title="Link to this heading"></a></h3>
+<p>Beyond the core OG1 variables, the output preserves:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code> and <code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code> hold the fix values, non-NaN only at the
-appended GPS rows;</p></li>
-<li><p>the dataset is sorted by <code class="docutils literal notranslate"><span class="pre">TIME</span></code> after the fixes are added.</p></li>
+<li><p>flight-model velocities (vertical and horizontal) from the glider flight model;</p></li>
+<li><p>engineering variables describing glider state;</p></li>
+<li><p>derived oceanographic variables where present in the input.</p></li>
 </ul>
 </section>
-<section id="units">
-<h2>Units<a class="headerlink" href="#units" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>Units are converted to the OG1 preferred units where a mapping exists (for example cm/s to
-m/s); the mappings are in <code class="docutils literal notranslate"><span class="pre">vocabularies.py</span></code>.</p></li>
-<li><p>Variables carry <code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, <code class="docutils literal notranslate"><span class="pre">long_name</span></code> and <code class="docutils literal notranslate"><span class="pre">units</span></code>.</p></li>
-<li><p>Controlled vocabularies come from <a class="reference external" href="http://vocab.nerc.ac.uk/">NERC</a>.</p></li>
-</ul>
 </section>
-<section id="configuration">
-<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
-<p>The user’s configuration is a <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> file kept with the data — source, output
-directory, dive range, platform block, and the contributor and institution records. See
-<a class="reference internal" href="mission_yaml.html#mission-yaml"><span class="std std-ref">mission.yaml reference</span></a> for every key and <a class="reference internal" href="cli_reference.html#cli-reference"><span class="std std-ref">CLI reference</span></a> for the commands.</p>
-<p>The package’s own YAML files are not user settings; they hold the OG1 vocabularies and
-mappings:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_variable_names.yaml</span></code> — variable name mappings;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_sensor_names.yaml</span></code> — sensor keys to sensor metadata entries;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_variable_attributes.yaml</span></code> — CF variable attributes;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_sensor_attributes.yaml</span></code> — sensor metadata;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OG1_global_attributes.yaml</span></code> — global attribute templates;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">institution_registry.yaml</span></code> — EDMO codes for resolving institutions.</p></li>
-</ul>
+<section id="variables-that-differ-between-dives">
+<h2>Variables that differ between dives<a class="headerlink" href="#variables-that-differ-between-dives" title="Link to this heading"></a></h2>
+<p>The basestation files of one mission need not carry the same variables: a sensor switched on
+part-way through, or present but off, makes the files disagree. The converter works from the
+union of the variables, so the OG1 file has one variable where the inputs had it on some dives
+and not others, and cannot say which dives that was.</p>
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1.process</span></code> (and the <code class="docutils literal notranslate"><span class="pre">process</span></code> CLI) records this in <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside
+the OG1 file. For each basestation variable it gives the runs of dives it is <em>present</em> in (the
+variable exists in the file) and <em>valid</em> in (present, with at least one non-missing value). The
+conversion record also lists the input files, records the <code class="docutils literal notranslate"><span class="pre">dives</span></code>, <code class="docutils literal notranslate"><span class="pre">platform</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> values
+the conversion was given (not for a draft) and the basestation <code class="docutils literal notranslate"><span class="pre">institution</span></code> global’s registry
+match, and carries the file’s <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> and SHA-256;
+the conversion-record reader reads it back and ignores a conversion record whose <code class="docutils literal notranslate"><span class="pre">id</span></code> or
+<code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> differs from the file’s (<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span></code> also checks the SHA-256).</p>
+<p>The conversion page groups the variables into patterns — <code class="docutils literal notranslate"><span class="pre">every</span> <span class="pre">dive</span></code>, <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">dive</span> <span class="pre">k</span></code>,
+<code class="docutils literal notranslate"><span class="pre">until</span> <span class="pre">dive</span> <span class="pre">k</span></code>, <code class="docutils literal notranslate"><span class="pre">dive</span> <span class="pre">k</span> <span class="pre">only</span></code>, <code class="docutils literal notranslate"><span class="pre">dives</span> <span class="pre">a–b</span></code>, <code class="docutils literal notranslate"><span class="pre">sporadic</span></code> — and shows each as a strip over
+the dives. On the bundled <code class="docutils literal notranslate"><span class="pre">demo_sg005</span></code> sample (dives 1–5), 338 variables are on every dive,
+the four depth-averaged currents are present on every dive but have values from dive 2, and
+<code class="docutils literal notranslate"><span class="pre">log_ALTIM_BOTTOM_PING</span></code> is on dive 4 only.</p>
+<p>Nothing about this is added to the OG1 file.</p>
 </section>
-<section id="og1-compliance">
-<h2>OG1 compliance<a class="headerlink" href="#og1-compliance" title="Link to this heading"></a></h2>
+<section id="checking-the-output">
+<h2>Checking the output<a class="headerlink" href="#checking-the-output" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">validate</span></code> verb checks the <strong>mission configuration</strong> before conversion: known and
+required keys, that <code class="docutils literal notranslate"><span class="pre">raw_dir</span></code> is reachable and holds basestation files, the dive range, the
+required platform fields, and that the contributor and institution records include at least
+one PI and one Operator. During conversion the input coordinates are checked. Neither step runs
+an OG1 compliance check on the output file.</p>
 <p>Output files target:</p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html">OG1 Format Specification</a></p></li>
@@ -228,181 +298,7 @@ checks it as mandatory), so the converter writes no default text; set it to add 
 <span class="gp">$ </span>compliance-checker<span class="w"> </span>--test<span class="w"> </span>og:1.0<span class="w"> </span>&lt;output_dir&gt;/&lt;id&gt;.nc
 </pre></div>
 </div>
-</section>
-<section id="variables-that-differ-between-dives">
-<h2>Variables that differ between dives<a class="headerlink" href="#variables-that-differ-between-dives" title="Link to this heading"></a></h2>
-<p>The basestation files of one mission need not carry the same variables: a sensor switched on
-part-way through, or present but off, makes the files disagree. The converter works from the
-union of the variables, so the OG1 file has one variable where the inputs had it on some dives
-and not others, and cannot say which dives that was.</p>
-<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1.process</span></code> (and the <code class="docutils literal notranslate"><span class="pre">process</span></code> CLI) records this in <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside
-the OG1 file. For each basestation variable it gives the runs of dives it is <em>present</em> in (the
-variable exists in the file) and <em>valid</em> in (present, with at least one non-missing value). The
-conversion record also lists the input files, records the <code class="docutils literal notranslate"><span class="pre">dives</span></code>, <code class="docutils literal notranslate"><span class="pre">platform</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> values
-the conversion was given (not for a draft) and the basestation <code class="docutils literal notranslate"><span class="pre">institution</span></code> global’s registry
-match, and carries the file’s <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> and SHA-256;
-the conversion-record reader reads it back and ignores a conversion record whose <code class="docutils literal notranslate"><span class="pre">id</span></code> or
-<code class="docutils literal notranslate"><span class="pre">tracking_id</span></code> differs from the file’s (<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span></code> also checks the SHA-256).</p>
-<p>The conversion page groups the variables into patterns — <code class="docutils literal notranslate"><span class="pre">every</span> <span class="pre">dive</span></code>, <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">dive</span> <span class="pre">k</span></code>,
-<code class="docutils literal notranslate"><span class="pre">until</span> <span class="pre">dive</span> <span class="pre">k</span></code>, <code class="docutils literal notranslate"><span class="pre">dive</span> <span class="pre">k</span> <span class="pre">only</span></code>, <code class="docutils literal notranslate"><span class="pre">dives</span> <span class="pre">a–b</span></code>, <code class="docutils literal notranslate"><span class="pre">sporadic</span></code> — and shows each as a strip over
-the dives. On the bundled <code class="docutils literal notranslate"><span class="pre">demo_sg005</span></code> sample (dives 1–5), 338 variables are on every dive,
-the four depth-averaged currents are present on every dive but have values from dive 2, and
-<code class="docutils literal notranslate"><span class="pre">log_ALTIM_BOTTOM_PING</span></code> is on dive 4 only.</p>
-<p>Nothing about this is added to the OG1 file.</p>
-</section>
-<section id="the-conversion-page">
-<span id="conversion-page"></span><h2>The conversion page<a class="headerlink" href="#the-conversion-page" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span></code> (and <code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code>) writes an HTML page for the OG1 file. A
-draft (<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">draft</span></code>) gets the same page with its global attributes replaced by the
-basestation files’ own.</p>
-<p>The page opens with <strong>mission.yaml against the data</strong> when the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> the conversion
-was given (<code class="docutils literal notranslate"><span class="pre">process</span></code>, or <code class="docutils literal notranslate"><span class="pre">seagliderOG1.process</span></code>) and the output disagree or fall short, as
-copyable boxes of <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> lines. Each check is shown only when it finds something:</p>
-<ul class="simple">
-<li><p><em>Dive range</em> — the requested <code class="docutils literal notranslate"><span class="pre">dives</span></code> against the first and last dive that reached the file
-(a dive outside the files, or an end dive rejected as empty or invalid), naming dives inside
-that span that were not converted;</p></li>
-<li><p><em>Platform from the files</em> — each platform field set in the config against the value the
-converter derives from the first basestation file (<code class="docutils literal notranslate"><span class="pre">PLATFORM_SERIAL_NUMBER</span></code>,
-<code class="docutils literal notranslate"><span class="pre">GLIDER_FIRMWARE_VERSION</span></code>, <code class="docutils literal notranslate"><span class="pre">LANDSTATION_VERSION</span></code>, <code class="docutils literal notranslate"><span class="pre">WMO_IDENTIFIER</span></code>), naming the source
-global when the files carry more than one value. The config wins by design, so a pair is a
-value to check, not an error;</p></li>
-<li><p><em>Platform not filled</em> — required or file-derivable platform fields written as <code class="docutils literal notranslate"><span class="pre">UNK</span></code> or, for
-the numeric <code class="docutils literal notranslate"><span class="pre">PLATFORM_DEPTH_RATING</span></code>, omitted;</p></li>
-<li><p><em>Institution ids</em> — config institutions with no <code class="docutils literal notranslate"><span class="pre">id</span></code> that the package’s EDMO registry
-(<code class="docutils literal notranslate"><span class="pre">config/institution_registry.yaml</span></code>) matched by name, as an <code class="docutils literal notranslate"><span class="pre">institutions:</span></code> block with the
-registry name and id filled in;</p></li>
-<li><p><em>Deployment id</em> — the derived <code class="docutils literal notranslate"><span class="pre">id</span></code> as an <code class="docutils literal notranslate"><span class="pre">identity_and_discovery.id</span></code> line, when the
-conversion starts at dive 1 and that <code class="docutils literal notranslate"><span class="pre">id</span></code> is null: pinned, it survives a later conversion of
-part of the mission, which would derive a later start time and so a different id;</p></li>
-<li><p><em>Institution not in the registry</em> — a config institution the registry does not match
-exactly, with the registry entries whose names contain every word of it (<code class="docutils literal notranslate"><span class="pre">University</span> <span class="pre">of</span>
-<span class="pre">Hamburg</span></code> → <code class="docutils literal notranslate"><span class="pre">University</span> <span class="pre">of</span> <span class="pre">Hamburg</span> <span class="pre">(IfM)</span></code>, EDMO 1156);</p></li>
-<li><p><em>Institution in the basestation files</em> — the basestation <code class="docutils literal notranslate"><span class="pre">institution</span></code> global’s registry
-match, when no config institution resolved to it. The converter does not write the file’s
-institution when the config lists institutions (it would be a second, role-less record), so
-this is where it surfaces, with <code class="docutils literal notranslate"><span class="pre">role:</span> <span class="pre">null</span></code> to fill;</p></li>
-<li><p><em>Missing globals</em> — OG1 highly-desirable globals (the ones <code class="docutils literal notranslate"><span class="pre">validate</span></code> warns about) and ACDD
-1.3 globals the file does not carry, each labelled with its tier, under the global-attribute
-section that sets it and <code class="docutils literal notranslate"><span class="pre">global_attributes:</span></code> otherwise. Globals the converter supplies
-itself (<code class="docutils literal notranslate"><span class="pre">standard_name_vocabulary</span></code>, <code class="docutils literal notranslate"><span class="pre">geospatial_bounds_crs</span></code>, <code class="docutils literal notranslate"><span class="pre">time_coverage_resolution</span></code>,
-…) are named, not boxed: they are not <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> values. Nor are <code class="docutils literal notranslate"><span class="pre">creator_*</span></code> and
-<code class="docutils literal notranslate"><span class="pre">publisher_*</span></code>: OG1 defines neither and records people and organisations in
-<code class="docutils literal notranslate"><span class="pre">contributor_*</span></code> and <code class="docutils literal notranslate"><span class="pre">contributing_institutions_*</span></code>.</p></li>
-</ul>
-<p>The dive, platform-pair and institution checks read the <code class="docutils literal notranslate"><span class="pre">config</span></code> the conversion record records, so a page
-for a file converted before it was recorded shows only the other two. A draft has no such section.</p>
-<p>Its sections, in order:</p>
-<ol class="arabic simple">
-<li><p><strong>Before → after</strong> — files, dives, size on disk, samples on the shared axis, variable and
-global-attribute counts, time span and OG1-requirement coverage, basestation input beside
-OG1 output, with a one-line verdict. The input column reads the conversion record; its cells show
-<code class="docutils literal notranslate"><span class="pre">—</span></code> when the conversion record is absent.</p></li>
-<li><p><strong>The OG1 file</strong> — the output read by what OG1 says about each variable, not by where it
-came from, with an <em>Orig var</em> / <em>Orig dim</em> column pair naming the basestation source:</p>
-<ul class="simple">
-<li><p><em>Required by OG1</em> — the variables (and the <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> dimension) a valid OG1 file
-must carry, present/absent, from <code class="xref py py-data docutils literal notranslate"><span class="pre">seagliderOG1.vocabularies.OG1_REQUIRED_VARS</span></code> (the
-upstream <code class="docutils literal notranslate"><span class="pre">ioos/cc-plugin-og</span></code> checker list).</p></li>
-<li><p><em>Sensors named by OG1</em> — one row per <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable: type, maker, model, serial
-number, calibration date, and the variables whose <code class="docutils literal notranslate"><span class="pre">sensor</span></code> attribute names it. Amber: a
-placeholder serial or date (empty, or every digit zero), or a serial shared by two sensors
-(a calibration comment copied between instruments); correct either with <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> in
-<code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>.</p></li>
-<li><p><em>Named by OG1</em> — variables OG1 defines but does not require (science, phase, QC).</p></li>
-<li><p><em>Candidate for OG1</em> — variables the project proposes to canonise, from
-<code class="xref py py-data docutils literal notranslate"><span class="pre">seagliderOG1.vocabularies.OG1_CANDIDATE_VARS</span></code> (e.g. the flight-model inputs and
-outputs), shown present/absent; edit that list as candidates are agreed.</p></li>
-<li><p><em>Carried through</em> — everything else, summarised by basestation family.</p></li>
-<li><p><em>Same quantity, more than once</em> — where several variables share a <code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, each
-compared (member − reference) to the OG1 reference member, in its units.</p></li>
-</ul>
-</li>
-<li><p><strong>Reconciliation</strong> — each basestation variable’s one fate (renamed, passed through,
-consumed, removed, dropped, skipped) with a count, a Meaning column, and a fate histogram.</p></li>
-<li><p><strong>Presence across dives</strong> — the patterns above, with each pattern’s share of the input dives.</p></li>
-<li><p><strong>Dimensions</strong> — each basestation dimension’s fate, the samples it supplied, and the
-dimension it ended on.</p></li>
-<li><p><strong>Derived variables</strong> — variables the converter built, with their basestation sources.</p></li>
-<li><p><strong>Dropped and removed variables</strong> — variables left out by <code class="docutils literal notranslate"><span class="pre">keep_variables</span></code> or the package
-drop list (empty, so every basestation variable is retained).</p></li>
-<li><p><strong>By basestation origin</strong> — the same output variables grouped by original dimension, with a
-Valid % column and a per-group baseline (the share of the axis that dimension supplied).</p></li>
-<li><p><strong>Global attributes</strong> — grouped by convention and OG1 tier, with recomputed coverage bounds
-and the history.</p></li>
-<li><p><strong>Scalar parameters</strong> — the per-dive and constant scalars, split by group, each collapsible.</p></li>
-</ol>
-</section>
-<section id="validation">
-<h2>Validation<a class="headerlink" href="#validation" title="Link to this heading"></a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">validate</span></code> verb checks the <strong>mission configuration</strong> before conversion: known and
-required keys, that <code class="docutils literal notranslate"><span class="pre">raw_dir</span></code> is reachable and holds basestation files, the dive range, the
-required platform fields, and that the contributor and institution records include at least
-one PI and one Operator. During conversion the input coordinates are checked.</p>
-<p>Neither step runs an OG1 compliance check on the output file. To check a finished OG1 file
-against the format, run the OG1 checker (see <a class="reference internal" href="#og1-compliance">OG1 compliance</a>), and use
-<a class="reference external" href="https://github.com/OceanGlidersCommunity/glidertest">glidertest</a> for the data themselves.</p>
-</section>
-<section id="extended-variables">
-<h2>Extended variables<a class="headerlink" href="#extended-variables" title="Link to this heading"></a></h2>
-<p>Beyond the core OG1 variables, the output preserves:</p>
-<ul class="simple">
-<li><p>flight-model velocities (vertical and horizontal) from the glider flight model;</p></li>
-<li><p>engineering variables describing glider state;</p></li>
-<li><p>derived oceanographic variables where present in the input.</p></li>
-</ul>
-</section>
-<section id="example">
-<h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
-<p>From the command line, after <code class="docutils literal notranslate"><span class="pre">init</span></code> and <code class="docutils literal notranslate"><span class="pre">validate</span></code> (see <a class="reference internal" href="cli_reference.html#cli-reference"><span class="std std-ref">CLI reference</span></a>):</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>seagliderOG1<span class="w"> </span>process<span class="w"> </span>sg005.yaml<span class="w">      </span><span class="c1"># -&gt; &lt;output_dir&gt;/&lt;id&gt;.nc</span>
-</pre></div>
-</div>
-<p>or from Python:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sg</span>
-
-<span class="n">datasets</span> <span class="o">=</span> <span class="n">sg</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">raw_dir</span><span class="p">,</span> <span class="n">dives</span><span class="o">=</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">))</span>
-<span class="n">ds</span> <span class="o">=</span> <span class="n">sg</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span>
-    <span class="n">datasets</span><span class="p">,</span>
-    <span class="n">contributors</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"Jane Doe"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"PI"</span><span class="p">,</span> <span class="s2">"email"</span><span class="p">:</span> <span class="s2">"jane@example.org"</span><span class="p">}],</span>
-    <span class="n">institutions</span><span class="o">=</span><span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"University of Hamburg (IfM)"</span><span class="p">,</span> <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"Operator"</span><span class="p">}],</span>
-<span class="p">)</span>
-<span class="n">sg</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>The <code class="docutils literal notranslate"><span class="pre">contributors</span></code> and <code class="docutils literal notranslate"><span class="pre">institutions</span></code> arguments are lists of records, one entry per person
-(or institution) per role; a conversion with no PI warns. See <a class="reference internal" href="cli_reference.html#cli-reference"><span class="std std-ref">CLI reference</span></a>.</p>
-</section>
-<section id="what-the-conversion-records">
-<h2>What the conversion records<a class="headerlink" href="#what-the-conversion-records" title="Link to this heading"></a></h2>
-<p>The output file records what the conversion did, so the treatment can be read back from the
-file alone:</p>
-<ul class="simple">
-<li><p>every renamed or passed-through variable carries <code class="docutils literal notranslate"><span class="pre">original_name</span></code> (its basestation name; equal
-to the OG1 name when the variable passed through unrenamed), and merged variables also carry
-<code class="docutils literal notranslate"><span class="pre">original_dimension</span></code>; converter-created variables have neither (see below);</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">conversion_dimensions</span></code> gives each basestation dimension a fate — <code class="docutils literal notranslate"><span class="pre">backbone</span></code> (the dimension
-that becomes <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>), <code class="docutils literal notranslate"><span class="pre">merged</span></code>, or <code class="docutils literal notranslate"><span class="pre">skipped</span></code> — and lists the variables it carried
-(a variable on more than one dimension is listed under each, so the counts are not a partition);</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">conversion_derived_variables</span></code> lists the variables the converter created (which therefore have
-no <code class="docutils literal notranslate"><span class="pre">original_name</span></code>);</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">conversion_dropped_variables</span></code> lists variables removed by <code class="docutils literal notranslate"><span class="pre">convert.keep_variables</span></code>;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">conversion_attribute_sources</span></code> records the source of each global attribute;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">history</span></code> is a single conversion provenance line (the basestation per-dive processing log
-is a per-dive QC record, not a mission record, so it is not carried).</p></li>
-</ul>
-<p>A scalar that is constant across the mission is stored as a plain scalar with
-<code class="docutils literal notranslate"><span class="pre">storage_type:</span> <span class="pre">constant_scalar</span></code>; one that varies per dive (or is missing on some dives)
-is stored as a JSON string with <code class="docutils literal notranslate"><span class="pre">storage_type:</span> <span class="pre">per_dive_scalar</span></code>, holding aligned <code class="docutils literal notranslate"><span class="pre">dives</span></code>
-and <code class="docutils literal notranslate"><span class="pre">values</span></code> lists (<code class="docutils literal notranslate"><span class="pre">null</span></code> for a missing value).</p>
-<p><code class="docutils literal notranslate"><span class="pre">inspect</span> <span class="pre">--conversion</span></code> prints these from any converted file, including a <em>Scalar
-parameters</em> section that lists the per-dive scalars in full and summarises the constants as a
-count (<code class="docutils literal notranslate"><span class="pre">--all</span></code> lists the constants too); <code class="docutils literal notranslate"><span class="pre">--parameter</span> <span class="pre">NAME</span></code> decodes one per-dive JSON
-scalar to a dive/value table:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>seagliderOG1<span class="w"> </span>inspect<span class="w"> </span>sg005_20080606_delayed.nc<span class="w"> </span>--conversion
-<span class="gp">$ </span>seagliderOG1<span class="w"> </span>inspect<span class="w"> </span>sg005_20080606_delayed.nc<span class="w"> </span>--parameter<span class="w"> </span>surface_curr_north
-</pre></div>
-</div>
+<p>For the data themselves, use <a class="reference external" href="https://github.com/OceanGlidersCommunity/glidertest">glidertest</a>.</p>
 </section>
 </section>
 
@@ -410,8 +306,8 @@ scalar to a dive/value table:</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="mission_yaml.html" class="btn btn-neutral float-left" title="mission.yaml reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="package_layout.html" class="btn btn-neutral float-right" title="Package layout and defaults" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="demo-output.html" class="btn btn-neutral float-left" title="Demo notebook" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="conversion_page.html" class="btn btn-neutral float-right" title="The conversion page" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

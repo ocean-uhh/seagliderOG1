@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev81 documentation</title>
+  <title>CLI reference &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,15 +14,15 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=b06c38e7"></script>
+      <script src="_static/documentation_options.js?v=8794b28d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="mission.yaml reference" href="mission_yaml.html" />
-    <link rel="prev" title="seagliderOG1 demo" href="demo-output.html" /> 
+    <link rel="next" title="API reference" href="api.html" />
+    <link rel="prev" title="Packaged defaults and your local tables" href="defaults.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -48,10 +48,19 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Demo</span></p>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demo-output.html">seagliderOG1 demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul class="current">
@@ -80,15 +89,12 @@
 <li class="toctree-l2"><a class="reference internal" href="#exit-status">Exit status</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
-<li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="seagliderOG1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Links</span></p>
 <ul>
@@ -151,7 +157,7 @@ written OG1 file: beside the file by default, directly into <code class="docutil
 with <code class="docutils literal notranslate"><span class="pre">--report-dir</span> <span class="pre">ROOT</span></code> — so the pages can live apart from the archived data. <code class="docutils literal notranslate"><span class="pre">process</span>
 <span class="pre">--report</span></code> (or <code class="docutils literal notranslate"><span class="pre">report:</span> <span class="pre">true</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>) writes the same page as it converts, and
 <code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report-dir</span> <span class="pre">ROOT</span></code> puts it under ROOT. An existing page is refused unless
-<code class="docutils literal notranslate"><span class="pre">--force</span></code>. <code class="docutils literal notranslate"><span class="pre">inspect</span></code> prints text only. See <a class="reference internal" href="conversion.html#conversion-page"><span class="std std-ref">The conversion page</span></a> for the sections the
+<code class="docutils literal notranslate"><span class="pre">--force</span></code>. <code class="docutils literal notranslate"><span class="pre">inspect</span></code> prints text only. See <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">The conversion page</span></a> for the sections the
 page shows.</p>
 <p><code class="docutils literal notranslate"><span class="pre">process</span></code> also writes <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside each OG1 file: the input files (name,
 size, dive number, dimension lengths and global-attribute count) and which dives each
@@ -580,8 +586,8 @@ nothing).</p></li>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="demo-output.html" class="btn btn-neutral float-left" title="seagliderOG1 demo" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="mission_yaml.html" class="btn btn-neutral float-right" title="mission.yaml reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="defaults.html" class="btn btn-neutral float-left" title="Packaged defaults and your local tables" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="API reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

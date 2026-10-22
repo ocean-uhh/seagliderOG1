@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1 API &mdash; seagliderOG1 0.0.2.post1.dev81 documentation</title>
+  <title>API reference &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,14 +14,15 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=b06c38e7"></script>
+      <script src="_static/documentation_options.js?v=8794b28d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Changelog" href="changelog.html" /> 
+    <link rel="next" title="Migrating to 0.1.0" href="migrating_0_1_0.html" />
+    <link rel="prev" title="CLI reference" href="cli_reference.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -47,23 +48,25 @@
               <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Demo</span></p>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demo-output.html">seagliderOG1 demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
-<li class="toctree-l1"><a class="reference internal" href="package_layout.html">Package layout and defaults</a></li>
-<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></a><ul>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#modules">Modules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#verbs">verbs</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.read"><code class="docutils literal notranslate"><span class="pre">read()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.convert"><code class="docutils literal notranslate"><span class="pre">convert()</span></code></a></li>
@@ -160,6 +163,11 @@
 </ul>
 </li>
 </ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
 <p class="caption" role="heading"><span class="caption-text">Links</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1">GitHub repository</a></li>
@@ -179,9 +187,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code></li>
+      <li class="breadcrumb-item active">API reference</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/seagliderOG1.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -189,8 +197,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="seagliderog1-api">
-<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">API</span></code><a class="headerlink" href="#seagliderog1-api" title="Link to this heading"></a></h1>
+  <section id="api-reference">
+<h1>API reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
 <p>The public API is a set of verbs on the top-level package:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">seagliderOG1.read</span></code> — read a mission’s basestation files into a list of datasets.</p></li>
@@ -206,6 +214,25 @@
 </ul>
 <p>plus the exceptions <code class="docutils literal notranslate"><span class="pre">seagliderOG1.MissionError</span></code> and <code class="docutils literal notranslate"><span class="pre">seagliderOG1.MetadataError</span></code>, and the
 supporting modules <code class="docutils literal notranslate"><span class="pre">tools</span></code>, <code class="docutils literal notranslate"><span class="pre">plotters</span></code>, <code class="docutils literal notranslate"><span class="pre">vocabularies</span></code> and <code class="docutils literal notranslate"><span class="pre">contributors</span></code>.</p>
+<section id="modules">
+<h2>Modules<a class="headerlink" href="#modules" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> — the public verbs (<code class="docutils literal notranslate"><span class="pre">read</span></code>, <code class="docutils literal notranslate"><span class="pre">convert</span></code>, <code class="docutils literal notranslate"><span class="pre">write</span></code>, <code class="docutils literal notranslate"><span class="pre">report</span></code>,
+<code class="docutils literal notranslate"><span class="pre">enrich</span></code>, <code class="docutils literal notranslate"><span class="pre">process</span></code>, <code class="docutils literal notranslate"><span class="pre">process_missions</span></code>), re-exported from the modules below.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">readers.py</span></code> — <code class="docutils literal notranslate"><span class="pre">read</span></code> basestation files from a server or a local directory.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">_convert.py</span></code> — <code class="docutils literal notranslate"><span class="pre">convert</span></code> orchestrates mapping, standardisation, concat and the
+single post-concat dtype pass; <code class="docutils literal notranslate"><span class="pre">process</span></code> / <code class="docutils literal notranslate"><span class="pre">process_missions</span></code> run the pipeline from a
+configuration. Private: not imported directly.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">writers.py</span></code> — <code class="docutils literal notranslate"><span class="pre">write</span></code> OG1 files and <code class="docutils literal notranslate"><span class="pre">enrich</span></code> a written file’s globals.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mission.py</span></code> — the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> schema: <code class="docutils literal notranslate"><span class="pre">load</span></code>, <code class="docutils literal notranslate"><span class="pre">check</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tools.py</span></code> — user-facing utilities.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vocabularies.py</span></code> — vocabulary and mapping tables (the defaults; see <a class="reference internal" href="defaults.html#defaults"><span class="std std-ref">Packaged defaults and your local tables</span></a>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plotters.py</span></code> — plotting. <code class="docutils literal notranslate"><span class="pre">contributors.py</span></code> — contributor/institution record handling.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reports/</span></code> — the HTML conversion page (<code class="docutils literal notranslate"><span class="pre">report</span></code>) and the reader behind it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cli/</span></code> — the <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span></code> command, one module per verb.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">config/*.yaml</span></code> — the OG1 mappings and vocabularies (see <a class="reference internal" href="defaults.html#defaults"><span class="std std-ref">Packaged defaults and your local tables</span></a>).</p></li>
+</ul>
+</section>
 <section id="verbs">
 <h2>verbs<a class="headerlink" href="#verbs" title="Link to this heading"></a></h2>
 <dl class="py function">
@@ -1032,11 +1059,13 @@ rule the CLI and notebooks share.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.readers.load_sample_basestation">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.readers.</span></span><span class="sig-name descname"><span class="pre">load_sample_basestation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'/home/runner/work/seagliderOG1/seagliderOG1/data/demo_sg005/p0050001_20080606.nc'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/readers.html#load_sample_basestation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.readers.load_sample_basestation" title="Link to this definition"></a></dt>
-<dd><p>Open a bundled sample Seaglider basestation file.</p>
+<dd><p>Open the demo sample Seaglider basestation file from the source repository.</p>
+<p>The sample lives under the repository’s <code class="docutils literal notranslate"><span class="pre">data/demo_sg005</span></code> directory and is not shipped in
+the installed package, so it resolves only from a source checkout.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>file_path</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to the sample basestation file to load. Default is the demo sg005
-dive 1 file bundled under <code class="docutils literal notranslate"><span class="pre">data/demo_sg005</span></code>.</p>
+dive 1 file under the repository’s <code class="docutils literal notranslate"><span class="pre">data/demo_sg005</span></code>.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The requested sample dataset loaded from disk.</p>
@@ -1735,7 +1764,8 @@ unavailable.</p></li>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="changelog.html" class="btn btn-neutral float-left" title="Changelog" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cli_reference.html" class="btn btn-neutral float-left" title="CLI reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="migrating_0_1_0.html" class="btn btn-neutral float-right" title="Migrating to 0.1.0" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -1,0 +1,189 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Packaged defaults and your local tables &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8794b28d"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="CLI reference" href="cli_reference.html" />
+    <link rel="prev" title="mission.yaml reference" href="mission_yaml.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Packaged defaults and your local tables</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#built-in-defaults">Built-in defaults</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1">GitHub repository</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Packaged defaults and your local tables</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/defaults.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="packaged-defaults-and-your-local-tables">
+<span id="defaults"></span><h1>Packaged defaults and your local tables<a class="headerlink" href="#packaged-defaults-and-your-local-tables" title="Link to this heading"></a></h1>
+<p>The package ships default tables — the OG1 mappings and vocabularies — that are not user
+configuration. The user’s own configuration is a <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> (see <a class="reference internal" href="mission_yaml.html#mission-yaml"><span class="std std-ref">mission.yaml reference</span></a>);
+this page is the packaged defaults and how to override them.</p>
+<section id="built-in-defaults">
+<h2>Built-in defaults<a class="headerlink" href="#built-in-defaults" title="Link to this heading"></a></h2>
+<p>Defaults live in two places, neither of which is user configuration.</p>
+<p>Packaged YAML (<code class="docutils literal notranslate"><span class="pre">seagliderOG1/config/</span></code>), read once when <code class="docutils literal notranslate"><span class="pre">vocabularies</span></code> is imported, not per
+conversion (each links to its current version on GitHub, so an installed user can read it without
+the source):</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/config/OG1_variable_names.yaml">OG1_variable_names.yaml</a>
+— basestation → OG1 variable name mappings.</p></li>
+<li><p><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/config/OG1_sensor_names.yaml">OG1_sensor_names.yaml</a>
+— sensor keys (<code class="docutils literal notranslate"><span class="pre">sbe41</span></code>, <code class="docutils literal notranslate"><span class="pre">wlbb2f</span></code>) → <code class="docutils literal notranslate"><span class="pre">OG1_sensor_attributes.yaml</span></code> entries; a lookup, never a
+variable rename.</p></li>
+<li><p><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/config/OG1_variable_attributes.yaml">OG1_variable_attributes.yaml</a>
+— CF/OG1 variable attributes (<code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, <code class="docutils literal notranslate"><span class="pre">long_name</span></code>, <code class="docutils literal notranslate"><span class="pre">units</span></code>).</p></li>
+<li><p><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/config/OG1_sensor_attributes.yaml">OG1_sensor_attributes.yaml</a>
+— sensor metadata.</p></li>
+<li><p><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/config/OG1_global_attributes.yaml">OG1_global_attributes.yaml</a>
+— global attribute templates (for example <code class="docutils literal notranslate"><span class="pre">featureType</span></code>).</p></li>
+<li><p><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/config/institution_registry.yaml">institution_registry.yaml</a>
+— EDMO codes for resolving institutions by name.</p></li>
+</ul>
+<p>Tables in <code class="docutils literal notranslate"><span class="pre">vocabularies.py</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DIMENSION_RENAMES</span></code> — dimension renaming (<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> → <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MODE_SUFFIX</span></code> — data mode to id suffix (<code class="docutils literal notranslate"><span class="pre">realtime</span></code> → <code class="docutils literal notranslate"><span class="pre">R</span></code>, <code class="docutils literal notranslate"><span class="pre">delayed</span></code> → <code class="docutils literal notranslate"><span class="pre">delayed</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_FIELDS</span></code> — the OG1 platform fields with their source attribute, formatter and
+required flag.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">preferred_units</span></code>, <code class="docutils literal notranslate"><span class="pre">unit_str_format</span></code>, <code class="docutils literal notranslate"><span class="pre">unit1_to_unit2</span></code> — unit standardisation and the
+conversion factors.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">VARIABLES_TO_DROP</span></code> — basestation variables dropped from the OG1 output; empty, so every
+basestation variable is retained.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ROLE_VOCABULARY</span></code>, <code class="docutils literal notranslate"><span class="pre">ROLE_ALIASES</span></code> — the W08 contributor roles and the accepted aliases.</p></li>
+</ul>
+<p>These are the packaged defaults, read-only for an installed package — do not edit them in place
+(a pip install puts them under <code class="docutils literal notranslate"><span class="pre">site-packages</span></code>, and an edit is lost on upgrade). The
+<code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> carries only the per-deployment metadata (platform, contributors, institutions,
+raw_dir and range), not a copy of these.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>A future release will add a fleet-level configuration file (<code class="docutils literal notranslate"><span class="pre">fleet.yaml</span></code>) for overriding these
+packaged tables without an editable checkout. Until then, changing a mapping means working from a
+source checkout.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mission_yaml.html" class="btn btn-neutral float-left" title="mission.yaml reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cli_reference.html" class="btn btn-neutral float-right" title="CLI reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

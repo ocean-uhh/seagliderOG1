@@ -1,0 +1,199 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuration &mdash; seagliderOG1 0.0.2.post1.dev82 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8794b28d"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="mission.yaml reference" href="mission_yaml.html" />
+    <link rel="prev" title="The conversion page" href="conversion_page.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg005 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#packaged-not-yours-to-set">Packaged, not yours to set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reused-across-missions">Reused across missions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#per-mission">Per mission</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#generating-a-starting-configuration">Generating a starting configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-the-conversion-report-checks">What the conversion report checks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1">GitHub repository</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Configuration</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/configuration.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="configuration">
+<span id="id1"></span><h1>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h1>
+<p>Converting a Seaglider mission to OG1 needs metadata the basestation files do not carry, carry
+only in part, or carry wrongly. That configuration sits at three levels, from fixed to
+per-mission.</p>
+<section id="packaged-not-yours-to-set">
+<h2>Packaged, not yours to set<a class="headerlink" href="#packaged-not-yours-to-set" title="Link to this heading"></a></h2>
+<p>Units, the basestation → OG1 variable-name mappings, and the OG1 controlled vocabularies are
+fixed by the OG1 format and shipped with the package. They are the same for every mission and
+are not user configuration; see <a class="reference internal" href="defaults.html#defaults"><span class="std std-ref">Packaged defaults and your local tables</span></a>. A variable OG1 does not specify keeps its
+basestation name — the one place a local vocabulary choice may later matter (below).</p>
+</section>
+<section id="reused-across-missions">
+<h2>Reused across missions<a class="headerlink" href="#reused-across-missions" title="Link to this heading"></a></h2>
+<p>Some metadata rarely changes between deployments: your institution and its EDMO code, and, in
+future, vocabulary choices for variables OG1 does not specify. Today the institution and
+contributor records are repeated in each mission’s <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>. A future <code class="docutils literal notranslate"><span class="pre">fleet.yaml</span></code>
+will hold them once for a fleet or institution, set in one place rather than per mission (see
+the tip on <a class="reference internal" href="defaults.html#defaults"><span class="std std-ref">Packaged defaults and your local tables</span></a>).</p>
+</section>
+<section id="per-mission">
+<h2>Per mission<a class="headerlink" href="#per-mission" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> you keep beside the data carries everything specific to one deployment (see
+<a class="reference internal" href="mission_yaml.html#mission-yaml"><span class="std std-ref">mission.yaml reference</span></a> for every key). The file name is yours — <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> is only the default
+<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">init</span></code> writes, and <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">process</span> <span class="pre">my_mission.yaml</span></code> works just as well; the
+convention is one configuration per discrete glider mission, so one configuration makes one OG1
+file. It carries:</p>
+<ul class="simple">
+<li><p>who and where — the PI and contributors, the institution(s) with their EDMO codes, and
+discovery metadata;</p></li>
+<li><p>the platform — its WMO number, serial number, model and depth rating;</p></li>
+<li><p>the data — the raw-data directory, the dive range, and the data mode;</p></li>
+<li><p>corrections — fixes for errors in the basestation calibration metadata
+(<code class="docutils literal notranslate"><span class="pre">sg_calib_constants.m</span></code> → <code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm*</span></code>), such as a wrong instrument serial number,
+through the <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> block.</p></li>
+</ul>
+</section>
+<section id="generating-a-starting-configuration">
+<h2>Generating a starting configuration<a class="headerlink" href="#generating-a-starting-configuration" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">init</span></code> writes a commented <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> to edit; with <code class="docutils literal notranslate"><span class="pre">--raw-dir</span></code> it fills
+<code class="docutils literal notranslate"><span class="pre">raw_dir</span></code> and the platform block from the basestation files:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>seagliderOG1<span class="w"> </span>init<span class="w"> </span>sg005.yaml<span class="w"> </span>--raw-dir<span class="w"> </span>/data/sg005/
+</pre></div>
+</div>
+<p>Generating a configuration from Python (a <code class="docutils literal notranslate"><span class="pre">mission.template()</span></code>, and a <code class="docutils literal notranslate"><span class="pre">fleet.template()</span></code> for
+the fleet file) is planned for a future release.</p>
+</section>
+<section id="what-the-conversion-report-checks">
+<h2>What the conversion report checks<a class="headerlink" href="#what-the-conversion-report-checks" title="Link to this heading"></a></h2>
+<p>The configuration need not be complete before the first run. <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span></code> (and
+<code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code>) writes an HTML page that checks the configuration against the data and
+suggests fixes: it proposes an EDMO code when your institution name matches the packaged
+registry, and flags recommended metadata that is missing or platform fields written as <code class="docutils literal notranslate"><span class="pre">UNK</span></code>.
+See <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">The conversion page</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="conversion_page.html" class="btn btn-neutral float-left" title="The conversion page" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mission_yaml.html" class="btn btn-neutral float-right" title="mission.yaml reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
