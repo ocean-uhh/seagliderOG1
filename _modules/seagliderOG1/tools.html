@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.tools &mdash; seagliderOG1 0.0.2.post1.dev80 documentation</title>
+  <title>seagliderOG1.tools &mdash; seagliderOG1 0.0.2.post1.dev81 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=1414bcfe"></script>
+      <script src="../../_static/documentation_options.js?v=b06c38e7"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -632,6 +632,42 @@
 <span class="c1"># ===============================================================================</span>
 <span class="c1"># Unused functions</span>
 <span class="c1"># ===============================================================================</span>
+
+
+<span class="c1"># --- deprecated v0.0.2 names (removed in 0.3.0; see seagliderOG1._deprecated) ----------</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">_deprecated</span>  <span class="c1"># noqa: E402  # shims follow the definitions above</span>
+
+<span class="n">calc_Z</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">_renamed</span><span class="p">(</span><span class="n">add_depth</span><span class="p">,</span> <span class="s2">"tools.calc_Z"</span><span class="p">,</span> <span class="s2">"tools.add_depth"</span><span class="p">)</span>
+<span class="n">assign_phase</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">_renamed</span><span class="p">(</span><span class="n">add_phase</span><span class="p">,</span> <span class="s2">"tools.assign_phase"</span><span class="p">,</span> <span class="s2">"tools.add_phase"</span><span class="p">)</span>
+<span class="n">assign_profile_number</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">_renamed</span><span class="p">(</span>
+    <span class="n">add_profile_number</span><span class="p">,</span> <span class="s2">"tools.assign_profile_number"</span><span class="p">,</span> <span class="s2">"tools.add_profile_number"</span>
+<span class="p">)</span>
+
+<span class="n">_REMOVED_TOOLS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"OG1_name_mapping"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">"the basestation -&gt; OG1 name mapping is built inside seagliderOG1.convert; "</span>
+        <span class="s2">"'seagliderOG1 inspect --conversion FILE.nc' prints what was renamed."</span>
+    <span class="p">),</span>
+    <span class="s2">"print_OG1_mapping_summary"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">"the mapping is built inside seagliderOG1.convert; "</span>
+        <span class="s2">"'seagliderOG1 inspect --conversion FILE.nc' prints what was renamed."</span>
+    <span class="p">),</span>
+<span class="p">}</span>
+<span class="n">_REMOVED_TOOLS</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+    <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span>
+        <span class="p">(</span>
+            <span class="s2">"og1_name_mapping"</span><span class="p">,</span>
+            <span class="s2">"gather_sensor_info"</span><span class="p">,</span>
+            <span class="s2">"add_sensor_to_dataset"</span><span class="p">,</span>
+            <span class="s2">"merge_datasets_along_time"</span><span class="p">,</span>
+            <span class="s2">"extract_scalar_parameters"</span><span class="p">,</span>
+            <span class="s2">"add_scalar_parameters"</span><span class="p">,</span>
+            <span class="s2">"set_best_dtype"</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">"a conversion-pipeline internal, private since 0.1.0; call seagliderOG1.convert."</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="n">_deprecated</span><span class="o">.</span><span class="n">install_removed</span><span class="p">(</span><span class="nb">globals</span><span class="p">(),</span> <span class="n">_REMOVED_TOOLS</span><span class="p">)</span>
 </pre></div>
 
            </div>

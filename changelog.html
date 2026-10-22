@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev80 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.0.2.post1.dev81 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=1414bcfe"></script>
+      <script src="_static/documentation_options.js?v=b06c38e7"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -192,6 +192,12 @@ sections (<code class="docutils literal notranslate"><span class="pre">validate<
 <section id="added">
 <h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>The v0.0.2 names are importable for one release and warn: a renamed name (e.g.
+<code class="docutils literal notranslate"><span class="pre">readers.load_basestation_files</span></code>, <code class="docutils literal notranslate"><span class="pre">convertOG1.convert_to_OG1</span></code>, <code class="docutils literal notranslate"><span class="pre">writers.save_dataset</span></code>)
+delegates to its 0.1.0 spelling and emits a <code class="docutils literal notranslate"><span class="pre">SeagliderDeprecationWarning</span></code> naming it; a removed
+name (e.g. <code class="docutils literal notranslate"><span class="pre">convertOG1.process_and_save_data</span></code>, <code class="docutils literal notranslate"><span class="pre">vocabularies.load_default_contributors</span></code>) raises
+with a message pointing at the migration guide. All of it is removed in 0.3.0. See <em>Migrating
+to 0.1.0</em>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sensors:</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> (<code class="docutils literal notranslate"><span class="pre">to_og1(sensors=...)</span></code>): correct a basestation sensor record’s
 <code class="docutils literal notranslate"><span class="pre">serial_number</span></code> and <code class="docutils literal notranslate"><span class="pre">calibration_date</span></code> by its sensor key; the corrected serial names the
 <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable, and its <code class="docutils literal notranslate"><span class="pre">comment</span></code> records the replaced value.</p></li>
