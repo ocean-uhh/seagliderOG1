@@ -385,8 +385,11 @@ _PLATFORM_HINTS = {
     "WMO_IDENTIFIER": "from wmo_identifier",
     "PLATFORM_NAME": "local or nickname of the glider",
     "TELECOM_TYPE": "e.g. Iridium (comma-separated for several)",
-    "TRACKING_SYSTEM": "e.g. ARGOS, GPS",
-    "BATTERY_TYPE": "see the OG1 battery_type vocabulary",
+    "TRACKING_SYSTEM": "OG1 tracking_system: gps | argos doppler | Beidou | acoustic",
+    "BATTERY_TYPE": (
+        "OG1 battery_type: lithium | alkaline | lithium rechargeable | "
+        "alkaline rechargeable | alkaline + lithium | lithium primary"
+    ),
     "BATTERY_PACK": "battery packaging",
 }
 

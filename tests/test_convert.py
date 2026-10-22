@@ -280,7 +280,7 @@ def test_keep_variables_keeps_source_ledger_complete():
 
 def test_process_dataset():
 
-    ds1 = readers.load_sample_basestation()
+    ds1 = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)[0]
 
     # test split_ds
     split_ds = tools.split_by_unique_dims(ds1)
@@ -727,7 +727,9 @@ def test_conversion_ledger_parses_the_file():
     assert per_dive
     assert sorted(ledger["scalar_parameters"][per_dive[0]]["dives"]) == [1, 2]
     try:
-        _record.conversion_ledger(readers.load_sample_basestation())
+        _record.conversion_ledger(
+            readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)[0]
+        )
     except _convert.MetadataError:
         pass
     else:

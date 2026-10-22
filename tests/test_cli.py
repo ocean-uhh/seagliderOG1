@@ -129,6 +129,18 @@ def test_init_from_fills_platform(tmp_path: pathlib.Path) -> None:
     assert str(platform["LANDSTATION_VERSION"]).startswith("basestation")
 
 
+def test_init_example_writes_the_bundled_sample(tmp_path: pathlib.Path) -> None:
+    """``init --example`` writes the sg271 sample config with raw_dir at the packaged dives."""
+    from seagliderOG1 import readers
+
+    out = tmp_path / "sg271.yaml"
+    assert cli.main(["init", "--example", str(out)]) == 0
+    data = yaml.safe_load(out.read_text(encoding="utf-8"))
+    assert data["raw_dir"] == str(readers.sample_mission_dir().resolve())
+    assert data["platform"]["PLATFORM_SERIAL_NUMBER"] == "sg271"
+    assert pathlib.Path(data["raw_dir"], "p2710001.nc").is_file()
+
+
 def test_init_from_one_file_fills_platform_and_its_directory(
     tmp_path: pathlib.Path,
 ) -> None:

@@ -8,7 +8,7 @@
 config_version: 3
 
 raw_dir: ./             # the dive files (p*.nc) sit beside this config
-output_dir: ./          # OG1 file written beside this config (copy the example out first; see `seagliderOG1 example`)
+output_dir: ./          # where the OG1 file is written (your own directory; see `seagliderOG1 init --example`)
 mode: realtime           # realtime | delayed
 dives: null             # [first, last] dive numbers; null = all files present
 repair: false           # run repair_files on the basestation files (writes the raw_dir tree)
@@ -24,12 +24,12 @@ platform:               # 'init --from' fills these; fill any null before valida
   platform_maker_vocabulary: https://vocab.nerc.ac.uk/collection/B75/current/ORG00202/   # optional -> attribute on PLATFORM_MAKER; e.g. https://vocab.nerc.ac.uk/collection/B75/current/ORG00142/
   GLIDER_FIRMWARE_VERSION: seaglider 67.01   # optional -> variable; from seaglider_software_version
   LANDSTATION_VERSION: basestation v3.0.6   # optional -> variable; from base_station_version
-  WMO_IDENTIFIER: 0-22000-0-8901140   # optional -> variable; from wmo_identifier
+  WMO_IDENTIFIER: "8901140"   # optional -> variable; the WMO platform number (the WIGOS id is 0-22000-0-8901140)
   #PLATFORM_NAME: null   # optional -> variable; local or nickname of the glider
   TELECOM_TYPE: Iridium   # optional -> variable; e.g. Iridium (comma-separated for several)
-  TRACKING_SYSTEM: Argos   # optional -> variable; e.g. ARGOS, GPS
-  BATTERY_TYPE: null   # optional -> variable; see the OG1 battery_type vocabulary
-  BATTERY_PACK: null   # optional -> variable; battery packaging
+  TRACKING_SYSTEM: "gps"   # optional -> variable; e.g. ARGOS, GPS
+  BATTERY_TYPE: lithium   # optional -> variable; see the OG1 battery_type vocabulary
+  BATTERY_PACK: "3 x 15V battery"   # optional -> variable; battery packaging
 
 local_config: null   # optional path to a directory of local config overrides; read once the feature lands
 
@@ -43,11 +43,11 @@ identity_and_discovery:   # -> global attributes; who and where: identity and di
 
 rights_and_access:   # -> global attributes; rights and access globals
   doi: null   # highly desirable -> global attribute; e.g. https://doi.org/...
-  license: "Sample of three dives released for demonstration under CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/); the full sg271 dataset is embargoed until 2028-03-08."
+  license: "CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/)"
   acknowledgment: "Funded by the Deutsche Forschungsgemeinschaft (DFG) under the grant numbers 558671572 and 544335393."
 
 provenance_and_processing:   # -> global attributes; provenance globals
-  comment: null   # suggested -> global attribute; overrides a comment global the basestation files carry
+  comment: "Three-dive sample of the sg271 Drygalski Trough mission (PycnMix) released for demonstration; the full dataset is embargoed until 2028-03-08."   # suggested -> global attribute
 
 global_attributes:  # any other OG1 global, written as given
   institution: "University of Hamburg"
