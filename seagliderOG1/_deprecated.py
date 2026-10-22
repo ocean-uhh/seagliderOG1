@@ -14,11 +14,37 @@ wrappers) so resolving that filter category does not pull in xarray.
 
 import os
 import warnings
+from collections.abc import Mapping
 
 __all__: list[str] = []
 
 _VERSION = "0.3.0"
 _URL = "https://ocean-uhh.github.io/seagliderOG1/migrating_0_1_0.html"
+
+# The pre-0.1.0 names that stay importable and warn (tiers A/B), bare names only. The one
+# list the public-API guard reads (so it cannot drift from a hand-kept copy); the module
+# bottoms bind these to _renamed/convert_to_OG1/save_dataset wrappers. ``show_*`` are NOT
+# here — they are real 0.1.0 public names that merely regained a path argument.
+# 0.3.0 removal deletes: this module, convertOG1.py, and the "deprecated" block at the
+# bottom of readers/writers/tools/contributors/plotters/vocabularies.
+SHIM_NAMES = frozenset(
+    {
+        "load_basestation_files",
+        "load_first_basestation_file",
+        "scan_and_repair_files",
+        "repair_netcdf_time_metadata_inplace",
+        "profnum_from_filename",
+        "glider_sn_from_filename",
+        "load_sample_dataset",
+        "save_dataset",
+        "calc_Z",
+        "assign_phase",
+        "assign_profile_number",
+        "registry_institutions",
+        "normalize_orcid",
+        "normalize_role",
+    }
+)
 
 
 class SeagliderDeprecationWarning(DeprecationWarning):
@@ -93,7 +119,11 @@ def _accept_path(func: object, name: str) -> object:
             )
             import xarray as xr
 
-            with xr.open_dataset(data, engine="netcdf4", decode_timedelta=False) as ds:
+            # decode_cf=False keeps units/calendar on the variables (not moved to
+            # .encoding), so show_* reports the same attributes v0.0.2's raw read did.
+            with xr.open_dataset(
+                data, engine="netcdf4", decode_cf=False, decode_timedelta=False
+            ) as ds:
                 return func(ds, *args, **kwargs)
         return func(data, *args, **kwargs)
 
@@ -126,6 +156,34 @@ def _removed(qualname: str, reason: str) -> None:
     raise AttributeError(msg)
 
 
+def install_removed(module_globals: dict, removed: dict[str, str]) -> None:
+    """Install a module ``__getattr__`` that raises for each tier-C removed name.
+
+    The one mechanism behind every removed name: call it at a module's bottom,
+    ``_deprecated.install_removed(globals(), {name: reason})``. A removed name raises
+    :func:`_removed` (an ``AttributeError`` naming why and the replacement); any other
+    missing name gets the ordinary module ``AttributeError``.
+
+    Parameters
+    ----------
+    module_globals : dict
+        The calling module's ``globals()``.
+    removed : dict of str to str
+        Removed name to the reason/replacement wording for its error.
+
+    """
+    full = module_globals["__name__"]
+    short = full.rsplit(".", 1)[-1]
+
+    def __getattr__(name: str) -> object:
+        if name in removed:
+            _removed(f"{short}.{name}", removed[name])
+        msg = f"module {full!r} has no attribute {name!r}"
+        raise AttributeError(msg)
+
+    module_globals["__getattr__"] = __getattr__
+
+
 # --- tier B adapters (delegate, reshape, warn) -------------------------------
 
 
@@ -144,7 +202,8 @@ def convert_to_OG1(ds_or_list: object, contrib_to_append: dict | None = None) ->
     Returns
     -------
     tuple of (xarray.Dataset, list of str)
-        The converted dataset and its data-variable names.
+        The converted dataset and, as v0.0.2 returned, the sorted union of the input
+        basestation variable names (coordinates included).
 
     """
     _warn("convertOG1.convert_to_OG1", "seagliderOG1.convert")
@@ -152,20 +211,34 @@ def convert_to_OG1(ds_or_list: object, contrib_to_append: dict | None = None) ->
 
     from seagliderOG1 import convert
 
-    datasets = [ds_or_list] if isinstance(ds_or_list, xr.Dataset) else list(ds_or_list)
+    if isinstance(ds_or_list, xr.Dataset):
+        datasets = [ds_or_list]
+    elif isinstance(ds_or_list, str | bytes | Mapping) or not hasattr(
+        ds_or_list, "__iter__"
+    ):
+        msg = "convert_to_OG1 takes a Dataset or a sequence of Datasets."
+        raise TypeError(msg)
+    else:
+        datasets = list(ds_or_list)
     contributors, institutions = _split_contrib_to_append(contrib_to_append)
     ds = convert(datasets, contributors=contributors, institutions=institutions)
-    return ds, list(ds.data_vars)
+    # v0.0.2's second return was the union of the INPUT basestation variable names (not
+    # the OG1 output names); reproduce it so an old caller indexing by it still works.
+    var_list = sorted({str(name) for d in datasets for name in d.variables})
+    return ds, var_list
 
 
 def _split_contrib_to_append(contrib: object) -> tuple:
     """Translate the v0.0.2 ``contrib_to_append`` into ``(contributors, institutions)`` records.
 
     A list of records passes through as ``contributors``. The flat dict form (the keys of
-    the deleted ``OG1_author.yaml``) maps ``contributor_*`` to one contributor record and
-    ``contributing_institutions*`` to one institution record; ``*_vocabulary`` keys are
-    dropped (the converter writes them). Any other key raises, showing the records built so
-    the caller sees the new shape.
+    the deleted ``OG1_author.yaml``) maps ``contributor_*`` to contributor records and
+    ``contributing_institutions*`` to institution records. v0.0.2's comma convention is
+    honoured: a comma-joined ``contributor_name`` splits into one record per name, and a
+    comma-joined ``role`` / ``email`` with the same count is paired positionally (a single
+    value applies to all). ``*_vocabulary`` keys are dropped (the converter writes them).
+    Anything that cannot be mapped unambiguously — an unknown key, a value with no name, a
+    count mismatch — raises showing the records it would have built; nothing is dropped.
     """
     if contrib is None:
         return None, None
@@ -174,15 +247,6 @@ def _split_contrib_to_append(contrib: object) -> tuple:
     if not isinstance(contrib, dict):
         msg = f"contrib_to_append must be a dict or a list of records, not {type(contrib).__name__}."
         raise TypeError(msg)
-    person = {
-        "name": contrib.get("contributor_name"),
-        "email": contrib.get("contributor_email"),
-        "role": contrib.get("contributor_role"),
-    }
-    institution = {
-        "name": contrib.get("contributing_institutions"),
-        "role": contrib.get("contributing_institutions_role"),
-    }
     known = {
         "contributor_name",
         "contributor_email",
@@ -190,33 +254,77 @@ def _split_contrib_to_append(contrib: object) -> tuple:
         "contributing_institutions",
         "contributing_institutions_role",
     }
-    extra = [
+    problems = [
         key for key in contrib if key not in known and not key.endswith("_vocabulary")
     ]
-    if extra:
-        contributors = (
-            [{k: v for k, v in person.items() if v}] if person.get("name") else []
-        )
-        institutions = (
-            [{k: v for k, v in institution.items() if v}]
-            if institution.get("name")
-            else []
-        )
+    contributors = _records(
+        contrib,
+        "contributor_name",
+        {"email": "contributor_email", "role": "contributor_role"},
+        problems,
+    )
+    institutions = _records(
+        contrib,
+        "contributing_institutions",
+        {"role": "contributing_institutions_role"},
+        problems,
+    )
+    if problems:
         msg = (
-            f"contrib_to_append keys {extra} have no place in the new contributors/institutions "
-            f"records; pass contributors={contributors} and institutions={institutions} to "
+            f"contrib_to_append {problems} cannot be mapped to the new records; pass "
+            f"contributors={contributors or []} and institutions={institutions or []} to "
             "seagliderOG1.convert instead."
         )
         raise ValueError(msg)
-    contributors = (
-        [{k: v for k, v in person.items() if v}] if person.get("name") else None
-    )
-    institutions = (
-        [{k: v for k, v in institution.items() if v}]
-        if institution.get("name")
-        else None
-    )
     return contributors, institutions
+
+
+def _records(
+    contrib: dict, name_key: str, extra_keys: dict[str, str], problems: list
+) -> list | None:
+    """Build one record per comma-split name, pairing each extra field positionally.
+
+    Parameters
+    ----------
+    contrib : dict
+        The v0.0.2 flat dict.
+    name_key : str
+        The key holding the (possibly comma-joined) name(s).
+    extra_keys : dict of str to str
+        Record-field name to the flat dict key holding its (possibly comma-joined) value(s).
+    problems : list
+        Appended to (in place) with a message for each value that cannot be mapped.
+
+    Returns
+    -------
+    list of dict or None
+        One record per name, or None when no name is given.
+
+    """
+    name = contrib.get(name_key)
+    extras = {field: contrib.get(key) for field, key in extra_keys.items()}
+    if not name:
+        if any(v is not None for v in extras.values()):
+            problems.append(f"{'/'.join(extra_keys.values())} without {name_key}")
+        return None
+    names = [part.strip() for part in str(name).split(",")]
+    records: list[dict] = [{"name": n} for n in names]
+    for field, value in extras.items():
+        if value is None:
+            continue
+        parts = [part.strip() for part in str(value).split(",")]
+        if len(parts) == 1:
+            for record in records:
+                record[field] = parts[0]
+        elif len(parts) == len(names):
+            for record, part in zip(records, parts, strict=True):
+                record[field] = part
+        else:
+            problems.append(
+                f"{name_key} has {len(names)} names but {extra_keys[field]} has "
+                f"{len(parts)} values"
+            )
+    return records
 
 
 def save_dataset(ds: object, output_file: str | os.PathLike | None = None) -> bool:
@@ -249,31 +357,3 @@ def save_dataset(ds: object, output_file: str | os.PathLike | None = None) -> bo
 
     writers.write(ds, output_file, overwrite=True)
     return True
-
-
-def load_sample_dataset(dataset_name: object = None) -> object:  # noqa: ARG001  # kept for v0.0.2 signature compatibility; the online registry is gone, so it is ignored
-    """Return the bundled sample; deprecated alias of ``readers.load_sample_basestation``.
-
-    v0.0.2 fetched ``dataset_name`` from an online pooch registry; that registry was removed,
-    so this returns the bundled sg005 sample regardless of ``dataset_name`` (read your own
-    file with :func:`seagliderOG1.readers.read_file` for anything else).
-
-    Parameters
-    ----------
-    dataset_name : object, optional
-        Ignored; accepted for signature compatibility.
-
-    Returns
-    -------
-    xarray.Dataset
-        The bundled sample dataset.
-
-    """
-    _warn(
-        "readers.load_sample_dataset",
-        "seagliderOG1.readers.load_sample_basestation (the bundled sample; the online "
-        "pooch registry was removed — use readers.read_file for your own file)",
-    )
-    from seagliderOG1 import readers
-
-    return readers.load_sample_basestation()

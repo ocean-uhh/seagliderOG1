@@ -579,15 +579,10 @@ REQUIRED_GLOBALS: dict[str, dict[str, str]] = global_attrs["required"]
 # --- deprecated v0.0.2 names (removed in 0.3.0; see seagliderOG1._deprecated) ----------
 from seagliderOG1 import _deprecated  # noqa: E402  # shim follows the definitions above
 
-_REMOVED_VOCAB = dict.fromkeys(
-    ("load_default_contributors", "contrib_to_append"),
-    "contributors come from the mission.yaml contributors: block now.",
+_deprecated.install_removed(
+    globals(),
+    dict.fromkeys(
+        ("load_default_contributors", "contrib_to_append"),
+        "contributors come from the mission.yaml contributors: block now.",
+    ),
 )
-
-
-def __getattr__(name: str) -> object:
-    """Raise for a v0.0.2 name removed in 0.1.0, else the normal AttributeError."""
-    if name in _REMOVED_VOCAB:
-        _deprecated._removed(f"vocabularies.{name}", _REMOVED_VOCAB[name])
-    msg = f"module {__name__!r} has no attribute {name!r}"
-    raise AttributeError(msg)

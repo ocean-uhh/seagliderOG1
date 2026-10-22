@@ -682,4 +682,16 @@ glider_sn_from_filename = _deprecated._renamed(
     "readers.glider_sn_from_filename",
     "readers.serial_from_filename",
 )
-load_sample_dataset = _deprecated.load_sample_dataset
+
+# load_sample_dataset is tier C: v0.0.2 fetched a named sample from an online pooch
+# registry, which was removed, so there is nothing to delegate to (returning the bundled
+# sample for any key would be a silent substitution).
+_deprecated.install_removed(
+    globals(),
+    {
+        "load_sample_dataset": (
+            "the online sample registry was removed in 0.1.0; the bundled sample is "
+            "readers.load_sample_basestation(), and any file is readers.read_file(path)."
+        ),
+    },
+)

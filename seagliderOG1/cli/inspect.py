@@ -320,12 +320,14 @@ def run(args: argparse.Namespace) -> int:
         return 0
 
     try:
+        # The un-wrapped implementations: the CLI must not route through the deprecation
+        # shim that the public plotters.show_* names carry (see plotters.py).
         if args.attrs:
-            table = plotters.show_attributes(ds)
+            table = plotters._show_attributes(ds)
         elif args.by_dimension:
-            table = plotters.show_variables_by_dimension(ds, args.by_dimension)
+            table = plotters._show_variables_by_dimension(ds, args.by_dimension)
         else:
-            table = plotters.show_variables(ds)
+            table = plotters._show_variables(ds)
     finally:
         ds.close()
 

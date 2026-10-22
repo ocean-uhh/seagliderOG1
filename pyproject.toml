@@ -133,4 +133,8 @@ omit = ["seagliderOG1/reports/_vendored/*"]
 # The shim layer gates itself: SeagliderDeprecationWarning becomes an error, so the suite
 # fails if the package ever calls its own v0.0.2 shims. The category is scoped, so
 # third-party DeprecationWarnings (netCDF4/xarray/NumPy) stay warnings. See _deprecated.py.
+# Pytest-scoped: it resolves the dotted category by importing the module, which CPython's
+# -W / PYTHONWARNINGS parser cannot do, so the guard holds for what the suite executes, not
+# at arbitrary runtime. (cli/inspect.py calls the un-wrapped plotters._show_* so the package
+# cannot trip this from inside, even if a path were later passed there.)
 filterwarnings = ["error::seagliderOG1._deprecated.SeagliderDeprecationWarning"]

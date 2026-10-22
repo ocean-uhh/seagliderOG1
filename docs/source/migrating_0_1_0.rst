@@ -4,8 +4,10 @@ Migrating to 0.1.0
 ==================
 
 0.1.0 reshapes the public API into the OceanGliders family's verbs and changes the output
-format. To ease the move, the v0.0.2 names are kept for one release: most are **still
+format. To ease the move, the pre-0.1.0 names are kept for one release: most are **still
 importable and warn**, a few are **removed and raise** with a message that points back here.
+("Pre-0.1.0" because a few of these names never shipped in a tagged release — they lived on
+``main`` between 0.0.2 and 0.1.0; they are marked where they appear.)
 
 This page is organised by what you do in a notebook — load, convert, write, plot, metadata —
 so you can find the line you have and read the line to write. Each old name is marked:
@@ -55,20 +57,20 @@ Load dive files
 
    # before
    list_datasets = readers.load_basestation_files(input_dir, start_profile=1, end_profile=5)
-   ds = readers.load_sample_dataset()           # load_sample_dataset (warns)
 
    # after
    list_datasets = sg.read(input_dir, dives=(1, 5))
-   ds = readers.load_sample_basestation()       # a local sample path, not a registry key
 
 ``read`` takes a ``dives=(first, last)`` tuple; ``readers.read_mission(source, start, end)`` is
 the same function with the old positional arguments if you prefer them.
+``readers.load_sample_dataset`` *(raises)* is gone (see below); the bundled sample is
+``readers.load_sample_basestation()`` and any file is ``readers.read_file(path)``.
 
 Convert
 -------
 
 ``convertOG1.convert_to_OG1`` *(warns)* → ``convert``. The old module ``convertOG1.py`` is a
-tombstone that warns on import; the conversion lives in the top-level verb now. ``convert``
+tombstone; importing it is silent, and each name warns or raises when used. ``convert``
 returns a single ``Dataset`` (not a ``(dataset, var_list)`` tuple) and takes a sequence:
 
 .. code-block:: python
@@ -88,7 +90,9 @@ Write
 
 ``writers.save_dataset`` *(warns)* → ``write``. The old default path (``../test.nc``) is not
 reproduced — ``path`` is required — and ``write`` returns the ``pathlib.Path`` written rather
-than a bool:
+than a bool. Note a behaviour change: v0.0.2 coerced an attribute netCDF cannot store (a bool
+or dict global) to text and returned ``False`` on failure; ``write`` raises ``TypeError`` naming
+it, and writes with compression.
 
 .. code-block:: python
 
@@ -157,34 +161,38 @@ returning something different from what it used to.
   since 0.1.0; call ``seagliderOG1.convert``.
 - ``standardise_OG10`` (and its ``OG1_mapping`` argument) — the OG1 name/attribute/unit step is
   internal to ``seagliderOG1.convert`` since 0.1.0; call ``seagliderOG1.convert``.
+- ``readers.load_sample_dataset`` — it fetched a named sample from an online registry that was
+  removed; the bundled sample is ``readers.load_sample_basestation()`` and any file is
+  ``readers.read_file(path)``. (Returning the bundled sample for an arbitrary key would be a
+  silent substitution.)
 
 Other renamed names
 -------------------
 
-All *(warns)* — importable until 0.3.0, delegating to the new name:
+All *(warns)* — importable until 0.3.0, delegating to the new name. Rows marked *(main only)*
+never shipped in a tagged release; they lived on ``main`` between 0.0.2 and 0.1.0, so if you
+installed from PyPI you never had them — they are shimmed for development installs.
 
 .. list-table::
    :header-rows: 1
    :widths: 50 50
 
-   * - v0.0.2
+   * - old name
      - 0.1.0
    * - ``readers.load_first_basestation_file``
      - ``readers.read_file``
-   * - ``readers.scan_and_repair_files``
+   * - ``readers.scan_and_repair_files`` *(main only)*
      - ``readers.repair_files``
-   * - ``readers.repair_netcdf_time_metadata_inplace``
+   * - ``readers.repair_netcdf_time_metadata_inplace`` *(main only)*
      - ``readers.repair_time_metadata``
-   * - ``readers.profnum_from_filename`` / ``glider_sn_from_filename``
+   * - ``readers.profnum_from_filename`` / ``glider_sn_from_filename`` *(main only)*
      - ``readers.profile_number_from_filename`` / ``serial_from_filename``
    * - ``tools.calc_Z`` / ``assign_phase`` / ``assign_profile_number``
      - ``tools.add_depth`` / ``add_phase`` / ``add_profile_number``
-   * - ``convert.apply_keep_variables(ds, keep)``
+   * - ``convertOG1.apply_keep_variables(ds, keep)``
      - ``keep_variables(ds, names)``
-   * - ``contributors.registry_institutions``
-     - ``contributors.institution_registry``
-   * - ``contributors.normalize_orcid`` / ``normalize_role``
-     - ``contributors.canonical_orcid`` / ``canonical_role``
+   * - ``contributors.registry_institutions`` / ``normalize_orcid`` / ``normalize_role`` *(main only)*
+     - ``contributors.institution_registry`` / ``canonical_orcid`` / ``canonical_role``
    * - ``firstrun=`` keyword (e.g. ``tools.convert_units_var(..., firstrun=...)``)
      - removed; accepted and ignored with a warning. Progress goes through
        ``logging.getLogger("seagliderOG1")`` (the CLI ``-v`` sets the level)

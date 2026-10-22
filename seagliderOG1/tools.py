@@ -542,11 +542,4 @@ _REMOVED_TOOLS.update(
         "a conversion-pipeline internal, private since 0.1.0; call seagliderOG1.convert.",
     )
 )
-
-
-def __getattr__(name: str) -> object:
-    """Raise for a v0.0.2 name removed in 0.1.0, else the normal AttributeError."""
-    if name in _REMOVED_TOOLS:
-        _deprecated._removed(f"tools.{name}", _REMOVED_TOOLS[name])
-    msg = f"module {__name__!r} has no attribute {name!r}"
-    raise AttributeError(msg)
+_deprecated.install_removed(globals(), _REMOVED_TOOLS)

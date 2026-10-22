@@ -77,11 +77,14 @@ def test_convert_to_OG1_returns_the_old_tuple_and_wraps_a_single_dataset():
     with pytest.warns(SeagliderDeprecationWarning):
         result, var_list = convert_to_OG1(ds)
     assert isinstance(result, xr.Dataset)
-    assert var_list == list(result.data_vars)
+    # v0.0.2's var_list is the INPUT basestation variable names (coords included), not the
+    # OG1 output names — compare against the inputs so a regression to data_vars fails here.
+    assert set(var_list) == {str(v) for v in ds.variables}
+    assert set(var_list) != set(map(str, result.data_vars))
 
 
 def test_convert_to_OG1_translates_the_contrib_dict():
-    """The flat contrib_to_append dict maps to a contributors record; unknown keys raise."""
+    """The flat contrib_to_append dict maps to a contributors record end to end."""
     ds = readers.read_file(str(DATA_DIR))
     with pytest.warns(SeagliderDeprecationWarning):
         out, _ = convert_to_OG1(
@@ -92,11 +95,29 @@ def test_convert_to_OG1_translates_the_contrib_dict():
             },
         )
     assert "Jane Doe" in out.attrs["contributor_name"]
-    with (
-        pytest.warns(SeagliderDeprecationWarning),
-        pytest.raises(ValueError, match="no place"),
+
+
+def test_split_contrib_to_append_comma_splits_and_refuses_the_ambiguous():
+    """Comma-joined names split and pair positionally; partial/unknown/mismatch raise, never drop."""
+    from seagliderOG1._deprecated import _split_contrib_to_append
+
+    contributors, _ = _split_contrib_to_append(
+        {"contributor_name": "Ann, Bob", "contributor_role": "PI, Owner"}
+    )
+    assert contributors == [
+        {"name": "Ann", "role": "PI"},
+        {"name": "Bob", "role": "Owner"},
+    ]
+    for bad in (
+        {"nonsense": "x"},  # unknown key
+        {"contributor_role": "PI"},  # value without a name
+        {
+            "contributor_name": "A, B",
+            "contributor_role": "PI, Owner, X",
+        },  # count mismatch
     ):
-        convert_to_OG1(ds, contrib_to_append={"nonsense": "x"})
+        with pytest.raises(ValueError, match="cannot be mapped"):
+            _split_contrib_to_append(bad)
 
 
 def test_save_dataset_requires_a_path_and_writes(
@@ -115,11 +136,10 @@ def test_save_dataset_requires_a_path_and_writes(
         writers.save_dataset(ds)
 
 
-def test_load_sample_dataset_returns_the_bundled_sample():
-    """load_sample_dataset warns and returns the bundled sample (the online registry is gone)."""
-    with pytest.warns(SeagliderDeprecationWarning):
-        ds = readers.load_sample_dataset()
-    assert isinstance(ds, xr.Dataset)
+def test_load_sample_dataset_is_removed():
+    """load_sample_dataset is tier C: the online registry is gone, so access raises."""
+    with pytest.raises(AttributeError, match="registry was removed"):
+        _ = readers.load_sample_dataset
 
 
 def test_show_contents_accepts_a_path_with_a_warning(sg005_og1: pathlib.Path):
@@ -154,10 +174,13 @@ def test_tier_c_raises_with_the_migration_message(module, name, needle):
     assert needle in message
 
 
-def test_convertOG1_tier_c_raises():
-    """convertOG1.process_and_save_data and standardise_OG10 raise with a message."""
-    with pytest.warns(SeagliderDeprecationWarning):
-        from seagliderOG1 import convertOG1
+def test_convertOG1_imports_silently_and_removed_names_raise():
+    """Importing convertOG1 is silent (so -W error can import it); removed names raise."""
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", SeagliderDeprecationWarning)
+        from seagliderOG1 import convertOG1  # no import-time warning
     with pytest.raises(AttributeError, match="mission.yaml"):
         _ = convertOG1.process_and_save_data
     with pytest.raises(AttributeError, match="internal to seagliderOG1.convert"):
