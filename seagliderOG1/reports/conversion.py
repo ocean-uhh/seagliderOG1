@@ -11,7 +11,7 @@ the History table), and Scalar parameters last (split Renamed / Log / sg_calib_c
 Everything else, per-dive values decoded, each group collapsible).
 
 Everything but the presence section and the sidecar-fed columns is read from the file alone
-via :func:`seagliderOG1.convert.conversion_ledger`, the vendored row builders, and the
+via ``conversion_ledger``, the vendored row builders, and the
 vendored table macros; the sidecar-fed columns show "—" and the presence section says so
 when the ``<id>_conversion.json`` beside the file is missing.
 """
@@ -30,8 +30,8 @@ import yaml
 if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
-from seagliderOG1 import __version__, contributors, convert, vocabularies, writers
-from seagliderOG1.reports import design
+from seagliderOG1 import __version__, contributors, vocabularies, writers
+from seagliderOG1.reports import _record, design
 from seagliderOG1.reports._env import get_template
 from seagliderOG1.reports._vendored import figure_png, nc_tables
 from seagliderOG1.reports._vendored.design_tokens import COLORS, W_FULL, W_THREE_FIFTHS
@@ -643,7 +643,7 @@ def _reconciliation(
     ds : xarray.Dataset
         An open OG1 dataset.
     ledger : dict
-        The parsed ledger from :func:`seagliderOG1.convert.conversion_ledger`.
+        The parsed ledger from ``conversion_ledger``.
 
     Returns
     -------
@@ -797,7 +797,7 @@ def _presence_rows(patterns: list[dict], total: int) -> list[dict[str, object]]:
     Parameters
     ----------
     patterns : list of dict
-        From :func:`seagliderOG1.convert.presence_patterns`.
+        From ``presence_patterns``.
     total : int
         Input dives in the mission.
 
@@ -839,7 +839,7 @@ def _strip_matrix(
     Parameters
     ----------
     patterns : list of dict
-        From :func:`seagliderOG1.convert.presence_patterns`, in display order (not empty).
+        From ``presence_patterns``, in display order (not empty).
 
     Returns
     -------
@@ -889,7 +889,7 @@ def draw_presence_strips(patterns: list[dict], dives: list[int]) -> "Figure | No
     Parameters
     ----------
     patterns : list of dict
-        From :func:`seagliderOG1.convert.presence_patterns`.
+        From ``presence_patterns``.
     dives : list of int
         The input dive numbers, in order.
 
@@ -1900,7 +1900,7 @@ def _config_suggestions(
     ----------
     sidecar : dict or None
         The conversion sidecar; its ``config`` (written by
-        :func:`seagliderOG1.convert.process_mission`), ``presence``,
+        :func:`seagliderOG1.process`), ``presence``,
         ``platform_from_file``, ``institution_from_file`` and
         ``basestation_globals`` are read.
     platform_gaps : dict of str to str, optional
@@ -2240,12 +2240,12 @@ def render_conversion(
     Parameters
     ----------
     path : str or pathlib.Path
-        An OG1 netCDF file written by :func:`seagliderOG1.convert.to_og1`.
+        An OG1 netCDF file written by :func:`seagliderOG1.convert`.
     title : str, optional
         The page title; defaults to the file name.
     verify : bool, optional
         Check the file against the SHA-256 in its sidecar and warn when it changed
-        (see :func:`seagliderOG1.convert.conversion_sidecar`). Default is False: a page
+        (see the conversion record). Default is False: a page
         written straight after the conversion has nothing to check.
 
     Returns
@@ -2262,16 +2262,16 @@ def render_conversion(
     # Several sections read the conversion sidecar beside the file (the before → after table,
     # the Samples in column, the Valid % baseline); read it once here and say so loudly where
     # it is missing. Which dives each variable came from is known only at conversion time.
-    sidecar = convert.conversion_sidecar(path, verify=verify)
+    sidecar = _record.conversion_sidecar(path, verify=verify)
     inputs = sidecar.get("inputs") if sidecar else None
     dim_samples = _dimension_samples(inputs)
 
     ds = xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False)
     try:
-        # A draft (process_mission(draft=True), the draft verb) says so in a global; the
+        # A draft (the draft verb, the draft verb) says so in a global; the
         # page then shows the basestation's own globals instead of the OG1 ones.
         # By value, not by name: a file could carry some other global called draft.
-        draft = ds.attrs.get("draft") == convert.DRAFT_NOTE
+        draft = ds.attrs.get("draft") == vocabularies.DRAFT_NOTE
         ds_id = ds.attrs.get("id", "")
         conventions = _conventions_check(ds)
         platform_gaps = _platform_gaps(ds)
@@ -2287,7 +2287,7 @@ def render_conversion(
             ].items()
             if source == "config" and not str(ds.attrs.get(name, "")).strip()
         ]
-        ledger = convert.conversion_ledger(ds)
+        ledger = _record.conversion_ledger(ds)
         groups, var_source = _variable_groups_by_original_dimension(ds)
         # Each Variables group gets its own Valid % baseline caption (the share of the shared
         # axis its dimension supplied), rendered one group at a time through the vendored macro.
@@ -2373,7 +2373,7 @@ def render_conversion(
 
     presence = sidecar.get("presence") if sidecar else None
     if presence:
-        patterns = convert.presence_patterns(presence)
+        patterns = _record.presence_patterns(presence)
         presence_rows = _presence_rows(patterns, len(presence["dives"]))
         presence_strips = figure_png.render_b64(
             draw_presence_strips,
@@ -2381,7 +2381,7 @@ def render_conversion(
             presence["dives"],
             source="conversion.py:draw_presence_strips",
         )
-        presence_summary = convert.presence_summary(presence) or (
+        presence_summary = _record.presence_summary(presence) or (
             f"Every variable has values on every one of the {len(presence['dives'])} "
             "input dives."
         )
@@ -2407,7 +2407,7 @@ def render_conversion(
         duplicate_groups=duplicate_groups,
         reconciliation=reconciliation,
         reconciliation_caption=reconciliation_caption,
-        sidecar_present=sidecar is not None,
+        record_present=sidecar is not None,
         fate_histogram=fate_histogram,
         fate_histogram_source=fate_histogram_source,
         dimensions=dimensions,
@@ -2428,7 +2428,7 @@ def render_conversion(
         presence_strips=presence_strips,
         presence_strips_source=figure_png.source_of(presence_strips),
         presence_summary=presence_summary,
-        sidecar_name=writers.conversion_path(path, ".json").name,
+        record_name=writers.conversion_path(path, ".json").name,
         draft=draft,
         conventions=conventions,
         draft_snippets=_draft_snippets(

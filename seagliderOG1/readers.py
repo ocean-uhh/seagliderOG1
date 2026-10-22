@@ -23,12 +23,13 @@ from tqdm import tqdm
 _log = logging.getLogger(__name__)
 
 __all__ = [
-    "load_sample_basestation",
-    "read_mission",
-    "read_file",
     "discover_missions",
-    "validate_filename",
+    "load_sample_basestation",
+    "read",
+    "read_file",
+    "read_mission",
     "repair_files",
+    "validate_filename",
 ]
 
 script_dir = pathlib.Path(__file__).parent.absolute()
@@ -377,6 +378,36 @@ def read_file(source: str | os.PathLike[str]) -> xr.Dataset:
     start_profile = profile_number_from_filename(filename)
     datasets = read_mission(source, start_profile, start_profile)
     return datasets[0]
+
+
+def read(
+    raw_dir: str | os.PathLike[str],
+    dives: tuple[int, int] | None = None,
+    *,
+    repair: bool = False,
+) -> list[xr.Dataset]:
+    """Read a mission directory of basestation files into datasets.
+
+    The public form of :func:`read_mission`: one directory in, a list of datasets out.
+
+    Parameters
+    ----------
+    raw_dir : str or os.PathLike
+        A mission directory holding basestation files (``pSSSDDDD*.nc``).
+    dives : tuple of (int, int), optional
+        First and last dive to read, inclusive. Default is None (every file present).
+    repair : bool, optional
+        When True, run :func:`repair_files` first (it rewrites files with inconsistent
+        time metadata in the source tree). Default is False.
+
+    Returns
+    -------
+    list of xarray.Dataset
+        The basestation datasets, ordered by filename.
+
+    """
+    first, last = dives if dives is not None else (None, None)
+    return read_mission(raw_dir, first, last, repair=repair)
 
 
 def read_mission(

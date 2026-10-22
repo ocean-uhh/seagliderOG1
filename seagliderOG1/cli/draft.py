@@ -3,7 +3,7 @@
 Runs the real converter with no mission config and writes, into ``-o DIR``:
 ``<id>_draft.nc``, ``<id>_draft_conversion.html`` (the conversion page in draft form,
 with the basestation's own global attributes), ``<id>_draft_conversion.json`` (the
-sidecar) and ``<id>_draft_mission.yaml`` (an ``init`` template with the values the
+conversion record) and ``<id>_draft_mission.yaml`` (an ``init`` template with the values the
 draft could work out from every dive filled in). None of it is an OG1 file: every name
 ends ``_draft``, the netCDF carries a ``draft`` global and no ``OG-1.0`` in
 ``Conventions``.
@@ -89,14 +89,15 @@ def run(args: argparse.Namespace) -> int:
     """
     import json
 
-    from seagliderOG1 import convert, writers
+    from seagliderOG1 import _convert, writers
+    from seagliderOG1.reports import _record
 
     raw_dir = pathlib.Path(args.raw_dir)
     if not raw_dir.is_dir():
         print(f"error: --raw-dir is not a directory: {raw_dir}", file=sys.stderr)
         return 1
     try:
-        path = convert.process_mission(
+        path = _convert._convert_mission(
             raw_dir,
             args.output_dir,
             dives=tuple(args.dives) if args.dives else None,
@@ -116,7 +117,7 @@ def run(args: argparse.Namespace) -> int:
 
     # The proposal: what init writes, plus the dive range the draft read and the
     # platform fields the converter derived from the files (from the sidecar).
-    # process_mission refused to start if it already existed (without --force). The
+    # the converter refused to start if it already existed (without --force). The
     # derived id goes in a comment, not in identity_and_discovery.id: a fixed id would go
     # stale if dives change.
     sidecar_path = writers.conversion_path(path, ".json")
@@ -129,8 +130,8 @@ def run(args: argparse.Namespace) -> int:
     platform = sidecar.get("platform_from_file")
     if platform is None:
         print(
-            "warning: the sidecar has no platform_from_file; the proposed platform: "
-            "block is all null.",
+            "warning: the conversion record has no platform_from_file; the proposed "
+            "platform: block is all null.",
             file=sys.stderr,
         )
     proposal = writers.proposal_path(path)
@@ -155,7 +156,7 @@ def run(args: argparse.Namespace) -> int:
         proposal,
     ):
         print(f"wrote {written}")
-    summary = convert.presence_summary(sidecar["presence"])
+    summary = _record.presence_summary(sidecar["presence"])
     if summary:
         print(f"  {path.stem}: {summary}")
     return 0

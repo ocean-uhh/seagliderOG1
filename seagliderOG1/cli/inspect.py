@@ -1,7 +1,7 @@
 """The ``inspect`` verb: the inventory of one netCDF file.
 
 Prints a text inventory (useful at sea, no browser). ``inspect --conversion`` prints the
-conversion ledger; the HTML conversion page is the ``report`` verb's. Works on a basestation
+conversion record; the HTML conversion page is the ``report`` verb's. Works on a basestation
 or an OG1 file.
 """
 
@@ -54,11 +54,10 @@ def _scalar_row(name: str, entry: dict) -> str:
 
 
 def _conversion_text(ds: "xr.Dataset", show_all: bool = False) -> str | None:
-    """Return the conversion ledger as text, or None if the file predates the ledger.
+    """Return the conversion record as text, or None if the file predates the record.
 
-    Reads the parsed ledger from :func:`seagliderOG1.convert.conversion_ledger` (the
-    same accessor the HTML page uses) plus each variable's own attributes — nothing
-    from conversion-time state.
+    Reads the parsed record (the same accessor the HTML page uses) plus each variable's
+    own attributes — nothing from conversion-time state.
 
     Parameters
     ----------
@@ -75,11 +74,11 @@ def _conversion_text(ds: "xr.Dataset", show_all: bool = False) -> str | None:
         file predates the conversion ledger).
 
     """
-    from seagliderOG1 import convert
+    from seagliderOG1.reports import _record
 
     if "conversion_dimensions" not in ds.attrs:
         return None
-    ledger = convert.conversion_ledger(ds)
+    ledger = _record.conversion_ledger(ds)
 
     out = ["Dimensions", f"  {'dimension':22s} {'fate':9s} {'n':>3s}  variables"]
     for dim in sorted(ledger["dimensions"]):
@@ -172,7 +171,7 @@ def _parameter_text(ds: "xr.Dataset", name: str) -> str | None:
         If ``name`` is a per-dive scalar whose value is not valid per-dive JSON.
 
     """
-    from seagliderOG1 import convert
+    from seagliderOG1.reports import _record
 
     if (
         name not in ds.variables
@@ -180,7 +179,7 @@ def _parameter_text(ds: "xr.Dataset", name: str) -> str | None:
     ):
         return None
 
-    entry = convert.conversion_ledger(ds)["scalar_parameters"][name]
+    entry = _record.conversion_ledger(ds)["scalar_parameters"][name]
     units = entry["units"]
     out = [
         f"{name} (per-dive JSON scalar; original_name "
@@ -211,7 +210,7 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
         help="show the inventory of one netCDF file",
         description=(
             "Show the inventory of one basestation or OG1 netCDF file as a text table. "
-            "With --conversion, print the conversion ledger; with --conversion -o, write "
+            "With --conversion, print the conversion record; with --conversion -o, write "
             "the HTML conversion page."
         ),
         epilog=_EPILOG,
@@ -312,8 +311,8 @@ def run(args: argparse.Namespace) -> int:
             ds.close()
         if text is None:
             print(
-                f"error: {args.file} has no conversion ledger (no "
-                "'conversion_dimensions' global); it predates the ledger.",
+                f"error: {args.file} has no conversion record (no "
+                "'conversion_dimensions' global); it predates the record.",
                 file=sys.stderr,
             )
             return 1

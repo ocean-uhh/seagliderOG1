@@ -52,41 +52,43 @@ From Python
 -----------
 
 One call does what ``process`` does for one mission — read, convert, write
-``<output_dir>/<id>.nc`` — and returns the path written:
+``<output_dir>/<id>.nc`` — taking the ``mission.yaml`` as its only argument and returning the
+path written:
 
 .. code-block:: python
 
-   from seagliderOG1 import convert
+   import seagliderOG1 as sg
 
-   path = convert.process_mission(
-       "/data/005/20080606",
-       "output",
-       contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
-       institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],
-       report=True,  # also write output/<id>_conversion.html
-   )
+   path = sg.process("sg005.yaml", overwrite=True, report=True)
 
-It takes ``dives``, ``platform``, ``deployment`` (one mapping of the identity, rights and
-provenance globals the ``mission.yaml`` sections split apart), ``global_attributes``, ``mode``,
-``keep_variables`` and ``repair`` as keyword arguments, and raises ``FileExistsError`` rather
-than overwrite unless ``overwrite=True``.
+To inspect or adjust the configuration before converting, load it, change a value and pass the
+mapping:
+
+.. code-block:: python
+
+   import seagliderOG1 as sg
+
+   cfg = sg.mission.load("sg005.yaml")
+   cfg["rights_and_access"]["doi"] = "10.5281/zenodo.0000000"
+   path = sg.process(cfg, overwrite=True)
+
+``process`` takes ``output_dir``, ``dives``, ``mode``, ``report`` and ``report_dir`` as keyword
+overrides of the configuration, and raises ``FileExistsError`` rather than overwrite unless
+``overwrite=True``.
 
 Step by step
 ^^^^^^^^^^^^
 
-The same pipeline as three calls, for when you want the dataset in hand before writing:
+The same pipeline as separate calls, for when you want the dataset in hand before writing:
 
 .. code-block:: python
 
-   from seagliderOG1 import convert, readers, writers
+   import seagliderOG1 as sg
 
-   datasets = readers.read_mission(source, first, last)
-   ds = convert.to_og1(
-       datasets,
-       contributors=[{"name": "Jane Doe", "role": "PI", "email": "jane@example.org"}],
-       institutions=[{"name": "University of Hamburg (IfM)", "role": "Operator"}],
-   )
-   writers.write(ds, out)
+   cfg = sg.mission.load("sg005.yaml")
+   ds = sg.convert(sg.read(cfg["raw_dir"], dives=cfg.get("dives")), cfg)
+   out = sg.write(ds, "output/out.nc", overwrite=True)
+   sg.report(out)
 
 The worked example in :doc:`the demo notebook <demo-output>` runs this end to end on the
 bundled ``sg005`` sample data.

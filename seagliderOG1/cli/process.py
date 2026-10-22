@@ -2,9 +2,7 @@
 
 Resolves the raw-data directory (a mission directory, or a root of ``SN/DATE`` missions selected
 with ``--all``/``--mission``), converts each with the mission config's contributors,
-institutions, platform and global attributes, and writes ``<output_dir>/<id>.nc``
-(plus ``<id>_conversion.html`` with ``--report``) via
-:func:`seagliderOG1.convert.process_mission`.
+institutions, platform and global attributes, and writes ``<output_dir>/<id>.nc`` (plus ``<id>_conversion.html`` with ``--report``).
 Each mission is attempted independently; one failure does not stop the run.
 """
 
@@ -13,6 +11,7 @@ import fnmatch
 import pathlib
 import sys
 
+from seagliderOG1 import mission as missionlib
 from seagliderOG1.cli import _mission
 
 
@@ -152,13 +151,13 @@ def _print_presence(
         The ``--report-dir`` root the page was written under, if any.
 
     """
-    from seagliderOG1 import convert
     from seagliderOG1.cli import report as report_cmd
+    from seagliderOG1.reports import _record
 
-    sidecar = convert.conversion_sidecar(out_path)
-    if not sidecar or "presence" not in sidecar:
+    record = _record.conversion_sidecar(out_path)
+    if not record or "presence" not in record:
         return
-    summary = convert.presence_summary(sidecar["presence"])
+    summary = _record.presence_summary(record["presence"])
     if summary is None:
         return
     if report:
@@ -184,7 +183,7 @@ def run(args: argparse.Namespace) -> int:
         (see the CLI family convention).
 
     """
-    from seagliderOG1 import convert, readers
+    from seagliderOG1 import _convert, readers
 
     config_path = pathlib.Path(args.config)
     if not config_path.is_file():
@@ -193,12 +192,12 @@ def run(args: argparse.Namespace) -> int:
 
     # Validate the effective raw_dir (the --raw-dir override, if any), not the stale
     # config value, so an override can rescue a config whose own raw_dir is missing.
-    issues = _mission.validate_config(config_path, raw_dir_override=args.raw_dir)
+    issues = missionlib.check(config_path, raw_dir_override=args.raw_dir)
     if _mission.report_issues(issues):
         print("configuration invalid; not converting.", file=sys.stderr)
         return 1
 
-    config = _mission.load_config(config_path)
+    config = missionlib._load_raw(config_path)
     base = config_path.parent
     raw_dir = args.raw_dir if args.raw_dir else config.get("raw_dir")
     source_path = (base / str(raw_dir)).resolve()
@@ -254,14 +253,14 @@ def run(args: argparse.Namespace) -> int:
     converted = skipped = failed = 0
     for mission in selected:
         try:
-            out_path = convert.process_mission(
+            out_path = _convert._convert_mission(
                 mission.path,
                 output_dir,
                 dives=dives,
                 contributors=config.get("contributors"),
                 institutions=config.get("institutions"),
                 platform=config.get("platform"),
-                deployment=_mission.deployment_from_config(config),
+                deployment=missionlib._merge_sections(config),
                 global_attributes=config.get("global_attributes"),
                 sensors=config.get("sensors"),
                 mode=mode,

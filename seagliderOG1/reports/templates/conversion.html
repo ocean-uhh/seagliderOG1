@@ -81,7 +81,7 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 
 <section id="summary">
 <h2>1. Before → after</h2>
-<p class="caption">What the conversion read and what it wrote. The basestation column is read from the conversion sidecar beside the file{% if not sidecar_present %}, which was not found, so its cells show "—"{% endif %}. "same" means the quantity is unchanged by conversion.</p>
+<p class="caption">What the conversion read and what it wrote. The basestation column is read from the conversion record beside the file{% if not record_present %}, which was not found, so its cells show "—"{% endif %}. "same" means the quantity is unchanged by conversion.</p>
 <table class="nc summary">
 <thead><tr><th>Quantity</th><th>Basestation input</th><th>{{ "Draft output" if draft else "OG1 output" }}</th></tr></thead>
 <tbody>
@@ -216,13 +216,13 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 </figure>
 {%- endif %}
 {%- else %}
-<p class="caption cell-bad">Presence across dives: sidecar not found ({{ sidecar_name }}). The variables are the union over the input files; which dives carried which is not recorded in the file.</p>
+<p class="caption cell-bad">Presence across dives: conversion record not found ({{ record_name }}). The variables are the union over the input files; which dives carried which is not recorded in the file.</p>
 {%- endif %}
 </section>
 
 <section id="dimensions">
 <h2>5. Dimensions</h2>
-<p class="caption">Amber: dimension skipped — no variable from it reaches this file. Fate is read from the output: backbone — the dimension whose samples define <code>N_MEASUREMENTS</code>; merged — its samples are added to <code>N_MEASUREMENTS</code> at their own times; skipped — not in the file. Samples in is that dimension's length summed over the input files ("—" when the sidecar is absent).</p>
+<p class="caption">Amber: dimension skipped — no variable from it reaches this file. Fate is read from the output: backbone — the dimension whose samples define <code>N_MEASUREMENTS</code>; merged — its samples are added to <code>N_MEASUREMENTS</code> at their own times; skipped — not in the file. Samples in is that dimension's length summed over the input files ("—" when the conversion record is absent).</p>
 <table class="nc dims sortable">
 <thead><tr><th>Original dimension</th><th>Fate</th><th>Variables</th><th>Samples in</th><th>Dimension after conversion</th></tr></thead>
 <tbody>
@@ -286,7 +286,7 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 {%- endfor %}
 </tbody></table>
 {%- else %}
-<p class="caption cell-bad">Basestation global attributes: not in the sidecar ({{ sidecar_name }}); convert again with this version to record them.</p>
+<p class="caption cell-bad">Basestation global attributes: not in the conversion record ({{ record_name }}); convert again with this version to record them.</p>
 {%- endif %}
 {%- else %}
 <h2>9. Global attributes</h2>

@@ -78,6 +78,36 @@ MODE_SUFFIX = {"delayed": "delayed", "realtime": "R"}
 # as unset (a value here is never written to the output, and validate treats it as null).
 PLACEHOLDER_VALUES = frozenset({"", "None", "null", "null@null.com"})
 
+# The one sentence a draft output carries in its ``draft`` global (shared by the
+# converter, which writes it, and the report, which reads it to mark the page a draft).
+DRAFT_NOTE = "converted without a mission config; not an OG1 file"
+
+
+def is_placeholder(value: object) -> bool:
+    """Return True for a null or placeholder value, so every path agrees on "unset".
+
+    The one definition behind the converter's ``_is_empty`` and the validator's
+    ``_is_placeholder``: None, or a string that is empty or one of
+    :data:`PLACEHOLDER_VALUES` (``""``, ``"None"``, ``"null"``, ``"null@null.com"``). A
+    value this returns True for is never written to the output and is treated as null by
+    ``validate``.
+
+    Parameters
+    ----------
+    value : object
+        The value to test.
+
+    Returns
+    -------
+    bool
+        True when the value counts as unset.
+
+    """
+    return value is None or (
+        isinstance(value, str) and value.strip() in PLACEHOLDER_VALUES
+    )
+
+
 # OG1 deployment-identity globals the mission config sets through the structured
 # deployment: block (one key per global). Ordered as the OG1 manual's global-attribute
 # table lists them (the order the `required:` block carries): mandatory, then highly

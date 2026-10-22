@@ -4,6 +4,7 @@ import argparse
 import pathlib
 import sys
 
+from seagliderOG1 import mission as missionlib
 from seagliderOG1.cli import _mission
 
 
@@ -52,7 +53,7 @@ def run(args: argparse.Namespace) -> int:
         print(f"error: config not found: {path}", file=sys.stderr)
         return 1
 
-    issues = _mission.validate_config(path, strict=args.strict)
+    issues = missionlib.check(path, strict=args.strict)
     if _mission.report_issues(issues):
         print(f"{path} is invalid.", file=sys.stderr)
         return 1

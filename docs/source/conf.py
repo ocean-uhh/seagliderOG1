@@ -12,7 +12,7 @@ import pathlib
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 
-from seagliderOG1.cli import _mission
+from seagliderOG1 import mission as _mission
 
 year = datetime.datetime.now(tz=datetime.UTC).date().year
 

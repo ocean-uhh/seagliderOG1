@@ -17,19 +17,18 @@ Renamed functions, modules and arguments
    * - was
      - now
    * - ``ds, varlist = convert_to_OG1(ds_or_list)``
-     - ``ds = convert.to_og1(sequence_of_datasets)`` — returns the Dataset; takes a sequence
+     - ``ds = seagliderOG1.convert(sequence_of_datasets)`` — returns the Dataset; takes a sequence
        (wrap a single dataset as ``[ds]``)
    * - ``from seagliderOG1 import convertOG1`` → ``convertOG1.convert_to_OG1(...)``
-     - ``from seagliderOG1 import convert`` → ``convert.to_og1(...)`` — module ``convertOG1.py``
-       renamed to ``convert.py``; ``convert_to_OG1`` to ``to_og1``
+     - ``import seagliderOG1 as sg`` → ``sg.convert(...)`` — the module ``convertOG1.py`` became the
+       private ``_convert.py``; the public entry is the top-level verb ``seagliderOG1.convert``
    * - ``convertOG1.process_and_save_data(directory)`` (convert a mission directory and write
        its OG1 file)
-     - ``convert.process_mission(source, output_dir, *, contributors=, institutions=,
-       platform=, deployment=, mode=, keep_variables=, overwrite=, report=) -> Path`` for one
-       mission, or ``seagliderOG1 process mission.yaml`` from the command line — the output path
-       and all metadata now come from the mission config, not package defaults; there is no
-       single-call "convert and save a whole root" (the caller selects missions, then calls
-       ``process_mission`` per mission, which is what the ``process`` CLI does)
+     - ``seagliderOG1.process(mission, *, output_dir=, dives=, mode=, report=, overwrite=) ->
+       Path`` for one mission, or ``seagliderOG1 process mission.yaml`` from the command line —
+       ``mission`` is the ``mission.yaml`` path or a loaded mapping; the output path and all
+       metadata come from it, not from keyword arguments. ``seagliderOG1.process_missions`` runs
+       it across a root of ``SN/DATE`` missions
    * - ``writers.save_dataset(ds, output_file="../test.nc") -> bool``
      - ``writers.write(ds, path, *, overwrite=False) -> pathlib.Path`` — ``path: str | Path``,
        no default; returns the path written; raises instead of returning ``False``
@@ -43,9 +42,9 @@ Renamed functions, modules and arguments
      - ``standardise_og1`` and ``og1_mapping`` — ``og1`` lower-case in names; the package name
        keeps its spelling
    * - ``tools.OG1_name_mapping(...)`` / ``print_OG1_mapping_summary(...)``
-     - ``convert.name_mapping(datasets)`` returns the basestation → OG1 mapping as a DataFrame;
-       the internal ``og1_name_mapping`` moved to the private pipeline module, and
-       ``print_OG1_mapping_summary`` was removed (print the DataFrame yourself)
+     - the basestation → OG1 name mapping is built internally by ``seagliderOG1.convert``; the
+       internal ``og1_name_mapping`` and the former ``name_mapping`` helper moved to the private
+       conversion module, and ``print_OG1_mapping_summary`` was removed
    * - ``tools`` pipeline internals (``og1_name_mapping``, ``gather_sensor_info``,
        ``add_sensor_to_dataset``, ``merge_datasets_along_time``, ``extract_scalar_parameters`` /
        ``add_scalar_parameters``, ``set_best_dtype``, …) and the ``seagliderOG1.utilities`` module
@@ -93,7 +92,7 @@ Output-format changes
   ``Conventions`` is ``CF-1.10, ACDD-1.3, OG-1.0`` (was ``CF-1.10,OG-1.0``).
 - **No placeholders.** A missing mandatory global is no longer written as ``null`` /
   ``null@null.com``; a config that relied on the fabricated email must set a real
-  ``contributor_email``. ``convert.to_og1`` raises ``MetadataError`` on a missing mandatory global.
+  ``contributor_email``. ``seagliderOG1.convert`` raises ``MetadataError`` on a missing mandatory global.
 - **Per-dive-varying scalars** (e.g. the flight-model constants ``C_VBD``, ``HD_A``/``HD_B``/
   ``HD_C``) are written as a JSON-string scalar variable
   (``{"dives": [...], "values": [...]}``, tagged ``serialization: json``) instead of broadcast
@@ -105,7 +104,7 @@ Output-format changes
   (the converter-created variables mapped to the basestation variables they consumed),
   ``conversion_dropped_variables``, ``conversion_removed_variables``,
   ``conversion_input_variable_count`` and ``conversion_attribute_sources``.
-  ``convert.conversion_ledger(ds)`` reads them back and ``seagliderOG1 inspect --conversion``
+  ``seagliderOG1 inspect --conversion`` reads them back and
   prints them (``-o`` writes an HTML page). The attribute is ``original_name`` — code that read
   the development-only ``original_variable_name`` must use ``original_name``.
 - **history** is a single conversion provenance line; the basestation ``comment`` is no longer
@@ -121,6 +120,6 @@ Platform, contributor, institution and deployment metadata are supplied in ``mis
 - A missing ``PLATFORM_SERIAL_NUMBER`` (no file ``platform_id``, none in the config) raises
   instead of defaulting to ``sg000``; other platform fields are written ``"UNK"`` with a warning
   rather than ``0000000`` or a hard-coded model.
-- ``convert.to_og1`` takes ``contributors=``, ``institutions=``, ``platform=``, ``deployment=``,
+- ``seagliderOG1.convert`` takes ``contributors=``, ``institutions=``, ``platform=``, ``deployment=``,
   ``global_attributes=`` as lists/dicts from the config. A missing contributor role is no longer
   defaulted to ``PI``; an unrecognised institution is no longer stamped with a default EDMO code.
