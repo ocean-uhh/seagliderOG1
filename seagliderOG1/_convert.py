@@ -1033,6 +1033,7 @@ def convert(
     deployment_information: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
     sensors: Mapping[str, Mapping[str, object]] | None = None,
+    unit_corrections: Mapping[str, Mapping[str, object]] | None = None,
     mode: str | None = None,
     record: dict | None = None,
 ) -> xr.Dataset:
@@ -1091,6 +1092,13 @@ def convert(
         ``{"serial_number": ..., "calibration_date": ...}``. A corrected serial names the
         ``SENSOR_*`` variable; the sensor's ``comment`` records the value it replaced.
         Default is None.
+    unit_corrections : collections.abc.Mapping, optional
+        Per-mission units-label corrections from the mission config ``unit_corrections:``
+        block: basestation variable name to ``{"from": <label as written or null>, "to":
+        <label to write>}``. Applied before unit conversion, in origin terms, and layered
+        over the package corrections (:data:`vocabularies.basestation_unit_corrections`) so a
+        mission entry wins on a shared key. Use it for a one-off mislabel on this mission; the
+        package file carries the systematic, cross-mission defects. Default is None.
     mode : str or None, optional
         Data mode, ``"realtime"`` or ``"delayed"``. Sets the ``id`` suffix (``R`` or
         ``delayed``) and so the output filename, per the OG1 manual, which defines no
@@ -1147,6 +1155,8 @@ def convert(
             global_attributes = cfg.get("global_attributes")
         if sensors is None:
             sensors = cfg.get("sensors")
+        if unit_corrections is None:
+            unit_corrections = cfg.get("unit_corrections")
         if mode is None:
             mode = cfg.get("mode")
     # None means "not set": the mission's mode if it had one, else the realtime default.
@@ -1180,6 +1190,13 @@ def convert(
     # Build the original->OG1 name lookup once; it is loop-invariant across dives.
     name_lookup = og1_mapping.set_index("original_name")["OG1_name"]
 
+    # Layer the mission corrections over the package defaults (a mission entry wins on a
+    # shared key); loop-invariant, so build it once and pass it to every dive.
+    corrections = {
+        **vocabularies.basestation_unit_corrections,
+        **(unit_corrections or {}),
+    }
+
     used_inputs = []
     for ds1_base in tqdm(list_of_datasets, desc="Processing datasets", unit="dataset"):
         if record is not None:
@@ -1187,7 +1204,11 @@ def convert(
             # and the conversion work from memory instead of reading the file twice.
             ds1_base.load()
         ds_new, attr_warnings = process_dataset(
-            ds1_base, og1_mapping, time_variables, name_lookup=name_lookup
+            ds1_base,
+            og1_mapping,
+            time_variables,
+            name_lookup=name_lookup,
+            unit_corrections=corrections,
         )
         if ds_new:
             processed_datasets.append(ds_new)
@@ -1686,6 +1707,7 @@ def process(
         deployment_information=cfg.get("deployment_information"),
         global_attributes=cfg.get("global_attributes"),
         sensors=cfg.get("sensors"),
+        unit_corrections=cfg.get("unit_corrections"),
         mode=mode if mode is not None else (cfg.get("mode") or "realtime"),
         keep_variables=cfg.get("keep_variables"),
         drop_variables=cfg.get("drop_variables"),
@@ -1764,6 +1786,7 @@ def process_missions(
         "deployment_information": cfg.get("deployment_information"),
         "global_attributes": cfg.get("global_attributes"),
         "sensors": cfg.get("sensors"),
+        "unit_corrections": cfg.get("unit_corrections"),
         "mode": mode if mode is not None else (cfg.get("mode") or "realtime"),
         "keep_variables": cfg.get("keep_variables"),
         "drop_variables": cfg.get("drop_variables"),
@@ -1788,6 +1811,7 @@ def _convert_mission(
     deployment_information: dict[str, object] | None = None,
     global_attributes: dict[str, object] | None = None,
     sensors: Mapping[str, Mapping[str, object]] | None = None,
+    unit_corrections: Mapping[str, Mapping[str, object]] | None = None,
     mode: str = "realtime",
     keep_variables: Sequence[str] | None = None,
     drop_variables: Sequence[str] | None = None,
@@ -1829,6 +1853,8 @@ def _convert_mission(
         Global attributes written verbatim, as for :func:`convert`. Default is None.
     sensors : collections.abc.Mapping, optional
         Sensor-record corrections, as for :func:`convert`. Default is None.
+    unit_corrections : collections.abc.Mapping, optional
+        Per-mission units-label corrections, as for :func:`convert`. Default is None.
     mode : str, optional
         Data mode, ``"realtime"`` (default) or ``"delayed"``; sets the ``id`` suffix
         and so the filename. Default is "realtime".
@@ -1897,6 +1923,7 @@ def _convert_mission(
         deployment_information=deployment_information,
         global_attributes=global_attributes,
         sensors=sensors,
+        unit_corrections=unit_corrections,
         mode=mode,
         record=record,
     )
@@ -1995,6 +2022,7 @@ def process_dataset(
     og1_mapping: pd.DataFrame,
     time_variables: dict[str, list[str]],
     name_lookup: pd.Series | None = None,
+    unit_corrections: Mapping[str, Mapping[str, object]] | None = None,
 ) -> tuple[
     xr.Dataset,  # Processed dataset with renamed variables, assigned attributes, and additional information
     list[str],  # List of warnings related to attribute assignments
@@ -2014,6 +2042,10 @@ def process_dataset(
         Precomputed ``original_name`` -> ``OG1_name`` lookup. Built from
         ``og1_mapping`` when None; :func:`convert` passes it in so it is not
         rebuilt per dive. Default is None.
+    unit_corrections : collections.abc.Mapping, optional
+        Units-label corrections keyed by basestation variable name, already merged
+        from the package defaults and the mission block by :func:`convert`. Passed to
+        :func:`apply_og1_vocabulary`. When None, the package defaults are used. Default is None.
 
     Returns
     -------
@@ -2067,7 +2099,12 @@ def process_dataset(
     # Must be after split_ds
     # map the original variable names to the OG1 variable names, and get the instrument type for each variable
 
-    ds_new = apply_og1_vocabulary(merged_ds, og1_mapping, name_lookup=name_lookup)
+    ds_new = apply_og1_vocabulary(
+        merged_ds,
+        og1_mapping,
+        name_lookup=name_lookup,
+        unit_corrections=unit_corrections,
+    )
 
     # Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)
     # -----------------------------------------------------------------------
@@ -2102,6 +2139,7 @@ def apply_og1_vocabulary(
     ds: xr.Dataset,
     og1_mapping: pd.DataFrame,
     name_lookup: pd.Series | None = None,
+    unit_corrections: Mapping[str, Mapping[str, object]] | None = None,
 ) -> xr.Dataset:
     """Standardize a dataset using OG1 names, attributes, and units.
 
@@ -2125,6 +2163,11 @@ def apply_og1_vocabulary(
     name_lookup : pandas.Series or None, optional
         Precomputed ``original_name`` -> ``OG1_name`` lookup. Built from
         ``og1_mapping`` when None. Default is None.
+    unit_corrections : collections.abc.Mapping, optional
+        Units-label corrections keyed by basestation variable name, ``{"from", "to"}``
+        each (already merged from the package defaults and the mission block by
+        :func:`convert`). When None, :data:`vocabularies.basestation_unit_corrections` is
+        used. Default is None.
 
     Returns
     -------
@@ -2135,6 +2178,9 @@ def apply_og1_vocabulary(
 
     if name_lookup is None:
         name_lookup = og1_mapping.set_index("original_name")["OG1_name"]
+
+    if unit_corrections is None:
+        unit_corrections = vocabularies.basestation_unit_corrections
 
     unassigned_variables = []
     variables_without_og1_attributes = []
@@ -2208,7 +2254,7 @@ def apply_og1_vocabulary(
         if original_name not in mapped_variables:
             if _is_raw_count(original_name, ds[original_name].attrs):
                 dsa[output_name].attrs["units"] = vocabularies.RAW_COUNT_UNITS
-            correction = vocabularies.basestation_unit_corrections.get(original_name)
+            correction = unit_corrections.get(original_name)
             if (
                 correction
                 and ds[original_name].attrs.get("units") == correction["from"]
@@ -2255,7 +2301,7 @@ def apply_og1_vocabulary(
             dsa,
             attributes,
             og1_attributes,
-            vocabularies.basestation_unit_corrections,
+            unit_corrections,
             unlabelled,
         )
 

@@ -492,7 +492,11 @@ def encode_times_og1(ds: xr.Dataset) -> xr.Dataset:
     for var_name in ds.variables:
         if "axis" in ds[var_name].attrs:
             ds[var_name].attrs.pop("axis")
-        if "time" in var_name.lower():
+        # Only real datetime variables are CF-time encoded: their units and calendar
+        # belong in encoding and are written there, so any stray attrs are dropped. A
+        # numeric duration such as DELTA_TIME_S merely has "time" in its name and must
+        # keep its unit attribute (seconds), so the name is not used to select here.
+        if np.issubdtype(ds[var_name].dtype, np.datetime64):
             for drop_attr in ["units", "calendar", "dtype"]:
                 if drop_attr in ds[var_name].attrs:
                     ds[var_name].attrs.pop(drop_attr)

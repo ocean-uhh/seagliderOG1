@@ -62,6 +62,11 @@ sensors:                # corrections to a basestation sensor record, by its ins
   tridentebb700chla470fdom365:
     serial_number: "237998"   # the chlorophyll/Tridente serial (the basestation comment parsed 237790)
 
+unit_corrections: {}    # correct a wrong units label on a basestation variable, by its name;
+  # to = label to write, from = label as written (null = unlabelled source). The systematic
+  # density/glide_angle mislabels are corrected by the package; add a one-off here. e.g.
+  # glide_angle: {from: "cm/s", to: "degrees"}
+
 contributors:           # one entry per person per role; replace this example
   # role is a W08 term: Manufacturer, Owner, Operator, PI, Technical Coordinator,
   # Data scientist, Service Provider. List a person once per role. At least one PI.

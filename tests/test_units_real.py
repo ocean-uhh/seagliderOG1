@@ -128,6 +128,41 @@ def test_sg271_gsw_sigma0_not_mapped_to_potdens0(sg271):
     assert 20 <= _median(sg271, "gsw_sigma0") <= 35
 
 
+def test_delta_time_s_keeps_seconds(sg271):
+    """DELTA_TIME_S is a numeric duration; it keeps `seconds`, not stripped as a time coord.
+
+    Its name contains "time", but it is float64, not a CF datetime variable, so
+    encode_times_og1 must not drop its unit attribute.
+    """
+    assert sg271["DELTA_TIME_S"].attrs.get("units") == "seconds"
+    assert np.issubdtype(sg271["DELTA_TIME_S"].dtype, np.floating)
+    assert sg271["TIME"].attrs["units"] == "seconds since 1970-01-01T00:00:00Z"
+    assert "units" not in sg271["TIME_GPS"].attrs
+
+
+def test_mission_unit_correction_applies(sg271):
+    """A mission `unit_corrections:` entry reaches the resolver and relabels a mapped variable.
+
+    sg271 labels `temperature` `degrees_Celsius`; the converter relabels it to the OG1
+    `degree_Celsius` as a factor-1 rewrite that records no `original_units`. A mission
+    correction naming the same label records `original_units` and a correction comment, so
+    its presence shows the mission block was consulted. The default conversion does not.
+    """
+    assert "original_units" not in sg271["TEMP"].attrs
+    dsets = readers.read_mission(str(readers.SAMPLE_DIR), 1, 1)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        over = _convert.convert(
+            dsets,
+            unit_corrections={
+                "temperature": {"from": "degrees_Celsius", "to": "degree_Celsius"}
+            },
+        )
+    assert over["TEMP"].attrs["units"] == "degree_Celsius"
+    assert over["TEMP"].attrs["original_units"] == "degrees_Celsius"
+    assert "corrected to 'degree_Celsius'" in over["TEMP"].attrs["comment"]
+
+
 def test_passthrough_density_relabelled(sg271):
     """The unmapped, passed-through `density` gets the same label fix; its value is unchanged."""
     assert sg271["density"].attrs["units"] == "kg m-3"

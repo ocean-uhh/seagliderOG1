@@ -63,6 +63,7 @@ KNOWN_KEYS = frozenset(
         "provenance_and_processing",
         "global_attributes",
         "sensors",
+        "unit_corrections",
         "contributors",
         "institutions",
     }
@@ -706,6 +707,77 @@ def _validate_sensors(sensors: object) -> list[ValidationIssue]:
     return issues
 
 
+def _validate_unit_corrections(unit_corrections: object) -> list[ValidationIssue]:
+    """Check the ``unit_corrections:`` block shape: basestation variable to ``{from, to}``.
+
+    Each entry corrects one basestation variable's units label: ``to`` is the label to
+    write, ``from`` is the label as written (or null for an unlabelled source, decision 9).
+    Whether the key names a variable of the mission, and whether ``from`` matches the label
+    actually written, is checked at conversion.
+
+    Parameters
+    ----------
+    unit_corrections : object
+        The ``unit_corrections`` value from the config (None when absent).
+
+    Returns
+    -------
+    list of ValidationIssue
+        One ERROR per malformed entry; empty when the block is absent or well formed.
+
+    """
+    if unit_corrections is None:
+        return []
+    if not isinstance(unit_corrections, dict):
+        return [
+            ValidationIssue(
+                "ERROR", "unit_corrections must be a mapping.", "unit_corrections"
+            )
+        ]
+    issues = []
+    for key, fields in unit_corrections.items():
+        where = f"unit_corrections.{key}"
+        if not isinstance(fields, dict):
+            issues.append(
+                ValidationIssue(
+                    "ERROR", f"{where} must map 'from' and 'to' to values.", where
+                )
+            )
+            continue
+        unknown = set(fields) - {"from", "to"}
+        if unknown:
+            issues.append(
+                ValidationIssue(
+                    "ERROR",
+                    f"{where}: unknown field(s) {sorted(unknown)}; allowed: ['from', 'to'].",
+                    where,
+                )
+            )
+        to_value = fields.get("to")
+        if to_value is None or not str(to_value).strip():
+            issues.append(
+                ValidationIssue(
+                    "ERROR",
+                    f"{where}.to is the units label to write and cannot be empty.",
+                    where,
+                )
+            )
+        if (
+            "from" in fields
+            and fields["from"] is not None
+            and not str(fields["from"]).strip()
+        ):
+            issues.append(
+                ValidationIssue(
+                    "ERROR",
+                    f"{where}.from must be null (an unlabelled source) or the label as "
+                    "written, not an empty string.",
+                    where,
+                )
+            )
+    return issues
+
+
 def _validate_raw_dir(
     data: dict[str, object], base_dir: pathlib.Path, strict: bool
 ) -> list[ValidationIssue]:
@@ -1229,6 +1301,7 @@ def _validate(
         )
 
     issues.extend(_validate_sensors(data.get("sensors")))
+    issues.extend(_validate_unit_corrections(data.get("unit_corrections")))
     issues.extend(_validate_global_attributes(data.get("global_attributes")))
     issues.extend(_validate_global_sections(data))
     issues.extend(_validate_highly_desirable(data))

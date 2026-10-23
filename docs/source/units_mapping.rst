@@ -62,10 +62,14 @@ resolves, so adding a row is all a new spelling needs — no code change.
 
 * **Leave a variable out** whose units you cannot use (for example one that is refused, or a
   wrong-quantity pass-through): list it under ``drop_variables`` (see :ref:`mission_yaml`).
-* A **per-mission units correction** is not yet available: the reserved ``local_config`` key will,
-  with the forthcoming fleet overlay, let a deployment add its own label corrections and aliases
-  (overlaying the package ``OG1_unit_corrections.yaml`` and ``UNITS``). Until then, a genuinely new
-  spelling is a package-level change above.
+* **Correct a wrong label on one variable** with a ``unit_corrections:`` block keyed by the
+  basestation variable name: ``to`` is the label to write, ``from`` is the label as written
+  (``null`` for an unlabelled source). It is applied before conversion, in origin terms, and
+  layered over the package ``OG1_unit_corrections.yaml`` so a mission entry wins on a shared key.
+  Use it for a one-off mislabel on this mission; the package file carries the systematic,
+  cross-mission defects. The ``to`` spelling must be one the OG1 target resolves (an alias in
+  ``UNITS`` or the target's own units) — a genuinely new spelling is still a package-level change
+  above. A fleet-wide overlay (the reserved ``local_config`` key) is not yet available.
 
 The tables below are regenerated on every docs build from the two bundled samples (sg005,
 basestation 2.8; sg271, basestation 3.0.6), so they always match the code.
