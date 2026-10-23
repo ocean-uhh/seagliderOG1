@@ -136,7 +136,7 @@ def test_global_attribute_groups_are_the_five_conventions_no_other():
     groups, _source = nc_tables.globals_rows(
         ds,
         extras=design.ATTR_GROUP_EXTRAS,
-        exclude=["history", "conversion_attribute_sources"],
+        exclude=["history", "conversion_attribute_sources", "conversion_units"],
     )
     titles = [title for title, _rows in groups]
     assert titles == [
@@ -171,7 +171,7 @@ def test_demo_config_institution_is_one_record_in_people_and_institutions():
     groups, _source = nc_tables.globals_rows(
         ds,
         extras=design.ATTR_GROUP_EXTRAS,
-        exclude=["history", "conversion_attribute_sources"],
+        exclude=["history", "conversion_attribute_sources", "conversion_units"],
     )
     people = {
         row[0]

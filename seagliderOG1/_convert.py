@@ -30,6 +30,7 @@ from seagliderOG1 import (
 )
 from seagliderOG1 import mission as _config
 from seagliderOG1.exceptions import MetadataError, MissionError, UnitsError
+from seagliderOG1.reports._vendored import units as _vendored_units
 
 __all__ = [
     "convert",
@@ -46,6 +47,8 @@ _log = logging.getLogger(__name__)
 # applied per dive (see apply_og1_vocabulary), so the same correction recurs.
 _UNIT_CORRECTED: set[str] = set()
 _UNIT_RANGE: set[str] = set()
+_UNIT_CONVERTED: set[str] = set()
+_UNIT_ADOPTED: set[str] = set()
 
 
 def _warn_once(seen: set[str], key: str, message: str, *args: object) -> None:
@@ -86,6 +89,210 @@ def _append_comment(existing: str | None, sentence: str) -> str:
     """
     existing = (existing or "").strip()
     return f"{existing} {sentence}".strip() if existing else sentence
+
+
+def _variable_median(var: xr.DataArray) -> float | None:
+    """Return the median of a variable's finite values, or None when there are none."""
+    values = np.asarray(var.values, dtype="float64").ravel()
+    finite = values[np.isfinite(values)]
+    return float(np.median(finite)) if finite.size else None
+
+
+def _warn_if_out_of_range(
+    dsa: xr.Dataset, output_name: str, og1_attributes: dict
+) -> None:
+    """Warn once when a variable's median is outside its OG1 valid range (not a refusal)."""
+    vmin, vmax = og1_attributes.get("valid_min"), og1_attributes.get("valid_max")
+    if vmin is None or vmax is None:
+        return
+    med = _variable_median(dsa[output_name])
+    if med is not None and not vmin <= med <= vmax:
+        _warn_once(
+            _UNIT_RANGE,
+            output_name,
+            "%s median %.4g is outside the valid range [%s, %s]; left as-is "
+            "(flagged on the conversion page)",
+            output_name,
+            med,
+            vmin,
+            vmax,
+        )
+
+
+def _refuse_if_factor_off_range(
+    output_name: str,
+    dsa: xr.Dataset,
+    og1_attributes: dict,
+    source_units: str,
+    target_unit: str,
+    factor: float,
+) -> None:
+    """Refuse a conversion that moved the median out of range (undoing it lands back in).
+
+    A value a unit conversion moved outside the OG1 ``valid_min``/``valid_max``, where dividing by
+    the applied factor lands it back inside, means the source label is wrong -- raise ``UnitsError``
+    rather than ship a file off by a unit factor. Out of range for any other reason only warns.
+    """
+    vmin, vmax = og1_attributes.get("valid_min"), og1_attributes.get("valid_max")
+    if vmin is None or vmax is None:
+        return
+    med = _variable_median(dsa[output_name])
+    if med is None or vmin <= med <= vmax:
+        return
+    if factor and vmin <= med / factor <= vmax:
+        msg = (
+            f"{output_name}: converting {source_units!r} to {target_unit!r} "
+            f"(factor {factor:g}) gives a median {med:.4g} outside the valid range "
+            f"[{vmin}, {vmax}]; the basestation units label is likely wrong. Correct it "
+            "with unit_corrections: in the mission config, or add the spelling to "
+            "vocabularies.UNITS."
+        )
+        raise UnitsError(msg)
+    _warn_once(
+        _UNIT_RANGE,
+        output_name,
+        "%s median %.4g is outside the valid range [%s, %s] after a units conversion; "
+        "left as-is (flagged on the conversion page)",
+        output_name,
+        med,
+        vmin,
+        vmax,
+    )
+
+
+def _to_canonical_units(
+    ds: xr.Dataset,
+    original_name: str,
+    output_name: str,
+    dsa: xr.Dataset,
+    attributes: dict,
+    og1_attributes: dict,
+    corrections: Mapping[str, Mapping[str, object]],
+    unlabelled: list[str],
+) -> None:
+    """Resolve a mapped variable's units to the OG1 canonical spelling, recording provenance.
+
+    The order is: a label correction (``corrections``, keyed by basestation name to
+    ``{from, to}``, guarded by the label as written; a ``from: null`` row applies to an
+    unlabelled source), then resolution against :data:`seagliderOG1.vocabularies.UNITS` to the OG1
+    target spelling. A factor of 1 relabels; a factor other than 1 multiplies the values and records
+    ``original_units`` + a ``comment`` + a ``conversion_units`` ledger entry on the dataset. An
+    unresolvable spelling raises :class:`~seagliderOG1.exceptions.UnitsError`. A source with no
+    units adopts the OG1 label (decision 9): declared via a ``from: null`` correction (silent) or
+    undeclared (adopted, warned, listed in ``unlabelled`` for the page). A genuinely unitless
+    variable (no source and no OG1 units) is left untouched.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The source dataset (read for the basestation units).
+    original_name : str
+        The basestation variable name.
+    output_name : str
+        The OG1 variable name.
+    dsa : xarray.Dataset
+        The output dataset (its variable's values are converted in place).
+    attributes : dict
+        The output variable's attributes being built (mutated).
+    og1_attributes : dict
+        The OG1 vocabulary attributes (``units``, ``standard_name``, ``valid_min``/``valid_max``).
+    corrections : Mapping
+        Effective label corrections (package overlaid by mission).
+    unlabelled : list of str
+        Output names of undeclared unlabelled sources, collected for the page recommendation.
+
+    """
+    raw_units = ds[original_name].attrs.get("units")
+    target_unit = og1_attributes.get("units")
+    standard_name = og1_attributes.get("standard_name")
+
+    correction = corrections.get(original_name)
+    source_units = raw_units
+    if correction is not None:
+        want = correction.get("from")
+        if (want is None and raw_units in (None, "")) or (
+            want is not None and raw_units == want
+        ):
+            source_units = correction["to"]
+            attributes["original_units"] = "" if raw_units in (None, "") else raw_units
+            note = (
+                "units from the OG1 vocabulary; the basestation file carried none"
+                if raw_units in (None, "")
+                else f"units label {raw_units!r} in the basestation file corrected "
+                f"to {correction['to']!r}"
+            )
+            attributes["comment"] = _append_comment(attributes.get("comment"), note)
+            _warn_once(
+                _UNIT_CORRECTED,
+                output_name,
+                "units on %r set to %r by a correction (label as written: %r)",
+                output_name,
+                correction["to"],
+                raw_units,
+            )
+
+    if source_units in (None, ""):
+        if target_unit is None:
+            return
+        attributes["original_units"] = ""
+        attributes["comment"] = _append_comment(
+            attributes.get("comment"),
+            "units from the OG1 vocabulary; the basestation file carried none",
+        )
+        _warn_once(
+            _UNIT_ADOPTED,
+            output_name,
+            "%s carried no units in the basestation file; adopted the OG1 label %r",
+            output_name,
+            target_unit,
+        )
+        unlabelled.append(output_name)
+        _warn_if_out_of_range(dsa, output_name, og1_attributes)
+        return
+
+    if target_unit is None:
+        attributes["units"] = source_units
+        return
+
+    try:
+        canonical, factor = _vendored_units.resolve_units(
+            source_units,
+            standard_name,
+            tables=vocabularies.UNITS,
+            canonical=target_unit,
+        )
+    except _vendored_units.UnitsError as exc:
+        msg = (
+            f"{output_name}: units {source_units!r} is not a recognised spelling of "
+            f"{target_unit!r}. Add the spelling to vocabularies.UNITS with its source, "
+            "or correct the label with unit_corrections: in the mission config."
+        )
+        raise UnitsError(msg) from exc
+
+    attributes["units"] = canonical
+    if factor == 1:
+        return
+    dsa[output_name].data = dsa[output_name].values * factor
+    dsa[output_name].encoding = {}
+    attributes.setdefault("original_units", source_units)
+    attributes["comment"] = _append_comment(
+        attributes.get("comment"), f"converted from {source_units} (x{factor:g})"
+    )
+    ledger = json.loads(dsa.attrs.get("conversion_units", "{}"))
+    ledger[output_name] = [source_units, canonical, factor]
+    dsa.attrs["conversion_units"] = json.dumps(ledger)
+    _warn_once(
+        _UNIT_CONVERTED,
+        output_name,
+        "%s: %s -> %s x%g",
+        output_name,
+        source_units,
+        canonical,
+        factor,
+    )
+    _refuse_if_factor_off_range(
+        output_name, dsa, og1_attributes, source_units, target_unit, factor
+    )
 
 
 # Global attributes the converter derives from the data; the mission config may
@@ -1894,7 +2101,6 @@ def process_dataset(
 def apply_og1_vocabulary(
     ds: xr.Dataset,
     og1_mapping: pd.DataFrame,
-    unit_format: dict[str, str] = vocabularies.unit_str_format,
     name_lookup: pd.Series | None = None,
 ) -> xr.Dataset:
     """Standardize a dataset using OG1 names, attributes, and units.
@@ -1919,9 +2125,6 @@ def apply_og1_vocabulary(
     name_lookup : pandas.Series or None, optional
         Precomputed ``original_name`` -> ``OG1_name`` lookup. Built from
         ``og1_mapping`` when None. Default is None.
-    unit_format : dict[str, str], optional
-        Unit spelling replacements. Defaults to
-        ``vocabularies.unit_str_format``.
 
     Returns
     -------
@@ -1935,6 +2138,7 @@ def apply_og1_vocabulary(
 
     unassigned_variables = []
     variables_without_og1_attributes = []
+    unlabelled: list[str] = []
     output_names = {}
     mapped_variables = set()
 
@@ -2044,104 +2248,16 @@ def apply_og1_vocabulary(
         ):
             attributes["units"] = vocabularies.RAW_COUNT_UNITS
 
-        if "units" in ds[original_name].attrs and "units" in og1_attributes:
-            raw_units = ds[original_name].attrs["units"]
-            target_unit = og1_attributes["units"]
-
-            # Label correction (origin-keyed, guarded by the written label): some
-            # basestation versions label a variable with units wrong for the
-            # magnitude it holds (the density family as g/m^3 for kg m-3 values).
-            # Fix the label before conversion so the wrong factor is never applied.
-            correction = vocabularies.basestation_unit_corrections.get(original_name)
-            units_corrected = bool(correction and raw_units == correction["from"])
-            source_units = correction["to"] if units_corrected else raw_units
-            if units_corrected:
-                attributes["original_units"] = raw_units
-                attributes["comment"] = _append_comment(
-                    attributes.get("comment"),
-                    f"units label {raw_units!r} in the basestation file corrected "
-                    f"to {correction['to']!r}",
-                )
-                _warn_once(
-                    _UNIT_CORRECTED,
-                    output_name,
-                    "units label %r on %r corrected to %r (from the value "
-                    "magnitude, not the basestation label)",
-                    raw_units,
-                    output_name,
-                    correction["to"],
-                )
-
-            original_unit = tools.reformat_units_str(source_units, unit_format)
-            requested_unit = tools.reformat_units_str(target_unit, unit_format)
-            factor_applied = False
-            conversion_factor = None
-            if original_unit != requested_unit:
-                converted_values, converted_unit = tools.convert_units_var(
-                    ds[original_name].values,
-                    source_units,
-                    target_unit,
-                    vocabularies.unit1_to_unit2,
-                )
-                factor_applied = converted_unit == requested_unit
-                if factor_applied:
-                    conversion_factor = vocabularies.unit1_to_unit2.get(
-                        f"{original_unit}_to_{requested_unit}", {}
-                    ).get("factor")
-
-                dsa[output_name].data = converted_values
-                attributes["units"] = converted_unit
-
-                # Source encoding may no longer suit the converted values.
-                dsa[output_name].encoding = {}
-
-            # Range check driven by the OG1 valid range. A value a unit conversion
-            # moved out of range -- undoing the conversion lands it back in -- is
-            # refused: the basestation units label is wrong. A value out of range
-            # for any other reason is NOT changed here; it is left as-is and
-            # flagged on the conversion page, never silently altered.
-            vmin = og1_attributes.get("valid_min")
-            vmax = og1_attributes.get("valid_max")
-            if (
-                (units_corrected or factor_applied)
-                and vmin is not None
-                and vmax is not None
-            ):
-                values = dsa[output_name].values
-                finite = values[np.isfinite(values)]
-                if finite.size:
-                    med = float(np.median(finite))
-                    if vmin <= med <= vmax:
-                        pass
-                    elif (
-                        factor_applied
-                        and conversion_factor
-                        and vmin <= med / conversion_factor <= vmax
-                    ):
-                        # Undoing the conversion lands the value in range, so the
-                        # conversion itself moved it out: the units label is wrong.
-                        msg = (
-                            f"{output_name}: converting {raw_units!r} to "
-                            f"{target_unit!r} (factor {conversion_factor:g}) gives a "
-                            f"median {med:.4g} outside the valid range "
-                            f"[{vmin}, {vmax}]; the basestation units label is "
-                            "likely wrong. Add a correction to "
-                            "OG1_unit_corrections.yaml or set the units in the "
-                            "mission config."
-                        )
-                        raise UnitsError(msg)
-                    else:
-                        _warn_once(
-                            _UNIT_RANGE,
-                            output_name,
-                            "%s median %.4g is outside the valid range [%s, %s] "
-                            "after a units correction; left as-is (flagged on the "
-                            "conversion page)",
-                            output_name,
-                            med,
-                            vmin,
-                            vmax,
-                        )
+        _to_canonical_units(
+            ds,
+            original_name,
+            output_name,
+            dsa,
+            attributes,
+            og1_attributes,
+            vocabularies.basestation_unit_corrections,
+            unlabelled,
+        )
 
         dsa[output_name].attrs = attributes
 

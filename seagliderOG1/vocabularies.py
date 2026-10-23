@@ -378,6 +378,9 @@ UNITS = _units.merge_tables(
         },  # sg271 delta_time_s; basestation log parameters
         "mg m-3": {"micrograms/liter": 1.0},  # sg005 wlbb2f chla; 1 ug/L = 1 mg/m3
         "cm3": {"cc": 1.0},  # basestation eng_vbdCC; 1 cc = 1 cm3
+        "kg m-3": {
+            "kg/m^3": 1.0
+        },  # sg271 correctly-labelled sigma_theta / density family
     },
 )
 
@@ -436,6 +439,14 @@ DROP_RECOMMENDATIONS = {
     "gsw_sigma0": (
         "the density anomaly (sigma0 = potential density - 1000); OG1 POTDENS0 is full "
         "potential density, which is derived separately, so gsw_sigma0 has no OG1 home."
+    ),
+    "sbe43_dissolved_oxygen": (
+        "per-mass oxygen (micromoles/kg); OG1 DOXY is per volume (mmol m-3), a different "
+        "quantity that needs density to derive, so this is not mapped to DOXY."
+    ),
+    "dissolved_oxygen_sat": (
+        "a per-mass saturation concentration (micromoles/kg); OG1 OXYSAT is percent "
+        "saturation, a different quantity, so this is not mapped to OXYSAT."
     ),
 }
 

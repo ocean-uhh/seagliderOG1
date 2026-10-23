@@ -2463,7 +2463,7 @@ def render_conversion(
         global_groups, globals_source = nc_tables.globals_rows(
             ds,
             extras=design.ATTR_GROUP_EXTRAS,
-            exclude=["history", "conversion_attribute_sources"],
+            exclude=["history", "conversion_attribute_sources", "conversion_units"],
             requirement=requirement_labels,
         )
         coverage_computed = _coverage_computed(ds)

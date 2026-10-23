@@ -713,7 +713,9 @@ def test_formerly_dropped_variables_reach_the_file():
     assert vocabularies.VARIABLES_TO_DROP == []
     assert written["density"] == "density"  # passed through
     assert written["theta"] == "THETA"  # renamed by OG1_variable_names.yaml
-    assert written["dissolved_oxygen_sat"] == "OXYSAT"
+    # dissolved_oxygen_sat is per-mass micromoles/kg, a different quantity from OXYSAT's percent:
+    # no longer mapped, it passes through under its own name (recommended for drop).
+    assert written["dissolved_oxygen_sat"] == "dissolved_oxygen_sat"
     # depth and eng_depth also map to DEPTH, which ctd_depth holds; they are numbered.
     assert written["ctd_depth"] == "DEPTH"
     assert {written["depth"], written["eng_depth"]} == {"DEPTH_2", "DEPTH_3"}

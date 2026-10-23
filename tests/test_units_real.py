@@ -84,15 +84,12 @@ def _source_target_pairs():
                 continue
             source = raw[origin].attrs.get("units")
             if source:
-                pairs.add((str(source), target["units"], target.get("standard_name")))
+                pairs.add(
+                    (str(source), target["units"], target.get("standard_name") or "")
+                )
     return sorted(pairs)
 
 
-@pytest.mark.xfail(
-    reason="OXYSAT (micromoles/kg->percent) and DOXY (micromoles/kg->mmol m-3) are "
-    "wrong-quantity mappings the view cannot resolve; removed in the mapping-changes commit",
-    strict=True,
-)
 def test_units_view_resolves_every_sample_spelling():
     """vocabularies.UNITS resolves every source spelling the bundled samples carry."""
     from seagliderOG1.reports._vendored import units
@@ -174,8 +171,8 @@ def test_uncorrected_mislabel_is_refused(monkeypatch):
         with pytest.raises(UnitsError) as excinfo:
             _convert.convert(dsets)
     message = str(excinfo.value)
-    assert "DENSITY" in message
-    assert "outside the valid range" in message
+    assert "g/m^3" in message
+    assert "not a recognised spelling" in message
 
 
 def test_correction_is_logged_once(monkeypatch, caplog):
