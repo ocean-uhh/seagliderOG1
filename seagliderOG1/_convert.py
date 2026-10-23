@@ -168,7 +168,6 @@ def _to_canonical_units(
     attributes: dict,
     og1_attributes: dict,
     corrections: Mapping[str, Mapping[str, object]],
-    unlabelled: list[str],
 ) -> None:
     """Resolve a mapped variable's units to the OG1 canonical spelling, recording provenance.
 
@@ -178,8 +177,9 @@ def _to_canonical_units(
     target spelling. A factor of 1 relabels; a factor other than 1 multiplies the values and records
     ``original_units`` + a ``comment`` + a ``conversion_units`` ledger entry on the dataset. An
     unresolvable spelling raises :class:`~seagliderOG1.exceptions.UnitsError`. A source with no
-    units adopts the OG1 label (decision 9): declared via a ``from: null`` correction (silent) or
-    undeclared (adopted, warned, listed in ``unlabelled`` for the page). A genuinely unitless
+    units adopts the OG1 label, either declared via a ``from: null`` correction (silent) or
+    undeclared (adopted with a warning). A value outside the OG1 ``valid_min``/``valid_max`` is
+    flagged on every path (adopt, relabel, convert), never silently changed. A genuinely unitless
     variable (no source and no OG1 units) is left untouched.
 
     Parameters
@@ -198,8 +198,6 @@ def _to_canonical_units(
         The OG1 vocabulary attributes (``units``, ``standard_name``, ``valid_min``/``valid_max``).
     corrections : Mapping
         Effective label corrections (package overlaid by mission).
-    unlabelled : list of str
-        Output names of undeclared unlabelled sources, collected for the page recommendation.
 
     """
     raw_units = ds[original_name].attrs.get("units")
@@ -246,7 +244,6 @@ def _to_canonical_units(
             output_name,
             target_unit,
         )
-        unlabelled.append(output_name)
         _warn_if_out_of_range(dsa, output_name, og1_attributes)
         return
 
@@ -271,6 +268,9 @@ def _to_canonical_units(
 
     attributes["units"] = canonical
     if factor == 1:
+        # A pure spelling rewrite leaves the values untouched, but a value outside the OG1
+        # range is still flagged (consistent with the adopt and convert paths), never changed.
+        _warn_if_out_of_range(dsa, output_name, og1_attributes)
         return
     dsa[output_name].data = dsa[output_name].values * factor
     dsa[output_name].encoding = {}
@@ -2184,7 +2184,6 @@ def apply_og1_vocabulary(
 
     unassigned_variables = []
     variables_without_og1_attributes = []
-    unlabelled: list[str] = []
     output_names = {}
     mapped_variables = set()
 
@@ -2255,26 +2254,33 @@ def apply_og1_vocabulary(
             if _is_raw_count(original_name, ds[original_name].attrs):
                 dsa[output_name].attrs["units"] = vocabularies.RAW_COUNT_UNITS
             correction = unit_corrections.get(original_name)
-            if (
-                correction
-                and ds[original_name].attrs.get("units") == correction["from"]
+            raw_units = ds[original_name].attrs.get("units")
+            want = correction.get("from") if correction else None
+            if correction is not None and (
+                (want is None and raw_units in (None, ""))
+                or (want is not None and raw_units == want)
             ):
                 attrs = dsa[output_name].attrs
-                attrs["original_units"] = correction["from"]
+                # An unlabelled source (from: null) records no original label; a mislabel
+                # records the label as written. Never write None as an attribute.
+                if raw_units in (None, ""):
+                    attrs["original_units"] = ""
+                    note = "units from the mission config; the basestation file carried none"
+                else:
+                    attrs["original_units"] = raw_units
+                    note = (
+                        f"units label {raw_units!r} in the basestation file corrected "
+                        f"to {correction['to']!r}"
+                    )
                 attrs["units"] = correction["to"]
-                attrs["comment"] = _append_comment(
-                    attrs.get("comment"),
-                    f"units label {correction['from']!r} in the basestation file "
-                    f"corrected to {correction['to']!r}",
-                )
+                attrs["comment"] = _append_comment(attrs.get("comment"), note)
                 _warn_once(
                     _UNIT_CORRECTED,
                     output_name,
-                    "units label %r on %r corrected to %r (from the value "
-                    "magnitude, not the basestation label)",
-                    correction["from"],
+                    "units on %r set to %r by a correction (label as written: %r)",
                     output_name,
                     correction["to"],
+                    raw_units,
                 )
             continue
 
@@ -2302,7 +2308,6 @@ def apply_og1_vocabulary(
             attributes,
             og1_attributes,
             unit_corrections,
-            unlabelled,
         )
 
         dsa[output_name].attrs = attributes

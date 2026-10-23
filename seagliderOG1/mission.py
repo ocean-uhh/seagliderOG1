@@ -711,9 +711,11 @@ def _validate_unit_corrections(unit_corrections: object) -> list[ValidationIssue
     """Check the ``unit_corrections:`` block shape: basestation variable to ``{from, to}``.
 
     Each entry corrects one basestation variable's units label: ``to`` is the label to
-    write, ``from`` is the label as written (or null for an unlabelled source, decision 9).
-    Whether the key names a variable of the mission, and whether ``from`` matches the label
-    actually written, is checked at conversion.
+    write, ``from`` is the label as written (or null for an unlabelled source). Both keys are
+    required, so an unlabelled source must be written ``from: null`` rather than omitted — an
+    omitted ``from`` would silently apply only to an unlabelled source. Whether the key names a
+    variable of the mission, and whether ``from`` matches the label actually written, is checked
+    at conversion.
 
     Parameters
     ----------
@@ -759,6 +761,14 @@ def _validate_unit_corrections(unit_corrections: object) -> list[ValidationIssue
                 ValidationIssue(
                     "ERROR",
                     f"{where}.to is the units label to write and cannot be empty.",
+                    where,
+                )
+            )
+        if "from" not in fields:
+            issues.append(
+                ValidationIssue(
+                    "ERROR",
+                    f"{where}.from is required; write 'from: null' for an unlabelled source.",
                     where,
                 )
             )

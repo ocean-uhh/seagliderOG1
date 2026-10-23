@@ -31,7 +31,7 @@ sigma_theta: {from: "g/m^3", to: "kg m-3"}
 glide_angle: {from: "cm/s", to: "degrees"}
 
 # from: null declares an unlabelled source (the basestation file carries no units; the values are
-# in `to`), so the OG1 label is adopted deliberately, not assumed (decision 9). Only where the OG1
+# in `to`), so the OG1 label is adopted deliberately, not assumed. Only where the OG1
 # target has units; a unitless QC flag or scalar needs no row.
 codaTODO_O2_sat: {from: null, to: "percent"}  # sg271 oxygen saturation, values 0-100
 eng_vbdCC: {from: null, to: "cm3"}  # basestation variable-buoyancy volume

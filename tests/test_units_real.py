@@ -191,6 +191,23 @@ def test_mission_unit_correction_applies(sg271):
     assert "corrected to 'degree_Celsius'" in over["TEMP"].attrs["comment"]
 
 
+def test_mission_from_null_on_passthrough_variable_adopts_label(sg271):
+    """A `from: null` correction on an unmapped, unlabelled variable adopts the label, not None.
+
+    The pass-through branch must set `original_units` to an empty string (never Python None,
+    which is not a valid netCDF attribute and would fail the writer), matching the mapped path.
+    """
+    dsets = readers.read_mission(str(readers.SAMPLE_DIR), 1, 1)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        over = _convert.convert(
+            dsets, unit_corrections={"eng_rec": {"from": None, "to": "count"}}
+        )
+    assert over["eng_rec"].attrs["units"] == "count"
+    assert over["eng_rec"].attrs["original_units"] == ""
+    assert over["eng_rec"].attrs["original_units"] is not None
+
+
 def test_passthrough_density_relabelled(sg271):
     """The unmapped, passed-through `density` gets the same label fix; its value is unchanged."""
     assert sg271["density"].attrs["units"] == "kg m-3"
@@ -245,4 +262,4 @@ def test_correction_is_logged_once(monkeypatch, caplog):
     with caplog.at_level(logging.WARNING, logger="seagliderOG1._convert"):
         _convert_dive1(str(readers.SAMPLE_DIR))
     messages = [record.getMessage() for record in caplog.records]
-    assert any("corrected to 'kg m-3'" in message for message in messages)
+    assert any("set to 'kg m-3' by a correction" in message for message in messages)

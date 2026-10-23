@@ -524,9 +524,10 @@ def _duplicate_groups(ds: xr.Dataset) -> list[dict[str, object]]:
     group when the group has a reference member — one that is OG1-required or OG1-named,
     preferring required then the shortest name. The reference is listed first; each other member
     is compared to it (member minus reference) over the samples both carry, in the reference's
-    units. A member whose units the alias table cannot relate is "not comparable" rather than
-    converted by guess. ``status_flag`` (the QC flags) and groups without a reference are
-    excluded.
+    units. A member whose units the units view (:data:`seagliderOG1.vocabularies.UNITS`) cannot
+    relate is "not comparable" rather than converted by guess — the view relates the spellings the
+    conversion needs, so an unrelated pair stays uncompared. ``status_flag`` (the QC flags) and
+    groups without a reference are excluded.
 
     Parameters
     ----------

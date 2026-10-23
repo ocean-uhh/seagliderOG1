@@ -260,6 +260,17 @@ def test_validate_rejects_a_malformed_unit_corrections_block(
     assert cli.main(["validate", str(cfg)]) == 1
 
 
+def test_validate_requires_from_in_a_unit_correction(tmp_path: pathlib.Path) -> None:
+    """An omitted `from` errors (it would silently apply only to an unlabelled source)."""
+    cfg = _write_config(
+        tmp_path / "mission.yaml", unit_corrections={"glide_angle": {"to": "degrees"}}
+    )
+    messages = [
+        i.message for i in mission.check(cfg) if i.key == "unit_corrections.glide_angle"
+    ]
+    assert any("from is required" in m for m in messages)
+
+
 def test_validate_checks_deployment_information(tmp_path: pathlib.Path) -> None:
     """A bad deployment_information block errors at validate: out-of-range lat and a naive time."""
     cfg = _write_config(
