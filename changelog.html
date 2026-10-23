@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.1.0.post1.dev2 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.1.0.post1.dev3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=20c22906"></script>
+      <script src="_static/documentation_options.js?v=84baad1f"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -74,12 +74,17 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#unreleased">[Unreleased]</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id1">[0.1.0] - 2026-10-22</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#unreleased">[Unreleased]</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#breaking-changes">Breaking changes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#added">Added</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#fixed">Fixed</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">[0.1.0] - 2026-10-22</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Breaking changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Fixed</a></li>
 </ul>
 </li>
 </ul>
@@ -123,11 +128,81 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 (<em>Migrating to 0.1.0</em> in the docs; <code class="docutils literal notranslate"><span class="pre">docs/source/migrating_0_1_0.rst</span></code>).</p>
 <section id="unreleased">
 <h2>[Unreleased]<a class="headerlink" href="#unreleased" title="Link to this heading"></a></h2>
+<section id="breaking-changes">
+<h3>Breaking changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
+<ul>
+<li><p>Density-family output values change where the basestation mislabelled their units. The
+basestation writes <code class="docutils literal notranslate"><span class="pre">density</span></code>, <code class="docutils literal notranslate"><span class="pre">density_insitu</span></code>, <code class="docutils literal notranslate"><span class="pre">sigma_t</span></code> and (on basestation 2.8) <code class="docutils literal notranslate"><span class="pre">sigma_theta</span></code>
+as <code class="docutils literal notranslate"><span class="pre">g/m^3</span></code> while holding kg m-3-magnitude values; 0.1.0 trusted the label, applied a factor, and
+wrote them 1000x too small. The label is now corrected to <code class="docutils literal notranslate"><span class="pre">kg</span> <span class="pre">m-3</span></code> before conversion, so no factor
+runs and the output equals the basestation value, with the basestation label kept as
+<code class="docutils literal notranslate"><span class="pre">original_units</span></code> and noted in <code class="docutils literal notranslate"><span class="pre">comment</span></code>:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>variable</p></th>
+<th class="head"><p>basestation label</p></th>
+<th class="head"><p>0.1.0 wrote</p></th>
+<th class="head"><p>now</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DENSITY</span></code> (sg271)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">g/m^3</span></code></p></td>
+<td><p>1.027</p></td>
+<td><p>1027</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SIGMA_T</span></code> (sg271, sg005)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">g/m^3</span></code></p></td>
+<td><p>0.027</p></td>
+<td><p>27.3 / 27.1</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SIGTHETA</span></code> (sg005)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">g/m^3</span></code></p></td>
+<td><p>0.027</p></td>
+<td><p>1027 (full density; see below)</p></td>
+</tr>
+</tbody>
+</table>
+<p>A file read from 0.1.0 differs; reconvert. On basestation 2.8 <code class="docutils literal notranslate"><span class="pre">sigma_theta</span></code> holds full density
+(~1027), not the anomaly its name implies; the value is <strong>not</strong> altered (it is left as-is and
+flagged on the conversion page, never silently changed), so <code class="docutils literal notranslate"><span class="pre">SIGTHETA</span></code> carries density magnitude
+on those files — correct it with <code class="docutils literal notranslate"><span class="pre">drop_variables</span></code> or a <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> override.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gsw_sigma0</span></code> is no longer mapped to <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code>. <code class="docutils literal notranslate"><span class="pre">gsw_sigma0</span></code> is the density anomaly
+(sigma0 = potential density − 1000); OG1 <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> is full potential density, so the mapping
+produced a <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> ~1000 out of range. <code class="docutils literal notranslate"><span class="pre">gsw_sigma0</span></code> now passes through under its own name;
+<code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> is absent until it is derived properly in a later release. The conversion page
+recommends dropping <code class="docutils literal notranslate"><span class="pre">gsw_sigma0</span></code>.</p></li>
+</ul>
+</section>
+<section id="added">
+<h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">drop_variables</span></code> mission.yaml key: a list of variables to leave out of the output, by OG1 or
+basestation name (matched through <code class="docutils literal notranslate"><span class="pre">original_name</span></code>), the counterpart of <code class="docutils literal notranslate"><span class="pre">keep_variables</span></code>.
+OG1-mandatory variables are never dropped; a dropped variable’s <code class="docutils literal notranslate"><span class="pre">_QC</span></code> companion goes with it;
+dropped names are recorded in <code class="docutils literal notranslate"><span class="pre">conversion_dropped_variables</span></code>.</p></li>
+<li><p>The conversion page recommends a <code class="docutils literal notranslate"><span class="pre">drop_variables</span></code> block for variables OG1 defines differently
+(first entry <code class="docutils literal notranslate"><span class="pre">gsw_sigma0</span></code>), as a copyable <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> snippet.</p></li>
+</ul>
+</section>
+<section id="fixed">
+<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>The basestation units-label corrections live in <code class="docutils literal notranslate"><span class="pre">config/OG1_unit_corrections.yaml</span></code>, keyed by the
+basestation variable and guarded by the label as written (so sg271’s correctly-labelled
+<code class="docutils literal notranslate"><span class="pre">sigma_theta</span></code> is untouched). A value a unit conversion moved outside the OG1 variable’s
+<code class="docutils literal notranslate"><span class="pre">valid_min</span></code>/<code class="docutils literal notranslate"><span class="pre">valid_max</span></code> — undoing the conversion lands it back in range — raises <code class="docutils literal notranslate"><span class="pre">UnitsError</span></code>
+(new, in <code class="docutils literal notranslate"><span class="pre">seagliderOG1.exceptions</span></code>) rather than shipping a file off by a unit factor. Values out
+of range for other reasons are left as-is and flagged on the page, never silently changed. Every
+correction is logged once per variable.</p></li>
+</ul>
+</section>
 </section>
 <section id="id1">
 <h2>[0.1.0] - 2026-10-22<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
-<section id="breaking-changes">
-<h3>Breaking changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
+<section id="id2">
+<h3>Breaking changes<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>The public API is a config-first set of verbs on the top-level package: <code class="docutils literal notranslate"><span class="pre">read</span></code>, <code class="docutils literal notranslate"><span class="pre">convert</span></code>,
 <code class="docutils literal notranslate"><span class="pre">write</span></code>, <code class="docutils literal notranslate"><span class="pre">report</span></code>, <code class="docutils literal notranslate"><span class="pre">enrich</span></code>, <code class="docutils literal notranslate"><span class="pre">process</span></code>, <code class="docutils literal notranslate"><span class="pre">process_missions</span></code>, plus <code class="docutils literal notranslate"><span class="pre">mission.load</span></code> / <code class="docutils literal notranslate"><span class="pre">mission.check</span></code>.
@@ -202,8 +277,8 @@ sections (<code class="docutils literal notranslate"><span class="pre">validate<
 <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> (#117); decode the JSON to read them.</p></li>
 </ul>
 </section>
-<section id="added">
-<h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
+<section id="id3">
+<h3>Added<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>A bundled sg271 sample mission (three dives, Drygalski Trough, PycnMix) ships inside the package:
 <code class="docutils literal notranslate"><span class="pre">readers.load_sample_basestation()</span></code> returns it, <code class="docutils literal notranslate"><span class="pre">readers.sample_mission_dir()</span></code> gives its path, and
@@ -322,8 +397,8 @@ provenance line (the basestation per-dive processing log is not carried).</p></l
 config, <code class="docutils literal notranslate"><span class="pre">ruff</span> <span class="pre">format</span></code> replaces <code class="docutils literal notranslate"><span class="pre">black</span></code>, CI coverage gate.</p></li>
 </ul>
 </section>
-<section id="fixed">
-<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
+<section id="id4">
+<h3>Fixed<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Conversion page: the presence-strips colorbar sits in its own column; it overlapped the strips
 (and warned “Axes that are not compatible with tight_layout”).</p></li>

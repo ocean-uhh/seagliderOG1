@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mission.yaml reference &mdash; seagliderOG1 0.1.0.post1.dev2 documentation</title>
+  <title>mission.yaml reference &mdash; seagliderOG1 0.1.0.post1.dev3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=20c22906"></script>
+      <script src="_static/documentation_options.js?v=84baad1f"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -186,26 +186,32 @@ for a <code class="docutils literal notranslate"><span class="pre">SN/DATE</span
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
 <td><p>Science variables to keep; <code class="docutils literal notranslate"><span class="pre">null</span></code> keeps all.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">report</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">drop_variables</span></code></p></td>
+<td><p>list or null</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
+<td><p>Variables to leave out of the file, by OG1 or basestation name; <code class="docutils literal notranslate"><span class="pre">null</span></code> drops none.
+OG1-mandatory variables are never dropped. The conversion page recommends names to drop.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">report</span></code></p></td>
 <td><p>bool</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p></td>
 <td><p>Also write the HTML conversion page <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> beside each file (as
 <code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code>).</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">platform</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">platform</span></code></p></td>
 <td><p>mapping</p></td>
 <td><p><em>(see below)</em></p></td>
 <td><p>OG1 platform fields. The required fields must be non-null when a platform block is
 present.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deployment_information</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">deployment_information</span></code></p></td>
 <td><p>mapping or null</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
 <td><p>The OG1 deployment variables <code class="docutils literal notranslate"><span class="pre">DEPLOYMENT_TIME</span></code> / <code class="docutils literal notranslate"><span class="pre">DEPLOYMENT_LATITUDE</span></code> /
 <code class="docutils literal notranslate"><span class="pre">DEPLOYMENT_LONGITUDE</span></code> (<em>see below</em>). Any key left null is derived from the first
 in-water fix. <code class="docutils literal notranslate"><span class="pre">validate</span></code> checks the lat/lon ranges and a timezone-bearing ISO time.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">identity_and_discovery</span></code>,
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">identity_and_discovery</span></code>,
 <code class="docutils literal notranslate"><span class="pre">rights_and_access</span></code>,
 <code class="docutils literal notranslate"><span class="pre">provenance_and_processing</span></code></p></td>
 <td><p>mapping</p></td>
@@ -218,7 +224,7 @@ convention groups: identity (<code class="docutils literal notranslate"><span cl
 <code class="docutils literal notranslate"><span class="pre">program_vocabulary</span></code> and <code class="docutils literal notranslate"><span class="pre">network</span></code> are not here — they are per-platform facts a
 local-config overlay will supply; until it lands, set them under <code class="docutils literal notranslate"><span class="pre">global_attributes</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">local_config</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">local_config</span></code></p></td>
 <td><p>str or null</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
 <td><p>Optional path to a directory of local config overrides. Reserved for a coming release and
@@ -226,7 +232,7 @@ not read yet, so it must be <code class="docutils literal notranslate"><span cla
 override would produce a wrong file that looks right). No <code class="docutils literal notranslate"><span class="pre">config_version</span></code> bump when the
 feature lands — the key is already declared and optional.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">global_attributes</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">global_attributes</span></code></p></td>
 <td><p>mapping or null</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
 <td><p>Verbatim escape hatch written into the OG1 file (null values are skipped). You may not
@@ -240,19 +246,19 @@ naming where the key goes. Replace the <code class="docutils literal notranslate
 </div>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sensors</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sensors</span></code></p></td>
 <td><p>mapping or null</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">null</span></code></p></td>
 <td><p>Corrections to a basestation sensor record, keyed by the sensor’s name in the files’
 <code class="docutils literal notranslate"><span class="pre">instrument</span></code> global (<code class="docutils literal notranslate"><span class="pre">legato</span></code>, <code class="docutils literal notranslate"><span class="pre">tridentebb700chla470fdom365</span></code>, <code class="docutils literal notranslate"><span class="pre">sbe41</span></code>, …):
 <code class="docutils literal notranslate"><span class="pre">serial_number</span></code> and <code class="docutils literal notranslate"><span class="pre">calibration_date</span></code>. See <a class="reference internal" href="#sensor-corrections">Sensor corrections</a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contributors</span></code></p></td>
 <td><p>list</p></td>
 <td><p><em>(required)</em></p></td>
 <td><p>One record per person per role; at least one with role <code class="docutils literal notranslate"><span class="pre">PI</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">institutions</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">institutions</span></code></p></td>
 <td><p>list</p></td>
 <td><p><em>(required)</em></p></td>
 <td><p>One record per institution per role; at least one with role <code class="docutils literal notranslate"><span class="pre">Operator</span></code>; resolved
@@ -478,6 +484,7 @@ at least one <code class="docutils literal notranslate"><span class="pre">Operat
 <span class="nt">dives</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">             </span><span class="c1"># [first, last] dive numbers; null = all files present</span>
 <span class="nt">repair</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">           </span><span class="c1"># run repair_files on the basestation files (writes the raw_dir tree)</span>
 <span class="nt">keep_variables</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">    </span><span class="c1"># optional list of science variables to keep; null = all</span>
+<span class="nt">drop_variables</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">    </span><span class="c1"># optional list of names to leave out of the file; null = none</span>
 <span class="nt">report</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">           </span><span class="c1"># also write &lt;id&gt;_conversion.html beside each file</span>
 
 <span class="nt">platform</span><span class="p">:</span><span class="w">               </span><span class="c1"># UPPER keys -&gt; variables, lower keys -&gt; attributes</span>

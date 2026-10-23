@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.1.0.post1.dev2 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.1.0.post1.dev3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=20c22906"></script>
+      <script src="_static/documentation_options.js?v=84baad1f"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -216,6 +216,24 @@ m/s); the mappings are in <code class="docutils literal notranslate"><span class
 <li><p>Variables carry <code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, <code class="docutils literal notranslate"><span class="pre">long_name</span></code> and <code class="docutils literal notranslate"><span class="pre">units</span></code>.</p></li>
 <li><p>Controlled vocabularies come from <a class="reference external" href="http://vocab.nerc.ac.uk/">NERC</a>.</p></li>
 </ul>
+<p>Some basestation versions label a variable with units that are wrong for the magnitude the
+values hold: the density family (<code class="docutils literal notranslate"><span class="pre">density</span></code>, <code class="docutils literal notranslate"><span class="pre">density_insitu</span></code>, <code class="docutils literal notranslate"><span class="pre">sigma_t</span></code>, and on
+basestation 2.8 <code class="docutils literal notranslate"><span class="pre">sigma_theta</span></code>) is written <code class="docutils literal notranslate"><span class="pre">g/m^3</span></code> while holding kg m-3-magnitude values. The
+corrections are listed in <code class="docutils literal notranslate"><span class="pre">config/OG1_unit_corrections.yaml</span></code>, keyed by the basestation variable
+and <strong>guarded by the label as written</strong> – a file that already labels the variable <code class="docutils literal notranslate"><span class="pre">kg/m^3</span></code> is
+left untouched, so the correction is harmless once a basestation fixes its output. The label is
+corrected to <code class="docutils literal notranslate"><span class="pre">kg</span> <span class="pre">m-3</span></code> before conversion, so no factor runs and the output equals the basestation
+value; the basestation label is kept in <code class="docutils literal notranslate"><span class="pre">original_units</span></code> with a note in <code class="docutils literal notranslate"><span class="pre">comment</span></code>, and the
+correction is logged.</p>
+<p>The converter does <strong>not</strong> silently change a value because it is out of range. The one exception is
+a refusal, not a change: if a unit conversion moved a value outside the OG1 variable’s
+<code class="docutils literal notranslate"><span class="pre">valid_min</span></code> / <code class="docutils literal notranslate"><span class="pre">valid_max</span></code> and undoing the conversion lands it back in range, the basestation
+label is wrong and the conversion raises <code class="docutils literal notranslate"><span class="pre">UnitsError</span></code> rather than writing a file off by a unit
+factor. Any other out-of-range value is left as-is and flagged on the conversion page (for example
+basestation 2.8 stores <code class="docutils literal notranslate"><span class="pre">sigma_theta</span></code> as full density, ~1027, not the anomaly its name implies).
+Use <code class="docutils literal notranslate"><span class="pre">drop_variables</span></code> or a <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> override to act on what the page flags; the page also
+recommends variables to drop where OG1 defines the name for a different quantity (such as
+<code class="docutils literal notranslate"><span class="pre">gsw_sigma0</span></code>, the density anomaly, where OG1 <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> is full potential density).</p>
 </section>
 <section id="gps-data">
 <h3>GPS data<a class="headerlink" href="#gps-data" title="Link to this heading"></a></h3>

@@ -62,6 +62,11 @@ Keys
      - list or null
      - ``null``
      - Science variables to keep; ``null`` keeps all.
+   * - ``drop_variables``
+     - list or null
+     - ``null``
+     - Variables to leave out of the file, by OG1 or basestation name; ``null`` drops none.
+       OG1-mandatory variables are never dropped. The conversion page recommends names to drop.
    * - ``report``
      - bool
      - ``false``
@@ -219,6 +224,7 @@ The template ``init`` writes (fill the nulls before ``validate``):
    dives: null             # [first, last] dive numbers; null = all files present
    repair: false           # run repair_files on the basestation files (writes the raw_dir tree)
    keep_variables: null    # optional list of science variables to keep; null = all
+   drop_variables: null    # optional list of names to leave out of the file; null = none
    report: false           # also write <id>_conversion.html beside each file
 
    platform:               # UPPER keys -> variables, lower keys -> attributes
