@@ -15,6 +15,19 @@ import matplotlib
 # covers every entry point into rendering, not just the CLI (which also sets MPLBACKEND).
 matplotlib.use("Agg")
 
-from seagliderOG1.reports._record import record, report
-
 __all__ = ["record", "report"]
+
+
+def __getattr__(name: str) -> object:
+    """Resolve ``record`` / ``report`` lazily on first access.
+
+    Importing this package therefore does not pull the ``_record`` -> ``writers`` ->
+    ``tools`` -> ``vocabularies`` chain; that chain imports the vendored units layer from
+    here (``vocabularies.UNITS``), so an eager import would be a circular import.
+    """
+    if name in __all__:
+        from seagliderOG1.reports import _record
+
+        return getattr(_record, name)
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)

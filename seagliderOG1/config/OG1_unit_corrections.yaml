@@ -26,3 +26,6 @@ density: {from: "g/m^3", to: "kg m-3"}
 density_insitu: {from: "g/m^3", to: "kg m-3"}
 sigma_t: {from: "g/m^3", to: "kg m-3"}
 sigma_theta: {from: "g/m^3", to: "kg m-3"}
+# glide_angle is labelled cm/s on basestation 2.8 (sg005) but holds degree-magnitude values
+# (median ~22, range [-63, 22]); OG1 GLIDE_ANGLE is degrees. A mislabel, not a conversion.
+glide_angle: {from: "cm/s", to: "degrees"}

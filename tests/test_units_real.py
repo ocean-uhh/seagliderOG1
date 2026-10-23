@@ -57,6 +57,57 @@ def _median(ds, name):
     return float(np.median(finite))
 
 
+def _source_target_pairs():
+    """Every (source units, OG1 target units, standard_name) a mapped variable carries.
+
+    Read from both bundled samples, so a new basestation spelling that reaches an OG1
+    variable fails the test until an alias row with its source is added to vocabularies.UNITS.
+    The density mislabel (g/m^3) is excluded: it is the OG1_unit_corrections.yaml label
+    correction, applied before resolution, not an alias.
+    """
+    import warnings
+
+    corrections = set(vocabularies.basestation_unit_corrections)
+    pairs = set()
+    for mission_dir in (str(readers.SAMPLE_DIR), SG005):
+        dsets = readers.read_mission(mission_dir, 1, 1)
+        raw = dsets[0]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            og1 = _convert.convert(dsets)
+        for name in og1.data_vars:
+            origin = str(og1[name].attrs.get("original_name", ""))
+            target = vocabularies.vocab_attrs.get(name, {})
+            if origin in ("", name) or "units" not in target:
+                continue
+            if origin not in raw.variables or origin in corrections:
+                continue
+            source = raw[origin].attrs.get("units")
+            if source:
+                pairs.add((str(source), target["units"], target.get("standard_name")))
+    return sorted(pairs)
+
+
+@pytest.mark.xfail(
+    reason="OXYSAT (micromoles/kg->percent) and DOXY (micromoles/kg->mmol m-3) are "
+    "wrong-quantity mappings the view cannot resolve; removed in the mapping-changes commit",
+    strict=True,
+)
+def test_units_view_resolves_every_sample_spelling():
+    """vocabularies.UNITS resolves every source spelling the bundled samples carry."""
+    from seagliderOG1.reports._vendored import units
+
+    unresolved = []
+    for source, target, standard_name in _source_target_pairs():
+        try:
+            units.resolve_units(
+                source, standard_name, tables=vocabularies.UNITS, canonical=target
+            )
+        except units.UnitsError:
+            unresolved.append((source, target))
+    assert unresolved == [], f"UNITS does not resolve: {unresolved}"
+
+
 def test_sg271_density_relabelled_to_kg_m3(sg271):
     """sg271 DENSITY and SIGMA_T are kg m-3-magnitude, not 1000x too small."""
     assert 1020 <= _median(sg271, "DENSITY") <= 1035
