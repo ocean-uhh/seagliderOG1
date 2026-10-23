@@ -375,16 +375,13 @@ def test_og1_candidate_groups_from_the_curated_list() -> None:
     assert vspeed["valid"] == "61.0"
 
 
-def test_unit_factor_direct_normalised_and_unrelated() -> None:
-    """Same unit is 1.0; a spelling variant resolves via the alias table; unrelated is None."""
-    assert conversion._unit_factor("m", "m") == 1.0
-    assert conversion._unit_factor("cm", "m") == 0.01  # direct table key
-    assert (
-        conversion._unit_factor("meters", "cm") == 100.0
-    )  # normalised fallback (m_to_cm)
-    assert (
-        conversion._unit_factor("degrees_north", "cm") is None
-    )  # no conversion invented
+def test_unit_factor_resolves_through_the_view() -> None:
+    """Same unit is 1.0; the view relates velocity/conductivity spellings; unrelated is None."""
+    assert conversion._unit_factor("m s-1", "m s-1") == 1.0
+    assert conversion._unit_factor("cm/s", "m s-1") == 0.01  # 1 cm/s = 0.01 m/s
+    assert conversion._unit_factor("S/m", "mS cm-1") == 10.0  # 1 S/m = 10 mS/cm
+    # A pair the view cannot relate is not comparable; no conversion is invented.
+    assert conversion._unit_factor("degrees_north", "cm") is None
 
 
 def test_summary_rows_and_verdict_before_and_after(tmp_path) -> None:

@@ -40,6 +40,9 @@ SHIM_NAMES = frozenset(
         "calc_Z",
         "assign_phase",
         "assign_profile_number",
+        "reformat_units_str",
+        "reformat_units_var",
+        "convert_units_var",
         "registry_institutions",
         "normalize_orcid",
         "normalize_role",
@@ -357,3 +360,105 @@ def save_dataset(ds: object, output_file: str | os.PathLike | None = None) -> bo
 
     writers.write(ds, output_file, overwrite=True)
     return True
+
+
+def reformat_units_str(old_unit: str) -> str:
+    """Return the canonical spelling of ``old_unit``; deprecated, resolve through the view.
+
+    The three ad-hoc unit tables are gone; a units spelling now resolves through
+    :data:`seagliderOG1.vocabularies.UNITS` over the vendored family tables. This returns the
+    canonical spelling that view gives (an unrecognised spelling is returned unchanged). The old
+    ``unit_format`` dict argument is gone with ``vocabularies.unit_str_format``. Removed in 0.3.0.
+
+    Parameters
+    ----------
+    old_unit : str
+        The units string to normalise.
+
+    Returns
+    -------
+    str
+        The canonical spelling, or ``old_unit`` unchanged when the view does not recognise it.
+
+    """
+    _warn("tools.reformat_units_str", "the units view seagliderOG1.vocabularies.UNITS")
+    from seagliderOG1 import vocabularies
+    from seagliderOG1.reports._vendored import units as _units
+
+    return _units.resolve_units(old_unit, tables=vocabularies.UNITS)[0]
+
+
+def reformat_units_var(ds: object, var_name: str) -> str:
+    """Return the canonical spelling of a variable's units; deprecated. Removed in 0.3.0.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset holding the variable.
+    var_name : str
+        The variable whose ``units`` attribute is normalised.
+
+    Returns
+    -------
+    str
+        The canonical spelling of the variable's units (unchanged when unrecognised).
+
+    """
+    _warn("tools.reformat_units_var", "the units view seagliderOG1.vocabularies.UNITS")
+    from seagliderOG1 import vocabularies
+    from seagliderOG1.reports._vendored import units as _units
+
+    return _units.resolve_units(ds[var_name].attrs["units"], tables=vocabularies.UNITS)[
+        0
+    ]
+
+
+def convert_units_var(var_values: object, current_unit: str, new_unit: str) -> tuple:
+    """Convert values between two spellings the view relates; deprecated. Removed in 0.3.0.
+
+    Both spellings resolve through :data:`seagliderOG1.vocabularies.UNITS`; when they share a
+    canonical, the ratio of their factors converts ``current_unit`` into ``new_unit``. A pair the
+    view cannot relate raises :class:`seagliderOG1.exceptions.UnitsError` — the v0.0.2 silent
+    pass-through of an unknown pair is the behaviour being removed. The conversion pipeline itself
+    no longer calls this; it resolves units in :func:`seagliderOG1.convert`.
+
+    Parameters
+    ----------
+    var_values : numpy.ndarray or float
+        The values to convert.
+    current_unit : str
+        The units the values are in.
+    new_unit : str
+        The units to convert to.
+
+    Returns
+    -------
+    tuple of (numpy.ndarray or float, str)
+        The converted values and the canonical spelling of ``new_unit``.
+
+    Raises
+    ------
+    seagliderOG1.exceptions.UnitsError
+        When the two spellings do not resolve to the same canonical unit.
+
+    """
+    _warn(
+        "tools.convert_units_var",
+        "seagliderOG1.convert (units resolve through vocabularies.UNITS)",
+    )
+    from seagliderOG1 import vocabularies
+    from seagliderOG1.exceptions import UnitsError
+    from seagliderOG1.reports._vendored import units as _units
+
+    canon_cur, factor_cur = _units.resolve_units(
+        current_unit, tables=vocabularies.UNITS
+    )
+    canon_new, factor_new = _units.resolve_units(new_unit, tables=vocabularies.UNITS)
+    if canon_cur != canon_new:
+        msg = (
+            f"convert_units_var cannot relate {current_unit!r} to {new_unit!r} through "
+            f"vocabularies.UNITS: they resolve to different canonical units "
+            f"({canon_cur!r} and {canon_new!r})."
+        )
+        raise UnitsError(msg)
+    return var_values * (factor_cur / factor_new), canon_new

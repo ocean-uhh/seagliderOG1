@@ -496,18 +496,25 @@ def _norm_unit(unit: str) -> str:
 def _unit_factor(u_from: str, u_to: str) -> float | None:
     """Return the multiplier converting ``u_from`` into ``u_to``, or None when unrelated.
 
-    Same unit (after spelling normalisation) is ``1.0``; otherwise the family alias table
-    (:data:`seagliderOG1.vocabularies.unit1_to_unit2`) is consulted. No conversion is invented:
-    units the table does not relate return None and the comparison is marked not comparable.
+    Same unit (after spelling normalisation) is ``1.0``; otherwise both spellings are resolved
+    through the package units view (:data:`seagliderOG1.vocabularies.UNITS`), and when they share
+    a canonical the ratio of their factors converts one into the other. No conversion is invented:
+    units the view cannot relate return None and the comparison is marked not comparable.
     """
     if _norm_unit(u_from) == _norm_unit(u_to):
         return 1.0
-    # The table keys a direct conversion by exact spelling; fall back to the normalised
-    # spellings so a "meters"/"m" variant still finds an "m_to_cm"-style entry.
-    entry = vocabularies.unit1_to_unit2.get(
-        f"{u_from}_to_{u_to}"
-    ) or vocabularies.unit1_to_unit2.get(f"{_norm_unit(u_from)}_to_{_norm_unit(u_to)}")
-    return float(entry["factor"]) if entry else None
+    from seagliderOG1.reports._vendored import units as _units
+
+    try:
+        canon_from, factor_from = _units.resolve_units(
+            u_from, tables=vocabularies.UNITS
+        )
+        canon_to, factor_to = _units.resolve_units(u_to, tables=vocabularies.UNITS)
+    except _units.UnitsError:
+        return None
+    if canon_from != canon_to or factor_to == 0:
+        return None
+    return factor_from / factor_to
 
 
 def _duplicate_groups(ds: xr.Dataset) -> list[dict[str, object]]:

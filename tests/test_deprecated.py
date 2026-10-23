@@ -136,6 +136,42 @@ def test_save_dataset_requires_a_path_and_writes(
         writers.save_dataset(ds)
 
 
+@pytest.mark.parametrize(
+    ("current", "new", "value", "expected"),
+    [
+        ("cm/s", "m s-1", 100.0, 1.0),
+        ("cm s-1", "m s-1", 100.0, 1.0),
+        ("m/s", "cm/s", 1.0, 100.0),
+        ("S/m", "mS/cm", 1.0, 10.0),
+        ("mS/cm", "S/m", 10.0, 1.0),
+        ("degrees_Celsius", "degree_Celsius", 1.0, 1.0),
+    ],
+)
+def test_convert_units_var_resolves_through_the_view(current, new, value, expected):
+    """convert_units_var now resolves both spellings through vocabularies.UNITS and warns."""
+    with pytest.warns(SeagliderDeprecationWarning):
+        out, _ = tools.convert_units_var(value, current, new)
+    assert out == pytest.approx(expected)
+
+
+def test_convert_units_var_refuses_a_pair_the_view_cannot_relate():
+    """A pair resolving to different canonicals raises UnitsError (the pass-through is gone)."""
+    from seagliderOG1.exceptions import UnitsError
+
+    with pytest.warns(SeagliderDeprecationWarning), pytest.raises(UnitsError):
+        tools.convert_units_var(1.0, "dbar", "Pa")
+
+
+def test_reformat_units_normalises_spelling_through_the_view():
+    """reformat_units_str/var return the canonical spelling the view gives, and warn."""
+    with pytest.warns(SeagliderDeprecationWarning):
+        assert tools.reformat_units_str("cm/s") == "m s-1"
+    ds = xr.Dataset({"v": ("x", [1.0])})
+    ds["v"].attrs["units"] = "meters"
+    with pytest.warns(SeagliderDeprecationWarning):
+        assert tools.reformat_units_var(ds, "v") == "m"
+
+
 def test_load_sample_dataset_is_removed():
     """load_sample_dataset is tier C: the online registry is gone, so access raises."""
     with pytest.raises(AttributeError, match="registry was removed"):
@@ -163,6 +199,9 @@ def test_show_contents_accepts_a_path_with_a_warning(sg005_og1: pathlib.Path):
         (tools, "set_best_dtype", "pipeline internal"),
         (sg.vocabularies, "load_default_contributors", "mission.yaml"),
         (sg.vocabularies, "contrib_to_append", "mission.yaml"),
+        (sg.vocabularies, "unit_str_format", "vocabularies.UNITS"),
+        (sg.vocabularies, "unit1_to_unit2", "vocabularies.UNITS"),
+        (sg.vocabularies, "preferred_units", "vocabularies.UNITS"),
     ],
 )
 def test_tier_c_raises_with_the_migration_message(module, name, needle):

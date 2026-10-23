@@ -20,9 +20,6 @@ __all__ = [
     "add_phase",
     "add_profile_number",
     "add_dive_number",
-    "convert_units_var",
-    "reformat_units_var",
-    "reformat_units_str",
     "convert_qc_flags",
     "encode_times_og1",
     "split_by_unique_dims",
@@ -261,130 +258,6 @@ def split_by_unique_dims(ds: xr.Dataset) -> dict:
     return {dims: xr.Dataset(variables) for dims, variables in groups.items()}
 
 
-def reformat_units_var(
-    ds: xr.Dataset, var_name: str, unit_format: dict = vocabularies.unit_str_format
-) -> str:
-    """Rename units in the dataset based on the provided dictionary for OG1.
-
-    Parameters
-    ----------
-    ds
-        The input dataset containing variables with units to be renamed.
-    var_name
-        The name of the variable whose units should be reformatted.
-    unit_format, optional
-        A dictionary mapping old unit strings to new formatted unit strings.
-
-    Returns
-    -------
-    str
-        The reformatted unit string.
-
-    """
-    """
-    Renames units in the dataset based on the provided dictionary for OG1.
-
-    Parameters
-    ----------
-    ds (xarray.Dataset): The input dataset containing variables with units to be renamed.
-    unit_format (dict): A dictionary mapping old unit strings to new formatted unit strings.
-
-    Returns
-    -------
-    xarray.Dataset: The dataset with renamed units.
-    """
-    old_unit = ds[var_name].attrs["units"]
-    return unit_format.get(old_unit, old_unit)
-
-
-def reformat_units_str(
-    old_unit: str, unit_format: dict = vocabularies.unit_str_format
-) -> str:
-    """Reformat a unit string based on the provided unit format dictionary.
-
-    Parameters
-    ----------
-    old_unit
-        The original unit string to reformat.
-    unit_format, optional
-        A dictionary mapping old unit strings to new formatted unit strings.
-
-    Returns
-    -------
-    str
-        The reformatted unit string, or the original if no mapping exists.
-
-    """
-    new_unit = unit_format.get(old_unit, old_unit)
-    return new_unit.strip()  # .casefold()
-
-
-# Unit pairs already warned about (see convert_units_var).
-_UNCONVERTED_UNITS: set[tuple[str, str]] = set()
-
-
-def convert_units_var(
-    var_values: np.ndarray,
-    current_unit: str,
-    new_unit: str,
-    unit1_to_unit2: dict = vocabularies.unit1_to_unit2,
-) -> tuple[np.ndarray, str]:
-    """Convert variable values from their current unit to a requested unit.
-
-    Unit strings are normalized with :func:`reformat_units_str` before they
-    are compared or used to look up conversion information.
-
-    If the normalized units are identical, the values are returned unchanged.
-    If no conversion is available, the original values and current unit are
-    returned, and an optional warning is logged.
-
-    Parameters
-    ----------
-    var_values
-        Values to convert.
-    current_unit
-        Unit currently associated with ``var_values``.
-    new_unit
-        Requested output unit.
-    unit1_to_unit2
-        Mapping of conversion keys, such as ``"cm/s_to_m/s"``, to conversion
-        information. Each entry must contain a ``"factor"`` value.
-
-    Returns
-    -------
-    converted_values
-        Converted values, or the original values if conversion is unnecessary
-        or unavailable.
-    output_unit
-        Normalized output unit. This is the current unit when conversion is
-        unavailable.
-    """
-    current_unit = reformat_units_str(current_unit)
-    requested_unit = reformat_units_str(new_unit)
-
-    # No conversion is needed when the normalized units are identical.
-    if current_unit == requested_unit:
-        return var_values, current_unit
-
-    conversion_key = f"{current_unit}_to_{requested_unit}"
-    conversion = unit1_to_unit2.get(conversion_key)
-
-    if conversion is not None:
-        converted_values = var_values * conversion["factor"]
-        return converted_values, requested_unit
-
-    # Once per unit pair per session: the same pair recurs on every dive.
-    if (current_unit, requested_unit) not in _UNCONVERTED_UNITS:
-        _UNCONVERTED_UNITS.add((current_unit, requested_unit))
-        _log.warning(
-            "No conversion information found for %r to %r",
-            current_unit,
-            requested_unit,
-        )
-
-    return var_values, current_unit
-
-
 def convert_qc_flags(dsa: xr.Dataset, qc_name: str) -> xr.Dataset:
     """Convert QC flag variables to proper integer format and update attributes.
 
@@ -521,6 +394,12 @@ assign_phase = _deprecated._renamed(add_phase, "tools.assign_phase", "tools.add_
 assign_profile_number = _deprecated._renamed(
     add_profile_number, "tools.assign_profile_number", "tools.add_profile_number"
 )
+
+# The three unit helpers now resolve through the units view (vocabularies.UNITS); the ad-hoc
+# unit tables they used are gone. Kept as warning shims for one release (removed 0.3.0).
+reformat_units_str = _deprecated.reformat_units_str
+reformat_units_var = _deprecated.reformat_units_var
+convert_units_var = _deprecated.convert_units_var
 
 _REMOVED_TOOLS = {
     "OG1_name_mapping": (

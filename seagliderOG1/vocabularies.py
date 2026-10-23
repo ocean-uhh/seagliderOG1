@@ -311,52 +311,6 @@ def platform_from_file(attrs: dict) -> dict:
 RAW_COUNT_SUFFIXES = ("redCount", "blueCount", "fluorCount", "redRef", "blueRef")
 RAW_COUNT_UNITS = "counts"
 
-# Preferred units for OG1 format - conversion will be attempted if mapping exists
-preferred_units = ["m s-1", "dbar", "S m-1"]
-
-# Unit string standardization: maps various unit representations to preferred format
-unit_str_format = {
-    "m/s": "m s-1",
-    "cm/s": "cm s-1",
-    "S/m": "S m-1",
-    "mS/cm": "mS cm-1",
-    "meters": "m",
-    "degrees_Celsius": "degree_Celsius",
-    "degreesCelsius": "degree_Celsius",
-    "g/m^3": "g m-3",
-    "kg/m^3": "kg m-3",
-    "g/kg": "g kg-1",
-    "seconds": "s",
-}
-
-# Unit conversion definitions: each entry defines source unit, target unit, and conversion factor
-unit1_to_unit2 = {
-    "cm s-1_to_m s-1": {"current_unit": "cm s-1", "new_unit": "m s-1", "factor": 0.01},
-    "cm/s_to_m/s": {"current_unit": "cm/s", "new_unit": "m/s", "factor": 0.01},
-    "m/s_to_cm/s": {"current_unit": "m/s", "new_unit": "cm/s", "factor": 100},
-    "m s-1_to_cm s-1": {"current_unit": "m s-1", "new_unit": "cm s-1", "factor": 100},
-    "S/m_to_mS/cm": {"current_unit": "S/m", "new_unit": "mS/cm", "factor": 10},
-    "S m-1_to_mS cm-1": {"current_unit": "S m-1", "new_unit": "mS cm-1", "factor": 10},
-    "mS/cm_to_S/m": {"current_unit": "mS/cm", "new_unit": "S/m", "factor": 0.1},
-    "mS cm-1_to_S m-1": {"current_unit": "mS cm-1", "new_unit": "S m-1", "factor": 0.1},
-    "dbar_to_Pa": {"current_unit": "dbar", "new_unit": "Pa", "factor": 10000},
-    "Pa_to_dbar": {"current_unit": "Pa", "new_unit": "dbar", "factor": 0.0001},
-    "dbar_to_kPa": {"current_unit": "dbar", "new_unit": "kPa", "factor": 10},
-    "m_to_cm": {"current_unit": "m", "new_unit": "cm", "factor": 100},
-    "m_to_km": {"current_unit": "m", "new_unit": "km", "factor": 0.001},
-    "cm_to_m": {"current_unit": "cm", "new_unit": "m", "factor": 0.01},
-    "km_to_m": {"current_unit": "km", "new_unit": "m", "factor": 1000},
-    "g/m^3_to_kg/m^3": {"current_unit": "g/m^3", "new_unit": "kg/m^3", "factor": 0.001},
-    "g m-3_to_kg m-3": {"current_unit": "g m-3", "new_unit": "kg m-3", "factor": 0.001},
-    "kg/m^3_to_g/m^3": {"current_unit": "kg/m^3", "new_unit": "g/m^3", "factor": 1000},
-    "kg m-3_to_g m-3": {"current_unit": "kg m-3", "new_unit": "g m-3", "factor": 1000},
-    "micrograms/liter_to_mg m-3": {
-        "current_unit": "micrograms/liter",
-        "new_unit": "mg m-3",
-        "factor": 1.0,
-    },
-}
-
 # The package units view over the vendored family tables (reports/_vendored/units.py). One table
 # resolves a reader spelling to the OG1 variable's canonical spelling and the factor to reach it.
 # Each row below is a spelling the bundled samples carry that the family default does not already
@@ -636,8 +590,15 @@ from seagliderOG1 import _deprecated  # noqa: E402  # shim follows the definitio
 
 _deprecated.install_removed(
     globals(),
-    dict.fromkeys(
-        ("load_default_contributors", "contrib_to_append"),
-        "contributors come from the mission.yaml contributors: block now.",
-    ),
+    {
+        **dict.fromkeys(
+            ("load_default_contributors", "contrib_to_append"),
+            "contributors come from the mission.yaml contributors: block now.",
+        ),
+        **dict.fromkeys(
+            ("unit_str_format", "unit1_to_unit2", "preferred_units"),
+            "units resolve through vocabularies.UNITS (one view over the vendored "
+            "family tables) now.",
+        ),
+    },
 )

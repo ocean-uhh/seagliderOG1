@@ -12,22 +12,6 @@ def test_dimension_renames():
     assert vocabularies.DIMENSION_RENAMES == {"sg_data_point": "N_MEASUREMENTS"}
 
 
-def test_preferred_units():
-    assert vocabularies.preferred_units == ["m s-1", "dbar", "S m-1"]
-
-
-def test_unit_str_format():
-    assert vocabularies.unit_str_format["m/s"] == "m s-1"
-    assert vocabularies.unit_str_format["cm/s"] == "cm s-1"
-    assert vocabularies.unit_str_format["S/m"] == "S m-1"
-    assert vocabularies.unit_str_format["mS/cm"] == "mS cm-1"
-    assert vocabularies.unit_str_format["meters"] == "m"
-    assert vocabularies.unit_str_format["degrees_Celsius"] == "degree_Celsius"
-    assert vocabularies.unit_str_format["degreesCelsius"] == "degree_Celsius"
-    assert vocabularies.unit_str_format["g/m^3"] == "g m-3"
-    assert vocabularies.unit_str_format["kg/m^3"] == "kg m-3"
-
-
 def test_var_names():
     og1_varlist = [
         "TIME",

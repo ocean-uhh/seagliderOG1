@@ -42,6 +42,12 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   mapped onto OG1 quantities they are not; they now pass through under their own names and are
   recommended for drop. `DOXY` comes only from `oxygen_concentration`, `OXYSAT` only from the
   percent `O2_sat` source.
+- The three ad-hoc unit tables in `vocabularies` (`unit_str_format`, `unit1_to_unit2`,
+  `preferred_units`) are removed; access raises naming `vocabularies.UNITS`. The three
+  `tools` unit helpers (`reformat_units_str`, `reformat_units_var`, `convert_units_var`) are
+  deprecated (warn, removed 0.3.0) and now resolve through `vocabularies.UNITS`: a spelling the
+  view cannot relate raises `UnitsError` instead of the old silent pass-through, and the
+  `unit_format` / `unit1_to_unit2` dict arguments are gone.
 
 ### Added
 

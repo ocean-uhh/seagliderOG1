@@ -90,19 +90,47 @@ def _source_target_pairs():
     return sorted(pairs)
 
 
-def test_units_view_resolves_every_sample_spelling():
-    """vocabularies.UNITS resolves every source spelling the bundled samples carry."""
+# Every (source spelling, OG1 target units) the bundled samples carry, pinned to the exact
+# (canonical, factor) the units view must resolve it to. The conversion path (vocabularies.UNITS)
+# resolves through the vendored family tables (reports/_vendored/units_tables.py); pinning the
+# factors here means a re-vendor that shifts a base factor fails this test loudly, rather than
+# silently moving a converted output value. A new sample spelling not listed fails until its
+# expected (canonical, factor) is added with a verified factor.
+EXPECTED_SAMPLE_UNITS = {
+    ("1e-3", "1e-3"): ("1e-3", 1.0),
+    ("Hz", "Hz"): ("Hz", 1.0),
+    ("S/m", "mS cm-1"): ("mS cm-1", 10.0),
+    ("cm/s", "m s-1"): ("m s-1", 0.01),
+    ("dbar", "dbar"): ("dbar", 1.0),
+    ("degrees_Celsius", "degree_Celsius"): ("degree_Celsius", 1.0),
+    ("g", "g"): ("g", 1.0),
+    ("g/kg", "g kg-1"): ("g kg-1", 1.0),
+    ("m/s", "m s-1"): ("m s-1", 1.0),
+    ("meters", "m"): ("m", 1.0),
+    ("micrograms/liter", "mg m-3"): ("mg m-3", 1.0),
+    ("s", "seconds"): ("seconds", 1.0),
+}
+
+
+def test_units_view_resolves_every_sample_spelling_to_the_pinned_factor():
+    """vocabularies.UNITS resolves every sample spelling to the exact pinned (canonical, factor)."""
     from seagliderOG1.reports._vendored import units
 
-    unresolved = []
+    resolved = {}
     for source, target, standard_name in _source_target_pairs():
-        try:
-            units.resolve_units(
-                source, standard_name, tables=vocabularies.UNITS, canonical=target
-            )
-        except units.UnitsError:
-            unresolved.append((source, target))
-    assert unresolved == [], f"UNITS does not resolve: {unresolved}"
+        resolved[(source, target)] = units.resolve_units(
+            source, standard_name, tables=vocabularies.UNITS, canonical=target
+        )
+    unexpected = sorted(set(resolved) - set(EXPECTED_SAMPLE_UNITS))
+    assert unexpected == [], (
+        f"sample spellings not pinned in EXPECTED_SAMPLE_UNITS: {unexpected}; "
+        "add each with its verified (canonical, factor)."
+    )
+    for key, got in resolved.items():
+        assert got == EXPECTED_SAMPLE_UNITS[key], (
+            f"{key} resolved to {got}, expected {EXPECTED_SAMPLE_UNITS[key]} "
+            "(a re-vendor may have shifted a family factor)."
+        )
 
 
 def test_sg271_density_relabelled_to_kg_m3(sg271):
