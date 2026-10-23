@@ -29,8 +29,11 @@ What the converter does to a variable's units, in order:
 Where to add or change a unit
 -----------------------------
 
-Each kind of unit handling lives in one place, so a new basestation spelling or a corrected
-label is one edit (the tables below are the data, not where you change it):
+The unit definitions below are **package-level**: they live in the package and apply to every file
+of a given basestation version, so adding one needs a change to seagliderOG1 and a release. (The
+tables further down are the data these produce, not where you change it.) The factor itself is
+applied in ``seagliderOG1._convert`` from the ``(canonical, factor)`` that ``vocabularies.UNITS``
+resolves, so adding a row is all a new spelling needs — no code change.
 
 * A **wrong label** — a basestation units string that is wrong for the magnitude the values hold
   (density written ``g/m^3`` for kg m⁻³ values; ``glide_angle`` written ``cm/s`` for degrees): add a
@@ -55,9 +58,14 @@ label is one edit (the tables below are the data, not where you change it):
   `OG1_variable_names.yaml
   <https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/config/OG1_variable_names.yaml>`_.
 
-The factor itself is applied in ``seagliderOG1._convert`` when a variable is converted, from the
-``(canonical, factor)`` that ``vocabularies.UNITS`` resolves — so adding a row above is all that a
-new spelling needs; no code change.
+**Mission-level**, in your own ``mission.yaml`` with no change to the package:
+
+* **Leave a variable out** whose units you cannot use (for example one that is refused, or a
+  wrong-quantity pass-through): list it under ``drop_variables`` (see :ref:`mission_yaml`).
+* A **per-mission units correction** is not yet available: the reserved ``local_config`` key will,
+  with the forthcoming fleet overlay, let a deployment add its own label corrections and aliases
+  (overlaying the package ``OG1_unit_corrections.yaml`` and ``UNITS``). Until then, a genuinely new
+  spelling is a package-level change above.
 
 The tables below are regenerated on every docs build from the two bundled samples (sg005,
 basestation 2.8; sg271, basestation 3.0.6), so they always match the code.
