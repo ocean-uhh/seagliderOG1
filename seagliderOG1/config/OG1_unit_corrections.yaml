@@ -1,0 +1,28 @@
+################################################################################
+# BASESTATION UNIT LABEL CORRECTIONS
+#
+# Some basestation versions label a variable with units that are wrong for the
+# magnitude the values hold. Keyed by the BASESTATION (origin) variable name and
+# guarded by the label as written, so a correctly-labelled source on another
+# basestation version is left untouched (sg271 writes `sigma_theta` as kg/m^3,
+# sg005 writes it as g/m^3 -- same destination, different origin label).
+#
+# Applied before unit conversion, in origin terms, so the wrong factor is never
+# applied. The label as written is kept on the variable as `original_units` and
+# noted in `comment`; one warning is logged per corrected variable.
+#
+# This is only the label half. After the rename and conversion, a value still
+# outside the OG1 variable's valid_min/valid_max is handled by the range pass in
+# _convert.py, driven by those ranges (the sigma density-vs-anomaly offset, or a
+# UnitsError when nothing brings it into range).
+#
+# Evidence (bundled samples, 2026-10-22): the density family is written `g/m^3`
+# while holding kg m-3-magnitude values on basestation 2.8 (sg005) and 3.0.6
+# (sg271); the same files label the GSW density variables `kg/m^3` at the same
+# magnitude. See CHANGELOG 0.1.1.
+################################################################################
+
+density: {from: "g/m^3", to: "kg m-3"}
+density_insitu: {from: "g/m^3", to: "kg m-3"}
+sigma_t: {from: "g/m^3", to: "kg m-3"}
+sigma_theta: {from: "g/m^3", to: "kg m-3"}

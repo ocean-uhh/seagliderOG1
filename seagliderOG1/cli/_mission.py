@@ -158,6 +158,7 @@ def render_template(
         f"dives: {_scalar(dives) if dives else 'null'}             # [first, last] dive numbers; null = all files present",
         "repair: false           # run repair_files on the basestation files (writes the raw_dir tree)",
         "keep_variables: null    # optional list of science variables to keep; null = all",
+        "drop_variables: null    # optional list of names to leave out of the file; null = none",
         "report: false           # also write <id>_conversion.html beside each file",
         "",
         *_platform_template_lines(plat),

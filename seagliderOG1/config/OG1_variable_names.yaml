@@ -77,7 +77,10 @@ down_irradiance_490: ED490
 downwelling_PAR: DPAR
 temperature_oxygen: TEMP_OXYGEN
 potential_density: POTDENS0
-gsw_sigma0: POTDENS0
+# gsw_sigma0 is the density anomaly (sigma0 = potential density - 1000); OG1 POTDENS0 is full
+# potential density, so gsw_sigma0 is not mapped here (it would be ~1000 out of range). It passes
+# through under its own name; POTDENS0 is derived in a later release. See drop_variables and the
+# conversion page's drop recommendation.
 chlorophyll_raw: FLUOCHLA
 fluorCount: FLUOCHLA
 ad2cp_pitch: AD2CP_PITCH

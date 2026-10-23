@@ -212,6 +212,7 @@ def run(args: argparse.Namespace) -> int:
     first, last = (dives[0], dives[1]) if dives else (None, None)
     repair = bool(args.repair or config.get("repair", False))
     keep_variables = config.get("keep_variables")
+    drop_variables = config.get("drop_variables")
     report = bool(args.report or args.report_dir or config.get("report", False))
 
     try:
@@ -266,6 +267,7 @@ def run(args: argparse.Namespace) -> int:
                 sensors=config.get("sensors"),
                 mode=mode,
                 keep_variables=keep_variables,
+                drop_variables=drop_variables,
                 repair=repair,
                 overwrite=args.force,
                 report=report,

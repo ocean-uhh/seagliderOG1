@@ -29,10 +29,11 @@ from seagliderOG1 import (
     writers,
 )
 from seagliderOG1 import mission as _config
-from seagliderOG1.exceptions import MetadataError, MissionError
+from seagliderOG1.exceptions import MetadataError, MissionError, UnitsError
 
 __all__ = [
     "convert",
+    "drop_variables",
     "keep_variables",
     "name_mapping",
     "process",
@@ -40,6 +41,52 @@ __all__ = [
 ]
 
 _log = logging.getLogger(__name__)
+
+# Units corrections are logged once per variable per session: the vocabulary is
+# applied per dive (see apply_og1_vocabulary), so the same correction recurs.
+_UNIT_CORRECTED: set[str] = set()
+_UNIT_RANGE: set[str] = set()
+
+
+def _warn_once(seen: set[str], key: str, message: str, *args: object) -> None:
+    """Log a warning the first time ``key`` is seen, suppressing later repeats.
+
+    Parameters
+    ----------
+    seen : set of str
+        Keys already warned about this session; ``key`` is added when new.
+    key : str
+        The deduplication key (a variable name).
+    message : str
+        A ``logging``-style format string.
+    *args : object
+        Arguments interpolated into ``message``.
+
+    """
+    if key not in seen:
+        seen.add(key)
+        _log.warning(message, *args)
+
+
+def _append_comment(existing: str | None, sentence: str) -> str:
+    """Append ``sentence`` to an existing comment, else return it alone.
+
+    Parameters
+    ----------
+    existing : str or None
+        The comment already on the variable, if any.
+    sentence : str
+        The sentence to append.
+
+    Returns
+    -------
+    str
+        The combined comment.
+
+    """
+    existing = (existing or "").strip()
+    return f"{existing} {sentence}".strip() if existing else sentence
+
 
 # Global attributes the converter derives from the data; the mission config may
 # not set these through global_attributes (a collision is an error). ``id`` is not
@@ -278,6 +325,68 @@ def keep_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
 
 # process_mission takes a keep_variables= argument, which shadows the function inside it.
 _keep_variables = keep_variables
+
+
+def drop_variables(ds: xr.Dataset, names: list[str]) -> xr.Dataset:
+    """Remove named variables from the converted dataset, keeping OG1 essentials.
+
+    Each requested name is matched against a variable's OG1 name and its
+    basestation name (``original_name``); the variable and its ``_QC`` companion
+    are removed. An OG1-mandatory variable is never dropped (a request to drop one
+    is warned and ignored). Dropped OG1 names are recorded in
+    ``conversion_dropped_variables``; a second call adds to that list.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The converted OG1 dataset.
+    names : list of str
+        Variables the user asked to drop, by OG1 or basestation name.
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset without the dropped variables.
+
+    """
+    requested = set(names)
+    to_drop = set()
+    protected = set()
+    for name in ds.data_vars:
+        original = str(ds[name].attrs.get("original_name", ""))
+        if name not in requested and not (original and original in requested):
+            continue
+        if name in _MANDATORY_OG1_VARS or name.startswith(_MANDATORY_OG1_PREFIXES):
+            protected.add(name)
+        else:
+            to_drop.add(name)
+    # Drop the _QC companion of any dropped variable too.
+    to_drop |= {
+        name for name in ds.data_vars if name.endswith("_QC") and name[:-3] in to_drop
+    }
+    if protected:
+        warnings.warn(
+            f"drop_variables kept OG1-mandatory variables requested for drop: "
+            f"{sorted(protected)}",
+            stacklevel=2,
+        )
+    if not to_drop:
+        return ds
+    result = ds.drop_vars(sorted(to_drop))
+    # Record what went, so the file says what was removed. A second call adds to
+    # the list rather than replacing it.
+    previous = json.loads(result.attrs.get("conversion_dropped_variables", "[]"))
+    result.attrs["conversion_dropped_variables"] = json.dumps(
+        sorted(set(previous) | to_drop)
+    )
+    writers.record_attribute_sources(
+        result.attrs, ["conversion_dropped_variables"], "derived"
+    )
+    return result
+
+
+# process_mission takes a drop_variables= argument, which shadows the function inside it.
+_drop_variables = drop_variables
 
 
 def _input_record(ds: xr.Dataset) -> dict[str, object]:
@@ -1372,6 +1481,7 @@ def process(
         sensors=cfg.get("sensors"),
         mode=mode if mode is not None else (cfg.get("mode") or "realtime"),
         keep_variables=cfg.get("keep_variables"),
+        drop_variables=cfg.get("drop_variables"),
         repair=repair if repair is not None else bool(cfg.get("repair", False)),
         overwrite=overwrite,
         report=report or bool(cfg.get("report", False)),
@@ -1449,6 +1559,7 @@ def process_missions(
         "sensors": cfg.get("sensors"),
         "mode": mode if mode is not None else (cfg.get("mode") or "realtime"),
         "keep_variables": cfg.get("keep_variables"),
+        "drop_variables": cfg.get("drop_variables"),
         "repair": repair if repair is not None else bool(cfg.get("repair", False)),
         "overwrite": overwrite,
         "report": report or bool(cfg.get("report", False)),
@@ -1472,6 +1583,7 @@ def _convert_mission(
     sensors: Mapping[str, Mapping[str, object]] | None = None,
     mode: str = "realtime",
     keep_variables: Sequence[str] | None = None,
+    drop_variables: Sequence[str] | None = None,
     repair: bool = False,
     overwrite: bool = False,
     report: bool = False,
@@ -1516,6 +1628,10 @@ def _convert_mission(
     keep_variables : sequence of str, optional
         Science variables to keep (see :func:`keep_variables`); OG1-mandatory
         variables always survive. Default is None (keep all).
+    drop_variables : sequence of str, optional
+        Variables to remove, by OG1 or basestation name (see
+        :func:`drop_variables`); OG1-mandatory variables are never dropped.
+        Default is None (drop none).
     repair : bool, optional
         Repair basestation time metadata before loading; this rewrites files in the
         source tree (see :func:`seagliderOG1.readers.read_mission`). Default is False.
@@ -1594,6 +1710,8 @@ def _convert_mission(
         }
     if keep_variables:
         ds = _keep_variables(ds, list(keep_variables))
+    if drop_variables:
+        ds = _drop_variables(ds, list(drop_variables))
     if draft:
         ds.attrs["id"] = f"{ds.attrs['id']}_draft"
         ds.attrs["draft"] = vocabularies.DRAFT_NOTE
@@ -1880,10 +1998,34 @@ def apply_og1_vocabulary(
         output_name = output_names[original_name]
 
         # Unmapped variables retain their values and attributes unchanged, except that
-        # a raw instrument count with no units is labelled as counts.
+        # a raw instrument count with no units is labelled as counts, and a basestation
+        # units mislabel is corrected on the passed-through variable too (same label fix
+        # as a mapped variable; the value is not changed).
         if original_name not in mapped_variables:
             if _is_raw_count(original_name, ds[original_name].attrs):
                 dsa[output_name].attrs["units"] = vocabularies.RAW_COUNT_UNITS
+            correction = vocabularies.basestation_unit_corrections.get(original_name)
+            if (
+                correction
+                and ds[original_name].attrs.get("units") == correction["from"]
+            ):
+                attrs = dsa[output_name].attrs
+                attrs["original_units"] = correction["from"]
+                attrs["units"] = correction["to"]
+                attrs["comment"] = _append_comment(
+                    attrs.get("comment"),
+                    f"units label {correction['from']!r} in the basestation file "
+                    f"corrected to {correction['to']!r}",
+                )
+                _warn_once(
+                    _UNIT_CORRECTED,
+                    output_name,
+                    "units label %r on %r corrected to %r (from the value "
+                    "magnitude, not the basestation label)",
+                    correction["from"],
+                    output_name,
+                    correction["to"],
+                )
             continue
 
         og1_attributes = vocabularies.vocab_attrs.get(
@@ -1903,26 +2045,103 @@ def apply_og1_vocabulary(
             attributes["units"] = vocabularies.RAW_COUNT_UNITS
 
         if "units" in ds[original_name].attrs and "units" in og1_attributes:
-            original_unit = tools.reformat_units_var(
-                ds,
-                original_name,
-                unit_format,
-            )
+            raw_units = ds[original_name].attrs["units"]
             target_unit = og1_attributes["units"]
 
-            if original_unit != target_unit:
+            # Label correction (origin-keyed, guarded by the written label): some
+            # basestation versions label a variable with units wrong for the
+            # magnitude it holds (the density family as g/m^3 for kg m-3 values).
+            # Fix the label before conversion so the wrong factor is never applied.
+            correction = vocabularies.basestation_unit_corrections.get(original_name)
+            units_corrected = bool(correction and raw_units == correction["from"])
+            source_units = correction["to"] if units_corrected else raw_units
+            if units_corrected:
+                attributes["original_units"] = raw_units
+                attributes["comment"] = _append_comment(
+                    attributes.get("comment"),
+                    f"units label {raw_units!r} in the basestation file corrected "
+                    f"to {correction['to']!r}",
+                )
+                _warn_once(
+                    _UNIT_CORRECTED,
+                    output_name,
+                    "units label %r on %r corrected to %r (from the value "
+                    "magnitude, not the basestation label)",
+                    raw_units,
+                    output_name,
+                    correction["to"],
+                )
+
+            original_unit = tools.reformat_units_str(source_units, unit_format)
+            requested_unit = tools.reformat_units_str(target_unit, unit_format)
+            factor_applied = False
+            conversion_factor = None
+            if original_unit != requested_unit:
                 converted_values, converted_unit = tools.convert_units_var(
                     ds[original_name].values,
-                    original_unit,
+                    source_units,
                     target_unit,
                     vocabularies.unit1_to_unit2,
                 )
+                factor_applied = converted_unit == requested_unit
+                if factor_applied:
+                    conversion_factor = vocabularies.unit1_to_unit2.get(
+                        f"{original_unit}_to_{requested_unit}", {}
+                    ).get("factor")
 
                 dsa[output_name].data = converted_values
                 attributes["units"] = converted_unit
 
                 # Source encoding may no longer suit the converted values.
                 dsa[output_name].encoding = {}
+
+            # Range check driven by the OG1 valid range. A value a unit conversion
+            # moved out of range -- undoing the conversion lands it back in -- is
+            # refused: the basestation units label is wrong. A value out of range
+            # for any other reason is NOT changed here; it is left as-is and
+            # flagged on the conversion page, never silently altered.
+            vmin = og1_attributes.get("valid_min")
+            vmax = og1_attributes.get("valid_max")
+            if (
+                (units_corrected or factor_applied)
+                and vmin is not None
+                and vmax is not None
+            ):
+                values = dsa[output_name].values
+                finite = values[np.isfinite(values)]
+                if finite.size:
+                    med = float(np.median(finite))
+                    if vmin <= med <= vmax:
+                        pass
+                    elif (
+                        factor_applied
+                        and conversion_factor
+                        and vmin <= med / conversion_factor <= vmax
+                    ):
+                        # Undoing the conversion lands the value in range, so the
+                        # conversion itself moved it out: the units label is wrong.
+                        msg = (
+                            f"{output_name}: converting {raw_units!r} to "
+                            f"{target_unit!r} (factor {conversion_factor:g}) gives a "
+                            f"median {med:.4g} outside the valid range "
+                            f"[{vmin}, {vmax}]; the basestation units label is "
+                            "likely wrong. Add a correction to "
+                            "OG1_unit_corrections.yaml or set the units in the "
+                            "mission config."
+                        )
+                        raise UnitsError(msg)
+                    else:
+                        _warn_once(
+                            _UNIT_RANGE,
+                            output_name,
+                            "%s median %.4g is outside the valid range [%s, %s] "
+                            "after a units correction; left as-is (flagged on the "
+                            "conversion page)",
+                            output_name,
+                            med,
+                            vmin,
+                            vmax,
+                        )
 
         dsa[output_name].attrs = attributes
 

@@ -938,16 +938,17 @@ def test_validate_rejects_unknown_key(tmp_path: pathlib.Path) -> None:
 
 
 def test_validate_rejects_bad_types(tmp_path: pathlib.Path) -> None:
-    """mode, dives and keep_variables type errors surface without real data."""
+    """mode, dives, keep_variables and drop_variables type errors surface without real data."""
     config = _write_config(
         tmp_path / "mission.yaml",
         raw_dir=str(tmp_path),
         mode="sideways",
         dives="all",
         keep_variables="TEMP",
+        drop_variables="gsw_sigma0",
     )
     bad = {i.key for i in mission.check(config) if i.level == "ERROR"}
-    assert {"mode", "dives", "keep_variables"} <= bad
+    assert {"mode", "dives", "keep_variables", "drop_variables"} <= bad
 
 
 def test_validate_rejects_non_w08_role(tmp_path: pathlib.Path) -> None:

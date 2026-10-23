@@ -112,6 +112,26 @@ Units
 * Variables carry ``standard_name``, ``long_name`` and ``units``.
 * Controlled vocabularies come from `NERC <http://vocab.nerc.ac.uk/>`_.
 
+Some basestation versions label a variable with units that are wrong for the magnitude the
+values hold: the density family (``density``, ``density_insitu``, ``sigma_t``, and on
+basestation 2.8 ``sigma_theta``) is written ``g/m^3`` while holding kg m-3-magnitude values. The
+corrections are listed in ``config/OG1_unit_corrections.yaml``, keyed by the basestation variable
+and **guarded by the label as written** -- a file that already labels the variable ``kg/m^3`` is
+left untouched, so the correction is harmless once a basestation fixes its output. The label is
+corrected to ``kg m-3`` before conversion, so no factor runs and the output equals the basestation
+value; the basestation label is kept in ``original_units`` with a note in ``comment``, and the
+correction is logged.
+
+The converter does **not** silently change a value because it is out of range. The one exception is
+a refusal, not a change: if a unit conversion moved a value outside the OG1 variable's
+``valid_min`` / ``valid_max`` and undoing the conversion lands it back in range, the basestation
+label is wrong and the conversion raises ``UnitsError`` rather than writing a file off by a unit
+factor. Any other out-of-range value is left as-is and flagged on the conversion page (for example
+basestation 2.8 stores ``sigma_theta`` as full density, ~1027, not the anomaly its name implies).
+Use ``drop_variables`` or a ``mission.yaml`` override to act on what the page flags; the page also
+recommends variables to drop where OG1 defines the name for a different quantity (such as
+``gsw_sigma0``, the density anomaly, where OG1 ``POTDENS0`` is full potential density).
+
 GPS data
 ~~~~~~~~
 

@@ -8,6 +8,50 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ## [Unreleased]
 
+### Breaking changes
+
+- Density-family output values change where the basestation mislabelled their units. The
+  basestation writes `density`, `density_insitu`, `sigma_t` and (on basestation 2.8) `sigma_theta`
+  as `g/m^3` while holding kg m-3-magnitude values; 0.1.0 trusted the label, applied a factor, and
+  wrote them 1000x too small. The label is now corrected to `kg m-3` before conversion, so no factor
+  runs and the output equals the basestation value, with the basestation label kept as
+  `original_units` and noted in `comment`:
+
+  | variable | basestation label | 0.1.0 wrote | now |
+  |---|---|---|---|
+  | `DENSITY` (sg271) | `g/m^3` | 1.027 | 1027 |
+  | `SIGMA_T` (sg271, sg005) | `g/m^3` | 0.027 | 27.3 / 27.1 |
+  | `SIGTHETA` (sg005) | `g/m^3` | 0.027 | 1027 (full density; see below) |
+
+  A file read from 0.1.0 differs; reconvert. On basestation 2.8 `sigma_theta` holds full density
+  (~1027), not the anomaly its name implies; the value is **not** altered (it is left as-is and
+  flagged on the conversion page, never silently changed), so `SIGTHETA` carries density magnitude
+  on those files — correct it with `drop_variables` or a `mission.yaml` override.
+- `gsw_sigma0` is no longer mapped to `POTDENS0`. `gsw_sigma0` is the density anomaly
+  (sigma0 = potential density − 1000); OG1 `POTDENS0` is full potential density, so the mapping
+  produced a `POTDENS0` ~1000 out of range. `gsw_sigma0` now passes through under its own name;
+  `POTDENS0` is absent until it is derived properly in a later release. The conversion page
+  recommends dropping `gsw_sigma0`.
+
+### Added
+
+- `drop_variables` mission.yaml key: a list of variables to leave out of the output, by OG1 or
+  basestation name (matched through `original_name`), the counterpart of `keep_variables`.
+  OG1-mandatory variables are never dropped; a dropped variable's `_QC` companion goes with it;
+  dropped names are recorded in `conversion_dropped_variables`.
+- The conversion page recommends a `drop_variables` block for variables OG1 defines differently
+  (first entry `gsw_sigma0`), as a copyable `mission.yaml` snippet.
+
+### Fixed
+
+- The basestation units-label corrections live in `config/OG1_unit_corrections.yaml`, keyed by the
+  basestation variable and guarded by the label as written (so sg271's correctly-labelled
+  `sigma_theta` is untouched). A value a unit conversion moved outside the OG1 variable's
+  `valid_min`/`valid_max` — undoing the conversion lands it back in range — raises `UnitsError`
+  (new, in `seagliderOG1.exceptions`) rather than shipping a file off by a unit factor. Values out
+  of range for other reasons are left as-is and flagged on the page, never silently changed. Every
+  correction is logged once per variable.
+
 ## [0.1.0] - 2026-10-22
 
 ### Breaking changes

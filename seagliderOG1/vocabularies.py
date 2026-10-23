@@ -16,6 +16,7 @@ Key Components:
 Configuration Files:
 
 - OG1_variable_names.yaml: Variable name mappings
+- OG1_unit_corrections.yaml: Basestation units labels that are wrong for the values
 - OG1_sensor_names.yaml: Sensor keys to OG1_sensor_attributes.yaml titles
 - OG1_variable_attributes.yaml: Variable attribute vocabularies
 - OG1_sensor_attributes.yaml: Sensor attribute definitions
@@ -394,6 +395,23 @@ VARIABLES_AS_IS = []
 # Based on https://github.com/voto-ocean-knowledge/votoutils/blob/main/votoutils/utilities/vocabularies.py
 with (CONFIG_DIR / "OG1_variable_names.yaml").open() as file:
     standard_names = yaml.safe_load(file)
+
+# Basestation units labels that are wrong for the magnitude the variable holds,
+# keyed by the basestation (origin) variable name and guarded by the label as
+# written. Applied before unit conversion; see OG1_unit_corrections.yaml and the
+# range pass in _convert.apply_og1_vocabulary.
+with (CONFIG_DIR / "OG1_unit_corrections.yaml").open() as file:
+    basestation_unit_corrections = yaml.safe_load(file) or {}
+
+# Basestation variables OG1 has no home for, or names for a different quantity, recommended
+# for drop_variables on the conversion page (the default is to keep everything). Keyed by the
+# basestation variable name, with the reason shown in the recommendation.
+DROP_RECOMMENDATIONS = {
+    "gsw_sigma0": (
+        "the density anomaly (sigma0 = potential density - 1000); OG1 POTDENS0 is full "
+        "potential density, which is derived separately, so gsw_sigma0 has no OG1 home."
+    ),
+}
 
 # Variable attribute vocabularies for OG1 format
 # Reference: http://vocab.nerc.ac.uk/scheme/OG1/current/
