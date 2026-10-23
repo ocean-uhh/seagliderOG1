@@ -53,6 +53,7 @@ KNOWN_KEYS = frozenset(
         "dives",
         "repair",
         "keep_variables",
+        "drop_variables",
         "report",
         "platform",
         "deployment_information",
@@ -1203,6 +1204,17 @@ def _validate(
         issues.append(
             ValidationIssue(
                 "ERROR", "keep_variables must be null or a list.", "keep_variables"
+            )
+        )
+    drop = data.get("drop_variables")
+    if drop is not None and (
+        not isinstance(drop, list) or not all(isinstance(name, str) for name in drop)
+    ):
+        issues.append(
+            ValidationIssue(
+                "ERROR",
+                "drop_variables must be null or a list of names.",
+                "drop_variables",
             )
         )
     if (

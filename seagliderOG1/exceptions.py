@@ -4,7 +4,7 @@ Kept in one module so callers can catch them without importing the pipeline
 internals that raise them.
 """
 
-__all__ = ["MetadataError", "MissionError"]
+__all__ = ["MetadataError", "MissionError", "UnitsError"]
 
 
 class MetadataError(ValueError):
@@ -14,6 +14,18 @@ class MetadataError(ValueError):
     (data-derived, package constants, mission config) are merged, when a
     mandatory global attribute is absent or holds a placeholder. Subclasses
     :class:`ValueError` so existing ``except ValueError`` handlers still catch it.
+    """
+
+
+class UnitsError(ValueError):
+    """A unit conversion produced values implausible for the variable.
+
+    Raised by :func:`seagliderOG1.convert` when a units factor is applied and
+    the converted values fall outside the OG1 variable's ``valid_min`` /
+    ``valid_max`` range, and no documented correction (such as the density
+    anomaly offset) brings them back into range. Refusing is safer than writing
+    a file whose values are off by a unit factor. Subclasses :class:`ValueError`
+    so existing ``except ValueError`` handlers still catch it.
     """
 
 

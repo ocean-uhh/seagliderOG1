@@ -12,7 +12,7 @@ The public API is a small set of verbs, re-exported here:
 - :mod:`seagliderOG1.mission` — load and check a ``mission.yaml`` (``mission.load`` /
   ``mission.check``).
 
-plus the exceptions :class:`MissionError` and :class:`MetadataError`.
+plus the exceptions :class:`MissionError`, :class:`MetadataError` and :class:`UnitsError`.
 
 The verbs are re-exported lazily (on first access) so that ``import seagliderOG1``
 stays free of xarray and matplotlib until a verb that needs them is used.
@@ -28,6 +28,7 @@ except PackageNotFoundError:  # not installed (e.g. a source tree without a buil
 __all__ = [
     "MetadataError",
     "MissionError",
+    "UnitsError",
     "__version__",
     "convert",
     "enrich",
@@ -51,6 +52,7 @@ _SOURCES = {
     "report": "seagliderOG1.reports",
     "MetadataError": "seagliderOG1.exceptions",
     "MissionError": "seagliderOG1.exceptions",
+    "UnitsError": "seagliderOG1.exceptions",
 }
 
 

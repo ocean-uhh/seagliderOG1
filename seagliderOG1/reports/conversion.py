@@ -1863,6 +1863,114 @@ def _null_block(key: str, comments: dict[str, str]) -> str:
     return "\n".join(lines)
 
 
+def _drop_recommendation(ds: xr.Dataset) -> dict[str, object] | None:
+    """Return a ``drop_variables`` suggestion block for variables OG1 defines differently.
+
+    A variable present in the output whose OG1 or basestation name is in
+    :data:`seagliderOG1.vocabularies.DROP_RECOMMENDATIONS` is recommended for
+    ``drop_variables``, with the reason. Returns None when none are present.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The converted OG1 dataset.
+
+    Returns
+    -------
+    dict or None
+        A ``{"title", "note", "boxes"}`` block, or None.
+
+    """
+    found = {}
+    for name in ds.data_vars:
+        original = str(ds[name].attrs.get("original_name", ""))
+        for candidate in (name, original):
+            if candidate in vocabularies.DROP_RECOMMENDATIONS:
+                found[candidate] = vocabularies.DROP_RECOMMENDATIONS[candidate]
+    if not found:
+        return None
+    names = sorted(found)
+    reasons = " ".join(f"{name}: {found[name]}" for name in names)
+    text = "drop_variables:\n" + "\n".join(f"  - {name}" for name in names)
+    return {
+        "title": "Variables OG1 defines differently",
+        "note": (
+            "These passed through under their basestation names; OG1 has no home for "
+            "them, or names them for a different quantity. Add them to "
+            f"drop_variables to leave them out of the file. {reasons}"
+        ),
+        "boxes": [{"label": "In the config", "text": text}],
+    }
+
+
+def _duplicate_recommendation(ds: xr.Dataset) -> dict[str, object] | None:
+    """Return a ``drop_variables`` block for pass-through duplicates of a mapped variable.
+
+    A variable that passed through under its basestation name (its ``original_name``
+    equals its own name) and is numerically identical to a mapped OG1 variable (same
+    shape, same finite points, values equal to float precision) is redundant. The
+    mapped OG1 variable is the one to keep; the pass-through copy is recommended for
+    ``drop_variables``. Returns None when none are found.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The converted OG1 dataset.
+
+    Returns
+    -------
+    dict or None
+        A ``{"title", "note", "boxes"}`` block, or None.
+
+    """
+    mapped = {
+        name: ds[name]
+        for name in ds.data_vars
+        if ds[name].ndim >= 1
+        and ds[name].dtype.kind in "fiu"
+        and str(ds[name].attrs.get("original_name", "")) not in ("", name)
+    }
+    pairs = []  # (passthrough_name, mapped_og1_name)
+    for name in ds.data_vars:
+        var = ds[name]
+        if (
+            var.ndim < 1
+            or var.dtype.kind not in "fiu"
+            or str(var.attrs.get("original_name", "")) != name
+        ):
+            continue
+        values = np.asarray(var.values, dtype="float64")
+        finite = np.isfinite(values)
+        if not finite.any():
+            continue
+        for og1_name, other in mapped.items():
+            if other.dims != var.dims or other.shape != var.shape:
+                continue
+            other_values = np.asarray(other.values, dtype="float64")
+            if not np.array_equal(finite, np.isfinite(other_values)):
+                continue
+            if np.allclose(values[finite], other_values[finite], rtol=1e-5, atol=1e-3):
+                pairs.append((name, og1_name))
+                break
+    if not pairs:
+        return None
+    pairs.sort()
+    reasons = "; ".join(
+        f"{passthrough} is identical to {og1}, which maps to the OG1 variable"
+        for passthrough, og1 in pairs
+    )
+    text = "drop_variables:\n" + "\n".join(f"  - {p}" for p, _ in pairs)
+    return {
+        "title": "Duplicate variables",
+        "note": (
+            "These passed through under their basestation names but hold the same "
+            f"values as a mapped OG1 variable, so they are redundant. {reasons}. Keep "
+            "the mapped one and drop the copy."
+        ),
+        "boxes": [{"label": "In the config", "text": text}],
+    }
+
+
 def _config_suggestions(
     sidecar: dict | None,
     platform_gaps: dict[str, str] | None = None,
@@ -2440,9 +2548,13 @@ def render_conversion(
         else [],
         config_suggestions=[]
         if draft
-        else _config_suggestions(
-            sidecar, platform_gaps, acdd_missing, str(ds_id), og1_missing
-        ),
+        else [
+            *_config_suggestions(
+                sidecar, platform_gaps, acdd_missing, str(ds_id), og1_missing
+            ),
+            *([rec] if (rec := _drop_recommendation(ds)) else []),
+            *([dup] if (dup := _duplicate_recommendation(ds)) else []),
+        ],
         basestation_rows=_basestation_rows(
             sidecar.get("basestation_globals") if sidecar else None,
             len(inputs) if inputs else 0,

@@ -26,6 +26,7 @@ PUBLIC_MODULES = [
 CONTRACT = [
     "MetadataError",
     "MissionError",
+    "UnitsError",
     "__version__",
     "convert",
     "enrich",

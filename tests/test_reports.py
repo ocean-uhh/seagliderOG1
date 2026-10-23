@@ -594,6 +594,38 @@ def test_config_suggestions_pair_config_with_the_files(sg005_og1):
     assert dives["note"] == "3 dives converted, 1 to 4; not converted: 3."
 
 
+def test_duplicate_recommendation_flags_passthrough_copy():
+    """A pass-through variable identical to a mapped OG1 variable is recommended for drop."""
+    import numpy as np
+    import xarray as xr
+
+    ds = xr.Dataset(
+        {
+            "DENSITY": ("N", np.array([1027.0, 1028.0, np.nan])),
+            "density": ("N", np.array([1027.0, 1028.0, np.nan])),
+            "TEMP": ("N", np.array([10.0, 11.0, 12.0])),
+        }
+    )
+    ds["DENSITY"].attrs["original_name"] = "density_insitu"  # mapped
+    ds["density"].attrs["original_name"] = "density"  # pass-through, identical
+    ds["TEMP"].attrs["original_name"] = "temperature"  # mapped, not a duplicate
+    rec = conversion._duplicate_recommendation(ds)
+    assert rec is not None
+    assert rec["boxes"][0]["text"] == "drop_variables:\n  - density"
+    assert "DENSITY" in rec["note"]
+    assert "TEMP" not in rec["boxes"][0]["text"]
+
+
+def test_duplicate_recommendation_none_without_duplicates():
+    """No duplicate pass-through variable, no recommendation."""
+    import numpy as np
+    import xarray as xr
+
+    ds = xr.Dataset({"TEMP": ("N", np.array([10.0, 11.0]))})
+    ds["TEMP"].attrs["original_name"] = "temperature"
+    assert conversion._duplicate_recommendation(ds) is None
+
+
 def test_config_suggestions_fill_gaps_from_the_file(sg005_og1):
     """The fixture (no platform, no institutions) has UNK and omitted platform fields."""
     import xarray as xr

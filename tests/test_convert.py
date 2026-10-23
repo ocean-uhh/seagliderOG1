@@ -260,6 +260,45 @@ def test_keep_variables_records_dropped_in_ledger():
     }
 
 
+def test_drop_variables_removes_named_and_qc_protects_mandatory():
+    """drop_variables removes the ask and its _QC, matches original_name, keeps mandatory."""
+    import warnings
+
+    ds = xr.Dataset(
+        {
+            "TEMP": ("N", [1.0, 2.0]),
+            "TEMP_QC": ("N", [1, 1]),
+            "gsw_sigma0": ("N", [27.0, 27.1]),
+            "GLIDE_SPEED": ("N", [0.1, 0.2]),
+            "TIME": ("N", [0.0, 1.0]),
+        }
+    )
+    ds["GLIDE_SPEED"].attrs["original_name"] = "horz_speed"
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        out = _convert.drop_variables(ds, ["gsw_sigma0", "horz_speed", "TEMP", "TIME"])
+    assert "gsw_sigma0" not in out.variables  # by OG1 name
+    assert "GLIDE_SPEED" not in out.variables  # by basestation original_name
+    assert (
+        "TEMP" not in out.variables and "TEMP_QC" not in out.variables
+    )  # ask + its QC
+    assert "TIME" in out.variables  # mandatory, never dropped
+    assert any("mandatory" in str(w.message) for w in caught)
+
+
+def test_drop_variables_records_dropped_in_ledger():
+    """drop_variables writes removed names to conversion_dropped_variables."""
+    import json
+    import warnings
+
+    ds = xr.Dataset({"gsw_sigma0": ("N", [27.0]), "TEMP": ("N", [1.0])})
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        out = _convert.drop_variables(ds, ["gsw_sigma0"])
+    assert "gsw_sigma0" not in out.variables
+    assert set(json.loads(out.attrs["conversion_dropped_variables"])) == {"gsw_sigma0"}
+
+
 def test_keep_variables_keeps_source_ledger_complete():
     """On a converted file, keep_variables lists conversion_dropped_variables under derived."""
     import json
