@@ -98,12 +98,20 @@ def _rows(mission_dir: str) -> list[tuple[str, str, str, str, str, str]]:
 
 
 def _basestation_version(mission_dir: str) -> str:
-    """Return the ``base_station_version`` global of the mission's first dive file."""
+    """Return the ``base_station_version`` global of the mission's first dive file.
+
+    The global is a string on some basestation versions (``"3.0.6"``) and a float32
+    on others (``2.8``, which promotes to ``2.799999...``); format the numeric form
+    with ``%g`` so it reads ``2.8``.
+    """
     first = sorted(pathlib.Path(mission_dir).glob("p*.nc"))[0]
     value = xr.open_dataset(first, engine="netcdf4", decode_times=False).attrs.get(
         "base_station_version", "unknown"
     )
-    return str(value)
+    try:
+        return f"{float(value):g}"
+    except (TypeError, ValueError):
+        return str(value)
 
 
 def _section(tag: str, mission_dir: str) -> str:
