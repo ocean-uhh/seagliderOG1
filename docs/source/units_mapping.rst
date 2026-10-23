@@ -26,6 +26,39 @@ What the converter does to a variable's units, in order:
   per-volume oxygen); the mapping is removed and the variable passes through under its basestation
   name, with a drop recommendation on the conversion page.
 
+Where to add or change a unit
+-----------------------------
+
+Each kind of unit handling lives in one place, so a new basestation spelling or a corrected
+label is one edit (the tables below are the data, not where you change it):
+
+* A **wrong label** — a basestation units string that is wrong for the magnitude the values hold
+  (density written ``g/m^3`` for kg m⁻³ values; ``glide_angle`` written ``cm/s`` for degrees): add a
+  row keyed by the basestation variable to
+  `OG1_unit_corrections.yaml
+  <https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/config/OG1_unit_corrections.yaml>`_.
+* An **accepted spelling and its factor** — a source spelling that resolves to a canonical one
+  (``S/m`` → ``mS cm-1``, ×10; ``cm/s`` → ``m s-1``, ×0.01; ``micrograms/liter`` → ``mg m-3``, ×1):
+  add a row to the ``UNITS`` view in
+  `vocabularies.py
+  <https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/vocabularies.py>`_. The view
+  layers the package rows over the shared family tables in
+  `reports/_vendored/units_tables.py
+  <https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/reports/_vendored/units_tables.py>`_,
+  which are vendored byte-for-byte from ctdcast — edit those upstream and re-vendor, not here.
+* The **canonical units of an OG1 variable** (the target spelling a source resolves to): the
+  variable's ``units`` in
+  `OG1_variable_attributes.yaml
+  <https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/config/OG1_variable_attributes.yaml>`_.
+* Which **basestation variable maps to which OG1 variable** (add a mapping, or remove a
+  wrong-quantity one so the source passes through under its own name):
+  `OG1_variable_names.yaml
+  <https://github.com/ocean-uhh/seagliderOG1/blob/main/seagliderOG1/config/OG1_variable_names.yaml>`_.
+
+The factor itself is applied in ``seagliderOG1._convert`` when a variable is converted, from the
+``(canonical, factor)`` that ``vocabularies.UNITS`` resolves — so adding a row above is all that a
+new spelling needs; no code change.
+
 The tables below are regenerated on every docs build from the two bundled samples (sg005,
 basestation 2.8; sg271, basestation 3.0.6), so they always match the code.
 
