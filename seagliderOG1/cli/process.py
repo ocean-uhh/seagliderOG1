@@ -265,6 +265,7 @@ def run(args: argparse.Namespace) -> int:
                 deployment_information=config.get("deployment_information"),
                 global_attributes=config.get("global_attributes"),
                 sensors=config.get("sensors"),
+                unit_corrections=config.get("unit_corrections"),
                 mode=mode,
                 keep_variables=keep_variables,
                 drop_variables=drop_variables,

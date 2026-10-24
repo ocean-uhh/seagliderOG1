@@ -136,7 +136,7 @@ def test_global_attribute_groups_are_the_five_conventions_no_other():
     groups, _source = nc_tables.globals_rows(
         ds,
         extras=design.ATTR_GROUP_EXTRAS,
-        exclude=["history", "conversion_attribute_sources"],
+        exclude=["history", "conversion_attribute_sources", "conversion_units"],
     )
     titles = [title for title, _rows in groups]
     assert titles == [
@@ -171,7 +171,7 @@ def test_demo_config_institution_is_one_record_in_people_and_institutions():
     groups, _source = nc_tables.globals_rows(
         ds,
         extras=design.ATTR_GROUP_EXTRAS,
-        exclude=["history", "conversion_attribute_sources"],
+        exclude=["history", "conversion_attribute_sources", "conversion_units"],
     )
     people = {
         row[0]
@@ -375,16 +375,13 @@ def test_og1_candidate_groups_from_the_curated_list() -> None:
     assert vspeed["valid"] == "61.0"
 
 
-def test_unit_factor_direct_normalised_and_unrelated() -> None:
-    """Same unit is 1.0; a spelling variant resolves via the alias table; unrelated is None."""
-    assert conversion._unit_factor("m", "m") == 1.0
-    assert conversion._unit_factor("cm", "m") == 0.01  # direct table key
-    assert (
-        conversion._unit_factor("meters", "cm") == 100.0
-    )  # normalised fallback (m_to_cm)
-    assert (
-        conversion._unit_factor("degrees_north", "cm") is None
-    )  # no conversion invented
+def test_unit_factor_resolves_through_the_view() -> None:
+    """Same unit is 1.0; the view relates velocity/conductivity spellings; unrelated is None."""
+    assert conversion._unit_factor("m s-1", "m s-1") == 1.0
+    assert conversion._unit_factor("cm/s", "m s-1") == 0.01  # 1 cm/s = 0.01 m/s
+    assert conversion._unit_factor("S/m", "mS cm-1") == 10.0  # 1 S/m = 10 mS/cm
+    # A pair the view cannot relate is not comparable; no conversion is invented.
+    assert conversion._unit_factor("degrees_north", "cm") is None
 
 
 def test_summary_rows_and_verdict_before_and_after(tmp_path) -> None:
@@ -446,6 +443,7 @@ def test_page_section_order_and_scalars_collapsed(tmp_path) -> None:
     assert ids == [
         "config-check",  # no platform given: PLATFORM_MODEL etc. are UNK
         "summary",
+        "units",
         "og1",
         "reconciliation",
         "presence",
@@ -460,6 +458,29 @@ def test_page_section_order_and_scalars_collapsed(tmp_path) -> None:
     details = re.findall(r'<details class="scalar-group"( open)?>', html)
     assert details and details[0] == " open"
     assert all(flag == "" for flag in details[1:])
+
+
+def test_unit_corrections_table_lists_corrections_conversions_and_adoptions() -> None:
+    """The Unit corrections table reports a label correction, a conversion, and an adoption."""
+    from seagliderOG1 import readers
+
+    dsets = readers.read_mission(str(readers.SAMPLE_DIR), 1, 1)
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ds = _convert.convert(dsets)
+    rows = {r["name"]: r for r in conversion._unit_corrections_rows(ds)}
+    # label correction (value unchanged): density family corrected g/m^3 -> kg m-3
+    assert "DENSITY" in rows
+    assert rows["DENSITY"]["original"] == "g/m^3"
+    assert "corrected" in rows["DENSITY"]["action"]
+    # conversion (values scaled): conductivity S/m -> mS cm-1 x10
+    assert rows["CNDC"]["written"] == "mS cm-1"
+    assert "×10" in rows["CNDC"]["action"]
+    # adoption (source unlabelled): OXYSAT took the OG1 label
+    assert rows["OXYSAT"]["original"] == "— (none)"
+    assert "adopted" in rows["OXYSAT"]["action"]
 
 
 def test_presence_strips_follow_file_order_across_a_dive_gap() -> None:

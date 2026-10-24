@@ -36,6 +36,8 @@ from typing import NamedTuple
 
 import yaml
 
+from seagliderOG1.reports._vendored import units as _units
+
 __all__ = ["PlatformField", "platform_from_file"]
 
 # Set the directory for yaml files as package directory + 'config/'
@@ -309,51 +311,65 @@ def platform_from_file(attrs: dict) -> dict:
 RAW_COUNT_SUFFIXES = ("redCount", "blueCount", "fluorCount", "redRef", "blueRef")
 RAW_COUNT_UNITS = "counts"
 
-# Preferred units for OG1 format - conversion will be attempted if mapping exists
-preferred_units = ["m s-1", "dbar", "S m-1"]
-
-# Unit string standardization: maps various unit representations to preferred format
-unit_str_format = {
-    "m/s": "m s-1",
-    "cm/s": "cm s-1",
-    "S/m": "S m-1",
-    "mS/cm": "mS cm-1",
-    "meters": "m",
-    "degrees_Celsius": "degree_Celsius",
-    "degreesCelsius": "degree_Celsius",
-    "g/m^3": "g m-3",
-    "kg/m^3": "kg m-3",
-    "g/kg": "g kg-1",
-    "seconds": "s",
-}
-
-# Unit conversion definitions: each entry defines source unit, target unit, and conversion factor
-unit1_to_unit2 = {
-    "cm s-1_to_m s-1": {"current_unit": "cm s-1", "new_unit": "m s-1", "factor": 0.01},
-    "cm/s_to_m/s": {"current_unit": "cm/s", "new_unit": "m/s", "factor": 0.01},
-    "m/s_to_cm/s": {"current_unit": "m/s", "new_unit": "cm/s", "factor": 100},
-    "m s-1_to_cm s-1": {"current_unit": "m s-1", "new_unit": "cm s-1", "factor": 100},
-    "S/m_to_mS/cm": {"current_unit": "S/m", "new_unit": "mS/cm", "factor": 10},
-    "S m-1_to_mS cm-1": {"current_unit": "S m-1", "new_unit": "mS cm-1", "factor": 10},
-    "mS/cm_to_S/m": {"current_unit": "mS/cm", "new_unit": "S/m", "factor": 0.1},
-    "mS cm-1_to_S m-1": {"current_unit": "mS cm-1", "new_unit": "S m-1", "factor": 0.1},
-    "dbar_to_Pa": {"current_unit": "dbar", "new_unit": "Pa", "factor": 10000},
-    "Pa_to_dbar": {"current_unit": "Pa", "new_unit": "dbar", "factor": 0.0001},
-    "dbar_to_kPa": {"current_unit": "dbar", "new_unit": "kPa", "factor": 10},
-    "m_to_cm": {"current_unit": "m", "new_unit": "cm", "factor": 100},
-    "m_to_km": {"current_unit": "m", "new_unit": "km", "factor": 0.001},
-    "cm_to_m": {"current_unit": "cm", "new_unit": "m", "factor": 0.01},
-    "km_to_m": {"current_unit": "km", "new_unit": "m", "factor": 1000},
-    "g/m^3_to_kg/m^3": {"current_unit": "g/m^3", "new_unit": "kg/m^3", "factor": 0.001},
-    "g m-3_to_kg m-3": {"current_unit": "g m-3", "new_unit": "kg m-3", "factor": 0.001},
-    "kg/m^3_to_g/m^3": {"current_unit": "kg/m^3", "new_unit": "g/m^3", "factor": 1000},
-    "kg m-3_to_g m-3": {"current_unit": "kg m-3", "new_unit": "g m-3", "factor": 1000},
-    "micrograms/liter_to_mg m-3": {
-        "current_unit": "micrograms/liter",
-        "new_unit": "mg m-3",
-        "factor": 1.0,
+# The package units view over the vendored family tables (reports/_vendored/units.py). One table
+# resolves a reader spelling to the OG1 variable's canonical spelling and the factor to reach it.
+# Each row below is a spelling the bundled samples carry that the family default does not already
+# cover, with its source. Built eagerly at import by choice: a bad row (a factor that disagrees
+# with the family) raises on `import seagliderOG1` loudly, caught by the import-under-`-W error`
+# test, rather than failing one conversion quietly. The `g/m^3` density mislabel is NOT here -- it
+# is the OG1_unit_corrections.yaml label correction, applied before resolution.
+UNITS = _units.merge_tables(
+    _units.DEFAULT_TABLES,
+    aliases={
+        "m s-1": {
+            "cm/s": 0.01,
+            "cm s-1": 0.01,
+        },  # 1 cm/s = 0.01 m/s; sg005/sg271 velocities
+        "degree_Celsius": {"degrees_Celsius": 1.0},  # sg005/sg271 temperature
+        "seconds": {
+            "s": 1.0,
+            "secs": 1.0,
+        },  # sg271 delta_time_s; basestation log parameters
+        "mg m-3": {"micrograms/liter": 1.0},  # sg005 wlbb2f chla; 1 ug/L = 1 mg/m3
+        "cm3": {"cc": 1.0},  # basestation eng_vbdCC; 1 cc = 1 cm3
+        "kg m-3": {
+            "kg/m^3": 1.0
+        },  # sg271 correctly-labelled sigma_theta / density family
     },
-}
+)
+
+
+def unit_factor(u_from: str, u_to: str) -> float | None:
+    """Return the multiplier converting ``u_from`` into ``u_to``, or None when unrelated.
+
+    Both spellings are resolved through :data:`UNITS`; when they share a canonical, the ratio
+    of their factors converts ``u_from`` values into ``u_to``. Units the view cannot relate (a
+    different canonical, an unresolvable spelling, or a degenerate zero factor) return None — no
+    conversion is invented. The one place the canonical compare and the factor ratio live, so the
+    converter shim and the conversion page cannot drift.
+
+    Parameters
+    ----------
+    u_from : str
+        The units the values are in.
+    u_to : str
+        The units to convert them to.
+
+    Returns
+    -------
+    float or None
+        The multiplier, or None when the two spellings are not relatable.
+
+    """
+    try:
+        canon_from, factor_from = _units.resolve_units(u_from, tables=UNITS)
+        canon_to, factor_to = _units.resolve_units(u_to, tables=UNITS)
+    except _units.UnitsError:
+        return None
+    if canon_from != canon_to or factor_to == 0:
+        return None
+    return factor_from / factor_to
+
 
 # Variables to exclude from OG1 output. Empty: every basestation variable is retained. The
 # names below were dropped before; kept commented out until the list is removed.
@@ -410,6 +426,14 @@ DROP_RECOMMENDATIONS = {
     "gsw_sigma0": (
         "the density anomaly (sigma0 = potential density - 1000); OG1 POTDENS0 is full "
         "potential density, which is derived separately, so gsw_sigma0 has no OG1 home."
+    ),
+    "sbe43_dissolved_oxygen": (
+        "per-mass oxygen (micromoles/kg); OG1 DOXY is per volume (mmol m-3), a different "
+        "quantity that needs density to derive, so this is not mapped to DOXY."
+    ),
+    "dissolved_oxygen_sat": (
+        "a per-mass saturation concentration (micromoles/kg); OG1 OXYSAT is percent "
+        "saturation, a different quantity, so this is not mapped to OXYSAT."
     ),
 }
 
@@ -599,8 +623,15 @@ from seagliderOG1 import _deprecated  # noqa: E402  # shim follows the definitio
 
 _deprecated.install_removed(
     globals(),
-    dict.fromkeys(
-        ("load_default_contributors", "contrib_to_append"),
-        "contributors come from the mission.yaml contributors: block now.",
-    ),
+    {
+        **dict.fromkeys(
+            ("load_default_contributors", "contrib_to_append"),
+            "contributors come from the mission.yaml contributors: block now.",
+        ),
+        **dict.fromkeys(
+            ("unit_str_format", "unit1_to_unit2", "preferred_units"),
+            "units resolve through vocabularies.UNITS (one view over the vendored "
+            "family tables) now.",
+        ),
+    },
 )

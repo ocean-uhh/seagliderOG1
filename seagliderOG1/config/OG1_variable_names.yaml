@@ -28,9 +28,11 @@ pressure: PRES
 ctd_pressure: PRES
 conductivity: CNDC
 trajectory: TRAJECTORY
-dissolved_oxygen: DOXY
-dissolved_oxygen: DOXY
-dissolved_oxygen_sat: OXYSAT
+# dissolved_oxygen (sbe43, after sensor-prefix strip) is per-mass micromoles/kg; OG1 DOXY is
+# mmol m-3 (per volume), a different quantity that needs density to derive. The basestation value
+# is not mapped to DOXY -- it passes through under its own name; DOXY is derived in a later release
+# (feat/derived-variables). dissolved_oxygen_sat is a per-mass saturation concentration, not OG1
+# OXYSAT's percent saturation, so it is not mapped either. See drop recommendations.
 O2_sat: OXYSAT
 oxygen_concentration: DOXY
 chlorophyll: CHLA

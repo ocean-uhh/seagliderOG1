@@ -36,8 +36,9 @@ Tables in ``vocabularies.py``:
 * ``MODE_SUFFIX`` — data mode to id suffix (``realtime`` → ``R``, ``delayed`` → ``delayed``).
 * ``PLATFORM_FIELDS`` — the OG1 platform fields with their source attribute, formatter and
   required flag.
-* ``preferred_units``, ``unit_str_format``, ``unit1_to_unit2`` — unit standardisation and the
-  conversion factors.
+* ``UNITS`` — the units view over the vendored family tables: one table that resolves a
+  basestation units spelling to the OG1 variable's canonical spelling and the factor to reach it
+  (see :ref:`units_mapping`).
 * ``VARIABLES_TO_DROP`` — basestation variables dropped from the OG1 output; empty, so every
   basestation variable is retained.
 * ``ROLE_VOCABULARY``, ``ROLE_ALIASES`` — the W08 contributor roles and the accepted aliases.

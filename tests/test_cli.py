@@ -222,6 +222,55 @@ def test_validate_names_the_home_of_a_refused_global(tmp_path: pathlib.Path) -> 
     assert cli.main(["process", str(cfg)]) == 1  # refused by validate, nothing read
 
 
+def test_validate_accepts_a_well_formed_unit_corrections_block(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A `unit_corrections:` entry with `from`/`to` (and a null `from`) validates clean."""
+    cfg = _write_config(
+        tmp_path / "mission.yaml",
+        unit_corrections={
+            "glide_angle": {"from": "cm/s", "to": "degrees"},
+            "eng_vbdCC": {"from": None, "to": "cm3"},
+        },
+    )
+    issues = [
+        i for i in mission.check(cfg) if (i.key or "").startswith("unit_corrections")
+    ]
+    assert issues == []
+
+
+def test_validate_rejects_a_malformed_unit_corrections_block(
+    tmp_path: pathlib.Path,
+) -> None:
+    """Empty `to`, a non-mapping entry, and an unknown field each error, named by key."""
+    cfg = _write_config(
+        tmp_path / "mission.yaml",
+        unit_corrections={
+            "a": {"to": None},
+            "b": "not a mapping",
+            "c": {"to": "m", "nonsense": 1},
+        },
+    )
+    keys = {
+        i.key
+        for i in mission.check(cfg)
+        if i.level == "ERROR" and (i.key or "").startswith("unit_corrections")
+    }
+    assert keys == {"unit_corrections.a", "unit_corrections.b", "unit_corrections.c"}
+    assert cli.main(["validate", str(cfg)]) == 1
+
+
+def test_validate_requires_from_in_a_unit_correction(tmp_path: pathlib.Path) -> None:
+    """An omitted `from` errors (it would silently apply only to an unlabelled source)."""
+    cfg = _write_config(
+        tmp_path / "mission.yaml", unit_corrections={"glide_angle": {"to": "degrees"}}
+    )
+    messages = [
+        i.message for i in mission.check(cfg) if i.key == "unit_corrections.glide_angle"
+    ]
+    assert any("from is required" in m for m in messages)
+
+
 def test_validate_checks_deployment_information(tmp_path: pathlib.Path) -> None:
     """A bad deployment_information block errors at validate: out-of-range lat and a naive time."""
     cfg = _write_config(

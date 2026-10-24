@@ -27,9 +27,12 @@ report:
 	  rm -rf "$$tmp" && \
 	  echo "regenerated docs/source/_static/demo/conversion.html"
 
-# html regenerates the report first; the demo notebook (demo-output.ipynb) is produced by
-# nbconvert (CI, or by hand) — it needs a jupyter kernel and is not required to refresh the report.
-html: report
+units:
+	@cd .. && python docs/generate_units_map.py
+
+# html regenerates the generated pages first; the demo notebook (demo-output.ipynb) is produced by
+# nbconvert (CI, or by hand) — it needs a jupyter kernel and is not required to refresh them.
+html: report units
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 # Catch-all target: route all unknown targets to Sphinx using the new

@@ -32,8 +32,33 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   produced a `POTDENS0` ~1000 out of range. `gsw_sigma0` now passes through under its own name;
   `POTDENS0` is absent until it is derived properly in a later release. The conversion page
   recommends dropping `gsw_sigma0`.
+- A basestation units spelling that no view resolves is now refused with `UnitsError` rather than
+  written through unchecked. Every source units string resolves to the OG1 variable's canonical
+  spelling and a factor through one view (`vocabularies.UNITS`) over the vendored units layer; add
+  a new spelling there (with its source and a verified factor) or correct the label in the mission
+  config.
+- The wrong-quantity oxygen mappings are removed: `dissolved_oxygen → DOXY` and
+  `dissolved_oxygen_sat → OXYSAT`. The sources were a per-mass concentration and a saturation
+  mapped onto OG1 quantities they are not; they now pass through under their own names and are
+  recommended for drop. `DOXY` comes only from `oxygen_concentration`, `OXYSAT` only from the
+  percent `O2_sat` source.
+- The three ad-hoc unit tables in `vocabularies` (`unit_str_format`, `unit1_to_unit2`,
+  `preferred_units`) are removed; access raises naming `vocabularies.UNITS`. The three
+  `tools` unit helpers (`reformat_units_str`, `reformat_units_var`, `convert_units_var`) are
+  deprecated (warn, removed 0.3.0) and now resolve through `vocabularies.UNITS`: a spelling the
+  view cannot relate raises `UnitsError` instead of the old silent pass-through, and the
+  `unit_format` / `unit1_to_unit2` dict arguments are gone.
 
 ### Added
+
+- `unit_corrections` mission.yaml key: per-mission units-label corrections keyed by the basestation
+  variable name (`{from, to}`, with `from: null` for an unlabelled source), applied before
+  conversion in origin terms and layered over the package `OG1_unit_corrections.yaml` so a mission
+  entry wins on a shared key. For a one-off mislabel on one mission; the package file carries the
+  systematic cross-mission defects.
+- Conversion report "Unit corrections" section: one row per variable the conversion corrected (label
+  fixed, value unchanged), converted (values scaled by the shown factor), or adopted an OG1 label for
+  (source carried no units).
 
 - `drop_variables` mission.yaml key: a list of variables to leave out of the output, by OG1 or
   basestation name (matched through `original_name`), the counterpart of `keep_variables`.
@@ -51,6 +76,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   (new, in `seagliderOG1.exceptions`) rather than shipping a file off by a unit factor. Values out
   of range for other reasons are left as-is and flagged on the page, never silently changed. Every
   correction is logged once per variable.
+- `DELTA_TIME_S` keeps its `seconds` unit. `encode_times_og1` stripped the unit from every variable
+  whose name contained `time`, including the numeric `DELTA_TIME_S` duration; it now acts only on
+  datetime variables, whose CF units belong in encoding.
 
 ## [0.1.0] - 2026-10-22
 

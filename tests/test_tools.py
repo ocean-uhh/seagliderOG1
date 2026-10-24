@@ -114,33 +114,6 @@ def test_convert_qc_flags_orphan_parent():
     assert result["TEMP_QC2"].dtype == np.int8
 
 
-def test_convert_units_var():
-
-    test_pairs = {
-        # 'var_name': ('current_units', 'new_units', 'current_value', 'converted_value')
-        "velo1": ("cm/s", "m/s", 100, 1.0),
-        "velo2": ("m/s", "cm/s", 1.0, 100),
-        "velo3": ("cm s-1", "m s-1", 100, 1.0),
-        "conduct1": ("S/m", "mS/cm", 1.0, 10),
-        "conduct2": ("mS/cm", "S/m", 10, 1.0),
-        "pres1": ("dbar", "Pa", 1, 10000),
-        "pres2": ("Pa", "dbar", 10000, 1),
-        "pres3": ("dbar", "kPa", 1, 10),
-        "dist1": ("m", "cm", 1, 100),
-        "dist2": ("m", "km", 1000, 1.0),
-        "dist3": ("cm", "m", 100, 1.0),
-        "dist4": ("km", "m", 1, 1000),
-        "density1": ("g m-3", "kg m-3", 1000, 1),
-        "density2": ("kg m-3", "g m-3", 1, 1000),
-        "temp": ("degrees_Celsius", "degree_Celsius", 1, 1),
-    }
-    for _, (current_units, new_units, current_value, new_value) in test_pairs.items():
-        converted_values, _ = tools.convert_units_var(
-            current_value, current_units, new_units
-        )
-        assert converted_values == new_value
-
-
 def test_calc_z():
     pressure_values = np.arange(10, 10000, 10)
     # Create a dummy xarray dataset with correct coordinates
@@ -432,14 +405,3 @@ def test_og1_name_mapping_sample_dataset():
     #         .unique()
     #     )
     #     assert len(instrument_types) <= 1
-
-
-def test_unconverted_units_warned_once(caplog):
-    """The same unconvertible unit pair warns once, not once per dive."""
-    import logging
-
-    tools._UNCONVERTED_UNITS.discard(("furlong", "m"))
-    with caplog.at_level(logging.WARNING):
-        for _ in range(3):
-            tools.convert_units_var(np.array([1.0]), "furlong", "m")
-    assert sum("furlong" in r.getMessage() for r in caplog.records) == 1

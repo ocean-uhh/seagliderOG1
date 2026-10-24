@@ -16,6 +16,7 @@ vendored table macros; the sidecar-fed columns show "—" and the presence secti
 when the ``<id>_conversion.json`` beside the file is missing.
 """
 
+import json
 import math
 import re
 import warnings
@@ -496,18 +497,15 @@ def _norm_unit(unit: str) -> str:
 def _unit_factor(u_from: str, u_to: str) -> float | None:
     """Return the multiplier converting ``u_from`` into ``u_to``, or None when unrelated.
 
-    Same unit (after spelling normalisation) is ``1.0``; otherwise the family alias table
-    (:data:`seagliderOG1.vocabularies.unit1_to_unit2`) is consulted. No conversion is invented:
-    units the table does not relate return None and the comparison is marked not comparable.
+    Same unit (after spelling normalisation) is ``1.0``; otherwise the ratio comes from
+    :func:`seagliderOG1.vocabularies.unit_factor` (one view over the vendored tables). No
+    conversion is invented: units the view cannot relate return None and the comparison is marked
+    not comparable. The ``_norm_unit`` fast path keeps the ``metre``/``metres`` spellings equal,
+    which the view does not alias.
     """
     if _norm_unit(u_from) == _norm_unit(u_to):
         return 1.0
-    # The table keys a direct conversion by exact spelling; fall back to the normalised
-    # spellings so a "meters"/"m" variant still finds an "m_to_cm"-style entry.
-    entry = vocabularies.unit1_to_unit2.get(
-        f"{u_from}_to_{u_to}"
-    ) or vocabularies.unit1_to_unit2.get(f"{_norm_unit(u_from)}_to_{_norm_unit(u_to)}")
-    return float(entry["factor"]) if entry else None
+    return vocabularies.unit_factor(u_from, u_to)
 
 
 def _duplicate_groups(ds: xr.Dataset) -> list[dict[str, object]]:
@@ -517,9 +515,10 @@ def _duplicate_groups(ds: xr.Dataset) -> list[dict[str, object]]:
     group when the group has a reference member — one that is OG1-required or OG1-named,
     preferring required then the shortest name. The reference is listed first; each other member
     is compared to it (member minus reference) over the samples both carry, in the reference's
-    units. A member whose units the alias table cannot relate is "not comparable" rather than
-    converted by guess. ``status_flag`` (the QC flags) and groups without a reference are
-    excluded.
+    units. A member whose units the units view (:data:`seagliderOG1.vocabularies.UNITS`) cannot
+    relate is "not comparable" rather than converted by guess — the view relates the spellings the
+    conversion needs, so an unrelated pair stays uncompared. ``status_flag`` (the QC flags) and
+    groups without a reference are excluded.
 
     Parameters
     ----------
@@ -1863,6 +1862,71 @@ def _null_block(key: str, comments: dict[str, str]) -> str:
     return "\n".join(lines)
 
 
+def _unit_corrections_rows(ds: xr.Dataset) -> list[dict[str, object]]:
+    """Return one row per variable whose units the conversion corrected, converted, or adopted.
+
+    Reads each variable's ``original_units`` attribute and the ``conversion_units`` ledger
+    (``output name -> [source, canonical, factor]``). Three actions appear: a factor-1 label
+    correction (the label was wrong for the magnitude, the value is unchanged); a conversion
+    (the values were scaled by the factor); and an adoption (the source carried no units, so the
+    OG1 label was taken). A pure spelling rewrite (factor 1, resolved from the view, no recorded
+    ``original_units``) is not listed — the Unit mapping docs page carries the full spelling view.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The converted OG1 dataset.
+
+    Returns
+    -------
+    list of dict
+        ``{"name", "original", "written", "action"}`` rows, sorted by name.
+
+    """
+    ledger: dict = {}
+    raw = ds.attrs.get("conversion_units")
+    if raw:
+        try:
+            ledger = json.loads(raw)
+        except (ValueError, TypeError):
+            ledger = {}
+    rows = []
+    for name in ds.variables:
+        attrs = ds[name].attrs
+        if "original_units" not in attrs and name not in ledger:
+            continue
+        written = str(attrs.get("units", ""))
+        if name in ledger:
+            source, _canonical, factor = ledger[str(name)]
+            rows.append(
+                {
+                    "name": str(name),
+                    "original": str(source),
+                    "written": written,
+                    "action": f"converted (×{factor:g})",
+                }
+            )
+        elif str(attrs.get("original_units", "")) == "":
+            rows.append(
+                {
+                    "name": str(name),
+                    "original": "— (none)",
+                    "written": written,
+                    "action": "OG1 label adopted (source unlabelled)",
+                }
+            )
+        else:
+            rows.append(
+                {
+                    "name": str(name),
+                    "original": str(attrs["original_units"]),
+                    "written": written,
+                    "action": "label corrected (value unchanged)",
+                }
+            )
+    return sorted(rows, key=lambda r: r["name"])
+
+
 def _drop_recommendation(ds: xr.Dataset) -> dict[str, object] | None:
     """Return a ``drop_variables`` suggestion block for variables OG1 defines differently.
 
@@ -2463,7 +2527,7 @@ def render_conversion(
         global_groups, globals_source = nc_tables.globals_rows(
             ds,
             extras=design.ATTR_GROUP_EXTRAS,
-            exclude=["history", "conversion_attribute_sources"],
+            exclude=["history", "conversion_attribute_sources", "conversion_units"],
             requirement=requirement_labels,
         )
         coverage_computed = _coverage_computed(ds)
@@ -2476,6 +2540,7 @@ def render_conversion(
         )
         history_rows = _history_rows(ledger)
         masthead_meta = _masthead_meta(ds, ledger)
+        unit_corrections_rows = _unit_corrections_rows(ds)
     finally:
         ds.close()
 
@@ -2504,6 +2569,7 @@ def render_conversion(
         masthead_meta=masthead_meta,
         page_nav=_page_nav(),
         summary_rows=summary_rows,
+        unit_corrections_rows=unit_corrections_rows,
         verdict_clauses=verdict_clauses,
         og1_required=og1_required,
         og1_required_caption=og1_required_caption,

@@ -165,6 +165,10 @@ returning something different from what it used to.
   removed; the bundled sample is ``readers.load_sample_basestation()`` and any file is
   ``readers.read_file(path)``. (Returning the bundled sample for an arbitrary key would be a
   silent substitution.)
+- ``vocabularies.unit_str_format`` / ``vocabularies.unit1_to_unit2`` / ``vocabularies.preferred_units``
+  *(deprecated 0.2.0)* — the three ad-hoc unit tables are replaced by one view,
+  ``vocabularies.UNITS``, over the vendored family tables; it resolves a basestation spelling to
+  the OG1 canonical spelling and the factor to reach it (see :ref:`units_mapping`).
 
 Other renamed names
 -------------------
@@ -189,6 +193,11 @@ installed from PyPI you never had them — they are shimmed for development inst
      - ``readers.profile_number_from_filename`` / ``serial_from_filename``
    * - ``tools.calc_Z`` / ``assign_phase`` / ``assign_profile_number``
      - ``tools.add_depth`` / ``add_phase`` / ``add_profile_number``
+   * - ``tools.reformat_units_str`` / ``reformat_units_var`` / ``convert_units_var`` *(deprecated 0.2.0)*
+     - resolve through ``vocabularies.UNITS``; a spelling the view cannot relate now raises
+       ``UnitsError`` instead of the old silent pass-through, and the ``unit_format`` /
+       ``unit1_to_unit2`` dict arguments are gone
+
    * - ``convertOG1.apply_keep_variables(ds, keep)``
      - ``keep_variables(ds, names)``
    * - ``contributors.registry_institutions`` / ``normalize_orcid`` / ``normalize_role`` *(main only)*

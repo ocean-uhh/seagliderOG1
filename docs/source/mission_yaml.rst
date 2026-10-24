@@ -121,6 +121,13 @@ Keys
      - Corrections to a basestation sensor record, keyed by the sensor's name in the files'
        ``instrument`` global (``legato``, ``tridentebb700chla470fdom365``, ``sbe41``, ...):
        ``serial_number`` and ``calibration_date``. See `Sensor corrections`_.
+   * - ``unit_corrections``
+     - mapping or null
+     - ``null``
+     - Correct a wrong units label on a basestation variable, keyed by the variable name:
+       ``to`` is the label to write, ``from`` is the label as written (``null`` for an
+       unlabelled source). Layered over the package corrections (a mission entry wins). See
+       :ref:`units_mapping`.
    * - ``contributors``
      - list
      - *(required)*
@@ -199,6 +206,27 @@ variable from that instrument. The sensor variable's ``comment`` records the val
 correction replaced, so the change can be read back from the file. A key that is not one of
 the mission's sensors stops the conversion with the list of keys; the conversion page's
 *Sensors named by OG1* table shows the serials and dates in use.
+
+Unit corrections
+----------------
+
+Correct a wrong units label on a basestation variable, keyed by the variable name:
+
+.. code-block:: yaml
+
+   unit_corrections:
+     glide_angle: {from: "cm/s", to: "degrees"}   # a label that is wrong for the magnitude
+     codaTODO_O2_sat: {from: null, to: "percent"}  # an unlabelled source given its OG1 label
+
+``to`` is the label to write; ``from`` is the label as written, or ``null`` for a source that
+carries no units. A correction is applied before unit conversion, in origin terms, so the
+wrong conversion factor is never applied; the label as written is kept on the variable as
+``original_units`` and noted in ``comment``. A mission entry is layered over the package
+corrections (:data:`seagliderOG1.vocabularies.basestation_unit_corrections`, which holds the
+systematic cross-mission defects such as the density family and ``glide_angle``) and wins on a
+shared key. The ``to`` spelling must be one the OG1 target resolves — an alias in the units
+view or the target's own units — so a correction fixes a *label*, not an unrecognised spelling;
+for that, add the spelling to the package units view. See :ref:`units_mapping`.
 
 Contributor and institution records
 ------------------------------------
