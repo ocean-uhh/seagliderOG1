@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.1.0.post1.dev4 documentation</title>
+  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.1.0.post1.dev5 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=4f333dd2"></script>
+      <script src="../../_static/documentation_options.js?v=eb4bb9cb"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -61,6 +61,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../units_mapping.html">Unit mapping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
@@ -140,6 +141,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1.reports._vendored</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">_units</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"PlatformField"</span><span class="p">,</span> <span class="s2">"platform_from_file"</span><span class="p">]</span>
 
@@ -420,51 +423,65 @@
 <span class="n">RAW_COUNT_SUFFIXES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"redCount"</span><span class="p">,</span> <span class="s2">"blueCount"</span><span class="p">,</span> <span class="s2">"fluorCount"</span><span class="p">,</span> <span class="s2">"redRef"</span><span class="p">,</span> <span class="s2">"blueRef"</span><span class="p">)</span>
 <span class="n">RAW_COUNT_UNITS</span> <span class="o">=</span> <span class="s2">"counts"</span>
 
-<span class="c1"># Preferred units for OG1 format - conversion will be attempted if mapping exists</span>
-<span class="n">preferred_units</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"m s-1"</span><span class="p">,</span> <span class="s2">"dbar"</span><span class="p">,</span> <span class="s2">"S m-1"</span><span class="p">]</span>
-
-<span class="c1"># Unit string standardization: maps various unit representations to preferred format</span>
-<span class="n">unit_str_format</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">"m/s"</span><span class="p">:</span> <span class="s2">"m s-1"</span><span class="p">,</span>
-    <span class="s2">"cm/s"</span><span class="p">:</span> <span class="s2">"cm s-1"</span><span class="p">,</span>
-    <span class="s2">"S/m"</span><span class="p">:</span> <span class="s2">"S m-1"</span><span class="p">,</span>
-    <span class="s2">"mS/cm"</span><span class="p">:</span> <span class="s2">"mS cm-1"</span><span class="p">,</span>
-    <span class="s2">"meters"</span><span class="p">:</span> <span class="s2">"m"</span><span class="p">,</span>
-    <span class="s2">"degrees_Celsius"</span><span class="p">:</span> <span class="s2">"degree_Celsius"</span><span class="p">,</span>
-    <span class="s2">"degreesCelsius"</span><span class="p">:</span> <span class="s2">"degree_Celsius"</span><span class="p">,</span>
-    <span class="s2">"g/m^3"</span><span class="p">:</span> <span class="s2">"g m-3"</span><span class="p">,</span>
-    <span class="s2">"kg/m^3"</span><span class="p">:</span> <span class="s2">"kg m-3"</span><span class="p">,</span>
-    <span class="s2">"g/kg"</span><span class="p">:</span> <span class="s2">"g kg-1"</span><span class="p">,</span>
-    <span class="s2">"seconds"</span><span class="p">:</span> <span class="s2">"s"</span><span class="p">,</span>
-<span class="p">}</span>
-
-<span class="c1"># Unit conversion definitions: each entry defines source unit, target unit, and conversion factor</span>
-<span class="n">unit1_to_unit2</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">"cm s-1_to_m s-1"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"cm s-1"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"m s-1"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">},</span>
-    <span class="s2">"cm/s_to_m/s"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"cm/s"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"m/s"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">},</span>
-    <span class="s2">"m/s_to_cm/s"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"m/s"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"cm/s"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
-    <span class="s2">"m s-1_to_cm s-1"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"m s-1"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"cm s-1"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
-    <span class="s2">"S/m_to_mS/cm"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"S/m"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"mS/cm"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
-    <span class="s2">"S m-1_to_mS cm-1"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"S m-1"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"mS cm-1"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
-    <span class="s2">"mS/cm_to_S/m"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"mS/cm"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"S/m"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">},</span>
-    <span class="s2">"mS cm-1_to_S m-1"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"mS cm-1"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"S m-1"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">},</span>
-    <span class="s2">"dbar_to_Pa"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"dbar"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"Pa"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">10000</span><span class="p">},</span>
-    <span class="s2">"Pa_to_dbar"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"Pa"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"dbar"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">},</span>
-    <span class="s2">"dbar_to_kPa"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"dbar"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"kPa"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
-    <span class="s2">"m_to_cm"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"m"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"cm"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
-    <span class="s2">"m_to_km"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"m"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"km"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span>
-    <span class="s2">"cm_to_m"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"cm"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"m"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">},</span>
-    <span class="s2">"km_to_m"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"km"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"m"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">1000</span><span class="p">},</span>
-    <span class="s2">"g/m^3_to_kg/m^3"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"g/m^3"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"kg/m^3"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span>
-    <span class="s2">"g m-3_to_kg m-3"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"g m-3"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"kg m-3"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span>
-    <span class="s2">"kg/m^3_to_g/m^3"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"kg/m^3"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"g/m^3"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">1000</span><span class="p">},</span>
-    <span class="s2">"kg m-3_to_g m-3"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"kg m-3"</span><span class="p">,</span> <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"g m-3"</span><span class="p">,</span> <span class="s2">"factor"</span><span class="p">:</span> <span class="mi">1000</span><span class="p">},</span>
-    <span class="s2">"micrograms/liter_to_mg m-3"</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">"current_unit"</span><span class="p">:</span> <span class="s2">"micrograms/liter"</span><span class="p">,</span>
-        <span class="s2">"new_unit"</span><span class="p">:</span> <span class="s2">"mg m-3"</span><span class="p">,</span>
-        <span class="s2">"factor"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+<span class="c1"># The package units view over the vendored family tables (reports/_vendored/units.py). One table</span>
+<span class="c1"># resolves a reader spelling to the OG1 variable's canonical spelling and the factor to reach it.</span>
+<span class="c1"># Each row below is a spelling the bundled samples carry that the family default does not already</span>
+<span class="c1"># cover, with its source. Built eagerly at import by choice: a bad row (a factor that disagrees</span>
+<span class="c1"># with the family) raises on `import seagliderOG1` loudly, caught by the import-under-`-W error`</span>
+<span class="c1"># test, rather than failing one conversion quietly. The `g/m^3` density mislabel is NOT here -- it</span>
+<span class="c1"># is the OG1_unit_corrections.yaml label correction, applied before resolution.</span>
+<span class="n">UNITS</span> <span class="o">=</span> <span class="n">_units</span><span class="o">.</span><span class="n">merge_tables</span><span class="p">(</span>
+    <span class="n">_units</span><span class="o">.</span><span class="n">DEFAULT_TABLES</span><span class="p">,</span>
+    <span class="n">aliases</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">"m s-1"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"cm/s"</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+            <span class="s2">"cm s-1"</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+        <span class="p">},</span>  <span class="c1"># 1 cm/s = 0.01 m/s; sg005/sg271 velocities</span>
+        <span class="s2">"degree_Celsius"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"degrees_Celsius"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>  <span class="c1"># sg005/sg271 temperature</span>
+        <span class="s2">"seconds"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"s"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s2">"secs"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="p">},</span>  <span class="c1"># sg271 delta_time_s; basestation log parameters</span>
+        <span class="s2">"mg m-3"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"micrograms/liter"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>  <span class="c1"># sg005 wlbb2f chla; 1 ug/L = 1 mg/m3</span>
+        <span class="s2">"cm3"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"cc"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>  <span class="c1"># basestation eng_vbdCC; 1 cc = 1 cm3</span>
+        <span class="s2">"kg m-3"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"kg/m^3"</span><span class="p">:</span> <span class="mf">1.0</span>
+        <span class="p">},</span>  <span class="c1"># sg271 correctly-labelled sigma_theta / density family</span>
     <span class="p">},</span>
-<span class="p">}</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">unit_factor</span><span class="p">(</span><span class="n">u_from</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">u_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the multiplier converting ``u_from`` into ``u_to``, or None when unrelated.</span>
+
+<span class="sd">    Both spellings are resolved through :data:`UNITS`; when they share a canonical, the ratio</span>
+<span class="sd">    of their factors converts ``u_from`` values into ``u_to``. Units the view cannot relate (a</span>
+<span class="sd">    different canonical, an unresolvable spelling, or a degenerate zero factor) return None — no</span>
+<span class="sd">    conversion is invented. The one place the canonical compare and the factor ratio live, so the</span>
+<span class="sd">    converter shim and the conversion page cannot drift.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    u_from : str</span>
+<span class="sd">        The units the values are in.</span>
+<span class="sd">    u_to : str</span>
+<span class="sd">        The units to convert them to.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float or None</span>
+<span class="sd">        The multiplier, or None when the two spellings are not relatable.</span>
+
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">canon_from</span><span class="p">,</span> <span class="n">factor_from</span> <span class="o">=</span> <span class="n">_units</span><span class="o">.</span><span class="n">resolve_units</span><span class="p">(</span><span class="n">u_from</span><span class="p">,</span> <span class="n">tables</span><span class="o">=</span><span class="n">UNITS</span><span class="p">)</span>
+        <span class="n">canon_to</span><span class="p">,</span> <span class="n">factor_to</span> <span class="o">=</span> <span class="n">_units</span><span class="o">.</span><span class="n">resolve_units</span><span class="p">(</span><span class="n">u_to</span><span class="p">,</span> <span class="n">tables</span><span class="o">=</span><span class="n">UNITS</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">_units</span><span class="o">.</span><span class="n">UnitsError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">canon_from</span> <span class="o">!=</span> <span class="n">canon_to</span> <span class="ow">or</span> <span class="n">factor_to</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">factor_from</span> <span class="o">/</span> <span class="n">factor_to</span>
+
 
 <span class="c1"># Variables to exclude from OG1 output. Empty: every basestation variable is retained. The</span>
 <span class="c1"># names below were dropped before; kept commented out until the list is removed.</span>
@@ -521,6 +538,14 @@
     <span class="s2">"gsw_sigma0"</span><span class="p">:</span> <span class="p">(</span>
         <span class="s2">"the density anomaly (sigma0 = potential density - 1000); OG1 POTDENS0 is full "</span>
         <span class="s2">"potential density, which is derived separately, so gsw_sigma0 has no OG1 home."</span>
+    <span class="p">),</span>
+    <span class="s2">"sbe43_dissolved_oxygen"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">"per-mass oxygen (micromoles/kg); OG1 DOXY is per volume (mmol m-3), a different "</span>
+        <span class="s2">"quantity that needs density to derive, so this is not mapped to DOXY."</span>
+    <span class="p">),</span>
+    <span class="s2">"dissolved_oxygen_sat"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">"a per-mass saturation concentration (micromoles/kg); OG1 OXYSAT is percent "</span>
+        <span class="s2">"saturation, a different quantity, so this is not mapped to OXYSAT."</span>
     <span class="p">),</span>
 <span class="p">}</span>
 
@@ -710,10 +735,17 @@
 
 <span class="n">_deprecated</span><span class="o">.</span><span class="n">install_removed</span><span class="p">(</span>
     <span class="nb">globals</span><span class="p">(),</span>
-    <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span>
-        <span class="p">(</span><span class="s2">"load_default_contributors"</span><span class="p">,</span> <span class="s2">"contrib_to_append"</span><span class="p">),</span>
-        <span class="s2">"contributors come from the mission.yaml contributors: block now."</span><span class="p">,</span>
-    <span class="p">),</span>
+    <span class="p">{</span>
+        <span class="o">**</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span>
+            <span class="p">(</span><span class="s2">"load_default_contributors"</span><span class="p">,</span> <span class="s2">"contrib_to_append"</span><span class="p">),</span>
+            <span class="s2">"contributors come from the mission.yaml contributors: block now."</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="o">**</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span>
+            <span class="p">(</span><span class="s2">"unit_str_format"</span><span class="p">,</span> <span class="s2">"unit1_to_unit2"</span><span class="p">,</span> <span class="s2">"preferred_units"</span><span class="p">),</span>
+            <span class="s2">"units resolve through vocabularies.UNITS (one view over the vendored "</span>
+            <span class="s2">"family tables) now."</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
 

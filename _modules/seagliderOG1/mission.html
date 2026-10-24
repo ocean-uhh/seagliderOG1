@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.mission &mdash; seagliderOG1 0.1.0.post1.dev4 documentation</title>
+  <title>seagliderOG1.mission &mdash; seagliderOG1 0.1.0.post1.dev5 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=4f333dd2"></script>
+      <script src="../../_static/documentation_options.js?v=eb4bb9cb"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -61,6 +61,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../units_mapping.html">Unit mapping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
@@ -168,6 +169,7 @@
         <span class="s2">"provenance_and_processing"</span><span class="p">,</span>
         <span class="s2">"global_attributes"</span><span class="p">,</span>
         <span class="s2">"sensors"</span><span class="p">,</span>
+        <span class="s2">"unit_corrections"</span><span class="p">,</span>
         <span class="s2">"contributors"</span><span class="p">,</span>
         <span class="s2">"institutions"</span><span class="p">,</span>
     <span class="p">}</span>
@@ -820,6 +822,87 @@
     <span class="k">return</span> <span class="n">issues</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_unit_corrections</span><span class="p">(</span><span class="n">unit_corrections</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ValidationIssue</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Check the ``unit_corrections:`` block shape: basestation variable to ``{from, to}``.</span>
+
+<span class="sd">    Each entry corrects one basestation variable's units label: ``to`` is the label to</span>
+<span class="sd">    write, ``from`` is the label as written (or null for an unlabelled source). Both keys are</span>
+<span class="sd">    required, so an unlabelled source must be written ``from: null`` rather than omitted — an</span>
+<span class="sd">    omitted ``from`` would silently apply only to an unlabelled source. Whether the key names a</span>
+<span class="sd">    variable of the mission, and whether ``from`` matches the label actually written, is checked</span>
+<span class="sd">    at conversion.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    unit_corrections : object</span>
+<span class="sd">        The ``unit_corrections`` value from the config (None when absent).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of ValidationIssue</span>
+<span class="sd">        One ERROR per malformed entry; empty when the block is absent or well formed.</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">unit_corrections</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">unit_corrections</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">ValidationIssue</span><span class="p">(</span>
+                <span class="s2">"ERROR"</span><span class="p">,</span> <span class="s2">"unit_corrections must be a mapping."</span><span class="p">,</span> <span class="s2">"unit_corrections"</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+    <span class="n">issues</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">unit_corrections</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">where</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"unit_corrections.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="s2">"ERROR"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2"> must map 'from' and 'to' to values."</span><span class="p">,</span> <span class="n">where</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">unknown</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="s2">"from"</span><span class="p">,</span> <span class="s2">"to"</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+            <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="s2">"ERROR"</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: unknown field(s) </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span><span class="si">}</span><span class="s2">; allowed: ['from', 'to']."</span><span class="p">,</span>
+                    <span class="n">where</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">to_value</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"to"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">to_value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">to_value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="s2">"ERROR"</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">.to is the units label to write and cannot be empty."</span><span class="p">,</span>
+                    <span class="n">where</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"from"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="s2">"ERROR"</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">.from is required; write 'from: null' for an unlabelled source."</span><span class="p">,</span>
+                    <span class="n">where</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="s2">"from"</span> <span class="ow">in</span> <span class="n">fields</span>
+            <span class="ow">and</span> <span class="n">fields</span><span class="p">[</span><span class="s2">"from"</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="s2">"from"</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="p">):</span>
+            <span class="n">issues</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ValidationIssue</span><span class="p">(</span>
+                    <span class="s2">"ERROR"</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">.from must be null (an unlabelled source) or the label as "</span>
+                    <span class="s2">"written, not an empty string."</span><span class="p">,</span>
+                    <span class="n">where</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">issues</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_validate_raw_dir</span><span class="p">(</span>
     <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span> <span class="n">base_dir</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ValidationIssue</span><span class="p">]:</span>
@@ -1343,6 +1426,7 @@
         <span class="p">)</span>
 
     <span class="n">issues</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_validate_sensors</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sensors"</span><span class="p">)))</span>
+    <span class="n">issues</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_validate_unit_corrections</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"unit_corrections"</span><span class="p">)))</span>
     <span class="n">issues</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_validate_global_attributes</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"global_attributes"</span><span class="p">)))</span>
     <span class="n">issues</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_validate_global_sections</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
     <span class="n">issues</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_validate_highly_desirable</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>

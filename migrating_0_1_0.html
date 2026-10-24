@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Migrating to 0.1.0 &mdash; seagliderOG1 0.1.0.post1.dev4 documentation</title>
+  <title>Migrating to 0.1.0 &mdash; seagliderOG1 0.1.0.post1.dev5 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=4f333dd2"></script>
+      <script src="_static/documentation_options.js?v=eb4bb9cb"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -64,6 +64,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="units_mapping.html">Unit mapping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
@@ -257,6 +258,10 @@ internal to <code class="docutils literal notranslate"><span class="pre">seaglid
 removed; the bundled sample is <code class="docutils literal notranslate"><span class="pre">readers.load_sample_basestation()</span></code> and any file is
 <code class="docutils literal notranslate"><span class="pre">readers.read_file(path)</span></code>. (Returning the bundled sample for an arbitrary key would be a
 silent substitution.)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vocabularies.unit_str_format</span></code> / <code class="docutils literal notranslate"><span class="pre">vocabularies.unit1_to_unit2</span></code> / <code class="docutils literal notranslate"><span class="pre">vocabularies.preferred_units</span></code>
+<em>(deprecated 0.2.0)</em> — the three ad-hoc unit tables are replaced by one view,
+<code class="docutils literal notranslate"><span class="pre">vocabularies.UNITS</span></code>, over the vendored family tables; it resolves a basestation spelling to
+the OG1 canonical spelling and the factor to reach it (see <a class="reference internal" href="units_mapping.html#units-mapping"><span class="std std-ref">Unit mapping</span></a>).</p></li>
 </ul>
 </section>
 <section id="other-renamed-names">
@@ -290,13 +295,18 @@ installed from PyPI you never had them — they are shimmed for development inst
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tools.calc_Z</span></code> / <code class="docutils literal notranslate"><span class="pre">assign_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">assign_profile_number</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">tools.add_depth</span></code> / <code class="docutils literal notranslate"><span class="pre">add_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">add_profile_number</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">convertOG1.apply_keep_variables(ds,</span> <span class="pre">keep)</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools.reformat_units_str</span></code> / <code class="docutils literal notranslate"><span class="pre">reformat_units_var</span></code> / <code class="docutils literal notranslate"><span class="pre">convert_units_var</span></code> <em>(deprecated 0.2.0)</em></p></td>
+<td><p>resolve through <code class="docutils literal notranslate"><span class="pre">vocabularies.UNITS</span></code>; a spelling the view cannot relate now raises
+<code class="docutils literal notranslate"><span class="pre">UnitsError</span></code> instead of the old silent pass-through, and the <code class="docutils literal notranslate"><span class="pre">unit_format</span></code> /
+<code class="docutils literal notranslate"><span class="pre">unit1_to_unit2</span></code> dict arguments are gone</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">convertOG1.apply_keep_variables(ds,</span> <span class="pre">keep)</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">keep_variables(ds,</span> <span class="pre">names)</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.registry_institutions</span></code> / <code class="docutils literal notranslate"><span class="pre">normalize_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">normalize_role</span></code> <em>(main only)</em></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contributors.registry_institutions</span></code> / <code class="docutils literal notranslate"><span class="pre">normalize_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">normalize_role</span></code> <em>(main only)</em></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">contributors.institution_registry</span></code> / <code class="docutils literal notranslate"><span class="pre">canonical_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">canonical_role</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">firstrun=</span></code> keyword (e.g. <code class="docutils literal notranslate"><span class="pre">tools.convert_units_var(...,</span> <span class="pre">firstrun=...)</span></code>)</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">firstrun=</span></code> keyword (e.g. <code class="docutils literal notranslate"><span class="pre">tools.convert_units_var(...,</span> <span class="pre">firstrun=...)</span></code>)</p></td>
 <td><p>removed; accepted and ignored with a warning. Progress goes through
 <code class="docutils literal notranslate"><span class="pre">logging.getLogger(&quot;seagliderOG1&quot;)</span></code> (the CLI <code class="docutils literal notranslate"><span class="pre">-v</span></code> sets the level)</p></td>
 </tr>

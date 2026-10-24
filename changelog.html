@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.1.0.post1.dev4 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.1.0.post1.dev5 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=4f333dd2"></script>
+      <script src="_static/documentation_options.js?v=eb4bb9cb"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -63,6 +63,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="units_mapping.html">Unit mapping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
@@ -173,11 +174,35 @@ on those files — correct it with <code class="docutils literal notranslate"><s
 produced a <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> ~1000 out of range. <code class="docutils literal notranslate"><span class="pre">gsw_sigma0</span></code> now passes through under its own name;
 <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> is absent until it is derived properly in a later release. The conversion page
 recommends dropping <code class="docutils literal notranslate"><span class="pre">gsw_sigma0</span></code>.</p></li>
+<li><p>A basestation units spelling that no view resolves is now refused with <code class="docutils literal notranslate"><span class="pre">UnitsError</span></code> rather than
+written through unchecked. Every source units string resolves to the OG1 variable’s canonical
+spelling and a factor through one view (<code class="docutils literal notranslate"><span class="pre">vocabularies.UNITS</span></code>) over the vendored units layer; add
+a new spelling there (with its source and a verified factor) or correct the label in the mission
+config.</p></li>
+<li><p>The wrong-quantity oxygen mappings are removed: <code class="docutils literal notranslate"><span class="pre">dissolved_oxygen</span> <span class="pre">→</span> <span class="pre">DOXY</span></code> and
+<code class="docutils literal notranslate"><span class="pre">dissolved_oxygen_sat</span> <span class="pre">→</span> <span class="pre">OXYSAT</span></code>. The sources were a per-mass concentration and a saturation
+mapped onto OG1 quantities they are not; they now pass through under their own names and are
+recommended for drop. <code class="docutils literal notranslate"><span class="pre">DOXY</span></code> comes only from <code class="docutils literal notranslate"><span class="pre">oxygen_concentration</span></code>, <code class="docutils literal notranslate"><span class="pre">OXYSAT</span></code> only from the
+percent <code class="docutils literal notranslate"><span class="pre">O2_sat</span></code> source.</p></li>
+<li><p>The three ad-hoc unit tables in <code class="docutils literal notranslate"><span class="pre">vocabularies</span></code> (<code class="docutils literal notranslate"><span class="pre">unit_str_format</span></code>, <code class="docutils literal notranslate"><span class="pre">unit1_to_unit2</span></code>,
+<code class="docutils literal notranslate"><span class="pre">preferred_units</span></code>) are removed; access raises naming <code class="docutils literal notranslate"><span class="pre">vocabularies.UNITS</span></code>. The three
+<code class="docutils literal notranslate"><span class="pre">tools</span></code> unit helpers (<code class="docutils literal notranslate"><span class="pre">reformat_units_str</span></code>, <code class="docutils literal notranslate"><span class="pre">reformat_units_var</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_units_var</span></code>) are
+deprecated (warn, removed 0.3.0) and now resolve through <code class="docutils literal notranslate"><span class="pre">vocabularies.UNITS</span></code>: a spelling the
+view cannot relate raises <code class="docutils literal notranslate"><span class="pre">UnitsError</span></code> instead of the old silent pass-through, and the
+<code class="docutils literal notranslate"><span class="pre">unit_format</span></code> / <code class="docutils literal notranslate"><span class="pre">unit1_to_unit2</span></code> dict arguments are gone.</p></li>
 </ul>
 </section>
 <section id="added">
 <h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">unit_corrections</span></code> mission.yaml key: per-mission units-label corrections keyed by the basestation
+variable name (<code class="docutils literal notranslate"><span class="pre">{from,</span> <span class="pre">to}</span></code>, with <code class="docutils literal notranslate"><span class="pre">from:</span> <span class="pre">null</span></code> for an unlabelled source), applied before
+conversion in origin terms and layered over the package <code class="docutils literal notranslate"><span class="pre">OG1_unit_corrections.yaml</span></code> so a mission
+entry wins on a shared key. For a one-off mislabel on one mission; the package file carries the
+systematic cross-mission defects.</p></li>
+<li><p>Conversion report “Unit corrections” section: one row per variable the conversion corrected (label
+fixed, value unchanged), converted (values scaled by the shown factor), or adopted an OG1 label for
+(source carried no units).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">drop_variables</span></code> mission.yaml key: a list of variables to leave out of the output, by OG1 or
 basestation name (matched through <code class="docutils literal notranslate"><span class="pre">original_name</span></code>), the counterpart of <code class="docutils literal notranslate"><span class="pre">keep_variables</span></code>.
 OG1-mandatory variables are never dropped; a dropped variable’s <code class="docutils literal notranslate"><span class="pre">_QC</span></code> companion goes with it;
@@ -196,6 +221,9 @@ basestation variable and guarded by the label as written (so sg271’s correctly
 (new, in <code class="docutils literal notranslate"><span class="pre">seagliderOG1.exceptions</span></code>) rather than shipping a file off by a unit factor. Values out
 of range for other reasons are left as-is and flagged on the page, never silently changed. Every
 correction is logged once per variable.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DELTA_TIME_S</span></code> keeps its <code class="docutils literal notranslate"><span class="pre">seconds</span></code> unit. <code class="docutils literal notranslate"><span class="pre">encode_times_og1</span></code> stripped the unit from every variable
+whose name contained <code class="docutils literal notranslate"><span class="pre">time</span></code>, including the numeric <code class="docutils literal notranslate"><span class="pre">DELTA_TIME_S</span></code> duration; it now acts only on
+datetime variables, whose CF units belong in encoding.</p></li>
 </ul>
 </section>
 </section>

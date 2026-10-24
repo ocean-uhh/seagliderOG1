@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.tools &mdash; seagliderOG1 0.1.0.post1.dev4 documentation</title>
+  <title>seagliderOG1.tools &mdash; seagliderOG1 0.1.0.post1.dev5 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=4f333dd2"></script>
+      <script src="../../_static/documentation_options.js?v=eb4bb9cb"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -61,6 +61,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../units_mapping.html">Unit mapping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
@@ -125,9 +126,6 @@
     <span class="s2">"add_phase"</span><span class="p">,</span>
     <span class="s2">"add_profile_number"</span><span class="p">,</span>
     <span class="s2">"add_dive_number"</span><span class="p">,</span>
-    <span class="s2">"convert_units_var"</span><span class="p">,</span>
-    <span class="s2">"reformat_units_var"</span><span class="p">,</span>
-    <span class="s2">"reformat_units_str"</span><span class="p">,</span>
     <span class="s2">"convert_qc_flags"</span><span class="p">,</span>
     <span class="s2">"encode_times_og1"</span><span class="p">,</span>
     <span class="s2">"split_by_unique_dims"</span><span class="p">,</span>
@@ -381,139 +379,6 @@
 
 
 
-<div class="viewcode-block" id="reformat_units_var">
-<a class="viewcode-back" href="../../api.html#seagliderOG1.tools.reformat_units_var">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">reformat_units_var</span><span class="p">(</span>
-    <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">var_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit_format</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Rename units in the dataset based on the provided dictionary for OG1.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    ds</span>
-<span class="sd">        The input dataset containing variables with units to be renamed.</span>
-<span class="sd">    var_name</span>
-<span class="sd">        The name of the variable whose units should be reformatted.</span>
-<span class="sd">    unit_format, optional</span>
-<span class="sd">        A dictionary mapping old unit strings to new formatted unit strings.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    str</span>
-<span class="sd">        The reformatted unit string.</span>
-
-<span class="sd">    """</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Renames units in the dataset based on the provided dictionary for OG1.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    ds (xarray.Dataset): The input dataset containing variables with units to be renamed.</span>
-<span class="sd">    unit_format (dict): A dictionary mapping old unit strings to new formatted unit strings.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    xarray.Dataset: The dataset with renamed units.</span>
-<span class="sd">    """</span>
-    <span class="n">old_unit</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"units"</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">unit_format</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">old_unit</span><span class="p">,</span> <span class="n">old_unit</span><span class="p">)</span></div>
-
-
-
-<div class="viewcode-block" id="reformat_units_str">
-<a class="viewcode-back" href="../../api.html#seagliderOG1.tools.reformat_units_str">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">reformat_units_str</span><span class="p">(</span>
-    <span class="n">old_unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit_format</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit_str_format</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Reformat a unit string based on the provided unit format dictionary.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    old_unit</span>
-<span class="sd">        The original unit string to reformat.</span>
-<span class="sd">    unit_format, optional</span>
-<span class="sd">        A dictionary mapping old unit strings to new formatted unit strings.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    str</span>
-<span class="sd">        The reformatted unit string, or the original if no mapping exists.</span>
-
-<span class="sd">    """</span>
-    <span class="n">new_unit</span> <span class="o">=</span> <span class="n">unit_format</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">old_unit</span><span class="p">,</span> <span class="n">old_unit</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">new_unit</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>  <span class="c1"># .casefold()</span></div>
-
-
-
-<span class="c1"># Unit pairs already warned about (see convert_units_var).</span>
-<span class="n">_UNCONVERTED_UNITS</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-
-
-<div class="viewcode-block" id="convert_units_var">
-<a class="viewcode-back" href="../../api.html#seagliderOG1.tools.convert_units_var">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convert_units_var</span><span class="p">(</span>
-    <span class="n">var_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">current_unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">new_unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">unit1_to_unit2</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">unit1_to_unit2</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Convert variable values from their current unit to a requested unit.</span>
-
-<span class="sd">    Unit strings are normalized with :func:`reformat_units_str` before they</span>
-<span class="sd">    are compared or used to look up conversion information.</span>
-
-<span class="sd">    If the normalized units are identical, the values are returned unchanged.</span>
-<span class="sd">    If no conversion is available, the original values and current unit are</span>
-<span class="sd">    returned, and an optional warning is logged.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    var_values</span>
-<span class="sd">        Values to convert.</span>
-<span class="sd">    current_unit</span>
-<span class="sd">        Unit currently associated with ``var_values``.</span>
-<span class="sd">    new_unit</span>
-<span class="sd">        Requested output unit.</span>
-<span class="sd">    unit1_to_unit2</span>
-<span class="sd">        Mapping of conversion keys, such as ``"cm/s_to_m/s"``, to conversion</span>
-<span class="sd">        information. Each entry must contain a ``"factor"`` value.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    converted_values</span>
-<span class="sd">        Converted values, or the original values if conversion is unnecessary</span>
-<span class="sd">        or unavailable.</span>
-<span class="sd">    output_unit</span>
-<span class="sd">        Normalized output unit. This is the current unit when conversion is</span>
-<span class="sd">        unavailable.</span>
-<span class="sd">    """</span>
-    <span class="n">current_unit</span> <span class="o">=</span> <span class="n">reformat_units_str</span><span class="p">(</span><span class="n">current_unit</span><span class="p">)</span>
-    <span class="n">requested_unit</span> <span class="o">=</span> <span class="n">reformat_units_str</span><span class="p">(</span><span class="n">new_unit</span><span class="p">)</span>
-
-    <span class="c1"># No conversion is needed when the normalized units are identical.</span>
-    <span class="k">if</span> <span class="n">current_unit</span> <span class="o">==</span> <span class="n">requested_unit</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">var_values</span><span class="p">,</span> <span class="n">current_unit</span>
-
-    <span class="n">conversion_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">current_unit</span><span class="si">}</span><span class="s2">_to_</span><span class="si">{</span><span class="n">requested_unit</span><span class="si">}</span><span class="s2">"</span>
-    <span class="n">conversion</span> <span class="o">=</span> <span class="n">unit1_to_unit2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">conversion_key</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">conversion</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">converted_values</span> <span class="o">=</span> <span class="n">var_values</span> <span class="o">*</span> <span class="n">conversion</span><span class="p">[</span><span class="s2">"factor"</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">converted_values</span><span class="p">,</span> <span class="n">requested_unit</span>
-
-    <span class="c1"># Once per unit pair per session: the same pair recurs on every dive.</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">current_unit</span><span class="p">,</span> <span class="n">requested_unit</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_UNCONVERTED_UNITS</span><span class="p">:</span>
-        <span class="n">_UNCONVERTED_UNITS</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">current_unit</span><span class="p">,</span> <span class="n">requested_unit</span><span class="p">))</span>
-        <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">"No conversion information found for </span><span class="si">%r</span><span class="s2"> to </span><span class="si">%r</span><span class="s2">"</span><span class="p">,</span>
-            <span class="n">current_unit</span><span class="p">,</span>
-            <span class="n">requested_unit</span><span class="p">,</span>
-        <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">var_values</span><span class="p">,</span> <span class="n">current_unit</span></div>
-
-
-
 <div class="viewcode-block" id="convert_qc_flags">
 <a class="viewcode-back" href="../../api.html#seagliderOG1.tools.convert_qc_flags">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_qc_flags</span><span class="p">(</span><span class="n">dsa</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">qc_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
@@ -626,7 +491,11 @@
     <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">"axis"</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
             <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"axis"</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s2">"time"</span> <span class="ow">in</span> <span class="n">var_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+        <span class="c1"># Only real datetime variables are CF-time encoded: their units and calendar</span>
+        <span class="c1"># belong in encoding and are written there, so any stray attrs are dropped. A</span>
+        <span class="c1"># numeric duration such as DELTA_TIME_S merely has "time" in its name and must</span>
+        <span class="c1"># keep its unit attribute (seconds), so the name is not used to select here.</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"units"</span><span class="p">,</span> <span class="s2">"calendar"</span><span class="p">,</span> <span class="s2">"dtype"</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="n">drop_attr</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
                     <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">drop_attr</span><span class="p">)</span>
@@ -652,6 +521,12 @@
 <span class="n">assign_profile_number</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">_renamed</span><span class="p">(</span>
     <span class="n">add_profile_number</span><span class="p">,</span> <span class="s2">"tools.assign_profile_number"</span><span class="p">,</span> <span class="s2">"tools.add_profile_number"</span>
 <span class="p">)</span>
+
+<span class="c1"># The three unit helpers now resolve through the units view (vocabularies.UNITS); the ad-hoc</span>
+<span class="c1"># unit tables they used are gone. Kept as warning shims for one release (removed 0.3.0).</span>
+<span class="n">reformat_units_str</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">reformat_units_str</span>
+<span class="n">reformat_units_var</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">reformat_units_var</span>
+<span class="n">convert_units_var</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">convert_units_var</span>
 
 <span class="n">_REMOVED_TOOLS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"OG1_name_mapping"</span><span class="p">:</span> <span class="p">(</span>
