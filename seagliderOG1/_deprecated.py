@@ -450,15 +450,14 @@ def convert_units_var(var_values: object, current_unit: str, new_unit: str) -> t
     from seagliderOG1.exceptions import UnitsError
     from seagliderOG1.reports._vendored import units as _units
 
-    canon_cur, factor_cur = _units.resolve_units(
-        current_unit, tables=vocabularies.UNITS
-    )
-    canon_new, factor_new = _units.resolve_units(new_unit, tables=vocabularies.UNITS)
-    if canon_cur != canon_new:
+    factor = vocabularies.unit_factor(current_unit, new_unit)
+    if factor is None:
         msg = (
             f"convert_units_var cannot relate {current_unit!r} to {new_unit!r} through "
-            f"vocabularies.UNITS: they resolve to different canonical units "
-            f"({canon_cur!r} and {canon_new!r})."
+            "vocabularies.UNITS: they resolve to different canonical units (or the "
+            "spelling is unknown)."
         )
         raise UnitsError(msg)
-    return var_values * (factor_cur / factor_new), canon_new
+    return var_values * factor, _units.resolve_units(
+        new_unit, tables=vocabularies.UNITS
+    )[0]

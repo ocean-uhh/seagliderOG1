@@ -16,6 +16,7 @@ vendored table macros; the sidecar-fed columns show "—" and the presence secti
 when the ``<id>_conversion.json`` beside the file is missing.
 """
 
+import json
 import math
 import re
 import warnings
@@ -496,25 +497,15 @@ def _norm_unit(unit: str) -> str:
 def _unit_factor(u_from: str, u_to: str) -> float | None:
     """Return the multiplier converting ``u_from`` into ``u_to``, or None when unrelated.
 
-    Same unit (after spelling normalisation) is ``1.0``; otherwise both spellings are resolved
-    through the package units view (:data:`seagliderOG1.vocabularies.UNITS`), and when they share
-    a canonical the ratio of their factors converts one into the other. No conversion is invented:
-    units the view cannot relate return None and the comparison is marked not comparable.
+    Same unit (after spelling normalisation) is ``1.0``; otherwise the ratio comes from
+    :func:`seagliderOG1.vocabularies.unit_factor` (one view over the vendored tables). No
+    conversion is invented: units the view cannot relate return None and the comparison is marked
+    not comparable. The ``_norm_unit`` fast path keeps the ``metre``/``metres`` spellings equal,
+    which the view does not alias.
     """
     if _norm_unit(u_from) == _norm_unit(u_to):
         return 1.0
-    from seagliderOG1.reports._vendored import units as _units
-
-    try:
-        canon_from, factor_from = _units.resolve_units(
-            u_from, tables=vocabularies.UNITS
-        )
-        canon_to, factor_to = _units.resolve_units(u_to, tables=vocabularies.UNITS)
-    except _units.UnitsError:
-        return None
-    if canon_from != canon_to or factor_to == 0:
-        return None
-    return factor_from / factor_to
+    return vocabularies.unit_factor(u_from, u_to)
 
 
 def _duplicate_groups(ds: xr.Dataset) -> list[dict[str, object]]:
@@ -1871,6 +1862,71 @@ def _null_block(key: str, comments: dict[str, str]) -> str:
     return "\n".join(lines)
 
 
+def _unit_corrections_rows(ds: xr.Dataset) -> list[dict[str, object]]:
+    """Return one row per variable whose units the conversion corrected, converted, or adopted.
+
+    Reads each variable's ``original_units`` attribute and the ``conversion_units`` ledger
+    (``output name -> [source, canonical, factor]``). Three actions appear: a factor-1 label
+    correction (the label was wrong for the magnitude, the value is unchanged); a conversion
+    (the values were scaled by the factor); and an adoption (the source carried no units, so the
+    OG1 label was taken). A pure spelling rewrite (factor 1, resolved from the view, no recorded
+    ``original_units``) is not listed — the Unit mapping docs page carries the full spelling view.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The converted OG1 dataset.
+
+    Returns
+    -------
+    list of dict
+        ``{"name", "original", "written", "action"}`` rows, sorted by name.
+
+    """
+    ledger: dict = {}
+    raw = ds.attrs.get("conversion_units")
+    if raw:
+        try:
+            ledger = json.loads(raw)
+        except (ValueError, TypeError):
+            ledger = {}
+    rows = []
+    for name in ds.variables:
+        attrs = ds[name].attrs
+        if "original_units" not in attrs and name not in ledger:
+            continue
+        written = str(attrs.get("units", ""))
+        if name in ledger:
+            source, _canonical, factor = ledger[str(name)]
+            rows.append(
+                {
+                    "name": str(name),
+                    "original": str(source),
+                    "written": written,
+                    "action": f"converted (×{factor:g})",
+                }
+            )
+        elif str(attrs.get("original_units", "")) == "":
+            rows.append(
+                {
+                    "name": str(name),
+                    "original": "— (none)",
+                    "written": written,
+                    "action": "OG1 label adopted (source unlabelled)",
+                }
+            )
+        else:
+            rows.append(
+                {
+                    "name": str(name),
+                    "original": str(attrs["original_units"]),
+                    "written": written,
+                    "action": "label corrected (value unchanged)",
+                }
+            )
+    return sorted(rows, key=lambda r: r["name"])
+
+
 def _drop_recommendation(ds: xr.Dataset) -> dict[str, object] | None:
     """Return a ``drop_variables`` suggestion block for variables OG1 defines differently.
 
@@ -2484,6 +2540,7 @@ def render_conversion(
         )
         history_rows = _history_rows(ledger)
         masthead_meta = _masthead_meta(ds, ledger)
+        unit_corrections_rows = _unit_corrections_rows(ds)
     finally:
         ds.close()
 
@@ -2512,6 +2569,7 @@ def render_conversion(
         masthead_meta=masthead_meta,
         page_nav=_page_nav(),
         summary_rows=summary_rows,
+        unit_corrections_rows=unit_corrections_rows,
         verdict_clauses=verdict_clauses,
         og1_required=og1_required,
         og1_required_caption=og1_required_caption,

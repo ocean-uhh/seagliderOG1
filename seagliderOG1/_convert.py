@@ -168,6 +168,7 @@ def _to_canonical_units(
     attributes: dict,
     og1_attributes: dict,
     corrections: Mapping[str, Mapping[str, object]],
+    ledger: dict,
 ) -> None:
     """Resolve a mapped variable's units to the OG1 canonical spelling, recording provenance.
 
@@ -198,6 +199,10 @@ def _to_canonical_units(
         The OG1 vocabulary attributes (``units``, ``standard_name``, ``valid_min``/``valid_max``).
     corrections : Mapping
         Effective label corrections (package overlaid by mission).
+    ledger : dict
+        Accumulator for the ``conversion_units`` record, mutated in place: a converted
+        variable adds ``output_name -> [source_units, canonical, factor]``. The caller
+        serialises it to ``dsa.attrs`` once after the variable loop.
 
     """
     raw_units = ds[original_name].attrs.get("units")
@@ -278,9 +283,7 @@ def _to_canonical_units(
     attributes["comment"] = _append_comment(
         attributes.get("comment"), f"converted from {source_units} (x{factor:g})"
     )
-    ledger = json.loads(dsa.attrs.get("conversion_units", "{}"))
     ledger[output_name] = [source_units, canonical, factor]
-    dsa.attrs["conversion_units"] = json.dumps(ledger)
     _warn_once(
         _UNIT_CONVERTED,
         output_name,
@@ -2186,6 +2189,9 @@ def apply_og1_vocabulary(
     variables_without_og1_attributes = []
     output_names = {}
     mapped_variables = set()
+    # Accumulate the conversion_units record across the variable loop and serialise once;
+    # a per-variable json round-trip of the growing dict would be O(variables^2) per dive.
+    conversion_ledger: dict[str, list] = {}
 
     # Determine output names for every variable, including QC variables.
     for original_name in ds.variables:
@@ -2308,6 +2314,7 @@ def apply_og1_vocabulary(
             attributes,
             og1_attributes,
             unit_corrections,
+            conversion_ledger,
         )
 
         dsa[output_name].attrs = attributes
@@ -2315,6 +2322,10 @@ def apply_og1_vocabulary(
         # Standardize mapped QC variables, including derived QC mappings.
         if original_name.lower().endswith("_qc") or output_name.upper().endswith("_QC"):
             dsa = tools.convert_qc_flags(dsa, output_name)
+
+    # One serialisation of the accumulated conversion record, after the loop.
+    if conversion_ledger:
+        dsa.attrs["conversion_units"] = json.dumps(conversion_ledger)
 
     if unassigned_variables:
         _log.debug(

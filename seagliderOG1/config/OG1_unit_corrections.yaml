@@ -22,14 +22,25 @@
 # magnitude. See CHANGELOG 0.1.1.
 ################################################################################
 
+# --- Wrong spelling of the right quantity -------------------------------------
+# The label is a different spelling of the same physical quantity the value holds;
+# the magnitude is right, only the label is wrong. Relabelled, never scaled.
 density: {from: "g/m^3", to: "kg m-3"}
 density_insitu: {from: "g/m^3", to: "kg m-3"}
 sigma_t: {from: "g/m^3", to: "kg m-3"}
 sigma_theta: {from: "g/m^3", to: "kg m-3"}
-# glide_angle is labelled cm/s on basestation 2.8 (sg005) but holds degree-magnitude values
-# (median ~22, range [-63, 22]); OG1 GLIDE_ANGLE is degrees. A mislabel, not a conversion.
+
+# --- Label names the wrong quantity -------------------------------------------
+# A stronger assertion: the label is a unit of a DIFFERENT quantity than the value
+# holds. glide_angle is labelled cm/s on basestation 2.8 (sg005) but holds
+# degree-magnitude values (median ~22, range [-63, 22]); OG1 GLIDE_ANGLE is degrees.
+# Still a relabel (the value is the target quantity's magnitude, trusted as-is), but
+# the claim rests on the magnitude, so the post-relabel valid_min/valid_max check in
+# _convert.py is the guard: a value that is NOT degree-magnitude (e.g. a genuine cm/s
+# glide rate mislabelled the same way) lands out of range and is flagged, not hidden.
 glide_angle: {from: "cm/s", to: "degrees"}
 
+# --- Unlabelled source, OG1 label adopted -------------------------------------
 # from: null declares an unlabelled source (the basestation file carries no units; the values are
 # in `to`), so the OG1 label is adopted deliberately, not assumed. Only where the OG1
 # target has units; a unitless QC flag or scalar needs no row.

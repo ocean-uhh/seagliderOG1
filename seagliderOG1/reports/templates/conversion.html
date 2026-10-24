@@ -92,6 +92,20 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 <p class="caption verdict">{% for c in verdict_clauses %}<span{% if c.bad %} class="cell-bad"{% endif %}>{{ c.text }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</p>
 </section>
 
+<section id="units">
+<h2>1b. Unit corrections</h2>
+<p class="caption">What the conversion did to each variable's units. <em>Label corrected</em>: the basestation label was wrong for the magnitude, so only the label was fixed and the value left unchanged. <em>Converted</em>: the values were scaled by the factor shown to reach the OG1 units. <em>OG1 label adopted</em>: the basestation file carried no units, so the OG1 label was taken (the value is unchanged, assumed to be in those units). A pure spelling rewrite with no value change is not listed; the Unit mapping docs page carries the full spelling view. Only variables whose units were corrected, converted, or adopted are shown.</p>
+{%- if unit_corrections_rows %}
+<table class="nc sortable">
+<thead><tr><th>Variable</th><th>Label as written</th><th>Units written</th><th>What happened</th></tr></thead>
+<tbody>
+{%- for r in unit_corrections_rows %}
+<tr><td>{{ r.name }}</td><td>{{ r.original }}</td><td>{{ r.written }}</td><td>{{ r.action }}</td></tr>
+{%- endfor %}
+</tbody></table>
+{%- else %}<p class="caption">Not applicable to this file: no variable's units were corrected, converted, or adopted.</p>{% endif %}
+</section>
+
 <section id="og1">
 <h2>2. {{ "What an OG1 file would hold" if draft else "The OG1 file" }}</h2>
 <p class="caption">The output read by what OG1 says it must and may contain, not by where it came from — the view that answers "where did the elements of my OG1 file come from". Orig var names the basestation variable (or how the converter built it) and Orig dim its basestation dimension.</p>

@@ -56,6 +56,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   conversion in origin terms and layered over the package `OG1_unit_corrections.yaml` so a mission
   entry wins on a shared key. For a one-off mislabel on one mission; the package file carries the
   systematic cross-mission defects.
+- Conversion report "Unit corrections" section: one row per variable the conversion corrected (label
+  fixed, value unchanged), converted (values scaled by the shown factor), or adopted an OG1 label for
+  (source carried no units).
 
 - `drop_variables` mission.yaml key: a list of variables to leave out of the output, by OG1 or
   basestation name (matched through `original_name`), the counterpart of `keep_variables`.

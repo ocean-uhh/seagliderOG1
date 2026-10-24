@@ -338,6 +338,39 @@ UNITS = _units.merge_tables(
     },
 )
 
+
+def unit_factor(u_from: str, u_to: str) -> float | None:
+    """Return the multiplier converting ``u_from`` into ``u_to``, or None when unrelated.
+
+    Both spellings are resolved through :data:`UNITS`; when they share a canonical, the ratio
+    of their factors converts ``u_from`` values into ``u_to``. Units the view cannot relate (a
+    different canonical, an unresolvable spelling, or a degenerate zero factor) return None — no
+    conversion is invented. The one place the canonical compare and the factor ratio live, so the
+    converter shim and the conversion page cannot drift.
+
+    Parameters
+    ----------
+    u_from : str
+        The units the values are in.
+    u_to : str
+        The units to convert them to.
+
+    Returns
+    -------
+    float or None
+        The multiplier, or None when the two spellings are not relatable.
+
+    """
+    try:
+        canon_from, factor_from = _units.resolve_units(u_from, tables=UNITS)
+        canon_to, factor_to = _units.resolve_units(u_to, tables=UNITS)
+    except _units.UnitsError:
+        return None
+    if canon_from != canon_to or factor_to == 0:
+        return None
+    return factor_from / factor_to
+
+
 # Variables to exclude from OG1 output. Empty: every basestation variable is retained. The
 # names below were dropped before; kept commented out until the list is removed.
 VARIABLES_TO_DROP = [
