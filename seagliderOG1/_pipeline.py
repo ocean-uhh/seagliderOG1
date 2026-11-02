@@ -1763,11 +1763,17 @@ _DATE_RBR = re.compile(r"(\w+):(\d{4}-\d{2}-\d{2})T[\d:.]+Z")
 _DATE_WORD_MONTH = re.compile(
     rf"(?i)\b(\d{{1,2}})([\s-]*)({_MONTH_WORD})(?![a-z])([\s-]*)(\d{{4}}|\d{{2}})\b"
 )
-_DATE_ISO = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
+_DATE_YEAR_FIRST = re.compile(r"\b(\d{4})([-/.])(\d{1,2})\2(\d{1,2})\b")
+_DATE_MONTH_WORD_FIRST = re.compile(
+    rf"(?i)\b({_MONTH_WORD})(?![a-z])\.?\s+(\d{{1,2}}),?\s+(\d{{4}}|\d{{2}})\b"
+)
 # The date text ends where a serial label starts, so a serial after the keyword is not
 # read as a date.
 _SERIAL_LABEL_START = re.compile(r"(?i)\b(?:serialnum|serial|s/n|sn)(?=[\s:#\d])")
-_DATE_SLASH = re.compile(r"\b(\d{1,2})/(\d{1,2})/(\d{4}|\d{2})\b")
+_DATE_NUMERIC = re.compile(r"\b(\d{1,2})([/.-])(\d{1,2})\2(\d{4}|\d{2})\b")
+#: Which reading of a two-number date wins when both fit, by separator: the US habit for
+#: slashes, the European one for dots and dashes.
+_NUMERIC_PREFERENCE = {"/": "month", ".": "day", "-": "day"}
 _DATE_8 = re.compile(r"\b(\d{8})\b")
 _DATE_6 = re.compile(r"\b(\d{6})\b")
 
@@ -1900,11 +1906,13 @@ def _calibcomm_date(
     tail = text[keyword.end() :]
     if label := _SERIAL_LABEL_START.search(tail):
         tail = tail[: label.start()]
-    if match := _DATE_ISO.search(tail):
-        day = _make_date(*(int(g) for g in match.groups()))
+    if match := _DATE_YEAR_FIRST.search(tail):
+        year_s, sep, month_s, day_s = match.groups()
+        rule = f"yyyy{sep}mm{sep}dd"
+        day = _make_date(int(year_s), int(month_s), int(day_s))
         if day is None:
-            return "UNK", {}, "yyyy-mm-dd", f"{match.group(0)!r} is not a calendar date"
-        return day.isoformat(), {}, "yyyy-mm-dd", ""
+            return "UNK", {}, rule, f"{match.group(0)!r} is not a calendar date"
+        return day.isoformat(), {}, rule, ""
     if match := _DATE_WORD_MONTH.search(tail):
         day_s, sep1, month_s, sep2, year_s = match.groups()
         separators = sep1 + sep2
@@ -1915,22 +1923,39 @@ def _calibcomm_date(
         if day is None:
             return "UNK", {}, rule, f"{match.group(0)!r} is not a calendar date"
         return day.isoformat(), {}, rule, ""
-    if match := _DATE_SLASH.search(tail):
-        first, second, year_s = match.groups()
+    if match := _DATE_MONTH_WORD_FIRST.search(tail):
+        month_s, day_s, year_s = match.groups()
+        rule = f"Mon dd, {'yyyy' if len(year_s) == 4 else 'yy'}"
         year = _full_year(int(year_s), len(year_s), first_sample)
+        day = _make_date(year, _MONTHS[month_s[:3].lower()], int(day_s))
+        if day is None:
+            return "UNK", {}, rule, f"{match.group(0)!r} is not a calendar date"
+        return day.isoformat(), {}, rule, ""
+    if match := _DATE_NUMERIC.search(tail):
+        first, sep, second, year_s = match.groups()
+        year = _full_year(int(year_s), len(year_s), first_sample)
+        month_rule, day_rule = f"mm{sep}dd{sep}yy", f"dd{sep}mm{sep}yy"
         month_first = _make_date(year, int(first), int(second))
         day_first = _make_date(year, int(second), int(first))
-        if month_first is None and day_first is not None:
+        preferred = _NUMERIC_PREFERENCE[sep]
+        if preferred == "month" and month_first is None and day_first is not None:
             return (
                 day_first.isoformat(),
                 {},
-                "dd/mm/yy",
+                day_rule,
                 "month-first impossible; read day-first",
             )
+        if preferred == "day" and day_first is None and month_first is not None:
+            return (
+                month_first.isoformat(),
+                {},
+                month_rule,
+                "day-first impossible; read month-first",
+            )
         iso, rule, note = _choose_reading(
-            [("mm/dd/yy", month_first), ("dd/mm/yy", day_first)],
+            [(month_rule, month_first), (day_rule, day_first)],
             first_sample,
-            prefer="mm/dd/yy",
+            prefer=month_rule if preferred == "month" else day_rule,
         )
         return iso, {}, rule, note
     if match := _DATE_8.search(tail):
@@ -1972,8 +1997,9 @@ def parse_calibcomm(text: str | None, first_sample: date | None = None) -> Calib
     Calibration comments (``sg_cal_calibcomm*``, from ``sg_calib_constants.m``) are typed
     by the operator, so the parser names the rule it used for each field and never guesses
     between readings without a reason: an all-numeric date is read only where one reading
-    falls inside the window ending at the first sample (``n/n/yy`` reads month-first when
-    both do); otherwise the field is ``"UNK"`` with a note.
+    falls inside the window ending at the first sample (when both do, ``n/n/yy`` reads
+    month-first and ``n.n.yy`` / ``n-n-yy`` day-first); otherwise the field is ``"UNK"``
+    with a note.
 
     Parameters
     ----------

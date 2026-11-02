@@ -51,8 +51,9 @@ Calibration date
 
 The date is read from the text after ``cal``, ``CAL:``, ``calibration`` or ``calibrated``.
 
-**ISO dates** (``2012-05-12``) have one reading. **Dates with the month as a word** have one
-reading too: ``04FEB08``, ``15sep08``, ``12 Aug 01``,
+**Dates with the year first** (``2012-05-12``, ``2012/05/12``, ``2012.05.12``) have one reading.
+**Dates with the month as a word** have one reading too, with the day or the month first
+(``May 12, 2012``): ``04FEB08``, ``15sep08``, ``12 Aug 01``,
 ``27 Feb 2025``, ``26 sept 07``, ``10 june 08``, ``24-May-17``, ``31-May-2017``. RBR comments
 give one ISO date per channel (``temp15:2025-02-26T13:58:29Z doxy24:2025-03-20T11:45:16Z``).
 
@@ -66,9 +67,12 @@ and at most 30 years before it:
    * - Shape
      - Readings
      - When more than one fits
-   * - ``n/n/yy``
+   * - ``n/n/yy`` (slashes)
      - month first, day first
      - month first (``9/10/08`` is 10 September 2008)
+   * - ``n.n.yy``, ``n-n-yy`` (dots, dashes)
+     - day first, month first
+     - day first (``12.05.2012`` is 12 May 2012)
    * - 8 digits
      - ``yyyymmdd``, ``ddmmyyyy``
      - ``UNK``
@@ -78,15 +82,16 @@ and at most 30 years before it:
 
 When only one reading fits, it is used, and the note says why the other was rejected. For
 example ``251114`` on a mission whose first sample is 15 August 2015 reads 25 November 2014,
-because the other reading (14 November 2025) is after the first sample. A ``n/n/yy`` date whose
-month-first reading is not a calendar date (``28/4/08``) is read day first. A two-digit year takes
+because the other reading (14 November 2025) is after the first sample. When the preferred
+reading is not a calendar date, the other is used (``28/4/08`` is 28 April; ``05.25.2012`` is
+25 May). Check ``original_calibcomm`` when a date matters: the preference is a convention, not
+something the comment says. A two-digit year takes
 the century nearest the first sample.
 
 The first sample is the earliest ``start_time`` global across the dive files.
 
-Other formats are not read and give ``UNK`` with a note, among them dates with dots or dashes
-between numbers (``12.05.2012``, ``12-05-2012``), ``2012/05/12`` and ``May 12, 2012``. The
-numbers after a serial label (``s/n``, ``SN``) are never read as a date.
+A comment that matches none of these gives ``UNK`` with a note. The numbers after a serial
+label (``s/n``, ``SN``) are never read as a date.
 
 Checks
 ------

@@ -22,8 +22,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   Other formats in the test table: `25281-1` and `F0012` keep their dash and letter (were
   `252811`, `0012`); `SBE#29613t1/c1` reads `29613` (was `0000`); `9/10/08` reads 10 September
   (was 9 October, day-first). An unreadable serial or date is `UNK`, never `0000`.
-- Date formats the new rules do not read (`12.05.2012`, `12-05-2012`, `2012/05/12`,
-  `May 12, 2012`) give `UNK`; the old parser guessed at them. ISO `2012-05-12` is read.
+- Two-number dates are read by separator when both readings fit: slashes month-first
+  (`9/10/08` → 10 September), dots and dashes day-first (`12.05.2012` → 12 May); the old parser
+  read every such date day-first. Year-first dates (`2012-05-12`, `2012/05/12`) and
+  `May 12, 2012` are read.
 - The old parser's placeholder values (`0000`, `00-00-0000`, `0000-00-00`, `Format Error`,
   `None Found`) are no longer written.
 - `sensors.<key>.calibration_date` in `mission.yaml` must be an ISO date (`YYYY-MM-DD`);

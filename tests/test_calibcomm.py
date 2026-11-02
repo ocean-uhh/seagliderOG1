@@ -275,16 +275,31 @@ def test_serial_after_the_keyword_is_not_read_as_a_date():
     assert (info.serial, info.calibration_date) == ("251114", "UNK")
 
 
-def test_iso_date_and_unread_formats():
-    """yyyy-mm-dd is read; dotted and dashed numeric dates are UNK, not guessed."""
-    info = parse_calibcomm(
-        "SBE s/n 0112 calibration 2012-05-12", datetime.date(2013, 1, 1)
-    )
-    assert (info.calibration_date, info.date_rule) == ("2012-05-12", "yyyy-mm-dd")
-    for text in ("calibration 12.05.2012", "calibration 12-05-2012"):
-        assert (
-            parse_calibcomm(text, datetime.date(2013, 1, 1)).calibration_date == "UNK"
-        )
+def test_year_first_and_month_word_first_dates():
+    """yyyy-mm-dd, yyyy/mm/dd and 'May 12, 2012' each have one reading."""
+    first = datetime.date(2013, 1, 1)
+    for text, rule in (
+        ("SBE s/n 0112 calibration 2012-05-12", "yyyy-mm-dd"),
+        ("SBE s/n 0112 calibration 2012/05/12", "yyyy/mm/dd"),
+        ("SBE s/n 0112 calibration May 12, 2012", "Mon dd, yyyy"),
+    ):
+        info = parse_calibcomm(text, first)
+        assert (info.calibration_date, info.date_rule) == ("2012-05-12", rule), text
+
+
+@pytest.mark.parametrize(
+    ("text", "expected", "rule"),
+    [
+        ("calibration 12.05.2012", "2012-05-12", "dd.mm.yy"),
+        ("calibration 12-05-2012", "2012-05-12", "dd-mm-yy"),
+        ("calibration 05.25.2012", "2012-05-25", "mm.dd.yy"),
+        ("calibration 12/05/2012", "2012-12-05", "mm/dd/yy"),
+    ],
+)
+def test_numeric_dates_by_separator(text, expected, rule):
+    """Both readings fit: dots and dashes read day-first, slashes month-first."""
+    info = parse_calibcomm(text, datetime.date(2013, 1, 1))
+    assert (info.calibration_date, info.date_rule) == (expected, rule)
 
 
 def test_rbr_fractional_seconds():
