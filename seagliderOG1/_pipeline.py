@@ -683,7 +683,21 @@ def gather_sensor_info(
                 "date_rule": info.date_rule,
                 "note": info.note,
                 "checks": [],
+                # The parameters that chose between date readings, so the choice can be
+                # reconstructed from the file.
+                "window_years": CALIBRATION_WINDOW_YEARS,
+                "first_sample": first_sample.isoformat() if first_sample else None,
             }
+            if info.note.startswith("both readings fit"):
+                record = metadata[CALIBCOMM_RECORD_KEY]
+                record["checks"].append(f"date chosen by convention: {info.note}")
+                _log.warning(
+                    "Sensor '%s': calibration date in %r has two readings; %s. Check it "
+                    "and correct it with sensors: in the mission config if wrong.",
+                    sensor,
+                    info.original,
+                    info.note,
+                )
             # A field the first comment leaves UNK is taken from the first later dive
             # whose comment gives it and does not contradict what is already read (a
             # different serial, or a different date); the sensor comment and the record
@@ -871,6 +885,47 @@ def gather_sensor_info(
     return sensor_dict
 
 
+def _sensor_variable_names(sensor_dict: dict) -> dict[str, str]:
+    """Return each catalogued sensor key's ``SENSOR_<TYPE>_<SERIAL>`` variable name.
+
+    Two sensors that would get the same name (same type, same serial, including two
+    ``UNK`` serials) are not merged: the second and later get the sensor key appended
+    (``SENSOR_FLUOROMETER_UNK_wlbb2fl``) and a WARNING names them.
+
+    Parameters
+    ----------
+    sensor_dict : dict
+        Sensor key to metadata, from :func:`gather_sensor_info`.
+
+    Returns
+    -------
+    dict of str to str
+        Sensor key to variable name, for keys with a ``sensor_type``.
+
+    """
+    names: dict[str, str] = {}
+    taken: dict[str, str] = {}
+    for sensor, info in sensor_dict.items():
+        if "sensor_type" not in info:
+            continue
+        sensor_type = info["sensor_type"].upper().replace(" ", "_")
+        name = f"SENSOR_{sensor_type}_{info['sensor_serial_number']}"
+        if name in taken:
+            unique = f"{name}_{sensor}"
+            _log.warning(
+                "Sensors '%s' and '%s' would both be %s; the second is written as %s. "
+                "Give them serial numbers with sensors: in the mission config.",
+                taken[name],
+                sensor,
+                name,
+                unique,
+            )
+            name = unique
+        taken[name] = sensor
+        names[sensor] = name
+    return names
+
+
 def add_sensor_to_dataset(
     ds_og1: xr.Dataset,
     sensor_dict: dict,
@@ -908,15 +963,13 @@ def add_sensor_to_dataset(
     # 1. Create dimensionless sensor variables in the dataset
     # -------------------------------------------------------------------------
     calibration_records = {}
-    for _, sensor_info in sensor_dict.items():
+    variable_names = _sensor_variable_names(sensor_dict)
+    for sensor, sensor_info in sensor_dict.items():
         # A sensor key with no catalogue entry has no type to name a variable by
         # (gather_sensor_info warned about it); skip it rather than fail the run.
-        if "sensor_type" not in sensor_info:
+        if sensor not in variable_names:
             continue
-        # Build sensor variable name
-        sensor_type = sensor_info["sensor_type"].upper().replace(" ", "_")
-        serial = sensor_info["sensor_serial_number"]
-        sensor_var_name = f"SENSOR_{sensor_type}_{serial}"
+        sensor_var_name = variable_names[sensor]
 
         # Create the variable (dimensionless DataArray)
         _log.debug(
@@ -965,9 +1018,7 @@ def add_sensor_to_dataset(
             continue
 
         og1_name = str(og1_name)
-        sensor_type = sensor_dict[instrument]["sensor_type"].upper().replace(" ", "_")
-        serial = sensor_dict[instrument]["sensor_serial_number"]
-        ds_og1[og1_name].attrs["sensor"] = f"SENSOR_{sensor_type}_{serial}"
+        ds_og1[og1_name].attrs["sensor"] = variable_names[instrument]
 
     return ds_og1
 
@@ -1762,7 +1813,8 @@ CALIBCOMM_SERIAL_RULES = {
 }
 
 _SERIAL_LABEL = re.compile(
-    r"(?i)\b(?:serialnum|serial\s*#|serial|s/n|sn)\s*[:#-]?\s*((?=[\w-]*\d)\w[\w-]*)"
+    r"(?i)\b(?:serialnum|serial\s*#|serial|s/n|sn)\s*[:#-]?\s*"
+    r"((?!\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\b)(?=[\w-]*\d)\w[\w-]*)"
 )
 _SERIAL_SBE_TC = re.compile(r"(?i)\bSBE\s*#\s*(\d+)\s*t\d+/c\d+")
 _SERIAL_TC_ONLY = re.compile(r"(?i)\bSBE\s+t\d+/c\d+\b")
@@ -1790,7 +1842,9 @@ _DATE_MONTH_WORD_FIRST = re.compile(
 # "on" / "date" / "dated", and a serial label with its number (removed first). The date
 # must come next; a date later in the comment (a "recal due" date, a revision number) is
 # not read.
-_DATE_LEAD = re.compile(r"(?i)^(?:\s+|[:,;]|\b(?:on|dated?)\b)*")
+_DATE_LEAD = re.compile(
+    r"(?i)^(?:\s+|[:,;#]|\b(?:on|dated?)\b|(?:serialnum|serial|s/n|sn)\b)*"
+)
 _DATE_NUMERIC = re.compile(r"\b(\d{1,2})([/.-])(\d{1,2})\2(\d{4}|\d{2})\b")
 #: Which reading of a two-number date wins when both fit, by separator: the US habit for
 #: slashes, the European one for dots and dashes.
@@ -1827,7 +1881,7 @@ def _make_date(year: int, month: int, day: int) -> date | None:
 
 
 def _full_year(year: int, digits: int, first_sample: date | None) -> int:
-    """Return a four-digit year; a two-digit year takes the century nearest the first sample.
+    """Return a four-digit year; a two-digit year takes the latest century not after the first sample.
 
     Without a first sample, two-digit years 00-69 are 20xx and 70-99 are 19xx.
     """
@@ -1835,10 +1889,9 @@ def _full_year(year: int, digits: int, first_sample: date | None) -> int:
         return year
     if first_sample is None:
         return 2000 + year if year < 70 else 1900 + year
-    return min(
-        (century + year for century in (1900, 2000, 2100)),
-        key=lambda y: abs(y - first_sample.year),
-    )
+    # The latest century that does not put the year after the first sample's year.
+    candidates = [c + year for c in (1900, 2000, 2100) if c + year <= first_sample.year]
+    return max(candidates) if candidates else 2000 + year
 
 
 def _window_start(first_sample: date) -> date:
@@ -1909,13 +1962,33 @@ def _choose_reading(
     return "UNK", shape, f"ambiguous: {listed}"
 
 
+def _single_date(
+    match: re.Match, rule: str, year: int, month: int, day: int
+) -> tuple[str, dict[str, str], str, str]:
+    """Return the ``_calibcomm_date`` result for a date shape with one reading."""
+    value = _make_date(year, month, day)
+    if value is None:
+        return "UNK", {}, rule, f"{match.group(0)!r} is not a calendar date"
+    return value.isoformat(), {}, rule, ""
+
+
 def _calibcomm_date(
     text: str, first_sample: date | None
 ) -> tuple[str, dict[str, str], str, str]:
     """Return ``(calibration_date, dates, rule, note)`` for a calibration comment."""
     if channels := _DATE_RBR.findall(text):
-        dates = dict(channels)
-        return max(dates.values()), dates, "rbr-iso", ""
+        dates: dict[str, str] = {}
+        repeated = []
+        for channel, iso in channels:
+            if channel in dates and dates[channel] != iso:
+                repeated.append(f"{channel} {dates[channel]}")
+            dates[channel] = max(dates.get(channel, iso), iso)
+        note = (
+            f"channel given twice; the latest date kept (dropped: {', '.join(repeated)})"
+            if repeated
+            else ""
+        )
+        return max(dates.values()), dates, "rbr-iso", note
     keyword = _DATE_KEYWORD.search(text)
     if keyword is None:
         return (
@@ -1928,29 +2001,29 @@ def _calibcomm_date(
     tail = tail[_DATE_LEAD.match(tail).end() :]
     if match := _DATE_YEAR_FIRST.match(tail):
         year_s, sep, month_s, day_s = match.groups()
-        rule = f"yyyy{sep}mm{sep}dd"
-        day = _make_date(int(year_s), int(month_s), int(day_s))
-        if day is None:
-            return "UNK", {}, rule, f"{match.group(0)!r} is not a calendar date"
-        return day.isoformat(), {}, rule, ""
+        return _single_date(
+            match, f"yyyy{sep}mm{sep}dd", int(year_s), int(month_s), int(day_s)
+        )
     if match := _DATE_WORD_MONTH.match(tail):
         day_s, sep1, month_s, sep2, year_s = match.groups()
         separators = sep1 + sep2
         sep = "-" if "-" in separators else (" " if separators else "")
-        rule = f"dd{sep}Mon{sep}{'yyyy' if len(year_s) == 4 else 'yy'}"
-        year = _full_year(int(year_s), len(year_s), first_sample)
-        day = _make_date(year, _MONTHS[month_s[:3].lower()], int(day_s))
-        if day is None:
-            return "UNK", {}, rule, f"{match.group(0)!r} is not a calendar date"
-        return day.isoformat(), {}, rule, ""
+        return _single_date(
+            match,
+            f"dd{sep}Mon{sep}{'yyyy' if len(year_s) == 4 else 'yy'}",
+            _full_year(int(year_s), len(year_s), first_sample),
+            _MONTHS[month_s[:3].lower()],
+            int(day_s),
+        )
     if match := _DATE_MONTH_WORD_FIRST.match(tail):
         month_s, day_s, year_s = match.groups()
-        rule = f"Mon dd, {'yyyy' if len(year_s) == 4 else 'yy'}"
-        year = _full_year(int(year_s), len(year_s), first_sample)
-        day = _make_date(year, _MONTHS[month_s[:3].lower()], int(day_s))
-        if day is None:
-            return "UNK", {}, rule, f"{match.group(0)!r} is not a calendar date"
-        return day.isoformat(), {}, rule, ""
+        return _single_date(
+            match,
+            f"Mon dd, {'yyyy' if len(year_s) == 4 else 'yy'}",
+            _full_year(int(year_s), len(year_s), first_sample),
+            _MONTHS[month_s[:3].lower()],
+            int(day_s),
+        )
     if match := _DATE_NUMERIC.match(tail):
         first, sep, second, year_s = match.groups()
         year = _full_year(int(year_s), len(year_s), first_sample)

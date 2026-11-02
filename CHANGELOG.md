@@ -42,7 +42,11 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   comment came from, the serial and date rules that read it, a note, and the checks that fired.
 - Checks on the parsed values, kept as written: a calibration date after the mission's first
   sample or more than 30 years before it (noted in the sensor's `comment`, logged, amber on the
-  conversion page); two sensors sharing a serial number (a WARNING in the log, amber on the page).
+  conversion page); a date with two readings chosen by convention (logged, amber); two sensors
+  sharing a serial number (logged, amber).
+- Two sensors that would get the same `SENSOR_*` name (e.g. two fluorometers with no serial) are
+  both written, the second with its sensor key appended, and a WARNING names them; before, the
+  second overwrote the first.
 - A serial or date the first dive's comment leaves `UNK` is taken from the first later dive whose
   comment gives it without contradicting the first (a different serial or date), with the source
   in the sensor's `comment`.

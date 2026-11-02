@@ -361,15 +361,12 @@ def _og1_tiers(
 def _is_placeholder(value: str) -> bool:
     """Return True for an empty value, ``UNK``, or one whose digits are all zero.
 
-    All-zero values (``0000``, ``00-00-0000``) are the placeholders files written by
-    seagliderOG1 0.2.0 and earlier carry.
+    Values of only zeros and dashes (``0000``, ``00-00-0000``) are the placeholders files
+    written by seagliderOG1 0.2.0 and earlier carry; a serial with letters (``F0000``) is
+    an identifier, not a placeholder.
     """
-    digits = [c for c in value if c.isdigit()]
-    return (
-        not value.strip()
-        or value.strip() == "UNK"
-        or (bool(digits) and set(digits) == {"0"})
-    )
+    text = value.strip()
+    return not text or text == "UNK" or bool(re.fullmatch(r"[0\-]*0[0\-]*", text))
 
 
 def _og1_sensor_rows(ds: xr.Dataset) -> list[dict[str, object]]:

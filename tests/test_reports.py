@@ -1005,3 +1005,11 @@ def test_calibration_rows_override_clears_amber_and_empty_record(sg005_og1_copy)
     assert not rows["SENSOR_OXYGEN_005"]["bad"]
     ds.attrs["conversion_sensor_calibration"] = "{}"
     assert conversion._calibration_comment_rows(ds) == []
+
+
+def test_letter_serial_with_zeros_is_not_a_placeholder():
+    """F0000 is an identifier; 0000 and 00-00-0000 are the old placeholders."""
+    assert not conversion._is_placeholder("F0000")
+    assert conversion._is_placeholder("0000") and conversion._is_placeholder(
+        "00-00-0000"
+    )

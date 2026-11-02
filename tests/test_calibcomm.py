@@ -64,10 +64,10 @@ def test_impossible_month_first_swaps_to_day_first():
 
 
 def test_six_digits_decided_by_first_sample():
-    """251114: yymmdd (2025) would postdate a 2015 dive, so ddmmyy is read."""
+    """251114: yymmdd puts the year in 1925, outside the window, so ddmmyy is read."""
     info = parse_calibcomm("SN: 0135  CAL: 251114", datetime.date(2015, 8, 15))
     assert (info.calibration_date, info.date_rule) == ("2014-11-25", "ddmmyy")
-    assert "yymmdd reading 2025-11-14 is outside the window" in info.note
+    assert "yymmdd reading 1925-11-14 is outside the window" in info.note
 
 
 def test_six_digits_without_first_sample_is_unk():
@@ -406,3 +406,61 @@ def test_no_fill_from_a_comment_with_another_serial():
         "UNK",
     )
     assert "filled_from" not in ctd[_pipeline.CALIBCOMM_RECORD_KEY]
+
+
+# --- Third review --------------------------------------------------------------------------
+
+
+def test_date_after_a_serial_label_is_not_the_serial():
+    """'calibration sn 2012-05-12': the date is a date, not the serial."""
+    info = parse_calibcomm("calibration sn 2012-05-12", datetime.date(2013, 1, 1))
+    assert (info.serial, info.calibration_date) == ("UNK", "2012-05-12")
+
+
+def test_two_sensors_with_one_name_are_both_written(caplog):
+    """Two fluorometers with no serial: both written, the second suffixed, one warning."""
+    from seagliderOG1 import _pipeline
+
+    sensors = {
+        "a": {"sensor_type": "fluorometer", "sensor_serial_number": "UNK"},
+        "b": {"sensor_type": "fluorometer", "sensor_serial_number": "UNK"},
+    }
+    with caplog.at_level("WARNING"):
+        names = _pipeline._sensor_variable_names(sensors)
+    assert names == {"a": "SENSOR_FLUOROMETER_UNK", "b": "SENSOR_FLUOROMETER_UNK_b"}
+    assert any(
+        "would both be SENSOR_FLUOROMETER_UNK" in r.message for r in caplog.records
+    )
+
+
+def test_convention_choice_is_warned_and_recorded(caplog):
+    """sg005 with dive 1-5 CTD dates written 3/4/08: both readings fit; warned, checked."""
+    from seagliderOG1 import _pipeline
+
+    datasets = _open(SG005)
+    for ds in datasets:
+        ds["sg_cal_calibcomm"] = ds["sg_cal_calibcomm"].copy(
+            data=b"SBE 24520-1 calibration 3/4/08"
+        )
+    with caplog.at_level("WARNING"):
+        ctd = _pipeline.gather_sensor_info(datasets)["sbe41"]
+    record = ctd[_pipeline.CALIBCOMM_RECORD_KEY]
+    assert ctd["sensor_calibration_date"] == "2008-03-04"
+    assert record["checks"][0].startswith("date chosen by convention")
+    assert (record["window_years"], record["first_sample"]) == (30, "2008-06-06")
+    assert any("has two readings" in r.message for r in caplog.records)
+
+
+def test_repeated_rbr_channel_keeps_latest_and_says_so():
+    """A channel named twice keeps its latest date and the note names the dropped one."""
+    info = parse_calibcomm(
+        "RBRcoda serialnum:1 temp:2025-02-26T13:58:29Z temp:2025-03-20T11:45:16Z"
+    )
+    assert info.dates == {"temp": "2025-03-20"}
+    assert "dropped: temp 2025-02-26" in info.note
+
+
+def test_two_digit_year_not_after_first_sample():
+    """'cal 12 Aug 10' for a 2065 mission is 2010, not 2110."""
+    info = parse_calibcomm("cal 12 Aug 10", datetime.date(2065, 1, 1))
+    assert info.calibration_date == "2010-08-12"

@@ -90,7 +90,7 @@ because the other reading (14 November 2025) is after the first sample. When the
 reading is not a calendar date, the other is used (``28/4/08`` is 28 April; ``05.25.2012`` is
 25 May). Check ``original_calibcomm`` when a date matters: the preference is a convention, not
 something the comment says. A two-digit year takes
-the century nearest the first sample.
+the latest century that does not put it after the first sample.
 
 The first sample is the earliest ``start_time`` global across the dive files.
 
@@ -108,7 +108,15 @@ The converter keeps what the comment says, and flags:
 * two sensors with the same serial number (usually a comment copied from another instrument) —
   in the log and on the conversion page;
 * a serial number read from a comment that is a single token with no label (it may be a model
-  number) — on the conversion page.
+  number) — on the conversion page;
+* an all-numeric date with two readings, chosen by the convention above — in the log and on the
+  conversion page;
+* two sensors that would get the same ``SENSOR_*`` name (for example two fluorometers with no
+  serial) — in the log; the second is written with its sensor key appended
+  (``SENSOR_FLUOROMETER_UNK_wlbb2fl``) rather than overwriting the first.
+
+The ``conversion_sensor_calibration`` record also stores the window (``window_years``) and the
+first sample used, so the date choice can be reconstructed from the file.
 
 A value corrected with ``sensors:`` (below) clears the flag on the conversion page.
 
