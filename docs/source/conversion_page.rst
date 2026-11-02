@@ -59,9 +59,15 @@ Its sections, in order:
      upstream ``ioos/cc-plugin-og`` checker list).
    * *Sensors named by OG1* — one row per ``SENSOR_*`` variable: type, maker, model, serial
      number, calibration date, and the variables whose ``sensor`` attribute names it. Amber: a
-     placeholder serial or date (empty, or every digit zero), or a serial shared by two sensors
-     (a calibration comment copied between instruments); correct either with ``sensors:`` in
-     ``mission.yaml``.
+     serial or date that is ``UNK`` or empty (files from 0.2.0 and earlier wrote every digit
+     zero), or a serial shared by two sensors (a calibration comment copied between
+     instruments); correct either with ``sensors:`` in ``mission.yaml``.
+   * *Calibration comments* — one row per ``SENSOR_*`` variable: the basestation
+     ``sg_cal_calibcomm*`` variable and its text (source), beside the sensor variable, its
+     serial number, calibration date and per-channel dates, the rules that read them, and a
+     note (result). Amber: ``UNK``, a serial from a lone token, a calibration date after the
+     first sample or more than 30 years before it, or a shared serial. See
+     :ref:`calibration_comments`.
    * *Named by OG1* — variables OG1 defines but does not require (science, phase, QC).
    * *Candidate for OG1* — variables the project proposes to canonise, from
      :data:`seagliderOG1.vocabularies.OG1_CANDIDATE_VARS` (e.g. the flight-model inputs and

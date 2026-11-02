@@ -8,6 +8,49 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ## [Unreleased]
 
+### Breaking changes
+
+- Sensor serial numbers and calibration dates are read from the calibration comments by named
+  rules; files differ from 0.2.0 wherever the old parser was wrong. Reconvert. On the samples:
+
+  | | 0.2.0 wrote | now |
+  |---|---|---|
+  | sg005 CTD (`SBE 24520-1 calibration 04FEB08`) | `SENSOR_CTD_245201` | `SENSOR_CTD_24520-1` |
+  | sg005 WET Labs (no comment) | `SENSOR_FLUOROMETER_0000`, date `00-00-0000` | `SENSOR_FLUOROMETER_UNK`, date `UNK` |
+  | sg271 tridente / coda calibration date | `backscatter_00: 2025-02-26, chlorophyll_00: …` | `2025-03-11` / `2025-03-20` (latest channel) |
+
+  Other formats in the test table: `25281-1` and `F0012` keep their dash and letter (were
+  `252811`, `0012`); `SBE#29613t1/c1` reads `29613` (was `0000`); `9/10/08` reads 10 September
+  (was 9 October, day-first). An unreadable serial or date is `UNK`, never `0000`.
+- The old parser's placeholder values (`0000`, `00-00-0000`, `0000-00-00`, `Format Error`,
+  `None Found`) are no longer written.
+- `sensors.<key>.calibration_date` in `mission.yaml` must be an ISO date (`YYYY-MM-DD`);
+  `seagliderOG1 validate` reports anything else as an ERROR.
+
+### Added
+
+- `original_calibcomm` attribute on each `SENSOR_*` variable: the calibration comment exactly as
+  written in the basestation file. Kept when `sensors:` corrects the serial or date.
+- `sensor_calibration_dates` attribute on sensors whose comment gives one date per channel (RBR):
+  every channel date, `"<channel>: <YYYY-MM-DD>"` joined by `"; "`.
+- `conversion_sensor_calibration` global: per `SENSOR_*` variable, the basestation variable the
+  comment came from, the serial and date rules that read it, a note, and the checks that fired.
+- Checks on the parsed values, kept as written but noted in the sensor's `comment`, logged, and
+  amber on the conversion page: a calibration date after the mission's first sample or more than
+  30 years before it; two sensors sharing a serial number (also a WARNING in the log).
+- Conversion page "Calibration comments" table: one row per sensor, the basestation variable and
+  comment beside the `SENSOR_*` variable, serial, calibration date, channel dates, rules and note.
+- Docs page "How calibration comments are read": the serial and date rules and every comment the
+  parser is tested against, generated from `tests/data/calibcomm_answers.csv`.
+- `tests/data/calibcomm_answers.csv` (50 comments from 13 gliders, basestation 2.8, 2.10 and 3.0.6) and
+  `scripts/collect_calibcomm.py`; tests that read the out-of-repo dev pack run when
+  `SEAGLIDEROG1_DEV_DATA` is set.
+
+### Fixed
+
+- A current-year calibration date is no longer rejected, and the same comment no longer parses
+  differently from one year to the next: the parser does not read today's date.
+
 ## [0.2.0] - 2026-10-24
 
 ### Breaking changes

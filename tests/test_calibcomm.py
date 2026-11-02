@@ -214,3 +214,30 @@ def test_sg005_output_carries_the_parse(sg005_og1):
     assert ledger["SENSOR_FLUOROMETER_UNK"]["note"] == (
         "no calibration comment for this sensor"
     )
+
+
+def test_dev_pack_records_match_the_table(dev_data):
+    """Every dev-pack file: each sensor's comment is read as the answer table says."""
+    import xarray as xr
+
+    from seagliderOG1 import _pipeline
+
+    expected = {(r["file"], r["variable"]): r for r in ROWS}
+    checked = 0
+    for path in sorted(dev_data.glob("p*.nc")):
+        with xr.open_dataset(path, engine="netcdf4") as ds:
+            sensors = _pipeline.gather_sensor_info([ds])
+        for metadata in sensors.values():
+            record = metadata[_pipeline.CALIBCOMM_RECORD_KEY]
+            row = expected.get((path.name, record["source_variable"]))
+            if row is None:
+                continue
+            assert (
+                metadata["sensor_serial_number"],
+                metadata["sensor_calibration_date"],
+                metadata["original_calibcomm"],
+            ) == (row["expected_serial"], row["expected_date"], row["string"]), (
+                path.name
+            )
+            checked += 1
+    assert checked, f"no dev-pack file in {dev_data} matched the answer table"

@@ -7,6 +7,7 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+import csv
 import datetime
 import pathlib
 from importlib.metadata import PackageNotFoundError
@@ -73,6 +74,45 @@ def _write_generated_tables() -> None:
                 ("note", "Note"),
             ],
             sectioned,
+        )
+    )
+
+    # The calibration-comments page: the serial rules and the answer table the parser is
+    # tested against, so the page shows exactly what the tests check.
+    from seagliderOG1 import _pipeline
+
+    (_GENERATED / "calibcomm_serial_rules.inc").write_text(
+        _list_table(
+            [("rule", "Rule"), ("reads", "What it reads")],
+            [
+                {"rule": rule, "reads": reads}
+                for rule, reads in _pipeline.CALIBCOMM_SERIAL_RULES.items()
+            ],
+        )
+    )
+    answers = pathlib.Path(__file__).parents[2] / "tests" / "data"
+    with (answers / "calibcomm_answers.csv").open(encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    (_GENERATED / "calibcomm_answers.inc").write_text(
+        _list_table(
+            [
+                ("string", "As written"),
+                ("expected_serial", "Serial"),
+                ("serial_rule", "Serial rule"),
+                ("expected_date", "Calibration date"),
+                ("date_rule", "Date rule"),
+                ("first_sample", "First sample"),
+                ("note", "Note"),
+            ],
+            [
+                {
+                    **row,
+                    "note": "; ".join(
+                        n for n in (row["expected_dates"], row["note"]) if n
+                    ),
+                }
+                for row in rows
+            ],
         )
     )
 

@@ -190,9 +190,10 @@ Sensor corrections
 ------------------
 
 The serial number and calibration date of each sensor come from the basestation calibration
-comments (``sg_cal_calibcomm*``, set in ``sg_calib_constants.m``). When one is wrong — a
-comment copied from another instrument, or a placeholder ``0000`` — correct it here rather
-than in the basestation files:
+comments (``sg_cal_calibcomm*``, set in ``sg_calib_constants.m``; how they are read is on
+:ref:`calibration_comments`). When one is wrong or ``UNK`` — a comment copied from another
+instrument, or one the parser could not read — correct it here rather than in the basestation
+files. ``calibration_date`` must be an ISO date (``YYYY-MM-DD``):
 
 .. code-block:: yaml
 
@@ -203,7 +204,8 @@ than in the basestation files:
 
 The corrected serial names the ``SENSOR_*`` variable and the ``sensor`` attribute of every
 variable from that instrument. The sensor variable's ``comment`` records the value each
-correction replaced, so the change can be read back from the file. A key that is not one of
+correction replaced, and ``original_calibcomm`` keeps the basestation comment, so the change can
+be read back from the file. A key that is not one of
 the mission's sensors stops the conversion with the list of keys; the conversion page's
 *Sensors named by OG1* table shows the serials and dates in use.
 
