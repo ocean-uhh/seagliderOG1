@@ -685,19 +685,39 @@ def gather_sensor_info(
                 "checks": [],
             }
             # A field the first comment leaves UNK is taken from the first later dive
-            # whose comment gives it; the sensor comment and the record say where from.
+            # whose comment gives it and does not contradict what is already read (a
+            # different serial, or a different date); the sensor comment and the record
+            # say where it came from.
             record = metadata[CALIBCOMM_RECORD_KEY]
-            for field, attr, rule_key in (
-                ("serial", "sensor_serial_number", "serial_rule"),
-                ("calibration_date", "sensor_calibration_date", "date_rule"),
+            fills = []
+            for field, attr, rule_key, other_field, other_attr in (
+                (
+                    "serial",
+                    "sensor_serial_number",
+                    "serial_rule",
+                    "calibration_date",
+                    "sensor_calibration_date",
+                ),
+                (
+                    "calibration_date",
+                    "sensor_calibration_date",
+                    "date_rule",
+                    "serial",
+                    "sensor_serial_number",
+                ),
             ):
-                if getattr(info, field) != "UNK":
+                if metadata[attr] != "UNK":
                     continue
+                known = metadata[other_attr]
                 later = next(
                     (
                         entry
                         for entry in parsed[1:]
                         if getattr(entry[0], field) != "UNK"
+                        and (
+                            known == "UNK"
+                            or getattr(entry[0], other_field) in ("UNK", known)
+                        )
                     ),
                     None,
                 )
@@ -722,13 +742,12 @@ def gather_sensor_info(
                 )
                 existing = metadata.get("comment")
                 metadata["comment"] = f"{existing} {sentence}" if existing else sentence
+                fills.append(
+                    f"{attr} from input file {other_index}: {other.original!r}"
+                )
+            if fills:
                 record["note"] = "; ".join(
-                    n
-                    for n in (
-                        record["note"],
-                        f"{attr} from input file {other_index}: {other.original!r}",
-                    )
-                    if n
+                    ([f"first comment: {info.note}"] if info.note else []) + fills
                 )
             unknown = [
                 label
@@ -1743,11 +1762,11 @@ CALIBCOMM_SERIAL_RULES = {
 }
 
 _SERIAL_LABEL = re.compile(
-    r"(?i)\b(?:serialnum|serial\s*#|serial|s/n|sn)\s*[:#]?\s*((?=[\w-]*\d)[\w-]+)"
+    r"(?i)\b(?:serialnum|serial\s*#|serial|s/n|sn)\s*[:#-]?\s*((?=[\w-]*\d)\w[\w-]*)"
 )
 _SERIAL_SBE_TC = re.compile(r"(?i)\bSBE\s*#\s*(\d+)\s*t\d+/c\d+")
 _SERIAL_TC_ONLY = re.compile(r"(?i)\bSBE\s+t\d+/c\d+\b")
-_SERIAL_SBE_TOKEN = re.compile(r"(?i)\bSBE\s+((?=[\w-]*\d)[\w-]+)")
+_SERIAL_SBE_TOKEN = re.compile(r"(?i)\bSBE\s+((?=[\w-]*\d)\w[\w-]*)")
 _BARE_TOKEN = re.compile(r"(?=[\w-]*\d)[\w-]+")
 
 _MONTHS = {
@@ -1767,9 +1786,11 @@ _DATE_YEAR_FIRST = re.compile(r"\b(\d{4})([-/.])(\d{1,2})\2(\d{1,2})\b")
 _DATE_MONTH_WORD_FIRST = re.compile(
     rf"(?i)\b({_MONTH_WORD})(?![a-z])\.?\s+(\d{{1,2}}),?\s+(\d{{4}}|\d{{2}})\b"
 )
-# The date text ends where a serial label starts, so a serial after the keyword is not
-# read as a date.
-_SERIAL_LABEL_START = re.compile(r"(?i)\b(?:serialnum|serial|s/n|sn)(?=[\s:#\d])")
+# What may stand between the calibration keyword and the date: whitespace, punctuation,
+# "on" / "date" / "dated", and a serial label with its number (removed first). The date
+# must come next; a date later in the comment (a "recal due" date, a revision number) is
+# not read.
+_DATE_LEAD = re.compile(r"(?i)^(?:\s+|[:,;]|\b(?:on|dated?)\b)*")
 _DATE_NUMERIC = re.compile(r"\b(\d{1,2})([/.-])(\d{1,2})\2(\d{4}|\d{2})\b")
 #: Which reading of a two-number date wins when both fit, by separator: the US habit for
 #: slashes, the European one for dots and dashes.
@@ -1903,17 +1924,16 @@ def _calibcomm_date(
             "none",
             "no calibration keyword (cal, calibration, calibrated)",
         )
-    tail = text[keyword.end() :]
-    if label := _SERIAL_LABEL_START.search(tail):
-        tail = tail[: label.start()]
-    if match := _DATE_YEAR_FIRST.search(tail):
+    tail = _SERIAL_LABEL.sub(" ", text[keyword.end() :])
+    tail = tail[_DATE_LEAD.match(tail).end() :]
+    if match := _DATE_YEAR_FIRST.match(tail):
         year_s, sep, month_s, day_s = match.groups()
         rule = f"yyyy{sep}mm{sep}dd"
         day = _make_date(int(year_s), int(month_s), int(day_s))
         if day is None:
             return "UNK", {}, rule, f"{match.group(0)!r} is not a calendar date"
         return day.isoformat(), {}, rule, ""
-    if match := _DATE_WORD_MONTH.search(tail):
+    if match := _DATE_WORD_MONTH.match(tail):
         day_s, sep1, month_s, sep2, year_s = match.groups()
         separators = sep1 + sep2
         sep = "-" if "-" in separators else (" " if separators else "")
@@ -1923,7 +1943,7 @@ def _calibcomm_date(
         if day is None:
             return "UNK", {}, rule, f"{match.group(0)!r} is not a calendar date"
         return day.isoformat(), {}, rule, ""
-    if match := _DATE_MONTH_WORD_FIRST.search(tail):
+    if match := _DATE_MONTH_WORD_FIRST.match(tail):
         month_s, day_s, year_s = match.groups()
         rule = f"Mon dd, {'yyyy' if len(year_s) == 4 else 'yy'}"
         year = _full_year(int(year_s), len(year_s), first_sample)
@@ -1931,7 +1951,7 @@ def _calibcomm_date(
         if day is None:
             return "UNK", {}, rule, f"{match.group(0)!r} is not a calendar date"
         return day.isoformat(), {}, rule, ""
-    if match := _DATE_NUMERIC.search(tail):
+    if match := _DATE_NUMERIC.match(tail):
         first, sep, second, year_s = match.groups()
         year = _full_year(int(year_s), len(year_s), first_sample)
         month_rule, day_rule = f"mm{sep}dd{sep}yy", f"dd{sep}mm{sep}yy"
@@ -1958,7 +1978,7 @@ def _calibcomm_date(
             prefer=month_rule if preferred == "month" else day_rule,
         )
         return iso, {}, rule, note
-    if match := _DATE_8.search(tail):
+    if match := _DATE_8.match(tail):
         d = match.group(1)
         iso, rule, note = _choose_reading(
             [
@@ -1968,7 +1988,7 @@ def _calibcomm_date(
             first_sample,
         )
         return iso, {}, rule, note
-    if match := _DATE_6.search(tail):
+    if match := _DATE_6.match(tail):
         d = match.group(1)
         iso, rule, note = _choose_reading(
             [
@@ -1988,7 +2008,12 @@ def _calibcomm_date(
             first_sample,
         )
         return iso, {}, rule, note
-    return "UNK", {}, "none", f"no date rule matches {tail.strip()!r}"
+    return (
+        "UNK",
+        {},
+        "none",
+        f"no date directly after the calibration keyword ({tail.strip()!r})",
+    )
 
 
 def parse_calibcomm(text: str | None, first_sample: date | None = None) -> CalibInfo:

@@ -25,7 +25,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - Two-number dates are read by separator when both readings fit: slashes month-first
   (`9/10/08` → 10 September), dots and dashes day-first (`12.05.2012` → 12 May); the old parser
   read every such date day-first. Year-first dates (`2012-05-12`, `2012/05/12`) and
-  `May 12, 2012` are read.
+  `May 12, 2012` are read. The date must directly follow the calibration keyword (a serial label
+  and `on` aside); a later date in the comment is not read.
 - The old parser's placeholder values (`0000`, `00-00-0000`, `0000-00-00`, `Format Error`,
   `None Found`) are no longer written.
 - `sensors.<key>.calibration_date` in `mission.yaml` must be an ISO date (`YYYY-MM-DD`);
@@ -43,7 +44,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   sample or more than 30 years before it (noted in the sensor's `comment`, logged, amber on the
   conversion page); two sensors sharing a serial number (a WARNING in the log, amber on the page).
 - A serial or date the first dive's comment leaves `UNK` is taken from the first later dive whose
-  comment gives it, with the source in the sensor's `comment`.
+  comment gives it without contradicting the first (a different serial or date), with the source
+  in the sensor's `comment`.
 - Conversion page "Calibration comments" table: one row per sensor, the basestation variable and
   comment beside the `SENSOR_*` variable, serial, calibration date, channel dates, rules and note.
 - Docs page "How calibration comments are read": the serial and date rules and every comment the

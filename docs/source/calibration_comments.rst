@@ -20,8 +20,9 @@ Each sensor key in the basestation ``instrument`` global is matched to a comment
 * ``sg_cal_calibcomm_wetlabs`` for a WET Labs sensor.
 
 The first dive with a comment is used. When that comment gives no serial number or no date and
-a later dive's comment does, the value is taken from the later dive, and the sensor's ``comment``
-says which file and comment it came from. Comments that give different values on different dives
+a later dive's comment does, without contradicting it (a different serial number, or a different
+date), the value is taken from the later dive, and the sensor's ``comment`` says which file and
+comment it came from. Comments that give different values on different dives
 are reported in the log. In the OG1 file, the ``SENSOR_*`` variable carries:
 
 ``sensor_serial_number``
@@ -49,7 +50,10 @@ the label is not the serial (``SBE 43F s/n 005`` reads ``005``).
 Calibration date
 ----------------
 
-The date is read from the text after ``cal``, ``CAL:``, ``calibration`` or ``calibrated``.
+The date must come directly after ``cal``, ``CAL:``, ``calibration`` or ``calibrated``; only a
+serial label with its number (``SN 1234``), punctuation and the words ``on`` or ``date`` may stand
+between them. A date later in the comment (``recal due 2013-08-12``) is not read, and
+``calibration was done 12 Aug 2011`` gives ``UNK``.
 
 **Dates with the year first** (``2012-05-12``, ``2012/05/12``, ``2012.05.12``) have one reading.
 **Dates with the month as a word** have one reading too, with the day or the month first

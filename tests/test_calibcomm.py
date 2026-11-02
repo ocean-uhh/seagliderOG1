@@ -336,6 +336,7 @@ def test_date_taken_from_a_later_dive(caplog):
     record = ctd[_pipeline.CALIBCOMM_RECORD_KEY]
     assert record["date_rule"] == "ddMonyy"
     assert record["filled_from"]["sensor_calibration_date"]["source_file_index"] == 2
+    assert record["note"].startswith("first comment: no calibration keyword")
     assert not [r for r in caplog.records if "Conflicting" in r.message]
 
 
@@ -347,3 +348,61 @@ def test_non_iso_override_is_refused():
         _pipeline.gather_sensor_info(
             _open(SG005), overrides={"sbe41": {"calibration_date": "04/02/2008"}}
         )
+
+
+@pytest.mark.parametrize(
+    ("text", "serial", "expected"),
+    [
+        ("SBE 43F cal SN 1234 04FEB08", "1234", "2008-02-04"),
+        ("Optode 4330 calibrated s/n 1234 on 12 Aug 2011", "1234", "2011-08-12"),
+        ("cal 12 Aug 2011 recal due 2013-08-12", "UNK", "2011-08-12"),
+        ("calibration 3/5/12 next 2014-05-03", "UNK", "2012-03-05"),
+        ("SBE 43 cal rev 2.1.08", "43", "UNK"),
+        ("cal sn-1234 3/5/12", "1234", "2012-03-05"),
+    ],
+)
+def test_date_directly_follows_the_keyword(text, serial, expected):
+    """The date is the first thing after the keyword, a serial label and 'on' aside."""
+    info = parse_calibcomm(text, datetime.date(2015, 1, 1))
+    assert (info.serial, info.calibration_date) == (serial, expected)
+
+
+def test_serial_taken_from_a_later_dive():
+    """sg005 with dive 1's CTD comment cut to the date: the serial comes from dive 2."""
+    from seagliderOG1 import _pipeline
+
+    datasets = _open(SG005)
+    datasets[0]["sg_cal_calibcomm"] = datasets[0]["sg_cal_calibcomm"].copy(
+        data=b"calibration 04FEB08"
+    )
+    ctd = _pipeline.gather_sensor_info(datasets)["sbe41"]
+    assert (ctd["sensor_serial_number"], ctd["sensor_calibration_date"]) == (
+        "24520-1",
+        "2008-02-04",
+    )
+    record = ctd[_pipeline.CALIBCOMM_RECORD_KEY]
+    assert record["serial_rule"] == "SBE-token"
+    assert record["filled_from"]["sensor_serial_number"]["source_file_index"] == 2
+    assert record["note"] == (
+        "sensor_serial_number from input file 2: 'SBE 24520-1 calibration 04FEB08'"
+    )
+
+
+def test_no_fill_from_a_comment_with_another_serial():
+    """A later comment naming a different serial does not lend its date."""
+    from seagliderOG1 import _pipeline
+
+    datasets = _open(SG005)
+    datasets[0]["sg_cal_calibcomm"] = datasets[0]["sg_cal_calibcomm"].copy(
+        data=b"SBE 24520-1"
+    )
+    for ds in datasets[1:]:
+        ds["sg_cal_calibcomm"] = ds["sg_cal_calibcomm"].copy(
+            data=b"SBE 99999 calibration 04FEB08"
+        )
+    ctd = _pipeline.gather_sensor_info(datasets)["sbe41"]
+    assert (ctd["sensor_serial_number"], ctd["sensor_calibration_date"]) == (
+        "24520-1",
+        "UNK",
+    )
+    assert "filled_from" not in ctd[_pipeline.CALIBCOMM_RECORD_KEY]
