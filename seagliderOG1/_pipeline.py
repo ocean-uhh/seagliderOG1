@@ -918,6 +918,7 @@ _TEOS10_INPUT_UNITS = {
     "PRES": "dbar",
     "PSAL": "1e-3",
     "SA": "g kg-1",
+    "CT": "degree_Celsius",
     "LATITUDE": "degrees_north",
     "LONGITUDE": "degrees_east",
 }

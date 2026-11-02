@@ -66,8 +66,15 @@ def test_psal_from_conductivity_only_when_absent(sg005_og1):
     assert "SP_from_C" in ds["PSAL"].attrs["comment"]
     assert "no thermal-inertia correction" in ds["PSAL"].attrs["comment"]
     assert {"SA", "CT", "POTDENS0"} <= set(ds.variables)
+    import gsw
+
+    expected = gsw.SP_from_C(
+        *(ds[v].values.astype(float) for v in ("CNDC", "TEMP", "PRES"))
+    )
+    np.testing.assert_allclose(ds["PSAL"].values, expected, rtol=0, atol=1e-6)
+    # Against the basestation's corrected salinity, within the thermal-inertia correction.
     mask = np.isfinite(original) & np.isfinite(ds["PSAL"].values)
-    assert np.abs(ds["PSAL"].values[mask] - original[mask]).max() < 0.1
+    assert np.abs(ds["PSAL"].values[mask] - original[mask]).max() < 0.05
 
 
 def test_missing_input_skips_with_info(sg005_og1, caplog):
@@ -95,6 +102,19 @@ def test_unexpected_units_are_refused(sg005_og1, caplog):
     )
 
 
+@pytest.mark.parametrize(("name", "units"), [("SA", "kg kg-1"), ("CT", "K")])
+def test_basestation_sa_or_ct_in_other_units_is_refused(sg271_og1, caplog, name, units):
+    """sg271's own SA or CT relabelled to other units: no POTDENS0, a WARNING names it."""
+    with xr.open_dataset(sg271_og1, engine="netcdf4") as ds:
+        ds = ds.load()
+    ds = ds.drop_vars("POTDENS0")
+    ds[name].attrs["units"] = units
+    with caplog.at_level("WARNING", logger="seagliderOG1._pipeline"):
+        ds = _pipeline.add_teos10_variables(ds)
+    assert "POTDENS0" not in ds.variables
+    assert any(f"{name} ('{units}'" in r.message for r in caplog.records)
+
+
 def test_report_compares_psal_with_conductivity(sg271_og1):
     """The practical-salinity group gains the page-only row from CNDC, TEMP and PRES."""
     with xr.open_dataset(sg271_og1, engine="netcdf4") as ds:
@@ -102,4 +122,6 @@ def test_report_compares_psal_with_conductivity(sg271_og1):
     rows = {r["name"]: r for r in groups["sea_water_practical_salinity"]["rows"]}
     row = rows["SP from CNDC, TEMP, PRES"]
     assert row["note"].startswith("computed for this page")
-    assert row["n_overlap"] != "0"
+    # sg271's salinity is ~0.067 below salinity from its conductivity (the offset the row
+    # exists to show); the row reports it, member minus reference.
+    assert 0.06 < float(row["offset"]) < 0.075
