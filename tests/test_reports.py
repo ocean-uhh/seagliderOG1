@@ -984,3 +984,24 @@ def test_calibration_columns_drop_empty_channel_and_note(sg005_og1):
     no_notes = [r for r in rows if not r["note"]]
     headers = [c["header"] for c in conversion._calibration_comment_columns(no_notes)]
     assert "Note" not in headers and "Channel dates" not in headers
+
+
+def test_calibration_rows_override_clears_amber_and_empty_record(sg005_og1_copy):
+    """A lone-token serial is amber until sensors: corrects it; an empty record has no rows."""
+    import json
+
+    import xarray as xr
+
+    with xr.open_dataset(sg005_og1_copy, engine="netcdf4") as ds:
+        ds = ds.load()
+    records = json.loads(ds.attrs["conversion_sensor_calibration"])
+    records["SENSOR_OXYGEN_005"]["serial_rule"] = "bare-token"
+    ds.attrs["conversion_sensor_calibration"] = json.dumps(records)
+    rows = {r["name"]: r for r in conversion._calibration_comment_rows(ds)}
+    assert rows["SENSOR_OXYGEN_005"]["bad"]
+    records["SENSOR_OXYGEN_005"]["overridden"] = ["sensor_serial_number"]
+    ds.attrs["conversion_sensor_calibration"] = json.dumps(records)
+    rows = {r["name"]: r for r in conversion._calibration_comment_rows(ds)}
+    assert not rows["SENSOR_OXYGEN_005"]["bad"]
+    ds.attrs["conversion_sensor_calibration"] = "{}"
+    assert conversion._calibration_comment_rows(ds) == []

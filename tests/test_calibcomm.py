@@ -241,3 +241,94 @@ def test_dev_pack_records_match_the_table(dev_data):
             )
             checked += 1
     assert checked, f"no dev-pack file in {dev_data} matched the answer table"
+
+
+# --- Review follow-ups --------------------------------------------------------------------
+
+
+def test_first_sample_on_29_february():
+    """A first sample on 29 February: the window starts on 28 February 30 years earlier."""
+    from seagliderOG1 import _pipeline
+
+    info = parse_calibcomm(
+        "SBE s/n 0021 calibration 9/10/08", datetime.date(2024, 2, 29)
+    )
+    assert info.calibration_date == "2008-09-10"
+    record = {"checks": []}
+    metadata = {
+        "sensor_calibration_date": "1990-01-01",
+        _pipeline.CALIBCOMM_RECORD_KEY: record,
+    }
+    _pipeline._check_calibration_date("x", metadata, datetime.date(2024, 2, 29))
+    assert record["checks"] == [
+        "calibration date 1990-01-01 is more than 30 years before the first sample "
+        "2024-02-29"
+    ]
+    assert "more than 30 years" in metadata["comment"]
+
+
+def test_serial_after_the_keyword_is_not_read_as_a_date():
+    """Digits after a serial label are a serial, not a date."""
+    info = parse_calibcomm(
+        "SBE 41 calibration date unknown s/n 251114", datetime.date(2015, 8, 15)
+    )
+    assert (info.serial, info.calibration_date) == ("251114", "UNK")
+
+
+def test_iso_date_and_unread_formats():
+    """yyyy-mm-dd is read; dotted and dashed numeric dates are UNK, not guessed."""
+    info = parse_calibcomm(
+        "SBE s/n 0112 calibration 2012-05-12", datetime.date(2013, 1, 1)
+    )
+    assert (info.calibration_date, info.date_rule) == ("2012-05-12", "yyyy-mm-dd")
+    for text in ("calibration 12.05.2012", "calibration 12-05-2012"):
+        assert (
+            parse_calibcomm(text, datetime.date(2013, 1, 1)).calibration_date == "UNK"
+        )
+
+
+def test_rbr_fractional_seconds():
+    """An RBR channel time with fractional seconds is kept."""
+    info = parse_calibcomm(
+        "RBRcoda serialnum:1 temp15:2025-02-26T13:58:29.000Z doxy24:2025-03-20T11:45:16Z"
+    )
+    assert info.dates == {"temp15": "2025-02-26", "doxy24": "2025-03-20"}
+
+
+def test_impossible_slash_date_rule_label():
+    """31/04/2012 is no date either way: UNK, labelled with both readings."""
+    info = parse_calibcomm("sn 1234 calibrated 31/04/2012", datetime.date(2013, 1, 1))
+    assert (info.calibration_date, info.date_rule) == ("UNK", "mm/dd/yy or dd/mm/yy")
+
+
+def test_date_taken_from_a_later_dive(caplog):
+    """sg005 with dive 1's CTD comment cut to the serial: the date comes from dive 2."""
+    from seagliderOG1 import _pipeline
+
+    datasets = _open(SG005)
+    datasets[0]["sg_cal_calibcomm"] = datasets[0]["sg_cal_calibcomm"].copy(
+        data=b"SBE 24520-1"
+    )
+    with caplog.at_level("WARNING"):
+        sensors = _pipeline.gather_sensor_info(datasets)
+    ctd = sensors["sbe41"]
+    assert (ctd["sensor_serial_number"], ctd["sensor_calibration_date"]) == (
+        "24520-1",
+        "2008-02-04",
+    )
+    assert ctd["original_calibcomm"] == "SBE 24520-1"
+    assert "read from the comment in input file 2" in ctd["comment"]
+    record = ctd[_pipeline.CALIBCOMM_RECORD_KEY]
+    assert record["date_rule"] == "ddMonyy"
+    assert record["filled_from"]["sensor_calibration_date"]["source_file_index"] == 2
+    assert not [r for r in caplog.records if "Conflicting" in r.message]
+
+
+def test_non_iso_override_is_refused():
+    """A sensors: calibration_date that is not YYYY-MM-DD stops the conversion."""
+    from seagliderOG1 import _pipeline
+
+    with pytest.raises(ValueError, match="not an ISO date"):
+        _pipeline.gather_sensor_info(
+            _open(SG005), overrides={"sbe41": {"calibration_date": "04/02/2008"}}
+        )

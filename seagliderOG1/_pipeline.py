@@ -17,6 +17,7 @@ import pandas as pd
 import xarray as xr
 
 from seagliderOG1 import vocabularies
+from seagliderOG1.mission import _is_iso_date
 
 _log = logging.getLogger(__name__)
 
@@ -449,7 +450,7 @@ def _check_calibration_date(sensor: str, metadata: dict, first_sample: date) -> 
         calibrated = date.fromisoformat(value)
     except ValueError:
         return
-    earliest = first_sample.replace(year=first_sample.year - CALIBRATION_WINDOW_YEARS)
+    earliest = _window_start(first_sample)
     if calibrated > first_sample:
         check = (
             f"calibration date {value} is after the first sample "
@@ -649,11 +650,14 @@ def gather_sensor_info(
             ("serial", "sensor_serial_number"),
             ("calibration_date", "sensor_calibration_date"),
         ):
+            # UNK on one dive and a value on another is not a conflict: the value is
+            # taken from the later dive below.
             distinct: dict[str, list] = {}
             for info, dataset_index, name in parsed:
-                distinct.setdefault(getattr(info, field), []).append(
-                    (dataset_index, name)
-                )
+                if getattr(info, field) != "UNK":
+                    distinct.setdefault(getattr(info, field), []).append(
+                        (dataset_index, name)
+                    )
             if len(distinct) > 1:
                 details = "; ".join(
                     f"{value!r} in {sources}" for value, sources in distinct.items()
@@ -680,11 +684,57 @@ def gather_sensor_info(
                 "note": info.note,
                 "checks": [],
             }
+            # A field the first comment leaves UNK is taken from the first later dive
+            # whose comment gives it; the sensor comment and the record say where from.
+            record = metadata[CALIBCOMM_RECORD_KEY]
+            for field, attr, rule_key in (
+                ("serial", "sensor_serial_number", "serial_rule"),
+                ("calibration_date", "sensor_calibration_date", "date_rule"),
+            ):
+                if getattr(info, field) != "UNK":
+                    continue
+                later = next(
+                    (
+                        entry
+                        for entry in parsed[1:]
+                        if getattr(entry[0], field) != "UNK"
+                    ),
+                    None,
+                )
+                if later is None:
+                    continue
+                other, other_index, other_name = later
+                metadata[attr] = getattr(other, field)
+                if field == "calibration_date" and other.dates:
+                    metadata["sensor_calibration_dates"] = "; ".join(
+                        f"{channel}: {iso}" for channel, iso in other.dates.items()
+                    )
+                record[rule_key] = getattr(other, rule_key)
+                record.setdefault("filled_from", {})[attr] = {
+                    "source_variable": other_name,
+                    "source_file_index": other_index,
+                    "original": other.original,
+                }
+                sentence = (
+                    f"{attr} {getattr(other, field)} read from the comment in input "
+                    f"file {other_index} ({other_name}: {other.original!r}); the first "
+                    "comment does not give it."
+                )
+                existing = metadata.get("comment")
+                metadata["comment"] = f"{existing} {sentence}" if existing else sentence
+                record["note"] = "; ".join(
+                    n
+                    for n in (
+                        record["note"],
+                        f"{attr} from input file {other_index}: {other.original!r}",
+                    )
+                    if n
+                )
             unknown = [
                 label
                 for label, value in (
-                    ("serial", info.serial),
-                    ("calibration date", info.calibration_date),
+                    ("serial", metadata["sensor_serial_number"]),
+                    ("calibration date", metadata["sensor_calibration_date"]),
                 )
                 if value == "UNK"
             ]
@@ -737,6 +787,12 @@ def gather_sensor_info(
                 )
                 raise ValueError(msg)
             attr = vocabularies.SENSOR_OVERRIDE_FIELDS[field]
+            if field == "calibration_date" and not _is_iso_date(str(value)):
+                msg = (
+                    f"sensors.{sensor}.calibration_date {value!r} is not an ISO date "
+                    "(YYYY-MM-DD)."
+                )
+                raise ValueError(msg)
             previous = metadata.get(attr)
             metadata[attr] = str(value)
             record = metadata.get(CALIBCOMM_RECORD_KEY)
@@ -859,10 +915,11 @@ def add_sensor_to_dataset(
             ds_og1[sensor_var_name].attrs[attr] = value
         if CALIBCOMM_RECORD_KEY in sensor_info:
             calibration_records[sensor_var_name] = sensor_info[CALIBCOMM_RECORD_KEY]
-    if calibration_records:
-        ds_og1.attrs["conversion_sensor_calibration"] = json.dumps(
-            {name: calibration_records[name] for name in sorted(calibration_records)}
-        )
+    # Always written (an empty object when the mission has no sensors), so an absent
+    # global means a file from before the record existed.
+    ds_og1.attrs["conversion_sensor_calibration"] = json.dumps(
+        {name: calibration_records[name] for name in sorted(calibration_records)}
+    )
 
     # -------------------------------------------------------------------------
     # 3. Assign 'sensor' attribute to sensor-specific variables
@@ -1702,10 +1759,14 @@ _MONTH_WORD = (
     r"|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?"
 )
 _DATE_KEYWORD = re.compile(r"(?i)\bcal(?:ibration|ibrated)?\b\s*:?\s*")
-_DATE_RBR = re.compile(r"(\w+):(\d{4}-\d{2}-\d{2})T[\d:]+Z")
+_DATE_RBR = re.compile(r"(\w+):(\d{4}-\d{2}-\d{2})T[\d:.]+Z")
 _DATE_WORD_MONTH = re.compile(
     rf"(?i)\b(\d{{1,2}})([\s-]*)({_MONTH_WORD})(?![a-z])([\s-]*)(\d{{4}}|\d{{2}})\b"
 )
+_DATE_ISO = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
+# The date text ends where a serial label starts, so a serial after the keyword is not
+# read as a date.
+_SERIAL_LABEL_START = re.compile(r"(?i)\b(?:serialnum|serial|s/n|sn)(?=[\s:#\d])")
 _DATE_SLASH = re.compile(r"\b(\d{1,2})/(\d{1,2})/(\d{4}|\d{2})\b")
 _DATE_8 = re.compile(r"\b(\d{8})\b")
 _DATE_6 = re.compile(r"\b(\d{6})\b")
@@ -1753,10 +1814,21 @@ def _full_year(year: int, digits: int, first_sample: date | None) -> int:
     )
 
 
+def _window_start(first_sample: date) -> date:
+    """Return the date :data:`CALIBRATION_WINDOW_YEARS` before the first sample.
+
+    A first sample on 29 February maps to 28 February of the earlier year.
+    """
+    year = first_sample.year - CALIBRATION_WINDOW_YEARS
+    try:
+        return first_sample.replace(year=year)
+    except ValueError:
+        return first_sample.replace(year=year, day=28)
+
+
 def _in_window(day: date, first_sample: date) -> bool:
     """Return True when ``day`` is on or before the first sample and within the window."""
-    earliest = first_sample.replace(year=first_sample.year - CALIBRATION_WINDOW_YEARS)
-    return earliest <= day <= first_sample
+    return _window_start(first_sample) <= day <= first_sample
 
 
 def _choose_reading(
@@ -1774,7 +1846,7 @@ def _choose_reading(
     or UNK.
     """
     valid = [(rule, day) for rule, day in readings if day is not None]
-    shape = "/".join(rule for rule, _ in readings)
+    shape = " or ".join(rule for rule, _ in readings)
     if not valid:
         return "UNK", shape, f"no reading of {shape} is a calendar date"
     candidates = valid
@@ -1826,6 +1898,13 @@ def _calibcomm_date(
             "no calibration keyword (cal, calibration, calibrated)",
         )
     tail = text[keyword.end() :]
+    if label := _SERIAL_LABEL_START.search(tail):
+        tail = tail[: label.start()]
+    if match := _DATE_ISO.search(tail):
+        day = _make_date(*(int(g) for g in match.groups()))
+        if day is None:
+            return "UNK", {}, "yyyy-mm-dd", f"{match.group(0)!r} is not a calendar date"
+        return day.isoformat(), {}, "yyyy-mm-dd", ""
     if match := _DATE_WORD_MONTH.search(tail):
         day_s, sep1, month_s, sep2, year_s = match.groups()
         separators = sep1 + sep2

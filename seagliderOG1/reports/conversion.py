@@ -445,8 +445,8 @@ def _calibration_comment_rows(ds: xr.Dataset) -> list[dict[str, object]] | None:
     list of dict or None
         ``{"source_variable", "original", "name", "serial", "calibration", "channels",
         "rules", "note", "bad"}`` rows, name-sorted; ``bad`` when the serial or the
-        calibration date is a placeholder, the serial was taken from a lone token, or a
-        check fired (a calibration date after the first sample or long before it, a serial
+        calibration date is a placeholder, the serial was taken from a lone token and not
+        corrected by the mission config, or a check fired (a calibration date after the first sample or long before it, a serial
         shared with another sensor). None when the file has no
         ``conversion_sensor_calibration`` global (written by seagliderOG1 0.2.0 or earlier).
 
@@ -476,7 +476,10 @@ def _calibration_comment_rows(ds: xr.Dataset) -> list[dict[str, object]] | None:
                 "note": "; ".join(n for n in notes if n),
                 "bad": _is_placeholder(serial)
                 or _is_placeholder(calibration)
-                or record.get("serial_rule") == "bare-token"
+                or (
+                    record.get("serial_rule") == "bare-token"
+                    and "sensor_serial_number" not in overridden
+                )
                 or bool(record.get("checks")),
             }
         )

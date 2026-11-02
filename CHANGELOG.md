@@ -22,6 +22,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   Other formats in the test table: `25281-1` and `F0012` keep their dash and letter (were
   `252811`, `0012`); `SBE#29613t1/c1` reads `29613` (was `0000`); `9/10/08` reads 10 September
   (was 9 October, day-first). An unreadable serial or date is `UNK`, never `0000`.
+- Date formats the new rules do not read (`12.05.2012`, `12-05-2012`, `2012/05/12`,
+  `May 12, 2012`) give `UNK`; the old parser guessed at them. ISO `2012-05-12` is read.
 - The old parser's placeholder values (`0000`, `00-00-0000`, `0000-00-00`, `Format Error`,
   `None Found`) are no longer written.
 - `sensors.<key>.calibration_date` in `mission.yaml` must be an ISO date (`YYYY-MM-DD`);
@@ -35,9 +37,11 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   every channel date, `"<channel>: <YYYY-MM-DD>"` joined by `"; "`.
 - `conversion_sensor_calibration` global: per `SENSOR_*` variable, the basestation variable the
   comment came from, the serial and date rules that read it, a note, and the checks that fired.
-- Checks on the parsed values, kept as written but noted in the sensor's `comment`, logged, and
-  amber on the conversion page: a calibration date after the mission's first sample or more than
-  30 years before it; two sensors sharing a serial number (also a WARNING in the log).
+- Checks on the parsed values, kept as written: a calibration date after the mission's first
+  sample or more than 30 years before it (noted in the sensor's `comment`, logged, amber on the
+  conversion page); two sensors sharing a serial number (a WARNING in the log, amber on the page).
+- A serial or date the first dive's comment leaves `UNK` is taken from the first later dive whose
+  comment gives it, with the source in the sensor's `comment`.
 - Conversion page "Calibration comments" table: one row per sensor, the basestation variable and
   comment beside the `SENSOR_*` variable, serial, calibration date, channel dates, rules and note.
 - Docs page "How calibration comments are read": the serial and date rules and every comment the

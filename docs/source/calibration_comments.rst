@@ -19,8 +19,10 @@ Each sensor key in the basestation ``instrument`` global is matched to a comment
 * ``sg_cal_calibcomm_oxygen`` or ``sg_cal_calibcomm_optode`` for an oxygen sensor;
 * ``sg_cal_calibcomm_wetlabs`` for a WET Labs sensor.
 
-The first dive with a comment is used; a comment that reads differently on a later dive is
-reported in the log. In the OG1 file, the ``SENSOR_*`` variable carries:
+The first dive with a comment is used. When that comment gives no serial number or no date and
+a later dive's comment does, the value is taken from the later dive, and the sensor's ``comment``
+says which file and comment it came from. Comments that give different values on different dives
+are reported in the log. In the OG1 file, the ``SENSOR_*`` variable carries:
 
 ``sensor_serial_number``
    The serial number, or ``UNK`` when it was not read.
@@ -49,7 +51,8 @@ Calibration date
 
 The date is read from the text after ``cal``, ``CAL:``, ``calibration`` or ``calibrated``.
 
-**Dates with the month as a word** have one reading: ``04FEB08``, ``15sep08``, ``12 Aug 01``,
+**ISO dates** (``2012-05-12``) have one reading. **Dates with the month as a word** have one
+reading too: ``04FEB08``, ``15sep08``, ``12 Aug 01``,
 ``27 Feb 2025``, ``26 sept 07``, ``10 june 08``, ``24-May-17``, ``31-May-2017``. RBR comments
 give one ISO date per channel (``temp15:2025-02-26T13:58:29Z doxy24:2025-03-20T11:45:16Z``).
 
@@ -81,17 +84,24 @@ the century nearest the first sample.
 
 The first sample is the earliest ``start_time`` global across the dive files.
 
+Other formats are not read and give ``UNK`` with a note, among them dates with dots or dashes
+between numbers (``12.05.2012``, ``12-05-2012``), ``2012/05/12`` and ``May 12, 2012``. The
+numbers after a serial label (``s/n``, ``SN``) are never read as a date.
+
 Checks
 ------
 
-The converter keeps what the comment says, and flags in the log, in the sensor's ``comment``
-and on the conversion page:
+The converter keeps what the comment says, and flags:
 
 * a calibration date after the mission's first sample (a calibration cannot postdate the data
-  it calibrated), or more than 30 years before it;
-* two sensors with the same serial number (usually a comment copied from another instrument);
+  it calibrated), or more than 30 years before it — in the log, in the sensor's ``comment`` and
+  on the conversion page;
+* two sensors with the same serial number (usually a comment copied from another instrument) —
+  in the log and on the conversion page;
 * a serial number read from a comment that is a single token with no label (it may be a model
-  number).
+  number) — on the conversion page.
+
+A value corrected with ``sensors:`` (below) clears the flag on the conversion page.
 
 If yours is not read correctly
 ------------------------------
