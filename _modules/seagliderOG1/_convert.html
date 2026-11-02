@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1._convert &mdash; seagliderOG1 0.2.0.post1.dev1 documentation</title>
+  <title>seagliderOG1._convert &mdash; seagliderOG1 0.2.0.post1.dev2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=104987fd"></script>
+      <script src="../../_static/documentation_options.js?v=27b10d97"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -1351,6 +1351,10 @@
 
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">processed_datasets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">)</span>
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span>
+
+    <span class="c1"># TEOS-10 variables OG1 names that the basestation did not supply (SA, CT, POTDENS0, and</span>
+    <span class="c1"># PSAL from conductivity when salinity is absent); one pass on the concatenated data.</span>
+    <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">add_teos10_variables</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">)</span>
 
     <span class="c1"># Add sensor information to the dataset - can be done on the concatenated data</span>
     <span class="c1"># -----------------------------------------------------------------------------</span>

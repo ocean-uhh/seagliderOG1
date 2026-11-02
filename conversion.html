@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.2.0.post1.dev1 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.2.0.post1.dev2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=104987fd"></script>
+      <script src="_static/documentation_options.js?v=27b10d97"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -59,6 +59,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#what-changes">What changes</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#variable-names">Variable names</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#units">Units</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#derived-teos-10-variables">Derived TEOS-10 variables</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#gps-data">GPS data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sensors-global-attributes-and-qc">Sensors, global attributes and QC</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#extended-variables">Extended variables</a></li>
@@ -173,6 +174,10 @@ coordinates, encode time. A variable with no OG1 name keeps its basestation name
 </li>
 <li><p><strong>Concatenate</strong> the dives on <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> and sort by <code class="docutils literal notranslate"><span class="pre">TIME</span></code>.
 <em>Page:</em> Before → after (samples on the shared axis).</p></li>
+<li><p><strong>TEOS-10 variables.</strong> Add the ones OG1 names that the basestation did not write: <code class="docutils literal notranslate"><span class="pre">SA</span></code>,
+<code class="docutils literal notranslate"><span class="pre">CT</span></code> and <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> (and <code class="docutils literal notranslate"><span class="pre">PSAL</span></code> from conductivity when the file has no salinity). See
+<a class="reference internal" href="#derived-teos-10-variables">Derived TEOS-10 variables</a>.
+<em>Page:</em> Derived variables; Same quantity, more than once.</p></li>
 <li><p><strong>Sensors.</strong> Gather each instrument’s record from the calibration comments, apply the
 <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> corrections from the mission file, write one <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable per instrument
 and point each measured variable’s <code class="docutils literal notranslate"><span class="pre">sensor</span></code> attribute at it.
@@ -188,7 +193,7 @@ conversion record.
 <code class="docutils literal notranslate"><span class="pre">provenance_and_processing:</span></code>, <code class="docutils literal notranslate"><span class="pre">contributors:</span></code>, <code class="docutils literal notranslate"><span class="pre">institutions:</span></code>.
 <em>Page:</em> mission.yaml against the data; Global attributes.</p></li>
 </ol>
-<p>Steps 1 and 3–6 run once per mission; step 2 runs once per dive file. Each <em>Page:</em> note names the
+<p>Steps 1 and 3–7 run once per mission; step 2 runs once per dive file. Each <em>Page:</em> note names the
 section of the <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">The conversion page</span></a> that shows that step’s result.</p>
 </section>
 <section id="what-changes">
@@ -236,6 +241,42 @@ basestation 2.8 stores <code class="docutils literal notranslate"><span class="p
 Use <code class="docutils literal notranslate"><span class="pre">drop_variables</span></code> or a <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> override to act on what the page flags; the page also
 recommends variables to drop where OG1 defines the name for a different quantity (such as
 <code class="docutils literal notranslate"><span class="pre">gsw_sigma0</span></code>, the density anomaly, where OG1 <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> is full potential density).</p>
+</section>
+<section id="derived-teos-10-variables">
+<h3>Derived TEOS-10 variables<a class="headerlink" href="#derived-teos-10-variables" title="Link to this heading"></a></h3>
+<p>After the dives are concatenated, the converter adds the TEOS-10 variables OG1 names that the
+basestation file does not carry, computed per sample with <a class="reference external" href="https://teos-10.github.io/GSW-Python/">gsw</a>:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Computed from</p></th>
+<th class="head"><p>When</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PSAL</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">gsw.SP_from_C(CNDC,</span> <span class="pre">TEMP,</span> <span class="pre">PRES)</span></code></p></td>
+<td><p>only when the file has conductivity but no salinity; no thermal-inertia correction</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SA</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">gsw.SA_from_SP(PSAL,</span> <span class="pre">PRES,</span> <span class="pre">LONGITUDE,</span> <span class="pre">LATITUDE)</span></code></p></td>
+<td><p>when the basestation did not write <code class="docutils literal notranslate"><span class="pre">absolute_salinity</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CT</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">gsw.CT_from_t(SA,</span> <span class="pre">TEMP,</span> <span class="pre">PRES)</span></code></p></td>
+<td><p>when the basestation did not write <code class="docutils literal notranslate"><span class="pre">conservative_temperature</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">gsw.sigma0(SA,</span> <span class="pre">CT)</span> <span class="pre">+</span> <span class="pre">1000</span></code> kg m-3</p></td>
+<td><p>always, unless already present</p></td>
+</tr>
+</tbody>
+</table>
+<p>A variable the basestation wrote is never overwritten. Each derived variable carries <code class="docutils literal notranslate"><span class="pre">sources</span></code>
+(the OG1 inputs) and a <code class="docutils literal notranslate"><span class="pre">comment</span></code> naming the gsw function and version, and is listed in
+<code class="docutils literal notranslate"><span class="pre">conversion_derived_variables</span></code> with the basestation variables behind its inputs. <code class="docutils literal notranslate"><span class="pre">PSAL</span></code> is the
+basestation’s corrected <code class="docutils literal notranslate"><span class="pre">salinity</span></code>; the conversion page compares it with salinity recomputed from
+<code class="docutils literal notranslate"><span class="pre">CNDC</span></code>, <code class="docutils literal notranslate"><span class="pre">TEMP</span></code> and <code class="docutils literal notranslate"><span class="pre">PRES</span></code>, so the size of the basestation’s salinity correction is visible.</p>
 </section>
 <section id="gps-data">
 <h3>GPS data<a class="headerlink" href="#gps-data" title="Link to this heading"></a></h3>
