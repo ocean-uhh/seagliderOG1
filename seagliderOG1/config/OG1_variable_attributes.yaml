@@ -325,6 +325,10 @@ THETA:
   uri: https://vocab.nerc.ac.uk/collection/OG1/current/THETA/
 CT:
   long_name: Conservative temperature
+  standard_name: sea_water_conservative_temperature
+  units: degree_Celsius
+  observation_type: calculated
+  sources: SA TEMP PRES
 POTDENS0:
   long_name: Potential density of water body at surface
   standard_name: sea_water_potential_density

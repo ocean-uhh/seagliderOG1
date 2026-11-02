@@ -187,7 +187,7 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 
 <h3>Same quantity, more than once</h3>
 {%- if duplicate_groups %}
-<p class="caption">Where more than one output variable encodes the same quantity (shared standard_name, not matched by name). The reference row (first, from the OG1-required or OG1-named member) sets the baseline; each other row is that variable minus the reference (mean offset, RMSD and max |diff|), over the samples both carry, in the reference's units. "not comparable" where the unit alias table relates no conversion; the difference-against-depth figure is a deferred follow-up.</p>
+<p class="caption">Where more than one output variable encodes the same quantity (shared standard_name, not matched by name). The reference row (first, from the OG1-required or OG1-named member) sets the baseline; each other row is that variable minus the reference (mean offset, RMSD and max |diff|), over the samples both carry, in the reference's units. "not comparable" where the unit alias table relates no conversion. In the practical-salinity group, "SP from CNDC, TEMP, PRES" is salinity recomputed from the file's conductivity for this page (not written to the file): its offset is the size of the basestation's salinity correction. The difference-against-depth figure is a deferred follow-up.</p>
 {%- for g in duplicate_groups %}
 <h4><code>{{ g.standard_name }}</code> — reference <code>{{ g.reference }}</code> ({{ g.reference_units }})</h4>
 <table class="nc sortable">

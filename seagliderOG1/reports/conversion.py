@@ -688,24 +688,9 @@ def _duplicate_groups(ds: xr.Dataset) -> list[dict[str, object]]:
                 )
                 continue
             vals = np.asarray(ds[member].values, dtype=float) * factor
-            mask = np.isfinite(vals) & np.isfinite(ref_vals)
-            n = int(mask.sum())
-            if not n:
-                rows.append(
-                    _duplicate_row(member, units, n_overlap="0", note="no overlap")
-                )
-                continue
-            diff = vals[mask] - ref_vals[mask]  # member minus reference
-            rows.append(
-                _duplicate_row(
-                    member,
-                    units,
-                    n_overlap=f"{n:,}",
-                    offset=nc_tables._fmt_minmax(float(diff.mean())),
-                    rmsd=nc_tables._fmt_minmax(float(np.sqrt((diff**2).mean()))),
-                    max_abs=nc_tables._fmt_minmax(float(np.abs(diff).max())),
-                )
-            )
+            rows.append(_compared_row(member, units, vals, ref_vals))
+        if sn == "sea_water_practical_salinity":
+            rows.extend(_salinity_from_conductivity_row(ds, ref_vals))
         groups.append(
             {
                 "standard_name": sn,
@@ -715,6 +700,61 @@ def _duplicate_groups(ds: xr.Dataset) -> list[dict[str, object]]:
             }
         )
     return groups
+
+
+def _compared_row(
+    name: str, units: str, vals: np.ndarray, ref_vals: np.ndarray, note: str = ""
+) -> dict[str, object]:
+    """Return a duplicate-comparison row: ``vals`` minus the reference over shared samples."""
+    mask = np.isfinite(vals) & np.isfinite(ref_vals)
+    n = int(mask.sum())
+    if not n:
+        return _duplicate_row(name, units, n_overlap="0", note=note or "no overlap")
+    diff = vals[mask] - ref_vals[mask]  # member minus reference
+    return _duplicate_row(
+        name,
+        units,
+        n_overlap=f"{n:,}",
+        offset=nc_tables._fmt_minmax(float(diff.mean())),
+        rmsd=nc_tables._fmt_minmax(float(np.sqrt((diff**2).mean()))),
+        max_abs=nc_tables._fmt_minmax(float(np.abs(diff).max())),
+        note=note,
+    )
+
+
+def _salinity_from_conductivity_row(
+    ds: xr.Dataset, ref_vals: np.ndarray
+) -> list[dict[str, object]]:
+    """Return the practical-salinity group's extra row: salinity recomputed from CNDC.
+
+    ``gsw.SP_from_C(CNDC, TEMP, PRES)`` is computed for this page only (not written to the
+    file) and compared with the reference, so the size of the basestation's salinity
+    correction is visible. Empty when an input is missing or ``PSAL`` already came from
+    conductivity (the comparison would be with itself).
+    """
+    import gsw
+
+    if not all(v in ds.variables for v in ("CNDC", "TEMP", "PRES")):
+        return []
+    if (
+        "SP_from_C" in str(ds["PSAL"].attrs.get("comment", ""))
+        if "PSAL" in ds
+        else True
+    ):
+        return []
+    with np.errstate(invalid="ignore"):
+        recomputed = gsw.SP_from_C(
+            *(np.asarray(ds[v].values, dtype=float) for v in ("CNDC", "TEMP", "PRES"))
+        )
+    return [
+        _compared_row(
+            "SP from CNDC, TEMP, PRES",
+            "1e-3",
+            recomputed,
+            ref_vals,
+            note="computed for this page with gsw.SP_from_C; not in the file",
+        )
+    ]
 
 
 def _duplicate_row(

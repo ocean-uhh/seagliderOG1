@@ -425,7 +425,8 @@ with (CONFIG_DIR / "OG1_unit_corrections.yaml").open() as file:
 DROP_RECOMMENDATIONS = {
     "gsw_sigma0": (
         "the density anomaly (sigma0 = potential density - 1000); OG1 POTDENS0 is full "
-        "potential density, which is derived separately, so gsw_sigma0 has no OG1 home."
+        "potential density, which the converter derives from SA and CT, so gsw_sigma0 has no "
+        "OG1 home."
     ),
     "sbe43_dissolved_oxygen": (
         "per-mass oxygen (micromoles/kg); OG1 DOXY is per volume (mmol m-3), a different "

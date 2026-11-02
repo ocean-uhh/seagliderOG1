@@ -12,6 +12,7 @@ from collections.abc import Mapping
 from datetime import date
 from typing import NamedTuple
 
+import gsw
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -883,6 +884,122 @@ def gather_sensor_info(
         )
 
     return sensor_dict
+
+
+#: TEOS-10 variables :func:`add_teos10_variables` writes when the basestation does not, in
+#: the order they are built: each OG1 name to the OG1 names it is computed from and the
+#: method written to its ``comment``.
+TEOS10_DERIVED = {
+    "PSAL": (
+        ("CNDC", "TEMP", "PRES"),
+        "PSS-78 practical salinity from conductivity: gsw.SP_from_C(CNDC, TEMP, PRES). "
+        "Computed by the converter because the basestation file has no salinity; it carries "
+        "no thermal-inertia correction.",
+    ),
+    "SA": (
+        ("PSAL", "PRES", "LONGITUDE", "LATITUDE"),
+        "TEOS-10 Absolute Salinity: gsw.SA_from_SP(PSAL, PRES, LONGITUDE, LATITUDE).",
+    ),
+    "CT": (
+        ("SA", "TEMP", "PRES"),
+        "TEOS-10 Conservative Temperature: gsw.CT_from_t(SA, TEMP, PRES).",
+    ),
+    "POTDENS0": (
+        ("SA", "CT"),
+        "TEOS-10 potential density referenced to 0 dbar: gsw.sigma0(SA, CT) + 1000 kg m-3.",
+    ),
+}
+
+#: The units each input must carry for the TEOS-10 functions (gsw takes conductivity in
+#: mS/cm, pressure in dbar, temperature in degrees Celsius).
+_TEOS10_INPUT_UNITS = {
+    "CNDC": "mS cm-1",
+    "TEMP": "degree_Celsius",
+    "PRES": "dbar",
+    "PSAL": "1e-3",
+    "SA": "g kg-1",
+    "LATITUDE": "degrees_north",
+    "LONGITUDE": "degrees_east",
+}
+
+
+def add_teos10_variables(ds: xr.Dataset) -> xr.Dataset:
+    """Add the TEOS-10 variables OG1 names that the basestation file does not supply.
+
+    Builds, in order, ``PSAL`` (only when absent and ``CNDC`` is present), ``SA``, ``CT`` and
+    ``POTDENS0`` (:data:`TEOS10_DERIVED`). A variable already in the dataset is never
+    overwritten; one whose inputs are missing, or carry other units than gsw expects, is
+    skipped with an INFO line. Each one written takes its attributes from the OG1 vocabulary,
+    with ``sources`` naming the OG1 inputs and ``comment`` the gsw function and version, and is
+    stamped with the basestation variables behind its inputs for
+    ``conversion_derived_variables``.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The concatenated OG1 dataset (OG1 names, canonical units).
+
+    Returns
+    -------
+    xarray.Dataset
+        ``ds`` with the variables it could build added.
+
+    """
+    for name, (inputs, method) in TEOS10_DERIVED.items():
+        if name in ds.variables:
+            continue
+        if name == "PSAL" and "CNDC" not in ds.variables:
+            continue
+        missing = [v for v in inputs if v not in ds.variables]
+        if missing:
+            _log.info("%s not derived: %s missing.", name, ", ".join(missing))
+            continue
+        wrong_units = [
+            f"{v} ({ds[v].attrs.get('units')!r}, expected {_TEOS10_INPUT_UNITS[v]!r})"
+            for v in inputs
+            if v in _TEOS10_INPUT_UNITS
+            and str(ds[v].attrs.get("units", "")) != _TEOS10_INPUT_UNITS[v]
+        ]
+        if wrong_units:
+            _log.warning(
+                "%s not derived: inputs in unexpected units: %s.",
+                name,
+                "; ".join(wrong_units),
+            )
+            continue
+        args = [np.asarray(ds[v].values, dtype=float) for v in inputs]
+        with np.errstate(invalid="ignore"):
+            if name == "PSAL":
+                values = gsw.SP_from_C(*args)
+            elif name == "SA":
+                values = gsw.SA_from_SP(*args)
+            elif name == "CT":
+                values = gsw.CT_from_t(*args)
+            else:
+                values = gsw.sigma0(*args) + 1000.0
+        attrs = dict(vocabularies.vocab_attrs.get(name, {}))
+        attrs["sources"] = " ".join(inputs)
+        attrs["comment"] = f"{method} gsw {gsw.__version__}."
+        sources = sorted(
+            {str(origin) for v in inputs for origin in _basestation_sources(ds[v])}
+        )
+        attrs[DERIVED_SOURCES_ATTR] = json.dumps(sources)
+        dims = ds[inputs[0]].dims
+        ds[name] = xr.DataArray(values, dims=dims, attrs=attrs)
+        _log.info("%s derived from %s.", name, ", ".join(inputs))
+    return ds
+
+
+def _basestation_sources(variable: xr.DataArray) -> list[str]:
+    """Return the basestation variable names behind an OG1 variable.
+
+    The variable's ``original_name`` when it was renamed from the basestation; else, for a
+    variable the converter built, the sources stamped on it (:data:`DERIVED_SOURCES_ATTR`).
+    """
+    original = variable.attrs.get("original_name")
+    if original:
+        return [str(original)]
+    return list(json.loads(variable.attrs.get(DERIVED_SOURCES_ATTR, "[]")))
 
 
 def _sensor_variable_names(sensor_dict: dict) -> dict[str, str]:

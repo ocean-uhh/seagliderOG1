@@ -1243,6 +1243,10 @@ def convert(
     ds_og1 = xr.concat(processed_datasets, dim="N_MEASUREMENTS")
     ds_og1 = ds_og1.sortby("TIME")
 
+    # TEOS-10 variables OG1 names that the basestation did not supply (SA, CT, POTDENS0, and
+    # PSAL from conductivity when salinity is absent); one pass on the concatenated data.
+    ds_og1 = _pipeline.add_teos10_variables(ds_og1)
+
     # Add sensor information to the dataset - can be done on the concatenated data
     # -----------------------------------------------------------------------------
     sensor_dict = _pipeline.gather_sensor_info(list_of_datasets, overrides=sensors)

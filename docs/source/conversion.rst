@@ -60,6 +60,11 @@ The steps
 #. **Concatenate** the dives on ``N_MEASUREMENTS`` and sort by ``TIME``.
    *Page:* Before → after (samples on the shared axis).
 
+#. **TEOS-10 variables.** Add the ones OG1 names that the basestation did not write: ``SA``,
+   ``CT`` and ``POTDENS0`` (and ``PSAL`` from conductivity when the file has no salinity). See
+   `Derived TEOS-10 variables`_.
+   *Page:* Derived variables; Same quantity, more than once.
+
 #. **Sensors.** Gather each instrument's record from the calibration comments, apply the
    ``sensors:`` corrections from the mission file, write one ``SENSOR_*`` variable per instrument
    and point each measured variable's ``sensor`` attribute at it.
@@ -77,7 +82,7 @@ The steps
    ``provenance_and_processing:``, ``contributors:``, ``institutions:``.
    *Page:* mission.yaml against the data; Global attributes.
 
-Steps 1 and 3–6 run once per mission; step 2 runs once per dive file. Each *Page:* note names the
+Steps 1 and 3–7 run once per mission; step 2 runs once per dive file. Each *Page:* note names the
 section of the :ref:`conversion_page` that shows that step's result.
 
 What changes
@@ -131,6 +136,37 @@ basestation 2.8 stores ``sigma_theta`` as full density, ~1027, not the anomaly i
 Use ``drop_variables`` or a ``mission.yaml`` override to act on what the page flags; the page also
 recommends variables to drop where OG1 defines the name for a different quantity (such as
 ``gsw_sigma0``, the density anomaly, where OG1 ``POTDENS0`` is full potential density).
+
+Derived TEOS-10 variables
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After the dives are concatenated, the converter adds the TEOS-10 variables OG1 names that the
+basestation file does not carry, computed per sample with `gsw <https://teos-10.github.io/GSW-Python/>`_:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Variable
+     - Computed from
+     - When
+   * - ``PSAL``
+     - ``gsw.SP_from_C(CNDC, TEMP, PRES)``
+     - only when the file has conductivity but no salinity; no thermal-inertia correction
+   * - ``SA``
+     - ``gsw.SA_from_SP(PSAL, PRES, LONGITUDE, LATITUDE)``
+     - when the basestation did not write ``absolute_salinity``
+   * - ``CT``
+     - ``gsw.CT_from_t(SA, TEMP, PRES)``
+     - when the basestation did not write ``conservative_temperature``
+   * - ``POTDENS0``
+     - ``gsw.sigma0(SA, CT) + 1000`` kg m-3
+     - always, unless already present
+
+A variable the basestation wrote is never overwritten. Each derived variable carries ``sources``
+(the OG1 inputs) and a ``comment`` naming the gsw function and version, and is listed in
+``conversion_derived_variables`` with the basestation variables behind its inputs. ``PSAL`` is the
+basestation's corrected ``salinity``; the conversion page compares it with salinity recomputed from
+``CNDC``, ``TEMP`` and ``PRES``, so the size of the basestation's salinity correction is visible.
 
 GPS data
 ~~~~~~~~

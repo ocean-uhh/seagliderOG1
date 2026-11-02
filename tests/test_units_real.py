@@ -150,8 +150,9 @@ def test_sg271_sigtheta_already_correct_left_unchanged(sg271):
 
 
 def test_sg271_gsw_sigma0_not_mapped_to_potdens0(sg271):
-    """gsw_sigma0 is the anomaly; it is not mapped to full-density POTDENS0, but passes through."""
-    assert "POTDENS0" not in sg271
+    """gsw_sigma0 is the anomaly and passes through; POTDENS0 is derived, not renamed from it."""
+    assert "original_name" not in sg271["POTDENS0"].attrs
+    assert 1020 <= float(np.nanmedian(sg271["POTDENS0"].values)) <= 1030
     assert "gsw_sigma0" in sg271
     assert 20 <= _median(sg271, "gsw_sigma0") <= 35
 

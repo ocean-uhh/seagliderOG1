@@ -34,6 +34,12 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Added
 
+- `SA`, `CT` and `POTDENS0` (TEOS-10, via gsw) are added when the basestation does not write them;
+  `PSAL` is computed from conductivity only when a file has no salinity. Each carries `sources` and
+  a `comment` naming the gsw function and version, and is listed in `conversion_derived_variables`.
+  Files have had no `POTDENS0` since 0.2.0.
+- The conversion page's practical-salinity comparison adds salinity recomputed from `CNDC`, `TEMP`
+  and `PRES`, showing the size of the basestation's salinity correction.
 - `original_calibcomm` attribute on each `SENSOR_*` variable: the calibration comment exactly as
   written in the basestation file. Kept when `sensors:` corrects the serial or date.
 - `sensor_calibration_dates` attribute on sensors whose comment gives one date per channel (RBR):
