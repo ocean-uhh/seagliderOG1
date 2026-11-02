@@ -426,6 +426,63 @@ def _og1_sensor_rows(ds: xr.Dataset) -> list[dict[str, object]]:
     return rows
 
 
+def _calibration_comment_rows(ds: xr.Dataset) -> list[dict[str, object]] | None:
+    """Return one row per ``SENSOR_*`` variable: the basestation comment and what was read.
+
+    The left side is the source — the basestation variable the comment came from and the
+    comment as written (``original_calibcomm``); the right side is the result — the
+    ``SENSOR_*`` variable, its serial number, calibration date and per-channel dates, the
+    rules that read them, and the note and checks from the ``conversion_sensor_calibration``
+    global.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open OG1 dataset.
+
+    Returns
+    -------
+    list of dict or None
+        ``{"source_variable", "original", "name", "serial", "calibration", "channels",
+        "rules", "note", "bad"}`` rows, name-sorted; ``bad`` when the serial or the
+        calibration date is a placeholder, the serial was taken from a lone token, or a
+        check fired (a calibration date after the first sample or long before it, a serial
+        shared with another sensor). None when the file has no
+        ``conversion_sensor_calibration`` global (written by seagliderOG1 0.2.0 or earlier).
+
+    """
+    raw = ds.attrs.get("conversion_sensor_calibration")
+    if raw is None:
+        return None
+    records = json.loads(str(raw))
+    rows = []
+    for name in sorted(records):
+        record = records[name]
+        attrs = ds[name].attrs if name in ds.variables else {}
+        serial = str(attrs.get("sensor_serial_number", ""))
+        calibration = str(attrs.get("sensor_calibration_date", ""))
+        overridden = record.get("overridden", [])
+        notes = [record.get("note", "")] + list(record.get("checks", []))
+        notes += [f"{attr} from the mission config" for attr in overridden]
+        rows.append(
+            {
+                "source_variable": record.get("source_variable") or "—",
+                "original": str(attrs.get("original_calibcomm", "")) or "—",
+                "name": name,
+                "serial": serial,
+                "calibration": calibration,
+                "channels": str(attrs.get("sensor_calibration_dates", "")),
+                "rules": f"{record.get('serial_rule', '')} / {record.get('date_rule', '')}",
+                "note": "; ".join(n for n in notes if n),
+                "bad": _is_placeholder(serial)
+                or _is_placeholder(calibration)
+                or record.get("serial_rule") == "bare-token"
+                or bool(record.get("checks")),
+            }
+        )
+    return rows
+
+
 def _og1_candidate_groups(
     ds: xr.Dataset, ledger: dict, valid_by_name: dict[str, float]
 ) -> list[dict[str, object]]:
@@ -2499,6 +2556,7 @@ def render_conversion(
         og1_candidate_groups = _og1_candidate_groups(ds, ledger, valid_by_name)
         og1_named, og1_carried = _og1_tiers(ds, ledger, valid_by_name)
         og1_sensors = _og1_sensor_rows(ds)
+        calibration_comments = _calibration_comment_rows(ds)
         duplicate_groups = _duplicate_groups(ds)
         reconciliation, reconciliation_caption = _reconciliation(ds, ledger)
         # The fate rows excluding the input-total row (the last), for the histogram.
@@ -2535,7 +2593,12 @@ def render_conversion(
         global_groups, globals_source = nc_tables.globals_rows(
             ds,
             extras=design.ATTR_GROUP_EXTRAS,
-            exclude=["history", "conversion_attribute_sources", "conversion_units"],
+            exclude=[
+                "history",
+                "conversion_attribute_sources",
+                "conversion_units",
+                "conversion_sensor_calibration",
+            ],
             requirement=requirement_labels,
         )
         coverage_computed = _coverage_computed(ds)
@@ -2585,6 +2648,7 @@ def render_conversion(
         og1_candidate_groups=og1_candidate_groups,
         og1_named=og1_named,
         og1_sensors=og1_sensors,
+        calibration_comments=calibration_comments,
         og1_carried=og1_carried,
         duplicate_groups=duplicate_groups,
         reconciliation=reconciliation,

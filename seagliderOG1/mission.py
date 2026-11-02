@@ -22,9 +22,11 @@ inside the functions that need them, so building the CLI parser and ``--help``
 do not pull in xarray or the packaged-YAML reads.
 """
 
+import datetime
 import logging
 import os
 import pathlib
+import re
 from collections.abc import Mapping
 from typing import NamedTuple
 
@@ -704,7 +706,27 @@ def _validate_sensors(sensors: object) -> list[ValidationIssue]:
                         where,
                     )
                 )
+            elif field == "calibration_date" and not _is_iso_date(str(value)):
+                issues.append(
+                    ValidationIssue(
+                        "ERROR",
+                        f"{where}.calibration_date {value!r} is not an ISO date "
+                        "(YYYY-MM-DD).",
+                        where,
+                    )
+                )
     return issues
+
+
+def _is_iso_date(text: str) -> bool:
+    """Return True when ``text`` is a calendar date written ``YYYY-MM-DD``."""
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text.strip()):
+        return False
+    try:
+        datetime.date.fromisoformat(text.strip())
+    except ValueError:
+        return False
+    return True
 
 
 def _validate_unit_corrections(unit_corrections: object) -> list[ValidationIssue]:

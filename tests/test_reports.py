@@ -924,3 +924,41 @@ def test_presence_strips_place_the_colorbar_beside_the_strips():
             conversion.draw_presence_strips, patterns, dives, source="test"
         )
     assert png is not None
+
+
+def test_calibration_comment_rows_pair_the_comment_with_the_sensor(sg005_og1):
+    """demo_sg005: each comment beside its SENSOR_ variable; the uncommented one is amber."""
+    import xarray as xr
+
+    with xr.open_dataset(sg005_og1, engine="netcdf4") as ds:
+        rows = {r["name"]: r for r in conversion._calibration_comment_rows(ds)}
+    ctd = rows["SENSOR_CTD_24520-1"]
+    assert (ctd["source_variable"], ctd["original"]) == (
+        "sg_cal_calibcomm",
+        "SBE 24520-1 calibration 04FEB08",
+    )
+    assert (ctd["serial"], ctd["calibration"], ctd["rules"]) == (
+        "24520-1",
+        "2008-02-04",
+        "SBE-token / ddMonyy",
+    )
+    assert not ctd["bad"]
+    oxygen = rows["SENSOR_OXYGEN_005"]
+    assert oxygen["source_variable"] == "sg_cal_calibcomm_oxygen" and not oxygen["bad"]
+    fluorometer = rows["SENSOR_FLUOROMETER_UNK"]
+    assert (fluorometer["source_variable"], fluorometer["original"]) == ("—", "—")
+    assert fluorometer["note"] == "no calibration comment for this sensor"
+    assert fluorometer["bad"]
+    html = conversion.render_conversion(sg005_og1)
+    assert "Calibration comments: basestation" in html
+    assert "SBE 24520-1 calibration 04FEB08" in html
+
+
+def test_calibration_comment_rows_absent_for_older_files(sg005_og1_copy):
+    """A file without conversion_sensor_calibration (0.2.0 and earlier) has no rows."""
+    import xarray as xr
+
+    with xr.open_dataset(sg005_og1_copy, engine="netcdf4") as ds:
+        ds = ds.load()
+    del ds.attrs["conversion_sensor_calibration"]
+    assert conversion._calibration_comment_rows(ds) is None

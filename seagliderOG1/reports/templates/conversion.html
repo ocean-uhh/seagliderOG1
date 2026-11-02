@@ -133,6 +133,20 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 </tbody></table>
 {%- else %}<p class="caption">Not applicable to this file: no <code>SENSOR_*</code> variables.</p>{% endif %}
 
+<h3>Calibration comments: basestation → <code>SENSOR_*</code></h3>
+{%- if calibration_comments %}
+<p class="caption">How each sensor's serial number and calibration date were read. Basestation variable and As written are the source: the <code>sg_cal_calibcomm*</code> variable (from <code>sg_calib_constants.m</code>, typed by the operator) and its text, kept in the file as <code>original_calibcomm</code>. The remaining columns are the result: the <code>SENSOR_*</code> variable and its <code>sensor_serial_number</code>, <code>sensor_calibration_date</code> and <code>sensor_calibration_dates</code> (per-channel dates, RBR), with the serial / date rules that read them (named on the <a href="https://ocean-uhh.github.io/seagliderOG1/calibration_comments.html">calibration comments</a> docs page). Amber: the serial or date is <code>UNK</code> (not read), the serial is a lone token with no label (it may be a model number), the calibration date is after the mission's first sample or more than 30 years before it, or two sensors share a serial number. Correct any of these with <code>sensors:</code> in <code>mission.yaml</code>.</p>
+<table class="nc sortable">
+<colgroup><col style="width:13%"><col style="width:21%"><col style="width:14%"><col style="width:8%"><col style="width:9%"><col style="width:13%"><col style="width:9%"><col style="width:13%"></colgroup>
+<thead><tr><th>Basestation variable</th><th>As written</th><th>Sensor</th><th>Serial</th><th>Calibration</th><th>Channel dates</th><th>Rules (serial / date)</th><th>Note</th></tr></thead>
+<tbody>
+{%- for r in calibration_comments %}
+<tr{% if r.bad %} class="cell-bad"{% endif %}><td class="cell-wrap">{{ r.source_variable }}</td><td class="cell-wrap">{{ r.original }}</td><td class="cell-wrap">{{ r.name }}</td><td style="white-space:nowrap">{{ r.serial }}</td><td style="white-space:nowrap">{{ r.calibration }}</td><td class="cell-wrap">{{ r.channels }}</td><td>{{ r.rules }}</td><td class="cell-wrap">{{ r.note }}</td></tr>
+{%- endfor %}
+</tbody></table>
+{%- elif calibration_comments is none %}<p class="caption">Not available: this file was written before the conversion recorded how calibration comments were read (seagliderOG1 0.2.0 or earlier); reconvert to see it.</p>
+{%- else %}<p class="caption">Not applicable to this file: no <code>SENSOR_*</code> variables.</p>{% endif %}
+
 <h3>Named by OG1 (not required)</h3>
 {%- if og1_named %}
 <p class="caption">{{ og1_named|length }} variables OG1 has a defined name and meaning for, present but not required — the science payload, phase and profile variables, and QC flags (the sensors are in the table above).</p>

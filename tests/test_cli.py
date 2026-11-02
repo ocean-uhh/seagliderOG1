@@ -318,14 +318,20 @@ def test_validate_errors_on_a_set_local_config(tmp_path: pathlib.Path) -> None:
 
 
 def test_validate_checks_the_sensors_block_shape(tmp_path: pathlib.Path) -> None:
-    """sensors: fields must be serial_number / calibration_date and non-empty."""
+    """sensors: fields must be serial_number / calibration_date, non-empty, dates ISO."""
     good = {"wlbb2f": {"serial_number": "1234", "calibration_date": "2008-02-01"}}
     assert not [
         i
         for i in mission.check(_write_config(tmp_path / "good.yaml", sensors=good))
         if (i.key or "").startswith("sensors")
     ]
-    for bad in ({"wlbb2f": {"serial": "1"}}, {"wlbb2f": {"serial_number": None}}, [1]):
+    for bad in (
+        {"wlbb2f": {"serial": "1"}},
+        {"wlbb2f": {"serial_number": None}},
+        {"wlbb2f": {"calibration_date": "11/03/2025"}},
+        {"wlbb2f": {"calibration_date": "2025-02-30"}},
+        [1],
+    ):
         issues = mission.check(_write_config(tmp_path / "bad.yaml", sensors=bad))
         assert any(
             i.level == "ERROR" and (i.key or "").startswith("sensors") for i in issues
