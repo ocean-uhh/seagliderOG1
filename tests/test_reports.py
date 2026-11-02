@@ -685,7 +685,7 @@ def test_config_suggestions_fill_gaps_from_the_file(sg005_og1):
 
 
 def test_sensor_rows_list_each_sensor_its_users_and_placeholders(sg005_og1):
-    """demo_sg005: three sensors, each with its users; the zero serial/date is amber."""
+    """demo_sg005: three sensors, each with its users; the UNK serial/date is amber."""
     import xarray as xr
 
     with xr.open_dataset(sg005_og1, engine="netcdf4") as ds:
@@ -693,24 +693,25 @@ def test_sensor_rows_list_each_sensor_its_users_and_placeholders(sg005_og1):
         ledger = _record.conversion_ledger(ds)
         named, _carried = conversion._og1_tiers(ds, ledger, {})
     assert sorted(rows) == [
-        "SENSOR_CTD_245201",
-        "SENSOR_FLUOROMETER_0000",
+        "SENSOR_CTD_24520-1",
+        "SENSOR_FLUOROMETER_UNK",
         "SENSOR_OXYGEN_005",
     ]
-    ctd = rows["SENSOR_CTD_245201"]
+    ctd = rows["SENSOR_CTD_24520-1"]
     assert (ctd["type"], ctd["serial"], ctd["calibration"]) == (
         "CTD",
-        "245201",
+        "24520-1",
         "2008-02-04",
     )
     assert "TEMP" in ctd["used_by"].split(", ") and not ctd["bad"]
-    fluorometer = rows["SENSOR_FLUOROMETER_0000"]
-    assert fluorometer["calibration"] == "00-00-0000" and fluorometer["bad"]
+    fluorometer = rows["SENSOR_FLUOROMETER_UNK"]
+    assert fluorometer["calibration"] == "UNK" and fluorometer["bad"]
     # The sensors are not repeated in the Named by OG1 table.
     assert not [r for r in named if r["name"].startswith("SENSOR_")]
     assert conversion._is_placeholder("") and not conversion._is_placeholder(
         "2008-02-04"
     )
+    assert conversion._is_placeholder("UNK") and conversion._is_placeholder("0000")
 
 
 def test_config_suggestions_offer_registry_entries_for_an_unmatched_name():

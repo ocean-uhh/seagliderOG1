@@ -1355,7 +1355,7 @@ def test_sensors_config_corrects_a_basestation_sensor_record() -> None:
     sensor = ds["SENSOR_FLUOROMETER_1234"]
     assert sensor.attrs["sensor_serial_number"] == "1234"
     assert sensor.attrs["sensor_calibration_date"] == "2008-02-01"
-    assert "(basestation calibration comment: 0000)" in sensor.attrs["comment"]
+    assert "(basestation calibration comment: UNK)" in sensor.attrs["comment"]
     users = [v for v in ds.variables if ds[v].attrs.get("sensor") == sensor.name]
     assert "FLUOCHLA" in users
     with pytest.raises(ValueError, match="sensor keys .* are .*'wlbb2f'"):

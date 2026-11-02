@@ -122,7 +122,7 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 
 <h3>Sensors named by OG1 (not required)</h3>
 {%- if og1_sensors %}
-<p class="caption">{{ og1_sensors|length }} <code>SENSOR_*</code> variables, from the basestation calibration comments and <code>config/OG1_sensor_attributes.yaml</code>. Used by lists the variables whose <code>sensor</code> attribute names the sensor. Amber: the serial number or calibration date is a placeholder (empty, or every digit zero), so the basestation configuration did not record it; or two sensors share a serial number, which usually means a calibration comment was copied from another instrument. Both come from the basestation <code>sg_calib_constants</code>; check them against the calibration sheets.</p>
+<p class="caption">{{ og1_sensors|length }} <code>SENSOR_*</code> variables, from the basestation calibration comments and <code>config/OG1_sensor_attributes.yaml</code>. Used by lists the variables whose <code>sensor</code> attribute names the sensor. Amber: the serial number or calibration date is <code>UNK</code> or empty (not read from the calibration comment; files from 0.2.0 and earlier wrote every digit zero instead); or two sensors share a serial number, which usually means a calibration comment was copied from another instrument. Both come from the basestation <code>sg_calib_constants</code>; check them against the calibration sheets.</p>
 <table class="nc sortable">
 <colgroup><col style="width:15%"><col style="width:7%"><col style="width:7%"><col style="width:16%"><col style="width:9%"><col style="width:11%"><col style="width:35%"></colgroup>
 <thead><tr><th>Sensor</th><th>Type</th><th>Maker</th><th>Model</th><th>Serial</th><th>Calibration</th><th>Used by</th></tr></thead>

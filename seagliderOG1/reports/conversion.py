@@ -359,9 +359,17 @@ def _og1_tiers(
 
 
 def _is_placeholder(value: str) -> bool:
-    """Return True for an empty value or one whose digits are all zero (``0000``, ``00-00-0000``)."""
+    """Return True for an empty value, ``UNK``, or one whose digits are all zero.
+
+    All-zero values (``0000``, ``00-00-0000``) are the placeholders files written by
+    seagliderOG1 0.2.0 and earlier carry.
+    """
     digits = [c for c in value if c.isdigit()]
-    return not value.strip() or (bool(digits) and set(digits) == {"0"})
+    return (
+        not value.strip()
+        or value.strip() == "UNK"
+        or (bool(digits) and set(digits) == {"0"})
+    )
 
 
 def _og1_sensor_rows(ds: xr.Dataset) -> list[dict[str, object]]:
@@ -379,8 +387,8 @@ def _og1_sensor_rows(ds: xr.Dataset) -> list[dict[str, object]]:
         "shared", "bad"}`` rows, name-sorted; ``used_by`` names the variables whose
         ``sensor`` attribute is this sensor; ``shared`` when another sensor has the same
         serial number (a basestation calibration comment copied between instruments);
-        ``bad`` when the serial or calibration date is a placeholder (empty, or every digit
-        zero) or the serial is shared.
+        ``bad`` when the serial or calibration date is a placeholder (empty, ``UNK``, or
+        every digit zero) or the serial is shared.
 
     """
     users: dict[str, list[str]] = {}

@@ -113,6 +113,7 @@ ATTR_GROUP_EXTRAS: dict[str, tuple[str, ...]] = {
         "conversion_dropped_variables",
         "conversion_removed_variables",
         "conversion_input_variable_count",
+        "conversion_sensor_calibration",
     ),
 }
 

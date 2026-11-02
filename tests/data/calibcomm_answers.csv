@@ -1,0 +1,51 @@
+file,first_sample,base_station_version,variable,string,expected_serial,expected_date,expected_dates,serial_rule,date_rule,source,note
+p0040001_20031002.nc,2003-10-02,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 25281-1 calibration 12 Aug 01,25281-1,2001-08-12,,label,dd Mon yy,read from the string,
+p0040001_20031002.nc,2003-10-02,2.8,sg_cal_calibcomm,SBE#29613t1/c1 calibration 7 Sep 02,29613,2002-09-07,,SBE#-tc,dd Mon yy,ruled by the maintainer,serial is the CT number; t1/c1 (T and C sensor pair) not part of it
+p0050001_20080606.nc,2008-06-06,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 005 calibration 09FEB08,005,2008-02-09,,label,ddMonyy,read from the string,
+p0050001_20080606.nc,2008-06-06,2.8,sg_cal_calibcomm,SBE 24520-1 calibration 04FEB08,24520-1,2008-02-04,,SBE-token,ddMonyy,read from the string,
+p0050001_20081106.nc,2008-11-06,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 042 calibration 05APR08,042,2008-04-05,,label,ddMonyy,read from the string,
+p0050001_20081106.nc,2008-11-06,2.8,sg_cal_calibcomm,SBE 0021 calibration 15sep08,0021,2008-09-15,,SBE-token,ddMonyy,read from the string,lower-case month
+p0050001_20090829.nc,2009-08-29,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 042 calibration 05APR08,042,2008-04-05,,label,ddMonyy,read from the string,
+p0050001_20090829.nc,2009-08-29,2.8,sg_cal_calibcomm,SBE 0015 calibration 4/28/08,0015,2008-04-28,,SBE-token,mm/dd/yy,read from the string,"unambiguous month-first numeric date (28 > 12), hand-typed by the operator"
+p0080001_20031002.nc,2003-10-02,2.8,sg_cal_calibcomm_oxygen,SBE 43 s/n F0012 calibration 27 Aug 02,F0012,2002-08-27,,label,dd Mon yy,read from the string,letter in serial
+p0080001_20031002.nc,2003-10-02,2.8,sg_cal_calibcomm,SBE#24520t4/c4 calibration 05 Apr 01,24520,2001-04-05,,SBE#-tc,dd Mon yy,ruled by the maintainer,as sg004: t4/c4 not part of the serial
+p0120001_20070831.nc,2007-08-31,2.8,sg_cal_calibcomm_oxygen,SBE 43 s/n 0036 calibration 13MAY06,0036,2006-05-13,,label,ddMonyy,read from the string,
+p0120001_20070831.nc,2007-08-31,2.8,sg_cal_calibcomm,SBE s/n 0013 calibration 01JUN07,0013,2007-06-01,,label,ddMonyy,read from the string,
+p0140001_20040924.nc,2004-09-24,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 033 calibration 15JAN04,033,2004-01-15,,label,ddMonyy,read from the string,
+p0140001_20040924.nc,2004-09-24,2.8,sg_cal_calibcomm,SBE t10/c10 calibration 12DEC03,UNK,2003-12-12,,tc-only,ddMonyy,ruled by the maintainer,only a T/C sensor pair; no CT serial
+p0140001_20080214.nc,2008-02-14,2.8,sg_cal_calibcomm_oxygen,0043,0043,UNK,,bare-token,none,ruled by the maintainer,bare token taken as the serial (may be a model number); no date
+p0140001_20080214.nc,2008-02-14,2.8,sg_cal_calibcomm,"SBE s/n 0019, calibration 26 sept 07",0019,2007-09-26,,label,dd Mon yy,read from the string,4-letter month 'sept'
+p0140001_20080829.nc,2008-08-29,2.8,sg_cal_calibcomm_oxygen,0088,0088,UNK,,bare-token,none,ruled by the maintainer,bare token taken as the serial (may be a model number); no date
+p0140001_20080829.nc,2008-08-29,2.8,sg_cal_calibcomm,"SBE s/n 0025, calibration 10 june 08",0025,2008-06-10,,label,dd Mon yy,read from the string,full month name
+p0150001_20040924.nc,2004-09-24,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 041 calibration 22JAN04,041,2004-01-22,,label,ddMonyy,read from the string,
+p0150001_20040924.nc,2004-09-24,2.8,sg_cal_calibcomm,SBE t12/c12 calibration 30DEC03,UNK,2003-12-30,,tc-only,ddMonyy,ruled by the maintainer,only a T/C sensor pair; no CT serial
+p0160001_20050406.nc,2005-04-06,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 042 calibration 25SEP04,042,2004-09-25,,label,ddMonyy,read from the string,
+p0160001_20050406.nc,2005-04-06,2.8,sg_cal_calibcomm,SBE t15/c15 calibration 18OCT04,UNK,2004-10-18,,tc-only,ddMonyy,ruled by the maintainer,only a T/C sensor pair; no CT serial
+p0160001_20061112.nc,2006-11-12,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 042 calibration 17FEB06,042,2006-02-17,,label,ddMonyy,read from the string,
+p0160001_20061112.nc,2006-11-12,2.8,sg_cal_calibcomm,SBE 0015 calibration 25JAN06,0015,2006-01-25,,SBE-token,ddMonyy,read from the string,
+p0160001_20071113.nc,2007-11-13,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 029 calibration 10APR07,029,2007-04-10,,label,ddMonyy,read from the string,
+p0160001_20071113.nc,2007-11-13,2.8,sg_cal_calibcomm,SBE 0013 calibration 21Feb07,0013,2007-02-21,,SBE-token,ddMonyy,read from the string,
+p0160001_20080607.nc,2008-06-07,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 103 calibration 02Apr08,103,2008-04-02,,label,ddMonyy,read from the string,
+p0160001_20080607.nc,2008-06-07,2.8,sg_cal_calibcomm,SBE 0088 calibration 23Mar08,0088,2008-03-23,,SBE-token,ddMonyy,read from the string,
+p0160001_20090605.nc,2009-06-05,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 103 calibration 02Apr08,103,2008-04-02,,label,ddMonyy,read from the string,
+p0160001_20090605.nc,2009-06-05,2.8,sg_cal_calibcomm,SBE 0093 calibration 30Jun08,0093,2008-06-30,,SBE-token,ddMonyy,read from the string,
+p0330001_20100518.nc,2010-05-18,2.10,sg_cal_calibcomm_optode,Optode 4330F S/N 182 foil batch 2808F calibrated 09may09,182,2009-05-09,,label,ddMonyy,read from the string,'calibrated' keyword; model 4330F is not the serial
+p0330001_20100518.nc,2010-05-18,2.10,sg_cal_calibcomm,SBE s/n 0112 calibration 20apr09,0112,2009-04-20,,label,ddMonyy,read from the string,
+p0330001_20100903.nc,2010-09-03,2.10,sg_cal_calibcomm_optode,Optode 4330F S/N 182 foil batch 2808F calibrated 09may09,182,2009-05-09,,label,ddMonyy,read from the string,
+p0330001_20100903.nc,2010-09-03,2.10,sg_cal_calibcomm,SBE s/n 0112 calibration 20apr09,0112,2009-04-20,,label,ddMonyy,read from the string,
+p0420001.nc,2022-07-18,2.10,sg_cal_calibcomm_wetlabs,wlbbfl2 SN4746 cal 24-May-17,4746,2017-05-24,,label,dd-Mon-yy,read from the string,'SN' glued to digits; 'cal' keyword
+p0420001.nc,2022-07-18,2.10,sg_cal_calibcomm_optode,Optode 4831F SN: 453 Foil ID: 1207FM calibrated 31-May-2017,453,2017-05-31,,label,dd-Mon-yyyy,read from the string,'SN:' with colon
+p0420001.nc,2022-07-18,2.10,sg_cal_calibcomm,"SBE s/n 0292, calibration 17-Mar-17",0292,2017-03-17,,label,dd-Mon-yy,read from the string,
+p1010001_20061112.nc,2006-11-12,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 029 calibration 16Jun04,029,2004-06-16,,label,ddMonyy,read from the string,
+p1010001_20061112.nc,2006-11-12,2.8,sg_cal_calibcomm,SBE s/n 0021 calibration 07Jun04,0021,2004-06-07,,label,ddMonyy,read from the string,
+p1010001_20070609.nc,2007-06-09,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 029 calibration 07May07,029,2007-05-07,,label,ddMonyy,read from the string,
+p1010001_20070609.nc,2007-06-09,2.8,sg_cal_calibcomm,SBE s/n 0021 calibration 15Apr07,0021,2007-04-15,,label,ddMonyy,read from the string,
+p1010001_20081108.nc,2008-11-08,2.8,sg_cal_calibcomm_oxygen,0061,0061,UNK,,bare-token,none,ruled by the maintainer,bare token taken as the serial (may be a model number); no date
+p1010001_20081108.nc,2008-11-08,2.8,sg_cal_calibcomm,"SBE s/n 19, calibration 9/10/08",19,2008-09-10,,label,mm/dd/yy,ruled by the maintainer,"month-first rule: 10 Sep (day-first 9 Oct); both precede the 8 Nov dive, so the guard cannot decide"
+p1020001_20061112.nc,2006-11-12,2.8,sg_cal_calibcomm_oxygen,SBE 43F s/n 043 calibration 16Jun04,043,2004-06-16,,label,ddMonyy,read from the string,
+p1020001_20061112.nc,2006-11-12,2.8,sg_cal_calibcomm,SBE s/n 0022 calibration 07Jun04,0022,2004-06-07,,label,ddMonyy,read from the string,
+p5370001.nc,2015-08-15,2.8,sg_cal_calibcomm_oxygen,SN: 251  CAL: 29082012,251,2012-08-29,,label,ddmmyyyy,ruled by the maintainer,"8 digits, day-first; last four a year"
+p5370001.nc,2015-08-15,2.8,sg_cal_calibcomm,SN: 0135  CAL: 251114,0135,2014-11-25,,label,ddmmyy,ruled by the maintainer,"ddmmyy; yymmdd would give 2025-11-14, after the first dive (2015-08-15T14:08:40Z), so ruled out by the dive-date guard"
+p2710001.nc,2026-03-02,3.0.6,sg_cal_calibcomm,"Legato s/n 238007, calibration 27 Feb 2025",238007,2025-02-27,,label,dd Mon yyyy,read from the string,
+p2710001.nc,2026-03-02,3.0.6,sg_cal_calibcomm_tridentebb700chla470fdom365,RBRtridente serialnum:237790 backscatter_00:2025-02-26T13:58:29Z chlorophyll_00:2025-03-11T12:50:27Z fdom_00:2025-03-11T12:54:10Z,237790,2025-03-11,backscatter_00: 2025-02-26; chlorophyll_00: 2025-03-11; fdom_00: 2025-03-11,label,rbr-iso,read from the string,tridente serial is the coda's; the sg271 mission.yaml corrects it to 237998
+p2710001.nc,2026-03-02,3.0.6,sg_cal_calibcomm_coda,RBRcoda serialnum:237790 temp15:2025-02-26T13:58:29Z doxy24:2025-03-20T11:45:16Z,237790,2025-03-20,temp15: 2025-02-26; doxy24: 2025-03-20,label,rbr-iso,read from the string,

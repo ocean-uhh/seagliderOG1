@@ -6,6 +6,7 @@ read an OG1 file use ``sg005_og1`` directly; tests that edit one take
 conversion itself (refusals, overwrite, draft, report placement) still convert.
 """
 
+import os
 import pathlib
 import shutil
 
@@ -14,6 +15,22 @@ import pytest
 from seagliderOG1 import _convert, writers
 
 SG005 = pathlib.Path(__file__).resolve().parent.parent / "data" / "demo_sg005"
+
+
+@pytest.fixture(scope="session")
+def dev_data() -> pathlib.Path:
+    """Return the dev pack folder named by ``SEAGLIDEROG1_DEV_DATA``; skip when unset.
+
+    The dev pack is a collection of single-dive basestation files from several gliders and
+    basestation versions, kept outside the repository (see CONTRIBUTING).
+    """
+    folder = os.environ.get("SEAGLIDEROG1_DEV_DATA")
+    if not folder:
+        pytest.skip("SEAGLIDEROG1_DEV_DATA is unset; dev-pack tests skipped")
+    path = pathlib.Path(folder)
+    if not path.is_dir():
+        pytest.skip(f"SEAGLIDEROG1_DEV_DATA={folder} is not a folder")
+    return path
 
 
 @pytest.fixture(scope="session")

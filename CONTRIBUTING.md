@@ -108,6 +108,13 @@ Tests mirror the package: `test_<module>.py` for each `<module>.py`. Cover succe
 paths. Tests convert the real basestation files in `data/demo_sg005`; synthetic data is for pure
 logic only. CI enforces a coverage floor (`--cov-fail-under` in `.github/workflows/tests.yml`).
 
+Some tests read a **dev pack**: a collection of single-dive basestation files from several
+gliders and basestation versions, kept outside the repository. Ask the maintainers for it, then
+point `SEAGLIDEROG1_DEV_DATA` at the folder; without it those tests are skipped and CI stays
+green. `scripts/collect_calibcomm.py FOLDER` prints the calibration comments of a folder of
+dive files as rows for `tests/data/calibcomm_answers.csv`, the table the calibration-comment
+parser is tested against.
+
 ## Lint and format
 
 [Ruff](https://docs.astral.sh/ruff/) does both:
