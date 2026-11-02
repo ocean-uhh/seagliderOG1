@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from seagliderOG1 import vocabularies
+from seagliderOG1 import _phase, vocabularies
 
 _log = logging.getLogger(__name__)
 
@@ -111,87 +111,43 @@ def add_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
 
 
 def add_phase(ds: xr.Dataset) -> xr.Dataset:
-    """Add 'PHASE' and 'PHASE_QC' variables indicating the phase of each measurement.
+    """Add ``PHASE`` and ``PHASE_QC``: what the glider was doing at each sample.
 
-    The phase is determined from the pressure readings ('PRES') for each unique
-    dive number ('dive_num').
+    ``PHASE`` takes the OG1 phase vocabulary ids: 1 ascent, 2 descent, 3 surfacing,
+    5 inflexion (the apogee), 0 unknown. Per dive it comes from the glider's state
+    table (``gc_state_state``) where the file has one, otherwise from the
+    guidance-and-control events (the apogee is the event that moves the VBD to zero),
+    otherwise from pressure alone (descent to the pressure maximum, ascent after).
+    GPS fixes are surfacing. ``PHASE_QC`` says which signal assigned each sample.
 
     Parameters
     ----------
     ds : xarray.Dataset
-        The input dataset containing 'dive_num' and 'PRES' variables.
+        A dataset on ``N_MEASUREMENTS`` with ``TIME``, ``PRES``, a dive-number variable
+        (``dive_number``, ``divenum``, ``dive_num`` or ``DIVE_NUMBER``) and, where the
+        basestation wrote them, ``TIME_GPS``, ``gc_state_state``, ``gc_vbd_ctl`` and
+        ``gc_end_secs``.
 
     Returns
     -------
     xarray.Dataset
-        The dataset with additional 'PHASE' and 'PHASE_QC' variables, where:
+        ``ds`` with ``PHASE`` (int8) and ``PHASE_QC`` (int8, OG1 quality-flag scale).
 
-        - 'PHASE' indicates the phase of each measurement:
-            - Phase 2 up to and including the maximum pressure point.
-            - Phase 1 after the maximum pressure point.
-        - 'PHASE_QC' is an additional variable with no QC applied.
+    Raises
+    ------
+    ValueError
+        If ``ds`` has no dive-number variable.
 
     Notes
     -----
-    In this formulation, we are only separating into dives and climbs based on
-    when the glider is at the maximum depth. Future work needs to separate out
-    the other phases and generate a PHASE_QC:
+    The phase vocabulary:
     https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md
     """
-    # Determine the correct keystring for divenum
-    if "dive_number" in ds.variables:
-        divenum_str = "dive_number"
-    elif "divenum" in ds.variables:
-        divenum_str = "divenum"
-    elif "dive_num" in ds.variables:
-        divenum_str = "dive_num"
-    elif "DIVE_NUMBER" in ds.variables:
-        divenum_str = "DIVE_NUMBER"
-    else:
-        raise ValueError("No valid dive number variable found in the dataset.")
-    # Initialize the new variable with the same dimensions as dive_num
-    ds["PHASE"] = (
-        ["N_MEASUREMENTS"],
-        np.full(ds.sizes["N_MEASUREMENTS"], np.nan),
-        dict(vocabularies.vocab_attrs["PHASE"]),
-    )
-    # Initialize the new variable PHASE_QC with the same dimensions as dive_num
-    ds["PHASE_QC"] = (
-        ["N_MEASUREMENTS"],
-        np.zeros(ds.sizes["N_MEASUREMENTS"], dtype=int),
-    )
-
-    # Iterate over each unique dive_num
-    for dive in np.unique(ds[divenum_str]):
-        # Get the indices for the current dive
-        dive_indices = np.where(ds[divenum_str] == dive)[0]
-        # Find the start and end index for the current dive
-        start_index = dive_indices[0]
-        end_index = dive_indices[-1]
-
-        # Find the index of the maximum pressure between start_index and end_index
-        pmax = np.nanmax(ds["PRES"][start_index : end_index + 1].values)
-
-        # Find the index where PRES attains the value pmax between start_index and end_index
-        pmax_index = start_index + np.argmax(
-            ds["PRES"][start_index : end_index + 1].values == pmax
-        )
-
-        # Assign phase 2 to all values up to and including the point where pmax is reached
-        ds["PHASE"][start_index : pmax_index + 1] = 2
-
-        # Assign phase 1 to all values after pmax is reached
-        ds["PHASE"][pmax_index + 1 : end_index + 1] = 1
-
-        # Assign phase 3 to the time at the beginning of the dive, between the first valid TIME_GPS and the second valid TIME_GPS
-        valid_time_gps_indices = np.where(
-            ~np.isnan(ds["TIME_GPS"][start_index : end_index + 1].values)
-        )[0]
-        if len(valid_time_gps_indices) >= 2:
-            first_valid_index = start_index + valid_time_gps_indices[0]
-            second_valid_index = start_index + valid_time_gps_indices[1]
-            ds["PHASE"][first_valid_index : second_valid_index + 1] = 3
-
+    phase, qc, _ = _phase.assign(ds)
+    attrs = dict(vocabularies.vocab_attrs["PHASE"])
+    attrs["ancillary_variables"] = "PHASE_QC"
+    ds["PHASE"] = (["N_MEASUREMENTS"], phase, attrs)
+    ds["PHASE_QC"] = (["N_MEASUREMENTS"], qc, dict(_phase.PHASE_QC_ATTRS))
     return ds
 
 

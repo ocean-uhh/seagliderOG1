@@ -2090,6 +2090,8 @@ def process_dataset(
     """
     # Check if the dataset has 'LONGITUDE' as a coordinate
     ds1_base = _pipeline._validate_coords(ds1_base)
+    if len(ds1_base.variables):
+        ds1_base = _pipeline._absolute_state_times(ds1_base)
     if ds1_base is None or len(ds1_base.variables) == 0:
         return (
             xr.Dataset(),

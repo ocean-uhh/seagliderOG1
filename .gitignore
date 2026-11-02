@@ -184,3 +184,4 @@ de421.bsp
 # Outputs of the bundled example (data/demo_sg005/mission.yaml)
 outputs/
 docs/source/_static/units/
+docs/source/_static/phase/

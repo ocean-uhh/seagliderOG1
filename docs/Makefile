@@ -12,7 +12,7 @@ BUILDDIR      = build
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help Makefile report
+.PHONY: help Makefile report units phase
 
 # Regenerate the hosted sg271 conversion report into _static/demo/ before building, so a local
 # `make html` mirrors CI. Uses the CLI (init --example -> process), not the demo notebook, so it
@@ -30,9 +30,13 @@ report:
 units:
 	@cd .. && python docs/generate_units_map.py
 
+# The figures on the Phase page, from the bundled samples.
+phase:
+	@cd .. && python docs/generate_phase_figures.py
+
 # html regenerates the generated pages first; the demo notebook (demo-output.ipynb) is produced by
 # nbconvert (CI, or by hand) — it needs a jupyter kernel and is not required to refresh them.
-html: report units
+html: report units phase
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 # Catch-all target: route all unknown targets to Sphinx using the new

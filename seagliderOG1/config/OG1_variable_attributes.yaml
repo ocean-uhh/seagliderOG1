@@ -377,9 +377,10 @@ DIVE_NUMBER:
   units: '1'
 PHASE:
   long_name: behavior of the glider at sea
-  comment: This is based only on splitting each dive cycle into the period before
-    the glider reaches the maximum pressure of that cycle (descent, PHASE=2) and the
-    period after the glider reaches the maximum pressure of that cycle (ascent, PHASE=1)
+  comment: From the glider's state table (gc_state_state) where the file has one,
+    otherwise from the guidance-and-control events (the apogee is the event that moves
+    the VBD to zero), otherwise from pressure; GPS fixes are surfacing. The inflexion
+    spans the two apogee G&C cycles. PHASE_QC says which signal assigned each sample.
   phase_vocabulary: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md
   units: '1'
 AD2CP_PRES:

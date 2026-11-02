@@ -10,6 +10,12 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Breaking changes
 
+- `PHASE` is assigned from the glider's state table (`gc_state_state`), or its G&C events when
+  the file has no state table, with GPS fixes as surfacing; pressure alone only when a file has
+  neither. Files now carry surfacing (3) and inflexion (5); before, `PHASE` was descent to the
+  pressure maximum and ascent after. `PHASE` is `int8` and `PHASE_QC` says which signal assigned
+  each sample (1 state table or GPS, 2 G&C events, 8 pressure, 9 unknown). Reconvert. See
+  *How the phase is assigned* in the docs.
 - Sensor serial numbers and calibration dates are read from the calibration comments by named
   rules; files differ from 0.2.0 wherever the old parser was wrong. Reconvert. On the samples:
 
@@ -66,6 +72,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Fixed
 
+- Basestation 2.10 files (`gc_state_secs` written as seconds from the dive start) no longer put rows
+  in January 1970; the output name and `time_coverage_start` take the dive's real start.
 - A current-year calibration date is no longer rejected, and the same comment no longer parses
   differently from one year to the next: the parser does not read today's date.
 
