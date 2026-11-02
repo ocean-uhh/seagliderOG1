@@ -483,6 +483,58 @@ def _calibration_comment_rows(ds: xr.Dataset) -> list[dict[str, object]] | None:
     return rows
 
 
+#: Columns of the calibration-comments table: key, header, relative width, whether the
+#: cell wraps, and whether the column is dropped when every row leaves it empty.
+_CALIBRATION_COLUMNS = (
+    ("source_variable", "Basestation variable", 15, True, False),
+    ("original", "Original", 24, True, False),
+    ("name", "OG1 Sensor", 18, True, False),
+    ("serial", "Serial", 8, False, False),
+    ("calibration", "Calibration", 10, False, False),
+    ("channels", "Channel dates", 15, True, True),
+    ("rules", "Rules (serial / date)", 12, False, False),
+    ("note", "Note", 15, True, True),
+)
+
+
+def _calibration_comment_columns(
+    rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Return the calibration-comments table columns, dropping optional empty ones.
+
+    Channel dates and Note are shown only when at least one row has a value, and the
+    widths of the columns kept are rescaled to sum to 100 %, so the remaining columns
+    get the space.
+
+    Parameters
+    ----------
+    rows : list of dict
+        The rows from :func:`_calibration_comment_rows`.
+
+    Returns
+    -------
+    list of dict
+        ``{"key", "header", "width", "wrap"}`` per column kept, in table order; ``width``
+        is a percentage.
+
+    """
+    kept = [
+        (key, header, weight, wrap)
+        for key, header, weight, wrap, optional in _CALIBRATION_COLUMNS
+        if not optional or any(row.get(key) for row in rows)
+    ]
+    total = sum(weight for _, _, weight, _ in kept)
+    return [
+        {
+            "key": key,
+            "header": header,
+            "width": round(100 * weight / total),
+            "wrap": wrap,
+        }
+        for key, header, weight, wrap in kept
+    ]
+
+
 def _og1_candidate_groups(
     ds: xr.Dataset, ledger: dict, valid_by_name: dict[str, float]
 ) -> list[dict[str, object]]:
@@ -2557,6 +2609,11 @@ def render_conversion(
         og1_named, og1_carried = _og1_tiers(ds, ledger, valid_by_name)
         og1_sensors = _og1_sensor_rows(ds)
         calibration_comments = _calibration_comment_rows(ds)
+        calibration_columns = (
+            _calibration_comment_columns(calibration_comments)
+            if calibration_comments
+            else []
+        )
         duplicate_groups = _duplicate_groups(ds)
         reconciliation, reconciliation_caption = _reconciliation(ds, ledger)
         # The fate rows excluding the input-total row (the last), for the histogram.
@@ -2649,6 +2706,7 @@ def render_conversion(
         og1_named=og1_named,
         og1_sensors=og1_sensors,
         calibration_comments=calibration_comments,
+        calibration_columns=calibration_columns,
         og1_carried=og1_carried,
         duplicate_groups=duplicate_groups,
         reconciliation=reconciliation,

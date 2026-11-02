@@ -962,3 +962,25 @@ def test_calibration_comment_rows_absent_for_older_files(sg005_og1_copy):
         ds = ds.load()
     del ds.attrs["conversion_sensor_calibration"]
     assert conversion._calibration_comment_rows(ds) is None
+
+
+def test_calibration_columns_drop_empty_channel_and_note(sg005_og1):
+    """sg005 has no channel dates (dropped) and one note (kept); widths still sum to ~100."""
+    import xarray as xr
+
+    with xr.open_dataset(sg005_og1, engine="netcdf4") as ds:
+        rows = conversion._calibration_comment_rows(ds)
+    columns = conversion._calibration_comment_columns(rows)
+    assert [c["header"] for c in columns] == [
+        "Basestation variable",
+        "Original",
+        "OG1 Sensor",
+        "Serial",
+        "Calibration",
+        "Rules (serial / date)",
+        "Note",
+    ]
+    assert abs(sum(c["width"] for c in columns) - 100) <= 2
+    no_notes = [r for r in rows if not r["note"]]
+    headers = [c["header"] for c in conversion._calibration_comment_columns(no_notes)]
+    assert "Note" not in headers and "Channel dates" not in headers
