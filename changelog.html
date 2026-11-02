@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.1.0.post1.dev6 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.2.0.post1.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=dcb333a1"></script>
+      <script src="_static/documentation_options.js?v=104987fd"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -53,6 +53,7 @@
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
 <ul>
@@ -75,18 +76,23 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#unreleased">[Unreleased]</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id1">[0.2.0] - 2026-10-24</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#unreleased">[Unreleased]</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#breaking-changes">Breaking changes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#added">Added</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#fixed">Fixed</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#id2">[0.1.0] - 2026-10-22</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id3">Breaking changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id4">Added</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">[0.2.0] - 2026-10-24</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Breaking changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Fixed</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">[0.1.0] - 2026-10-22</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id6">Breaking changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id7">Added</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id5">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id8">Fixed</a></li>
 </ul>
 </li>
 </ul>
@@ -130,11 +136,88 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 (<em>Migrating to 0.1.0</em> in the docs; <code class="docutils literal notranslate"><span class="pre">docs/source/migrating_0_1_0.rst</span></code>).</p>
 <section id="unreleased">
 <h2>[Unreleased]<a class="headerlink" href="#unreleased" title="Link to this heading"></a></h2>
+<section id="breaking-changes">
+<h3>Breaking changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
+<ul>
+<li><p>Sensor serial numbers and calibration dates are read from the calibration comments by named
+rules; files differ from 0.2.0 wherever the old parser was wrong. Reconvert. On the samples:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+<th class="head"><p>0.2.0 wrote</p></th>
+<th class="head"><p>now</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>sg005 CTD (<code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">24520-1</span> <span class="pre">calibration</span> <span class="pre">04FEB08</span></code>)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SENSOR_CTD_245201</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SENSOR_CTD_24520-1</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>sg005 WET Labs (no comment)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SENSOR_FLUOROMETER_0000</span></code>, date <code class="docutils literal notranslate"><span class="pre">00-00-0000</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SENSOR_FLUOROMETER_UNK</span></code>, date <code class="docutils literal notranslate"><span class="pre">UNK</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>sg271 tridente / coda calibration date</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">backscatter_00:</span> <span class="pre">2025-02-26,</span> <span class="pre">chlorophyll_00:</span> <span class="pre">…</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2025-03-11</span></code> / <code class="docutils literal notranslate"><span class="pre">2025-03-20</span></code> (latest channel)</p></td>
+</tr>
+</tbody>
+</table>
+<p>Other formats in the test table: <code class="docutils literal notranslate"><span class="pre">25281-1</span></code> and <code class="docutils literal notranslate"><span class="pre">F0012</span></code> keep their dash and letter (were
+<code class="docutils literal notranslate"><span class="pre">252811</span></code>, <code class="docutils literal notranslate"><span class="pre">0012</span></code>); <code class="docutils literal notranslate"><span class="pre">SBE#29613t1/c1</span></code> reads <code class="docutils literal notranslate"><span class="pre">29613</span></code> (was <code class="docutils literal notranslate"><span class="pre">0000</span></code>); <code class="docutils literal notranslate"><span class="pre">9/10/08</span></code> reads 10 September
+(was 9 October, day-first). An unreadable serial or date is <code class="docutils literal notranslate"><span class="pre">UNK</span></code>, never <code class="docutils literal notranslate"><span class="pre">0000</span></code>.</p>
+</li>
+<li><p>Two-number dates are read by separator when both readings fit: slashes month-first
+(<code class="docutils literal notranslate"><span class="pre">9/10/08</span></code> → 10 September), dots and dashes day-first (<code class="docutils literal notranslate"><span class="pre">12.05.2012</span></code> → 12 May); the old parser
+read every such date day-first. Year-first dates (<code class="docutils literal notranslate"><span class="pre">2012-05-12</span></code>, <code class="docutils literal notranslate"><span class="pre">2012/05/12</span></code>) and
+<code class="docutils literal notranslate"><span class="pre">May</span> <span class="pre">12,</span> <span class="pre">2012</span></code> are read. The date must directly follow the calibration keyword (a serial label
+and <code class="docutils literal notranslate"><span class="pre">on</span></code> aside); a later date in the comment is not read.</p></li>
+<li><p>The old parser’s placeholder values (<code class="docutils literal notranslate"><span class="pre">0000</span></code>, <code class="docutils literal notranslate"><span class="pre">00-00-0000</span></code>, <code class="docutils literal notranslate"><span class="pre">0000-00-00</span></code>, <code class="docutils literal notranslate"><span class="pre">Format</span> <span class="pre">Error</span></code>,
+<code class="docutils literal notranslate"><span class="pre">None</span> <span class="pre">Found</span></code>) are no longer written.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sensors.&lt;key&gt;.calibration_date</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> must be an ISO date (<code class="docutils literal notranslate"><span class="pre">YYYY-MM-DD</span></code>);
+<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">validate</span></code> reports anything else as an ERROR.</p></li>
+</ul>
+</section>
+<section id="added">
+<h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">original_calibcomm</span></code> attribute on each <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable: the calibration comment exactly as
+written in the basestation file. Kept when <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> corrects the serial or date.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sensor_calibration_dates</span></code> attribute on sensors whose comment gives one date per channel (RBR):
+every channel date, <code class="docutils literal notranslate"><span class="pre">&quot;&lt;channel&gt;:</span> <span class="pre">&lt;YYYY-MM-DD&gt;&quot;</span></code> joined by <code class="docutils literal notranslate"><span class="pre">&quot;;</span> <span class="pre">&quot;</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">conversion_sensor_calibration</span></code> global: per <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable, the basestation variable the
+comment came from, the serial and date rules that read it, a note, and the checks that fired.</p></li>
+<li><p>Checks on the parsed values, kept as written: a calibration date after the mission’s first
+sample or more than 30 years before it (noted in the sensor’s <code class="docutils literal notranslate"><span class="pre">comment</span></code>, logged, amber on the
+conversion page); a date with two readings chosen by convention (logged, amber); two sensors
+sharing a serial number (logged, amber).</p></li>
+<li><p>Two sensors that would get the same <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> name (e.g. two fluorometers with no serial) are
+both written, the second with its sensor key appended, and a WARNING names them; before, the
+second overwrote the first.</p></li>
+<li><p>A serial or date the first dive’s comment leaves <code class="docutils literal notranslate"><span class="pre">UNK</span></code> is taken from the first later dive whose
+comment gives it without contradicting the first (a different serial or date), with the source
+in the sensor’s <code class="docutils literal notranslate"><span class="pre">comment</span></code>.</p></li>
+<li><p>Conversion page “Calibration comments” table: one row per sensor, the basestation variable and
+comment beside the <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable, serial, calibration date, channel dates, rules and note.</p></li>
+<li><p>Docs page “How calibration comments are read”: the serial and date rules and every comment the
+parser is tested against, generated from <code class="docutils literal notranslate"><span class="pre">tests/data/calibcomm_answers.csv</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tests/data/calibcomm_answers.csv</span></code> (50 comments from 13 gliders, basestation 2.8, 2.10 and 3.0.6) and
+<code class="docutils literal notranslate"><span class="pre">scripts/collect_calibcomm.py</span></code>; tests that read the out-of-repo dev pack run when
+<code class="docutils literal notranslate"><span class="pre">SEAGLIDEROG1_DEV_DATA</span></code> is set.</p></li>
+</ul>
+</section>
+<section id="fixed">
+<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>A current-year calibration date is no longer rejected, and the same comment no longer parses
+differently from one year to the next: the parser does not read today’s date.</p></li>
+</ul>
+</section>
 </section>
 <section id="id1">
 <h2>[0.2.0] - 2026-10-24<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
-<section id="breaking-changes">
-<h3>Breaking changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
+<section id="id2">
+<h3>Breaking changes<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
 <ul>
 <li><p>Density-family output values change where the basestation mislabelled their units. The
 basestation writes <code class="docutils literal notranslate"><span class="pre">density</span></code>, <code class="docutils literal notranslate"><span class="pre">density_insitu</span></code>, <code class="docutils literal notranslate"><span class="pre">sigma_t</span></code> and (on basestation 2.8) <code class="docutils literal notranslate"><span class="pre">sigma_theta</span></code>
@@ -196,8 +279,8 @@ view cannot relate raises <code class="docutils literal notranslate"><span class
 <code class="docutils literal notranslate"><span class="pre">unit_format</span></code> / <code class="docutils literal notranslate"><span class="pre">unit1_to_unit2</span></code> dict arguments are gone.</p></li>
 </ul>
 </section>
-<section id="added">
-<h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
+<section id="id3">
+<h3>Added<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">unit_corrections</span></code> mission.yaml key: per-mission units-label corrections keyed by the basestation
 variable name (<code class="docutils literal notranslate"><span class="pre">{from,</span> <span class="pre">to}</span></code>, with <code class="docutils literal notranslate"><span class="pre">from:</span> <span class="pre">null</span></code> for an unlabelled source), applied before
@@ -215,8 +298,8 @@ dropped names are recorded in <code class="docutils literal notranslate"><span c
 (first entry <code class="docutils literal notranslate"><span class="pre">gsw_sigma0</span></code>), as a copyable <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> snippet.</p></li>
 </ul>
 </section>
-<section id="fixed">
-<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
+<section id="id4">
+<h3>Fixed<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>The basestation units-label corrections live in <code class="docutils literal notranslate"><span class="pre">config/OG1_unit_corrections.yaml</span></code>, keyed by the
 basestation variable and guarded by the label as written (so sg271’s correctly-labelled
@@ -231,10 +314,10 @@ datetime variables, whose CF units belong in encoding.</p></li>
 </ul>
 </section>
 </section>
-<section id="id2">
-<h2>[0.1.0] - 2026-10-22<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
-<section id="id3">
-<h3>Breaking changes<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<section id="id5">
+<h2>[0.1.0] - 2026-10-22<a class="headerlink" href="#id5" title="Link to this heading"></a></h2>
+<section id="id6">
+<h3>Breaking changes<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>The public API is a config-first set of verbs on the top-level package: <code class="docutils literal notranslate"><span class="pre">read</span></code>, <code class="docutils literal notranslate"><span class="pre">convert</span></code>,
 <code class="docutils literal notranslate"><span class="pre">write</span></code>, <code class="docutils literal notranslate"><span class="pre">report</span></code>, <code class="docutils literal notranslate"><span class="pre">enrich</span></code>, <code class="docutils literal notranslate"><span class="pre">process</span></code>, <code class="docutils literal notranslate"><span class="pre">process_missions</span></code>, plus <code class="docutils literal notranslate"><span class="pre">mission.load</span></code> / <code class="docutils literal notranslate"><span class="pre">mission.check</span></code>.
@@ -309,8 +392,8 @@ sections (<code class="docutils literal notranslate"><span class="pre">validate<
 <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> (#117); decode the JSON to read them.</p></li>
 </ul>
 </section>
-<section id="id4">
-<h3>Added<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<section id="id7">
+<h3>Added<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>A bundled sg271 sample mission (three dives, Drygalski Trough, PycnMix) ships inside the package:
 <code class="docutils literal notranslate"><span class="pre">readers.load_sample_basestation()</span></code> returns it, <code class="docutils literal notranslate"><span class="pre">readers.sample_mission_dir()</span></code> gives its path, and
@@ -429,8 +512,8 @@ provenance line (the basestation per-dive processing log is not carried).</p></l
 config, <code class="docutils literal notranslate"><span class="pre">ruff</span> <span class="pre">format</span></code> replaces <code class="docutils literal notranslate"><span class="pre">black</span></code>, CI coverage gate.</p></li>
 </ul>
 </section>
-<section id="id5">
-<h3>Fixed<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<section id="id8">
+<h3>Fixed<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>Conversion page: the presence-strips colorbar sits in its own column; it overlapped the strips
 (and warned “Axes that are not compatible with tight_layout”).</p></li>

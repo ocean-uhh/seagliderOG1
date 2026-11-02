@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mission.yaml reference &mdash; seagliderOG1 0.1.0.post1.dev6 documentation</title>
+  <title>mission.yaml reference &mdash; seagliderOG1 0.2.0.post1.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=dcb333a1"></script>
+      <script src="_static/documentation_options.js?v=104987fd"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -54,6 +54,7 @@
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
 <ul>
@@ -460,9 +461,10 @@ is from the manual, v1.0.0; <code class="docutils literal notranslate"><span cla
 <section id="sensor-corrections">
 <h2>Sensor corrections<a class="headerlink" href="#sensor-corrections" title="Link to this heading"></a></h2>
 <p>The serial number and calibration date of each sensor come from the basestation calibration
-comments (<code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm*</span></code>, set in <code class="docutils literal notranslate"><span class="pre">sg_calib_constants.m</span></code>). When one is wrong — a
-comment copied from another instrument, or a placeholder <code class="docutils literal notranslate"><span class="pre">0000</span></code> — correct it here rather
-than in the basestation files:</p>
+comments (<code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm*</span></code>, set in <code class="docutils literal notranslate"><span class="pre">sg_calib_constants.m</span></code>; how they are read is on
+<a class="reference internal" href="calibration_comments.html#calibration-comments"><span class="std std-ref">How calibration comments are read</span></a>). When one is wrong or <code class="docutils literal notranslate"><span class="pre">UNK</span></code> — a comment copied from another
+instrument, or one the parser could not read — correct it here rather than in the basestation
+files. <code class="docutils literal notranslate"><span class="pre">calibration_date</span></code> must be an ISO date (<code class="docutils literal notranslate"><span class="pre">YYYY-MM-DD</span></code>):</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">sensors</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">tridentebb700chla470fdom365</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">serial_number</span><span class="p">:</span><span class="w"> </span><span class="s">"237998"</span>
@@ -471,7 +473,8 @@ than in the basestation files:</p>
 </div>
 <p>The corrected serial names the <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable and the <code class="docutils literal notranslate"><span class="pre">sensor</span></code> attribute of every
 variable from that instrument. The sensor variable’s <code class="docutils literal notranslate"><span class="pre">comment</span></code> records the value each
-correction replaced, so the change can be read back from the file. A key that is not one of
+correction replaced, and <code class="docutils literal notranslate"><span class="pre">original_calibcomm</span></code> keeps the basestation comment, so the change can
+be read back from the file. A key that is not one of
 the mission’s sensors stops the conversion with the list of keys; the conversion page’s
 <em>Sensors named by OG1</em> table shows the serials and dates in use.</p>
 </section>

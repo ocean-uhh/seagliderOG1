@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The conversion page &mdash; seagliderOG1 0.1.0.post1.dev6 documentation</title>
+  <title>The conversion page &mdash; seagliderOG1 0.2.0.post1.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=dcb333a1"></script>
+      <script src="_static/documentation_options.js?v=104987fd"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -22,7 +22,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Example report" href="example_report.html" />
-    <link rel="prev" title="What the conversion does" href="conversion.html" /> 
+    <link rel="prev" title="How calibration comments are read" href="calibration_comments.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -54,6 +54,7 @@
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
 <ul class="current">
@@ -165,9 +166,15 @@ must carry, present/absent, from <code class="xref py py-data docutils literal n
 upstream <code class="docutils literal notranslate"><span class="pre">ioos/cc-plugin-og</span></code> checker list).</p></li>
 <li><p><em>Sensors named by OG1</em> — one row per <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable: type, maker, model, serial
 number, calibration date, and the variables whose <code class="docutils literal notranslate"><span class="pre">sensor</span></code> attribute names it. Amber: a
-placeholder serial or date (empty, or every digit zero), or a serial shared by two sensors
-(a calibration comment copied between instruments); correct either with <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> in
-<code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>.</p></li>
+serial or date that is <code class="docutils literal notranslate"><span class="pre">UNK</span></code> or empty (files from 0.2.0 and earlier wrote every digit
+zero), or a serial shared by two sensors (a calibration comment copied between
+instruments); correct either with <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>.</p></li>
+<li><p><em>Calibration comments</em> — one row per <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable: the basestation
+<code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm*</span></code> variable and its text (source), beside the sensor variable, its
+serial number, calibration date and per-channel dates, the rules that read them, and a
+note (result). Amber: <code class="docutils literal notranslate"><span class="pre">UNK</span></code>, a serial from a lone token, a calibration date after the
+first sample or more than 30 years before it, or a shared serial. See
+<a class="reference internal" href="calibration_comments.html#calibration-comments"><span class="std std-ref">How calibration comments are read</span></a>.</p></li>
 <li><p><em>Named by OG1</em> — variables OG1 defines but does not require (science, phase, QC).</p></li>
 <li><p><em>Candidate for OG1</em> — variables the project proposes to canonise, from
 <code class="xref py py-data docutils literal notranslate"><span class="pre">seagliderOG1.vocabularies.OG1_CANDIDATE_VARS</span></code> (e.g. the flight-model inputs and
@@ -228,7 +235,7 @@ scalar to a dive/value table:</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="conversion.html" class="btn btn-neutral float-left" title="What the conversion does" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="calibration_comments.html" class="btn btn-neutral float-left" title="How calibration comments are read" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="example_report.html" class="btn btn-neutral float-right" title="Example report" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

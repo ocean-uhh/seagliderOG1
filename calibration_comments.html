@@ -1,0 +1,725 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How calibration comments are read &mdash; seagliderOG1 0.2.0.post1.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=104987fd"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The conversion page" href="conversion_page.html" />
+    <link rel="prev" title="What the conversion does" href="conversion.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg271 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How calibration comments are read</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#where-the-comments-come-from">Where the comments come from</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#serial-number">Serial number</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#calibration-date">Calibration date</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#checks">Checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#if-yours-is-not-read-correctly">If yours is not read correctly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#every-comment-the-parser-is-tested-against">Every comment the parser is tested against</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_report.html">Example report</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="units_mapping.html">Unit mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1">GitHub repository</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">How calibration comments are read</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/calibration_comments.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="how-calibration-comments-are-read">
+<span id="calibration-comments"></span><h1>How calibration comments are read<a class="headerlink" href="#how-calibration-comments-are-read" title="Link to this heading"></a></h1>
+<p>Each sensor’s serial number and calibration date come from a basestation calibration comment:
+a <code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm*</span></code> variable, set in <code class="docutils literal notranslate"><span class="pre">sg_calib_constants.m</span></code>. The comments are typed by the
+glider operator, not written by the basestation, so their format varies from mission to mission.
+This page states the rules the converter uses to read them, and lists every comment it is tested
+against, so you can check how yours will be read.</p>
+<section id="where-the-comments-come-from">
+<h2>Where the comments come from<a class="headerlink" href="#where-the-comments-come-from" title="Link to this heading"></a></h2>
+<p>Each sensor key in the basestation <code class="docutils literal notranslate"><span class="pre">instrument</span></code> global is matched to a comment variable:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm_&lt;key&gt;</span></code> (for example <code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm_coda</span></code>);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm</span></code> for the CTD;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm_oxygen</span></code> or <code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm_optode</span></code> for an oxygen sensor;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm_wetlabs</span></code> for a WET Labs sensor.</p></li>
+</ul>
+<p>The first dive with a comment is used. When that comment gives no serial number or no date and
+a later dive’s comment does, without contradicting it (a different serial number, or a different
+date), the value is taken from the later dive, and the sensor’s <code class="docutils literal notranslate"><span class="pre">comment</span></code> says which file and
+comment it came from. Comments that give different values on different dives
+are reported in the log. In the OG1 file, the <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable carries:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">sensor_serial_number</span></code></dt><dd><p>The serial number, or <code class="docutils literal notranslate"><span class="pre">UNK</span></code> when it was not read.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sensor_calibration_date</span></code></dt><dd><p>ISO <code class="docutils literal notranslate"><span class="pre">YYYY-MM-DD</span></code>, or <code class="docutils literal notranslate"><span class="pre">UNK</span></code>. For a comment with one date per channel, the latest.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sensor_calibration_dates</span></code></dt><dd><p>Every channel date, <code class="docutils literal notranslate"><span class="pre">&quot;&lt;channel&gt;:</span> <span class="pre">&lt;YYYY-MM-DD&gt;&quot;</span></code> joined by <code class="docutils literal notranslate"><span class="pre">&quot;;</span> <span class="pre">&quot;</span></code> (RBR comments only).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">original_calibcomm</span></code></dt><dd><p>The comment exactly as written in the basestation file.</p>
+</dd>
+</dl>
+<p>The <code class="docutils literal notranslate"><span class="pre">conversion_sensor_calibration</span></code> global records, per <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable, the basestation
+variable the comment came from, the serial and date rules that read it, and any note. The
+<a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">conversion page</span></a> shows these in its <em>Calibration comments</em> table.</p>
+</section>
+<section id="serial-number">
+<h2>Serial number<a class="headerlink" href="#serial-number" title="Link to this heading"></a></h2>
+<p>The rules are tried in this order; the first that matches is used. The serial is kept as an
+identifier: letters and dashes are not removed (<code class="docutils literal notranslate"><span class="pre">25281-1</span></code>, <code class="docutils literal notranslate"><span class="pre">F0012</span></code>). A model number before
+the label is not the serial (<code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">005</span></code> reads <code class="docutils literal notranslate"><span class="pre">005</span></code>).</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Rule</p></th>
+<th class="head"><p>What it reads</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">label</span></code></p></td>
+<td><p>the token after s/n, S/N, sn, SN:, SN (glued), serial, serial #, serialnum:</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE#-tc</span></code></p></td>
+<td><p>SBE#&lt;serial&gt;t&lt;n&gt;/c&lt;n&gt;: the CT serial; the T/C sensor pair is not part of it</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tc-only</span></code></p></td>
+<td><p>SBE t&lt;n&gt;/c&lt;n&gt;: a T/C sensor pair and no CT serial (UNK)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE-token</span></code></p></td>
+<td><p>the token after SBE when there is no label</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">bare-token</span></code></p></td>
+<td><p>the whole comment is one token (it may be a model number)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">none</span></code></p></td>
+<td><p>no serial in the comment (UNK)</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="calibration-date">
+<h2>Calibration date<a class="headerlink" href="#calibration-date" title="Link to this heading"></a></h2>
+<p>The date must come directly after <code class="docutils literal notranslate"><span class="pre">cal</span></code>, <code class="docutils literal notranslate"><span class="pre">CAL:</span></code>, <code class="docutils literal notranslate"><span class="pre">calibration</span></code> or <code class="docutils literal notranslate"><span class="pre">calibrated</span></code>; only a
+serial label with its number (<code class="docutils literal notranslate"><span class="pre">SN</span> <span class="pre">1234</span></code>), punctuation and the words <code class="docutils literal notranslate"><span class="pre">on</span></code> or <code class="docutils literal notranslate"><span class="pre">date</span></code> may stand
+between them. A date later in the comment (<code class="docutils literal notranslate"><span class="pre">recal</span> <span class="pre">due</span> <span class="pre">2013-08-12</span></code>) is not read, and
+<code class="docutils literal notranslate"><span class="pre">calibration</span> <span class="pre">was</span> <span class="pre">done</span> <span class="pre">12</span> <span class="pre">Aug</span> <span class="pre">2011</span></code> gives <code class="docutils literal notranslate"><span class="pre">UNK</span></code>.</p>
+<p><strong>Dates with the year first</strong> (<code class="docutils literal notranslate"><span class="pre">2012-05-12</span></code>, <code class="docutils literal notranslate"><span class="pre">2012/05/12</span></code>, <code class="docutils literal notranslate"><span class="pre">2012.05.12</span></code>) have one reading.
+<strong>Dates with the month as a word</strong> have one reading too, with the day or the month first
+(<code class="docutils literal notranslate"><span class="pre">May</span> <span class="pre">12,</span> <span class="pre">2012</span></code>): <code class="docutils literal notranslate"><span class="pre">04FEB08</span></code>, <code class="docutils literal notranslate"><span class="pre">15sep08</span></code>, <code class="docutils literal notranslate"><span class="pre">12</span> <span class="pre">Aug</span> <span class="pre">01</span></code>,
+<code class="docutils literal notranslate"><span class="pre">27</span> <span class="pre">Feb</span> <span class="pre">2025</span></code>, <code class="docutils literal notranslate"><span class="pre">26</span> <span class="pre">sept</span> <span class="pre">07</span></code>, <code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">june</span> <span class="pre">08</span></code>, <code class="docutils literal notranslate"><span class="pre">24-May-17</span></code>, <code class="docutils literal notranslate"><span class="pre">31-May-2017</span></code>. RBR comments
+give one ISO date per channel (<code class="docutils literal notranslate"><span class="pre">temp15:2025-02-26T13:58:29Z</span> <span class="pre">doxy24:2025-03-20T11:45:16Z</span></code>).</p>
+<p><strong>All-numeric dates</strong> can have more than one reading. The converter lists the readings the
+shape allows and keeps those that are calendar dates on or before the mission’s first sample
+and at most 30 years before it:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Shape</p></th>
+<th class="head"><p>Readings</p></th>
+<th class="head"><p>When more than one fits</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">n/n/yy</span></code> (slashes)</p></td>
+<td><p>month first, day first</p></td>
+<td><p>month first (<code class="docutils literal notranslate"><span class="pre">9/10/08</span></code> is 10 September 2008)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">n.n.yy</span></code>, <code class="docutils literal notranslate"><span class="pre">n-n-yy</span></code> (dots, dashes)</p></td>
+<td><p>day first, month first</p></td>
+<td><p>day first (<code class="docutils literal notranslate"><span class="pre">12.05.2012</span></code> is 12 May 2012)</p></td>
+</tr>
+<tr class="row-even"><td><p>8 digits</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">yyyymmdd</span></code>, <code class="docutils literal notranslate"><span class="pre">ddmmyyyy</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">UNK</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>6 digits</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ddmmyy</span></code>, <code class="docutils literal notranslate"><span class="pre">yymmdd</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">UNK</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>When only one reading fits, it is used, and the note says why the other was rejected. For
+example <code class="docutils literal notranslate"><span class="pre">251114</span></code> on a mission whose first sample is 15 August 2015 reads 25 November 2014,
+because the other reading (14 November 2025) is after the first sample. When the preferred
+reading is not a calendar date, the other is used (<code class="docutils literal notranslate"><span class="pre">28/4/08</span></code> is 28 April; <code class="docutils literal notranslate"><span class="pre">05.25.2012</span></code> is
+25 May). Check <code class="docutils literal notranslate"><span class="pre">original_calibcomm</span></code> when a date matters: the preference is a convention, not
+something the comment says. A two-digit year takes
+the latest century that does not put it after the first sample.</p>
+<p>The first sample is the earliest <code class="docutils literal notranslate"><span class="pre">start_time</span></code> global across the dive files.</p>
+<p>A comment that matches none of these gives <code class="docutils literal notranslate"><span class="pre">UNK</span></code> with a note. The numbers after a serial
+label (<code class="docutils literal notranslate"><span class="pre">s/n</span></code>, <code class="docutils literal notranslate"><span class="pre">SN</span></code>) are never read as a date.</p>
+</section>
+<section id="checks">
+<h2>Checks<a class="headerlink" href="#checks" title="Link to this heading"></a></h2>
+<p>The converter keeps what the comment says, and flags:</p>
+<ul class="simple">
+<li><p>a calibration date after the mission’s first sample (a calibration cannot postdate the data
+it calibrated), or more than 30 years before it — in the log, in the sensor’s <code class="docutils literal notranslate"><span class="pre">comment</span></code> and
+on the conversion page;</p></li>
+<li><p>two sensors with the same serial number (usually a comment copied from another instrument) —
+in the log and on the conversion page;</p></li>
+<li><p>a serial number read from a comment that is a single token with no label (it may be a model
+number) — on the conversion page;</p></li>
+<li><p>an all-numeric date with two readings, chosen by the convention above — in the log and on the
+conversion page;</p></li>
+<li><p>two sensors that would get the same <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> name (for example two fluorometers with no
+serial) — in the log; the second is written with its sensor key appended
+(<code class="docutils literal notranslate"><span class="pre">SENSOR_FLUOROMETER_UNK_wlbb2fl</span></code>) rather than overwriting the first.</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">conversion_sensor_calibration</span></code> record also stores the window (<code class="docutils literal notranslate"><span class="pre">window_years</span></code>) and the
+first sample used, so the date choice can be reconstructed from the file.</p>
+<p>A value corrected with <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> (below) clears the flag on the conversion page.</p>
+</section>
+<section id="if-yours-is-not-read-correctly">
+<h2>If yours is not read correctly<a class="headerlink" href="#if-yours-is-not-read-correctly" title="Link to this heading"></a></h2>
+<p>Correct the serial number or calibration date with <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> (see
+<a class="reference internal" href="mission_yaml.html#mission-yaml"><span class="std std-ref">mission.yaml reference</span></a>). For example, on the sg271 sample the RBR tridente comment carries the RBR
+coda’s serial number:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">sensors</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">tridentebb700chla470fdom365</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">serial_number</span><span class="p">:</span><span class="w"> </span><span class="s">"237998"</span>
+</pre></div>
+</div>
+<p>The correction replaces the serial number; <code class="docutils literal notranslate"><span class="pre">original_calibcomm</span></code> still holds the comment as
+written. To have a new comment format read, open an issue with the comment text and what it
+means; it becomes a row in the table below.</p>
+</section>
+<section id="every-comment-the-parser-is-tested-against">
+<h2>Every comment the parser is tested against<a class="headerlink" href="#every-comment-the-parser-is-tested-against" title="Link to this heading"></a></h2>
+<p>The rows below are <code class="docutils literal notranslate"><span class="pre">tests/data/calibcomm_answers.csv</span></code>: each comment, what it means, and the
+first-sample date the test uses. The expected values were read from the string, or decided by
+the maintainers where the string is ambiguous.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>As written</p></th>
+<th class="head"><p>Serial</p></th>
+<th class="head"><p>Serial rule</p></th>
+<th class="head"><p>Calibration date</p></th>
+<th class="head"><p>Date rule</p></th>
+<th class="head"><p>First sample</p></th>
+<th class="head"><p>Note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">25281-1</span> <span class="pre">calibration</span> <span class="pre">12</span> <span class="pre">Aug</span> <span class="pre">01</span></code></p></td>
+<td><p>25281-1</p></td>
+<td><p>label</p></td>
+<td><p>2001-08-12</p></td>
+<td><p>dd Mon yy</p></td>
+<td><p>2003-10-02</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE#29613t1/c1</span> <span class="pre">calibration</span> <span class="pre">7</span> <span class="pre">Sep</span> <span class="pre">02</span></code></p></td>
+<td><p>29613</p></td>
+<td><p>SBE#-tc</p></td>
+<td><p>2002-09-07</p></td>
+<td><p>dd Mon yy</p></td>
+<td><p>2003-10-02</p></td>
+<td><p>serial is the CT number; t1/c1 (T and C sensor pair) not part of it</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">005</span> <span class="pre">calibration</span> <span class="pre">09FEB08</span></code></p></td>
+<td><p>005</p></td>
+<td><p>label</p></td>
+<td><p>2008-02-09</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2008-06-06</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">24520-1</span> <span class="pre">calibration</span> <span class="pre">04FEB08</span></code></p></td>
+<td><p>24520-1</p></td>
+<td><p>SBE-token</p></td>
+<td><p>2008-02-04</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2008-06-06</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">042</span> <span class="pre">calibration</span> <span class="pre">05APR08</span></code></p></td>
+<td><p>042</p></td>
+<td><p>label</p></td>
+<td><p>2008-04-05</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2008-11-06</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">0021</span> <span class="pre">calibration</span> <span class="pre">15sep08</span></code></p></td>
+<td><p>0021</p></td>
+<td><p>SBE-token</p></td>
+<td><p>2008-09-15</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2008-11-06</p></td>
+<td><p>lower-case month</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">042</span> <span class="pre">calibration</span> <span class="pre">05APR08</span></code></p></td>
+<td><p>042</p></td>
+<td><p>label</p></td>
+<td><p>2008-04-05</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2009-08-29</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">0015</span> <span class="pre">calibration</span> <span class="pre">4/28/08</span></code></p></td>
+<td><p>0015</p></td>
+<td><p>SBE-token</p></td>
+<td><p>2008-04-28</p></td>
+<td><p>mm/dd/yy</p></td>
+<td><p>2009-08-29</p></td>
+<td><p>unambiguous month-first numeric date (28 &gt; 12), hand-typed by the operator</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43</span> <span class="pre">s/n</span> <span class="pre">F0012</span> <span class="pre">calibration</span> <span class="pre">27</span> <span class="pre">Aug</span> <span class="pre">02</span></code></p></td>
+<td><p>F0012</p></td>
+<td><p>label</p></td>
+<td><p>2002-08-27</p></td>
+<td><p>dd Mon yy</p></td>
+<td><p>2003-10-02</p></td>
+<td><p>letter in serial</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE#24520t4/c4</span> <span class="pre">calibration</span> <span class="pre">05</span> <span class="pre">Apr</span> <span class="pre">01</span></code></p></td>
+<td><p>24520</p></td>
+<td><p>SBE#-tc</p></td>
+<td><p>2001-04-05</p></td>
+<td><p>dd Mon yy</p></td>
+<td><p>2003-10-02</p></td>
+<td><p>as sg004: t4/c4 not part of the serial</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43</span> <span class="pre">s/n</span> <span class="pre">0036</span> <span class="pre">calibration</span> <span class="pre">13MAY06</span></code></p></td>
+<td><p>0036</p></td>
+<td><p>label</p></td>
+<td><p>2006-05-13</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2007-08-31</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">s/n</span> <span class="pre">0013</span> <span class="pre">calibration</span> <span class="pre">01JUN07</span></code></p></td>
+<td><p>0013</p></td>
+<td><p>label</p></td>
+<td><p>2007-06-01</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2007-08-31</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">033</span> <span class="pre">calibration</span> <span class="pre">15JAN04</span></code></p></td>
+<td><p>033</p></td>
+<td><p>label</p></td>
+<td><p>2004-01-15</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2004-09-24</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">t10/c10</span> <span class="pre">calibration</span> <span class="pre">12DEC03</span></code></p></td>
+<td><p>UNK</p></td>
+<td><p>tc-only</p></td>
+<td><p>2003-12-12</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2004-09-24</p></td>
+<td><p>only a T/C sensor pair; no CT serial</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">0043</span></code></p></td>
+<td><p>0043</p></td>
+<td><p>bare-token</p></td>
+<td><p>UNK</p></td>
+<td><p>none</p></td>
+<td><p>2008-02-14</p></td>
+<td><p>bare token taken as the serial (may be a model number); no date</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">s/n</span> <span class="pre">0019,</span> <span class="pre">calibration</span> <span class="pre">26</span> <span class="pre">sept</span> <span class="pre">07</span></code></p></td>
+<td><p>0019</p></td>
+<td><p>label</p></td>
+<td><p>2007-09-26</p></td>
+<td><p>dd Mon yy</p></td>
+<td><p>2008-02-14</p></td>
+<td><p>4-letter month ‘sept’</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">0088</span></code></p></td>
+<td><p>0088</p></td>
+<td><p>bare-token</p></td>
+<td><p>UNK</p></td>
+<td><p>none</p></td>
+<td><p>2008-08-29</p></td>
+<td><p>bare token taken as the serial (may be a model number); no date</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">s/n</span> <span class="pre">0025,</span> <span class="pre">calibration</span> <span class="pre">10</span> <span class="pre">june</span> <span class="pre">08</span></code></p></td>
+<td><p>0025</p></td>
+<td><p>label</p></td>
+<td><p>2008-06-10</p></td>
+<td><p>dd Mon yy</p></td>
+<td><p>2008-08-29</p></td>
+<td><p>full month name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">041</span> <span class="pre">calibration</span> <span class="pre">22JAN04</span></code></p></td>
+<td><p>041</p></td>
+<td><p>label</p></td>
+<td><p>2004-01-22</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2004-09-24</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">t12/c12</span> <span class="pre">calibration</span> <span class="pre">30DEC03</span></code></p></td>
+<td><p>UNK</p></td>
+<td><p>tc-only</p></td>
+<td><p>2003-12-30</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2004-09-24</p></td>
+<td><p>only a T/C sensor pair; no CT serial</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">042</span> <span class="pre">calibration</span> <span class="pre">25SEP04</span></code></p></td>
+<td><p>042</p></td>
+<td><p>label</p></td>
+<td><p>2004-09-25</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2005-04-06</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">t15/c15</span> <span class="pre">calibration</span> <span class="pre">18OCT04</span></code></p></td>
+<td><p>UNK</p></td>
+<td><p>tc-only</p></td>
+<td><p>2004-10-18</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2005-04-06</p></td>
+<td><p>only a T/C sensor pair; no CT serial</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">042</span> <span class="pre">calibration</span> <span class="pre">17FEB06</span></code></p></td>
+<td><p>042</p></td>
+<td><p>label</p></td>
+<td><p>2006-02-17</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2006-11-12</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">0015</span> <span class="pre">calibration</span> <span class="pre">25JAN06</span></code></p></td>
+<td><p>0015</p></td>
+<td><p>SBE-token</p></td>
+<td><p>2006-01-25</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2006-11-12</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">029</span> <span class="pre">calibration</span> <span class="pre">10APR07</span></code></p></td>
+<td><p>029</p></td>
+<td><p>label</p></td>
+<td><p>2007-04-10</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2007-11-13</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">0013</span> <span class="pre">calibration</span> <span class="pre">21Feb07</span></code></p></td>
+<td><p>0013</p></td>
+<td><p>SBE-token</p></td>
+<td><p>2007-02-21</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2007-11-13</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">103</span> <span class="pre">calibration</span> <span class="pre">02Apr08</span></code></p></td>
+<td><p>103</p></td>
+<td><p>label</p></td>
+<td><p>2008-04-02</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2008-06-07</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">0088</span> <span class="pre">calibration</span> <span class="pre">23Mar08</span></code></p></td>
+<td><p>0088</p></td>
+<td><p>SBE-token</p></td>
+<td><p>2008-03-23</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2008-06-07</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">103</span> <span class="pre">calibration</span> <span class="pre">02Apr08</span></code></p></td>
+<td><p>103</p></td>
+<td><p>label</p></td>
+<td><p>2008-04-02</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2009-06-05</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">0093</span> <span class="pre">calibration</span> <span class="pre">30Jun08</span></code></p></td>
+<td><p>0093</p></td>
+<td><p>SBE-token</p></td>
+<td><p>2008-06-30</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2009-06-05</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Optode</span> <span class="pre">4330F</span> <span class="pre">S/N</span> <span class="pre">182</span> <span class="pre">foil</span> <span class="pre">batch</span> <span class="pre">2808F</span> <span class="pre">calibrated</span> <span class="pre">09may09</span></code></p></td>
+<td><p>182</p></td>
+<td><p>label</p></td>
+<td><p>2009-05-09</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2010-05-18</p></td>
+<td><p>‘calibrated’ keyword; model 4330F is not the serial</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">s/n</span> <span class="pre">0112</span> <span class="pre">calibration</span> <span class="pre">20apr09</span></code></p></td>
+<td><p>0112</p></td>
+<td><p>label</p></td>
+<td><p>2009-04-20</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2010-05-18</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Optode</span> <span class="pre">4330F</span> <span class="pre">S/N</span> <span class="pre">182</span> <span class="pre">foil</span> <span class="pre">batch</span> <span class="pre">2808F</span> <span class="pre">calibrated</span> <span class="pre">09may09</span></code></p></td>
+<td><p>182</p></td>
+<td><p>label</p></td>
+<td><p>2009-05-09</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2010-09-03</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">s/n</span> <span class="pre">0112</span> <span class="pre">calibration</span> <span class="pre">20apr09</span></code></p></td>
+<td><p>0112</p></td>
+<td><p>label</p></td>
+<td><p>2009-04-20</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2010-09-03</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">wlbbfl2</span> <span class="pre">SN4746</span> <span class="pre">cal</span> <span class="pre">24-May-17</span></code></p></td>
+<td><p>4746</p></td>
+<td><p>label</p></td>
+<td><p>2017-05-24</p></td>
+<td><p>dd-Mon-yy</p></td>
+<td><p>2022-07-18</p></td>
+<td><p>‘SN’ glued to digits; ‘cal’ keyword</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Optode</span> <span class="pre">4831F</span> <span class="pre">SN:</span> <span class="pre">453</span> <span class="pre">Foil</span> <span class="pre">ID:</span> <span class="pre">1207FM</span> <span class="pre">calibrated</span> <span class="pre">31-May-2017</span></code></p></td>
+<td><p>453</p></td>
+<td><p>label</p></td>
+<td><p>2017-05-31</p></td>
+<td><p>dd-Mon-yyyy</p></td>
+<td><p>2022-07-18</p></td>
+<td><p>‘SN:’ with colon</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">s/n</span> <span class="pre">0292,</span> <span class="pre">calibration</span> <span class="pre">17-Mar-17</span></code></p></td>
+<td><p>0292</p></td>
+<td><p>label</p></td>
+<td><p>2017-03-17</p></td>
+<td><p>dd-Mon-yy</p></td>
+<td><p>2022-07-18</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">029</span> <span class="pre">calibration</span> <span class="pre">16Jun04</span></code></p></td>
+<td><p>029</p></td>
+<td><p>label</p></td>
+<td><p>2004-06-16</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2006-11-12</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">s/n</span> <span class="pre">0021</span> <span class="pre">calibration</span> <span class="pre">07Jun04</span></code></p></td>
+<td><p>0021</p></td>
+<td><p>label</p></td>
+<td><p>2004-06-07</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2006-11-12</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">029</span> <span class="pre">calibration</span> <span class="pre">07May07</span></code></p></td>
+<td><p>029</p></td>
+<td><p>label</p></td>
+<td><p>2007-05-07</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2007-06-09</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">s/n</span> <span class="pre">0021</span> <span class="pre">calibration</span> <span class="pre">15Apr07</span></code></p></td>
+<td><p>0021</p></td>
+<td><p>label</p></td>
+<td><p>2007-04-15</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2007-06-09</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">0061</span></code></p></td>
+<td><p>0061</p></td>
+<td><p>bare-token</p></td>
+<td><p>UNK</p></td>
+<td><p>none</p></td>
+<td><p>2008-11-08</p></td>
+<td><p>bare token taken as the serial (may be a model number); no date</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">s/n</span> <span class="pre">19,</span> <span class="pre">calibration</span> <span class="pre">9/10/08</span></code></p></td>
+<td><p>19</p></td>
+<td><p>label</p></td>
+<td><p>2008-09-10</p></td>
+<td><p>mm/dd/yy</p></td>
+<td><p>2008-11-08</p></td>
+<td><p>month-first rule: 10 Sep (day-first 9 Oct); both precede the 8 Nov dive, so the guard cannot decide</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">43F</span> <span class="pre">s/n</span> <span class="pre">043</span> <span class="pre">calibration</span> <span class="pre">16Jun04</span></code></p></td>
+<td><p>043</p></td>
+<td><p>label</p></td>
+<td><p>2004-06-16</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2006-11-12</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">s/n</span> <span class="pre">0022</span> <span class="pre">calibration</span> <span class="pre">07Jun04</span></code></p></td>
+<td><p>0022</p></td>
+<td><p>label</p></td>
+<td><p>2004-06-07</p></td>
+<td><p>ddMonyy</p></td>
+<td><p>2006-11-12</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SN:</span> <span class="pre">251</span>&#160; <span class="pre">CAL:</span> <span class="pre">29082012</span></code></p></td>
+<td><p>251</p></td>
+<td><p>label</p></td>
+<td><p>2012-08-29</p></td>
+<td><p>ddmmyyyy</p></td>
+<td><p>2015-08-15</p></td>
+<td><p>8 digits, day-first; last four a year</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SN:</span> <span class="pre">0135</span>&#160; <span class="pre">CAL:</span> <span class="pre">251114</span></code></p></td>
+<td><p>0135</p></td>
+<td><p>label</p></td>
+<td><p>2014-11-25</p></td>
+<td><p>ddmmyy</p></td>
+<td><p>2015-08-15</p></td>
+<td><p>ddmmyy; yymmdd would give 2025-11-14, after the first dive (2015-08-15T14:08:40Z), so ruled out by the dive-date guard</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Legato</span> <span class="pre">s/n</span> <span class="pre">238007,</span> <span class="pre">calibration</span> <span class="pre">27</span> <span class="pre">Feb</span> <span class="pre">2025</span></code></p></td>
+<td><p>238007</p></td>
+<td><p>label</p></td>
+<td><p>2025-02-27</p></td>
+<td><p>dd Mon yyyy</p></td>
+<td><p>2026-03-02</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">RBRtridente</span> <span class="pre">serialnum:237790</span> <span class="pre">backscatter_00:2025-02-26T13:58:29Z</span> <span class="pre">chlorophyll_00:2025-03-11T12:50:27Z</span> <span class="pre">fdom_00:2025-03-11T12:54:10Z</span></code></p></td>
+<td><p>237790</p></td>
+<td><p>label</p></td>
+<td><p>2025-03-11</p></td>
+<td><p>rbr-iso</p></td>
+<td><p>2026-03-02</p></td>
+<td><p>backscatter_00: 2025-02-26; chlorophyll_00: 2025-03-11; fdom_00: 2025-03-11; tridente serial is the coda’s; the sg271 mission.yaml corrects it to 237998</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">RBRcoda</span> <span class="pre">serialnum:237790</span> <span class="pre">temp15:2025-02-26T13:58:29Z</span> <span class="pre">doxy24:2025-03-20T11:45:16Z</span></code></p></td>
+<td><p>237790</p></td>
+<td><p>label</p></td>
+<td><p>2025-03-20</p></td>
+<td><p>rbr-iso</p></td>
+<td><p>2026-03-02</p></td>
+<td><p>temp15: 2025-02-26; doxy24: 2025-03-20</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="conversion.html" class="btn btn-neutral float-left" title="What the conversion does" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="conversion_page.html" class="btn btn-neutral float-right" title="The conversion page" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

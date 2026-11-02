@@ -22,6 +22,7 @@ https://github.com/ocean-uhh/seagliderOG1/issues/new.
    :caption: The conversion
 
    conversion
+   calibration_comments
 
 .. toctree::
    :maxdepth: 2

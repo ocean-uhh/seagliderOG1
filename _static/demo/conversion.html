@@ -339,7 +339,7 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
     <h1>sg271_20260302T193828_R.nc</h1>
     <span class="masthead-type">conversion</span>
   </div>
-  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>sg271_20260302T193828_R.nc</span><span>generated 2026-10-24T12:35:53+00:00</span></p>
+  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>sg271_20260302T193828_R.nc</span><span>generated 2026-11-02T20:01:30+00:00</span></p>
   
 
 <nav class="page-nav">
@@ -350,7 +350,7 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 
 
 
-  <dl class="meta-grid"><div><dt>Platform</dt><dd>sub-surface gliders (sg271)</dd></div><div><dt>Dives</dt><dd>1–3</dd></div><div><dt>Time coverage</dt><dd>2026-03-02 19:38 → 21:45</dd></div><div><dt>Latitude</dt><dd>-72.981 → -72.979</dd></div><div><dt>Longitude</dt><dd>171.408 → 171.437</dd></div><div><dt>seagliderOG1 version</dt><dd>0.1.0.post1.dev6</dd></div>
+  <dl class="meta-grid"><div><dt>Platform</dt><dd>sub-surface gliders (sg271)</dd></div><div><dt>Dives</dt><dd>1–3</dd></div><div><dt>Time coverage</dt><dd>2026-03-02 19:38 → 21:45</dd></div><div><dt>Latitude</dt><dd>-72.981 → -72.979</dd></div><div><dt>Longitude</dt><dd>171.408 → 171.437</dd></div><div><dt>seagliderOG1 version</dt><dd>0.2.0.post1.dev1</dd></div>
   </dl>
   <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
 </div>
@@ -418,11 +418,11 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 <tbody>
 <tr><td>Files</td><td>3</td><td>1</td></tr>
 <tr><td>Dives</td><td>1–3</td><td>same</td></tr>
-<tr><td>Size on disk</td><td>3.22 MB</td><td>1.62 MB</td></tr>
+<tr><td>Size on disk</td><td>3.22 MB</td><td>1.63 MB</td></tr>
 <tr><td>Samples on the axis</td><td>3,904</td><td>9,318</td></tr>
 <tr><td>Variables</td><td>542</td><td>559</td></tr>
 <tr><td class="indent">of which scalar parameters</td><td>404</td><td>404</td></tr>
-<tr><td>Global attributes</td><td>48</td><td>48</td></tr>
+<tr><td>Global attributes</td><td>48</td><td>49</td></tr>
 <tr><td>Time span</td><td>—</td><td>2026-03-02 19:38 → 21:45</td></tr>
 <tr><td>OG1 requirement</td><td>—</td><td>mandatory 9/9 present · highly desirable 8/14 (missing: internal_mission_identifier, site_vocabulary, program, program_vocabulary, data_url, doi) · suggested 8/11 (missing: network, uri, web_link)</td></tr>
 </tbody></table>
@@ -489,14 +489,25 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 </tbody></table>
 
 <h3>Sensors named by OG1 (not required)</h3>
-<p class="caption">3 <code>SENSOR_*</code> variables, from the basestation calibration comments and <code>config/OG1_sensor_attributes.yaml</code>. Used by lists the variables whose <code>sensor</code> attribute names the sensor. Amber: the serial number or calibration date is a placeholder (empty, or every digit zero), so the basestation configuration did not record it; or two sensors share a serial number, which usually means a calibration comment was copied from another instrument. Both come from the basestation <code>sg_calib_constants</code>; check them against the calibration sheets.</p>
+<p class="caption">3 <code>SENSOR_*</code> variables, from the basestation calibration comments and <code>config/OG1_sensor_attributes.yaml</code>. Used by lists the variables whose <code>sensor</code> attribute names the sensor. Amber: the serial number or calibration date is <code>UNK</code> or empty (not read from the calibration comment; files from 0.2.0 and earlier wrote every digit zero instead); or two sensors share a serial number, which usually means a calibration comment was copied from another instrument. Both come from the basestation <code>sg_calib_constants</code>; check them against the calibration sheets.</p>
 <table class="nc sortable">
 <colgroup><col style="width:15%"><col style="width:7%"><col style="width:7%"><col style="width:16%"><col style="width:9%"><col style="width:11%"><col style="width:35%"></colgroup>
 <thead><tr><th>Sensor</th><th>Type</th><th>Maker</th><th>Model</th><th>Serial</th><th>Calibration</th><th>Used by</th></tr></thead>
 <tbody>
 <tr><td class="cell-wrap">SENSOR_CTD_238007</td><td>CTD</td><td>RBR</td><td>RBR Legato3 CTD</td><td>238007</td><td>2025-02-27</td><td class="cell-wrap">22: CNDC, CNDC_QC, CNDC_RAW, CNDC_RAW_QC, DENSITY, DEPTH, PRES, PRES_2, PRES_QC, PSAL, PSAL_QC, PSAL_RAW, PSAL_RAW_QC, SIGMA_T, SIGTHETA, SOUND_VELOCITY, TEMP, TEMP_2, TEMP_QC, TEMP_RAW, TEMP_RAW_QC, THETA</td></tr>
-<tr><td class="cell-wrap">SENSOR_FLUOROMETER_237998</td><td>fluorometer</td><td>RBR</td><td>RBR tridente scattering fluorescence sensor</td><td>237998</td><td>backscatter_00: 2025-02-26, chlorophyll_00: 2025-03-11, fdom_00: 2025-03-11</td><td class="cell-wrap">2: CDOM, CHLA</td></tr>
-<tr><td class="cell-wrap">SENSOR_OXYGEN_237790</td><td>Oxygen</td><td>RBR</td><td>RBR Coda T.ODO Temperature and Dissolved Oxygen Sensor</td><td>237790</td><td>temp15: 2025-02-26, doxy24: 2025-03-20</td><td class="cell-wrap">2: OXYSAT, TEMP_3</td></tr>
+<tr><td class="cell-wrap">SENSOR_FLUOROMETER_237998</td><td>fluorometer</td><td>RBR</td><td>RBR tridente scattering fluorescence sensor</td><td>237998</td><td>2025-03-11</td><td class="cell-wrap">2: CDOM, CHLA</td></tr>
+<tr><td class="cell-wrap">SENSOR_OXYGEN_237790</td><td>Oxygen</td><td>RBR</td><td>RBR Coda T.ODO Temperature and Dissolved Oxygen Sensor</td><td>237790</td><td>2025-03-20</td><td class="cell-wrap">2: OXYSAT, TEMP_3</td></tr>
+</tbody></table>
+
+<h3>Calibration comments: basestation → <code>SENSOR_*</code></h3>
+<p class="caption">How each sensor's serial number and calibration date were read. Basestation variable and Original are the source: the <code>sg_cal_calibcomm*</code> variable (from <code>sg_calib_constants.m</code>, typed by the operator) and its text, kept in the file as <code>original_calibcomm</code>. The remaining columns are the result: the OG1 <code>SENSOR_*</code> variable and its <code>sensor_serial_number</code> and <code>sensor_calibration_date</code>, per-channel dates (<code>sensor_calibration_dates</code>, RBR), with the serial / date rules that read them (named on the <a href="https://ocean-uhh.github.io/seagliderOG1/calibration_comments.html">calibration comments</a> docs page). Amber: the serial or date is <code>UNK</code> (not read), the serial is a lone token with no label (it may be a model number), the calibration date is after the mission's first sample or more than 30 years before it, the date has two readings and was chosen by convention (slashes month-first, dots and dashes day-first), or two sensors share a serial number. Correct any of these with <code>sensors:</code> in <code>mission.yaml</code>.</p>
+<table class="nc sortable">
+<colgroup><col style="width:13%"><col style="width:21%"><col style="width:15%"><col style="width:7%"><col style="width:9%"><col style="width:13%"><col style="width:10%"><col style="width:13%"></colgroup>
+<thead><tr><th>Basestation variable</th><th>Original</th><th>OG1 Sensor</th><th>Serial</th><th>Calibration</th><th>Channel dates</th><th>Rules (serial / date)</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td class="cell-wrap">sg_cal_calibcomm</td><td class="cell-wrap">Legato s/n 238007, calibration 27 Feb 2025</td><td class="cell-wrap">SENSOR_CTD_238007</td><td style="white-space:nowrap">238007</td><td style="white-space:nowrap">2025-02-27</td><td class="cell-wrap"></td><td style="white-space:nowrap">label / dd Mon yyyy</td><td class="cell-wrap"></td></tr>
+<tr><td class="cell-wrap">sg_cal_calibcomm_tridentebb700chla470fdom365</td><td class="cell-wrap">RBRtridente serialnum:237790 backscatter_00:2025-02-26T13:58:29Z chlorophyll_00:2025-03-11T12:50:27Z fdom_00:2025-03-11T12:54:10Z</td><td class="cell-wrap">SENSOR_FLUOROMETER_237998</td><td style="white-space:nowrap">237998</td><td style="white-space:nowrap">2025-03-11</td><td class="cell-wrap">backscatter_00: 2025-02-26; chlorophyll_00: 2025-03-11; fdom_00: 2025-03-11</td><td style="white-space:nowrap">label / rbr-iso</td><td class="cell-wrap">sensor_serial_number from the mission config</td></tr>
+<tr><td class="cell-wrap">sg_cal_calibcomm_coda</td><td class="cell-wrap">RBRcoda serialnum:237790 temp15:2025-02-26T13:58:29Z doxy24:2025-03-20T11:45:16Z</td><td class="cell-wrap">SENSOR_OXYGEN_237790</td><td style="white-space:nowrap">237790</td><td style="white-space:nowrap">2025-03-20</td><td class="cell-wrap">temp15: 2025-02-26; doxy24: 2025-03-20</td><td style="white-space:nowrap">label / rbr-iso</td><td class="cell-wrap"></td></tr>
 </tbody></table>
 
 <h3>Named by OG1 (not required)</h3>
@@ -864,16 +875,16 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 <tr>
 <td data-sort="PROFILE_NUMBER">PROFILE_NUMBER</td><td>(computed)</td><td data-nosort>—</td></tr>
 <tr>
-<td data-sort="SENSOR_CTD_238007">SENSOR_CTD_238007</td><td>(computed)</td><td data-nosort><details class="attr-disclosure"><summary>8 attrs</summary>
-<table data-nosort><tbody><tr><th>sensor_maker</th><td>RBR</td></tr><tr><th>sensor_maker_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L35/current/MAN0049/</td></tr><tr><th>sensor_model</th><td>RBR Legato3 CTD</td></tr><tr><th>sensor_model_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L22/current/TOOL1745/</td></tr><tr><th>sensor_type</th><td>CTD</td></tr><tr><th>sensor_type_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L05/current/130/</td></tr><tr><th>sensor_serial_number</th><td>238007</td></tr><tr><th>sensor_calibration_date</th><td>2025-02-27</td></tr>
+<td data-sort="SENSOR_CTD_238007">SENSOR_CTD_238007</td><td>(computed)</td><td data-nosort><details class="attr-disclosure"><summary>9 attrs</summary>
+<table data-nosort><tbody><tr><th>sensor_maker</th><td>RBR</td></tr><tr><th>sensor_maker_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L35/current/MAN0049/</td></tr><tr><th>sensor_model</th><td>RBR Legato3 CTD</td></tr><tr><th>sensor_model_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L22/current/TOOL1745/</td></tr><tr><th>sensor_type</th><td>CTD</td></tr><tr><th>sensor_type_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L05/current/130/</td></tr><tr><th>sensor_serial_number</th><td>238007</td></tr><tr><th>sensor_calibration_date</th><td>2025-02-27</td></tr><tr><th>original_calibcomm</th><td>Legato s/n 238007, calibration 27 Feb 2025</td></tr>
 </tbody></table></details></td></tr>
 <tr>
-<td data-sort="SENSOR_FLUOROMETER_237998">SENSOR_FLUOROMETER_237998</td><td>(computed)</td><td data-nosort><details class="attr-disclosure"><summary>9 attrs</summary>
-<table data-nosort><tbody><tr><th>sensor_maker</th><td>RBR</td></tr><tr><th>sensor_maker_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L35/current/MAN0049/</td></tr><tr><th>sensor_model</th><td>RBR tridente scattering fluorescence sensor</td></tr><tr><th>sensor_model_vocabulary</th><td>http://vocab.nerc.ac.uk/collection/L22/current/TOOL2149/</td></tr><tr><th>sensor_type</th><td>fluorometer</td></tr><tr><th>sensor_type_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L05/current/113/ and https://vocab.nerc.ac.uk/collection/L05/current/123/</td></tr><tr><th>sensor_serial_number</th><td>237998</td></tr><tr><th>sensor_calibration_date</th><td>backscatter_00: 2025-02-26, chlorophyll_00: 2025-03-11, fdom_00: 2025-03-11</td></tr><tr><th>comment</th><td>sensor_serial_number 237998 from the mission config (basestation calibration comment: 237790).</td></tr>
+<td data-sort="SENSOR_FLUOROMETER_237998">SENSOR_FLUOROMETER_237998</td><td>(computed)</td><td data-nosort><details class="attr-disclosure"><summary>11 attrs</summary>
+<table data-nosort><tbody><tr><th>sensor_maker</th><td>RBR</td></tr><tr><th>sensor_maker_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L35/current/MAN0049/</td></tr><tr><th>sensor_model</th><td>RBR tridente scattering fluorescence sensor</td></tr><tr><th>sensor_model_vocabulary</th><td>http://vocab.nerc.ac.uk/collection/L22/current/TOOL2149/</td></tr><tr><th>sensor_type</th><td>fluorometer</td></tr><tr><th>sensor_type_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L05/current/113/ and https://vocab.nerc.ac.uk/collection/L05/current/123/</td></tr><tr><th>sensor_serial_number</th><td>237998</td></tr><tr><th>sensor_calibration_date</th><td>2025-03-11</td></tr><tr><th>sensor_calibration_dates</th><td>backscatter_00: 2025-02-26; chlorophyll_00: 2025-03-11; fdom_00: 2025-03-11</td></tr><tr><th>original_calibcomm</th><td>RBRtridente serialnum:237790 backscatter_00:2025-02-26T13:58:29Z chlorophyll_00:2025-03-11T12:50:27Z fdom_00:2025-03-11T12:54:10Z</td></tr><tr><th>comment</th><td>sensor_serial_number 237998 from the mission config (basestation calibration comment: 237790).</td></tr>
 </tbody></table></details></td></tr>
 <tr>
-<td data-sort="SENSOR_OXYGEN_237790">SENSOR_OXYGEN_237790</td><td>(computed)</td><td data-nosort><details class="attr-disclosure"><summary>8 attrs</summary>
-<table data-nosort><tbody><tr><th>sensor_maker</th><td>RBR</td></tr><tr><th>sensor_maker_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L35/current/MAN0049/</td></tr><tr><th>sensor_model</th><td>RBR Coda T.ODO Temperature and Dissolved Oxygen Sensor</td></tr><tr><th>sensor_model_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L22/current/TOOL1717/</td></tr><tr><th>sensor_type</th><td>Oxygen</td></tr><tr><th>sensor_type_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L05/current/351/</td></tr><tr><th>sensor_serial_number</th><td>237790</td></tr><tr><th>sensor_calibration_date</th><td>temp15: 2025-02-26, doxy24: 2025-03-20</td></tr>
+<td data-sort="SENSOR_OXYGEN_237790">SENSOR_OXYGEN_237790</td><td>(computed)</td><td data-nosort><details class="attr-disclosure"><summary>10 attrs</summary>
+<table data-nosort><tbody><tr><th>sensor_maker</th><td>RBR</td></tr><tr><th>sensor_maker_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L35/current/MAN0049/</td></tr><tr><th>sensor_model</th><td>RBR Coda T.ODO Temperature and Dissolved Oxygen Sensor</td></tr><tr><th>sensor_model_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L22/current/TOOL1717/</td></tr><tr><th>sensor_type</th><td>Oxygen</td></tr><tr><th>sensor_type_vocabulary</th><td>https://vocab.nerc.ac.uk/collection/L05/current/351/</td></tr><tr><th>sensor_serial_number</th><td>237790</td></tr><tr><th>sensor_calibration_date</th><td>2025-03-20</td></tr><tr><th>sensor_calibration_dates</th><td>temp15: 2025-02-26; doxy24: 2025-03-20</td></tr><tr><th>original_calibcomm</th><td>RBRcoda serialnum:237790 temp15:2025-02-26T13:58:29Z doxy24:2025-03-20T11:45:16Z</td></tr>
 </tbody></table></details></td></tr>
 <tr>
 <td data-sort="TELECOM_TYPE">TELECOM_TYPE</td><td>(computed)</td><td data-nosort><details class="attr-disclosure"><summary>1 attr</summary>
@@ -1983,16 +1994,16 @@ The following time values occurred multiple times and have been assigned to the 
 <tr><td class="mono">rtqc_method</td><td>mandatory</td><td><code>string</code></td><td>No QC applied</td></tr>
 <tr><td class="mono">rtqc_method_doi</td><td>highly desirable</td><td><code>string</code></td><td>n/a</td></tr>
 <tr><td class="mono">start_date</td><td>mandatory</td><td><code>string</code></td><td>20260302T193828</td></tr>
-<tr><td class="mono">date_created</td><td>mandatory</td><td><code>string</code></td><td>20261024T123551</td></tr>
+<tr><td class="mono">date_created</td><td>mandatory</td><td><code>string</code></td><td>20261102T200128</td></tr>
 <tr><td class="mono">featureType</td><td>mandatory</td><td><code>string</code></td><td>trajectory</td></tr>
 <tr><td class="mono">Conventions</td><td>mandatory</td><td><code>string</code></td><td>CF-1.10, ACDD-1.3, OG-1.0</td></tr>
-<tr><td class="mono">date_modified</td><td></td><td><code>string</code></td><td>20261024T123551</td></tr>
+<tr><td class="mono">date_modified</td><td></td><td><code>string</code></td><td>20261102T200128</td></tr>
 <tr><td class="mono">comment</td><td>suggested</td><td><code>string</code></td><td>Three-dive sample of the sg271 Drygalski Trough mission (PycnMix) released for demonstration; the full dataset is embargoed until 2028-03-18 (two years after the mission ended).</td></tr>
 <tr><td class="mono">conversion_dimensions</td><td></td><td><code>string</code></td><td>{&#34;codaTODO_data_point&#34;: {&#34;fate&#34;: &#34;merged&#34;, &#34;variables&#34;: [&#34;codaTODO_O2_sat&#34;, &#34;codaTODO_compensated_O2&#34;, &#34;codaTODO_phase&#34;, &#34;codaTODO_temp&#34;, &#34;codaTODO_time&#34;, &#34;codaTODO_uncompensated_O2&#34;]}, &#34;ctd_data_point&#34;: {&#34;fate&#34;: &#34;backbone&#34;, &#34;variables&#34;: [&#34;absolute_salinity&#34;, &#34;buoyancy&#34;, &#34;conductivity&#34;, &#34;conductivity_qc&#34;, &#34;conductivity_raw&#34;, &#34;conductivity_raw_qc&#34;, &#34;conservative_temperature&#34;, &#34;ctd_depth&#34;, &#34;ctd_pressure&#34;, &#34;ctd_pressure_qc&#34;, &#34;ctd_time&#34;, &#34;delta_time_s&#34;, &#34;density&#34;, &#34;density_insitu&#34;, &#34;dissolved_oxygen_sat&#34;, &#34;east_displacement&#34;, &#34;east_displacement_gsm&#34;, &#34;glide_angle&#34;, &#34;glide_angle_gsm&#34;, &#34;gsw_sigma0&#34;, &#34;gsw_sigma3&#34;, &#34;gsw_sigma4&#34;, &#34;horz_speed&#34;, &#34;horz_speed_gsm&#34;, &#34;latitude&#34;, &#34;latitude_gsm&#34;, &#34;longitude&#34;, &#34;longitude_gsm&#34;, &#34;north_displacement&#34;, &#34;north_displacement_gsm&#34;, &#34;polar_heading&#34;, &#34;salinity&#34;, &#34;salinity_qc&#34;, &#34;salinity_raw&#34;, &#34;salinity_raw_qc&#34;, &#34;sigma_t&#34;, &#34;sigma_theta&#34;, &#34;sound_velocity&#34;, &#34;speed&#34;, &#34;speed_gsm&#34;, &#34;speed_qc&#34;, &#34;temperature&#34;, &#34;temperature_qc&#34;, &#34;temperature_raw&#34;, &#34;temperature_raw_qc&#34;, &#34;theta&#34;, &#34;vert_speed&#34;, &#34;vert_speed_gsm&#34;]}, &#34;depth_data_point&#34;: {&#34;fate&#34;: &#34;merged&#34;, &#34;variables&#34;: [&#34;depth_depth&#34;, &#34;depth_time&#34;]}, &#34;gc_event&#34;: {&#34;fate&#34;: &#34;merged&#34;, &#34;variables&#34;: [&#34;gc_data_pts&#34;, &#34;gc_depth&#34;, &#34;gc_end_secs&#34;, &#34;gc_flags&#34;, &#34;gc_humid&#34;, &#34;gc_intP&#34;, &#34;gc_ob_vertv&#34;, &#34;gc_pitch_ad&#34;, &#34;gc_pitch_ad_start&#34;, &#34;gc_pitch_ctl&#34;, &#34;gc_pitch_end_time&#34;, &#34;gc_pitch_errors&#34;, &#34;gc_pitch_i&#34;, &#34;gc_pitch_secs&#34;, &#34;gc_pitch_st&#34;, &#34;gc_pitch_start_time&#34;, &#34;gc_pitch_volts&#34;, &#34;gc_roll_ad&#34;, &#34;gc_roll_ad_start&#34;, &#34;gc_roll_ctl&#34;, &#34;gc_roll_end_time&#34;, &#34;gc_roll_errors&#34;, &#34;gc_roll_i&#34;, &#34;gc_roll_secs&#34;, &#34;gc_roll_st&#34;, &#34;gc_roll_start_time&#34;, &#34;gc_roll_volts&#34;, &#34;gc_st_secs&#34;, &#34;gc_vbd_ad&#34;, &#34;gc_vbd_ad_start&#34;, &#34;gc_vbd_ctl&#34;, &#34;gc_vbd_end_time&#34;, &#34;gc_vbd_errors&#34;, &#34;gc_vbd_i&#34;, &#34;gc_vbd_pot1_ad&#34;, &#34;gc_vbd_pot1_ad_start&#34;, &#34;gc_vbd_pot2_ad&#34;, &#34;gc_vbd_pot2_ad_start&#34;, &#34;gc_vbd_secs&#34;, &#34;gc_vbd_st&#34;, &#34;gc_vbd_start_time&#34;, &#34;gc_vbd_volts&#34;]}, &#34;gc_state&#34;: {&#34;fate&#34;: &#34;merged&#34;, &#34;variables&#34;: [&#34;gc_state_eop_code&#34;, &#34;gc_state_secs&#34;, &#34;gc_state_state&#34;]}, &#34;gps_info&#34;: {&#34;fate&#34;: &#34;merged&#34;, &#34;variables&#34;: [&#34;log_gps_driftheading&#34;, &#34;log_gps_driftspeed&#34;, &#34;log_gps_final_fix_time&#34;, &#34;log_gps_first_fix_time&#34;, &#34;log_gps_hdop&#34;, &#34;log_gps_hpe&#34;, &#34;log_gps_lat&#34;, &#34;log_gps_lon&#34;, &#34;log_gps_magvar&#34;, &#34;log_gps_n_satellites&#34;, &#34;log_gps_qc&#34;, &#34;log_gps_time&#34;]}, &#34;legato_data_point&#34;: {&#34;fate&#34;: &#34;merged&#34;, &#34;variables&#34;: [&#34;legato_conduc&#34;, &#34;legato_conducTemp&#34;, &#34;legato_pressure&#34;, &#34;legato_temp&#34;, &#34;legato_time&#34;]}, &#34;magnetometer_data_point&#34;: {&#34;fate&#34;: &#34;merged&#34;, &#34;variables&#34;: [&#34;eng_mag_x&#34;, &#34;eng_mag_y&#34;, &#34;eng_mag_z&#34;]}, &#34;sg_data_point&#34;: {&#34;fate&#34;: &#34;merged&#34;, &#34;variables&#34;: [&#34;depth&#34;, &#34;eng_GC_state&#34;, &#34;eng_depth&#34;, &#34;eng_elaps_t&#34;, &#34;eng_elaps_t_0000&#34;, &#34;eng_head&#34;, &#34;eng_pitchAng&#34;, &#34;eng_rec&#34;, &#34;eng_rollAng&#34;, &#34;eng_vbdCC&#34;, &#34;pressure&#34;, &#34;time&#34;]}, &#34;trajectory&#34;: {&#34;fate&#34;: &#34;skipped&#34;, &#34;variables&#34;: [&#34;trajectory&#34;]}, &#34;tridentebb700chla470fdom365_data_point&#34;: {&#34;fate&#34;: &#34;merged&#34;, &#34;variables&#34;: [&#34;tridentebb700chla470fdom365_bb700&#34;, &#34;tridentebb700chla470fdom365_chla470&#34;, &#34;tridentebb700chla470fdom365_fdom365&#34;, &#34;tridentebb700chla470fdom365_time&#34;]}}</td></tr>
 <tr><td class="mono">conversion_derived_variables</td><td></td><td><code>string</code></td><td>{&#34;BATTERY_PACK&#34;: [], &#34;BATTERY_TYPE&#34;: [], &#34;DEPLOYMENT_LATITUDE&#34;: [], &#34;DEPLOYMENT_LONGITUDE&#34;: [], &#34;DEPLOYMENT_TIME&#34;: [], &#34;DEPTH_Z&#34;: [], &#34;DIVE_NUMBER&#34;: [], &#34;GLIDER_FIRMWARE_VERSION&#34;: [], &#34;LANDSTATION_VERSION&#34;: [], &#34;LATITUDE_GPS&#34;: [&#34;log_gps_lat&#34;], &#34;LONGITUDE_GPS&#34;: [&#34;log_gps_lon&#34;], &#34;PHASE&#34;: [], &#34;PHASE_QC&#34;: [], &#34;PLATFORM_DEPTH_RATING&#34;: [], &#34;PLATFORM_MAKER&#34;: [], &#34;PLATFORM_MODEL&#34;: [], &#34;PLATFORM_SERIAL_NUMBER&#34;: [], &#34;PROFILE_NUMBER&#34;: [], &#34;SENSOR_CTD_238007&#34;: [], &#34;SENSOR_FLUOROMETER_237998&#34;: [], &#34;SENSOR_OXYGEN_237790&#34;: [], &#34;TELECOM_TYPE&#34;: [], &#34;TIME&#34;: [&#34;codaTODO_time&#34;, &#34;ctd_time&#34;, &#34;depth_time&#34;, &#34;gc_st_secs&#34;, &#34;gc_state_secs&#34;, &#34;legato_time&#34;, &#34;log_gps_time&#34;, &#34;time&#34;, &#34;tridentebb700chla470fdom365_time&#34;], &#34;TIME_GPS&#34;: [&#34;log_gps_time&#34;], &#34;TRACKING_SYSTEM&#34;: [], &#34;TRAJECTORY&#34;: [], &#34;WMO_IDENTIFIER&#34;: []}</td></tr>
 <tr><td class="mono">conversion_removed_variables</td><td></td><td><code>string</code></td><td>[]</td></tr>
 <tr><td class="mono">conversion_input_variable_count</td><td></td><td><code>int64</code></td><td>542</td></tr>
-<tr><td class="mono">tracking_id</td><td></td><td><code>string</code></td><td>1282fe2e-3a8f-43c3-890a-d745d5ac140b</td></tr>
+<tr><td class="mono">tracking_id</td><td></td><td><code>string</code></td><td>1d2e050b-c75d-4272-b6b8-48d1c72c7c26</td></tr>
 </tbody></table><div class="fig-source">source: seagliderOG1/reports/_vendored/nc_tables.py:globals_rows</div>
 <div class="warn conventions-box">
 <p><strong>Conventions</strong> claims <code>CF-1.10, ACDD-1.3, OG-1.0</code>. What the file holds against it (presence only; amber when any count is short):</p>
@@ -2010,7 +2021,7 @@ The following time values occurred multiple times and have been assigned to the 
 
 <thead><tr><th>#</th><th>History</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>2026-10-24T12:35:52+00:00 seagliderOG1 0.1.0.post1.dev6: basestation to OG1 (convert)</td></tr>
+<tr><td>1</td><td>2026-11-02T20:01:28+00:00 seagliderOG1 0.2.0.post1.dev1: basestation to OG1 (convert)</td></tr>
 </tbody></table>
 </section>
 
@@ -4087,7 +4098,7 @@ The following time values occurred multiple times and have been assigned to the 
 </details>
 </section>
 
-<footer>Generated by seagliderOG1 v0.1.0.post1.dev6 &nbsp;&middot;&nbsp; 2026-10-24T12:35:53+00:00</footer>
+<footer>Generated by seagliderOG1 v0.2.0.post1.dev1 &nbsp;&middot;&nbsp; 2026-11-02T20:01:30+00:00</footer>
 <script>
 document.querySelectorAll('table').forEach(function (table) {
   if (table.hasAttribute('data-nosort')) { return; }
