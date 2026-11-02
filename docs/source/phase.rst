@@ -56,8 +56,10 @@ In every case:
 * a row at a GPS fix time is 3 (surfacing);
 * the inflexion spans both apogee G&C cycles, so it ends with the event that moves pitch and VBD
   to the climb. The state table starts the climb at that event, but the glider is still turning
-  and reaches its pressure maximum there;
-* a sample no rule claims is 0 (unknown).
+  and often reaches its pressure maximum there;
+* a sample no rule claims is 0 (unknown);
+* the last state runs to the end of the dive file, so a file cut off mid-dive (sg271 dive 1,
+  which ends at the apogee) keeps that state's phase to its end.
 
 Commands (``log_D_TGT``, ``log_D_FLARE``, ``log_D_SURF``, ``log_LOITER_*``) are never used to
 assign a phase; the figures draw them for comparison.

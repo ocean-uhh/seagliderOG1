@@ -71,13 +71,6 @@ PHASE_QC_ATTRS = {
     ),
 }
 
-PHASE_COMMENT = (
-    "From the glider's state table (gc_state_state) where the file has one, otherwise from "
-    "the guidance-and-control events (the apogee is the event that moves the VBD to zero), "
-    "otherwise from pressure; GPS fixes are surfacing. The inflexion spans the two apogee "
-    "G&C cycles. PHASE_QC says which signal assigned each sample."
-)
-
 #: Dive-number variable names, in the order they are looked for.
 _DIVE_NAMES = ("dive_number", "divenum", "dive_num", "DIVE_NUMBER")
 
@@ -127,8 +120,11 @@ def _states(
         return []
     code = ds["gc_state_state"].values[rows]
     keep = np.isfinite(code)
-    pairs = sorted(zip(time[keep], code[keep].astype(int), strict=True))
-    return [(float(t), int(c)) for t, c in pairs]
+    t, c = time[keep], code[keep].astype(int)
+    # Pairs of states share a second (end dive / begin apogee, …): a stable sort on time
+    # keeps them in the order the file wrote them.
+    order = np.argsort(t, kind="stable")
+    return [(float(t[i]), int(c[i])) for i in order]
 
 
 def _events(
@@ -177,6 +173,8 @@ def _assign_from_states(
         # Basestation 2.10: an 8 straight after a 9 is the surface, not the coast.
         if code == 8 and previous == 9:
             value = SURFACING
+        # The last state runs to the end of the dive file (a file cut off mid-dive keeps
+        # the last state's phase to its end).
         stop = states[k + 1][0] if k + 1 < len(states) else np.inf
         sel = (t >= start) & (t < stop)
         phase[sel] = value
@@ -212,7 +210,8 @@ def _widen_apogee(
     """Mark the two apogee G&C cycles inflexion over what the state table said.
 
     The state table ends the apogee when the second cycle (pitch and VBD to the climb)
-    starts; the glider is still turning through it and reaches its pressure maximum there.
+    starts; the glider is still turning through it, and often reaches its pressure maximum
+    there.
     """
     if window is None:
         return

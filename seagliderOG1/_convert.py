@@ -2081,7 +2081,7 @@ def process_dataset(
             - Adds GPS info as LATITUDE_GPS, LONGITUDE_GPS, and TIME_GPS (increasing the length of N_MEASUREMENTS).
             - Adds the divenum as a variable of length N_MEASUREMENTS.
             - Adds the PROFILE_NUMBER (odd for dives, even for ascents).
-            - Adds the PHASE of the dive (1 for ascent, 2 for descent, 3 for between the first two surface points).
+            - Adds PHASE and PHASE_QC from the state table, G&C events, GPS fixes or pressure (see tools.add_phase).
             - Adds the DEPTH_Z with positive up.
         4. Returns the processed dataset, attribute warnings, and categorized datasets.
 
@@ -2090,13 +2090,12 @@ def process_dataset(
     """
     # Check if the dataset has 'LONGITUDE' as a coordinate
     ds1_base = _pipeline._validate_coords(ds1_base)
-    if len(ds1_base.variables):
-        ds1_base = _pipeline._absolute_state_times(ds1_base)
     if ds1_base is None or len(ds1_base.variables) == 0:
         return (
             xr.Dataset(),
             [],
         )
+    ds1_base = _pipeline._absolute_state_times(ds1_base)
     # Split the dataset by unique dimensions
     split_ds = tools.split_by_unique_dims(ds1_base)
 

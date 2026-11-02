@@ -125,6 +125,41 @@ def test_inflexion_covers_both_apogee_cycles(sg271):
     assert inflexion.max() > begin_climb
 
 
+def test_ascent_starts_where_the_apogee_cycles_end(sg271):
+    """sg271 dive 2: every non-GPS row after the second apogee G&C cycle and before the
+    surface coast ends is ascent; every row from begin dive to begin apogee is descent."""
+    dive = sg271["DIVE_NUMBER"].values == 2
+    time = sg271["TIME"].values[dive]
+    phase = sg271["PHASE"].values[dive]
+    state = sg271["gc_state_state"].values[dive]
+    vbd = sg271["gc_vbd_ctl"].values[dive]
+    end = sg271["gc_end_secs"].values[dive]
+    cycle_two_end = end[np.isfinite(vbd)][
+        np.flatnonzero(vbd[np.isfinite(vbd)] == 0)[0] + 1
+    ]
+    end_coast = time[state == 9][0]
+    climb = (time > cycle_two_end) & (time < end_coast)
+    assert climb.sum() > 1000
+    assert (phase[climb] == _phase.ASCENT).all()
+    begin_dive, begin_apogee = time[state == 0][0], time[state == 4][0]
+    descent = (time >= begin_dive) & (time < begin_apogee)
+    assert (phase[descent] == _phase.DESCENT).all()
+
+
+def test_states_written_at_the_same_second_keep_file_order(sg271):
+    """End apogee and begin climb at one time: the climb still follows the apogee."""
+    ds = sg271.copy(deep=True)
+    dive = ds["DIVE_NUMBER"].values == 2
+    state = ds["gc_state_state"].values
+    time = ds["TIME"].values.copy()
+    end_apogee = np.flatnonzero(dive & (state == 5))[0]
+    begin_climb = np.flatnonzero(dive & (state == 2))[0]
+    time[begin_climb] = time[end_apogee]
+    ds = ds.assign_coords(TIME=("N_MEASUREMENTS", time))
+    phase, _, _ = _phase.assign(ds)
+    np.testing.assert_array_equal(phase[dive], sg271["PHASE"].values[dive])
+
+
 def test_without_gc_events_pressure_decides(sg005):
     """sg005 with its G&C events removed: no inflexion, PHASE_QC 8 on CTD rows."""
     ds = sg005.drop_vars("gc_vbd_ctl")
