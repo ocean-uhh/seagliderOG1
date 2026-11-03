@@ -43,8 +43,8 @@ Per dive file, in this order.
    state to its end state take the phase the Seaglider column of the `OG1 phase translation
    table
    <https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md>`_
-   gives that transition; the phase holds from the begin state until the next named
-   transition begins:
+   specifies for that transition; the phase holds from the begin state until the next
+   listed transition begins, and a pair the table does not list is ignored:
 
    .. list-table::
       :header-rows: 1
@@ -92,8 +92,8 @@ Per dive file, in this order.
    keeps that phase to its end (sg271 dive 1 ends in the apogee, with end-of-phase code
    ``ABORT_DEPTH_EXCEEDED``).
 
-   The surface coast (8, 9) and recovery (12, 13) are not named in the OG1 table, so they
-   change nothing: the phase before them carries on (ascent, through the coast). Rows
+   The surface coast (8, 9) and recovery (12, 13) are not listed in the OG1 table, so they
+   are ignored: the phase before them holds (ascent, through the coast). Rows
    before the first named begin state take the phase of the first named end state (a file
    opens with "end surface": surfacing). Rows still unset after step 2 take the phase of
    the row before them. Basestation 2.10 files write 8 and 9 around the surface and no 14

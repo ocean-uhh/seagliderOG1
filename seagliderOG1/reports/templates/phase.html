@@ -92,7 +92,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 
 <section id="states">
 <h2>{{ 5 if p.scatter_png else 4 }}. Seaglider state table</h2>
-<p class="caption">Every state the Seaglider basestation numbers in <code>gc_state_state</code>, in begin/end pairs. Each begin state of a pair sets the <code>PHASE</code> the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a> gives that transition, held until the next named pair begins; a pair the table does not name changes nothing, so the phase before it carries on. Count: how many times the begin state appears in this file. Ended with: the end-of-phase codes (<code>gc_state_eop_code</code>) the end state carried. Names and numbers: the basestation's own list.</p>
+<p class="caption">Every state the Seaglider basestation numbers in <code>gc_state_state</code>, in begin/end pairs. Each begin state of a pair sets the <code>PHASE</code> the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a> specifies the transition, held until the next listed pair begins; a pair the table does not list is ignored, so the phase before it holds. Count: how many times the begin state appears in this file. Ended with: the end-of-phase codes (<code>gc_state_eop_code</code>) the end state carried. Names and numbers: the basestation's own list.</p>
 <table class="nc">
 <thead><tr><th>Transition</th><th>States</th><th></th><th>PHASE</th><th>Phase from</th><th>Count</th><th>Ended with</th></tr></thead>
 <tbody>
@@ -104,7 +104,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 
 <section id="qc">
 <h2>{{ 6 if p.scatter_png else 5 }}. PHASE_QC differences from OG1</h2>
-<p class="caption"><code>PHASE_QC</code> is 0 (no QC performed) on every data point. Amber: an attribute this file writes differently from the OG1 format table, with the reason; both are points to take to the OG1 format group.</p>
+<p class="caption"><code>PHASE_QC</code> is 0 (no QC performed) on every data point. Amber: an attribute this file writes differently from the OG1 format table, following the <a href="https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#flags">CF conventions for flags</a> instead; the reason is given for each, and both are points to take to the OG1 format group.</p>
 <table class="nc">
 <thead><tr><th>Attribute</th><th>OG1 format table</th><th>This file</th><th>Why</th></tr></thead>
 <tbody>

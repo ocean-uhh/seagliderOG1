@@ -650,7 +650,7 @@ def _state_rows(path: str | Path) -> list[dict[str, object]]:
 
     Every state code the basestation numbers appears in one pair. The PHASE is the one the
     OG1 phase translation table gives the transition from the begin state to the end state;
-    a pair that table does not list changes nothing (the phase before it carries on).
+    a pair that table does not list is ignored (the phase before it holds).
     """
     with xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False) as ds:
         state = (
@@ -780,20 +780,20 @@ for each dive:
     # step 1: from the first signal the file has
     if the dive has a state table (gc_state_state):
         sort states by time (same-second states keep file order)
-        each begin state of a transition the OG1 phase translation table names
-        (Seaglider column) sets that PHASE from its time until the next named
-        begin state:
+        each begin state of a transition the OG1 phase translation table lists
+        (Seaglider column) sets the PHASE it specifies, from its time until the
+        next listed begin state:
             0 begin dive    (-> 1 end dive)             2 descent
             2 begin climb   (-> 3 end climb)            1 ascent
             4 begin apogee  (-> 5 end apogee)           5 inflection
             6 begin loiter  (-> 7 end loiter)           4 parking
             10 begin subsurface finish (-> 11 end)      5 inflection
             14 begin surface (-> 15 end surface)        3 surfacing
-          not named in the OG1 table, so they change nothing (the phase
-          before them carries on):
+          not listed in the OG1 table, so ignored (the phase before
+          them holds):
             8 begin surface coast -> 9 end surface coast
             12 begin recovery     -> 13 end recovery
-          a code with no name -> WARNING, changes nothing
+          a code with no name -> WARNING, ignored
         the last named transition runs to the end of the dive file
         rows before the first named begin state: the phase of the first named
           end state (a file opens with 15 end surface -> 3 surfacing)

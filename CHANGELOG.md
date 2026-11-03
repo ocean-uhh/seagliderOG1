@@ -12,7 +12,7 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 - `PHASE` is assigned from the glider's state table (`gc_state_state`), or its G&C events when
   the file has no state table, or pressure alone, following the OG1 phase translation table;
-  GPS fixes are surfacing (3); states the table does not name (the surface coast) change nothing. Files now carry surfacing, inflection (5)
+  GPS fixes are surfacing (3); pairs the table does not list (the surface coast) are ignored. Files now carry surfacing, inflection (5)
   and parking (4, a loiter); before, `PHASE` was descent to the pressure maximum and ascent
   after. `PHASE` is a byte with `_FillValue` 0, `flag_values`/`flag_meanings` from the OG1
   vocabulary and `phase_calculation_method` naming the signal per dive; `PHASE_QC` is 0 (no QC)

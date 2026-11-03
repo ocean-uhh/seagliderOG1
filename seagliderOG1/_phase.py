@@ -11,7 +11,7 @@ Three signals, in order of precedence, per dive:
 
 GPS fixes are surfacing (3) in every case. Each transition the OG1 phase translation table's
 Seaglider column names sets its phase from its begin state until the next named transition;
-states the table does not name change nothing. The state names and codes are the
+pairs the table does not list are ignored. The state names and codes are the
 basestation's. No
 transition (7) is assigned. Commands (``log_D_*``, ``log_LOITER_*``) are not used. No
 quality control is applied: ``PHASE_QC`` is 0 throughout, and ``PHASE``'s
@@ -58,7 +58,7 @@ GC_STATE_NAMES: dict[int, str] = {
 #: (begin state, end state) -> OG1 PHASE, from the Seaglider column of the OG1 phase
 #: translation table. The phase starts at the begin state and holds until the next named
 #: transition begins. The surface coast (8 -> 9) and recovery (12 -> 13) are not in that
-#: table, so they change nothing: the phase before them carries on (Eleanor, 2026-11-03).
+#: table, so they are ignored: the phase before them holds (Eleanor, 2026-11-03).
 GC_TRANSITIONS: dict[tuple[int, int], int] = {
     (0, 1): DESCENT,
     (2, 3): ASCENT,
@@ -489,7 +489,7 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
         #     methods["flare"].append(int(number))
         p_phase[gps[rows]] = SURFACING
         if states:
-            # A state the OG1 table does not name changes nothing: rows it left at 0 carry
+            # A pair the OG1 table does not list is ignored: rows left at 0 take
             # the phase of the row before them (a basestation 2.10 file opens with "end
             # surface coast" after its GPS fixes, not "end surface").
             p_phase = _hold_previous(p_phase)
