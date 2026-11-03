@@ -33,7 +33,6 @@ if TYPE_CHECKING:
 
 from seagliderOG1 import __version__, contributors, vocabularies, writers
 from seagliderOG1.reports import _record, design
-from seagliderOG1.reports import phase as phase_figures
 from seagliderOG1.reports._env import get_template
 from seagliderOG1.reports._vendored import figure_png, nc_tables
 from seagliderOG1.reports._vendored.design_tokens import COLORS, W_FULL, W_THREE_FIFTHS
@@ -1590,16 +1589,28 @@ def _masthead_meta(ds: xr.Dataset, ledger: dict) -> list[tuple[str, str]]:
     return meta
 
 
-def _page_nav(has_inventory: bool = False) -> dict:
+def _page_nav(
+    has_inventory: bool = False,
+    *,
+    current: str = "conversion",
+    conversion_href: str = "",
+    phase_href: str = "",
+) -> dict:
     """Return the page-nav structure for the vendored ``page_nav`` macro.
 
-    The conversion page is current; the inventory page is a link when it exists and a
-    disabled "not yet generated" pill otherwise.
+    One pill per page: conversion, phase (when the file has ``PHASE``) and inventory. The
+    current page's pill is marked current; the others link, or show "not yet generated".
 
     Parameters
     ----------
     has_inventory : bool, default False
         Whether an inventory page exists to link to.
+    current : {"conversion", "phase"}, default "conversion"
+        The page this nav sits on.
+    conversion_href : str, optional
+        The conversion page's file name, for the pill on the phase page.
+    phase_href : str, optional
+        The phase page's file name; no phase pill when empty.
 
     Returns
     -------
@@ -1607,27 +1618,19 @@ def _page_nav(has_inventory: bool = False) -> dict:
         ``{"rows": [...]}`` for ``page_nav``.
 
     """
-    return {
-        "rows": [
-            {
-                "label": "",
-                "pills": [
-                    {
-                        "role": "conversion",
-                        "state": "current",
-                        "label": "conversion",
-                        "href": "",
-                    },
-                    {
-                        "role": "inventory",
-                        "state": "link" if has_inventory else "missing",
-                        "label": "inventory",
-                        "href": "inventory.html" if has_inventory else "",
-                    },
-                ],
-            }
-        ]
-    }
+
+    def pill(role: str, href: str) -> dict[str, str]:
+        if role == current:
+            return {"role": role, "state": "current", "label": role, "href": ""}
+        if href:
+            return {"role": role, "state": "link", "label": role, "href": href}
+        return {"role": role, "state": "missing", "label": role, "href": ""}
+
+    pills = [pill("conversion", conversion_href)]
+    if phase_href or current == "phase":
+        pills.append(pill("phase", phase_href))
+    pills.append(pill("inventory", "inventory.html" if has_inventory else ""))
+    return {"rows": [{"label": "", "pills": pills}]}
 
 
 def _format_bytes(total: int | None) -> str:
@@ -2562,55 +2565,6 @@ def _basestation_rows(found: dict | None, n_files: int) -> list[dict[str, object
     return rows
 
 
-def _phase_section(path: str | Path) -> dict[str, object] | None:
-    """Return the Phase section's figures and captions, or None when the file has no PHASE.
-
-    The dive figure and the pitch against dP/dt figure show the complete dive nearest the
-    middle of the mission (:func:`seagliderOG1.reports.phase.middle_dive`); the bars cover
-    every dive.
-    """
-    with xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False) as ds:
-        if "PHASE" not in ds.variables or "DIVE_NUMBER" not in ds.variables:
-            return None
-        ds = ds.load()
-    dive = phase_figures.middle_dive(ds)
-    if dive is None:
-        return None
-    source = "phase.py:{}"
-    dive_png = figure_png.render_b64(
-        phase_figures.draw_phase_dive,
-        ds,
-        dive,
-        width_in=W_FULL,
-        source=source.format("draw_phase_dive"),
-    )
-    bars_png = figure_png.render_b64(
-        phase_figures.draw_phase_fractions,
-        ds,
-        width_in=W_FULL,
-        source=source.format("draw_phase_fractions"),
-    )
-    scatter_png = figure_png.render_b64(
-        phase_figures.draw_phase_pitch_dpdt,
-        [(f"dive {dive}", ds, dive)],
-        width_in=W_THREE_FIFTHS,
-        optional=True,
-        source=source.format("draw_phase_pitch_dpdt"),
-    )
-    attrs = ds["PHASE"].attrs
-    return {
-        "dive": dive,
-        "method": attrs.get("phase_calculation_method", ""),
-        "vocabulary": attrs.get("phase_vocabulary", ""),
-        "dive_png": dive_png,
-        "dive_source": figure_png.source_of(dive_png),
-        "bars_png": bars_png,
-        "bars_source": figure_png.source_of(bars_png),
-        "scatter_png": scatter_png,
-        "scatter_source": figure_png.source_of(scatter_png),
-    }
-
-
 def render_conversion(
     path: str | Path, *, title: str | None = None, verify: bool = False
 ) -> str:
@@ -2779,16 +2733,18 @@ def render_conversion(
     else:
         presence_rows, presence_strips, presence_summary = [], None, None
 
-    phase_section = _phase_section(path)
-
     return get_template("conversion.html").render(
         title=title or Path(path).name,
-        phase_section=phase_section,
         css=design.SHARED_CSS,
         version=__version__,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
         masthead_meta=masthead_meta,
-        page_nav=_page_nav(),
+        page_nav=_page_nav(
+            # No phase page beside a draft.
+            phase_href=writers.phase_page_path(path).name
+            if "PHASE" in ds.variables and not draft
+            else ""
+        ),
         summary_rows=summary_rows,
         unit_corrections_rows=unit_corrections_rows,
         verdict_clauses=verdict_clauses,

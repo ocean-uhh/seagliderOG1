@@ -1997,6 +1997,13 @@ def _convert_mission(
         page.parent.mkdir(parents=True, exist_ok=True)
         page.write_text(render_conversion(path), encoding="utf-8")
         _log.info("wrote %s", page)
+        if not draft:
+            # A draft is for setting up the mission metadata; no phase page.
+            from seagliderOG1.reports.phase import write_phase_page
+
+            phase_page = write_phase_page(path, page)
+            if phase_page is not None:
+                _log.info("wrote %s", phase_page)
     return path
 
 

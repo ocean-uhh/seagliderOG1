@@ -243,6 +243,23 @@ def write_record(path: str | Path, attrs: dict, contents: dict) -> Path:
     return target
 
 
+def phase_page_path(path: str | Path) -> Path:
+    """Return the phase page beside an OG1 file: ``<stem>_phase.html``.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The OG1 netCDF file.
+
+    Returns
+    -------
+    pathlib.Path
+        The path, in the same directory as ``path``.
+    """
+    path = Path(path)
+    return path.with_name(f"{path.stem}_phase.html")
+
+
 def conversion_path(path: str | Path, suffix: str) -> Path:
     """Return a conversion output beside an OG1 file: ``<stem>_conversion<suffix>``.
 

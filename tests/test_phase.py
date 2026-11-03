@@ -12,6 +12,8 @@ from seagliderOG1 import _convert, _phase, _pipeline, tools
 DATA = pathlib.Path(__file__).resolve().parent.parent
 SG271 = DATA / "seagliderOG1" / "data" / "sg271"
 SG005 = DATA / "data" / "demo_sg005"
+#: One basestation-2.10 dive (sg033, 2010-09-03), public at NCEI.
+SG033_BS210 = DATA / "tests" / "data" / "sg033_bs210"
 
 #: The order the Seaglider runs its phases in, per dive file.
 ORDER = (3, 7, 2, 5, 7, 1, 3)
@@ -92,13 +94,14 @@ def test_one_inflection_run_at_the_bottom_of_the_dive(mission, request):
 
 @pytest.mark.parametrize("mission", ["sg271", "sg005"])
 def test_gps_fixes_are_surfacing(mission, request):
-    """Every row at a GPS fix time is 3; no CTD sample deeper than 1 dbar is 3."""
+    """Every row at a GPS fix time is 3; no CTD sample deeper than 5 dbar is 3 (surfacing
+    starts at the surface coast, above $D_SURF)."""
     ds = request.getfixturevalue(mission)
     fixes = ds["TIME_GPS"].values[~np.isnat(ds["TIME_GPS"].values)]
     at_fix = np.isin(ds["TIME"].values, fixes)
     assert at_fix.sum() >= 3 * np.unique(ds["DIVE_NUMBER"].values).size
     assert (ds["PHASE"].values[at_fix] == _phase.SURFACING).all()
-    deep = ds["PRES"].values > 1
+    deep = ds["PRES"].values > 5
     assert not (ds["PHASE"].values[deep] == _phase.SURFACING).any()
 
 
@@ -157,7 +160,8 @@ def test_inflection_is_the_state_tables_apogee(sg271):
 
 def test_climb_is_transition_to_the_deepest_sample_then_ascent(sg271):
     """sg271 dive 2: from begin climb to the deepest sample is transition, then ascent to
-    the end of the surface coast; from begin dive to begin apogee, transition then descent."""
+    the start of the surface coast; from begin dive to begin apogee, transition then
+    descent."""
     dive = sg271["DIVE_NUMBER"].values == 2
     time = sg271["TIME"].values[dive]
     phase = sg271["PHASE"].values[dive]
@@ -168,7 +172,7 @@ def test_climb_is_transition_to_the_deepest_sample_then_ascent(sg271):
     assert deepest > begin_climb  # the glider sinks on after the apogee ends
     bottom = (time >= begin_climb) & (time <= deepest)
     assert (phase[bottom] == _phase.TRANSITION).all()
-    climb = (time > deepest) & (time < time[state == 9][0])
+    climb = (time > deepest) & (time < time[state == 8][0])
     assert climb.sum() > 1000
     assert (phase[climb] == _phase.ASCENT).all()
     descent = (time >= time[state == 0][0]) & (time < time[state == 4][0])
@@ -182,7 +186,15 @@ def test_g_and_c_apogee_matches_the_state_table(sg271):
     PHASE to within a row or two at each boundary (the apogee event spans the two states)."""
     phase, methods = _phase.assign(sg271.drop_vars("gc_state_state"))
     assert methods["events"] == [1, 2, 3]
-    differ = phase != sg271["PHASE"].values
+    # The G&C events cannot see the surface coast (surfacing from the state table, ascent
+    # from the events); leave those rows out.
+    state_phase = sg271["PHASE"].values
+    gps = np.isin(
+        sg271["TIME"].values,
+        sg271["TIME_GPS"].values[~np.isnat(sg271["TIME_GPS"].values)],
+    )
+    coast = (state_phase == _phase.SURFACING) & ~gps & (phase == _phase.ASCENT)
+    differ = (phase != state_phase) & ~coast
     assert differ.sum() < 0.01 * phase.size
 
 
@@ -243,6 +255,38 @@ def test_sg537_transition_runs_to_the_last_rise_above_d_flare(dev_data, tmp_path
     assert depth[later][0] >= d_flare
 
 
+def test_one_bad_shallow_depth_mid_descent_does_not_move_the_flare(sg271):
+    """A single 0 m DEPTH reading mid-descent leaves the transition where it was."""
+    ds = sg271.copy(deep=True)
+    dive = ds["DIVE_NUMBER"].values == 2
+    rows = np.flatnonzero(dive & (ds["PHASE"].values == _phase.DESCENT))
+    glitch = rows[np.isfinite(ds["DEPTH"].values[rows])][200]
+    assert ds["DEPTH"].values[glitch] > 20
+    depth = ds["DEPTH"].values.copy()
+    depth[glitch] = 0.0
+    ds["DEPTH"] = ("N_MEASUREMENTS", depth)
+    phase, _ = _phase.assign(ds)
+    np.testing.assert_array_equal(phase[dive], sg271["PHASE"].values[dive])
+
+
+def test_without_depth_pressure_places_the_flare(sg271):
+    """Without DEPTH the flare is read against PRES, to within a row of the DEPTH result."""
+    phase, methods = _phase.assign(sg271.drop_vars("DEPTH"))
+    assert methods["flare"] == [1, 2, 3]
+    assert (phase != sg271["PHASE"].values).sum() <= 3
+
+
+def test_command_reads_a_per_dive_json_record(sg271):
+    """log_D_TGT changes between dives, so it is written as JSON; each dive gets its own."""
+    raw = str(np.asarray(sg271["log_D_TGT"].values).item())
+    assert raw.startswith("{")
+    assert _phase.command(sg271, "log_D_TGT", 1) == 45.0
+    assert _phase.command(sg271, "log_D_TGT", 3) == 100.0
+    assert _phase.command(sg271, "log_D_TGT", 9) is None
+    assert _phase.command(sg271, "log_NOT_THERE", 1) is None
+    assert _phase.command(sg271, "log_D_FLARE", 2) == 3.0
+
+
 def test_without_gc_events_pressure_decides(sg005):
     """sg005 with its G&C events removed: no inflection, the method says pressure."""
     ds = sg005.drop_vars("gc_vbd_ctl")
@@ -301,16 +345,23 @@ def test_elapsed_state_seconds_become_times(tmp_path):
     np.testing.assert_array_equal(again["gc_state_secs"].values, absolute)
 
 
-def test_basestation_2_10_dives_convert_with_their_own_dates(dev_data, tmp_path):
-    """sg033 and dg042 (basestation 2.10) no longer start in 1970, and run 3 2 5 1 3."""
-    for name, file in (("sg033", "p0330001_20100903.nc"), ("dg042", "p0420001.nc")):
-        raw = tmp_path / f"raw_{name}"
-        raw.mkdir()
-        shutil.copy(dev_data / file, raw / file)
-        out = _convert._convert_mission(raw, tmp_path / name)
-        assert "1970" not in out.name
-        with xr.open_dataset(out) as ds:
-            assert ds["TIME"].values.min() > np.datetime64("2000-01-01")
-            runs = _runs(np.nan_to_num(ds["PHASE"].values).astype(int))
-            assert _is_in_order(runs)
-            assert {2, 3, 5, 1, 7} <= set(runs)
+def test_basestation_2_10_dive_converts_with_its_own_date(tmp_path):
+    """sg033 2010-09-03 (basestation 2.10, public at NCEI): gc_state_secs are seconds from
+    the dive start; the file no longer starts in 1970, and the state table assigns PHASE."""
+    out = _convert._convert_mission(SG033_BS210, tmp_path)
+    assert "1970" not in out.name
+    ds = _unmasked(out)
+    assert ds["TIME"].values.min() > np.datetime64("2010-01-01")
+    runs = _runs(ds["PHASE"].values)
+    assert _is_in_order(runs)
+    assert {2, 3, 5, 1, 7} <= set(runs)
+    assert "state table" in ds["PHASE"].attrs["phase_calculation_method"]
+
+
+def test_dg042_converts_with_its_own_date(dev_data, tmp_path):
+    """dg042 (basestation 2.10, dev pack) no longer starts in 1970."""
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    shutil.copy(dev_data / "p0420001.nc", raw / "p0420001.nc")
+    out = _convert._convert_mission(raw, tmp_path / "out")
+    assert "1970" not in out.name

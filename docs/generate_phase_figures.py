@@ -90,7 +90,7 @@ def _draw(missions: dict[str, tuple[xr.Dataset, int]], out: pathlib.Path) -> Non
             out / f"dive_{name}.png",
         )
         _save(
-            phase.draw_phase_fractions(ds, width_in=width),
+            phase.draw_phase_fractions(ds, width_in=design_tokens.W_THREE_FIFTHS),
             out / f"fractions_{name}.png",
         )
 

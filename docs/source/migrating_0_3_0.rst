@@ -43,7 +43,7 @@ dive, 0.2.0 and 0.3.0 differ like this:
      - the first two 3, the last one ascent
      - every fix 3
    * - data type
-     - byte, no ``_FillValue``
+     - byte, ``_FillValue`` 127
      - byte, ``_FillValue`` 0
    * - attributes
      - ``phase_vocabulary``

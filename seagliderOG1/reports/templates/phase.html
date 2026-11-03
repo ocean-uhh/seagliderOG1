@@ -1,0 +1,83 @@
+{% import "_nav.html" as navm -%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }} — phase</title>
+<style>
+{{ css | safe }}
+section { margin: 1.4rem 0; }
+td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 2px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div id="top"></div>
+<div class="masthead">
+  <div class="masthead-header">
+    <h1>{{ title }}</h1>
+    <span class="masthead-type">phase</span>
+  </div>
+  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>{{ title }}</span><span>generated {{ generated_at }}</span></p>
+  {{ navm.page_nav(page_nav) }}
+  <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
+</div>
+
+<p class="caption"><code>PHASE</code> says what the glider was doing at each row, in the <a href="{{ p.vocabulary }}">OG1 phase vocabulary</a>. How phase should be assigned is under discussion in the OceanGliders community; the rules this converter uses, their fallbacks and the refinements still open are on <a href="{{ p.docs_url }}">How the phase is assigned</a>. <code>PHASE_QC</code> is 0 (no QC performed) on every row.</p>
+<nav class="jump-nav"><a href="#method">How it was assigned</a> · <a href="#counts">Rows per phase</a> · <a href="#dive">One dive</a> · <a href="#dives">Every dive</a>{% if p.scatter_png %} · <a href="#pitch">Pitch and dP/dt</a>{% endif %}</nav>
+
+<section id="method">
+<h2>1. How it was assigned</h2>
+<p class="caption">The file's <code>phase_calculation_method</code>:</p>
+<p>{{ p.method }}</p>
+</section>
+
+<section id="counts">
+<h2>2. Rows per phase</h2>
+<p class="caption">Every OG1 phase id, with the number of rows assigned it over the {{ p.n_dives }} dive{{ "s" if p.n_dives != 1 }}, its share of all rows, and the number of dives it appears in. 4 (parking) and 6 (propelled) are never assigned by this converter.</p>
+<table class="nc">
+<thead><tr><th></th><th>id</th><th>phase</th><th>rows</th><th>%</th><th>dives</th></tr></thead>
+<tbody>
+{%- for r in p.rows %}
+<tr><td class="swatch"><span style="background: {{ r.color }}"></span></td><td>{{ r.id }}</td><td>{{ r.name }}</td><td>{{ r.rows }}</td><td>{{ r.share }}</td><td>{{ r.dives }}</td></tr>
+{%- endfor %}
+</tbody></table>
+</section>
+
+<section id="dive">
+<h2>3. One dive</h2>
+<p class="caption">Dive {{ p.dive }}, {{ "the complete dive (descent, inflection and ascent) nearest the middle of the mission" if p.complete else "the middle dive of the mission (no dive has descent, inflection and ascent)" }}, on one time axis: pressure (each sample colored by its <code>PHASE</code>; the commanded depths dashed), pitch, the glider's state table — or its G&amp;C events' VBD setting when the file has no state table (dotted lines: the start of each G&amp;C event) — and <code>PHASE</code> as a band, each color held until the next row. Green vertical lines: GPS fixes.</p>
+{%- if p.dive_png %}
+<figure>
+<img alt="Dive {{ p.dive }}: pressure, pitch, the state table and PHASE" src="data:image/png;base64,{{ p.dive_png }}">
+{%- if show_source and p.dive_source %}<figcaption class="fig-source">source: {{ p.dive_source }}</figcaption>{% endif %}
+</figure>
+{%- endif %}
+</section>
+
+<section id="dives">
+<h2>4. Every dive</h2>
+<p class="caption">Top: each dive's share of rows in each phase{% if p.few_dives %}; the digits above each bar are its phases in the order they run (a complete dive reads 3725713: surfacing, transition, descent, inflection, transition, ascent, surfacing — or 372513 when the deepest sample falls inside the inflection){% endif %}. Bottom: the dive's maximum pressure (gray bars, left axis) and its duration from first to last row (dots, right axis), to read each share against how deep and how long the dive was.</p>
+{%- if p.bars_png %}
+<figure{% if p.bars_slot %} class="{{ p.bars_slot }}"{% endif %}>
+<img alt="Per-dive share of rows in each phase, with maximum pressure and duration" src="data:image/png;base64,{{ p.bars_png }}">
+{%- if show_source and p.bars_source %}<figcaption class="fig-source">source: {{ p.bars_source }}</figcaption>{% endif %}
+</figure>
+{%- endif %}
+</section>
+
+{%- if p.scatter_png %}
+<section id="pitch">
+<h2>5. Pitch and dP/dt</h2>
+<p class="caption">Dive {{ p.dive }}: pitch against the rate of pressure change, colored by <code>PHASE</code>. Descent sits at negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection lies between them; transition sits at steep negative pitch with dP/dt near zero (the start of the dive) and at positive pitch with dP/dt still positive (the bottom). Pitch is interpolated in time onto the pressure rows.</p>
+<figure class="slot-three-fifths">
+<img alt="Pitch against dP/dt colored by PHASE for dive {{ p.dive }}" src="data:image/png;base64,{{ p.scatter_png }}">
+{%- if show_source and p.scatter_source %}<figcaption class="fig-source">source: {{ p.scatter_source }}</figcaption>{% endif %}
+</figure>
+</section>
+{%- endif %}
+
+<footer>Generated by seagliderOG1 v{{ version }} &nbsp;&middot;&nbsp; {{ generated_at }}</footer>
+{{ js_top_links | safe }}
+</body>
+</html>

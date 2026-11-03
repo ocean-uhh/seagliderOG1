@@ -22,7 +22,8 @@ start of dive   bleeds oil at the surface, nose full down, until ``$D_FLARE``   
 dive            pitched to the dive angle at ``$D_FLARE``; sinks under G&C              2 descent
 apogee          at the target depth, pitch to the apogee angle and VBD to zero          5 inflection
 start of climb  pumps oil and pitches up, but still sinking to its deepest point        7 transition
-climb           rises to ``$D_SURF``, then coasts to the surface                        1 ascent
+climb           rises to ``$D_SURF``                                                    1 ascent
+surface coast   above ``$D_SURF``, still rising and sampling, to the surface            3 surfacing
 =============== ======================================================================= ===============
 
 The CTD samples from the start of the dive to the end of the coast; the surface interval is
@@ -45,14 +46,13 @@ Per dive file, in this order.
    0, 1   begin dive, end dive         2 descent
    4, 5   begin apogee, end apogee     5 inflection
    2, 3   begin climb, end climb       1 ascent
-   8      begin surface coast          1 ascent
-   9      end surface coast            3 surfacing
+   8, 9   begin/end surface coast      3 surfacing
    14, 15 begin surface, end surface   3 surfacing
    ====== ============================ ==============
 
    States written at the same second (end apogee and begin climb, for example) keep the
-   order the file wrote them. Basestation 2.10 writes 8 and 9 for the surface as well; an 8
-   straight after a 9 is the surface. A code not in the table leaves its samples at 0
+   order the file wrote them. Basestation 2.10 writes 8 and 9 for the surface as well. A
+   code not in the table leaves its samples at 0
    (unknown) and is logged as a WARNING. The last state runs to the end of the dive file,
    so a file cut off mid-dive keeps that state's phase to its end (sg271 dive 1 ends in the
    apogee).
@@ -68,13 +68,20 @@ Per dive file, in this order.
 #. **Pressure**, for files with neither: descent up to and including the pressure maximum,
    ascent after. No inflection is assigned.
 
+*Provisional:* surfacing starts at "begin surface coast". The glider is still rising above
+``$D_SURF`` (typically 2 m) and sampling, so this start of surfacing is a choice, not settled;
+files without a state table cannot see the coast and stay ascent to the surface.
+
 **Step 2 — transition at the start of the dive.** Descent up to the *last* sample shallower
-than ``$D_FLARE`` (``log_D_FLARE``, compared with ``DEPTH``) before the inflection is 7
+than ``$D_FLARE`` (``log_D_FLARE``, compared with ``DEPTH``, or with ``PRES`` on a dive
+without ``DEPTH``) before the inflection is 7
 (transition): the glider is still bleeding at the surface, nose full down, and has not yet
 pitched to the dive angle. The last such sample is used, not the first deeper one, because a
 glider can sink past ``$D_FLARE`` and come back above it before the dive proper starts (on
-one test dive, to 7 m and back up to 3 m with ``$D_FLARE`` at 3 m). A file
-without ``log_D_FLARE`` gets no transition here.
+one test dive, to 7 m and back up to 3 m with ``$D_FLARE`` at 3 m). Only samples before the
+glider is first 10 m below ``$D_FLARE`` count, so a single bad shallow reading deeper in
+the dive cannot stretch the transition. A file without ``log_D_FLARE`` gets no transition
+here.
 
 **Step 3 — transition at the bottom.** Ascent from the end of the inflection up to and
 including the deepest sample (the pressure maximum) is 7 (transition): the apogee has ended
@@ -115,8 +122,15 @@ In the file
 ``PHASE_QC`` is 0 (no QC performed) on every row: the phase is not quality controlled. Its
 ``flag_values`` and ``flag_meanings`` are the OG1 scale 0–4.
 
-The conversion page shows the same figures as below for the complete dive nearest the middle
-of the mission (section *Phase*).
+In the report
+-------------
+
+``seagliderOG1 process --report`` and ``seagliderOG1 report`` write a phase page,
+``<id>_phase.html``, beside the conversion page, linked from its navigation. It shows the
+file's ``phase_calculation_method``, the rows and dives per phase, and the figures below for
+the complete dive nearest the middle of the mission (no old/new comparison), so the
+assignment can be checked mission by mission. It is a page of its own because how phase
+should be assigned is under discussion in the OceanGliders community.
 
 The figures
 -----------
@@ -138,9 +152,11 @@ sg005 dive 1 (basestation 2.8, G&C events):
 .. image:: _static/phase/dive_sg005.png
    :alt: sg005 dive 1: pressure, pitch, G&C VBD settings and PHASE, new and old
 
-Every dive's share of rows in each phase; the digits above each bar are the dive's phases in
-the order they run. A complete dive reads ``3725713``, or ``372513`` when the deepest sample falls inside the
-inflection; sg271 dive 1 ends in the apogee.
+Every dive's share of rows in each phase (top); the digits above each bar are the dive's
+phases in the order they run. A complete dive reads ``3725713``, or ``372513`` when the
+deepest sample falls inside the inflection; sg271 dive 1 ends in the apogee. Below, the
+dive's maximum pressure (bars) and duration (dots), since a share means little without how
+deep and how long the dive was. Fewer than six dives are drawn in six slots.
 
 .. image:: _static/phase/fractions_sg271.png
    :alt: Per-dive share of rows in each phase, sg271
@@ -159,7 +175,7 @@ the pressure rows.
    :alt: Pitch against dP/dt colored by phase for sg271 and sg005
 
 The figures are drawn by ``docs/generate_phase_figures.py`` on every docs build, with the
-functions in :mod:`seagliderOG1.reports.phase` that the conversion page uses.
+functions in :mod:`seagliderOG1.reports.phase` that the phase page uses.
 
 Sources
 -------

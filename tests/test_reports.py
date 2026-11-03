@@ -449,7 +449,6 @@ def test_page_section_order_and_scalars_collapsed(tmp_path) -> None:
         "presence",
         "dimensions",
         "derived",
-        "phase",
         "dropped",
         "variables",
         "globals",
@@ -1014,3 +1013,29 @@ def test_letter_serial_with_zeros_is_not_a_placeholder():
     assert conversion._is_placeholder("0000") and conversion._is_placeholder(
         "00-00-0000"
     )
+
+
+def test_phase_page_beside_the_conversion_page(tmp_path) -> None:
+    """report() writes <stem>_phase.html beside the conversion page; the two link each other;
+    a file without PHASE gets no phase page and no phase pill."""
+    import xarray as xr
+
+    from seagliderOG1 import writers
+    from seagliderOG1.reports import phase as phase_page
+    from seagliderOG1.reports import report
+
+    path = _convert._convert_mission(DATA, tmp_path / "a", dives=(1, 3))
+    page = report(path, overwrite=True)
+    written = writers.phase_page_path(path)
+    assert written.exists()
+    html = written.read_text()
+    assert "Dive 2, the complete dive" in html
+    assert html.count("data:image/png;base64") >= 3
+    assert f'href="{page.name}"' in html
+    assert f'href="{written.name}"' in page.read_text()
+    stripped = tmp_path / "b" / path.name
+    stripped.parent.mkdir()
+    with xr.open_dataset(path) as ds:
+        ds.drop_vars(["PHASE", "PHASE_QC"]).to_netcdf(stripped)
+    assert phase_page.render_phase(stripped) is None
+    assert phase_page.write_phase_page(stripped, stripped.with_suffix(".html")) is None

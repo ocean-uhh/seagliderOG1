@@ -18,8 +18,6 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   after. `PHASE` is a byte with `_FillValue` 0, `flag_values`/`flag_meanings` from the OG1
   vocabulary and `phase_calculation_method` naming the signal per dive; `PHASE_QC` is 0 (no QC)
   with the OG1 flag scale. Reconvert. See *How the phase is assigned* in the docs.
-- The conversion page has a Phase section: one dive from the middle of the mission, every
-  dive's phase shares, and pitch against dP/dt.
 - Sensor serial numbers and calibration dates are read from the calibration comments by named
   rules; files differ from 0.2.0 wherever the old parser was wrong. Reconvert. On the samples:
 
@@ -44,6 +42,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Added
 
+- A phase page, `<id>_phase.html`, is written beside the conversion page (`process --report`,
+  `report`): how `PHASE` was assigned, rows per phase, one dive from the middle of the
+  mission, every dive's phase shares with its depth and duration, and pitch against dP/dt.
 - `SA`, `CT` and `POTDENS0` (TEOS-10, via gsw) are added when the basestation does not write them;
   `PSAL` is computed from conductivity only when a file has no salinity. Each carries `sources` and
   a `comment` naming the gsw function and version, and is listed in `conversion_derived_variables`.

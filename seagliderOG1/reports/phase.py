@@ -1,14 +1,16 @@
-"""Figures of how ``PHASE`` was assigned, for the conversion page and the docs.
+"""The phase page of the report, and its figures (also drawn on the docs page).
 
 Three figures: one dive on a shared time axis (:func:`draw_phase_dive`), the share of
 each dive's rows in each phase over the mission (:func:`draw_phase_fractions`), and pitch
 against the rate of pressure change for one dive (:func:`draw_phase_pitch_dpdt`).
+:func:`write_phase_page` writes ``<stem>_phase.html`` beside the conversion page.
 :func:`middle_dive` picks the dive to show. Each draw function fixes only the aspect
 ratio; its height follows ``width_in``.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -32,6 +34,9 @@ PHASE_COLORS: dict[int, str] = {
     6: "#56b4e9",
     7: "#f0e442",
 }
+
+#: Fewer dives than this are drawn in this many slots, so the bars keep their width.
+_MIN_SLOTS = 6
 
 #: More dives than this and the run order is not written above the bars.
 _MAX_ORDER_LABELS = 30
@@ -77,12 +82,30 @@ def middle_dive(ds: xr.Dataset) -> int | None:
     numbers = np.unique(dive[np.isfinite(dive)])
     if numbers.size == 0:
         return None
-    phase = _phase_values(ds)
-    wanted = {_phase.DESCENT, _phase.INFLECTION, _phase.ASCENT}
-    complete = [n for n in numbers if wanted <= set(phase[dive == n].tolist())]
+    complete = [n for n in numbers if is_complete(ds, int(n))]
     pool = np.array(complete) if complete else numbers
     middle = np.median(numbers)
     return int(pool[np.argmin(np.abs(pool - middle))])
+
+
+def is_complete(ds: xr.Dataset, dive: int) -> bool:
+    """Return True when ``dive`` has descent, inflection and ascent rows.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An OG1 dataset with ``PHASE`` and ``DIVE_NUMBER``.
+    dive : int
+        The dive number.
+
+    Returns
+    -------
+    bool
+        Whether the dive's phases include 2, 5 and 1.
+    """
+    rows = np.asarray(ds["DIVE_NUMBER"].values, dtype=float) == dive
+    present = set(_phase_values(ds)[rows].tolist())
+    return {_phase.DESCENT, _phase.INFLECTION, _phase.ASCENT} <= present
 
 
 def _minutes(times: np.ndarray, t0: np.datetime64) -> np.ndarray:
@@ -280,12 +303,18 @@ def draw_phase_dive(
 
 
 def draw_phase_fractions(ds: xr.Dataset, *, width_in: float = W_FULL) -> Figure | None:
-    """Draw each dive's share of rows in each phase, stacked, with the run order on top.
+    """Draw each dive's share of rows in each phase, with its depth and duration below.
+
+    Top: stacked bars of each phase's share of the dive's rows, with the phases' run order
+    written above each bar (up to 30 dives). Bottom, shorter: the dive's maximum pressure
+    (bars, left axis) and duration from first to last row (dots, right axis), so a share can
+    be read against how deep and how long the dive was. Fewer than six dives are drawn in
+    six slots, so the bars keep a sensible width.
 
     Parameters
     ----------
     ds : xarray.Dataset
-        An OG1 dataset with ``PHASE`` and ``DIVE_NUMBER``.
+        An OG1 dataset with ``PHASE``, ``DIVE_NUMBER``, ``TIME`` and ``PRES``.
     width_in : float, optional
         Figure width in inches; the height follows.
 
@@ -302,9 +331,33 @@ def draw_phase_fractions(ds: xr.Dataset, *, width_in: float = W_FULL) -> Figure 
         return None
     phase = _phase_values(ds)
     ids = list(_phase.PHASE_NAMES)
-    shares = np.array([[np.mean(phase[dive == n] == k) for k in ids] for n in numbers])
-    fig, ax = plt.subplots(figsize=(width_in, width_in * 0.4), layout="constrained")
+    # Counts per (dive, phase) in one pass: index of each row's dive, times the ids.
+    finite = np.isfinite(dive)
+    dive_index = np.searchsorted(numbers, dive[finite])
+    counts = np.bincount(
+        dive_index * len(ids) + phase[finite].astype(int),
+        minlength=numbers.size * len(ids),
+    ).reshape(numbers.size, len(ids))
+    shares = counts / counts.sum(axis=1, keepdims=True)
+    pres = np.asarray(ds["PRES"].values, dtype=float)
+    seconds = ds["TIME"].values.astype("datetime64[ns]").astype("int64") / 1e9
+    max_pres = np.full(numbers.size, np.nan)
+    minutes = np.full(numbers.size, np.nan)
+    for i, n in enumerate(numbers):
+        here = dive == n
+        if np.isfinite(pres[here]).any():
+            max_pres[i] = np.nanmax(pres[here])
+        minutes[i] = (seconds[here].max() - seconds[here].min()) / 60.0
+    fig, (ax, ax_depth) = plt.subplots(
+        2,
+        1,
+        sharex=True,
+        figsize=(width_in, width_in * 0.55),
+        gridspec_kw={"height_ratios": [3, 1.2]},
+        layout="constrained",
+    )
     x = np.arange(numbers.size)
+    few = numbers.size <= _MAX_ORDER_LABELS
     bottom = np.zeros(numbers.size)
     for j, k in enumerate(ids):
         if shares[:, j].any():
@@ -312,24 +365,35 @@ def draw_phase_fractions(ds: xr.Dataset, *, width_in: float = W_FULL) -> Figure 
                 x,
                 shares[:, j],
                 bottom=bottom,
-                width=0.8 if numbers.size <= _MAX_ORDER_LABELS else 1.0,
+                width=0.8 if few else 1.0,
                 color=PHASE_COLORS[k],
                 label=_label(k),
             )
         bottom += shares[:, j]
-    if numbers.size <= _MAX_ORDER_LABELS:
+    if few:
         for i, n in enumerate(numbers):
             text = "".join(str(r) for r in _runs(phase[dive == n]))
             ax.text(i, 1.02, text, ha="center", fontsize=ANNOT_FS - 2)
-        ax.set_xticks(x, [str(int(n)) for n in numbers])
         ax.set_ylim(0, 1.12)
     else:
-        step = max(1, numbers.size // 12)
-        ax.set_xticks(x[::step], [str(int(n)) for n in numbers[::step]])
         ax.set_ylim(0, 1)
-    ax.set_xlabel("dive")
     ax.set_ylabel("share of the dive's rows")
     ax.legend(loc="upper left", bbox_to_anchor=(1.0, 1.0), frameon=False)
+    ax_depth.bar(x, max_pres, width=0.8 if few else 1.0, color="0.75")
+    ax_depth.invert_yaxis()
+    ax_depth.set_ylabel("max PRES\n(dbar)")
+    ax_time = ax_depth.twinx()
+    ax_time.plot(x, minutes, "o", color="0.15", ms=4 if few else 2)
+    ax_time.set_ylabel("duration\n(min)")
+    ax_time.set_ylim(0, np.nanmax(minutes) * 1.15 if np.isfinite(minutes).any() else 1)
+    if few:
+        ax_depth.set_xticks(x, [str(int(n)) for n in numbers])
+    else:
+        step = max(1, numbers.size // 12)
+        ax_depth.set_xticks(x[::step], [str(int(n)) for n in numbers[::step]])
+    slots = max(numbers.size, _MIN_SLOTS)
+    ax_depth.set_xlim(-0.6, slots - 0.4)
+    ax_depth.set_xlabel("dive")
     return fig
 
 
@@ -397,3 +461,192 @@ def draw_phase_pitch_dpdt(
         loc="upper left", bbox_to_anchor=(1.0, 1.0), frameon=False, markerscale=3
     )
     return fig
+
+
+#: Variables the phase page's figures and table read (plus the ``log_D_*`` commands).
+_PAGE_VARIABLES = frozenset(
+    {
+        "PHASE",
+        "DIVE_NUMBER",
+        "TIME",
+        "PRES",
+        "DEPTH",
+        "PITCH",
+        "TIME_GPS",
+        "gc_state_state",
+        "gc_vbd_ctl",
+        "gc_end_secs",
+    }
+)
+
+#: The docs page that states the algorithm.
+DOCS_URL = "https://ocean-uhh.github.io/seagliderOG1/phase.html"
+
+
+def _load_for_page(path: str | Path) -> xr.Dataset | None:
+    """Return the variables the phase page reads, loaded; None without PHASE."""
+    with xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False) as ds:
+        if "PHASE" not in ds.variables or "DIVE_NUMBER" not in ds.variables:
+            return None
+        names = [
+            name
+            for name in ds.variables
+            if (name in _PAGE_VARIABLES or name.startswith("log_D_"))
+            and name not in ds.coords
+        ]
+        return ds[names].load()
+
+
+def _phase_rows(ds: xr.Dataset) -> list[dict[str, object]]:
+    """Return one row per OG1 phase id: rows, share and dives it appears in."""
+    phase = _phase_values(ds)
+    dive = np.asarray(ds["DIVE_NUMBER"].values, dtype=float)
+    total = phase.size
+    rows = []
+    for k, name in _phase.PHASE_NAMES.items():
+        here = phase == k
+        dives = np.unique(dive[here & np.isfinite(dive)])
+        rows.append(
+            {
+                "id": k,
+                "name": name,
+                "color": PHASE_COLORS[k],
+                "rows": f"{int(here.sum()):,}",
+                "share": f"{100 * here.sum() / total:.1f}" if total else "—",
+                "dives": f"{dives.size:,}",
+            }
+        )
+    return rows
+
+
+def phase_context(path: str | Path) -> dict[str, object] | None:
+    """Return the phase page's figures, table and text, or None when the file has no PHASE.
+
+    The dive figure and the pitch against dP/dt figure show :func:`middle_dive`; the bars
+    and the table cover every dive.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        An OG1 netCDF file.
+
+    Returns
+    -------
+    dict or None
+        Template context for ``phase.html``.
+    """
+    from seagliderOG1.reports._vendored import figure_png
+    from seagliderOG1.reports._vendored.design_tokens import W_THREE_FIFTHS
+
+    ds = _load_for_page(path)
+    if ds is None:
+        return None
+    dive = middle_dive(ds)
+    if dive is None:
+        return None
+    n_dives = int(
+        np.unique(ds["DIVE_NUMBER"].values[np.isfinite(ds["DIVE_NUMBER"].values)]).size
+    )
+    dive_png = figure_png.render_b64(
+        draw_phase_dive, ds, dive, width_in=W_FULL, source="phase.py:draw_phase_dive"
+    )
+    bars_width = W_THREE_FIFTHS if n_dives <= _MIN_SLOTS else W_FULL
+    bars_png = figure_png.render_b64(
+        draw_phase_fractions,
+        ds,
+        width_in=bars_width,
+        source="phase.py:draw_phase_fractions",
+    )
+    scatter_png = figure_png.render_b64(
+        draw_phase_pitch_dpdt,
+        [(f"dive {dive}", ds, dive)],
+        width_in=W_THREE_FIFTHS,
+        optional=True,
+        source="phase.py:draw_phase_pitch_dpdt",
+    )
+    attrs = ds["PHASE"].attrs
+    return {
+        "dive": dive,
+        "complete": is_complete(ds, dive),
+        "n_dives": n_dives,
+        "few_dives": n_dives <= _MAX_ORDER_LABELS,
+        "method": attrs.get("phase_calculation_method", ""),
+        "vocabulary": attrs.get("phase_vocabulary", ""),
+        "docs_url": DOCS_URL,
+        "rows": _phase_rows(ds),
+        "dive_png": dive_png,
+        "dive_source": figure_png.source_of(dive_png),
+        "bars_png": bars_png,
+        "bars_slot": "slot-three-fifths" if bars_width == W_THREE_FIFTHS else "",
+        "bars_source": figure_png.source_of(bars_png),
+        "scatter_png": scatter_png,
+        "scatter_source": figure_png.source_of(scatter_png),
+    }
+
+
+def render_phase(path: str | Path, *, title: str | None = None) -> str | None:
+    """Return the phase page for an OG1 file as self-contained HTML, or None without PHASE.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        An OG1 netCDF file written by :func:`seagliderOG1.convert`.
+    title : str, optional
+        The page title; defaults to the file name.
+
+    Returns
+    -------
+    str or None
+        The rendered page, or None when the file has no ``PHASE``.
+    """
+    from datetime import UTC, datetime
+
+    from seagliderOG1 import __version__, writers
+    from seagliderOG1.reports import design
+    from seagliderOG1.reports._env import get_template
+    from seagliderOG1.reports.conversion import _page_nav
+
+    context = phase_context(path)
+    if context is None:
+        return None
+    return get_template("phase.html").render(
+        title=title or Path(path).name,
+        css=design.SHARED_CSS,
+        version=__version__,
+        generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
+        page_nav=_page_nav(
+            current="phase",
+            conversion_href=writers.conversion_path(path, ".html").name,
+        ),
+        p=context,
+    )
+
+
+def write_phase_page(
+    nc_path: str | Path, conversion_page: str | Path, *, title: str | None = None
+) -> Path | None:
+    """Write the phase page beside the conversion page; return it, or None without PHASE.
+
+    Parameters
+    ----------
+    nc_path : str or pathlib.Path
+        The OG1 file.
+    conversion_page : str or pathlib.Path
+        Where its conversion page was written; the phase page goes in the same folder.
+    title : str, optional
+        Page title; the file name by default.
+
+    Returns
+    -------
+    pathlib.Path or None
+        The phase page, or None when the file has no ``PHASE``.
+    """
+    from seagliderOG1 import writers
+
+    html = render_phase(nc_path, title=title)
+    if html is None:
+        return None
+    target = Path(conversion_page).with_name(writers.phase_page_path(nc_path).name)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(html, encoding="utf-8")
+    return target

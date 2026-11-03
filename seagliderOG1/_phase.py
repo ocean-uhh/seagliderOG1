@@ -46,7 +46,9 @@ TRANSITION = 7
 #: reached), state 4 starting the G&C event that moves the VBD to zero at the target
 #: depth, and state 2 starting the event that moves it positive. 14 and 15 appear only on
 #: basestation 3.0.6, as the last and first states of a dive file (the surface manoeuvre);
-#: basestation 2.10 uses 8 and 9 there instead, so an 8 after a 9 is the surface.
+#: basestation 2.10 uses 8 and 9 there instead. Surfacing starts at "begin surface coast"
+#: (provisional: the glider is still rising above $D_SURF, and where surfacing should start
+#: is not settled).
 GC_STATE_CODES: dict[int, tuple[str, int]] = {
     0: ("begin dive", DESCENT),
     1: ("end dive", DESCENT),
@@ -54,7 +56,7 @@ GC_STATE_CODES: dict[int, tuple[str, int]] = {
     5: ("end apogee", INFLECTION),
     2: ("begin climb", ASCENT),
     3: ("end climb", ASCENT),
-    8: ("begin surface coast", ASCENT),
+    8: ("begin surface coast", SURFACING),
     9: ("end surface coast", SURFACING),
     14: ("begin surface", SURFACING),
     15: ("end surface", SURFACING),
@@ -149,6 +151,9 @@ def _ranges(numbers: list[int]) -> str:
 
 #: Dive-number variable names, in the order they are looked for.
 _DIVE_NAMES = ("dive_number", "divenum", "dive_num", "DIVE_NUMBER")
+
+#: Metres past $D_FLARE after which a shallower sample no longer counts as the flare.
+_FLARE_MARGIN_M = 10.0
 
 #: |gc_vbd_ctl| (cm3) below which the VBD counts as moved to zero (the apogee event).
 _VBD_ZERO = 1.0
@@ -299,6 +304,11 @@ def _mark_flare(
     # Only the descent before the first inflection or ascent sample.
     later = np.flatnonzero(np.isin(phase, (INFLECTION, ASCENT)))
     end = t[later].min() if later.size else np.inf
+    # Only before the glider is first well past $D_FLARE, so one bad shallow sample deeper
+    # in the dive cannot stretch the transition down the whole descent.
+    deep = descent & np.isfinite(depth) & (depth > d_flare + _FLARE_MARGIN_M)
+    if deep.any():
+        end = min(end, t[deep].min())
     above = descent & (t < end) & np.isfinite(depth) & (depth < d_flare)
     if not above.any():
         return False
@@ -331,22 +341,16 @@ def _assign_from_states(
 ) -> set[int]:
     """Set phase from the state table; return the codes seen that have no meaning here."""
     unknown: set[int] = set()
-    previous = None
     for k, (start, code) in enumerate(states):
         if code not in GC_STATE_CODES:
             unknown.add(code)
-            previous = code
             continue
         value = GC_STATE_CODES[code][1]
-        # Basestation 2.10: an 8 straight after a 9 is the surface, not the coast.
-        if code == 8 and previous == 9:
-            value = SURFACING
         # The last state runs to the end of the dive file (a file cut off mid-dive keeps
         # the last state's phase to its end).
         stop = states[k + 1][0] if k + 1 < len(states) else np.inf
         sel = (t >= start) & (t < stop)
         phase[sel] = value
-        previous = code
     return unknown
 
 
@@ -410,10 +414,9 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
         if "TIME_GPS" in ds.variables
         else np.full(n, np.nan)
     )
-    depth_name = "DEPTH" if "DEPTH" in ds.variables else "PRES"
-    depth = (
-        np.asarray(ds[depth_name].values, dtype=float)
-        if depth_name in ds.variables
+    depth_all = (
+        np.asarray(ds["DEPTH"].values, dtype=float)
+        if "DEPTH" in ds.variables
         else np.full(n, np.nan)
     )
     # A GPS fix can reach N_MEASUREMENTS twice (the fix row and the gps_info row at the
@@ -442,7 +445,9 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
         if _mark_bottom_transition(t, pres[rows], p_phase):
             methods["bottom"].append(int(number))
         d_flare = command(ds, "log_D_FLARE", int(number), rows)
-        if _mark_flare(t, depth[rows], p_phase, d_flare):
+        # DEPTH, or PRES (dbar, close to metres near the surface) on a dive without it.
+        depth = depth_all[rows] if np.isfinite(depth_all[rows]).any() else pres[rows]
+        if _mark_flare(t, depth, p_phase, d_flare):
             methods["flare"].append(int(number))
         p_phase[gps[rows]] = SURFACING
         phase[rows] = p_phase

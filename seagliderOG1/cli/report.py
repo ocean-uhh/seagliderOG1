@@ -118,6 +118,7 @@ def write_page(
     """
     from seagliderOG1.exceptions import MetadataError
     from seagliderOG1.reports.conversion import render_conversion
+    from seagliderOG1.reports.phase import write_phase_page
 
     if not nc_path.is_file():
         return f"file not found: {nc_path}"
@@ -130,6 +131,7 @@ def write_page(
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(html, encoding="utf-8")
+        write_phase_page(nc_path, target, title=title)
     except OSError as exc:
         return f"could not write {target}: {exc}"
     return None
