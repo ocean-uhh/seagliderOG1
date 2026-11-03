@@ -48,7 +48,9 @@ def _runs(phase: np.ndarray) -> list[int]:
 
 
 def _is_in_order(runs: list[int]) -> bool:
-    """Return True when ``runs`` follows ORDER without going back."""
+    """Return True when ``runs`` follows ORDER without going back (unknown runs aside: the
+    state table's surface coast is unknown, as the OG1 table does not list it)."""
+    runs = [run for run in runs if run != _phase.UNKNOWN]
     position = 0
     for run in runs:
         while position < len(ORDER) and ORDER[position] != run:
@@ -66,7 +68,7 @@ def test_every_dive_runs_surface_descent_inflection_ascent_surface(mission, requ
     for number in np.unique(dive):
         runs = _runs(ds["PHASE"].values[dive == number])
         assert _is_in_order(runs), (number, runs)
-        assert 0 not in runs
+        assert 0 not in runs or mission == "sg271"  # sg271's surface coast is unknown
 
 
 @pytest.mark.parametrize("mission", ["sg271", "sg005"])
@@ -188,14 +190,14 @@ def test_g_and_c_apogee_matches_the_state_table(sg271):
     PHASE to within a row or two at each boundary (the apogee event spans the two states)."""
     phase, methods = _phase.assign(sg271.drop_vars("gc_state_state"))
     assert methods["events"] == [1, 2, 3]
-    # The G&C events cannot see the surface coast (surfacing from the state table, ascent
+    # The G&C events cannot see the surface coast (unknown from the state table, ascent
     # from the events); leave those rows out.
     state_phase = sg271["PHASE"].values
     gps = np.isin(
         sg271["TIME"].values,
         sg271["TIME_GPS"].values[~np.isnat(sg271["TIME_GPS"].values)],
     )
-    coast = (state_phase == _phase.SURFACING) & ~gps & (phase == _phase.ASCENT)
+    coast = (state_phase == _phase.UNKNOWN) & ~gps & (phase == _phase.ASCENT)
     differ = (phase != state_phase) & ~coast
     assert differ.sum() < 0.01 * phase.size
 
@@ -215,7 +217,8 @@ def test_ascent_runs_from_begin_climb_to_the_surface_coast(sg271):
 
 
 def test_state_codes_follow_the_og1_translation_table():
-    """Every basestation state 0-15 has a name and the phase the OG1 table gives it."""
+    """Every basestation state 0-15 has a name and the phase the OG1 table gives it; the
+    states the table does not list (surface coast, recovery) are unknown."""
     assert sorted(_phase.GC_STATE_CODES) == list(range(16))
     expected = {
         0: 2,
@@ -234,6 +237,8 @@ def test_state_codes_follow_the_og1_translation_table():
     for code, phase in expected.items():
         assert _phase.GC_STATE_CODES[code][1] == phase
         assert _phase.GC_STATE_SOURCE[code] == "OG1 phase table"
+    for code in (8, 9, 12, 13):
+        assert _phase.GC_STATE_CODES[code][1] == _phase.UNKNOWN
     assert _phase.GC_STATE_CODES[6][0] == "begin loiter"
     assert _phase.GC_STATE_CODES[10][0] == "begin subsurface finish"
     assert _phase.EOP_CODES[1] == "TARGET_DEPTH_EXCEEDED"

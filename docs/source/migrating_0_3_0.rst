@@ -37,7 +37,7 @@ dive, 0.2.0 and 0.3.0 differ like this:
      - inflection (the apogee); the deepest sample can fall in the first ascent rows
    * - end of the climb
      - ascent
-     - surfacing from the start of the surface coast (state table only)
+     - unknown (0) in the surface coast, which the OG1 table does not list (state table only)
    * - GPS fixes
      - the first two 3, the last one ascent
      - every fix 3
@@ -50,7 +50,7 @@ dive, 0.2.0 and 0.3.0 differ like this:
        ``phase_calculation_method_vocabulary``
 
 Code that selects profiles with ``PHASE == 2`` / ``PHASE == 1`` still works, but the apogee
-samples (5) and the surface coast (3) are no longer in either. To keep every sample, split
+samples (5) and the surface coast (0) are no longer in either. To keep every sample, split
 each dive at its inflection, or at its deepest sample as 0.2.0 did.
 
 xarray reads ``PHASE`` with its ``_FillValue`` 0 as missing, so ``PHASE`` 0 (unknown) comes back

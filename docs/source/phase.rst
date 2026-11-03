@@ -23,7 +23,7 @@ dive            bleeds oil and sinks (nose down until ``$D_FLARE``, then at the 
                 angle)
 apogee          at the target depth, pitch to the apogee angle and VBD to zero          5 inflection
 climb           pumps oil, pitches up, rises to ``$D_SURF``                             1 ascent
-surface coast   above ``$D_SURF``, still rising and sampling, to the surface            3 surfacing
+surface coast   above ``$D_SURF``, still rising and sampling, to the surface            0 unknown
 loiter          held at a depth (when the pilot commands it)                            4 parking
 =============== ======================================================================= ===============
 
@@ -51,9 +51,9 @@ Per dive file, in this order.
    2, 3   begin climb, end climb           1 ascent       OG1 table
    4, 5   begin apogee, end apogee         5 inflection   OG1 table
    6, 7   begin loiter, end loiter         4 parking      OG1 table
-   8, 9   begin/end surface coast          3 surfacing    this converter (provisional)
+   8, 9   begin/end surface coast          0 unknown      not in the OG1 table
    10, 11 begin/end subsurface finish      5 inflection   OG1 table
-   12, 13 begin/end recovery               3 surfacing    this converter (provisional)
+   12, 13 begin/end recovery               0 unknown      not in the OG1 table
    14, 15 begin surface, end surface       3 surfacing    OG1 table
    ====== ================================ ============== ==============================
 
@@ -64,18 +64,23 @@ Per dive file, in this order.
    state's phase to its end (sg271 dive 1 ends in the apogee, with end-of-phase code
    ``ABORT_DEPTH_EXCEEDED``).
 
-   *Provisional:* surfacing starts at "begin surface coast". The OG1 table does not place
-   the coast; the glider is still rising above ``$D_SURF`` (typically 2 m) and sampling.
+   The surface coast (8, 9) and recovery (12, 13) are not in the OG1 table, so their rows
+   are 0 (unknown). Basestation 2.10 files write 8 and 9 around the surface and no 14 or
+   15, so on those files only the GPS fix rows are surfacing.
 #. **The G&C events** (``gc_st_secs``, ``gc_end_secs``, ``gc_vbd_ctl``), for files with no state
    table (basestation 2.8). The inflection is the first G&C event that moves the VBD to zero
    after the dive's bleed; descent before it, ascent after. Where a file has both, this event
    is where the state table's apogee falls. Without a state table the coast cannot be seen,
-   so it stays ascent.
+   so it is ascent.
 #. **Pressure**, for files with neither: descent up to and including the pressure maximum,
    ascent after. No inflection is assigned.
 
-**Step 2 — surfacing.** Every row at a GPS fix time is 3 (surfacing). The converter writes
-each fix as rows of their own (``TIME_GPS``, ``LATITUDE_GPS``, ``LONGITUDE_GPS``).
+**Step 2 — GPS fixes.** Every row at a GPS fix time is 3 (surfacing): a fix means the glider
+is at the surface. The converter writes each fix as rows of their own (``TIME_GPS``,
+``LATITUDE_GPS``, ``LONGITUDE_GPS``); the CTD does not sample at the surface, so these are
+the only rows this step touches. It is the only way files without a state table get
+surfacing, and it keeps the fix taken at the end of a dive cut off before "begin surface"
+(sg271 dive 1) at the surface.
 
 A sample no step claims is 0 (unknown). No piloting command is used: ``log_D_FLARE``,
 ``log_D_TGT``, ``log_D_SURF`` and ``log_LOITER_*`` say what the glider was told to do, not

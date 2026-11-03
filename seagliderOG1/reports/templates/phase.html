@@ -33,7 +33,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 <p>{{ p.method }}</p>
 <p class="caption">The algorithm as the code runs it, per dive. Step 2 overrides step 1.</p>
 <pre class="pseudocode">{{ p.pseudocode }}</pre>
-<p class="caption">Every state the Seaglider basestation numbers in <code>gc_state_state</code>, the <code>PHASE</code> each is given — from the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a>, or provisionally by this converter where that table gives none — how many times each appears in this file, and the end-of-phase codes (<code>gc_state_eop_code</code>) it ended with. Names and numbers: the basestation's own list.</p>
+<p class="caption">Every state the Seaglider basestation numbers in <code>gc_state_state</code>, the <code>PHASE</code> each is given — from the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a>; a state that table does not list gives 0 (unknown) — how many times each appears in this file, and the end-of-phase codes (<code>gc_state_eop_code</code>) it ended with. Names and numbers: the basestation's own list.</p>
 <table class="nc">
 <thead><tr><th>Code</th><th>State</th><th></th><th>PHASE</th><th>Phase from</th><th>In this file</th><th>Ended with</th></tr></thead>
 <tbody>

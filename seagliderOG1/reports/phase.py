@@ -728,9 +728,9 @@ for each dive:
             6 begin loiter, 7 end loiter            -> 4 parking
             10/11 begin/end subsurface finish       -> 5 inflection
             14 begin surface, 15 end surface        -> 3 surfacing
-          not in the OG1 table (provisional here):
-            8/9 begin/end surface coast             -> 3 surfacing
-            12/13 begin/end recovery                -> 3 surfacing
+          not in the OG1 table:
+            8/9 begin/end surface coast             -> 0 unknown
+            12/13 begin/end recovery                -> 0 unknown
           any other code                            -> 0, WARNING
         the last state runs to the end of the dive file
     elif the dive has G&C events (gc_vbd_ctl, gc_end_secs):
@@ -741,8 +741,9 @@ for each dive:
     else:
         rows up to the pressure maximum -> 2 descent, rows after -> 1 ascent
 
-    # step 2: surfacing
+    # step 2: GPS fixes
     rows at a GPS fix time (TIME_GPS) -> 3 surfacing
+      (the CTD does not sample at the surface: these are the fix rows only)
 
 PHASE_QC = 0 (no QC performed) on every row
 No transition (7): the OG1 table gives Seaglider none.

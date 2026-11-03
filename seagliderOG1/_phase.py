@@ -39,9 +39,9 @@ TRANSITION = 7
 #: translation table's Seaglider column (dive 0->1 descent, climb 2->3 ascent, apogee 4->5
 #: and
 #: subsurface finish 10->11 inflection, loiter 6->7 parking, surface 14->15 surfacing).
-#: Not in that column, and set here provisionally: the surface coast (8->9), where the
-#: glider is still rising above $D_SURF and sampling, and recovery (12->13), both
-#: surfacing. Basestation 2.10 files write 8 and 9 around the surface too.
+#: Not in that column, so 0 (unknown): the surface coast (8->9), where the glider is still
+#: rising above $D_SURF and sampling, and recovery (12->13). Basestation 2.10 files write 8
+#: and 9 around the surface too.
 GC_STATE_CODES: dict[int, tuple[str, int]] = {
     0: ("begin dive", DESCENT),
     1: ("end dive", DESCENT),
@@ -51,22 +51,26 @@ GC_STATE_CODES: dict[int, tuple[str, int]] = {
     5: ("end apogee", INFLECTION),
     6: ("begin loiter", PARKING),
     7: ("end loiter", PARKING),
-    8: ("begin surface coast", SURFACING),
-    9: ("end surface coast", SURFACING),
+    # Not in the OG1 table, so unknown (Eleanor, 2026-11-03); were surfacing, provisionally:
+    # 8: ("begin surface coast", SURFACING),
+    # 9: ("end surface coast", SURFACING),
+    8: ("begin surface coast", UNKNOWN),
+    9: ("end surface coast", UNKNOWN),
     10: ("begin subsurface finish", INFLECTION),
     11: ("end subsurface finish", INFLECTION),
-    12: ("begin recovery", SURFACING),
-    13: ("end recovery", SURFACING),
+    # Not in the OG1 table, so unknown; were surfacing, provisionally:
+    # 12: ("begin recovery", SURFACING),
+    # 13: ("end recovery", SURFACING),
+    12: ("begin recovery", UNKNOWN),
+    13: ("end recovery", UNKNOWN),
     14: ("begin surface", SURFACING),
     15: ("end surface", SURFACING),
 }
 
-#: Where each state's PHASE comes from: the OG1 phase vocabulary, or this converter
-#: (provisional) where that vocabulary gives none.
+#: Where each state's PHASE comes from: the OG1 phase translation table, or nowhere (the
+#: table does not list the state, so its rows are 0, unknown).
 GC_STATE_SOURCE: dict[int, str] = {
-    code: (
-        "this converter (provisional)" if code in (8, 9, 12, 13) else "OG1 phase table"
-    )
+    code: ("not in the OG1 table" if code in (8, 9, 12, 13) else "OG1 phase table")
     for code in GC_STATE_CODES
 }
 
