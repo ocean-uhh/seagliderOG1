@@ -25,7 +25,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 </div>
 
 <p class="caption"><code>PHASE</code> says what the glider was doing at each row, in the <a href="{{ p.vocabulary }}">OG1 phase vocabulary</a>. How phase should be assigned is under discussion in the OceanGliders community; the rules this converter uses, their fallbacks and the refinements still open are on <a href="{{ p.docs_url }}">How the phase is assigned</a>. <code>PHASE_QC</code> is 0 (no QC performed) on every row.</p>
-<nav class="jump-nav"><a href="#method">How it was assigned</a> · <a href="#counts">Rows per phase</a> · <a href="#dive">Three dives</a> · <a href="#dives">Every dive</a>{% if p.scatter_png %} · <a href="#pitch">Pitch and dP/dt</a>{% endif %}</nav>
+<nav class="jump-nav"><a href="#method">How it was assigned</a> · <a href="#counts">Rows per phase</a> · <a href="#qc">PHASE_QC</a> · <a href="#dive">Three dives</a> · <a href="#dives">Every dive</a>{% if p.scatter_png %} · <a href="#pitch">Pitch and dP/dt</a>{% endif %}</nav>
 
 <section id="method">
 <h2>1. How it was assigned</h2>
@@ -60,6 +60,17 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 {%- for r in p.rows %}
 <tr><td class="swatch"><span style="background: {{ r.color }}"></span></td><td>{{ r.id }}</td><td>{{ r.name }}</td><td>{{ r.rows }}</td><td>{{ r.share }}</td><td>{{ r.dives }}</td></tr>
 {%- endfor %}
+</tbody></table>
+</section>
+
+<section id="qc">
+<h2>2b. PHASE_QC against the OG1 format</h2>
+<p class="caption"><code>PHASE_QC</code> is 0 (no QC performed) on every row. Amber: an attribute this file writes differently from the OG1 format table, with the reason; both are points to take to the OG1 format group.</p>
+<table class="nc">
+<thead><tr><th>Attribute</th><th>OG1 format table</th><th>This file</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td><code>_FillValue</code></td><td class="cell-bad"><code>" "</code></td><td class="cell-bad">none</td><td>a string fill value cannot be stored on a byte variable; every row has a value (0), so none is needed</td></tr>
+<tr><td><code>flag_meanings</code></td><td class="cell-bad">"No QC has been applied, Good data, Probably good data, Probably bad data, Bad data"</td><td class="cell-bad"><code>{{ p.qc_meanings }}</code></td><td>CF pairs <code>flag_meanings</code> with <code>flag_values</code> by space-separated words; the OG1 phrase splits into 15 words for 5 values</td></tr>
 </tbody></table>
 </section>
 

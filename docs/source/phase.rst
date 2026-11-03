@@ -113,7 +113,11 @@ In the file
    Empty: OG1 has no vocabulary for methods yet.
 
 ``PHASE_QC`` is 0 (no QC performed) on every row: the phase is not quality controlled. Its
-``flag_values`` and ``flag_meanings`` are the OG1 scale 0–4.
+``flag_values`` are the OG1 scale 0–4. Two attributes differ from the OG1 table, and the
+phase page marks both in amber: ``flag_meanings`` is written as CF words
+(``no_qc_performed good_data probably_good_data probably_bad_data bad_data``) because the OG1
+phrase cannot be paired with the five values, and no ``_FillValue`` is written because the
+OG1 table's ``" "`` is a string on a byte variable.
 
 Profiles and segments
 ---------------------
@@ -131,8 +135,8 @@ Three OG1 variables follow from ``PHASE``, with the OG1 definitions written into
    1 from the first row, +1 each time the glider enters surfacing: a segment is a surface
    interval and the dive after it.
 
-``DIVE_NUMBER`` is kept: it is the Seaglider's own dive number (the basestation file's), not
-an OG1 variable.
+``dive_number`` is kept, in lower case because it is not an OG1 variable: it is the
+Seaglider's own dive number, from the basestation file (``DIVE_NUMBER`` before 0.3.0).
 
 In the report
 -------------

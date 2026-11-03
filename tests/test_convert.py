@@ -906,10 +906,10 @@ def test_process_mission_dives_and_keep_variables(tmp_path: pathlib.Path) -> Non
     """dives limits the dives read; keep_variables subsets and records what it dropped."""
     with pytest.warns(UserWarning, match="keep_variables dropped"):
         path = _convert._convert_mission(
-            _SG005, tmp_path, dives=(2, 2), keep_variables=["TEMP", "DIVE_NUMBER"]
+            _SG005, tmp_path, dives=(2, 2), keep_variables=["TEMP", "dive_number"]
         )
     with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
-        assert set(np.unique(ds["DIVE_NUMBER"].values)) == {2}
+        assert set(np.unique(ds["dive_number"].values)) == {2}
         assert "TEMP" in ds.data_vars
         assert "PSAL" not in ds.data_vars
         assert "PSAL" in ds.attrs["conversion_dropped_variables"]

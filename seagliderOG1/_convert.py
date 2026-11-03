@@ -474,7 +474,11 @@ _MANDATORY_OG1_VARS = frozenset(
         "TRAJECTORY",
         "WMO_IDENTIFIER",
         "PROFILE_NUMBER",
+        "PROFILE_DIRECTION",
+        "SEGMENT_NUMBER",
         "PHASE",
+        "PHASE_QC",
+        "dive_number",
     }
 )
 _MANDATORY_OG1_PREFIXES = ("PLATFORM_", "SENSOR_", "DEPLOYMENT_")
@@ -2126,7 +2130,7 @@ def process_dataset(
         unit_corrections=unit_corrections,
     )
 
-    # Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)
+    # Add new variables to the dataset (GPS, dive_number, PROFILE_NUMBER, PHASE)
     # -----------------------------------------------------------------------
     # Add the gps_info to the dataset
     # Must be after split_by_unique_dims and after rename_dimensions

@@ -49,7 +49,7 @@ conservative_temperature: CT
 ctd_density: DENSITY
 density_insitu: DENSITY
 profile_index: PROFILE_NUMBER
-divenum: DIVE_NUMBER
+divenum: dive_number
 platform: PLATFORM_MODEL
 source: PLATFORM_SERIAL_NUMBER
 vert_speed: GLIDER_VERT_VELO_MODEL

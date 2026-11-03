@@ -186,7 +186,12 @@ def _ranges(numbers: list[int]) -> str:
 
 
 #: Dive-number variable names, in the order they are looked for.
-_DIVE_NAMES = ("dive_number", "divenum", "dive_num", "DIVE_NUMBER")
+_DIVE_NAMES = (
+    "dive_number",
+    "divenum",
+    "dive_num",
+    "DIVE_NUMBER",
+)  # last: before 0.3.0
 
 #: Metres past $D_FLARE after which a shallower sample no longer counts as the flare.
 _FLARE_MARGIN_M = 10.0
@@ -313,18 +318,23 @@ def command(
     if raw.dtype.kind in "USO":
         try:
             record = json.loads(str(raw.item() if raw.ndim == 0 else raw.flat[0]))
-            lookup = dict(zip(record["dives"], record["values"], strict=True))
+            lookup = {
+                int(d): v
+                for d, v in zip(record["dives"], record["values"], strict=True)
+            }
         except (ValueError, KeyError, TypeError):
             return None
         value = lookup.get(dive)
         return None if value is None else float(value)
     values = raw.astype(float)
-    if (
-        values.ndim == 1
-        and rows is not None
-        and values.size == ds.sizes.get("N_MEASUREMENTS")
-    ):
+    if values.ndim == 1:
+        # Only an array on N_MEASUREMENTS can be read for one dive (by its rows); any
+        # other array does not say which value is which dive's.
+        if rows is None or values.size != ds.sizes.get("N_MEASUREMENTS"):
+            return None
         values = values[rows]
+    elif values.ndim > 1:
+        return None
     values = values[np.isfinite(values)].ravel()
     return float(values[0]) if values.size else None
 

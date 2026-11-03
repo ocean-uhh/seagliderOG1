@@ -56,9 +56,9 @@ def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Datase
     dive_var = xr.DataArray(
         np.full(ds.sizes["N_MEASUREMENTS"], dive_number),
         dims=["N_MEASUREMENTS"],
-        attrs=dict(vocabularies.vocab_attrs["DIVE_NUMBER"]),
+        attrs=dict(vocabularies.vocab_attrs["dive_number"]),
     )
-    return ds.assign(DIVE_NUMBER=dive_var)
+    return ds.assign(dive_number=dive_var)
 
 
 def add_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
@@ -67,7 +67,7 @@ def add_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     This function separates each dive into two profiles: descent (down cast) and
     ascent (up cast) phases. The dive is split at the maximum pressure point,
     with the descent phase getting the dive number and ascent getting dive + 0.5.
-    Profile numbers are then calculated as 2 * DIVE_NUMBER - 1.
+    Profile numbers are then calculated as 2 * dive_number - 1.
 
     Parameters
     ----------
@@ -79,7 +79,7 @@ def add_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
     Returns
     -------
     xarray.Dataset
-        Dataset with 'DIVE_NUMBER' and 'PROFILE_NUMBER' variables added.
+        Dataset with 'dive_number' and 'PROFILE_NUMBER' variables added.
 
     Notes
     -----
@@ -126,7 +126,7 @@ def add_phase(ds: xr.Dataset) -> xr.Dataset:
     ----------
     ds : xarray.Dataset
         A dataset on ``N_MEASUREMENTS`` with ``TIME``, ``PRES``, a dive-number variable
-        (``dive_number``, ``divenum``, ``dive_num`` or ``DIVE_NUMBER``) and, where the
+        (``dive_number``, ``divenum``, ``dive_num``, or ``DIVE_NUMBER`` in files from before 0.3.0) and, where the
         basestation wrote them, ``TIME_GPS``, ``gc_state_state``, ``gc_vbd_ctl`` and
         ``gc_end_secs``.
 

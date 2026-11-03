@@ -69,16 +69,16 @@ def middle_dive(ds: xr.Dataset) -> int | None:
     Parameters
     ----------
     ds : xarray.Dataset
-        An OG1 dataset with ``PHASE`` and ``DIVE_NUMBER``.
+        An OG1 dataset with ``PHASE`` and ``dive_number``.
 
     Returns
     -------
     int or None
         The dive number, or None when the dataset has no dives.
     """
-    if "PHASE" not in ds.variables or "DIVE_NUMBER" not in ds.variables:
+    if "PHASE" not in ds.variables or "dive_number" not in ds.variables:
         return None
-    dive = np.asarray(ds["DIVE_NUMBER"].values, dtype=float)
+    dive = np.asarray(ds["dive_number"].values, dtype=float)
     numbers = np.unique(dive[np.isfinite(dive)])
     if numbers.size == 0:
         return None
@@ -94,7 +94,7 @@ def is_complete(ds: xr.Dataset, dive: int) -> bool:
     Parameters
     ----------
     ds : xarray.Dataset
-        An OG1 dataset with ``PHASE`` and ``DIVE_NUMBER``.
+        An OG1 dataset with ``PHASE`` and ``dive_number``.
     dive : int
         The dive number.
 
@@ -103,7 +103,7 @@ def is_complete(ds: xr.Dataset, dive: int) -> bool:
     bool
         Whether the dive's phases include 2, 5 and 1.
     """
-    rows = np.asarray(ds["DIVE_NUMBER"].values, dtype=float) == dive
+    rows = np.asarray(ds["dive_number"].values, dtype=float) == dive
     present = set(_phase_values(ds)[rows].tolist())
     return {_phase.DESCENT, _phase.INFLECTION, _phase.ASCENT} <= present
 
@@ -134,7 +134,7 @@ def _pitch_at(ds: xr.Dataset, rows: np.ndarray) -> np.ndarray:
         return np.full(rows.size, np.nan)
     t = ds["TIME"].values.astype("datetime64[ns]").astype("int64") / 1e9
     pitch = np.asarray(ds["PITCH"].values, dtype=float)
-    dive = np.asarray(ds["DIVE_NUMBER"].values, dtype=float)
+    dive = np.asarray(ds["dive_number"].values, dtype=float)
     out = np.full(rows.size, np.nan)
     for number in np.unique(dive[rows][np.isfinite(dive[rows])]):
         here = dive == number
@@ -206,14 +206,14 @@ def pick_dives(ds: xr.Dataset) -> list[int]:
     Parameters
     ----------
     ds : xarray.Dataset
-        An OG1 dataset with ``DIVE_NUMBER``.
+        An OG1 dataset with ``dive_number``.
 
     Returns
     -------
     list of int
         The dive numbers, in order.
     """
-    dive = np.asarray(ds["DIVE_NUMBER"].values, dtype=float)
+    dive = np.asarray(ds["dive_number"].values, dtype=float)
     numbers = [int(n) for n in np.unique(dive[np.isfinite(dive)])]
     if not numbers:
         return []
@@ -242,7 +242,7 @@ def draw_phase_dive(
     Parameters
     ----------
     ds : xarray.Dataset
-        An OG1 dataset with ``TIME``, ``PRES``, ``PHASE`` and ``DIVE_NUMBER``; ``PITCH``,
+        An OG1 dataset with ``TIME``, ``PRES``, ``PHASE`` and ``dive_number``; ``PITCH``,
         ``TIME_GPS``, ``gc_state_state``, ``gc_vbd_ctl`` and the ``log_D_*`` commands are
         drawn when present.
     dive : int
@@ -261,7 +261,7 @@ def draw_phase_dive(
     import matplotlib.pyplot as plt
     from matplotlib.patches import Patch
 
-    rows = np.flatnonzero(np.asarray(ds["DIVE_NUMBER"].values, dtype=float) == dive)
+    rows = np.flatnonzero(np.asarray(ds["dive_number"].values, dtype=float) == dive)
     if rows.size == 0:
         return None
     times = ds["TIME"].values[rows]
@@ -360,7 +360,7 @@ def draw_phase_fractions(ds: xr.Dataset, *, width_in: float = W_FULL) -> Figure 
     Parameters
     ----------
     ds : xarray.Dataset
-        An OG1 dataset with ``PHASE``, ``DIVE_NUMBER``, ``TIME`` and ``PRES``.
+        An OG1 dataset with ``PHASE``, ``dive_number``, ``TIME`` and ``PRES``.
     width_in : float, optional
         Figure width in inches; the height follows.
 
@@ -371,7 +371,7 @@ def draw_phase_fractions(ds: xr.Dataset, *, width_in: float = W_FULL) -> Figure 
     """
     import matplotlib.pyplot as plt
 
-    dive = np.asarray(ds["DIVE_NUMBER"].values, dtype=float)
+    dive = np.asarray(ds["dive_number"].values, dtype=float)
     numbers = np.unique(dive[np.isfinite(dive)])
     if numbers.size == 0:
         return None
@@ -475,7 +475,7 @@ def draw_phase_pitch_dpdt(
         layout="constrained",
     )
     for ax, (title, ds, dive) in zip(axes[0], usable, strict=True):
-        dives = np.asarray(ds["DIVE_NUMBER"].values, dtype=float)
+        dives = np.asarray(ds["dive_number"].values, dtype=float)
         pres = np.asarray(ds["PRES"].values, dtype=float)
         keep = np.isfinite(pres) & (dives == dive if dive is not None else True)
         rows = np.flatnonzero(keep)
@@ -513,7 +513,7 @@ def draw_phase_pitch_dpdt(
 _PAGE_VARIABLES = frozenset(
     {
         "PHASE",
-        "DIVE_NUMBER",
+        "dive_number",
         "TIME",
         "PRES",
         "DEPTH",
@@ -532,7 +532,7 @@ DOCS_URL = "https://ocean-uhh.github.io/seagliderOG1/phase.html"
 def _load_for_page(path: str | Path) -> xr.Dataset | None:
     """Return the variables the phase page reads, loaded; None without PHASE."""
     with xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False) as ds:
-        if "PHASE" not in ds.variables or "DIVE_NUMBER" not in ds.variables:
+        if "PHASE" not in ds.variables or "dive_number" not in ds.variables:
             return None
         names = [
             name
@@ -546,7 +546,7 @@ def _load_for_page(path: str | Path) -> xr.Dataset | None:
 def _phase_rows(ds: xr.Dataset) -> list[dict[str, object]]:
     """Return one row per OG1 phase id: rows, share and dives it appears in."""
     phase = _phase_values(ds)
-    dive = np.asarray(ds["DIVE_NUMBER"].values, dtype=float)
+    dive = np.asarray(ds["dive_number"].values, dtype=float)
     total = phase.size
     rows = []
     for k, name in _phase.PHASE_NAMES.items():
@@ -568,7 +568,7 @@ def _phase_rows(ds: xr.Dataset) -> list[dict[str, object]]:
 #: Every variable the assignment reads: (name, how it is used). The page lists each with
 #: whether this file has it.
 INPUT_VARIABLES: tuple[tuple[str, str], ...] = (
-    ("DIVE_NUMBER", "groups rows into dives"),
+    ("dive_number", "groups rows into dives"),
     ("TIME", "orders rows; compared with state and G&C event times"),
     ("gc_state_state", "step 1a: the state table, when the file has one"),
     ("gc_state_eop_code", "check only: why each state ended (in the table above)"),
@@ -656,7 +656,7 @@ def phase_context(path: str | Path) -> dict[str, object] | None:
     if not dives:
         return None
     n_dives = int(
-        np.unique(ds["DIVE_NUMBER"].values[np.isfinite(ds["DIVE_NUMBER"].values)]).size
+        np.unique(ds["dive_number"].values[np.isfinite(ds["dive_number"].values)]).size
     )
     dive_figures = []
     for dive in dives:
@@ -701,6 +701,7 @@ def phase_context(path: str | Path) -> dict[str, object] | None:
         "pseudocode": PSEUDOCODE,
         "inputs": _input_rows(path),
         "states": _state_rows(path),
+        "qc_meanings": _phase.PHASE_QC_ATTRS["flag_meanings"],
         "rows": _phase_rows(ds),
         "bars_png": bars_png,
         "bars_slot": "slot-three-fifths" if bars_width == W_THREE_FIFTHS else "",

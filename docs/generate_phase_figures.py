@@ -63,7 +63,7 @@ def convert(raw: pathlib.Path, work: pathlib.Path) -> xr.Dataset:
 
 def old_rule(ds: xr.Dataset) -> np.ndarray:
     """Return PHASE as converters before 0.3.0 assigned it: 2 to the pressure maximum, 1 after."""
-    dive = ds["DIVE_NUMBER"].values
+    dive = ds["dive_number"].values
     pres = ds["PRES"].values
     out = np.zeros(dive.size, dtype="int8")
     for number in np.unique(dive[np.isfinite(dive)]):

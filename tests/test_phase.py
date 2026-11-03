@@ -62,7 +62,7 @@ def _is_in_order(runs: list[int]) -> bool:
 def test_every_dive_runs_surface_descent_inflection_ascent_surface(mission, request):
     """Per dive the phases follow 3 2 5 1 3 (sg271 dive 1 stops at the apogee)."""
     ds = request.getfixturevalue(mission)
-    dive = ds["DIVE_NUMBER"].values
+    dive = ds["dive_number"].values
     for number in np.unique(dive):
         runs = _runs(ds["PHASE"].values[dive == number])
         assert _is_in_order(runs), (number, runs)
@@ -74,7 +74,7 @@ def test_one_inflection_run_at_the_bottom_of_the_dive(mission, request):
     """Each dive has one inflection run; the deepest sample is in it or in the G&C event
     that follows (the glider can still sink while it pumps to climb)."""
     ds = request.getfixturevalue(mission)
-    dive = ds["DIVE_NUMBER"].values
+    dive = ds["dive_number"].values
     for number in np.unique(dive):
         rows = dive == number
         phase = ds["PHASE"].values[rows]
@@ -97,7 +97,7 @@ def test_gps_fixes_are_surfacing(mission, request):
     ds = request.getfixturevalue(mission)
     fixes = ds["TIME_GPS"].values[~np.isnat(ds["TIME_GPS"].values)]
     at_fix = np.isin(ds["TIME"].values, fixes)
-    assert at_fix.sum() >= 3 * np.unique(ds["DIVE_NUMBER"].values).size
+    assert at_fix.sum() >= 3 * np.unique(ds["dive_number"].values).size
     assert (ds["PHASE"].values[at_fix] == _phase.SURFACING).all()
     deep = ds["PRES"].values > 5
     assert not (ds["PHASE"].values[deep] == _phase.SURFACING).any()
@@ -146,7 +146,7 @@ def test_phase_is_written_as_byte_with_fill_value_0(tmp_path):
 
 def test_inflection_is_the_state_tables_apogee(sg271):
     """sg271 dive 2: inflection exactly from begin apogee to begin climb."""
-    dive = sg271["DIVE_NUMBER"].values == 2
+    dive = sg271["dive_number"].values == 2
     time = sg271["TIME"].values[dive]
     phase = sg271["PHASE"].values[dive]
     state = sg271["gc_state_state"].values[dive]
@@ -164,7 +164,7 @@ def test_climb_is_transition_to_the_deepest_sample_then_ascent(sg271):
     """sg271 dive 2: from begin climb to the deepest sample is transition, then ascent to
     the start of the surface coast; from begin dive to begin apogee, transition then
     descent."""
-    dive = sg271["DIVE_NUMBER"].values == 2
+    dive = sg271["dive_number"].values == 2
     time = sg271["TIME"].values[dive]
     phase = sg271["PHASE"].values[dive]
     state = sg271["gc_state_state"].values[dive]
@@ -203,7 +203,7 @@ def test_g_and_c_apogee_matches_the_state_table(sg271):
 def test_ascent_runs_from_begin_climb_to_the_surface_coast(sg271):
     """sg271 dive 2: every row from begin climb to begin surface coast is ascent; every
     row from begin dive to begin apogee is descent."""
-    dive = sg271["DIVE_NUMBER"].values == 2
+    dive = sg271["dive_number"].values == 2
     time = sg271["TIME"].values[dive]
     phase = sg271["PHASE"].values[dive]
     state = sg271["gc_state_state"].values[dive]
@@ -242,7 +242,7 @@ def test_state_codes_follow_the_og1_translation_table():
 def test_states_written_at_the_same_second_keep_file_order(sg271):
     """End apogee and begin climb at one time: the climb still follows the apogee."""
     ds = sg271.copy(deep=True)
-    dive = ds["DIVE_NUMBER"].values == 2
+    dive = ds["dive_number"].values == 2
     state = ds["gc_state_state"].values
     time = ds["TIME"].values.copy()
     end_apogee = np.flatnonzero(dive & (state == 5))[0]
@@ -265,8 +265,8 @@ def test_transition_ends_at_the_last_sample_above_d_flare(mission, request):
     the apogee; the next pressure sample is deeper and descent."""
     ds = request.getfixturevalue(mission)
     d_flare = float(ds["log_D_FLARE"].values)
-    for number in np.unique(ds["DIVE_NUMBER"].values):
-        rows = np.flatnonzero(ds["DIVE_NUMBER"].values == number)
+    for number in np.unique(ds["dive_number"].values):
+        rows = np.flatnonzero(ds["dive_number"].values == number)
         phase = ds["PHASE"].values[rows]
         time = ds["TIME"].values[rows]
         depth = ds["DEPTH"].values[rows]
@@ -307,7 +307,7 @@ def test_sg537_transition_runs_to_the_last_rise_above_d_flare(dev_data, tmp_path
 def test_one_bad_shallow_depth_mid_descent_does_not_move_the_flare(sg271):
     """A single 0 m DEPTH reading mid-descent leaves the transition where it was."""
     ds = sg271.copy(deep=True)
-    dive = ds["DIVE_NUMBER"].values == 2
+    dive = ds["dive_number"].values == 2
     rows = np.flatnonzero(dive & (ds["PHASE"].values == _phase.DESCENT))
     glitch = rows[np.isfinite(ds["DEPTH"].values[rows])][200]
     assert ds["DEPTH"].values[glitch] > 20
@@ -337,6 +337,12 @@ def test_command_reads_a_per_dive_json_record(sg271):
     assert _phase.command(sg271, "log_D_TGT", 9) is None
     assert _phase.command(sg271, "log_NOT_THERE", 1) is None
     assert _phase.command(sg271, "log_D_FLARE", 2) == 3.0
+    # A per-dive array not on N_MEASUREMENTS says nothing about which dive is which.
+    ds = sg271.assign(log_X=("dive", np.array([1.0, 2.0, 3.0])))
+    assert _phase.command(ds, "log_X", 2) is None
+    # JSON with string dive keys.
+    ds = sg271.assign(log_Y=((), '{"dives": ["1", "2"], "values": [4.0, 5.0]}'))
+    assert _phase.command(ds, "log_Y", 2) == 5.0
 
 
 def test_without_gc_events_pressure_decides(sg005):
@@ -369,7 +375,7 @@ def test_add_phase_keeps_its_public_shape(sg271):
     ds = tools.add_phase(sg271.drop_vars(["PHASE", "PHASE_QC"]))
     np.testing.assert_array_equal(ds["PHASE"].values, sg271["PHASE"].values)
     with pytest.raises(ValueError, match="dive number"):
-        tools.add_phase(sg271.drop_vars("DIVE_NUMBER"))
+        tools.add_phase(sg271.drop_vars("dive_number"))
 
 
 def test_state_codes_in_the_samples_are_all_known(sg271):
@@ -425,7 +431,7 @@ def test_pick_dives_takes_one_near_the_start_middle_and_end():
 
     from seagliderOG1.reports import phase as page
 
-    ds = xr.Dataset({"DIVE_NUMBER": ("N_MEASUREMENTS", np.repeat(np.arange(1, 31), 4))})
+    ds = xr.Dataset({"dive_number": ("N_MEASUREMENTS", np.repeat(np.arange(1, 31), 4))})
     dives = page.pick_dives(ds)
     assert dives[0] == 2
     assert 11 <= dives[1] <= 20

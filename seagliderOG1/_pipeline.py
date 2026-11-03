@@ -1208,7 +1208,7 @@ INTEGER_VARIABLES: dict[str, type] = {
     "PROFILE_NUMBER": np.int16,
     "SEGMENT_NUMBER": np.int16,
     "PROFILE_DIRECTION": np.int8,
-    "DIVE_NUMBER": np.int16,
+    "dive_number": np.int16,
     "VBD_MIN_CNTS": np.int16,
 }
 

@@ -62,6 +62,9 @@ as NaN; ``xr.open_dataset(..., mask_and_scale=False)`` or ``ds.PHASE.fillna(0)``
    numbered the halves 2n-1 and 2n from the dive number, and gave every row a number.
 ``PROFILE_DIRECTION``, ``SEGMENT_NUMBER``
    New (OG1): 1/-1/0 for descent/ascent/other, and +1 each time the glider enters surfacing.
+``dive_number``
+   Renamed from ``DIVE_NUMBER``: it is the Seaglider's dive number, not an OG1 variable, so
+   it is written in lower case like the other non-OG1 variables.
 ``PHASE_QC``
    0 (no QC performed) on every row, with the OG1 flag scale 0–4 as ``flag_values`` and
    ``flag_meanings``. 0.2.0 wrote 0 with no flag attributes.

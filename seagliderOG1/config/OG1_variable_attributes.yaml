@@ -372,7 +372,7 @@ BUOYANCY:
 PROFILE_NUMBER:
   long_name: Identifier of numbered profile within the dataset
   units: '1'
-DIVE_NUMBER:
+dive_number:
   long_name: dive number
   units: '1'
 PHASE:

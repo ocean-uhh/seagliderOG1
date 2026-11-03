@@ -20,6 +20,7 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - `PROFILE_NUMBER` follows `PHASE` as OG1 defines it: one number per run of descent or ascent,
   -9999 on every other row; it was the dive split at the pressure maximum, every row numbered.
   New: `PROFILE_DIRECTION` (1/-1/0) and `SEGMENT_NUMBER` (+1 on each entry to surfacing).
+- `DIVE_NUMBER` is renamed `dive_number` (lower case: not an OG1 variable). Rename it in your code.
 - Sensor serial numbers and calibration dates are read from the calibration comments by named
   rules; files differ from 0.2.0 wherever the old parser was wrong. Reconvert. On the samples:
 

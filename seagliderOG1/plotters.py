@@ -12,6 +12,8 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from pandas import DataFrame
 
+from seagliderOG1 import _phase
+
 __all__ = [
     "show_contents",
     "show_variables",
@@ -324,7 +326,8 @@ def plot_depth_colored(
 
     Notes
     -----
-    - Accepts dive number variables: 'dive_number', 'divenum', or 'dive_num'.
+    - Accepts dive number variables: 'dive_number', 'divenum', 'dive_num', or
+      'DIVE_NUMBER' (files from before 0.3.0).
     - Uses scatter plot with colorbar when color_by is specified.
     - Inverts y-axis and formats time axis similar to plot_profile_depth.
 
@@ -337,16 +340,7 @@ def plot_depth_colored(
 
     """
     # Filter data by dive number if specified
-    if "dive_number" in data.variables:
-        divenum_str = "dive_number"
-    elif "divenum" in data.variables:
-        divenum_str = "divenum"
-    elif "dive_num" in data.variables:
-        divenum_str = "dive_num"
-    elif "DIVE_NUMBER" in data.variables:
-        divenum_str = "DIVE_NUMBER"
-    else:
-        raise ValueError("No valid dive number variable found in the dataset.")
+    divenum_str = _phase.dive_variable(data)
 
     if start_dive is not None and end_dive is not None:
         if isinstance(data, pd.DataFrame):
