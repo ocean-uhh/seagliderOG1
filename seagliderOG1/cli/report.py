@@ -27,9 +27,10 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
     """
     parser = subparsers.add_parser(
         "report",
-        help="write the HTML conversion page for an OG1 file",
+        help="write the HTML conversion and phase pages for an OG1 file",
         description=(
-            "Write <id>_conversion.html for an OG1 file written by seagliderOG1: "
+            "Write <id>_conversion.html and <id>_phase.html for an OG1 file written by "
+            "seagliderOG1: "
             "beside the file, in -o DIR, or in --report-dir ROOT/<id>/."
         ),
         epilog=(

@@ -145,7 +145,11 @@ The figures
 Each dive figure shares one time axis: pressure, each sample colored by its ``PHASE``, with
 the commanded depths dashed; pitch; the G&C events' VBD setting; the state table
 (``gc_state_state``) as a step line, when the file has one (dotted lines mark the start of
-each G&C event); and ``PHASE`` as a band, each color held until the next row. Here the band is
+each G&C event); and ``PHASE`` as a band, each color held until the next row.
+The CTD does not sample at the surface, so the green band at each end, with no pressure
+samples under it, is time at the surface between GPS fixes: at the start, from the first fix
+through the Iridium call to the second fix and the start of the dive; at the end, from the
+last sample to the fix taken on surfacing. Here the band is
 drawn twice: the algorithm above (new), and the rule converters before 0.3.0 used (old:
 descent to the pressure maximum, ascent after). Vertical green lines are GPS fixes.
 

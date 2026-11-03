@@ -77,12 +77,15 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
     parser.add_argument(
         "--report",
         action="store_true",
-        help="also write the HTML conversion page <id>_conversion.html beside each file",
+        help=(
+            "also write the HTML pages <id>_conversion.html and <id>_phase.html "
+            "beside each file"
+        ),
     )
     parser.add_argument(
         "--report-dir",
         metavar="ROOT",
-        help="write each conversion page into ROOT/<id>/ instead (implies --report)",
+        help="write the pages into ROOT/<id>/ instead (implies --report)",
     )
     parser.add_argument(
         "-n",
