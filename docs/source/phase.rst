@@ -115,6 +115,25 @@ In the file
 ``PHASE_QC`` is 0 (no QC performed) on every row: the phase is not quality controlled. Its
 ``flag_values`` and ``flag_meanings`` are the OG1 scale 0–4.
 
+Profiles and segments
+---------------------
+
+Three OG1 variables follow from ``PHASE``, with the OG1 definitions written into each as its
+``*_calculation_method`` attribute:
+
+``PROFILE_NUMBER`` (``_FillValue`` -9999)
+   One number per run of descent (2) or ascent (1) rows, from 1, in time order. Every other
+   row — surfacing, inflection, parking, unknown — is -9999, so the apogee and the surface
+   belong to no profile. On the samples, profile 2n-1 is dive n's descent and 2n its ascent.
+``PROFILE_DIRECTION`` (byte, ``_FillValue`` 0)
+   1 on descent rows, -1 on ascent rows, 0 elsewhere.
+``SEGMENT_NUMBER`` (``_FillValue`` -9999)
+   1 from the first row, +1 each time the glider enters surfacing: a segment is a surface
+   interval and the dive after it.
+
+``DIVE_NUMBER`` is kept: it is the Seaglider's own dive number (the basestation file's), not
+an OG1 variable.
+
 In the report
 -------------
 

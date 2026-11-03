@@ -257,21 +257,29 @@ def _events(
 
 
 def _apogee_window(
-    events: list[tuple[float, float, float]],
+    events: list[tuple[float, float, float]], deepest: float | None = None
 ) -> tuple[float, float] | None:
     """Return (start, end) of the apogee G&C event, or None.
 
-    The apogee event is the first that moves the VBD to zero after an event with the VBD
-    negative (bled). Where a file has a state table too, "begin apogee" and "end apogee"
-    fall at this event's start and end (sg271, sg033, dg042).
+    A candidate is an event that moves the VBD to zero after an event with the VBD negative
+    (bled). The apogee is the candidate whose start is nearest the deepest sample (a glider
+    can trim to near zero mid-descent and bleed again); without pressure, the first. Where
+    a file has a state table too, "begin apogee" and "end apogee" fall at this event's
+    start and end (sg271, sg033, dg042).
     """
+    candidates = []
     bled = False
     for start, end, vbd in events:
         if vbd < -_VBD_ZERO:
             bled = True
         elif bled and abs(vbd) <= _VBD_ZERO:
-            return start, end
-    return None
+            candidates.append((start, end))
+            bled = False
+    if not candidates:
+        return None
+    if deepest is None or len(candidates) == 1:
+        return candidates[0]
+    return min(candidates, key=lambda c: abs(c[0] - deepest))
 
 
 def command(
@@ -372,6 +380,15 @@ def _mark_bottom_transition(t: np.ndarray, pres: np.ndarray, phase: np.ndarray) 
     return True
 
 
+def _deepest_time(t: np.ndarray, pres: np.ndarray) -> float | None:
+    """Return the time of the last sample at the dive's pressure maximum, or None."""
+    ok = np.isfinite(pres)
+    if not ok.any():
+        return None
+    at_max = np.flatnonzero(ok & (pres == np.nanmax(pres)))
+    return float(t[at_max[-1]])
+
+
 def _assign_from_states(
     t: np.ndarray, states: list[tuple[float, int]], phase: np.ndarray
 ) -> set[int]:
@@ -404,7 +421,8 @@ def _assign_from_pressure(pres: np.ndarray, phase: np.ndarray) -> None:
     """Set descent up to and including the pressure maximum, ascent after."""
     if not np.isfinite(pres).any():
         return
-    imax = int(np.nanargmax(pres))
+    # The last sample at the maximum: a plateau at the bottom is still descent.
+    imax = int(np.flatnonzero(np.isfinite(pres) & (pres == np.nanmax(pres)))[-1])
     phase[: imax + 1] = DESCENT
     phase[imax + 1 :] = ASCENT
 
@@ -458,7 +476,7 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
     # A GPS fix can reach N_MEASUREMENTS twice (the fix row and the gps_info row at the
     # same time): every row at a fix time is surfacing.
     gps = np.isin(time, gps_time[np.isfinite(gps_time)])
-    unknown_codes: set[int] = set()
+    unknown_codes: dict[int, list[int]] = {}
     for number in np.unique(dive[np.isfinite(dive)]):
         rows = np.where(dive == number)[0]
         t = time[rows]
@@ -466,9 +484,12 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
         states = _states(ds, rows, t)
         sample = ~gps[rows]
         if states:
-            unknown_codes |= _assign_from_states(t, states, p_phase)
+            for code in _assign_from_states(t, states, p_phase):
+                unknown_codes.setdefault(code, []).append(int(number))
             methods["states"].append(int(number))
-        elif (window := _apogee_window(_events(ds, rows, t))) is not None:
+        elif (
+            window := _apogee_window(_events(ds, rows, t), _deepest_time(t, pres[rows]))
+        ) is not None:
             sub = p_phase[sample]
             _assign_from_events(t[sample], window, sub)
             p_phase[sample] = sub
@@ -491,8 +512,81 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
         p_phase[gps[rows]] = SURFACING
         phase[rows] = p_phase
     if unknown_codes:
+        unknown_rows = int((phase == UNKNOWN).sum())
         _log.warning(
-            "gc_state_state codes %s have no known meaning; their samples are PHASE 0.",
-            sorted(unknown_codes),
+            "gc_state_state codes with no known meaning: %s; %d rows are PHASE 0.",
+            "; ".join(
+                f"{code} (dives {_ranges(dives)})"
+                for code, dives in sorted(unknown_codes.items())
+            ),
+            unknown_rows,
         )
     return phase, methods
+
+
+#: OG1 attributes of the variables derived from PHASE (OG1 format, "Phase" section).
+PROFILE_NUMBER_ATTRS = {
+    "long_name": "Identifier of numbered profile within the dataset",
+    "units": "1",
+    "profile_number_calculation_method": (
+        "PROFILE_NUMBER increments by one each time the glider starts an ascending or "
+        "descending profile. PROFILE_NUMBER is one at the start of the first ascending or "
+        "descending profile in the datasets. When the glider is not in one of these "
+        "states, PROFILE_NUMBER is NaN"
+    ),
+}
+PROFILE_DIRECTION_ATTRS = {
+    "long_name": "Vertical direction of profile",
+    "units": "1",
+    "profile_direction_calculation_method": (
+        "PROFILE_DIRECTION is 1 when a glider is descending and -1 when the glider is "
+        "ascending. Otherwise it is 0"
+    ),
+}
+SEGMENT_NUMBER_ATTRS = {
+    "long_name": "Identifier of numbered segment within the dataset",
+    "units": "1",
+    "segment_number_calculation_method": (
+        "SEGMENT_NUMBER is 1 at the start of a deployment. SEGMENT_NUMBER increments by 1 "
+        "each time the glider enters the surface phase (PHASE=3)"
+    ),
+}
+#: _FillValue of PROFILE_NUMBER and SEGMENT_NUMBER (OG1).
+NUMBER_FILL = -9999
+
+
+def profiles(phase: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return PROFILE_NUMBER, PROFILE_DIRECTION and SEGMENT_NUMBER from PHASE, as OG1 defines them.
+
+    Parameters
+    ----------
+    phase : numpy.ndarray
+        PHASE for every row, in time order.
+
+    Returns
+    -------
+    profile_number : numpy.ndarray of int32
+        1 for the first run of descent (2) or ascent (1) rows, incremented at the start of
+        each later run; :data:`NUMBER_FILL` on every other row.
+    profile_direction : numpy.ndarray of int8
+        1 on descent rows, -1 on ascent rows, 0 elsewhere.
+    segment_number : numpy.ndarray of int32
+        1 from the first row, incremented each time PHASE becomes 3 (surfacing) after a
+        row that was not; a dataset that starts at the surface does not count that start.
+    """
+    phase = np.asarray(phase)
+    n = phase.size
+    in_profile = np.isin(phase, (ASCENT, DESCENT))
+    previous = np.r_[UNKNOWN - 1, phase[:-1]] if n else phase
+    starts = in_profile & (phase != previous)
+    profile_number = np.where(in_profile, np.cumsum(starts), NUMBER_FILL).astype(
+        "int32"
+    )
+    profile_direction = np.zeros(n, dtype="int8")
+    profile_direction[phase == DESCENT] = 1
+    profile_direction[phase == ASCENT] = -1
+    enters_surface = (phase == SURFACING) & (previous != SURFACING)
+    if n:
+        enters_surface[0] = False
+    segment_number = (1 + np.cumsum(enters_surface)).astype("int32")
+    return profile_number, profile_direction, segment_number

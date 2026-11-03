@@ -18,6 +18,7 @@ _log = logging.getLogger(__name__)
 __all__ = [
     "add_depth",
     "add_phase",
+    "add_profiles",
     "add_profile_number",
     "add_dive_number",
     "convert_qc_flags",
@@ -158,6 +159,37 @@ def add_phase(ds: xr.Dataset) -> xr.Dataset:
         np.zeros(phase.size, dtype="int8"),
         dict(_phase.PHASE_QC_ATTRS),
     )
+    return ds
+
+
+def add_profiles(ds: xr.Dataset) -> xr.Dataset:
+    """Add ``PROFILE_NUMBER``, ``PROFILE_DIRECTION`` and ``SEGMENT_NUMBER`` from ``PHASE``.
+
+    As the OG1 format defines them: a profile is a run of descent (2) or ascent (1) rows,
+    numbered from 1 in time order, with ``PROFILE_NUMBER`` -9999 (its ``_FillValue``) on
+    every other row; ``PROFILE_DIRECTION`` is 1 descending, -1 ascending, 0 otherwise
+    (``_FillValue`` 0); ``SEGMENT_NUMBER`` starts at 1 and increments each time the glider
+    enters surfacing (3).
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        A dataset on ``N_MEASUREMENTS``, sorted by ``TIME``, with ``PHASE``.
+
+    Returns
+    -------
+    xarray.Dataset
+        ``ds`` with the three variables.
+    """
+    phase = np.nan_to_num(np.asarray(ds["PHASE"].values, dtype=float)).astype("int8")
+    number, direction, segment = _phase.profiles(phase)
+    for name, values, attrs, fill in (
+        ("PROFILE_NUMBER", number, _phase.PROFILE_NUMBER_ATTRS, _phase.NUMBER_FILL),
+        ("PROFILE_DIRECTION", direction, _phase.PROFILE_DIRECTION_ATTRS, 0),
+        ("SEGMENT_NUMBER", segment, _phase.SEGMENT_NUMBER_ATTRS, _phase.NUMBER_FILL),
+    ):
+        ds[name] = (["N_MEASUREMENTS"], values, dict(attrs))
+        ds[name].encoding["_FillValue"] = values.dtype.type(fill)
     return ds
 
 

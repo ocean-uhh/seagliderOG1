@@ -1206,6 +1206,8 @@ def _del_capital_letters(string: str) -> str:
 INTEGER_VARIABLES: dict[str, type] = {
     "PHASE": np.int8,
     "PROFILE_NUMBER": np.int16,
+    "SEGMENT_NUMBER": np.int16,
+    "PROFILE_DIRECTION": np.int8,
     "DIVE_NUMBER": np.int16,
     "VBD_MIN_CNTS": np.int16,
 }
@@ -2322,7 +2324,7 @@ def _absolute_state_times(ds1: xr.Dataset) -> xr.Dataset:
     xarray.Dataset
         ``ds1``, with ``gc_state_secs`` shifted by the dive start when it was elapsed seconds.
     """
-    if "gc_state_secs" not in ds1.variables or "start_time" not in ds1.attrs:
+    if "gc_state_secs" not in ds1.variables:
         return ds1
     secs = ds1["gc_state_secs"]
     if np.issubdtype(secs.dtype, np.datetime64):
@@ -2331,6 +2333,13 @@ def _absolute_state_times(ds1: xr.Dataset) -> xr.Dataset:
         values = secs.values.astype(float)
     finite = np.isfinite(values)
     if not finite.any() or values[finite].max() >= _ELAPSED_SECONDS_LIMIT:
+        return ds1
+    if "start_time" not in ds1.attrs:
+        _log.warning(
+            "%s: gc_state_secs are seconds from the dive start but the file has no "
+            "start_time; the state table is left in January 1970 and not used for PHASE.",
+            ds1.attrs.get("id", "dive"),
+        )
         return ds1
     start = float(ds1.attrs["start_time"])
     if np.issubdtype(secs.dtype, np.datetime64):

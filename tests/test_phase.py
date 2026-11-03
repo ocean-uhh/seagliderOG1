@@ -361,7 +361,7 @@ def test_unknown_state_code_is_phase_0_with_a_warning(sg271, caplog):
     with caplog.at_level("WARNING", logger="seagliderOG1._phase"):
         phase, _ = _phase.assign(ds)
     assert (phase == _phase.UNKNOWN).any()
-    assert any("[42]" in r.message for r in caplog.records)
+    assert any("42 (dives" in r.message for r in caplog.records)
 
 
 def test_add_phase_keeps_its_public_shape(sg271):
@@ -431,3 +431,41 @@ def test_pick_dives_takes_one_near_the_start_middle_and_end():
     assert 11 <= dives[1] <= 20
     assert 21 <= dives[2] <= 30
     assert page.pick_dives(ds) == dives
+
+
+@pytest.mark.parametrize("mission", ["sg271", "sg005"])
+def test_profiles_follow_phase_as_og1_defines_them(mission, request):
+    """PROFILE_NUMBER: one number per run of descent or ascent, -9999 elsewhere;
+    PROFILE_DIRECTION: 1/-1/0; SEGMENT_NUMBER: +1 on each entry to surfacing."""
+    ds = request.getfixturevalue(mission)
+    phase = ds["PHASE"].values
+    number = np.nan_to_num(ds["PROFILE_NUMBER"].values, nan=_phase.NUMBER_FILL)
+    in_profile = np.isin(phase, (_phase.ASCENT, _phase.DESCENT))
+    assert (number[~in_profile] == _phase.NUMBER_FILL).all()
+    runs = [(int(phase[i]), int(number[i])) for i in np.flatnonzero(in_profile)]
+    numbers = [n for _, n in runs]
+    assert numbers[0] == 1
+    assert np.all(np.diff(numbers) >= 0)
+    for profile in set(numbers):  # each profile is one direction
+        assert len({p for p, n in runs if n == profile}) == 1
+    direction = np.nan_to_num(ds["PROFILE_DIRECTION"].values).astype(int)
+    assert (direction[phase == _phase.DESCENT] == 1).all()
+    assert (direction[phase == _phase.ASCENT] == -1).all()
+    assert (direction[~in_profile] == 0).all()
+    segment = ds["SEGMENT_NUMBER"].values
+    assert segment[0] == 1
+    assert np.all(np.diff(segment) >= 0)
+    for name in ("PROFILE_NUMBER", "PROFILE_DIRECTION", "SEGMENT_NUMBER"):
+        assert ds[name].attrs[f"{name.lower()}_calculation_method"]
+
+
+def test_sg005_has_two_profiles_and_one_segment_per_dive(sg005):
+    """sg005 dives 1-5: profiles 1-10 alternate descent, ascent; segments 1-6."""
+    phase = sg005["PHASE"].values
+    number = sg005["PROFILE_NUMBER"].values
+    for profile in range(1, 11):
+        rows = number == profile
+        assert rows.any()
+        expected = _phase.DESCENT if profile % 2 else _phase.ASCENT
+        assert (phase[rows] == expected).all()
+    assert set(np.unique(sg005["SEGMENT_NUMBER"].values)) == set(range(1, 7))

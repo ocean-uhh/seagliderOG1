@@ -370,7 +370,7 @@ BUOYANCY:
   long_name: Buoyancy of vehicle, corrected for compression effects
   units: g
 PROFILE_NUMBER:
-  long_name: profile index
+  long_name: Identifier of numbered profile within the dataset
   units: '1'
 DIVE_NUMBER:
   long_name: dive number

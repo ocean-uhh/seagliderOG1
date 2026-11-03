@@ -1287,6 +1287,8 @@ def convert(
     # PHASE again over the whole mission, now the piloting scalars are in (log_D_FLARE
     # sets the transition), so phase_calculation_method names every dive.
     ds_og1 = tools.add_phase(ds_og1)
+    # PROFILE_NUMBER, PROFILE_DIRECTION and SEGMENT_NUMBER follow from PHASE (OG1).
+    ds_og1 = tools.add_profiles(ds_og1)
 
     # Resolve platform fields from the config and the first file (no silent
     # fallbacks: missing serial raises, other strings warn + "UNK", the numeric
@@ -2132,8 +2134,6 @@ def process_dataset(
     ds_new = add_gps_info_to_dataset(ds_new, ds_gps)
     # Add the profile number (odd for dives, even for get_sgscents)
     ds_new = tools.add_profile_number(ds_new, ds1_base)
-    # Assign the phase of the dive (must be after adding divenum)
-    ds_new = tools.add_phase(ds_new)
     # Assign DEPTH_Z to the dataset where positive is up.
     ds_new = tools.add_depth(ds_new)
 

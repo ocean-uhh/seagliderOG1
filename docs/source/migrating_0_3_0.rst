@@ -56,6 +56,12 @@ each dive at its inflection, or at its deepest sample as 0.2.0 did.
 xarray reads ``PHASE`` with its ``_FillValue`` 0 as missing, so ``PHASE`` 0 (unknown) comes back
 as NaN; ``xr.open_dataset(..., mask_and_scale=False)`` or ``ds.PHASE.fillna(0)`` keeps the 0.
 
+``PROFILE_NUMBER``
+   Now from ``PHASE``, as OG1 defines it: one number per run of descent or ascent, -9999 on
+   every other row (surfacing, inflection). 0.2.0 split each dive at the pressure maximum,
+   numbered the halves 2n-1 and 2n from the dive number, and gave every row a number.
+``PROFILE_DIRECTION``, ``SEGMENT_NUMBER``
+   New (OG1): 1/-1/0 for descent/ascent/other, and +1 each time the glider enters surfacing.
 ``PHASE_QC``
    0 (no QC performed) on every row, with the OG1 flag scale 0–4 as ``flag_values`` and
    ``flag_meanings``. 0.2.0 wrote 0 with no flag attributes.
