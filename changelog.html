@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.2.0.post1.dev2 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.2.0.post1.dev3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=27b10d97"></script>
+      <script src="_static/documentation_options.js?v=83c9898e"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -53,6 +53,7 @@
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="phase.html">How the phase is assigned</a></li>
 <li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
@@ -74,6 +75,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_3_0.html">Migrating to 0.3.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#unreleased">[Unreleased]</a><ul>
@@ -139,6 +141,19 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 <section id="breaking-changes">
 <h3>Breaking changes<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h3>
 <ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">PHASE</span></code> is assigned from the glider’s state table (<code class="docutils literal notranslate"><span class="pre">gc_state_state</span></code>), or its G&amp;C events when
+the file has no state table, or pressure alone, following the OG1 phase translation table;
+GPS fixes are surfacing (3); pairs the table does not list (the surface coast) are ignored. Files now carry surfacing, inflection (5)
+and parking (4, a loiter); before, <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> was descent to the pressure maximum and ascent
+after. <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> is a byte with <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> 0, <code class="docutils literal notranslate"><span class="pre">flag_values</span></code>/<code class="docutils literal notranslate"><span class="pre">flag_meanings</span></code> from the OG1
+vocabulary and <code class="docutils literal notranslate"><span class="pre">phase_calculation_method</span></code> naming the signal per dive; <code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code> is 0 (no QC)
+with the OG1 flag scale. Reconvert. See <em>How the phase is assigned</em> in the docs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> follows <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> as OG1 defines it: one number per run of descent or ascent,
+-9999 on every other data point; it was the dive split at the pressure maximum, every data point
+numbered. <code class="docutils literal notranslate"><span class="pre">tools.add_profile_number</span></code> (and <code class="docutils literal notranslate"><span class="pre">assign_profile_number</span></code>) is removed: call
+<code class="docutils literal notranslate"><span class="pre">tools.add_phase</span></code>, then <code class="docutils literal notranslate"><span class="pre">tools.add_profiles</span></code>.
+New: <code class="docutils literal notranslate"><span class="pre">PROFILE_DIRECTION</span></code> (1/-1/0) and <code class="docutils literal notranslate"><span class="pre">SEGMENT_NUMBER</span></code> (+1 on each entry to surfacing).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code> is renamed <code class="docutils literal notranslate"><span class="pre">dive_number</span></code> (lower case: not an OG1 variable). Rename it in your code.</p></li>
 <li><p>Sensor serial numbers and calibration dates are read from the calibration comments by named
 rules; files differ from 0.2.0 wherever the old parser was wrong. Reconvert. On the samples:</p>
 <table class="docutils align-default">
@@ -181,6 +196,9 @@ and <code class="docutils literal notranslate"><span class="pre">on</span></code
 <section id="added">
 <h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>A phase page, <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_phase.html</span></code>, is written beside the conversion page (<code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code>,
+<code class="docutils literal notranslate"><span class="pre">report</span></code>): how <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> was assigned, rows per phase, one dive from the middle of the
+mission, every dive’s phase shares with its depth and duration, and pitch against dP/dt.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">SA</span></code>, <code class="docutils literal notranslate"><span class="pre">CT</span></code> and <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> (TEOS-10, via gsw) are added when the basestation does not write them;
 <code class="docutils literal notranslate"><span class="pre">PSAL</span></code> is computed from conductivity only when a file has no salinity. Each carries <code class="docutils literal notranslate"><span class="pre">sources</span></code> and
 a <code class="docutils literal notranslate"><span class="pre">comment</span></code> naming the gsw function and version, and is listed in <code class="docutils literal notranslate"><span class="pre">conversion_derived_variables</span></code>.
@@ -215,6 +233,8 @@ parser is tested against, generated from <code class="docutils literal notransla
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Basestation 2.10 files (<code class="docutils literal notranslate"><span class="pre">gc_state_secs</span></code> written as seconds from the dive start) no longer put rows
+in January 1970; the output name and <code class="docutils literal notranslate"><span class="pre">time_coverage_start</span></code> take the dive’s real start.</p></li>
 <li><p>A current-year calibration date is no longer rejected, and the same comment no longer parses
 differently from one year to the next: the parser does not read today’s date.</p></li>
 </ul>

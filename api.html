@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>API reference &mdash; seagliderOG1 0.2.0.post1.dev2 documentation</title>
+  <title>API reference &mdash; seagliderOG1 0.2.0.post1.dev3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,14 +14,14 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=27b10d97"></script>
+      <script src="_static/documentation_options.js?v=83c9898e"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Migrating to 0.1.0" href="migrating_0_1_0.html" />
+    <link rel="next" title="Migrating to 0.3.0" href="migrating_0_3_0.html" />
     <link rel="prev" title="CLI reference" href="cli_reference.html" /> 
 </head>
 
@@ -54,6 +54,7 @@
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="phase.html">How the phase is assigned</a></li>
 <li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
@@ -158,7 +159,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_depth"><code class="docutils literal notranslate"><span class="pre">add_depth()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_dive_number"><code class="docutils literal notranslate"><span class="pre">add_dive_number()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_phase"><code class="docutils literal notranslate"><span class="pre">add_phase()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_profile_number"><code class="docutils literal notranslate"><span class="pre">add_profile_number()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.add_profiles"><code class="docutils literal notranslate"><span class="pre">add_profiles()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.convert_qc_flags"><code class="docutils literal notranslate"><span class="pre">convert_qc_flags()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.encode_times_og1"><code class="docutils literal notranslate"><span class="pre">encode_times_og1()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#seagliderOG1.tools.split_by_unique_dims"><code class="docutils literal notranslate"><span class="pre">split_by_unique_dims()</span></code></a></li>
@@ -169,6 +170,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_3_0.html">Migrating to 0.3.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
@@ -1281,7 +1283,8 @@ Should contain ‘ctd_depth’/’DEPTH’, ‘ctd_time’/’TIME’, and dive 
 </dl>
 <p class="rubric">Notes</p>
 <ul class="simple">
-<li><p>Accepts dive number variables: ‘dive_number’, ‘divenum’, or ‘dive_num’.</p></li>
+<li><p>Accepts dive number variables: ‘dive_number’, ‘divenum’, ‘dive_num’, or
+‘DIVE_NUMBER’ (files from before 0.3.0).</p></li>
 <li><p>Uses scatter plot with colorbar when color_by is specified.</p></li>
 <li><p>Inverts y-axis and formats time axis similar to plot_profile_depth.</p></li>
 </ul>
@@ -1595,65 +1598,56 @@ coercion, profile and phase numbering, time encoding, and dataset merging.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="seagliderOG1.tools.add_phase">
 <span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_phase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_phase" title="Link to this definition"></a></dt>
-<dd><p>Add ‘PHASE’ and ‘PHASE_QC’ variables indicating the phase of each measurement.</p>
-<p>The phase is determined from the pressure readings (‘PRES’) for each unique
-dive number (‘dive_num’).</p>
+<dd><p>Add <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> and <code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code>: what the glider was doing at each sample.</p>
+<p><code class="docutils literal notranslate"><span class="pre">PHASE</span></code> takes the OG1 phase vocabulary ids (<code class="docutils literal notranslate"><span class="pre">phase_vocabulary</span></code>): 1 ascent,
+2 descent, 3 surfacing, 5 inflection, 0 unknown. Per dive it comes from the glider’s
+state table (<code class="docutils literal notranslate"><span class="pre">gc_state_state</span></code>) where the file has one, otherwise from the
+guidance-and-control events (the apogee is the event that moves the VBD to zero),
+otherwise from pressure alone (descent to the pressure maximum, ascent after). GPS
+fixes are surfacing. <code class="docutils literal notranslate"><span class="pre">phase_calculation_method</span></code> says which signal assigned which
+dives. No quality control is applied: <code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code> is 0 throughout.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ds</strong> (<em>xarray.Dataset</em>) – The input dataset containing ‘dive_num’ and ‘PRES’ variables.</p>
+<dd class="field-odd"><p><strong>ds</strong> (<em>xarray.Dataset</em>) – A dataset on <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> with <code class="docutils literal notranslate"><span class="pre">TIME</span></code>, <code class="docutils literal notranslate"><span class="pre">PRES</span></code>, a dive-number variable
+(<code class="docutils literal notranslate"><span class="pre">dive_number</span></code>, <code class="docutils literal notranslate"><span class="pre">divenum</span></code>, <code class="docutils literal notranslate"><span class="pre">dive_num</span></code>, or <code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code> in files from before 0.3.0) and, where the
+basestation wrote them, <code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">gc_state_state</span></code>, <code class="docutils literal notranslate"><span class="pre">gc_vbd_ctl</span></code> and
+<code class="docutils literal notranslate"><span class="pre">gc_end_secs</span></code>.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><p>The dataset with additional ‘PHASE’ and ‘PHASE_QC’ variables, where:</p>
-<ul class="simple">
-<li><dl class="simple">
-<dt>’PHASE’ indicates the phase of each measurement:</dt><dd><ul>
-<li><p>Phase 2 up to and including the maximum pressure point.</p></li>
-<li><p>Phase 1 after the maximum pressure point.</p></li>
-</ul>
-</dd>
-</dl>
-</li>
-<li><p>’PHASE_QC’ is an additional variable with no QC applied.</p></li>
-</ul>
-</p>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">ds</span></code> with <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> (int8, <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> 0) and <code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code> (int8, all 0).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>xarray.Dataset</p>
 </dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">ds</span></code> has no dive-number variable.</p>
+</dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>In this formulation, we are only separating into dives and climbs based on
-when the glider is at the maximum depth. Future work needs to separate out
-the other phases and generate a PHASE_QC:
+<p>The phase vocabulary:
 <a class="reference external" href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md">https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md</a></p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="seagliderOG1.tools.add_profile_number">
-<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_profile_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_profile_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_profile_number" title="Link to this definition"></a></dt>
-<dd><p>Assign profile numbers to measurements based on dive phases (down/up casts).</p>
-<p>This function separates each dive into two profiles: descent (down cast) and
-ascent (up cast) phases. The dive is split at the maximum pressure point,
-with the descent phase getting the dive number and ascent getting dive + 0.5.
-Profile numbers are then calculated as 2 * DIVE_NUMBER - 1.</p>
+<dt class="sig sig-object py" id="seagliderOG1.tools.add_profiles">
+<span class="sig-prename descclassname"><span class="pre">seagliderOG1.tools.</span></span><span class="sig-name descname"><span class="pre">add_profiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/seagliderOG1/tools.html#add_profiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seagliderOG1.tools.add_profiles" title="Link to this definition"></a></dt>
+<dd><p>Add <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code>, <code class="docutils literal notranslate"><span class="pre">PROFILE_DIRECTION</span></code> and <code class="docutils literal notranslate"><span class="pre">SEGMENT_NUMBER</span></code> from <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>.</p>
+<p>As the OG1 format defines them: a profile is a run of descent (2) or ascent (1) rows,
+numbered from 1 in time order, with <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> -9999 (its <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code>) on
+every other row; <code class="docutils literal notranslate"><span class="pre">PROFILE_DIRECTION</span></code> is 1 descending, -1 ascending, 0 otherwise
+(<code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> 0); <code class="docutils literal notranslate"><span class="pre">SEGMENT_NUMBER</span></code> starts at 1 and increments each time the glider
+enters surfacing (3).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> – The dataset to add profile numbers to.</p></li>
-<li><p><strong>ds1</strong> – Dataset containing dive number information in attributes.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>ds</strong> (<em>xarray.Dataset</em>) – A dataset on <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>, sorted by <code class="docutils literal notranslate"><span class="pre">TIME</span></code>, with <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Dataset with ‘DIVE_NUMBER’ and ‘PROFILE_NUMBER’ variables added.</p>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">ds</span></code> with the three variables.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>xarray.Dataset</p>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>Requires pressure variable (PRES)</p></li>
-</ul>
 </dd></dl>
 
 <dl class="py function">
@@ -1723,7 +1717,7 @@ and adds proper metadata including long_name and standard_name.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="cli_reference.html" class="btn btn-neutral float-left" title="CLI reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="migrating_0_1_0.html" class="btn btn-neutral float-right" title="Migrating to 0.1.0" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="migrating_0_3_0.html" class="btn btn-neutral float-right" title="Migrating to 0.3.0" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

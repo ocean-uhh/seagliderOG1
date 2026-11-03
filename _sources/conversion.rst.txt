@@ -51,7 +51,8 @@ The steps
 
    * merge that file's dimensions onto the measurement axis;
    * append the GPS fixes as extra rows (``LATITUDE_GPS``, ``LONGITUDE_GPS``, ``TIME_GPS``);
-   * add ``DIVE_NUMBER``, ``PROFILE_NUMBER`` and ``PHASE``;
+   * add ``dive_number``, ``PROFILE_NUMBER`` and ``PHASE`` (from the glider's state table,
+     G&C events and GPS fixes; see :ref:`phase`);
    * apply the OG1 vocabulary: rename, attach the OG1 attributes, convert units, mark the
      coordinates, encode time. A variable with no OG1 name keeps its basestation name.
 

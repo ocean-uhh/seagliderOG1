@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1._convert &mdash; seagliderOG1 0.2.0.post1.dev2 documentation</title>
+  <title>seagliderOG1._convert &mdash; seagliderOG1 0.2.0.post1.dev3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=27b10d97"></script>
+      <script src="../../_static/documentation_options.js?v=83c9898e"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -51,6 +51,7 @@
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../phase.html">How the phase is assigned</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../calibration_comments.html">How calibration comments are read</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
@@ -72,6 +73,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../migrating_0_3_0.html">Migrating to 0.3.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
 </ul>
@@ -581,7 +583,11 @@
         <span class="s2">"TRAJECTORY"</span><span class="p">,</span>
         <span class="s2">"WMO_IDENTIFIER"</span><span class="p">,</span>
         <span class="s2">"PROFILE_NUMBER"</span><span class="p">,</span>
+        <span class="s2">"PROFILE_DIRECTION"</span><span class="p">,</span>
+        <span class="s2">"SEGMENT_NUMBER"</span><span class="p">,</span>
         <span class="s2">"PHASE"</span><span class="p">,</span>
+        <span class="s2">"PHASE_QC"</span><span class="p">,</span>
+        <span class="s2">"dive_number"</span><span class="p">,</span>
     <span class="p">}</span>
 <span class="p">)</span>
 <span class="n">_MANDATORY_OG1_PREFIXES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"PLATFORM_"</span><span class="p">,</span> <span class="s2">"SENSOR_"</span><span class="p">,</span> <span class="s2">"DEPLOYMENT_"</span><span class="p">)</span>
@@ -1393,6 +1399,11 @@
     <span class="n">ds_og1</span><span class="p">,</span> <span class="n">og1_mapping</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">add_scalar_parameters</span><span class="p">(</span>
         <span class="n">ds_og1</span><span class="p">,</span> <span class="n">extracted</span><span class="p">,</span> <span class="n">og1_mapping</span>
     <span class="p">)</span>
+    <span class="c1"># PHASE again over the whole mission, now the piloting scalars are in (log_D_FLARE</span>
+    <span class="c1"># sets the transition), so phase_calculation_method names every dive.</span>
+    <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_phase</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">)</span>
+    <span class="c1"># PROFILE_NUMBER, PROFILE_DIRECTION and SEGMENT_NUMBER follow from PHASE (OG1).</span>
+    <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">)</span>
 
     <span class="c1"># Resolve platform fields from the config and the first file (no silent</span>
     <span class="c1"># fallbacks: missing serial raises, other strings warn + "UNK", the numeric</span>
@@ -2110,6 +2121,13 @@
         <span class="n">page</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">page</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">render_conversion</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
         <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"wrote </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">draft</span><span class="p">:</span>
+            <span class="c1"># A draft is for setting up the mission metadata; no phase page.</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1.reports.phase</span><span class="w"> </span><span class="kn">import</span> <span class="n">write_phase_page</span>
+
+            <span class="n">phase_page</span> <span class="o">=</span> <span class="n">write_phase_page</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">phase_page</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"wrote </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">phase_page</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">path</span>
 
 
@@ -2197,7 +2215,7 @@
 <span class="sd">            - Adds GPS info as LATITUDE_GPS, LONGITUDE_GPS, and TIME_GPS (increasing the length of N_MEASUREMENTS).</span>
 <span class="sd">            - Adds the divenum as a variable of length N_MEASUREMENTS.</span>
 <span class="sd">            - Adds the PROFILE_NUMBER (odd for dives, even for ascents).</span>
-<span class="sd">            - Adds the PHASE of the dive (1 for ascent, 2 for descent, 3 for between the first two surface points).</span>
+<span class="sd">            - Adds PHASE and PHASE_QC from the state table, G&amp;C events, GPS fixes or pressure (see tools.add_phase).</span>
 <span class="sd">            - Adds the DEPTH_Z with positive up.</span>
 <span class="sd">        4. Returns the processed dataset, attribute warnings, and categorized datasets.</span>
 
@@ -2211,6 +2229,7 @@
             <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(),</span>
             <span class="p">[],</span>
         <span class="p">)</span>
+    <span class="n">ds1_base</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">_absolute_state_times</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
     <span class="c1"># Split the dataset by unique dimensions</span>
     <span class="n">split_ds</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">split_by_unique_dims</span><span class="p">(</span><span class="n">ds1_base</span><span class="p">)</span>
 
@@ -2229,16 +2248,15 @@
         <span class="n">unit_corrections</span><span class="o">=</span><span class="n">unit_corrections</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="c1"># Add new variables to the dataset (GPS, DIVE_NUMBER, PROFILE_NUMBER, PHASE)</span>
+    <span class="c1"># Add new variables to the dataset (GPS, dive_number, PROFILE_NUMBER, PHASE)</span>
     <span class="c1"># -----------------------------------------------------------------------</span>
     <span class="c1"># Add the gps_info to the dataset</span>
     <span class="c1"># Must be after split_by_unique_dims and after rename_dimensions</span>
     <span class="n">ds_gps</span> <span class="o">=</span> <span class="n">split_ds</span><span class="p">[(</span><span class="s2">"gps_info"</span><span class="p">,)]</span>
     <span class="n">ds_new</span> <span class="o">=</span> <span class="n">add_gps_info_to_dataset</span><span class="p">(</span><span class="n">ds_new</span><span class="p">,</span> <span class="n">ds_gps</span><span class="p">)</span>
-    <span class="c1"># Add the profile number (odd for dives, even for get_sgscents)</span>
-    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_profile_number</span><span class="p">(</span><span class="n">ds_new</span><span class="p">,</span> <span class="n">ds1_base</span><span class="p">)</span>
-    <span class="c1"># Assign the phase of the dive (must be after adding divenum)</span>
-    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_phase</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
+    <span class="c1"># dive_number per dive; PROFILE_NUMBER is set once, from PHASE, over the whole mission</span>
+    <span class="c1"># (tools.add_profiles).</span>
+    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_dive_number</span><span class="p">(</span><span class="n">ds_new</span><span class="p">,</span> <span class="n">ds1_base</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">])</span>
     <span class="c1"># Assign DEPTH_Z to the dataset where positive is up.</span>
     <span class="n">ds_new</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">add_depth</span><span class="p">(</span><span class="n">ds_new</span><span class="p">)</span>
 

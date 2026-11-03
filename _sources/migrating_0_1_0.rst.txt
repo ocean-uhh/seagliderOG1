@@ -192,7 +192,8 @@ installed from PyPI you never had them — they are shimmed for development inst
    * - ``readers.profnum_from_filename`` / ``glider_sn_from_filename`` *(main only)*
      - ``readers.profile_number_from_filename`` / ``serial_from_filename``
    * - ``tools.calc_Z`` / ``assign_phase`` / ``assign_profile_number``
-     - ``tools.add_depth`` / ``add_phase`` / ``add_profile_number``
+     - ``tools.add_depth`` / ``add_phase`` / ``add_profile_number`` (removed in 0.3.0: use
+       ``add_phase`` then ``add_profiles``)
    * - ``tools.reformat_units_str`` / ``reformat_units_var`` / ``convert_units_var`` *(deprecated 0.2.0)*
      - resolve through ``vocabularies.UNITS``; a spelling the view cannot relate now raises
        ``UnitsError`` instead of the old silent pass-through, and the ``unit_format`` /

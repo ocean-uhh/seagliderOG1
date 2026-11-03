@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Migrating to 0.1.0 &mdash; seagliderOG1 0.2.0.post1.dev2 documentation</title>
+  <title>Migrating to 0.1.0 &mdash; seagliderOG1 0.2.0.post1.dev3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=27b10d97"></script>
+      <script src="_static/documentation_options.js?v=83c9898e"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -22,7 +22,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Changelog" href="changelog.html" />
-    <link rel="prev" title="API reference" href="api.html" /> 
+    <link rel="prev" title="Migrating to 0.3.0" href="migrating_0_3_0.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -54,6 +54,7 @@
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="phase.html">How the phase is assigned</a></li>
 <li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
@@ -75,6 +76,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_3_0.html">Migrating to 0.3.0</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Migrating to 0.1.0</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#the-whole-mission-in-one-call">The whole mission in one call</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#load-dive-files">Load dive files</a></li>
@@ -294,7 +296,8 @@ installed from PyPI you never had them — they are shimmed for development inst
 <td><p><code class="docutils literal notranslate"><span class="pre">readers.profile_number_from_filename</span></code> / <code class="docutils literal notranslate"><span class="pre">serial_from_filename</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tools.calc_Z</span></code> / <code class="docutils literal notranslate"><span class="pre">assign_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">assign_profile_number</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">tools.add_depth</span></code> / <code class="docutils literal notranslate"><span class="pre">add_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">add_profile_number</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tools.add_depth</span></code> / <code class="docutils literal notranslate"><span class="pre">add_phase</span></code> / <code class="docutils literal notranslate"><span class="pre">add_profile_number</span></code> (removed in 0.3.0: use
+<code class="docutils literal notranslate"><span class="pre">add_phase</span></code> then <code class="docutils literal notranslate"><span class="pre">add_profiles</span></code>)</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tools.reformat_units_str</span></code> / <code class="docutils literal notranslate"><span class="pre">reformat_units_var</span></code> / <code class="docutils literal notranslate"><span class="pre">convert_units_var</span></code> <em>(deprecated 0.2.0)</em></p></td>
 <td><p>resolve through <code class="docutils literal notranslate"><span class="pre">vocabularies.UNITS</span></code>; a spelling the view cannot relate now raises
@@ -359,7 +362,7 @@ page). The attribute is <code class="docutils literal notranslate"><span class="
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="api.html" class="btn btn-neutral float-left" title="API reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="migrating_0_3_0.html" class="btn btn-neutral float-left" title="Migrating to 0.3.0" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="changelog.html" class="btn btn-neutral float-right" title="Changelog" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

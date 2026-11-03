@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1 &mdash; seagliderOG1 0.2.0.post1.dev2 documentation</title>
+  <title>seagliderOG1 &mdash; seagliderOG1 0.2.0.post1.dev3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=27b10d97"></script>
+      <script src="_static/documentation_options.js?v=83c9898e"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -53,6 +53,7 @@
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="phase.html">How the phase is assigned</a></li>
 <li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
@@ -74,6 +75,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_3_0.html">Migrating to 0.3.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
@@ -146,6 +148,16 @@ mission in, one OG1 file out; the platform, contributor and institution metadata
 <li class="toctree-l2"><a class="reference internal" href="conversion.html#what-changes">What changes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conversion.html#variables-that-differ-between-dives">Variables that differ between dives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conversion.html#checking-the-output">Checking the output</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="phase.html">How the phase is assigned</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="phase.html#what-a-seaglider-dive-looks-like">What a Seaglider dive looks like</a></li>
+<li class="toctree-l2"><a class="reference internal" href="phase.html#the-algorithm">The algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="phase.html#in-the-file">In the file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="phase.html#profiles-and-segments">Profiles and segments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="phase.html#in-the-report">In the report</a></li>
+<li class="toctree-l2"><a class="reference internal" href="phase.html#the-figures">The figures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="phase.html#sources">Sources</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a><ul>
@@ -231,6 +243,13 @@ mission in, one OG1 file out; the platform, contributor and institution metadata
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_3_0.html">Migrating to 0.3.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="migrating_0_3_0.html#phase">PHASE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="migrating_0_3_0.html#basestation-2-10-files">Basestation 2.10 files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="migrating_0_3_0.html#sensor-serial-numbers-and-calibration-dates">Sensor serial numbers and calibration dates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="migrating_0_3_0.html#removed-names">Removed names</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="migrating_0_1_0.html#the-whole-mission-in-one-call">The whole mission in one call</a></li>
 <li class="toctree-l2"><a class="reference internal" href="migrating_0_1_0.html#load-dive-files">Load dive files</a></li>

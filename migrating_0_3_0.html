@@ -1,0 +1,282 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migrating to 0.3.0 &mdash; seagliderOG1 0.2.0.post1.dev3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=83c9898e"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Migrating to 0.1.0" href="migrating_0_1_0.html" />
+    <link rel="prev" title="API reference" href="api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg271 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="phase.html">How the phase is assigned</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_report.html">Example report</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="units_mapping.html">Unit mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Migrating to 0.3.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#phase">PHASE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basestation-2-10-files">Basestation 2.10 files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sensor-serial-numbers-and-calibration-dates">Sensor serial numbers and calibration dates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#removed-names">Removed names</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1">GitHub repository</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Migrating to 0.3.0</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/migrating_0_3_0.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="migrating-to-0-3-0">
+<span id="migrating-0-3-0"></span><h1>Migrating to 0.3.0<a class="headerlink" href="#migrating-to-0-3-0" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Draft.</strong> 0.3.0 is not released. This page collects the changes on <code class="docutils literal notranslate"><span class="pre">main</span></code> since 0.2.0
+that change what a file holds or what a call accepts, and will be completed before the
+tag.</p>
+</div>
+<p>0.3.0 changes the output: reconvert your missions. Nothing on this page needs a code change
+unless you read <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>, <code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code> or the <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> serial numbers and dates, or still
+import a pre-0.1.0 name.</p>
+<section id="phase">
+<h2>PHASE<a class="headerlink" href="#phase" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">PHASE</span></code> is assigned from what the glider recorded it did (see <a class="reference internal" href="phase.html"><span class="doc">How the phase is assigned</span></a>). On the same
+dive, 0.2.0 and 0.3.0 differ like this:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 22.0%" />
+<col style="width: 39.0%" />
+<col style="width: 39.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>0.2.0</p></th>
+<th class="head"><p>0.3.0</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>values used</p></td>
+<td><p>1 ascent, 2 descent, 3 at the first two GPS fixes</p></td>
+<td><p>1 ascent, 2 descent, 3 surfacing, 4 parking (a loiter), 5 inflection, 0 unknown</p></td>
+</tr>
+<tr class="row-odd"><td><p>descent / ascent split</p></td>
+<td><p>at the pressure maximum</p></td>
+<td><p>at the glider’s apogee (state table, or the G&amp;C event that moves the VBD to zero)</p></td>
+</tr>
+<tr class="row-even"><td><p>bottom of the dive</p></td>
+<td><p>descent to the pressure maximum, then ascent</p></td>
+<td><p>inflection (the apogee); the deepest sample can fall in the first ascent data points</p></td>
+</tr>
+<tr class="row-odd"><td><p>end of the climb</p></td>
+<td><p>ascent</p></td>
+<td><p>ascent through the surface coast (the OG1 table does not name it), then surfacing from
+begin surface</p></td>
+</tr>
+<tr class="row-even"><td><p>GPS fixes</p></td>
+<td><p>the first two 3, the last one ascent</p></td>
+<td><p>every fix 3</p></td>
+</tr>
+<tr class="row-odd"><td><p>data type</p></td>
+<td><p>byte, <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> 127</p></td>
+<td><p>byte, <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> 0</p></td>
+</tr>
+<tr class="row-even"><td><p>attributes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">phase_vocabulary</span></code></p></td>
+<td><p>also <code class="docutils literal notranslate"><span class="pre">flag_values</span></code>, <code class="docutils literal notranslate"><span class="pre">flag_meanings</span></code>, <code class="docutils literal notranslate"><span class="pre">phase_calculation_method</span></code>,
+<code class="docutils literal notranslate"><span class="pre">phase_calculation_method_vocabulary</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>Code that selects profiles with <code class="docutils literal notranslate"><span class="pre">PHASE</span> <span class="pre">==</span> <span class="pre">2</span></code> / <code class="docutils literal notranslate"><span class="pre">PHASE</span> <span class="pre">==</span> <span class="pre">1</span></code> still works, but the apogee
+samples (5) are no longer in either. To keep every sample, split
+each dive at its inflection, or at its deepest sample as 0.2.0 did.</p>
+<p>xarray reads <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> with its <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> 0 as missing, so <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> 0 (unknown) comes back
+as NaN; <code class="docutils literal notranslate"><span class="pre">xr.open_dataset(...,</span> <span class="pre">mask_and_scale=False)</span></code> or <code class="docutils literal notranslate"><span class="pre">ds.PHASE.fillna(0)</span></code> keeps the 0.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code></dt><dd><p>Now from <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>, as OG1 defines it: one number per run of descent or ascent, -9999 on
+every other data point (surfacing, inflection). 0.2.0 split each dive at the pressure maximum,
+numbered the halves 2n-1 and 2n from the dive number, and gave every data point a number.
+<code class="docutils literal notranslate"><span class="pre">tools.add_profile_number</span></code> (and its old name <code class="docutils literal notranslate"><span class="pre">assign_profile_number</span></code>), which did that, is
+removed: call <code class="docutils literal notranslate"><span class="pre">tools.add_phase</span></code>, then <code class="docutils literal notranslate"><span class="pre">tools.add_profiles</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PROFILE_DIRECTION</span></code>, <code class="docutils literal notranslate"><span class="pre">SEGMENT_NUMBER</span></code></dt><dd><p>New (OG1): 1/-1/0 for descent/ascent/other, and +1 each time the glider enters surfacing.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">dive_number</span></code></dt><dd><p>Renamed from <code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code>: it is the Seaglider’s dive number, not an OG1 variable, so
+it is written in lower case like the other non-OG1 variables.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code></dt><dd><p>0 (no QC performed) on every data point, with the OG1 flag scale 0–4 as <code class="docutils literal notranslate"><span class="pre">flag_values</span></code> and
+<code class="docutils literal notranslate"><span class="pre">flag_meanings</span></code>. 0.2.0 wrote 0 with no flag attributes.</p>
+</dd>
+</dl>
+</section>
+<section id="basestation-2-10-files">
+<h2>Basestation 2.10 files<a class="headerlink" href="#basestation-2-10-files" title="Link to this heading"></a></h2>
+<p>Files whose <code class="docutils literal notranslate"><span class="pre">gc_state_secs</span></code> are seconds from the dive start (basestation 2.10) no longer put
+data points in January 1970. Their output name and <code class="docutils literal notranslate"><span class="pre">time_coverage_start</span></code> change from
+<code class="docutils literal notranslate"><span class="pre">sg033_19700101T000012_R</span></code> to the dive’s real start, for example <code class="docutils literal notranslate"><span class="pre">sg033_20100903T181710_R</span></code>.</p>
+</section>
+<section id="sensor-serial-numbers-and-calibration-dates">
+<h2>Sensor serial numbers and calibration dates<a class="headerlink" href="#sensor-serial-numbers-and-calibration-dates" title="Link to this heading"></a></h2>
+<p>Serial numbers and calibration dates are read from the calibration comments by named rules
+(see <a class="reference internal" href="calibration_comments.html"><span class="doc">How calibration comments are read</span></a>); files differ from 0.2.0 wherever the old parser was wrong.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 30.0%" />
+<col style="width: 30.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>sample</p></th>
+<th class="head"><p>0.2.0 wrote</p></th>
+<th class="head"><p>0.3.0</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>sg005 CTD (<code class="docutils literal notranslate"><span class="pre">SBE</span> <span class="pre">24520-1</span> <span class="pre">calibration</span> <span class="pre">04FEB08</span></code>)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SENSOR_CTD_245201</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SENSOR_CTD_24520-1</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>sg005 WET Labs (no comment)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SENSOR_FLUOROMETER_0000</span></code>, date <code class="docutils literal notranslate"><span class="pre">00-00-0000</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SENSOR_FLUOROMETER_UNK</span></code>, date <code class="docutils literal notranslate"><span class="pre">UNK</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p>A serial or date that cannot be read is <code class="docutils literal notranslate"><span class="pre">UNK</span></code>; <code class="docutils literal notranslate"><span class="pre">0000</span></code>, <code class="docutils literal notranslate"><span class="pre">00-00-0000</span></code>, <code class="docutils literal notranslate"><span class="pre">0000-00-00</span></code>,
+<code class="docutils literal notranslate"><span class="pre">Format</span> <span class="pre">Error</span></code> and <code class="docutils literal notranslate"><span class="pre">None</span> <span class="pre">Found</span></code> are no longer written.</p></li>
+<li><p>Two-number dates are read by separator: slashes month-first (<code class="docutils literal notranslate"><span class="pre">9/10/08</span></code> → 10 September),
+dots and dashes day-first (<code class="docutils literal notranslate"><span class="pre">12.05.2012</span></code> → 12 May). 0.2.0 read every such date day-first.</p></li>
+<li><p>New on each <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code>: <code class="docutils literal notranslate"><span class="pre">original_calibcomm</span></code> (the comment as written) and, for
+multi-channel instruments, <code class="docutils literal notranslate"><span class="pre">sensor_calibration_dates</span></code>. New global:
+<code class="docutils literal notranslate"><span class="pre">conversion_sensor_calibration</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sensors.&lt;key&gt;.calibration_date</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> must be an ISO date (<code class="docutils literal notranslate"><span class="pre">YYYY-MM-DD</span></code>).</p></li>
+</ul>
+</section>
+<section id="removed-names">
+<h2>Removed names<a class="headerlink" href="#removed-names" title="Link to this heading"></a></h2>
+<p><em>To be completed with the release.</em> The pre-0.1.0 names that warn in 0.1.x and 0.2.x are
+removed in 0.3.0; <a class="reference internal" href="migrating_0_1_0.html"><span class="doc">Migrating to 0.1.0</span></a> gives each one’s replacement.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api.html" class="btn btn-neutral float-left" title="API reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="migrating_0_1_0.html" class="btn btn-neutral float-right" title="Migrating to 0.1.0" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

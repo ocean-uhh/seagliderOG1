@@ -1,0 +1,413 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How the phase is assigned &mdash; seagliderOG1 0.2.0.post1.dev3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=83c9898e"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="How calibration comments are read" href="calibration_comments.html" />
+    <link rel="prev" title="What the conversion does" href="conversion.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg271 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How the phase is assigned</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#what-a-seaglider-dive-looks-like">What a Seaglider dive looks like</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-algorithm">The algorithm</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#discussed-not-applied">Discussed, not applied</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#in-the-file">In the file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#profiles-and-segments">Profiles and segments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#in-the-report">In the report</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-figures">The figures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sources">Sources</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_report.html">Example report</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="units_mapping.html">Unit mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_3_0.html">Migrating to 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1">GitHub repository</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">How the phase is assigned</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/phase.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="how-the-phase-is-assigned">
+<span id="phase"></span><h1>How the phase is assigned<a class="headerlink" href="#how-the-phase-is-assigned" title="Link to this heading"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">PHASE</span></code> says what the glider was doing at each sample, in the <a class="reference external" href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md">OG1 phase vocabulary</a>.
+The converter assigns it from what the Seaglider recorded it did — its state table and its
+guidance-and-control (G&amp;C) events — with GPS fixes for the surface and pressure as the last
+fallback. This page states the algorithm, its fallbacks, and shows it on the bundled samples.</p>
+<section id="what-a-seaglider-dive-looks-like">
+<h2>What a Seaglider dive looks like<a class="headerlink" href="#what-a-seaglider-dive-looks-like" title="Link to this heading"></a></h2>
+<p>A Seaglider repeats one cycle per dive file (SGX manual, §2.2.3 <em>Run phases</em>), and records
+each stage in its state table (<code class="docutils literal notranslate"><span class="pre">gc_state_state</span></code>):</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Seaglider stage</p></th>
+<th class="head"><p>what happens</p></th>
+<th class="head"><p>OG1 <code class="docutils literal notranslate"><span class="pre">PHASE</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>surface</p></td>
+<td><p>GPS fix, communications, a second GPS fix</p></td>
+<td><p>3 surfacing</p></td>
+</tr>
+<tr class="row-odd"><td><p>dive</p></td>
+<td><p>bleeds oil and sinks (nose down until <code class="docutils literal notranslate"><span class="pre">$D_FLARE</span></code>, then at the dive
+angle)</p></td>
+<td><p>2 descent</p></td>
+</tr>
+<tr class="row-even"><td><p>apogee</p></td>
+<td><p>at the target depth, pitch to the apogee angle and VBD to zero</p></td>
+<td><p>5 inflection</p></td>
+</tr>
+<tr class="row-odd"><td><p>climb</p></td>
+<td><p>pumps oil, pitches up, rises to <code class="docutils literal notranslate"><span class="pre">$D_SURF</span></code></p></td>
+<td><p>1 ascent</p></td>
+</tr>
+<tr class="row-even"><td><p>surface coast</p></td>
+<td><p>above <code class="docutils literal notranslate"><span class="pre">$D_SURF</span></code>, still rising and sampling, to the surface</p></td>
+<td><p>1 ascent (held)</p></td>
+</tr>
+<tr class="row-odd"><td><p>loiter</p></td>
+<td><p>held at a depth (when the pilot commands it)</p></td>
+<td><p>4 parking</p></td>
+</tr>
+</tbody>
+</table>
+<p>The CTD samples from the start of the dive to the end of the coast; the surface interval is
+split between the dive file that ends with it (the fix on surfacing) and the next (the two
+fixes before diving). <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> 6 (propelled) and 7 (transition) are not assigned.</p>
+</section>
+<section id="the-algorithm">
+<h2>The algorithm<a class="headerlink" href="#the-algorithm" title="Link to this heading"></a></h2>
+<p>Per dive file, in this order.</p>
+<p><strong>Step 1</strong>, from the first of these signals the file has:</p>
+<ol class="arabic">
+<li><p><strong>The state table</strong> (<code class="docutils literal notranslate"><span class="pre">gc_state_state</span></code>; basestation 2.10 and later). The state names
+and numbers are the basestation’s own list, in begin/end pairs. The data points from a begin
+state to its end state take the phase the Seaglider column of the <a class="reference external" href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation
+table</a>
+specifies for that transition; the phase holds from the begin state until the next
+listed transition begins, and a pair the table does not list is ignored:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>pair</p></th>
+<th class="head"><p>states</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">PHASE</span></code></p></th>
+<th class="head"><p>phase from</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0 → 1</p></td>
+<td><p>begin dive → end dive</p></td>
+<td><p>2 descent</p></td>
+<td><p>OG1 table</p></td>
+</tr>
+<tr class="row-odd"><td><p>2 → 3</p></td>
+<td><p>begin climb → end climb</p></td>
+<td><p>1 ascent</p></td>
+<td><p>OG1 table</p></td>
+</tr>
+<tr class="row-even"><td><p>4 → 5</p></td>
+<td><p>begin apogee → end apogee</p></td>
+<td><p>5 inflection</p></td>
+<td><p>OG1 table</p></td>
+</tr>
+<tr class="row-odd"><td><p>6 → 7</p></td>
+<td><p>begin loiter → end loiter</p></td>
+<td><p>4 parking</p></td>
+<td><p>OG1 table</p></td>
+</tr>
+<tr class="row-even"><td><p>8 → 9</p></td>
+<td><p>begin → end surface coast</p></td>
+<td><p>no change (held)</p></td>
+<td><p>not in the OG1 table</p></td>
+</tr>
+<tr class="row-odd"><td><p>10 → 11</p></td>
+<td><p>begin → end subsurface finish</p></td>
+<td><p>5 inflection</p></td>
+<td><p>OG1 table</p></td>
+</tr>
+<tr class="row-even"><td><p>12 → 13</p></td>
+<td><p>begin → end recovery</p></td>
+<td><p>no change (held)</p></td>
+<td><p>not in the OG1 table</p></td>
+</tr>
+<tr class="row-odd"><td><p>14 → 15</p></td>
+<td><p>begin surface → end surface</p></td>
+<td><p>3 surfacing</p></td>
+<td><p>OG1 table</p></td>
+</tr>
+</tbody>
+</table>
+<p>States written at the same second (end apogee and begin climb, for example) keep the
+order the file wrote them. A code with no name is logged as a WARNING. A begin state
+whose end state never comes runs to the end of the dive file, so a file cut off mid-dive
+keeps that phase to its end (sg271 dive 1 ends in the apogee, with end-of-phase code
+<code class="docutils literal notranslate"><span class="pre">ABORT_DEPTH_EXCEEDED</span></code>).</p>
+<p>The surface coast (8, 9) and recovery (12, 13) are not listed in the OG1 table, so they
+are ignored: the phase before them holds (ascent, through the coast). Data points
+before the first named begin state take the phase of the first named end state (a file
+opens with “end surface”: surfacing). Data points still unset after step 2 take the phase of
+the data point before them. Basestation 2.10 files write 8 and 9 around the surface and no 14
+or 15, so on those files the surface time is the GPS fix data points and what follows them.</p>
+</li>
+<li><p><strong>The G&amp;C events</strong> (<code class="docutils literal notranslate"><span class="pre">gc_st_secs</span></code>, <code class="docutils literal notranslate"><span class="pre">gc_end_secs</span></code>, <code class="docutils literal notranslate"><span class="pre">gc_vbd_ctl</span></code>), for files with no state
+table (basestation 2.8). The inflection is the first G&amp;C event that moves the VBD to zero
+after the dive’s bleed; descent before it, ascent after. Where a file has both, this event
+is where the state table’s apogee falls. Without a state table the coast cannot be seen,
+so it is ascent.</p></li>
+<li><p><strong>Pressure</strong>, for files with neither: descent up to and including the pressure maximum,
+ascent after. No inflection is assigned.</p></li>
+</ol>
+<p><strong>Step 2 — GPS fixes.</strong> Every data point at a GPS fix time is 3 (surfacing): a fix means the glider
+is at the surface. The converter writes each fix as its own data points (<code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code>,
+<code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code>); the CTD does not sample at the surface, so these are
+the only data points this step touches. It is the only way files without a state table get
+surfacing, and it keeps the fix taken at the end of a dive cut off before “begin surface”
+(sg271 dive 1) at the surface.</p>
+<p>A sample no step claims is 0 (unknown). No piloting command is used: <code class="docutils literal notranslate"><span class="pre">log_D_FLARE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">log_D_TGT</span></code>, <code class="docutils literal notranslate"><span class="pre">log_D_SURF</span></code> and <code class="docutils literal notranslate"><span class="pre">log_LOITER_*</span></code> say what the glider was told to do, not
+what it did, and are drawn on the figures for comparison only.</p>
+<section id="discussed-not-applied">
+<h3>Discussed, not applied<a class="headerlink" href="#discussed-not-applied" title="Link to this heading"></a></h3>
+<p>Two uses of 7 (transition) were tried and are switched off, because the OG1 translation table
+gives Seaglider no transition. The code is kept, commented, for discussion:</p>
+<ul class="simple">
+<li><p><em>the start of the dive</em>: descent up to the last sample shallower than <code class="docutils literal notranslate"><span class="pre">$D_FLARE</span></code>, while
+the glider bleeds at the surface nose-down before pitching to the dive angle. The last
+such sample, not the first deeper one, because a glider can sink past <code class="docutils literal notranslate"><span class="pre">$D_FLARE</span></code> and
+come back above it (one test dive went to 7 m and back to 3 m with <code class="docutils literal notranslate"><span class="pre">$D_FLARE</span></code> at 3 m);</p></li>
+<li><p><em>the bottom</em>: ascent from “end apogee” to the deepest sample, while the glider pumps and
+pitches up but is still sinking (about half the sample dives reach their deepest sample
+after “end apogee”). A refinement would hold it until the rise rate first reaches the
+25th percentile of the rise rates from the end of the apogee to the start of surfacing.</p></li>
+</ul>
+</section>
+</section>
+<section id="in-the-file">
+<h2>In the file<a class="headerlink" href="#in-the-file" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">PHASE</span></code> (byte, <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> 0) carries:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">phase_vocabulary</span></code></dt><dd><p>The OG1 phase vocabulary (linked above).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">flag_values</span></code>, <code class="docutils literal notranslate"><span class="pre">flag_meanings</span></code></dt><dd><p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">1</span> <span class="pre">2</span> <span class="pre">3</span> <span class="pre">4</span> <span class="pre">5</span> <span class="pre">6</span> <span class="pre">7</span></code> and <code class="docutils literal notranslate"><span class="pre">unknown</span> <span class="pre">ascent</span> <span class="pre">descent</span> <span class="pre">surfacing</span> <span class="pre">parking</span> <span class="pre">inflection</span> <span class="pre">propelled</span>
+<span class="pre">transition</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">phase_calculation_method</span></code></dt><dd><p>Which signal assigned which dives, for example “From the glider’s state table
+(gc_state_state) on dives 1-3. Data points at GPS fix times are surfacing; …”.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">phase_calculation_method_vocabulary</span></code></dt><dd><p>Empty: OG1 has no vocabulary for methods yet.</p>
+</dd>
+</dl>
+<p><code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code> is 0 (no QC performed) on every data point: the phase is not quality controlled. Its
+<code class="docutils literal notranslate"><span class="pre">flag_values</span></code> are the OG1 scale 0–4. Two attributes differ from the OG1 table, and the
+phase page marks both in amber: <code class="docutils literal notranslate"><span class="pre">flag_meanings</span></code> is written as CF words
+(<code class="docutils literal notranslate"><span class="pre">no_qc_performed</span> <span class="pre">good_data</span> <span class="pre">probably_good_data</span> <span class="pre">probably_bad_data</span> <span class="pre">bad_data</span></code>) because the OG1
+phrase cannot be paired with the five values, and no <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> is written because the
+OG1 table’s <code class="docutils literal notranslate"><span class="pre">&quot;</span> <span class="pre">&quot;</span></code> is a string on a byte variable.</p>
+</section>
+<section id="profiles-and-segments">
+<h2>Profiles and segments<a class="headerlink" href="#profiles-and-segments" title="Link to this heading"></a></h2>
+<p>Three OG1 variables follow from <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>, with the OG1 definitions written into each as its
+<code class="docutils literal notranslate"><span class="pre">*_calculation_method</span></code> attribute:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> (<code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> -9999)</dt><dd><p>One number per run of descent (2) or ascent (1) data points, from 1, in time order. Every other
+data point — surfacing, inflection, parking, unknown — is -9999, so the apogee and the surface
+belong to no profile. On the samples, profile 2n-1 is dive n’s descent and 2n its ascent.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PROFILE_DIRECTION</span></code> (byte, <code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> 0)</dt><dd><p>1 on descent data points, -1 on ascent data points, 0 elsewhere.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">SEGMENT_NUMBER</span></code> (<code class="docutils literal notranslate"><span class="pre">_FillValue</span></code> -9999)</dt><dd><p>1 from the first data point, +1 each time the glider enters surfacing: a segment is a surface
+interval and the dive after it.</p>
+</dd>
+</dl>
+<p><code class="docutils literal notranslate"><span class="pre">dive_number</span></code> is kept, in lower case because it is not an OG1 variable: it is the
+Seaglider’s own dive number, from the basestation file (<code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code> before 0.3.0).</p>
+</section>
+<section id="in-the-report">
+<h2>In the report<a class="headerlink" href="#in-the-report" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">process</span> <span class="pre">--report</span></code> and <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span></code> write a phase page,
+<code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_phase.html</span></code>, beside the conversion page, linked from its navigation. It is a page of
+its own because how phase should be assigned is under discussion in the OceanGliders
+community. It shows:</p>
+<ul class="simple">
+<li><p>the file’s <code class="docutils literal notranslate"><span class="pre">phase_calculation_method</span></code>, the algorithm as pseudocode, every state code
+with its phase and how often it appears in the file, and the variables the algorithm
+reads with whether the file has them;</p></li>
+<li><p>the data points and dives per phase;</p></li>
+<li><p>the dive figure below (without the old/new comparison) for three dives: dive 2 (or 1), and
+one drawn from each of the middle and last thirds of the mission, at random but the same on
+every run;</p></li>
+<li><p>every dive’s phase shares with its depth and duration, and pitch against dP/dt for the
+three dives.</p></li>
+</ul>
+</section>
+<section id="the-figures">
+<h2>The figures<a class="headerlink" href="#the-figures" title="Link to this heading"></a></h2>
+<p>Each dive figure shares one time axis: pressure, each sample colored by its <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>, with
+the commanded depths dashed; pitch; the G&amp;C events’ VBD setting; the state table
+(<code class="docutils literal notranslate"><span class="pre">gc_state_state</span></code>) as a step line, when the file has one (dotted lines mark the start of
+each G&amp;C event); and <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> as a band, each color held until the next data point.
+The CTD does not sample at the surface, so the yellow band at each end, with no pressure
+samples under it, is time at the surface between GPS fixes: at the start, from the first fix
+through the Iridium call to the second fix and the start of the dive; at the end, from the
+last sample to the fix taken on surfacing. Here the band is
+drawn twice: the algorithm above (new), and the rule converters before 0.3.0 used (old:
+descent to the pressure maximum, ascent after). Vertical yellow lines are GPS fixes.</p>
+<p>sg271 dive 3 (basestation 3.0.6, state table):</p>
+<img alt="sg271 dive 3: pressure, pitch, state table and PHASE, new and old" src="_images/dive_sg271.png" />
+<p>sg005 dive 1 (basestation 2.8, G&amp;C events):</p>
+<img alt="sg005 dive 1: pressure, pitch, G&amp;C VBD settings and PHASE, new and old" src="_images/dive_sg005.png" />
+<p>Every dive’s share of data points in each phase (top). Below, the
+dive’s maximum pressure (bars) and duration (dots), since a share means little without how
+deep and how long the dive was. Fewer than six dives are drawn in six slots.</p>
+<img alt="Per-dive share of data points in each phase, sg271" src="_images/fractions_sg271.png" />
+<img alt="Per-dive share of data points in each phase, sg005" src="_images/fractions_sg005.png" />
+<p>Pitch against the rate of pressure change, colored by phase, every dive. Descent sits at
+negative pitch and positive dP/dt (i.e., increasing pressure), ascent at positive pitch and negative dP/dt; inflection
+lies between them. Descent data points at steep negative pitch with dP/dt near zero are the glider
+bleeding at the surface before the flare; ascent data points at positive pitch with dP/dt still
+positive are the glider still sinking after the apogee ends. Basestation 3
+records pitch and pressure at different times, so sg271’s pitch is interpolated in time onto
+the pressure samples.</p>
+<img alt="Pitch against dP/dt colored by phase for sg271 and sg005" src="_images/pitch_dpdt.png" />
+<p>The figures are drawn by <code class="docutils literal notranslate"><span class="pre">docs/generate_phase_figures.py</span></code> on every docs build, with the
+functions in <code class="xref py py-mod docutils literal notranslate"><span class="pre">seagliderOG1.reports.phase</span></code> that the phase page uses.</p>
+</section>
+<section id="sources">
+<h2>Sources<a class="headerlink" href="#sources" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>SGX documentation 2024 v1.0, §2.2.3 <em>Run phases</em>,
+<a class="reference external" href="https://iop.apl.washington.edu/iopsg/SGX_documentation_2024-v1.0.pdf">iop.apl.washington.edu</a>.</p></li>
+<li><p>Seaglider File Formats Manual: the <code class="docutils literal notranslate"><span class="pre">$STATE</span></code> and <code class="docutils literal notranslate"><span class="pre">$GC</span></code> lines of the log file.</p></li>
+<li><p><a class="reference external" href="https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.html">OG1 format</a>:
+the <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> and <code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code> variables.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="conversion.html" class="btn btn-neutral float-left" title="What the conversion does" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="calibration_comments.html" class="btn btn-neutral float-right" title="How calibration comments are read" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

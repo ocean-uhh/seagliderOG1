@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.tools &mdash; seagliderOG1 0.2.0.post1.dev2 documentation</title>
+  <title>seagliderOG1.tools &mdash; seagliderOG1 0.2.0.post1.dev3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=27b10d97"></script>
+      <script src="../../_static/documentation_options.js?v=83c9898e"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -51,6 +51,7 @@
 <p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../phase.html">How the phase is assigned</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../calibration_comments.html">How calibration comments are read</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
@@ -72,6 +73,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../migrating_0_3_0.html">Migrating to 0.3.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
 </ul>
@@ -118,14 +120,14 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">vocabularies</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">_phase</span><span class="p">,</span> <span class="n">vocabularies</span>
 
 <span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">"add_depth"</span><span class="p">,</span>
     <span class="s2">"add_phase"</span><span class="p">,</span>
-    <span class="s2">"add_profile_number"</span><span class="p">,</span>
+    <span class="s2">"add_profiles"</span><span class="p">,</span>
     <span class="s2">"add_dive_number"</span><span class="p">,</span>
     <span class="s2">"convert_qc_flags"</span><span class="p">,</span>
     <span class="s2">"encode_times_og1"</span><span class="p">,</span>
@@ -164,149 +166,96 @@
     <span class="n">dive_var</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">dive_number</span><span class="p">),</span>
         <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
-        <span class="n">attrs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"DIVE_NUMBER"</span><span class="p">]),</span>
+        <span class="n">attrs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]),</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">DIVE_NUMBER</span><span class="o">=</span><span class="n">dive_var</span><span class="p">)</span></div>
-
-
-
-<div class="viewcode-block" id="add_profile_number">
-<a class="viewcode-back" href="../../api.html#seagliderOG1.tools.add_profile_number">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">add_profile_number</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">ds1</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Assign profile numbers to measurements based on dive phases (down/up casts).</span>
-
-<span class="sd">    This function separates each dive into two profiles: descent (down cast) and</span>
-<span class="sd">    ascent (up cast) phases. The dive is split at the maximum pressure point,</span>
-<span class="sd">    with the descent phase getting the dive number and ascent getting dive + 0.5.</span>
-<span class="sd">    Profile numbers are then calculated as 2 * DIVE_NUMBER - 1.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    ds</span>
-<span class="sd">        The dataset to add profile numbers to.</span>
-<span class="sd">    ds1</span>
-<span class="sd">        Dataset containing dive number information in attributes.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    xarray.Dataset</span>
-<span class="sd">        Dataset with 'DIVE_NUMBER' and 'PROFILE_NUMBER' variables added.</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    - Requires pressure variable (PRES)</span>
-<span class="sd">    """</span>
-    <span class="n">dive_number</span> <span class="o">=</span> <span class="n">ds1</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]</span>
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">add_dive_number</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dive_number</span><span class="p">)</span>
-
-    <span class="n">fill_value</span> <span class="o">=</span> <span class="o">-</span><span class="mi">9999</span>
-    <span class="n">profile_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">fill_value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">profile_numbers</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">dive_number</span><span class="p">):</span>
-        <span class="n">pmax_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanargmax</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"PRES"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
-
-        <span class="n">profile_numbers</span><span class="p">[:</span> <span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dive_number</span> <span class="o">-</span> <span class="mi">1</span>
-        <span class="n">profile_numbers</span><span class="p">[</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dive_number</span>
-
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
-        <span class="n">PROFILE_NUMBER</span><span class="o">=</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
-            <span class="n">profile_numbers</span><span class="p">,</span>
-            <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
-            <span class="c1"># Built here, not mapped from a basestation variable, so the vocabulary</span>
-            <span class="c1"># attributes are applied here (copied: vocab_attrs is shared).</span>
-            <span class="n">attrs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">]),</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"_FillValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_value</span>
-
-    <span class="k">return</span> <span class="n">ds</span></div>
+    <span class="k">return</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">dive_number</span><span class="o">=</span><span class="n">dive_var</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="add_phase">
 <a class="viewcode-back" href="../../api.html#seagliderOG1.tools.add_phase">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_phase</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Add 'PHASE' and 'PHASE_QC' variables indicating the phase of each measurement.</span>
+<span class="w">    </span><span class="sd">"""Add ``PHASE`` and ``PHASE_QC``: what the glider was doing at each sample.</span>
 
-<span class="sd">    The phase is determined from the pressure readings ('PRES') for each unique</span>
-<span class="sd">    dive number ('dive_num').</span>
+<span class="sd">    ``PHASE`` takes the OG1 phase vocabulary ids (``phase_vocabulary``): 1 ascent,</span>
+<span class="sd">    2 descent, 3 surfacing, 5 inflection, 0 unknown. Per dive it comes from the glider's</span>
+<span class="sd">    state table (``gc_state_state``) where the file has one, otherwise from the</span>
+<span class="sd">    guidance-and-control events (the apogee is the event that moves the VBD to zero),</span>
+<span class="sd">    otherwise from pressure alone (descent to the pressure maximum, ascent after). GPS</span>
+<span class="sd">    fixes are surfacing. ``phase_calculation_method`` says which signal assigned which</span>
+<span class="sd">    dives. No quality control is applied: ``PHASE_QC`` is 0 throughout.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    ds : xarray.Dataset</span>
-<span class="sd">        The input dataset containing 'dive_num' and 'PRES' variables.</span>
+<span class="sd">        A dataset on ``N_MEASUREMENTS`` with ``TIME``, ``PRES``, a dive-number variable</span>
+<span class="sd">        (``dive_number``, ``divenum``, ``dive_num``, or ``DIVE_NUMBER`` in files from before 0.3.0) and, where the</span>
+<span class="sd">        basestation wrote them, ``TIME_GPS``, ``gc_state_state``, ``gc_vbd_ctl`` and</span>
+<span class="sd">        ``gc_end_secs``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset</span>
-<span class="sd">        The dataset with additional 'PHASE' and 'PHASE_QC' variables, where:</span>
+<span class="sd">        ``ds`` with ``PHASE`` (int8, ``_FillValue`` 0) and ``PHASE_QC`` (int8, all 0).</span>
 
-<span class="sd">        - 'PHASE' indicates the phase of each measurement:</span>
-<span class="sd">            - Phase 2 up to and including the maximum pressure point.</span>
-<span class="sd">            - Phase 1 after the maximum pressure point.</span>
-<span class="sd">        - 'PHASE_QC' is an additional variable with no QC applied.</span>
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``ds`` has no dive-number variable.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    In this formulation, we are only separating into dives and climbs based on</span>
-<span class="sd">    when the glider is at the maximum depth. Future work needs to separate out</span>
-<span class="sd">    the other phases and generate a PHASE_QC:</span>
+<span class="sd">    The phase vocabulary:</span>
 <span class="sd">    https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md</span>
 <span class="sd">    """</span>
-    <span class="c1"># Determine the correct keystring for divenum</span>
-    <span class="k">if</span> <span class="s2">"dive_number"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">divenum_str</span> <span class="o">=</span> <span class="s2">"dive_number"</span>
-    <span class="k">elif</span> <span class="s2">"divenum"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">divenum_str</span> <span class="o">=</span> <span class="s2">"divenum"</span>
-    <span class="k">elif</span> <span class="s2">"dive_num"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">divenum_str</span> <span class="o">=</span> <span class="s2">"dive_num"</span>
-    <span class="k">elif</span> <span class="s2">"DIVE_NUMBER"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-        <span class="n">divenum_str</span> <span class="o">=</span> <span class="s2">"DIVE_NUMBER"</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No valid dive number variable found in the dataset."</span><span class="p">)</span>
-    <span class="c1"># Initialize the new variable with the same dimensions as dive_num</span>
-    <span class="n">ds</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
-        <span class="nb">dict</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">]),</span>
-    <span class="p">)</span>
-    <span class="c1"># Initialize the new variable PHASE_QC with the same dimensions as dive_num</span>
+    <span class="n">phase</span><span class="p">,</span> <span class="n">methods</span> <span class="o">=</span> <span class="n">_phase</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+    <span class="n">attrs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">])</span>
+    <span class="n">attrs</span><span class="p">[</span><span class="s2">"flag_values"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">_phase</span><span class="o">.</span><span class="n">PHASE_NAMES</span><span class="p">),</span> <span class="s2">"int8"</span><span class="p">)</span>
+    <span class="n">attrs</span><span class="p">[</span><span class="s2">"flag_meanings"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_phase</span><span class="o">.</span><span class="n">PHASE_NAMES</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">attrs</span><span class="p">[</span><span class="s2">"phase_calculation_method"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_phase</span><span class="o">.</span><span class="n">method_text</span><span class="p">(</span><span class="n">methods</span><span class="p">)</span>
+    <span class="n">attrs</span><span class="p">[</span><span class="s2">"phase_calculation_method_vocabulary"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">attrs</span><span class="p">[</span><span class="s2">"ancillary_variables"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"PHASE_QC"</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">phase</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"_FillValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">ds</span><span class="p">[</span><span class="s2">"PHASE_QC"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
         <span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">phase</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int8"</span><span class="p">),</span>
+        <span class="nb">dict</span><span class="p">(</span><span class="n">_phase</span><span class="o">.</span><span class="n">PHASE_QC_ATTRS</span><span class="p">),</span>
     <span class="p">)</span>
+    <span class="k">return</span> <span class="n">ds</span></div>
 
-    <span class="c1"># Iterate over each unique dive_num</span>
-    <span class="k">for</span> <span class="n">dive</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">divenum_str</span><span class="p">]):</span>
-        <span class="c1"># Get the indices for the current dive</span>
-        <span class="n">dive_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">divenum_str</span><span class="p">]</span> <span class="o">==</span> <span class="n">dive</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="c1"># Find the start and end index for the current dive</span>
-        <span class="n">start_index</span> <span class="o">=</span> <span class="n">dive_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">end_index</span> <span class="o">=</span> <span class="n">dive_indices</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-        <span class="c1"># Find the index of the maximum pressure between start_index and end_index</span>
-        <span class="n">pmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"PRES"</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 
-        <span class="c1"># Find the index where PRES attains the value pmax between start_index and end_index</span>
-        <span class="n">pmax_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span>
-            <span class="n">ds</span><span class="p">[</span><span class="s2">"PRES"</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">pmax</span>
-        <span class="p">)</span>
+<div class="viewcode-block" id="add_profiles">
+<a class="viewcode-back" href="../../api.html#seagliderOG1.tools.add_profiles">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_profiles</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Add ``PROFILE_NUMBER``, ``PROFILE_DIRECTION`` and ``SEGMENT_NUMBER`` from ``PHASE``.</span>
 
-        <span class="c1"># Assign phase 2 to all values up to and including the point where pmax is reached</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="sd">    As the OG1 format defines them: a profile is a run of descent (2) or ascent (1) rows,</span>
+<span class="sd">    numbered from 1 in time order, with ``PROFILE_NUMBER`` -9999 (its ``_FillValue``) on</span>
+<span class="sd">    every other row; ``PROFILE_DIRECTION`` is 1 descending, -1 ascending, 0 otherwise</span>
+<span class="sd">    (``_FillValue`` 0); ``SEGMENT_NUMBER`` starts at 1 and increments each time the glider</span>
+<span class="sd">    enters surfacing (3).</span>
 
-        <span class="c1"># Assign phase 1 to all values after pmax is reached</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">][</span><span class="n">pmax_index</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds : xarray.Dataset</span>
+<span class="sd">        A dataset on ``N_MEASUREMENTS``, sorted by ``TIME``, with ``PHASE``.</span>
 
-        <span class="c1"># Assign phase 3 to the time at the beginning of the dive, between the first valid TIME_GPS and the second valid TIME_GPS</span>
-        <span class="n">valid_time_gps_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-            <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">][</span><span class="n">start_index</span> <span class="p">:</span> <span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_time_gps_indices</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">first_valid_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">valid_time_gps_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">second_valid_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">valid_time_gps_indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">ds</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">][</span><span class="n">first_valid_index</span> <span class="p">:</span> <span class="n">second_valid_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
-
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        ``ds`` with the three variables.</span>
+<span class="sd">    """</span>
+    <span class="n">phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"PHASE"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"int8"</span><span class="p">)</span>
+    <span class="n">number</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">segment</span> <span class="o">=</span> <span class="n">_phase</span><span class="o">.</span><span class="n">profiles</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span> <span class="n">fill</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="p">(</span><span class="s2">"PROFILE_NUMBER"</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">_phase</span><span class="o">.</span><span class="n">PROFILE_NUMBER_ATTRS</span><span class="p">,</span> <span class="n">_phase</span><span class="o">.</span><span class="n">NUMBER_FILL</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"PROFILE_DIRECTION"</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">_phase</span><span class="o">.</span><span class="n">PROFILE_DIRECTION_ATTRS</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"SEGMENT_NUMBER"</span><span class="p">,</span> <span class="n">segment</span><span class="p">,</span> <span class="n">_phase</span><span class="o">.</span><span class="n">SEGMENT_NUMBER_ATTRS</span><span class="p">,</span> <span class="n">_phase</span><span class="o">.</span><span class="n">NUMBER_FILL</span><span class="p">),</span>
+    <span class="p">):</span>
+        <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">values</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">attrs</span><span class="p">))</span>
+        <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"_FillValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">ds</span></div>
 
 
@@ -519,9 +468,6 @@
 
 <span class="n">calc_Z</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">_renamed</span><span class="p">(</span><span class="n">add_depth</span><span class="p">,</span> <span class="s2">"tools.calc_Z"</span><span class="p">,</span> <span class="s2">"tools.add_depth"</span><span class="p">)</span>
 <span class="n">assign_phase</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">_renamed</span><span class="p">(</span><span class="n">add_phase</span><span class="p">,</span> <span class="s2">"tools.assign_phase"</span><span class="p">,</span> <span class="s2">"tools.add_phase"</span><span class="p">)</span>
-<span class="n">assign_profile_number</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">_renamed</span><span class="p">(</span>
-    <span class="n">add_profile_number</span><span class="p">,</span> <span class="s2">"tools.assign_profile_number"</span><span class="p">,</span> <span class="s2">"tools.add_profile_number"</span>
-<span class="p">)</span>
 
 <span class="c1"># The three unit helpers now resolve through the units view (vocabularies.UNITS); the ad-hoc</span>
 <span class="c1"># unit tables they used are gone. Kept as warning shims for one release (removed 0.3.0).</span>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.2.0.post1.dev2 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.2.0.post1.dev3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,14 +14,14 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=27b10d97"></script>
+      <script src="_static/documentation_options.js?v=83c9898e"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="How calibration comments are read" href="calibration_comments.html" />
+    <link rel="next" title="How the phase is assigned" href="phase.html" />
     <link rel="prev" title="Demo notebook" href="demo-output.html" /> 
 </head>
 
@@ -69,6 +69,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#checking-the-output">Checking the output</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="phase.html">How the phase is assigned</a></li>
 <li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
@@ -90,6 +91,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_3_0.html">Migrating to 0.3.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
@@ -166,7 +168,8 @@ present in only some dives gets the same name everywhere.
 <ul class="simple">
 <li><p>merge that file’s dimensions onto the measurement axis;</p></li>
 <li><p>append the GPS fixes as extra rows (<code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code>);</p></li>
-<li><p>add <code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code>, <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> and <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>;</p></li>
+<li><p>add <code class="docutils literal notranslate"><span class="pre">dive_number</span></code>, <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> and <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> (from the glider’s state table,
+G&amp;C events and GPS fixes; see <a class="reference internal" href="phase.html#phase"><span class="std std-ref">How the phase is assigned</span></a>);</p></li>
 <li><p>apply the OG1 vocabulary: rename, attach the OG1 attributes, convert units, mark the
 coordinates, encode time. A variable with no OG1 name keeps its basestation name.</p></li>
 </ul>
@@ -371,7 +374,7 @@ checks it as mandatory), so the converter writes no default text; set it to add 
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="demo-output.html" class="btn btn-neutral float-left" title="Demo notebook" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="calibration_comments.html" class="btn btn-neutral float-right" title="How calibration comments are read" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="phase.html" class="btn btn-neutral float-right" title="How the phase is assigned" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
