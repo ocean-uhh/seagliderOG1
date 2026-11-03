@@ -27,11 +27,11 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 </div>
 
 <nav class="jump-nav"><a href="#counts">OG1 phase counts</a> · <a href="#dive">Example dive cycles</a>{% if p.scatter_png %} · <a href="#pitch">Pitch and dP/dt</a>{% endif %} · <a href="#method">Algorithm</a> · <a href="#states">Seaglider state table</a> · <a href="#qc">PHASE_QC</a></nav>
-<p class="caption"><code>PHASE</code> says what the glider was doing at each data point, in the <a href="{{ p.vocabulary }}">OG1 phase vocabulary</a>. How phase should be assigned is under discussion in the OceanGliders community; the rules this converter uses, their fallbacks and the refinements still open are on <a href="{{ p.docs_url }}">How the phase is assigned</a>. <code>PHASE_QC</code> is 0 (no QC performed) on every data point.</p>
+<p class="caption"><code>PHASE</code> says what the glider was doing at each data point, in the <a href="{{ p.vocabulary }}">OG1 phase vocabulary</a>. How phase should be assigned is under discussion in the OceanGliders community.</p>
 
 <section id="counts">
 <h2>1. OG1 phase counts</h2>
-<p class="caption">Every OG1 phase id, with the number of data points (entries on <code>N_MEASUREMENTS</code>) assigned it over the {{ p.n_dives }} dive{{ "s" if p.n_dives != 1 }}, its share of all data points, and the number of dives it appears in. Which Seaglider states give which phase: the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a>. 6 (propelled) and 7 (transition) are never assigned to a Seaglider.</p>
+<p class="caption">Every OG1 phase id, with the number of data points (entries on <code>N_MEASUREMENTS</code>) assigned it over the {{ p.n_dives }} dive{{ "s" if p.n_dives != 1 }}, its share of all data points, and the number of dives it appears in. We use the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a> to determine how to assign phase for Seagliders. 6 (propelled) and 7 (transition) are never assigned to a Seaglider.</p>
 <table class="nc">
 <thead><tr><th></th><th>id</th><th>phase</th><th>Count</th><th>%</th><th>dives</th></tr></thead>
 <tbody>
@@ -39,7 +39,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 <tr><td class="swatch"><span style="background: {{ r.color }}"></span></td><td>{{ r.id }}</td><td>{{ r.name }}</td><td>{{ r.rows }}</td><td>{{ r.share }}</td><td>{{ r.dives }}</td></tr>
 {%- endfor %}
 </tbody></table>
-<p class="caption">Per dive. Top: each dive's share of data points in each phase. Bottom: the dive's maximum pressure (gray bars, left axis) and its duration from first to last data point (dots, right axis), to read each share against how deep and how long the dive was.</p>
+<p class="caption"><strong>Dive fraction in each phase.</strong> Top: the fraction of data points from each dive spent in each phase. Bottom: the dive's maximum pressure (gray bars, left axis) and duration from first to last data points (dots, right axis).</p>
 {%- if p.bars_png %}
 <figure{% if p.bars_slot %} class="{{ p.bars_slot }}"{% endif %}>
 <img alt="Per-dive share of data points in each phase, with maximum pressure and duration" src="data:image/png;base64,{{ p.bars_png }}">
@@ -50,7 +50,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 
 <section id="dive">
 <h2>2. Example dive cycles</h2>
-<p class="caption">Dive {{ p.dives|join(", ") }}: one near the start of the mission (often a shallow test dive), one drawn from the middle third of the dives and one from the last third (chosen at random, the same on every run). Each on one time axis: pressure (each sample colored by its <code>PHASE</code>; the commanded depths dashed), pitch, the G&amp;C events' VBD setting, the glider's state table (<code>gc_state_state</code>, when the file has one), and <code>PHASE</code> as a band, each color held until the next data point. Dotted lines: the start of each G&amp;C event. Yellow vertical lines: GPS fixes. The CTD does not sample at the surface, so the yellow band at each end, with no pressure samples under it, is time at the surface between GPS fixes: at the start, from the first fix through the Iridium call to the second fix and the start of the dive; at the end, from the last sample to the fix taken on surfacing.</p>
+<p class="caption">Plots below show how phase is assigned against dive cycles. Up to three are chosen to demonstrate how the rules apply. The x-axis is time and the panels show the pressure (each data point colored by its <code>PHASE</code>, with some of the commanded depths in dashed horizontal lines), pitch, the guidance and control (G&amp;C) events' VBD setting, the glider's state table (<code>gc_state_state</code>, if available), and <code>PHASE</code> as a band. Dotted lines show the start of each G&amp;C event. Yellow vertical lines are the GPS fixes. Note that when the CTD does not sample at the surface, there is no colored pressure line.</p>
 {%- for f in p.dive_figures %}
 <h3>Dive {{ f.dive }}{% if not f.complete %} (no descent, inflection and ascent){% endif %}</h3>
 {%- if f.png %}
