@@ -469,7 +469,7 @@ def draw_phase_fractions(ds: xr.Dataset, *, width_in: float = W_FULL) -> Figure 
             )
         bottom += shares[:, j]
     ax.set_ylim(0, 1)
-    ax.set_ylabel("share of the dive's data points")
+    ax.set_ylabel("fraction of\ndata points")
     ax.legend(loc="upper left", bbox_to_anchor=(1.0, 1.0), frameon=False)
     ax_depth.bar(x, max_pres, width=0.8 if few else 1.0, color="0.75")
     ax_depth.invert_yaxis()
