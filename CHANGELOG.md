@@ -11,11 +11,14 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 ### Breaking changes
 
 - `PHASE` is assigned from the glider's state table (`gc_state_state`), or its G&C events when
-  the file has no state table, with GPS fixes as surfacing; pressure alone only when a file has
-  neither. Files now carry surfacing (3) and inflexion (5); before, `PHASE` was descent to the
-  pressure maximum and ascent after. `PHASE` is `int8` and `PHASE_QC` says which signal assigned
-  each sample (1 state table or GPS, 2 G&C events, 8 pressure, 9 unknown). Reconvert. See
-  *How the phase is assigned* in the docs.
+  the file has no state table, or pressure alone; descent before the last sample above
+  `$D_FLARE` is transition (7) and GPS fixes are surfacing (3). Files now carry transition,
+  surfacing and inflection (5); before, `PHASE` was descent to the pressure maximum and ascent
+  after. `PHASE` is a byte with `_FillValue` 0, `flag_values`/`flag_meanings` from the OG1
+  vocabulary and `phase_calculation_method` naming the signal per dive; `PHASE_QC` is 0 (no QC)
+  with the OG1 flag scale. Reconvert. See *How the phase is assigned* in the docs.
+- The conversion page has a Phase section: one dive from the middle of the mission, every
+  dive's phase shares, and pitch against dP/dt.
 - Sensor serial numbers and calibration dates are read from the calibration comments by named
   rules; files differ from 0.2.0 wherever the old parser was wrong. Reconvert. On the samples:
 

@@ -449,6 +449,7 @@ def test_page_section_order_and_scalars_collapsed(tmp_path) -> None:
         "presence",
         "dimensions",
         "derived",
+        "phase",
         "dropped",
         "variables",
         "globals",

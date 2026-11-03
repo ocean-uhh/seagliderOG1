@@ -113,12 +113,13 @@ def add_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
 def add_phase(ds: xr.Dataset) -> xr.Dataset:
     """Add ``PHASE`` and ``PHASE_QC``: what the glider was doing at each sample.
 
-    ``PHASE`` takes the OG1 phase vocabulary ids: 1 ascent, 2 descent, 3 surfacing,
-    5 inflexion (the apogee), 0 unknown. Per dive it comes from the glider's state
-    table (``gc_state_state``) where the file has one, otherwise from the
+    ``PHASE`` takes the OG1 phase vocabulary ids (``phase_vocabulary``): 1 ascent,
+    2 descent, 3 surfacing, 5 inflection, 0 unknown. Per dive it comes from the glider's
+    state table (``gc_state_state``) where the file has one, otherwise from the
     guidance-and-control events (the apogee is the event that moves the VBD to zero),
-    otherwise from pressure alone (descent to the pressure maximum, ascent after).
-    GPS fixes are surfacing. ``PHASE_QC`` says which signal assigned each sample.
+    otherwise from pressure alone (descent to the pressure maximum, ascent after). GPS
+    fixes are surfacing. ``phase_calculation_method`` says which signal assigned which
+    dives. No quality control is applied: ``PHASE_QC`` is 0 throughout.
 
     Parameters
     ----------
@@ -131,7 +132,7 @@ def add_phase(ds: xr.Dataset) -> xr.Dataset:
     Returns
     -------
     xarray.Dataset
-        ``ds`` with ``PHASE`` (int8) and ``PHASE_QC`` (int8, OG1 quality-flag scale).
+        ``ds`` with ``PHASE`` (int8, ``_FillValue`` 0) and ``PHASE_QC`` (int8, all 0).
 
     Raises
     ------
@@ -143,11 +144,20 @@ def add_phase(ds: xr.Dataset) -> xr.Dataset:
     The phase vocabulary:
     https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md
     """
-    phase, qc, _ = _phase.assign(ds)
+    phase, methods = _phase.assign(ds)
     attrs = dict(vocabularies.vocab_attrs["PHASE"])
+    attrs["flag_values"] = np.array(list(_phase.PHASE_NAMES), "int8")
+    attrs["flag_meanings"] = " ".join(_phase.PHASE_NAMES.values())
+    attrs["phase_calculation_method"] = _phase.method_text(methods)
+    attrs["phase_calculation_method_vocabulary"] = ""
     attrs["ancillary_variables"] = "PHASE_QC"
     ds["PHASE"] = (["N_MEASUREMENTS"], phase, attrs)
-    ds["PHASE_QC"] = (["N_MEASUREMENTS"], qc, dict(_phase.PHASE_QC_ATTRS))
+    ds["PHASE"].encoding["_FillValue"] = np.int8(0)
+    ds["PHASE_QC"] = (
+        ["N_MEASUREMENTS"],
+        np.zeros(phase.size, dtype="int8"),
+        dict(_phase.PHASE_QC_ATTRS),
+    )
     return ds
 
 

@@ -14,21 +14,28 @@ SG271 = DATA / "seagliderOG1" / "data" / "sg271"
 SG005 = DATA / "data" / "demo_sg005"
 
 #: The order the Seaglider runs its phases in, per dive file.
-ORDER = (3, 2, 5, 1, 3)
+ORDER = (3, 7, 2, 5, 1, 3)
+
+
+def _unmasked(path: pathlib.Path) -> xr.Dataset:
+    """Load an OG1 file with PHASE as written (int8; 0 is the _FillValue, unknown)."""
+    ds = xr.load_dataset(path)
+    ds["PHASE"] = ds["PHASE"].fillna(0).astype("int8")
+    return ds
 
 
 @pytest.fixture(scope="module")
 def sg271(tmp_path_factory: pytest.TempPathFactory) -> xr.Dataset:
     """Return sg271 dives 1-3 (basestation 3.0.6, state table) converted to OG1."""
     out = _convert._convert_mission(SG271, tmp_path_factory.mktemp("sg271_phase"))
-    return xr.load_dataset(out)
+    return _unmasked(out)
 
 
 @pytest.fixture(scope="module")
 def sg005(tmp_path_factory: pytest.TempPathFactory) -> xr.Dataset:
     """Return sg005 dives 1-5 (basestation 2.8, G&C events, no state table) as OG1."""
     out = _convert._convert_mission(SG005, tmp_path_factory.mktemp("sg005_phase"))
-    return xr.load_dataset(out)
+    return _unmasked(out)
 
 
 def _runs(phase: np.ndarray) -> list[int]:
@@ -50,8 +57,10 @@ def _is_in_order(runs: list[int]) -> bool:
 
 
 @pytest.mark.parametrize("mission", ["sg271", "sg005"])
-def test_every_dive_runs_surface_descent_inflexion_ascent_surface(mission, request):
-    """Per dive the phases follow 3 2 5 1 3, each once (sg271 dive 1 stops at the apogee)."""
+def test_every_dive_runs_surface_transition_descent_inflection_ascent_surface(
+    mission, request
+):
+    """Per dive the phases follow 3 7 2 5 1 3, each once (sg271 dive 1 stops at the apogee)."""
     ds = request.getfixturevalue(mission)
     dive = ds["DIVE_NUMBER"].values
     for number in np.unique(dive):
@@ -62,27 +71,34 @@ def test_every_dive_runs_surface_descent_inflexion_ascent_surface(mission, reque
 
 
 @pytest.mark.parametrize("mission", ["sg271", "sg005"])
-def test_one_inflexion_run_holds_the_pressure_maximum(mission, request):
-    """Each dive has exactly one inflexion run, and the deepest sample is in it."""
+def test_one_inflection_run_at_the_bottom_of_the_dive(mission, request):
+    """Each dive has one inflection run; the deepest sample is in it or in the G&C event
+    that follows (the glider can still sink while it pumps to climb)."""
     ds = request.getfixturevalue(mission)
     dive = ds["DIVE_NUMBER"].values
     for number in np.unique(dive):
         rows = dive == number
         phase = ds["PHASE"].values[rows]
-        assert _runs(phase).count(_phase.INFLEXION) == 1
-        pres = ds["PRES"].values[rows]
-        assert phase[np.nanargmax(pres)] == _phase.INFLEXION
+        assert _runs(phase).count(_phase.INFLECTION) == 1
+        time = ds["TIME"].values[rows]
+        deepest = time[np.nanargmax(ds["PRES"].values[rows])]
+        apogee_end = time[phase == _phase.INFLECTION].max()
+        vbd = ds["gc_vbd_ctl"].values[rows]
+        starts = time[np.isfinite(vbd)]
+        ends = ds["gc_end_secs"].values[rows][np.isfinite(vbd)]
+        after = ends[starts > apogee_end]
+        limit = after.min() if after.size else apogee_end
+        assert time[phase == _phase.INFLECTION].min() <= deepest <= limit
 
 
 @pytest.mark.parametrize("mission", ["sg271", "sg005"])
-def test_gps_fixes_are_surfacing_and_good(mission, request):
-    """Every row at a GPS fix time is 3 with PHASE_QC 1; no CTD sample deeper than 1 dbar is 3."""
+def test_gps_fixes_are_surfacing(mission, request):
+    """Every row at a GPS fix time is 3; no CTD sample deeper than 1 dbar is 3."""
     ds = request.getfixturevalue(mission)
     fixes = ds["TIME_GPS"].values[~np.isnat(ds["TIME_GPS"].values)]
     at_fix = np.isin(ds["TIME"].values, fixes)
     assert at_fix.sum() >= 3 * np.unique(ds["DIVE_NUMBER"].values).size
     assert (ds["PHASE"].values[at_fix] == _phase.SURFACING).all()
-    assert (ds["PHASE_QC"].values[at_fix] == _phase.QC_STATE).all()
     deep = ds["PRES"].values > 1
     assert not (ds["PHASE"].values[deep] == _phase.SURFACING).any()
 
@@ -99,51 +115,70 @@ def test_descent_sinks_and_ascent_rises(mission, request):
     assert np.nanmedian(dpdt[phase == _phase.ASCENT]) < -0.05
 
 
-def test_state_table_assigns_sg271_and_events_assign_sg005(sg271, sg005):
-    """sg271 rows are flagged 1 (state table); sg005's CTD rows 2 (G&C events)."""
-    assert set(np.unique(sg271["PHASE_QC"].values)) == {_phase.QC_STATE}
-    sample = ~np.isin(
-        sg005["TIME"].values,
-        sg005["TIME_GPS"].values[~np.isnat(sg005["TIME_GPS"].values)],
-    )
-    assert set(np.unique(sg005["PHASE_QC"].values[sample])) == {_phase.QC_EVENTS}
-    assert sg271["PHASE"].dtype == np.int8
-    assert sg271["PHASE_QC"].attrs["flag_meanings"].split()[0] == "good"
-    assert sg271["PHASE"].attrs["ancillary_variables"] == "PHASE_QC"
+def test_attributes_follow_og1_and_qc_is_zero(sg271, sg005, tmp_path):
+    """PHASE carries the vocabulary and the method; PHASE_QC is 0 (no QC applied)."""
+    attrs = sg271["PHASE"].attrs
+    assert attrs["phase_vocabulary"].endswith("vocabularyCollection/phase.md")
+    assert attrs["flag_meanings"].split() == list(_phase.PHASE_NAMES.values())
+    assert list(attrs["flag_values"]) == list(_phase.PHASE_NAMES)
+    assert attrs["ancillary_variables"] == "PHASE_QC"
+    assert "state table" in attrs["phase_calculation_method"]
+    assert "dives 1-3" in attrs["phase_calculation_method"]
+    assert "D_FLARE" in attrs["phase_calculation_method"]
+    assert attrs["phase_calculation_method_vocabulary"] == ""
+    assert "guidance-and-control" in sg005["PHASE"].attrs["phase_calculation_method"]
+    for ds in (sg271, sg005):
+        assert set(np.unique(ds["PHASE_QC"].values)) == {0}
+        assert ds["PHASE_QC"].attrs["flag_meanings"].split()[0] == "no_qc_performed"
 
 
-def test_inflexion_covers_both_apogee_cycles(sg271):
-    """The inflexion starts at state 4 and ends with the G&C event after the VBD-zero one."""
+def test_phase_is_written_as_byte_with_fill_value_0(tmp_path):
+    """On disk PHASE is int8 with _FillValue 0, as the OG1 format lists it."""
+    import netCDF4
+
+    out = _convert._convert_mission(SG271, tmp_path, dives=(2, 2))
+    with netCDF4.Dataset(out) as nc:
+        assert nc["PHASE"].dtype == np.int8
+        assert nc["PHASE"].getncattr("_FillValue") == 0
+        assert nc["PHASE_QC"].dtype == np.int8
+
+
+def test_inflection_is_the_state_tables_apogee(sg271):
+    """sg271 dive 2: inflection exactly from begin apogee to begin climb."""
     dive = sg271["DIVE_NUMBER"].values == 2
     time = sg271["TIME"].values[dive]
     phase = sg271["PHASE"].values[dive]
     state = sg271["gc_state_state"].values[dive]
     begin_apogee = time[state == 4][0]
     begin_climb = time[state == 2][0]
-    inflexion = time[phase == _phase.INFLEXION]
-    assert inflexion.min() >= begin_apogee
-    assert inflexion.max() > begin_climb
+    window = (time >= begin_apogee) & (time < begin_climb)
+    assert (phase[window] == _phase.INFLECTION).all()
+    assert (phase[~window] != _phase.INFLECTION).all()
 
 
-def test_ascent_starts_where_the_apogee_cycles_end(sg271):
-    """sg271 dive 2: every non-GPS row after the second apogee G&C cycle and before the
-    surface coast ends is ascent; every row from begin dive to begin apogee is descent."""
+def test_ascent_runs_from_begin_climb_to_end_of_coast(sg271):
+    """sg271 dive 2: every row from begin climb to end surface coast is ascent; from begin
+    dive to begin apogee, transition then descent."""
     dive = sg271["DIVE_NUMBER"].values == 2
     time = sg271["TIME"].values[dive]
     phase = sg271["PHASE"].values[dive]
     state = sg271["gc_state_state"].values[dive]
-    vbd = sg271["gc_vbd_ctl"].values[dive]
-    end = sg271["gc_end_secs"].values[dive]
-    cycle_two_end = end[np.isfinite(vbd)][
-        np.flatnonzero(vbd[np.isfinite(vbd)] == 0)[0] + 1
-    ]
-    end_coast = time[state == 9][0]
-    climb = (time > cycle_two_end) & (time < end_coast)
+    climb = (time >= time[state == 2][0]) & (time < time[state == 9][0])
     assert climb.sum() > 1000
     assert (phase[climb] == _phase.ASCENT).all()
-    begin_dive, begin_apogee = time[state == 0][0], time[state == 4][0]
-    descent = (time >= begin_dive) & (time < begin_apogee)
-    assert (phase[descent] == _phase.DESCENT).all()
+    descent = (time >= time[state == 0][0]) & (time < time[state == 4][0])
+    assert set(phase[descent].tolist()) == {_phase.TRANSITION, _phase.DESCENT}
+    first_descent = time[descent & (phase == _phase.DESCENT)].min()
+    assert (phase[descent & (time >= first_descent)] == _phase.DESCENT).all()
+
+
+def test_g_and_c_apogee_matches_the_state_table(sg271):
+    """With the state table removed, sg271 falls back to its G&C events and gives the same
+    PHASE to within a row or two at each boundary (the apogee event spans the two states)."""
+    phase, methods = _phase.assign(sg271.drop_vars("gc_state_state"))
+    assert methods["events"] == [1, 2, 3]
+    differ = phase != sg271["PHASE"].values
+    assert differ.sum() < 0.01 * phase.size
 
 
 def test_states_written_at_the_same_second_keep_file_order(sg271):
@@ -156,33 +191,71 @@ def test_states_written_at_the_same_second_keep_file_order(sg271):
     begin_climb = np.flatnonzero(dive & (state == 2))[0]
     time[begin_climb] = time[end_apogee]
     ds = ds.assign_coords(TIME=("N_MEASUREMENTS", time))
-    phase, _, _ = _phase.assign(ds)
-    np.testing.assert_array_equal(phase[dive], sg271["PHASE"].values[dive])
+    phase, _ = _phase.assign(ds)
+    # Only the end-apogee row, now at the begin-climb time, changes (5 -> 1).
+    same = dive & (np.arange(dive.size) != end_apogee)
+    np.testing.assert_array_equal(phase[same], sg271["PHASE"].values[same])
+    assert phase[end_apogee] == _phase.ASCENT
+
+
+@pytest.mark.parametrize("mission", ["sg271", "sg005"])
+def test_transition_ends_at_the_last_sample_above_d_flare(mission, request):
+    """Each dive's transition ends at its last sample shallower than log_D_FLARE before
+    the apogee; the next pressure sample is deeper and descent."""
+    ds = request.getfixturevalue(mission)
+    d_flare = float(ds["log_D_FLARE"].values)
+    for number in np.unique(ds["DIVE_NUMBER"].values):
+        rows = np.flatnonzero(ds["DIVE_NUMBER"].values == number)
+        phase = ds["PHASE"].values[rows]
+        time = ds["TIME"].values[rows]
+        depth = ds["DEPTH"].values[rows]
+        apogee = time[phase == _phase.INFLECTION].min()
+        above = (time < apogee) & (depth < d_flare) & ~(phase == _phase.SURFACING)
+        last_above = time[above].max()
+        assert time[phase == _phase.TRANSITION].max() == last_above
+        after = (time > last_above) & np.isfinite(depth)
+        assert phase[after][0] == _phase.DESCENT
+        assert depth[after][0] >= d_flare
+
+
+def test_sg537_transition_runs_to_the_last_rise_above_d_flare(dev_data, tmp_path):
+    """sg537 dive 1 sinks past D_FLARE and comes back above it before diving: the
+    transition runs to the last sample above D_FLARE, past the first dip."""
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    shutil.copy(dev_data / "p5370001.nc", raw / "p5370001.nc")
+    ds = _unmasked(_convert._convert_mission(raw, tmp_path / "out"))
+    d_flare = float(ds["log_D_FLARE"].values)
+    phase, depth = ds["PHASE"].values, ds["DEPTH"].values
+    transition = phase == _phase.TRANSITION
+    assert (depth[transition] >= d_flare).any()  # the dip is inside the transition
+    end = ds["TIME"].values[transition].max()
+    later = (ds["TIME"].values > end) & np.isfinite(depth) & (phase != _phase.SURFACING)
+    assert depth[later][0] >= d_flare
 
 
 def test_without_gc_events_pressure_decides(sg005):
-    """sg005 with its G&C events removed: no inflexion, PHASE_QC 8 on CTD rows."""
+    """sg005 with its G&C events removed: no inflection, the method says pressure."""
     ds = sg005.drop_vars("gc_vbd_ctl")
-    phase, qc, methods = _phase.assign(ds)
+    phase, methods = _phase.assign(ds)
     assert methods["pressure"] and not methods["events"]
-    assert _phase.INFLEXION not in phase
+    assert _phase.INFLECTION not in phase
+    assert "pressure alone" in _phase.method_text(methods)
     gps = np.isin(
         ds["TIME"].values, ds["TIME_GPS"].values[~np.isnat(ds["TIME_GPS"].values)]
     )
-    assert set(np.unique(qc[~gps])) == {_phase.QC_PRESSURE}
     assert (phase[gps] == _phase.SURFACING).all()
 
 
 def test_unknown_state_code_is_phase_0_with_a_warning(sg271, caplog):
-    """A state code with no meaning here leaves its rows 0 (QC 9) and names the code."""
+    """A state code with no meaning here leaves its rows 0 and names the code."""
     ds = sg271.copy()
     state = ds["gc_state_state"].values.copy()
     state[state == 2] = 42
     ds["gc_state_state"] = ("N_MEASUREMENTS", state)
     with caplog.at_level("WARNING", logger="seagliderOG1._phase"):
-        phase, qc, _ = _phase.assign(ds)
+        phase, _ = _phase.assign(ds)
     assert (phase == _phase.UNKNOWN).any()
-    assert (qc[phase == _phase.UNKNOWN] == _phase.QC_MISSING).all()
     assert any("[42]" in r.message for r in caplog.records)
 
 

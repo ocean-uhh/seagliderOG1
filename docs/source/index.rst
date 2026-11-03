@@ -52,6 +52,7 @@ https://github.com/ocean-uhh/seagliderOG1/issues/new.
    :maxdepth: 2
    :caption: Changelog / Migration
 
+   migrating_0_3_0
    migrating_0_1_0
    changelog
 

@@ -1284,6 +1284,9 @@ def convert(
     ds_og1, og1_mapping = _pipeline.add_scalar_parameters(
         ds_og1, extracted, og1_mapping
     )
+    # PHASE again over the whole mission, now the piloting scalars are in (log_D_FLARE
+    # sets the transition), so phase_calculation_method names every dive.
+    ds_og1 = tools.add_phase(ds_og1)
 
     # Resolve platform fields from the config and the first file (no silent
     # fallbacks: missing serial raises, other strings warn + "UNK", the numeric
