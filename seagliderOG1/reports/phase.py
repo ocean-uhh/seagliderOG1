@@ -24,15 +24,15 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
 
-#: OG1 phase id -> color. Fixed on every figure.
+#: OG1 phase id -> color, from the Okabe-Ito palette (unknown gray). Fixed on every figure.
 PHASE_COLORS: dict[int, str] = {
     0: "#bbbbbb",
     1: "#d55e00",
     2: "#0072b2",
     3: "#e69f00",
-    4: "#cc79a7",
-    5: "#009e73",
-    6: "#56b4e9",
+    4: "#56b4e9",
+    5: "#cc79a7",
+    6: "#009e73",
     7: "#f0e442",
 }
 
