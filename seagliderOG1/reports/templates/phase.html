@@ -8,6 +8,7 @@
 <style>
 {{ css | safe }}
 section { margin: 1.4rem 0; }
+pre.pseudocode { font-size: 0.85em; line-height: 1.35; background: var(--bg-sunken); padding: 0.8rem; overflow-x: auto; }
 td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 2px; vertical-align: middle; }
 </style>
 </head>
@@ -24,12 +25,22 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 </div>
 
 <p class="caption"><code>PHASE</code> says what the glider was doing at each row, in the <a href="{{ p.vocabulary }}">OG1 phase vocabulary</a>. How phase should be assigned is under discussion in the OceanGliders community; the rules this converter uses, their fallbacks and the refinements still open are on <a href="{{ p.docs_url }}">How the phase is assigned</a>. <code>PHASE_QC</code> is 0 (no QC performed) on every row.</p>
-<nav class="jump-nav"><a href="#method">How it was assigned</a> · <a href="#counts">Rows per phase</a> · <a href="#dive">One dive</a> · <a href="#dives">Every dive</a>{% if p.scatter_png %} · <a href="#pitch">Pitch and dP/dt</a>{% endif %}</nav>
+<nav class="jump-nav"><a href="#method">How it was assigned</a> · <a href="#counts">Rows per phase</a> · <a href="#dive">Three dives</a> · <a href="#dives">Every dive</a>{% if p.scatter_png %} · <a href="#pitch">Pitch and dP/dt</a>{% endif %}</nav>
 
 <section id="method">
 <h2>1. How it was assigned</h2>
 <p class="caption">The file's <code>phase_calculation_method</code>:</p>
 <p>{{ p.method }}</p>
+<p class="caption">The algorithm as the code runs it, per dive. Steps 2 and 3 only relabel rows step 1 assigned; step 4 overrides every other step.</p>
+<pre class="pseudocode">{{ p.pseudocode }}</pre>
+<p class="caption">The variables it reads, and whether this file has them. "Check only" variables are drawn on the figures below but never set a phase.</p>
+<table class="nc">
+<thead><tr><th>Variable</th><th>Used for</th><th>In this file</th></tr></thead>
+<tbody>
+{%- for r in p.inputs %}
+<tr><td><code>{{ r.name }}</code></td><td>{{ r.use }}</td><td>{{ r.present }}</td></tr>
+{%- endfor %}
+</tbody></table>
 </section>
 
 <section id="counts">
@@ -45,14 +56,17 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 </section>
 
 <section id="dive">
-<h2>3. One dive</h2>
-<p class="caption">Dive {{ p.dive }}, {{ "the complete dive (descent, inflection and ascent) nearest the middle of the mission" if p.complete else "the middle dive of the mission (no dive has descent, inflection and ascent)" }}, on one time axis: pressure (each sample colored by its <code>PHASE</code>; the commanded depths dashed), pitch, the glider's state table — or its G&amp;C events' VBD setting when the file has no state table (dotted lines: the start of each G&amp;C event) — and <code>PHASE</code> as a band, each color held until the next row. Green vertical lines: GPS fixes.</p>
-{%- if p.dive_png %}
+<h2>3. Three dives</h2>
+<p class="caption">Dive {{ p.dives|join(", ") }}: one near the start of the mission (often a shallow test dive), one drawn from the middle third of the dives and one from the last third (chosen at random, the same on every run). Each on one time axis: pressure (each sample colored by its <code>PHASE</code>; the commanded depths dashed), pitch, the G&amp;C events' VBD setting, the glider's state table (<code>gc_state_state</code>, when the file has one), and <code>PHASE</code> as a band, each color held until the next row. Dotted lines: the start of each G&amp;C event. Green vertical lines: GPS fixes.</p>
+{%- for f in p.dive_figures %}
+<h3>Dive {{ f.dive }}{% if not f.complete %} (no descent, inflection and ascent){% endif %}</h3>
+{%- if f.png %}
 <figure>
-<img alt="Dive {{ p.dive }}: pressure, pitch, the state table and PHASE" src="data:image/png;base64,{{ p.dive_png }}">
-{%- if show_source and p.dive_source %}<figcaption class="fig-source">source: {{ p.dive_source }}</figcaption>{% endif %}
+<img alt="Dive {{ f.dive }}: pressure, pitch, G&amp;C VBD, state table and PHASE" src="data:image/png;base64,{{ f.png }}">
+{%- if show_source and f.source %}<figcaption class="fig-source">source: {{ f.source }}</figcaption>{% endif %}
 </figure>
 {%- endif %}
+{%- endfor %}
 </section>
 
 <section id="dives">
@@ -69,9 +83,9 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 {%- if p.scatter_png %}
 <section id="pitch">
 <h2>5. Pitch and dP/dt</h2>
-<p class="caption">Dive {{ p.dive }}: pitch against the rate of pressure change, colored by <code>PHASE</code>. Descent sits at negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection lies between them; transition sits at steep negative pitch with dP/dt near zero (the start of the dive) and at positive pitch with dP/dt still positive (the bottom). Pitch is interpolated in time onto the pressure rows.</p>
-<figure class="slot-three-fifths">
-<img alt="Pitch against dP/dt colored by PHASE for dive {{ p.dive }}" src="data:image/png;base64,{{ p.scatter_png }}">
+<p class="caption">Dive {{ p.dives|join(", ") }}: pitch against the rate of pressure change, colored by <code>PHASE</code>. Descent sits at negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection lies between them; transition sits at steep negative pitch with dP/dt near zero (the start of the dive) and at positive pitch with dP/dt still positive (the bottom). Pitch is interpolated in time onto the pressure rows.</p>
+<figure{% if p.scatter_slot %} class="{{ p.scatter_slot }}"{% endif %}>
+<img alt="Pitch against dP/dt colored by PHASE" src="data:image/png;base64,{{ p.scatter_png }}">
 {%- if show_source and p.scatter_source %}<figcaption class="fig-source">source: {{ p.scatter_source }}</figcaption>{% endif %}
 </figure>
 </section>

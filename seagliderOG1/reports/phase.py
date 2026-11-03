@@ -145,55 +145,86 @@ def _pitch_at(ds: xr.Dataset, rows: np.ndarray) -> np.ndarray:
     return out
 
 
-def _draw_gc(ax: Axes, ds: xr.Dataset, rows: np.ndarray, t0: np.datetime64) -> None:
-    """Draw the state table as a step line, or the G&C VBD settings without one."""
-    times = ds["TIME"].values[rows]
-    state = (
-        np.asarray(ds["gc_state_state"].values[rows], dtype=float)
-        if "gc_state_state" in ds.variables
-        else np.full(rows.size, np.nan)
-    )
-    vbd = (
-        np.asarray(ds["gc_vbd_ctl"].values[rows], dtype=float)
-        if "gc_vbd_ctl" in ds.variables
-        else np.full(rows.size, np.nan)
-    )
-    if np.isfinite(state).any():
-        keep = np.isfinite(state)
-        order = np.argsort(times[keep], kind="stable")
-        tt = _minutes(times[keep][order], t0)
-        cc = state[keep][order].astype(int)
-        levels = sorted(set(cc.tolist()))
-        level = [levels.index(c) for c in cc]
-        ax.step(tt, level, where="post", color="0.2", lw=0.9)
-        ax.plot(tt, level, "o", color="0.2", ms=3)
-        names = {c: n for c, (n, _) in _phase.GC_STATE_CODES.items()}
-        ax.set_yticks(range(len(levels)), [f"{c} {names.get(c, '?')}" for c in levels])
-        ax.tick_params(axis="y", labelsize=ANNOT_FS - 2)
-        ax.set_ylabel("state")
-    elif np.isfinite(vbd).any() and "gc_end_secs" in ds.variables:
-        keep = np.isfinite(vbd)
-        ends = ds["gc_end_secs"].values[rows][keep]
-        for a, b, v in zip(
-            _minutes(times[keep], t0), _minutes(ends, t0), vbd[keep], strict=True
-        ):
-            ax.plot([a, b], [v, v], color="0.2", lw=2.5, solid_capstyle="butt")
-        ax.axhline(0, color="0.7", lw=0.5)
-        ax.set_ylabel("G&C VBD\n(cm³)")
-    else:
-        ax.text(
-            0.5,
-            0.5,
-            "no state table or G&C events in this file",
-            ha="center",
-            va="center",
-            transform=ax.transAxes,
-            fontsize=ANNOT_FS,
-            color="0.4",
-        )
-        ax.set_yticks([])
-    for a in _minutes(times[np.isfinite(vbd)], t0):
+def _column(ds: xr.Dataset, name: str, rows: np.ndarray) -> np.ndarray:
+    """Return ``name`` at ``rows`` as floats, all NaN when ``ds`` lacks it."""
+    if name not in ds.variables:
+        return np.full(rows.size, np.nan)
+    return np.asarray(ds[name].values[rows], dtype=float)
+
+
+def _event_lines(ax: Axes, ds: xr.Dataset, rows: np.ndarray, t0: np.datetime64) -> None:
+    """Draw a dotted line at the start of each G&C event."""
+    starts = ds["TIME"].values[rows][np.isfinite(_column(ds, "gc_vbd_ctl", rows))]
+    for a in _minutes(starts, t0):
         ax.axvline(a, color="0.5", lw=0.4, ls=":")
+
+
+def _draw_vbd(ax: Axes, ds: xr.Dataset, rows: np.ndarray, t0: np.datetime64) -> None:
+    """Draw each G&C event's VBD setting as a bar from its start to its end."""
+    vbd = _column(ds, "gc_vbd_ctl", rows)
+    keep = np.isfinite(vbd)
+    ends = ds["gc_end_secs"].values[rows][keep]
+    for a, b, v in zip(
+        _minutes(ds["TIME"].values[rows][keep], t0),
+        _minutes(ends, t0),
+        vbd[keep],
+        strict=True,
+    ):
+        ax.plot([a, b], [v, v], color="0.2", lw=2.5, solid_capstyle="butt")
+    ax.axhline(0, color="0.7", lw=0.5)
+    ax.set_ylabel("G&C VBD\n(cm³)")
+    _event_lines(ax, ds, rows, t0)
+
+
+def _draw_states(ax: Axes, ds: xr.Dataset, rows: np.ndarray, t0: np.datetime64) -> None:
+    """Draw the glider's state table (gc_state_state) as a step line."""
+    state = _column(ds, "gc_state_state", rows)
+    keep = np.isfinite(state)
+    times = ds["TIME"].values[rows][keep]
+    order = np.argsort(times, kind="stable")
+    tt = _minutes(times[order], t0)
+    cc = state[keep][order].astype(int)
+    levels = sorted(set(cc.tolist()))
+    level = [levels.index(c) for c in cc]
+    ax.step(tt, level, where="post", color="0.2", lw=0.9)
+    ax.plot(tt, level, "o", color="0.2", ms=3)
+    names = {c: n for c, (n, _) in _phase.GC_STATE_CODES.items()}
+    ax.set_yticks(range(len(levels)), [f"{c} {names.get(c, '?')}" for c in levels])
+    ax.tick_params(axis="y", labelsize=ANNOT_FS - 2)
+    ax.set_ylabel("gc_state_state")
+    _event_lines(ax, ds, rows, t0)
+
+
+def pick_dives(ds: xr.Dataset) -> list[int]:
+    """Return up to three dives to draw: one near the start, middle and end of the mission.
+
+    The first is dive 2 when the mission has it, else dive 1 (the first dives are often
+    shallow test dives, which is the point of showing one). The second is drawn from the
+    middle third of the dives and the third from the last third, at random but the same on
+    every run (the generator is seeded with the number of dives). A dive is not repeated.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An OG1 dataset with ``DIVE_NUMBER``.
+
+    Returns
+    -------
+    list of int
+        The dive numbers, in order.
+    """
+    dive = np.asarray(ds["DIVE_NUMBER"].values, dtype=float)
+    numbers = [int(n) for n in np.unique(dive[np.isfinite(dive)])]
+    if not numbers:
+        return []
+    picked = [numbers[1] if len(numbers) > 1 else numbers[0]]
+    rng = np.random.default_rng(len(numbers))
+    third = len(numbers) / 3
+    for start, stop in ((third, 2 * third), (2 * third, len(numbers))):
+        pool = [n for n in numbers[int(start) : int(np.ceil(stop))] if n not in picked]
+        if pool:
+            picked.append(int(rng.choice(pool)))
+    return sorted(set(picked))
 
 
 def draw_phase_dive(
@@ -203,7 +234,10 @@ def draw_phase_dive(
     old: np.ndarray | None = None,
     width_in: float = W_FULL,
 ) -> Figure | None:
-    """Draw one dive: pressure, pitch, the glider's G&C record, and PHASE.
+    """Draw one dive: pressure, pitch, the G&C events' VBD, the state table, and PHASE.
+
+    The VBD and state-table panels are drawn when the file has them (basestation 2.8 has
+    no state table).
 
     Parameters
     ----------
@@ -234,15 +268,28 @@ def draw_phase_dive(
     t0 = times.min()
     t = _minutes(times, t0)
     phase = _phase_values(ds)[rows]
+    has_events = (
+        np.isfinite(_column(ds, "gc_vbd_ctl", rows)).any()
+        and "gc_end_secs" in ds.variables
+    )
+    has_states = bool(np.isfinite(_column(ds, "gc_state_state", rows)).any())
+    ratios = [3, 1.4] + [1.2] * int(has_events) + [1.6] * int(has_states)
+    ratios.append(0.9 if old is not None else 0.5)
     fig, axes = plt.subplots(
-        4,
+        len(ratios),
         1,
         sharex=True,
-        figsize=(width_in, width_in * 0.9),
-        gridspec_kw={"height_ratios": [3, 1.6, 1.6, 0.9 if old is not None else 0.5]},
+        figsize=(width_in, width_in * (0.55 + 0.12 * len(ratios))),
+        gridspec_kw={"height_ratios": ratios},
         layout="constrained",
     )
-    ax_p, ax_pitch, ax_gc, ax_ph = axes
+    ax_p, ax_pitch, ax_ph = axes[0], axes[1], axes[-1]
+    panel = 2
+    if has_events:
+        _draw_vbd(axes[panel], ds, rows, t0)
+        panel += 1
+    if has_states:
+        _draw_states(axes[panel], ds, rows, t0)
     pres = np.asarray(ds["PRES"].values[rows], dtype=float)
     ok = np.isfinite(pres)
     ax_p.plot(t[ok], pres[ok], color="0.6", lw=0.6, zorder=1)
@@ -274,7 +321,6 @@ def draw_phase_dive(
         ax_pitch.plot(t[okp], pitch[okp], color="0.2", lw=0.8)
         ax_pitch.axhline(0, color="0.7", lw=0.5)
     ax_pitch.set_ylabel("PITCH (°)")
-    _draw_gc(ax_gc, ds, rows, t0)
     if old is None:
         _band(ax_ph, t, phase, 0.0, 1.0)
         ax_ph.set_yticks([])
@@ -519,11 +565,42 @@ def _phase_rows(ds: xr.Dataset) -> list[dict[str, object]]:
     return rows
 
 
-def phase_context(path: str | Path) -> dict[str, object] | None:
-    """Return the phase page's figures, table and text, or None when the file has no PHASE.
+#: Every variable the assignment reads: (name, how it is used). The page lists each with
+#: whether this file has it.
+INPUT_VARIABLES: tuple[tuple[str, str], ...] = (
+    ("DIVE_NUMBER", "groups rows into dives"),
+    ("TIME", "orders rows; compared with state and G&C event times"),
+    ("gc_state_state", "step 1a: the state table, when the file has one"),
+    (
+        "gc_vbd_ctl",
+        "step 1b: the G&C event that moves the VBD to zero is the inflection",
+    ),
+    ("gc_end_secs", "step 1b: where that G&C event ends"),
+    ("PRES", "step 1c: pressure maximum (fallback); step 3: the deepest sample"),
+    ("DEPTH", "step 2: compared with log_D_FLARE (PRES on a dive without DEPTH)"),
+    ("log_D_FLARE", "step 2: the flare depth (the one command used)"),
+    ("TIME_GPS", "step 4: rows at GPS fix times are surfacing"),
+    ("PITCH", "check only: drawn, and plotted against dP/dt"),
+    ("log_D_TGT", "check only: drawn as a dashed line"),
+    ("log_D_SURF", "check only: drawn as a dashed line"),
+)
 
-    The dive figure and the pitch against dP/dt figure show :func:`middle_dive`; the bars
-    and the table cover every dive.
+
+def _input_rows(path: str | Path) -> list[dict[str, str]]:
+    """Return the input variables with whether the file at ``path`` has them."""
+    with xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False) as ds:
+        present = set(ds.variables)
+    return [
+        {"name": name, "use": use, "present": "yes" if name in present else "no"}
+        for name, use in INPUT_VARIABLES
+    ]
+
+
+def phase_context(path: str | Path) -> dict[str, object] | None:
+    """Return the phase page's figures, tables and text, or None when the file has no PHASE.
+
+    The dive figures and the pitch against dP/dt figure show :func:`pick_dives` (one near
+    the start, middle and end of the mission); the bars and the counts cover every dive.
 
     Parameters
     ----------
@@ -541,15 +618,29 @@ def phase_context(path: str | Path) -> dict[str, object] | None:
     ds = _load_for_page(path)
     if ds is None:
         return None
-    dive = middle_dive(ds)
-    if dive is None:
+    dives = pick_dives(ds)
+    if not dives:
         return None
     n_dives = int(
         np.unique(ds["DIVE_NUMBER"].values[np.isfinite(ds["DIVE_NUMBER"].values)]).size
     )
-    dive_png = figure_png.render_b64(
-        draw_phase_dive, ds, dive, width_in=W_FULL, source="phase.py:draw_phase_dive"
-    )
+    dive_figures = []
+    for dive in dives:
+        png = figure_png.render_b64(
+            draw_phase_dive,
+            ds,
+            dive,
+            width_in=W_FULL,
+            source="phase.py:draw_phase_dive",
+        )
+        dive_figures.append(
+            {
+                "dive": dive,
+                "complete": is_complete(ds, dive),
+                "png": png,
+                "source": figure_png.source_of(png),
+            }
+        )
     bars_width = W_THREE_FIFTHS if n_dives <= _MIN_SLOTS else W_FULL
     bars_png = figure_png.render_b64(
         draw_phase_fractions,
@@ -559,29 +650,72 @@ def phase_context(path: str | Path) -> dict[str, object] | None:
     )
     scatter_png = figure_png.render_b64(
         draw_phase_pitch_dpdt,
-        [(f"dive {dive}", ds, dive)],
-        width_in=W_THREE_FIFTHS,
+        [(f"dive {dive}", ds, dive) for dive in dives],
+        width_in=W_FULL if len(dives) > 1 else W_THREE_FIFTHS,
         optional=True,
         source="phase.py:draw_phase_pitch_dpdt",
     )
     attrs = ds["PHASE"].attrs
     return {
-        "dive": dive,
-        "complete": is_complete(ds, dive),
+        "dives": dives,
+        "dive_figures": dive_figures,
         "n_dives": n_dives,
         "few_dives": n_dives <= _MAX_ORDER_LABELS,
         "method": attrs.get("phase_calculation_method", ""),
         "vocabulary": attrs.get("phase_vocabulary", ""),
         "docs_url": DOCS_URL,
+        "pseudocode": PSEUDOCODE,
+        "inputs": _input_rows(path),
         "rows": _phase_rows(ds),
-        "dive_png": dive_png,
-        "dive_source": figure_png.source_of(dive_png),
         "bars_png": bars_png,
         "bars_slot": "slot-three-fifths" if bars_width == W_THREE_FIFTHS else "",
         "bars_source": figure_png.source_of(bars_png),
         "scatter_png": scatter_png,
+        "scatter_slot": "" if len(dives) > 1 else "slot-three-fifths",
         "scatter_source": figure_png.source_of(scatter_png),
     }
+
+
+#: The assignment as the code runs it, per dive file, for the phase page.
+PSEUDOCODE = """\
+for each dive:
+    PHASE = 0 (unknown) on every row
+
+    # step 1: descent, inflection, ascent - from the first signal the file has
+    if the dive has a state table (gc_state_state):
+        sort states by time (same-second states keep file order)
+        each state sets PHASE from its time until the next state's time:
+            0 begin dive, 1 end dive            -> 2 descent
+            4 begin apogee, 5 end apogee        -> 5 inflection
+            2 begin climb, 3 end climb          -> 1 ascent
+            8 begin coast, 9 end coast          -> 3 surfacing   (provisional)
+            14 begin surface, 15 end surface    -> 3 surfacing
+            any other code                      -> 0, WARNING
+        the last state runs to the end of the dive file
+    elif the dive has G&C events (gc_vbd_ctl, gc_end_secs):
+        apogee = first event with VBD at zero after an event with VBD bled (negative)
+        rows before apogee start -> 2 descent
+        rows in the apogee event -> 5 inflection
+        rows after it            -> 1 ascent
+    else:
+        rows up to the pressure maximum -> 2 descent, rows after -> 1 ascent
+
+    # step 3: transition at the bottom
+    if the deepest sample (PRES) comes after the inflection:
+        ascent rows from the end of the inflection to the deepest sample -> 7 transition
+
+    # step 2: transition at the start of the dive
+    if log_D_FLARE is recorded for this dive:
+        depth = DEPTH, or PRES if the dive has no DEPTH
+        look only before the first descent row deeper than log_D_FLARE + 10 m
+        last_above = the last descent row there shallower than log_D_FLARE
+        descent rows up to last_above -> 7 transition
+
+    # step 4: surfacing
+    rows at a GPS fix time (TIME_GPS) -> 3 surfacing
+
+PHASE_QC = 0 (no QC performed) on every row
+"""
 
 
 def render_phase(path: str | Path, *, title: str | None = None) -> str | None:

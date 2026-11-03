@@ -1029,8 +1029,11 @@ def test_phase_page_beside_the_conversion_page(tmp_path) -> None:
     written = writers.phase_page_path(path)
     assert written.exists()
     html = written.read_text()
-    assert "Dive 2, the complete dive" in html
-    assert html.count("data:image/png;base64") >= 3
+    assert (
+        "Dive 2, 3:" in html
+    )  # three dives: 2 near the start, then middle and end thirds
+    assert html.count("data:image/png;base64") >= 4
+    assert "gc_state_state" in html and "for each dive:" in html
     assert f'href="{page.name}"' in html
     assert f'href="{written.name}"' in page.read_text()
     stripped = tmp_path / "b" / path.name

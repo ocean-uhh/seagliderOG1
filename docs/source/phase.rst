@@ -126,19 +126,26 @@ In the report
 -------------
 
 ``seagliderOG1 process --report`` and ``seagliderOG1 report`` write a phase page,
-``<id>_phase.html``, beside the conversion page, linked from its navigation. It shows the
-file's ``phase_calculation_method``, the rows and dives per phase, and the figures below for
-the complete dive nearest the middle of the mission (no old/new comparison), so the
-assignment can be checked mission by mission. It is a page of its own because how phase
-should be assigned is under discussion in the OceanGliders community.
+``<id>_phase.html``, beside the conversion page, linked from its navigation. It is a page of
+its own because how phase should be assigned is under discussion in the OceanGliders
+community. It shows:
+
+* the file's ``phase_calculation_method``, the algorithm as pseudocode, and the variables it
+  reads with whether the file has them;
+* the rows and dives per phase;
+* the dive figure below (without the old/new comparison) for three dives: dive 2 (or 1), and
+  one drawn from each of the middle and last thirds of the mission, at random but the same on
+  every run;
+* every dive's phase shares with its depth and duration, and pitch against dP/dt for the
+  three dives.
 
 The figures
 -----------
 
-Each dive figure has four panels on one time axis: pressure, each sample colored by its
-``PHASE``, with the commanded depths dashed; pitch; the state table as a step line, or the
-G&C events' VBD setting when the file has no state table (dotted lines mark the start of each
-G&C event); and ``PHASE`` as a band, each color held until the next row. Here the band is
+Each dive figure shares one time axis: pressure, each sample colored by its ``PHASE``, with
+the commanded depths dashed; pitch; the G&C events' VBD setting; the state table
+(``gc_state_state``) as a step line, when the file has one (dotted lines mark the start of
+each G&C event); and ``PHASE`` as a band, each color held until the next row. Here the band is
 drawn twice: the algorithm above (new), and the rule converters before 0.3.0 used (old:
 descent to the pressure maximum, ascent after). Vertical green lines are GPS fixes.
 

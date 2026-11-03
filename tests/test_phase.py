@@ -365,3 +365,17 @@ def test_dg042_converts_with_its_own_date(dev_data, tmp_path):
     shutil.copy(dev_data / "p0420001.nc", raw / "p0420001.nc")
     out = _convert._convert_mission(raw, tmp_path / "out")
     assert "1970" not in out.name
+
+
+def test_pick_dives_takes_one_near_the_start_middle_and_end():
+    """Dive 2 first; one from the middle third and one from the last third; stable."""
+    import xarray as xr
+
+    from seagliderOG1.reports import phase as page
+
+    ds = xr.Dataset({"DIVE_NUMBER": ("N_MEASUREMENTS", np.repeat(np.arange(1, 31), 4))})
+    dives = page.pick_dives(ds)
+    assert dives[0] == 2
+    assert 11 <= dives[1] <= 20
+    assert 21 <= dives[2] <= 30
+    assert page.pick_dives(ds) == dives
