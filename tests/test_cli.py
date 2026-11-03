@@ -1121,7 +1121,7 @@ def test_deprecated_source_key_is_read_as_raw_dir_with_a_warning(
 ) -> None:
     """A config that still says source: validates with a WARNING; both keys is an ERROR."""
     config = _write_config(tmp_path / "old.yaml")
-    data = yaml.safe_load(config.read_text())
+    data = yaml.safe_load(config.read_text(encoding="utf-8"))
     data["source"] = data.pop("raw_dir")
     config.write_text(yaml.safe_dump(data))
     issues = mission.check(config)
@@ -1188,7 +1188,9 @@ def test_enrich_sets_the_doi_and_rebinds_the_sidecar(
     assert after["tracking_id"] != before["tracking_id"]
     assert "enrich set doi" in after["history"].splitlines()[-1]
     assert "doi" in json.loads(after["conversion_attribute_sources"])["enriched"]
-    sidecar = json.loads(writers.conversion_path(nc, ".json").read_text())
+    sidecar = json.loads(
+        writers.conversion_path(nc, ".json").read_text(encoding="utf-8")
+    )
     assert sidecar["tracking_id"] == after["tracking_id"]
     assert sidecar["sha256"] == writers.file_sha256(nc)
     assert _record.conversion_sidecar(nc)["presence"]  # still bound, no warning

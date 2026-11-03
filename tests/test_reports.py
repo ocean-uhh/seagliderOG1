@@ -159,7 +159,9 @@ def test_demo_config_institution_is_one_record_in_people_and_institutions():
     from seagliderOG1.reports import design
     from seagliderOG1.reports._vendored import nc_tables
 
-    config = yaml.safe_load((pathlib.Path(DATA) / "mission.yaml").read_text())
+    config = yaml.safe_load(
+        (pathlib.Path(DATA) / "mission.yaml").read_text(encoding="utf-8")
+    )
     ds = _convert.convert(
         readers.read_mission(DATA, 1, 1), institutions=config["institutions"]
     )
@@ -1028,7 +1030,7 @@ def test_phase_page_beside_the_conversion_page(tmp_path) -> None:
     page = report(path, overwrite=True)
     written = writers.phase_page_path(path)
     assert written.exists()
-    html = written.read_text()
+    html = written.read_text(encoding="utf-8")
     assert (
         "Dive 2, 3:" in html
     )  # three dives: 2 near the start, then middle and end thirds
@@ -1040,7 +1042,7 @@ def test_phase_page_beside_the_conversion_page(tmp_path) -> None:
     assert html.index('id="method"') < html.index('id="states"') < html.index('id="qc"')
     assert "14 → 15" in html and 'class="row-bad"' in html
     assert f'href="{page.name}"' in html
-    assert f'href="{written.name}"' in page.read_text()
+    assert f'href="{written.name}"' in page.read_text(encoding="utf-8")
     stripped = tmp_path / "b" / path.name
     stripped.parent.mkdir()
     with xr.open_dataset(path) as ds:

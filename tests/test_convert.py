@@ -948,7 +948,7 @@ def test_bundled_example_writes_platform_vocabularies(tmp_path: pathlib.Path) ->
     """The sg005 example config's platform vocabulary terms reach the written file."""
     import yaml
 
-    config = yaml.safe_load((_SG005 / "mission.yaml").read_text())
+    config = yaml.safe_load((_SG005 / "mission.yaml").read_text(encoding="utf-8"))
     path = _convert._convert_mission(
         _SG005,
         tmp_path,
@@ -1047,7 +1047,7 @@ def test_conversion_sidecar_ignores_an_unreadable_or_foreign_sidecar(
     """A truncated sidecar, or one of another schema, is warned about and ignored."""
     path = sg005_og1_copy
     sidecar_file = writers.conversion_path(path, ".json")
-    payload = json.loads(sidecar_file.read_text())
+    payload = json.loads(sidecar_file.read_text(encoding="utf-8"))
     sidecar_file.write_text(json.dumps({**payload, "schema": 99}))
     with pytest.warns(UserWarning, match="not a schema-1"):
         assert _record.conversion_sidecar(path) is None
@@ -1106,7 +1106,7 @@ def test_conversion_sidecar_ignores_another_conversion(
     """A sidecar whose tracking_id does not match the file is warned about and ignored."""
     path = sg005_og1_copy
     sidecar_file = writers.conversion_path(path, ".json")
-    payload = json.loads(sidecar_file.read_text())
+    payload = json.loads(sidecar_file.read_text(encoding="utf-8"))
     payload["tracking_id"] = "not-this-file"
     sidecar_file.write_text(json.dumps(payload))
     with pytest.warns(UserWarning, match="belongs to another conversion"):
@@ -1123,7 +1123,9 @@ def test_sidecar_records_tracking_id_and_hash_and_warns_on_change(
 ) -> None:
     """The sidecar carries the file's tracking_id and SHA-256; a changed file warns."""
     path = sg005_og1_copy
-    sidecar = json.loads(writers.conversion_path(path, ".json").read_text())
+    sidecar = json.loads(
+        writers.conversion_path(path, ".json").read_text(encoding="utf-8")
+    )
     with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
         assert sidecar["tracking_id"] == ds.attrs["tracking_id"]
         # The writer's tracking_id is in the source ledger, so it names every global.
