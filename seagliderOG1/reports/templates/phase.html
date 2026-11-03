@@ -75,7 +75,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 
 <section id="method">
 <h2>{{ 4 if p.scatter_png else 3 }}. Algorithm</h2>
-<p class="caption">The code: <code>PHASE</code> is assigned by <code>assign()</code> in <code>seagliderOG1/_phase.py</code>, called through the public wrapper <code>seagliderOG1.tools.add_phase()</code>; <code>PROFILE_NUMBER</code>, <code>PROFILE_DIRECTION</code> and <code>SEGMENT_NUMBER</code> follow from it in <code>tools.add_profiles()</code>. This page is drawn by <code>seagliderOG1/reports/phase.py</code>.</p>
+<p class="caption">The code: <code>PHASE</code> is assigned by <code>assign()</code> in <code>seagliderOG1/_phase.py</code>, called through the public wrapper <code>seagliderOG1.tools.add_phase()</code>; <code>PROFILE_NUMBER</code>, <code>PROFILE_DIRECTION</code> and <code>SEGMENT_NUMBER</code> follow from it in <code>tools.add_profiles()</code>.</p>
 <p class="caption">The file's <code>phase_calculation_method</code>:</p>
 <p>{{ p.method }}</p>
 <p class="caption">The algorithm as the code runs it, per dive. Step 2 overrides step 1; step 3 fills what is left.</p>
