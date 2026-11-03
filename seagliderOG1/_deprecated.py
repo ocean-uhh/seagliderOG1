@@ -39,7 +39,6 @@ SHIM_NAMES = frozenset(
         "save_dataset",
         "calc_Z",
         "assign_phase",
-        "assign_profile_number",
         "reformat_units_str",
         "reformat_units_var",
         "convert_units_var",

@@ -2136,8 +2136,9 @@ def process_dataset(
     # Must be after split_by_unique_dims and after rename_dimensions
     ds_gps = split_ds[("gps_info",)]
     ds_new = add_gps_info_to_dataset(ds_new, ds_gps)
-    # Add the profile number (odd for dives, even for get_sgscents)
-    ds_new = tools.add_profile_number(ds_new, ds1_base)
+    # dive_number per dive; PROFILE_NUMBER is set once, from PHASE, over the whole mission
+    # (tools.add_profiles).
+    ds_new = tools.add_dive_number(ds_new, ds1_base.attrs["dive_number"])
     # Assign DEPTH_Z to the dataset where positive is up.
     ds_new = tools.add_depth(ds_new)
 

@@ -19,7 +19,6 @@ __all__ = [
     "add_depth",
     "add_phase",
     "add_profiles",
-    "add_profile_number",
     "add_dive_number",
     "convert_qc_flags",
     "encode_times_og1",
@@ -59,56 +58,6 @@ def add_dive_number(ds: xr.Dataset, dive_number: int | None = None) -> xr.Datase
         attrs=dict(vocabularies.vocab_attrs["dive_number"]),
     )
     return ds.assign(dive_number=dive_var)
-
-
-def add_profile_number(ds: xr.Dataset, ds1: xr.Dataset) -> xr.Dataset:
-    """Assign profile numbers to measurements based on dive phases (down/up casts).
-
-    This function separates each dive into two profiles: descent (down cast) and
-    ascent (up cast) phases. The dive is split at the maximum pressure point,
-    with the descent phase getting the dive number and ascent getting dive + 0.5.
-    Profile numbers are then calculated as 2 * dive_number - 1.
-
-    Parameters
-    ----------
-    ds
-        The dataset to add profile numbers to.
-    ds1
-        Dataset containing dive number information in attributes.
-
-    Returns
-    -------
-    xarray.Dataset
-        Dataset with 'dive_number' and 'PROFILE_NUMBER' variables added.
-
-    Notes
-    -----
-    - Requires pressure variable (PRES)
-    """
-    dive_number = ds1.attrs["dive_number"]
-    ds = add_dive_number(ds, dive_number)
-
-    fill_value = -9999
-    profile_numbers = np.full(ds.sizes["N_MEASUREMENTS"], fill_value, dtype=int)
-
-    if profile_numbers.size and not np.isnan(dive_number):
-        pmax_index = int(np.nanargmax(ds["PRES"].values))
-
-        profile_numbers[: pmax_index + 1] = 2 * dive_number - 1
-        profile_numbers[pmax_index + 1 :] = 2 * dive_number
-
-    ds = ds.assign(
-        PROFILE_NUMBER=xr.DataArray(
-            profile_numbers,
-            dims=["N_MEASUREMENTS"],
-            # Built here, not mapped from a basestation variable, so the vocabulary
-            # attributes are applied here (copied: vocab_attrs is shared).
-            attrs=dict(vocabularies.vocab_attrs["PROFILE_NUMBER"]),
-        )
-    )
-    ds["PROFILE_NUMBER"].encoding["_FillValue"] = fill_value
-
-    return ds
 
 
 def add_phase(ds: xr.Dataset) -> xr.Dataset:
@@ -389,9 +338,6 @@ from seagliderOG1 import _deprecated  # noqa: E402  # shims follow the definitio
 
 calc_Z = _deprecated._renamed(add_depth, "tools.calc_Z", "tools.add_depth")
 assign_phase = _deprecated._renamed(add_phase, "tools.assign_phase", "tools.add_phase")
-assign_profile_number = _deprecated._renamed(
-    add_profile_number, "tools.assign_profile_number", "tools.add_profile_number"
-)
 
 # The three unit helpers now resolve through the units view (vocabularies.UNITS); the ad-hoc
 # unit tables they used are gone. Kept as warning shims for one release (removed 0.3.0).

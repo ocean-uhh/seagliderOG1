@@ -61,6 +61,8 @@ as NaN; ``xr.open_dataset(..., mask_and_scale=False)`` or ``ds.PHASE.fillna(0)``
    Now from ``PHASE``, as OG1 defines it: one number per run of descent or ascent, -9999 on
    every other data point (surfacing, inflection). 0.2.0 split each dive at the pressure maximum,
    numbered the halves 2n-1 and 2n from the dive number, and gave every data point a number.
+   ``tools.add_profile_number`` (and its old name ``assign_profile_number``), which did that, is
+   removed: call ``tools.add_phase``, then ``tools.add_profiles``.
 ``PROFILE_DIRECTION``, ``SEGMENT_NUMBER``
    New (OG1): 1/-1/0 for descent/ascent/other, and +1 each time the glider enters surfacing.
 ``dive_number``

@@ -466,3 +466,23 @@ def test_sg005_has_two_profiles_and_one_segment_per_dive(sg005):
         expected = _phase.DESCENT if profile % 2 else _phase.ASCENT
         assert (phase[rows] == expected).all()
     assert set(np.unique(sg005["SEGMENT_NUMBER"].values)) == set(range(1, 7))
+
+
+def test_state_times_in_1970_are_not_used(sg271):
+    """State rows left as seconds from the dive start (no start_time to anchor them) are
+    ignored, and the dives fall back to their G&C events."""
+    ds = sg271.copy(deep=True)
+    state_rows = np.isfinite(ds["gc_state_state"].values)
+    time = ds["TIME"].values.copy()
+    time[state_rows] = np.datetime64("1970-01-01T00:00:00") + (
+        time[state_rows] - time[state_rows].min()
+    )
+    ds = ds.assign_coords(TIME=("N_MEASUREMENTS", time))
+    _, methods = _phase.assign(ds)
+    assert methods["states"] == []
+    assert methods["events"] == [1, 2, 3]
+
+
+def test_method_text_names_the_vbd_threshold(sg005):
+    """The G&C fallback's VBD-at-zero threshold is written into phase_calculation_method."""
+    assert "|gc_vbd_ctl| <= 1 cm3" in sg005["PHASE"].attrs["phase_calculation_method"]

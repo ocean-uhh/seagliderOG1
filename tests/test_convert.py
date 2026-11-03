@@ -363,9 +363,8 @@ def test_process_dataset():
     assert "LATITUDE_GPS" in list(ds_new.variables)
     assert "LONGITUDE_GPS" in list(ds_new.variables)
 
-    ds_new = tools.add_profile_number(ds_new, ds1)
-    assert "PROFILE_NUMBER" in list(ds_new.variables)
-    assert ds_new["PROFILE_NUMBER"].values.max() == 2 * ds1.attrs["dive_number"]
+    ds_new = tools.add_dive_number(ds_new, ds1.attrs["dive_number"])
+    assert (ds_new["dive_number"].values == ds1.attrs["dive_number"]).all()
 
     ds_new = tools.add_depth(ds_new)
     meanZ = ds_new["DEPTH_Z"].mean().item()

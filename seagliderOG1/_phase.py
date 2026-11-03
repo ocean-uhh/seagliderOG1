@@ -110,10 +110,16 @@ PHASE_NAMES: dict[int, str] = {
     7: "transition",
 }
 
+#: |gc_vbd_ctl| (cm3) below which the VBD counts as moved to zero (the apogee event).
+_VBD_ZERO = 1.0
+
 #: Method key -> the words ``phase_calculation_method`` uses for it.
 METHOD_TEXT: dict[str, str] = {
     "states": "the glider's state table (gc_state_state)",
-    "events": "the guidance-and-control events (gc_vbd_ctl, gc_end_secs)",
+    "events": (
+        "the guidance-and-control events (gc_vbd_ctl, gc_end_secs; VBD at zero means "
+        f"|gc_vbd_ctl| <= {_VBD_ZERO:g} cm3)"
+    ),
     "pressure": "pressure alone (descent to the pressure maximum, ascent after)",
 }
 
@@ -193,11 +199,11 @@ _DIVE_NAMES = (
     "DIVE_NUMBER",
 )  # last: before 0.3.0
 
+#: Unix seconds for 1990-01-01: an earlier state time is elapsed seconds, not a time.
+_ELAPSED_SECONDS_LIMIT = 631152000.0
+
 #: Metres past $D_FLARE after which a shallower sample no longer counts as the flare.
 _FLARE_MARGIN_M = 10.0
-
-#: |gc_vbd_ctl| (cm3) below which the VBD counts as moved to zero (the apogee event).
-_VBD_ZERO = 1.0
 
 
 def dive_variable(ds: xr.Dataset) -> str:
@@ -241,7 +247,10 @@ def _states(
     if "gc_state_state" not in ds.variables:
         return []
     code = ds["gc_state_state"].values[rows]
-    keep = np.isfinite(code)
+    # A state time before 1990 is seconds from the dive start that could not be anchored
+    # (a basestation 2.10 file with no start_time): unusable, so the dive falls back to
+    # its G&C events.
+    keep = np.isfinite(code) & (time >= _ELAPSED_SECONDS_LIMIT)
     t, c = time[keep], code[keep].astype(int)
     # Pairs of states share a second (end dive / begin apogee, …): a stable sort on time
     # keeps them in the order the file wrote them.

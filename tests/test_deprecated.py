@@ -230,3 +230,9 @@ def test_a_genuinely_missing_name_still_raises_plainly():
     """__getattr__ only rewrites the removed names; anything else is a normal AttributeError."""
     with pytest.raises(AttributeError, match="has no attribute"):
         _ = tools.not_a_real_name
+
+
+@pytest.mark.parametrize("name", ["add_profile_number", "assign_profile_number"])
+def test_pressure_maximum_profile_numbering_is_gone(name):
+    """PROFILE_NUMBER follows PHASE (tools.add_profiles); the old split is not importable."""
+    assert not hasattr(tools, name)
