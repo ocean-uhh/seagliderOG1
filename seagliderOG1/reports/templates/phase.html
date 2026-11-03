@@ -9,6 +9,8 @@
 {{ css | safe }}
 section { margin: 1.4rem 0; }
 pre.pseudocode { font-size: 0.85em; line-height: 1.35; background: var(--bg-sunken); padding: 0.8rem; overflow-x: auto; }
+tr.row-bad td { background: var(--warn-bg); }
+h3.table-title { font-size: 1em; margin: 1rem 0 0.3rem; }
 td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 2px; vertical-align: middle; }
 </style>
 </head>
@@ -24,59 +26,31 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
   <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
 </div>
 
-<p class="caption"><code>PHASE</code> says what the glider was doing at each row, in the <a href="{{ p.vocabulary }}">OG1 phase vocabulary</a>. How phase should be assigned is under discussion in the OceanGliders community; the rules this converter uses, their fallbacks and the refinements still open are on <a href="{{ p.docs_url }}">How the phase is assigned</a>. <code>PHASE_QC</code> is 0 (no QC performed) on every row.</p>
-<nav class="jump-nav"><a href="#method">How it was assigned</a> · <a href="#counts">Rows per phase</a> · <a href="#qc">PHASE_QC</a> · <a href="#dive">Three dives</a> · <a href="#dives">Every dive</a>{% if p.scatter_png %} · <a href="#pitch">Pitch and dP/dt</a>{% endif %}</nav>
-
-<section id="method">
-<h2>1. How it was assigned</h2>
-<p class="caption">The file's <code>phase_calculation_method</code>:</p>
-<p>{{ p.method }}</p>
-<p class="caption">The algorithm as the code runs it, per dive. Step 2 overrides step 1.</p>
-<pre class="pseudocode">{{ p.pseudocode }}</pre>
-<p class="caption">Every state the Seaglider basestation numbers in <code>gc_state_state</code>, the <code>PHASE</code> each is given — from the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a>; a state that table does not list gives 0 (unknown) — how many times each appears in this file, and the end-of-phase codes (<code>gc_state_eop_code</code>) it ended with. Names and numbers: the basestation's own list.</p>
-<table class="nc">
-<thead><tr><th>Code</th><th>State</th><th></th><th>PHASE</th><th>Phase from</th><th>In this file</th><th>Ended with</th></tr></thead>
-<tbody>
-{%- for r in p.states %}
-<tr><td>{{ r.code }}</td><td>{{ r.name }}</td><td class="swatch"><span style="background: {{ r.color }}"></span></td><td>{{ r.phase }}</td><td>{{ r.source }}</td><td>{{ r.count }}</td><td>{{ r.eop }}</td></tr>
-{%- endfor %}
-</tbody></table>
-<p class="caption">The variables it reads, and whether this file has them. "Check only" variables are drawn on the figures below but never set a phase.</p>
-<table class="nc">
-<thead><tr><th>Variable</th><th>Used for</th><th>In this file</th></tr></thead>
-<tbody>
-{%- for r in p.inputs %}
-<tr><td><code>{{ r.name }}</code></td><td>{{ r.use }}</td><td>{{ r.present }}</td></tr>
-{%- endfor %}
-</tbody></table>
-</section>
+<p class="caption"><code>PHASE</code> says what the glider was doing at each data point, in the <a href="{{ p.vocabulary }}">OG1 phase vocabulary</a>. How phase should be assigned is under discussion in the OceanGliders community; the rules this converter uses, their fallbacks and the refinements still open are on <a href="{{ p.docs_url }}">How the phase is assigned</a>. <code>PHASE_QC</code> is 0 (no QC performed) on every data point.</p>
+<nav class="jump-nav"><a href="#counts">OG1 phase counts</a> · <a href="#dive">Example dive cycles</a>{% if p.scatter_png %} · <a href="#pitch">Pitch and dP/dt</a>{% endif %} · <a href="#method">Algorithm</a> · <a href="#states">Seaglider state table</a> · <a href="#qc">PHASE_QC</a></nav>
 
 <section id="counts">
-<h2>2. Rows per phase</h2>
-<p class="caption">Every OG1 phase id, with the number of rows assigned it over the {{ p.n_dives }} dive{{ "s" if p.n_dives != 1 }}, its share of all rows, and the number of dives it appears in. 4 (parking) comes only from a loiter in the state table; 6 (propelled) and 7 (transition) are never assigned to a Seaglider.</p>
+<h2>1. OG1 phase counts</h2>
+<p class="caption">Every OG1 phase id, with the number of data points (rows on <code>N_MEASUREMENTS</code>) assigned it over the {{ p.n_dives }} dive{{ "s" if p.n_dives != 1 }}, its share of all data points, and the number of dives it appears in. Which Seaglider states give which phase: the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a>. 6 (propelled) and 7 (transition) are never assigned to a Seaglider.</p>
 <table class="nc">
-<thead><tr><th></th><th>id</th><th>phase</th><th>rows</th><th>%</th><th>dives</th></tr></thead>
+<thead><tr><th></th><th>id</th><th>phase</th><th>Count</th><th>%</th><th>dives</th></tr></thead>
 <tbody>
 {%- for r in p.rows %}
 <tr><td class="swatch"><span style="background: {{ r.color }}"></span></td><td>{{ r.id }}</td><td>{{ r.name }}</td><td>{{ r.rows }}</td><td>{{ r.share }}</td><td>{{ r.dives }}</td></tr>
 {%- endfor %}
 </tbody></table>
-</section>
-
-<section id="qc">
-<h2>2b. PHASE_QC against the OG1 format</h2>
-<p class="caption"><code>PHASE_QC</code> is 0 (no QC performed) on every row. Amber: an attribute this file writes differently from the OG1 format table, with the reason; both are points to take to the OG1 format group.</p>
-<table class="nc">
-<thead><tr><th>Attribute</th><th>OG1 format table</th><th>This file</th><th>Why</th></tr></thead>
-<tbody>
-<tr><td><code>_FillValue</code></td><td class="cell-bad"><code>" "</code></td><td class="cell-bad">none</td><td>a string fill value cannot be stored on a byte variable; every row has a value (0), so none is needed</td></tr>
-<tr><td><code>flag_meanings</code></td><td class="cell-bad">"No QC has been applied, Good data, Probably good data, Probably bad data, Bad data"</td><td class="cell-bad"><code>{{ p.qc_meanings }}</code></td><td>CF pairs <code>flag_meanings</code> with <code>flag_values</code> by space-separated words; the OG1 phrase splits into 15 words for 5 values</td></tr>
-</tbody></table>
+<p class="caption">Per dive. Top: each dive's share of data points in each phase{% if p.few_dives %}; the digits above each bar are its phases in the order they run (a complete dive reads 32513: surfacing, descent, inflection, ascent, surfacing; a 0 is the surface coast, which the OG1 table does not list){% endif %}. Bottom: the dive's maximum pressure (gray bars, left axis) and its duration from first to last data point (dots, right axis), to read each share against how deep and how long the dive was.</p>
+{%- if p.bars_png %}
+<figure{% if p.bars_slot %} class="{{ p.bars_slot }}"{% endif %}>
+<img alt="Per-dive share of data points in each phase, with maximum pressure and duration" src="data:image/png;base64,{{ p.bars_png }}">
+{%- if show_source and p.bars_source %}<figcaption class="fig-source">source: {{ p.bars_source }}</figcaption>{% endif %}
+</figure>
+{%- endif %}
 </section>
 
 <section id="dive">
-<h2>3. Three dives</h2>
-<p class="caption">Dive {{ p.dives|join(", ") }}: one near the start of the mission (often a shallow test dive), one drawn from the middle third of the dives and one from the last third (chosen at random, the same on every run). Each on one time axis: pressure (each sample colored by its <code>PHASE</code>; the commanded depths dashed), pitch, the G&amp;C events' VBD setting, the glider's state table (<code>gc_state_state</code>, when the file has one), and <code>PHASE</code> as a band, each color held until the next row. Dotted lines: the start of each G&amp;C event. Green vertical lines: GPS fixes. The CTD does not sample at the surface, so the green band at each end, with no pressure samples under it, is time at the surface between GPS fixes: at the start, from the first fix through the Iridium call to the second fix and the start of the dive; at the end, from the last sample to the fix taken on surfacing.</p>
+<h2>2. Example dive cycles</h2>
+<p class="caption">Dive {{ p.dives|join(", ") }}: one near the start of the mission (often a shallow test dive), one drawn from the middle third of the dives and one from the last third (chosen at random, the same on every run). Each on one time axis: pressure (each sample colored by its <code>PHASE</code>; the commanded depths dashed), pitch, the G&amp;C events' VBD setting, the glider's state table (<code>gc_state_state</code>, when the file has one), and <code>PHASE</code> as a band, each color held until the next data point. Dotted lines: the start of each G&amp;C event. Green vertical lines: GPS fixes. The CTD does not sample at the surface, so the green band at each end, with no pressure samples under it, is time at the surface between GPS fixes: at the start, from the first fix through the Iridium call to the second fix and the start of the dive; at the end, from the last sample to the fix taken on surfacing.</p>
 {%- for f in p.dive_figures %}
 <h3>Dive {{ f.dive }}{% if not f.complete %} (no descent, inflection and ascent){% endif %}</h3>
 {%- if f.png %}
@@ -88,27 +62,56 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 {%- endfor %}
 </section>
 
-<section id="dives">
-<h2>4. Every dive</h2>
-<p class="caption">Top: each dive's share of rows in each phase{% if p.few_dives %}; the digits above each bar are its phases in the order they run (a complete dive reads 32513: surfacing, descent, inflection, ascent, surfacing){% endif %}. Bottom: the dive's maximum pressure (gray bars, left axis) and its duration from first to last row (dots, right axis), to read each share against how deep and how long the dive was.</p>
-{%- if p.bars_png %}
-<figure{% if p.bars_slot %} class="{{ p.bars_slot }}"{% endif %}>
-<img alt="Per-dive share of rows in each phase, with maximum pressure and duration" src="data:image/png;base64,{{ p.bars_png }}">
-{%- if show_source and p.bars_source %}<figcaption class="fig-source">source: {{ p.bars_source }}</figcaption>{% endif %}
-</figure>
-{%- endif %}
-</section>
-
 {%- if p.scatter_png %}
 <section id="pitch">
-<h2>5. Pitch and dP/dt</h2>
-<p class="caption">Dive {{ p.dives|join(", ") }}: pitch against the rate of pressure change, colored by <code>PHASE</code>. Descent sits at negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection lies between them. Descent rows at steep negative pitch and dP/dt near zero are the glider bleeding at the surface before the flare; ascent rows at positive pitch with dP/dt still positive are the glider still sinking after the apogee ends. Pitch is interpolated in time onto the pressure rows.</p>
+<h2>3. Pitch and dP/dt</h2>
+<p class="caption">Dive {{ p.dives|join(", ") }}: pitch against the rate of pressure change, colored by <code>PHASE</code>. Descent sits at negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection lies between them. Descent points at steep negative pitch and dP/dt near zero are the glider bleeding at the surface before the flare; ascent points at positive pitch with dP/dt still positive are the glider still sinking after the apogee ends. Pitch is interpolated in time onto the pressure data points.</p>
 <figure{% if p.scatter_slot %} class="{{ p.scatter_slot }}"{% endif %}>
 <img alt="Pitch against dP/dt colored by PHASE" src="data:image/png;base64,{{ p.scatter_png }}">
 {%- if show_source and p.scatter_source %}<figcaption class="fig-source">source: {{ p.scatter_source }}</figcaption>{% endif %}
 </figure>
 </section>
 {%- endif %}
+
+<section id="method">
+<h2>{{ 4 if p.scatter_png else 3 }}. Algorithm</h2>
+<p class="caption">The file's <code>phase_calculation_method</code>:</p>
+<p>{{ p.method }}</p>
+<p class="caption">The algorithm as the code runs it, per dive. Step 2 overrides step 1.</p>
+<pre class="pseudocode">{{ p.pseudocode }}</pre>
+<h3 class="table-title">Variables used by the algorithm</h3>
+<p class="caption">Each variable the algorithm reads, and whether this file has it. "Check only" variables are drawn on the figures above but never set a phase.</p>
+<table class="nc">
+<thead><tr><th>Variable</th><th>Used for</th><th>In this file</th></tr></thead>
+<tbody>
+{%- for r in p.inputs %}
+<tr><td><code>{{ r.name }}</code></td><td>{{ r.use }}</td><td>{{ r.present }}</td></tr>
+{%- endfor %}
+</tbody></table>
+</section>
+
+<section id="states">
+<h2>{{ 5 if p.scatter_png else 4 }}. Seaglider state table</h2>
+<p class="caption">Every state the Seaglider basestation numbers in <code>gc_state_state</code>, in begin/end pairs. The data points from a begin state to its end state take the <code>PHASE</code> the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a> gives that transition; a pair the table does not list leaves them 0 (unknown). Count: how many times the begin state appears in this file. Ended with: the end-of-phase codes (<code>gc_state_eop_code</code>) the end state carried. Names and numbers: the basestation's own list.</p>
+<table class="nc">
+<thead><tr><th>Transition</th><th>States</th><th></th><th>PHASE</th><th>Phase from</th><th>Count</th><th>Ended with</th></tr></thead>
+<tbody>
+{%- for r in p.states %}
+<tr><td>{{ r.transition }}</td><td>{{ r.states }}</td><td class="swatch"><span style="background: {{ r.color }}"></span></td><td>{{ r.phase }}</td><td>{{ r.source }}</td><td>{{ r.count }}</td><td>{{ r.eop }}</td></tr>
+{%- endfor %}
+</tbody></table>
+</section>
+
+<section id="qc">
+<h2>{{ 6 if p.scatter_png else 5 }}. PHASE_QC differences from OG1</h2>
+<p class="caption"><code>PHASE_QC</code> is 0 (no QC performed) on every data point. Amber: an attribute this file writes differently from the OG1 format table, with the reason; both are points to take to the OG1 format group.</p>
+<table class="nc">
+<thead><tr><th>Attribute</th><th>OG1 format table</th><th>This file</th><th>Why</th></tr></thead>
+<tbody>
+<tr class="row-bad"><td><code>_FillValue</code></td><td><code>" "</code></td><td>none</td><td>a string fill value cannot be stored on a byte variable; every data point has a value (0), so none is needed</td></tr>
+<tr class="row-bad"><td><code>flag_meanings</code></td><td>"No QC has been applied, Good data, Probably good data, Probably bad data, Bad data"</td><td><code>{{ p.qc_meanings }}</code></td><td>CF pairs <code>flag_meanings</code> with <code>flag_values</code> by space-separated words; the OG1 phrase splits into 15 words for 5 values</td></tr>
+</tbody></table>
+</section>
 
 <footer>Generated by seagliderOG1 v{{ version }} &nbsp;&middot;&nbsp; {{ generated_at }}</footer>
 {{ js_top_links | safe }}

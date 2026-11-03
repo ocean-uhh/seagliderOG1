@@ -38,30 +38,57 @@ Per dive file, in this order.
 
 **Step 1**, from the first of these signals the file has:
 
-#. **The state table** (``gc_state_state``; basestation 2.10 and later). Each state sets the
-   phase from its time until the next state's time. The phases follow the Seaglider column
-   of the `OG1 phase translation table
-   <https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md>`_;
-   the state names and numbers are the basestation's own list:
+#. **The state table** (``gc_state_state``; basestation 2.10 and later). The state names
+   and numbers are the basestation's own list, in begin/end pairs. The rows from a begin
+   state to its end state take the phase the Seaglider column of the `OG1 phase translation
+   table
+   <https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md>`_
+   gives that transition; rows outside a listed transition stay 0 (unknown):
 
-   ====== ================================ ============== ==============================
-   code   state                            ``PHASE``      phase from
-   ====== ================================ ============== ==============================
-   0, 1   begin dive, end dive             2 descent      OG1 table
-   2, 3   begin climb, end climb           1 ascent       OG1 table
-   4, 5   begin apogee, end apogee         5 inflection   OG1 table
-   6, 7   begin loiter, end loiter         4 parking      OG1 table
-   8, 9   begin/end surface coast          0 unknown      not in the OG1 table
-   10, 11 begin/end subsurface finish      5 inflection   OG1 table
-   12, 13 begin/end recovery               0 unknown      not in the OG1 table
-   14, 15 begin surface, end surface       3 surfacing    OG1 table
-   ====== ================================ ============== ==============================
+   .. list-table::
+      :header-rows: 1
+
+      * - pair
+        - states
+        - ``PHASE``
+        - phase from
+      * - 0 → 1
+        - begin dive → end dive
+        - 2 descent
+        - OG1 table
+      * - 2 → 3
+        - begin climb → end climb
+        - 1 ascent
+        - OG1 table
+      * - 4 → 5
+        - begin apogee → end apogee
+        - 5 inflection
+        - OG1 table
+      * - 6 → 7
+        - begin loiter → end loiter
+        - 4 parking
+        - OG1 table
+      * - 8 → 9
+        - begin → end surface coast
+        - 0 unknown
+        - not in the OG1 table
+      * - 10 → 11
+        - begin → end subsurface finish
+        - 5 inflection
+        - OG1 table
+      * - 12 → 13
+        - begin → end recovery
+        - 0 unknown
+        - not in the OG1 table
+      * - 14 → 15
+        - begin surface → end surface
+        - 3 surfacing
+        - OG1 table
 
    States written at the same second (end apogee and begin climb, for example) keep the
-   order the file wrote them. Basestation 2.10 writes 8 and 9 around the surface as well. A
-   code not in the table leaves its samples at 0 (unknown) and is logged as a WARNING. The
-   last state runs to the end of the dive file, so a file cut off mid-dive keeps that
-   state's phase to its end (sg271 dive 1 ends in the apogee, with end-of-phase code
+   order the file wrote them. A code with no name is logged as a WARNING. A begin state
+   whose end state never comes runs to the end of the dive file, so a file cut off mid-dive
+   keeps that phase to its end (sg271 dive 1 ends in the apogee, with end-of-phase code
    ``ABORT_DEPTH_EXCEEDED``).
 
    The surface coast (8, 9) and recovery (12, 13) are not in the OG1 table, so their rows

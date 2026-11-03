@@ -9,8 +9,9 @@ Three signals, in order of precedence, per dive:
    zero, descent before it, ascent after;
 3. pressure, for files with neither: descent up to the pressure maximum, ascent after.
 
-GPS fixes are surfacing (3) in every case. Each state's phase follows the OG1 phase
-translation table's Seaglider column; the state names and codes are the basestation's. No
+GPS fixes are surfacing (3) in every case. The rows between a begin state and its end
+state take the phase the OG1 phase translation table's Seaglider column gives that
+transition; the state names and codes are the basestation's. No
 transition (7) is assigned. Commands (``log_D_*``, ``log_LOITER_*``) are not used. No
 quality control is applied: ``PHASE_QC`` is 0 throughout, and ``PHASE``'s
 ``phase_calculation_method`` says which signal assigned which dives.
@@ -21,7 +22,6 @@ https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabul
 
 from __future__ import annotations
 
-import json
 import logging
 
 import numpy as np
@@ -33,45 +33,40 @@ _log = logging.getLogger(__name__)
 UNKNOWN, ASCENT, DESCENT, SURFACING, PARKING, INFLECTION = 0, 1, 2, 3, 4, 5
 TRANSITION = 7
 
-#: State code -> (state name, OG1 phase from this state until the next).
-#: Names and codes: the Seaglider basestation (basestation3 ``LogFile.map_state_code``,
-#: which numbers the log file's $STATE strings in this order). Phases: the OG1 phase
-#: translation table's Seaglider column (dive 0->1 descent, climb 2->3 ascent, apogee 4->5
-#: and
-#: subsurface finish 10->11 inflection, loiter 6->7 parking, surface 14->15 surfacing).
-#: Not in that column, so 0 (unknown): the surface coast (8->9), where the glider is still
-#: rising above $D_SURF and sampling, and recovery (12->13). Basestation 2.10 files write 8
-#: and 9 around the surface too.
-GC_STATE_CODES: dict[int, tuple[str, int]] = {
-    0: ("begin dive", DESCENT),
-    1: ("end dive", DESCENT),
-    2: ("begin climb", ASCENT),
-    3: ("end climb", ASCENT),
-    4: ("begin apogee", INFLECTION),
-    5: ("end apogee", INFLECTION),
-    6: ("begin loiter", PARKING),
-    7: ("end loiter", PARKING),
-    # Not in the OG1 table, so unknown (Eleanor, 2026-11-03); were surfacing, provisionally:
-    # 8: ("begin surface coast", SURFACING),
-    # 9: ("end surface coast", SURFACING),
-    8: ("begin surface coast", UNKNOWN),
-    9: ("end surface coast", UNKNOWN),
-    10: ("begin subsurface finish", INFLECTION),
-    11: ("end subsurface finish", INFLECTION),
-    # Not in the OG1 table, so unknown; were surfacing, provisionally:
-    # 12: ("begin recovery", SURFACING),
-    # 13: ("end recovery", SURFACING),
-    12: ("begin recovery", UNKNOWN),
-    13: ("end recovery", UNKNOWN),
-    14: ("begin surface", SURFACING),
-    15: ("end surface", SURFACING),
+#: Seaglider state code -> name, as the basestation numbers the log file's $STATE strings
+#: (basestation3 ``LogFile.map_state_code``).
+GC_STATE_NAMES: dict[int, str] = {
+    0: "begin dive",
+    1: "end dive",
+    2: "begin climb",
+    3: "end climb",
+    4: "begin apogee",
+    5: "end apogee",
+    6: "begin loiter",
+    7: "end loiter",
+    8: "begin surface coast",
+    9: "end surface coast",
+    10: "begin subsurface finish",
+    11: "end subsurface finish",
+    12: "begin recovery",
+    13: "end recovery",
+    14: "begin surface",
+    15: "end surface",
 }
 
-#: Where each state's PHASE comes from: the OG1 phase translation table, or nowhere (the
-#: table does not list the state, so its rows are 0, unknown).
-GC_STATE_SOURCE: dict[int, str] = {
-    code: ("not in the OG1 table" if code in (8, 9, 12, 13) else "OG1 phase table")
-    for code in GC_STATE_CODES
+#: (begin state, end state) -> OG1 PHASE of the rows from the begin state to the end state,
+#: from the Seaglider column of the OG1 phase translation table. The surface coast (8 -> 9)
+#: and recovery (12 -> 13) are not in that table, so their rows stay 0 (unknown); they were
+#: surfacing, provisionally, before 2026-11-03.
+GC_TRANSITIONS: dict[tuple[int, int], int] = {
+    (0, 1): DESCENT,
+    (2, 3): ASCENT,
+    (4, 5): INFLECTION,
+    (6, 7): PARKING,
+    # (8, 9): SURFACING,
+    (10, 11): INFLECTION,
+    # (12, 13): SURFACING,
+    (14, 15): SURFACING,
 }
 
 #: End-of-phase codes (``gc_state_eop_code``) by number, as the basestation numbers them
@@ -291,58 +286,6 @@ def _apogee_window(
     return min(candidates, key=lambda c: abs(c[0] - deepest))
 
 
-def command(
-    ds: xr.Dataset, name: str, dive: int, rows: np.ndarray | None = None
-) -> float | None:
-    """Return the value of the piloting command ``name`` on ``dive``, or None.
-
-    A command the same on every dive is a scalar; one that changes is written as JSON
-    ``{"dives": [...], "values": [...]}``; inside the converter, before the dives are
-    joined, it can sit on ``N_MEASUREMENTS`` (``rows`` picks the dive's rows).
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        A dataset that may hold ``name``.
-    name : str
-        The command, for example ``log_D_FLARE``.
-    dive : int
-        The dive number.
-    rows : numpy.ndarray, optional
-        The dive's row indices, for a command on ``N_MEASUREMENTS``.
-
-    Returns
-    -------
-    float or None
-        The value, or None when ``ds`` does not record it for that dive.
-    """
-    if name not in ds.variables:
-        return None
-    raw = np.asarray(ds[name].values)
-    if raw.dtype.kind in "USO":
-        try:
-            record = json.loads(str(raw.item() if raw.ndim == 0 else raw.flat[0]))
-            lookup = {
-                int(d): v
-                for d, v in zip(record["dives"], record["values"], strict=True)
-            }
-        except (ValueError, KeyError, TypeError):
-            return None
-        value = lookup.get(dive)
-        return None if value is None else float(value)
-    values = raw.astype(float)
-    if values.ndim == 1:
-        # Only an array on N_MEASUREMENTS can be read for one dive (by its rows); any
-        # other array does not say which value is which dive's.
-        if rows is None or values.size != ds.sizes.get("N_MEASUREMENTS"):
-            return None
-        values = values[rows]
-    elif values.ndim > 1:
-        return None
-    values = values[np.isfinite(values)].ravel()
-    return float(values[0]) if values.size else None
-
-
 def _mark_flare(
     t: np.ndarray, depth: np.ndarray, phase: np.ndarray, d_flare: float | None
 ) -> bool:
@@ -406,18 +349,25 @@ def _deepest_time(t: np.ndarray, pres: np.ndarray) -> float | None:
 def _assign_from_states(
     t: np.ndarray, states: list[tuple[float, int]], phase: np.ndarray
 ) -> set[int]:
-    """Set phase from the state table; return the codes seen that have no meaning here."""
-    unknown: set[int] = set()
+    """Set phase from the state table's transitions; return codes with no name.
+
+    Rows from a begin state to its end state (both included) take that transition's
+    PHASE (:data:`GC_TRANSITIONS`). A begin state whose end state never comes (a file cut
+    off mid-dive) runs to the end of the dive file. Rows outside any listed transition are
+    left as they are.
+    """
+    unknown = {code for _, code in states if code not in GC_STATE_NAMES}
+    begins = {begin: (end, value) for (begin, end), value in GC_TRANSITIONS.items()}
     for k, (start, code) in enumerate(states):
-        if code not in GC_STATE_CODES:
-            unknown.add(code)
+        if code not in begins:
             continue
-        value = GC_STATE_CODES[code][1]
-        # The last state runs to the end of the dive file (a file cut off mid-dive keeps
-        # the last state's phase to its end).
-        stop = states[k + 1][0] if k + 1 < len(states) else np.inf
-        sel = (t >= start) & (t < stop)
-        phase[sel] = value
+        end_code, value = begins[code]
+        stop = np.inf
+        for later_time, later_code in states[k + 1 :]:
+            if later_code == end_code:
+                stop = later_time
+                break
+        phase[(t >= start) & (t <= stop)] = value
     return unknown
 
 
@@ -519,7 +469,7 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
         # end of the apogee to the deepest sample, as transition.
         # if _mark_bottom_transition(t, pres[rows], p_phase):
         #     methods["bottom"].append(int(number))
-        # d_flare = command(ds, "log_D_FLARE", int(number), rows)
+        # d_flare = command(ds, "log_D_FLARE", int(number), rows)  # reports.phase
         # depth = depth_all[rows] if np.isfinite(depth_all[rows]).any() else pres[rows]
         # if _mark_flare(t, depth, p_phase, d_flare):
         #     methods["flare"].append(int(number))

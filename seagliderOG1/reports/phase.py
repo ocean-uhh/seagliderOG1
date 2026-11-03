@@ -10,6 +10,7 @@ ratio; its height follows ``width_in``.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -112,6 +113,58 @@ def _minutes(times: np.ndarray, t0: np.datetime64) -> np.ndarray:
     return (times - t0) / np.timedelta64(1, "s") / 60.0
 
 
+def _command(
+    ds: xr.Dataset, name: str, dive: int, rows: np.ndarray | None = None
+) -> float | None:
+    """Return the value of the piloting command ``name`` on ``dive``, or None.
+
+    A command the same on every dive is a scalar; one that changes is written as JSON
+    ``{"dives": [...], "values": [...]}``; inside the converter, before the dives are
+    joined, it can sit on ``N_MEASUREMENTS`` (``rows`` picks the dive's rows).
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        A dataset that may hold ``name``.
+    name : str
+        The command, for example ``log_D_FLARE``.
+    dive : int
+        The dive number.
+    rows : numpy.ndarray, optional
+        The dive's row indices, for a command on ``N_MEASUREMENTS``.
+
+    Returns
+    -------
+    float or None
+        The value, or None when ``ds`` does not record it for that dive.
+    """
+    if name not in ds.variables:
+        return None
+    raw = np.asarray(ds[name].values)
+    if raw.dtype.kind in "USO":
+        try:
+            record = json.loads(str(raw.item() if raw.ndim == 0 else raw.flat[0]))
+            lookup = {
+                int(d): v
+                for d, v in zip(record["dives"], record["values"], strict=True)
+            }
+        except (ValueError, KeyError, TypeError):
+            return None
+        value = lookup.get(dive)
+        return None if value is None else float(value)
+    values = raw.astype(float)
+    if values.ndim == 1:
+        # Only an array on N_MEASUREMENTS can be read for one dive (by its rows); any
+        # other array does not say which value is which dive's.
+        if rows is None or values.size != ds.sizes.get("N_MEASUREMENTS"):
+            return None
+        values = values[rows]
+    elif values.ndim > 1:
+        return None
+    values = values[np.isfinite(values)].ravel()
+    return float(values[0]) if values.size else None
+
+
 def _band(ax: Axes, t: np.ndarray, phase: np.ndarray, y0: float, y1: float) -> None:
     """Draw ``phase`` as colored spans between y0 and y1, each to the next row."""
     if t.size == 0:
@@ -188,7 +241,7 @@ def _draw_states(ax: Axes, ds: xr.Dataset, rows: np.ndarray, t0: np.datetime64) 
     level = [levels.index(c) for c in cc]
     ax.step(tt, level, where="post", color="0.2", lw=0.9)
     ax.plot(tt, level, "o", color="0.2", ms=3)
-    names = {c: n for c, (n, _) in _phase.GC_STATE_CODES.items()}
+    names = _phase.GC_STATE_NAMES
     ax.set_yticks(range(len(levels)), [f"{c} {names.get(c, '?')}" for c in levels])
     ax.tick_params(axis="y", labelsize=ANNOT_FS - 2)
     ax.set_ylabel("gc_state_state")
@@ -279,7 +332,7 @@ def draw_phase_dive(
         len(ratios),
         1,
         sharex=True,
-        figsize=(width_in, width_in * (0.55 + 0.12 * len(ratios))),
+        figsize=(width_in, 0.7 * width_in * (0.55 + 0.12 * len(ratios))),
         gridspec_kw={"height_ratios": ratios},
         layout="constrained",
     )
@@ -303,7 +356,7 @@ def draw_phase_dive(
         ("log_D_TGT", "--", 1.0),
         ("log_D_SURF", "-.", 1.0),
     ):
-        value = _phase.command(ds, name, dive, rows)
+        value = _command(ds, name, dive, rows)
         if value is not None:
             ax_p.axhline(value, color="0.3", ls=style, lw=0.7)
             ax_p.annotate(
@@ -571,7 +624,10 @@ INPUT_VARIABLES: tuple[tuple[str, str], ...] = (
     ("dive_number", "groups rows into dives"),
     ("TIME", "orders rows; compared with state and G&C event times"),
     ("gc_state_state", "step 1a: the state table, when the file has one"),
-    ("gc_state_eop_code", "check only: why each state ended (in the table above)"),
+    (
+        "gc_state_eop_code",
+        "check only: why each state ended (Seaglider state table, below)",
+    ),
     (
         "gc_vbd_ctl",
         "step 1b: the G&C event that moves the VBD to zero is the inflection",
@@ -597,7 +653,12 @@ def _input_rows(path: str | Path) -> list[dict[str, str]]:
 
 
 def _state_rows(path: str | Path) -> list[dict[str, object]]:
-    """Return every basestation state code with its PHASE, source and count in the file."""
+    """Return one row per begin/end pair of Seaglider states: names, PHASE, counts, endings.
+
+    Every state code the basestation numbers appears in one pair. The PHASE is the one the
+    OG1 phase translation table gives the transition from the begin state to the end state;
+    a pair that table does not list gives 0 (unknown).
+    """
     with xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False) as ds:
         state = (
             np.asarray(ds["gc_state_state"].values, dtype=float)
@@ -610,17 +671,23 @@ def _state_rows(path: str | Path) -> list[dict[str, object]]:
             else np.full(state.size, np.nan)
         )
     rows = []
-    for code, (name, phase) in _phase.GC_STATE_CODES.items():
-        here = state == code
-        endings = sorted({int(e) for e in eop[here] if np.isfinite(e) and e >= 0})
+    for begin in range(0, max(_phase.GC_STATE_NAMES) + 1, 2):
+        end = begin + 1
+        phase = _phase.GC_TRANSITIONS.get((begin, end), _phase.UNKNOWN)
+        listed = (begin, end) in _phase.GC_TRANSITIONS
+        endings = sorted(
+            {int(e) for e in eop[state == end] if np.isfinite(e) and e >= 0}
+        )
         rows.append(
             {
-                "code": code,
-                "name": name,
+                "transition": f"{begin} → {end}",
+                "states": (
+                    f"{_phase.GC_STATE_NAMES[begin]} → {_phase.GC_STATE_NAMES[end]}"
+                ),
                 "phase": _label(phase),
                 "color": PHASE_COLORS[phase],
-                "source": _phase.GC_STATE_SOURCE[code],
-                "count": int(here.sum()),
+                "source": "OG1 phase table" if listed else "not in the OG1 table",
+                "count": int((state == begin).sum()),
                 "eop": ", ".join(
                     _phase.EOP_CODES[e] if e < len(_phase.EOP_CODES) else str(e)
                     for e in endings
@@ -720,26 +787,28 @@ for each dive:
     # step 1: from the first signal the file has
     if the dive has a state table (gc_state_state):
         sort states by time (same-second states keep file order)
-        each state sets PHASE from its time until the next state's time,
-        from the OG1 phase translation table (Seaglider column):
-            0 begin dive,  1 end dive               -> 2 descent
-            2 begin climb, 3 end climb              -> 1 ascent
-            4 begin apogee, 5 end apogee            -> 5 inflection
-            6 begin loiter, 7 end loiter            -> 4 parking
-            10/11 begin/end subsurface finish       -> 5 inflection
-            14 begin surface, 15 end surface        -> 3 surfacing
-          not in the OG1 table:
-            8/9 begin/end surface coast             -> 0 unknown
-            12/13 begin/end recovery                -> 0 unknown
-          any other code                            -> 0, WARNING
-        the last state runs to the end of the dive file
+        for each transition from a begin state to its end state, the rows from
+        the begin state's time to the end state's time take the PHASE the OG1
+        phase translation table (Seaglider column) gives that transition:
+            0 begin dive    -> 1 end dive               2 descent
+            2 begin climb   -> 3 end climb              1 ascent
+            4 begin apogee  -> 5 end apogee             5 inflection
+            6 begin loiter  -> 7 end loiter             4 parking
+            10 begin subsurface finish -> 11 end        5 inflection
+            14 begin surface -> 15 end surface          3 surfacing
+          not in the OG1 table, rows stay 0 (unknown):
+            8 begin surface coast -> 9 end surface coast
+            12 begin recovery     -> 13 end recovery
+          a code with no name -> WARNING
+        a begin state with no end state runs to the end of the dive file
     elif the dive has G&C events (gc_vbd_ctl, gc_end_secs):
-        apogee = first event with VBD at zero after an event with VBD bled (negative)
+        apogee = the event with VBD at zero after an event with VBD bled (negative);
+                 if several, the one nearest the deepest sample
         rows before the apogee event -> 2 descent
         rows in the apogee event     -> 5 inflection
         rows after it                -> 1 ascent
     else:
-        rows up to the pressure maximum -> 2 descent, rows after -> 1 ascent
+        rows up to the (last) pressure maximum -> 2 descent, rows after -> 1 ascent
 
     # step 2: GPS fixes
     rows at a GPS fix time (TIME_GPS) -> 3 surfacing

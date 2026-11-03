@@ -203,44 +203,33 @@ def test_g_and_c_apogee_matches_the_state_table(sg271):
 
 
 def test_ascent_runs_from_begin_climb_to_the_surface_coast(sg271):
-    """sg271 dive 2: every row from begin climb to begin surface coast is ascent; every
-    row from begin dive to begin apogee is descent."""
+    """sg271 dive 2: every row from begin climb to end climb is ascent; every row from begin
+    dive to end dive is descent."""
     dive = sg271["dive_number"].values == 2
     time = sg271["TIME"].values[dive]
     phase = sg271["PHASE"].values[dive]
     state = sg271["gc_state_state"].values[dive]
-    climb = (time >= time[state == 2][0]) & (time < time[state == 8][0])
+    climb = (time >= time[state == 2][0]) & (time <= time[state == 3][0])
     assert climb.sum() > 1000
     assert (phase[climb] == _phase.ASCENT).all()
-    descent = (time >= time[state == 0][0]) & (time < time[state == 4][0])
+    descent = (time >= time[state == 0][0]) & (time <= time[state == 1][0])
     assert (phase[descent] == _phase.DESCENT).all()
 
 
 def test_state_codes_follow_the_og1_translation_table():
-    """Every basestation state 0-15 has a name and the phase the OG1 table gives it; the
-    states the table does not list (surface coast, recovery) are unknown."""
-    assert sorted(_phase.GC_STATE_CODES) == list(range(16))
-    expected = {
-        0: 2,
-        1: 2,
-        2: 1,
-        3: 1,
-        4: 5,
-        5: 5,
-        6: 4,
-        7: 4,
-        10: 5,
-        11: 5,
-        14: 3,
-        15: 3,
+    """Every basestation state 0-15 has a name; PHASE comes from begin/end transitions as the
+    OG1 table lists them; the surface coast and recovery are not listed."""
+    assert sorted(_phase.GC_STATE_NAMES) == list(range(16))
+    assert _phase.GC_TRANSITIONS == {
+        (0, 1): 2,
+        (2, 3): 1,
+        (4, 5): 5,
+        (6, 7): 4,
+        (10, 11): 5,
+        (14, 15): 3,
     }
-    for code, phase in expected.items():
-        assert _phase.GC_STATE_CODES[code][1] == phase
-        assert _phase.GC_STATE_SOURCE[code] == "OG1 phase table"
-    for code in (8, 9, 12, 13):
-        assert _phase.GC_STATE_CODES[code][1] == _phase.UNKNOWN
-    assert _phase.GC_STATE_CODES[6][0] == "begin loiter"
-    assert _phase.GC_STATE_CODES[10][0] == "begin subsurface finish"
+    assert _phase.GC_STATE_NAMES[6] == "begin loiter"
+    assert _phase.GC_STATE_NAMES[10] == "begin subsurface finish"
     assert _phase.EOP_CODES[1] == "TARGET_DEPTH_EXCEEDED"
 
 
@@ -335,19 +324,21 @@ def test_without_depth_pressure_places_the_flare(sg271):
 
 def test_command_reads_a_per_dive_json_record(sg271):
     """log_D_TGT changes between dives, so it is written as JSON; each dive gets its own."""
+    from seagliderOG1.reports import phase as page
+
     raw = str(np.asarray(sg271["log_D_TGT"].values).item())
     assert raw.startswith("{")
-    assert _phase.command(sg271, "log_D_TGT", 1) == 45.0
-    assert _phase.command(sg271, "log_D_TGT", 3) == 100.0
-    assert _phase.command(sg271, "log_D_TGT", 9) is None
-    assert _phase.command(sg271, "log_NOT_THERE", 1) is None
-    assert _phase.command(sg271, "log_D_FLARE", 2) == 3.0
+    assert page._command(sg271, "log_D_TGT", 1) == 45.0
+    assert page._command(sg271, "log_D_TGT", 3) == 100.0
+    assert page._command(sg271, "log_D_TGT", 9) is None
+    assert page._command(sg271, "log_NOT_THERE", 1) is None
+    assert page._command(sg271, "log_D_FLARE", 2) == 3.0
     # A per-dive array not on N_MEASUREMENTS says nothing about which dive is which.
     ds = sg271.assign(log_X=("dive", np.array([1.0, 2.0, 3.0])))
-    assert _phase.command(ds, "log_X", 2) is None
+    assert page._command(ds, "log_X", 2) is None
     # JSON with string dive keys.
     ds = sg271.assign(log_Y=((), '{"dives": ["1", "2"], "values": [4.0, 5.0]}'))
-    assert _phase.command(ds, "log_Y", 2) == 5.0
+    assert page._command(ds, "log_Y", 2) == 5.0
 
 
 def test_without_gc_events_pressure_decides(sg005):
@@ -384,9 +375,9 @@ def test_add_phase_keeps_its_public_shape(sg271):
 
 
 def test_state_codes_in_the_samples_are_all_known(sg271):
-    """Every state code sg271 writes has a meaning in GC_STATE_CODES."""
+    """Every state code sg271 writes has a name in GC_STATE_NAMES."""
     codes = sg271["gc_state_state"].values
-    assert set(codes[np.isfinite(codes)].astype(int)) <= set(_phase.GC_STATE_CODES)
+    assert set(codes[np.isfinite(codes)].astype(int)) <= set(_phase.GC_STATE_NAMES)
 
 
 def test_elapsed_state_seconds_become_times(tmp_path):
