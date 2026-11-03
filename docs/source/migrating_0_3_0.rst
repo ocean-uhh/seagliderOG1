@@ -34,7 +34,7 @@ dive, 0.2.0 and 0.3.0 differ like this:
      - at the glider's apogee (state table, or the G&C event that moves the VBD to zero)
    * - bottom of the dive
      - descent to the pressure maximum, then ascent
-     - inflection (the apogee); the deepest sample can fall in the first ascent rows
+     - inflection (the apogee); the deepest sample can fall in the first ascent data points
    * - end of the climb
      - ascent
      - ascent through the surface coast (the OG1 table does not name it), then surfacing from
@@ -59,22 +59,22 @@ as NaN; ``xr.open_dataset(..., mask_and_scale=False)`` or ``ds.PHASE.fillna(0)``
 
 ``PROFILE_NUMBER``
    Now from ``PHASE``, as OG1 defines it: one number per run of descent or ascent, -9999 on
-   every other row (surfacing, inflection). 0.2.0 split each dive at the pressure maximum,
-   numbered the halves 2n-1 and 2n from the dive number, and gave every row a number.
+   every other data point (surfacing, inflection). 0.2.0 split each dive at the pressure maximum,
+   numbered the halves 2n-1 and 2n from the dive number, and gave every data point a number.
 ``PROFILE_DIRECTION``, ``SEGMENT_NUMBER``
    New (OG1): 1/-1/0 for descent/ascent/other, and +1 each time the glider enters surfacing.
 ``dive_number``
    Renamed from ``DIVE_NUMBER``: it is the Seaglider's dive number, not an OG1 variable, so
    it is written in lower case like the other non-OG1 variables.
 ``PHASE_QC``
-   0 (no QC performed) on every row, with the OG1 flag scale 0–4 as ``flag_values`` and
+   0 (no QC performed) on every data point, with the OG1 flag scale 0–4 as ``flag_values`` and
    ``flag_meanings``. 0.2.0 wrote 0 with no flag attributes.
 
 Basestation 2.10 files
 ----------------------
 
 Files whose ``gc_state_secs`` are seconds from the dive start (basestation 2.10) no longer put
-rows in January 1970. Their output name and ``time_coverage_start`` change from
+data points in January 1970. Their output name and ``time_coverage_start`` change from
 ``sg033_19700101T000012_R`` to the dive's real start, for example ``sg033_20100903T181710_R``.
 
 Sensor serial numbers and calibration dates

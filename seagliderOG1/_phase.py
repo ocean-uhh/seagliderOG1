@@ -161,7 +161,7 @@ def method_text(methods: dict[str, list[int]]) -> str:
         else ""
     )
     return (
-        f"From {used}.{flare}{bottom} Rows at GPS fix times are surfacing; no command "
+        f"From {used}.{flare}{bottom} Data points at GPS fix times are surfacing; no command "
         "(log_D_FLARE, log_D_TGT, log_D_SURF, log_LOITER_*) is used."
     )
 
@@ -497,7 +497,7 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
     if unknown_codes:
         unknown_rows = int((phase == UNKNOWN).sum())
         _log.warning(
-            "gc_state_state codes with no known meaning: %s; %d rows are PHASE 0.",
+            "gc_state_state codes with no known meaning: %s; %d data points are PHASE 0.",
             "; ".join(
                 f"{code} (dives {_ranges(dives)})"
                 for code, dives in sorted(unknown_codes.items())

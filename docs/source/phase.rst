@@ -39,7 +39,7 @@ Per dive file, in this order.
 **Step 1**, from the first of these signals the file has:
 
 #. **The state table** (``gc_state_state``; basestation 2.10 and later). The state names
-   and numbers are the basestation's own list, in begin/end pairs. The rows from a begin
+   and numbers are the basestation's own list, in begin/end pairs. The data points from a begin
    state to its end state take the phase the Seaglider column of the `OG1 phase translation
    table
    <https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md>`_
@@ -93,11 +93,11 @@ Per dive file, in this order.
    ``ABORT_DEPTH_EXCEEDED``).
 
    The surface coast (8, 9) and recovery (12, 13) are not listed in the OG1 table, so they
-   are ignored: the phase before them holds (ascent, through the coast). Rows
+   are ignored: the phase before them holds (ascent, through the coast). Data points
    before the first named begin state take the phase of the first named end state (a file
-   opens with "end surface": surfacing). Rows still unset after step 2 take the phase of
-   the row before them. Basestation 2.10 files write 8 and 9 around the surface and no 14
-   or 15, so on those files the surface time is the GPS fix rows and what follows them.
+   opens with "end surface": surfacing). Data points still unset after step 2 take the phase of
+   the data point before them. Basestation 2.10 files write 8 and 9 around the surface and no 14
+   or 15, so on those files the surface time is the GPS fix data points and what follows them.
 #. **The G&C events** (``gc_st_secs``, ``gc_end_secs``, ``gc_vbd_ctl``), for files with no state
    table (basestation 2.8). The inflection is the first G&C event that moves the VBD to zero
    after the dive's bleed; descent before it, ascent after. Where a file has both, this event
@@ -106,10 +106,10 @@ Per dive file, in this order.
 #. **Pressure**, for files with neither: descent up to and including the pressure maximum,
    ascent after. No inflection is assigned.
 
-**Step 2 — GPS fixes.** Every row at a GPS fix time is 3 (surfacing): a fix means the glider
-is at the surface. The converter writes each fix as rows of their own (``TIME_GPS``,
+**Step 2 — GPS fixes.** Every data point at a GPS fix time is 3 (surfacing): a fix means the glider
+is at the surface. The converter writes each fix as its own data points (``TIME_GPS``,
 ``LATITUDE_GPS``, ``LONGITUDE_GPS``); the CTD does not sample at the surface, so these are
-the only rows this step touches. It is the only way files without a state table get
+the only data points this step touches. It is the only way files without a state table get
 surfacing, and it keeps the fix taken at the end of a dive cut off before "begin surface"
 (sg271 dive 1) at the surface.
 
@@ -144,11 +144,11 @@ In the file
    transition``.
 ``phase_calculation_method``
    Which signal assigned which dives, for example "From the glider's state table
-   (gc_state_state) on dives 1-3. Rows at GPS fix times are surfacing; …".
+   (gc_state_state) on dives 1-3. Data points at GPS fix times are surfacing; …".
 ``phase_calculation_method_vocabulary``
    Empty: OG1 has no vocabulary for methods yet.
 
-``PHASE_QC`` is 0 (no QC performed) on every row: the phase is not quality controlled. Its
+``PHASE_QC`` is 0 (no QC performed) on every data point: the phase is not quality controlled. Its
 ``flag_values`` are the OG1 scale 0–4. Two attributes differ from the OG1 table, and the
 phase page marks both in amber: ``flag_meanings`` is written as CF words
 (``no_qc_performed good_data probably_good_data probably_bad_data bad_data``) because the OG1
@@ -162,13 +162,13 @@ Three OG1 variables follow from ``PHASE``, with the OG1 definitions written into
 ``*_calculation_method`` attribute:
 
 ``PROFILE_NUMBER`` (``_FillValue`` -9999)
-   One number per run of descent (2) or ascent (1) rows, from 1, in time order. Every other
-   row — surfacing, inflection, parking, unknown — is -9999, so the apogee and the surface
+   One number per run of descent (2) or ascent (1) data points, from 1, in time order. Every other
+   data point — surfacing, inflection, parking, unknown — is -9999, so the apogee and the surface
    belong to no profile. On the samples, profile 2n-1 is dive n's descent and 2n its ascent.
 ``PROFILE_DIRECTION`` (byte, ``_FillValue`` 0)
-   1 on descent rows, -1 on ascent rows, 0 elsewhere.
+   1 on descent data points, -1 on ascent data points, 0 elsewhere.
 ``SEGMENT_NUMBER`` (``_FillValue`` -9999)
-   1 from the first row, +1 each time the glider enters surfacing: a segment is a surface
+   1 from the first data point, +1 each time the glider enters surfacing: a segment is a surface
    interval and the dive after it.
 
 ``dive_number`` is kept, in lower case because it is not an OG1 variable: it is the
@@ -185,7 +185,7 @@ community. It shows:
 * the file's ``phase_calculation_method``, the algorithm as pseudocode, every state code
   with its phase and how often it appears in the file, and the variables the algorithm
   reads with whether the file has them;
-* the rows and dives per phase;
+* the data points and dives per phase;
 * the dive figure below (without the old/new comparison) for three dives: dive 2 (or 1), and
   one drawn from each of the middle and last thirds of the mission, at random but the same on
   every run;
@@ -198,7 +198,7 @@ The figures
 Each dive figure shares one time axis: pressure, each sample colored by its ``PHASE``, with
 the commanded depths dashed; pitch; the G&C events' VBD setting; the state table
 (``gc_state_state``) as a step line, when the file has one (dotted lines mark the start of
-each G&C event); and ``PHASE`` as a band, each color held until the next row.
+each G&C event); and ``PHASE`` as a band, each color held until the next data point.
 The CTD does not sample at the surface, so the yellow band at each end, with no pressure
 samples under it, is time at the surface between GPS fixes: at the start, from the first fix
 through the Iridium call to the second fix and the start of the dive; at the end, from the
@@ -216,23 +216,23 @@ sg005 dive 1 (basestation 2.8, G&C events):
 .. image:: _static/phase/dive_sg005.png
    :alt: sg005 dive 1: pressure, pitch, G&C VBD settings and PHASE, new and old
 
-Every dive's share of rows in each phase (top). Below, the
+Every dive's share of data points in each phase (top). Below, the
 dive's maximum pressure (bars) and duration (dots), since a share means little without how
 deep and how long the dive was. Fewer than six dives are drawn in six slots.
 
 .. image:: _static/phase/fractions_sg271.png
-   :alt: Per-dive share of rows in each phase, sg271
+   :alt: Per-dive share of data points in each phase, sg271
 
 .. image:: _static/phase/fractions_sg005.png
-   :alt: Per-dive share of rows in each phase, sg005
+   :alt: Per-dive share of data points in each phase, sg005
 
 Pitch against the rate of pressure change, colored by phase, every dive. Descent sits at
 negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection
-lies between them. Descent rows at steep negative pitch with dP/dt near zero are the glider
-bleeding at the surface before the flare; ascent rows at positive pitch with dP/dt still
+lies between them. Descent data points at steep negative pitch with dP/dt near zero are the glider
+bleeding at the surface before the flare; ascent data points at positive pitch with dP/dt still
 positive are the glider still sinking after the apogee ends. Basestation 3
-records pitch and pressure on different rows, so sg271's pitch is interpolated in time onto
-the pressure rows.
+records pitch and pressure at different times, so sg271's pitch is interpolated in time onto
+the pressure samples.
 
 .. image:: _static/phase/pitch_dpdt.png
    :alt: Pitch against dP/dt colored by phase for sg271 and sg005

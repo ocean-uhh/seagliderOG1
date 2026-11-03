@@ -383,7 +383,7 @@ def draw_phase_dive(
         ax_ph.set_yticks([0.75, 0.25], ["new", "old"])
     ax_ph.set_ylim(0, 1)
     ax_ph.set_ylabel("PHASE")
-    ax_ph.set_xlabel("minutes from the first row of the dive")
+    ax_ph.set_xlabel("minutes from the start of the dive file")
     if "TIME_GPS" in ds.variables:
         gps = ds["TIME_GPS"].values[rows]
         for fix in _minutes(np.unique(gps[~np.isnat(gps)]), t0):
@@ -469,7 +469,7 @@ def draw_phase_fractions(ds: xr.Dataset, *, width_in: float = W_FULL) -> Figure 
             )
         bottom += shares[:, j]
     ax.set_ylim(0, 1)
-    ax.set_ylabel("share of the dive's rows")
+    ax.set_ylabel("share of the dive's data points")
     ax.legend(loc="upper left", bbox_to_anchor=(1.0, 1.0), frameon=False)
     ax_depth.bar(x, max_pres, width=0.8 if few else 1.0, color="0.75")
     ax_depth.invert_yaxis()
@@ -614,8 +614,8 @@ def _phase_rows(ds: xr.Dataset) -> list[dict[str, object]]:
 #: Every variable the assignment reads: (name, how it is used). The page lists each with
 #: whether this file has it.
 INPUT_VARIABLES: tuple[tuple[str, str], ...] = (
-    ("dive_number", "groups rows into dives"),
-    ("TIME", "orders rows; compared with state and G&C event times"),
+    ("dive_number", "groups data points into dives"),
+    ("TIME", "orders data points; compared with state and G&C event times"),
     ("gc_state_state", "step 1a: the state table, when the file has one"),
     (
         "gc_state_eop_code",
@@ -775,7 +775,7 @@ def phase_context(path: str | Path) -> dict[str, object] | None:
 #: The assignment as the code runs it, per dive file, for the phase page.
 PSEUDOCODE = """\
 for each dive:
-    PHASE = 0 (unknown) on every row
+    PHASE = 0 (unknown) on every data point
 
     # step 1: from the first signal the file has
     if the dive has a state table (gc_state_state):
@@ -794,25 +794,27 @@ for each dive:
             8 begin surface coast -> 9 end surface coast
             12 begin recovery     -> 13 end recovery
           a code with no name -> WARNING, ignored
-        the last named transition runs to the end of the dive file
-        rows before the first named begin state: the phase of the first named
-          end state (a file opens with 15 end surface -> 3 surfacing)
+        the last listed transition runs to the end of the dive file
+        data points before the first listed begin state take the phase of the
+          first listed end state (a file opens with 15 end surface -> 3 surfacing)
     elif the dive has G&C events (gc_vbd_ctl, gc_end_secs):
         apogee = the event with VBD at zero after an event with VBD bled (negative);
                  if several, the one nearest the deepest sample
-        rows before the apogee event -> 2 descent
-        rows in the apogee event     -> 5 inflection
-        rows after it                -> 1 ascent
+        data points before the apogee event -> 2 descent
+        data points in the apogee event     -> 5 inflection
+        data points after it                -> 1 ascent
     else:
-        rows up to the (last) pressure maximum -> 2 descent, rows after -> 1 ascent
+        data points up to the (last) pressure maximum -> 2 descent
+        data points after it                          -> 1 ascent
 
     # step 2: GPS fixes
-    rows at a GPS fix time (TIME_GPS) -> 3 surfacing
-      (the CTD does not sample at the surface: these are the fix rows only)
+    data points at a GPS fix time (TIME_GPS) -> 3 surfacing
+      (the CTD does not sample at the surface: these are the fix data points only)
 
-    # step 3 (state table only): rows still 0 take the phase of the row before
+    # step 3 (state table only): data points still 0 take the phase of the
+    # data point before them
 
-PHASE_QC = 0 (no QC performed) on every row
+PHASE_QC = 0 (no QC performed) on every data point
 No transition (7): the OG1 table gives Seaglider none.
 """
 
