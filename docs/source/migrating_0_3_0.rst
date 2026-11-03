@@ -28,17 +28,16 @@ dive, 0.2.0 and 0.3.0 differ like this:
      - 0.3.0
    * - values used
      - 1 ascent, 2 descent, 3 at the first two GPS fixes
-     - 1 ascent, 2 descent, 3 surfacing, 5 inflection, 7 transition, 0 unknown
+     - 1 ascent, 2 descent, 3 surfacing, 4 parking (a loiter), 5 inflection, 0 unknown
    * - descent / ascent split
      - at the pressure maximum
      - at the glider's apogee (state table, or the G&C event that moves the VBD to zero)
-   * - start of the dive
-     - descent
-     - transition, up to the last sample above ``$D_FLARE``
    * - bottom of the dive
      - descent to the pressure maximum, then ascent
-     - inflection (the apogee), then transition from the end of the apogee to the deepest
-       sample
+     - inflection (the apogee); the deepest sample can fall in the first ascent rows
+   * - end of the climb
+     - ascent
+     - surfacing from the start of the surface coast (state table only)
    * - GPS fixes
      - the first two 3, the last one ascent
      - every fix 3
@@ -51,9 +50,8 @@ dive, 0.2.0 and 0.3.0 differ like this:
        ``phase_calculation_method_vocabulary``
 
 Code that selects profiles with ``PHASE == 2`` / ``PHASE == 1`` still works, but the apogee
-samples (5) and the transitions (7) are no longer in either. A 7 before the inflection belongs
-to the descent, a 7 after it to the climb; to keep every sample, split each dive at its
-inflection, or at its deepest sample as 0.2.0 did.
+samples (5) and the surface coast (3) are no longer in either. To keep every sample, split
+each dive at its inflection, or at its deepest sample as 0.2.0 did.
 
 xarray reads ``PHASE`` with its ``_FillValue`` 0 as missing, so ``PHASE`` 0 (unknown) comes back
 as NaN; ``xr.open_dataset(..., mask_and_scale=False)`` or ``ds.PHASE.fillna(0)`` keeps the 0.

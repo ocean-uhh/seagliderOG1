@@ -9,20 +9,14 @@ Three signals, in order of precedence, per dive:
    zero, descent before it, ascent after;
 3. pressure, for files with neither: descent up to the pressure maximum, ascent after.
 
-GPS fixes are surfacing (3) in every case. The inflection (5) is the state table's
-apogee, from "begin apogee" to "end apogee"; without a state table it is the G&C event
-that moves the VBD to zero, which is where those two states fall when both are recorded.
-Descent before the last sample shallower than ``$D_FLARE`` (``log_D_FLARE``) is
-transition (7): the glider bleeding at the surface before it pitches up to dive. So is
-ascent from the end of the apogee to the deepest sample: the glider is pumping and pitching
-up but still sinking. That is
-the one command used; ``log_D_TGT``, ``log_D_SURF`` and ``log_LOITER_*`` are not. No quality
-control is applied: ``PHASE_QC`` is 0 throughout, and ``PHASE``'s
+GPS fixes are surfacing (3) in every case. Each state's phase follows the OG1 phase
+translation table's Seaglider column; the state names and codes are the basestation's. No
+transition (7) is assigned. Commands (``log_D_*``, ``log_LOITER_*``) are not used. No
+quality control is applied: ``PHASE_QC`` is 0 throughout, and ``PHASE``'s
 ``phase_calculation_method`` says which signal assigned which dives.
 
-The meaning of each state code was read from the data (the order of states within a dive,
-their times against pressure and the G&C events), not from a code table; each entry of
-:data:`GC_STATE_CODES` names the evidence.
+OG1 phase translation table:
+https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md
 """
 
 from __future__ import annotations
@@ -40,27 +34,69 @@ UNKNOWN, ASCENT, DESCENT, SURFACING, PARKING, INFLECTION = 0, 1, 2, 3, 4, 5
 TRANSITION = 7
 
 #: State code -> (state name, OG1 phase from this state until the next).
-#: Evidence: sg271 dives 2-3 (basestation 3.0.6) and sg033 2010-09-03 and dg042 2022-07-18
-#: (basestation 2.10) read the codes in the same order every dive - 0 1 4 5 2 3 8 9 - with
-#: end-of-phase code 1 on state 1 (target depth reached) and 2 on state 3 (surface depth
-#: reached), state 4 starting the G&C event that moves the VBD to zero at the target
-#: depth, and state 2 starting the event that moves it positive. 14 and 15 appear only on
-#: basestation 3.0.6, as the last and first states of a dive file (the surface manoeuvre);
-#: basestation 2.10 uses 8 and 9 there instead. Surfacing starts at "begin surface coast"
-#: (provisional: the glider is still rising above $D_SURF, and where surfacing should start
-#: is not settled).
+#: Names and codes: the Seaglider basestation (basestation3 ``LogFile.map_state_code``,
+#: which numbers the log file's $STATE strings in this order). Phases: the OG1 phase
+#: translation table's Seaglider column (dive 0->1 descent, climb 2->3 ascent, apogee 4->5
+#: and
+#: subsurface finish 10->11 inflection, loiter 6->7 parking, surface 14->15 surfacing).
+#: Not in that column, and set here provisionally: the surface coast (8->9), where the
+#: glider is still rising above $D_SURF and sampling, and recovery (12->13), both
+#: surfacing. Basestation 2.10 files write 8 and 9 around the surface too.
 GC_STATE_CODES: dict[int, tuple[str, int]] = {
     0: ("begin dive", DESCENT),
     1: ("end dive", DESCENT),
-    4: ("begin apogee", INFLECTION),
-    5: ("end apogee", INFLECTION),
     2: ("begin climb", ASCENT),
     3: ("end climb", ASCENT),
+    4: ("begin apogee", INFLECTION),
+    5: ("end apogee", INFLECTION),
+    6: ("begin loiter", PARKING),
+    7: ("end loiter", PARKING),
     8: ("begin surface coast", SURFACING),
     9: ("end surface coast", SURFACING),
+    10: ("begin subsurface finish", INFLECTION),
+    11: ("end subsurface finish", INFLECTION),
+    12: ("begin recovery", SURFACING),
+    13: ("end recovery", SURFACING),
     14: ("begin surface", SURFACING),
     15: ("end surface", SURFACING),
 }
+
+#: Where each state's PHASE comes from: the OG1 phase vocabulary, or this converter
+#: (provisional) where that vocabulary gives none.
+GC_STATE_SOURCE: dict[int, str] = {
+    code: (
+        "this converter (provisional)" if code in (8, 9, 12, 13) else "OG1 phase table"
+    )
+    for code in GC_STATE_CODES
+}
+
+#: End-of-phase codes (``gc_state_eop_code``) by number, as the basestation numbers them
+#: (basestation3 ``LogFile.map_eop_code``, copied from the glider's constant.h). -1: none.
+EOP_CODES: tuple[str, ...] = (
+    "CONTROL_FINISHED_OK",
+    "TARGET_DEPTH_EXCEEDED",
+    "SURFACE_DEPTH_REACHED",
+    "FINISH_DEPTH_REACHED",
+    "ABORT_DEPTH_EXCEEDED",
+    "FLARE_DEPTH_REACHED",
+    "NO_VERTICAL_VELOCITY",
+    "HALF_MISSION_TIME_EXCEEDED",
+    "UNCOMMANDED_BLEED_DETECTED",
+    "MOTOR_MAX_ERRORS_EXCEEDED",
+    "CF8_MAX_ERRORS_EXCEEDED",
+    "BOTTOM_OBSTACLE_DETECTED",
+    "SURFACE_OBSTACLE_DETECTED",
+    "ABORT_TIME_EXCEEDED",
+    "LOITER_COMPLETE",
+    "POWER_ERROR_DETECTED",
+    "SENSOR_ERROR_DETECTED",
+    "LOGGER_MESSAGE_DELIMITER",
+    "LOGGER_WANTS_CLIMB",
+    "LOGGER_WANTS_RECOVERY",
+    "LOGGER_WANTS_SURFACE",
+    "LOGGER_WANTS_LOITER",
+    "LOGGER_WANTS_FINISH",
+)
 
 #: OG1 phase vocabulary: id -> name, in id order (``flag_values``/``flag_meanings`` on PHASE).
 PHASE_NAMES: dict[int, str] = {
@@ -414,11 +450,11 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
         if "TIME_GPS" in ds.variables
         else np.full(n, np.nan)
     )
-    depth_all = (
-        np.asarray(ds["DEPTH"].values, dtype=float)
-        if "DEPTH" in ds.variables
-        else np.full(n, np.nan)
-    )
+    # depth_all = (  # for the transition rules below, off
+    #     np.asarray(ds["DEPTH"].values, dtype=float)
+    #     if "DEPTH" in ds.variables
+    #     else np.full(n, np.nan)
+    # )
     # A GPS fix can reach N_MEASUREMENTS twice (the fix row and the gps_info row at the
     # same time): every row at a fix time is surfacing.
     gps = np.isin(time, gps_time[np.isfinite(gps_time)])
@@ -442,13 +478,16 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
             _assign_from_pressure(pres[rows][sample], sub)
             p_phase[sample] = sub
             methods["pressure"].append(int(number))
-        if _mark_bottom_transition(t, pres[rows], p_phase):
-            methods["bottom"].append(int(number))
-        d_flare = command(ds, "log_D_FLARE", int(number), rows)
-        # DEPTH, or PRES (dbar, close to metres near the surface) on a dive without it.
-        depth = depth_all[rows] if np.isfinite(depth_all[rows]).any() else pres[rows]
-        if _mark_flare(t, depth, p_phase, d_flare):
-            methods["flare"].append(int(number))
+        # Transition (7) is not assigned: the OG1 phase vocabulary gives Seaglider no
+        # transition. The two rules below (Eleanor, 2026-11-03: off, kept for discussion)
+        # marked the descent before the last sample above $D_FLARE, and the ascent from the
+        # end of the apogee to the deepest sample, as transition.
+        # if _mark_bottom_transition(t, pres[rows], p_phase):
+        #     methods["bottom"].append(int(number))
+        # d_flare = command(ds, "log_D_FLARE", int(number), rows)
+        # depth = depth_all[rows] if np.isfinite(depth_all[rows]).any() else pres[rows]
+        # if _mark_flare(t, depth, p_phase, d_flare):
+        #     methods["flare"].append(int(number))
         p_phase[gps[rows]] = SURFACING
         phase[rows] = p_phase
     if unknown_codes:

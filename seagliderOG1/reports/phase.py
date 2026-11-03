@@ -571,16 +571,16 @@ INPUT_VARIABLES: tuple[tuple[str, str], ...] = (
     ("DIVE_NUMBER", "groups rows into dives"),
     ("TIME", "orders rows; compared with state and G&C event times"),
     ("gc_state_state", "step 1a: the state table, when the file has one"),
+    ("gc_state_eop_code", "check only: why each state ended (listed below)"),
     (
         "gc_vbd_ctl",
         "step 1b: the G&C event that moves the VBD to zero is the inflection",
     ),
     ("gc_end_secs", "step 1b: where that G&C event ends"),
-    ("PRES", "step 1c: pressure maximum (fallback); step 3: the deepest sample"),
-    ("DEPTH", "step 2: compared with log_D_FLARE (PRES on a dive without DEPTH)"),
-    ("log_D_FLARE", "step 2: the flare depth (the one command used)"),
-    ("TIME_GPS", "step 4: rows at GPS fix times are surfacing"),
+    ("PRES", "step 1c: the pressure maximum, when there are no G&C events"),
+    ("TIME_GPS", "step 2: rows at GPS fix times are surfacing"),
     ("PITCH", "check only: drawn, and plotted against dP/dt"),
+    ("log_D_FLARE", "check only: drawn as a dashed line"),
     ("log_D_TGT", "check only: drawn as a dashed line"),
     ("log_D_SURF", "check only: drawn as a dashed line"),
 )
@@ -594,6 +594,40 @@ def _input_rows(path: str | Path) -> list[dict[str, str]]:
         {"name": name, "use": use, "present": "yes" if name in present else "no"}
         for name, use in INPUT_VARIABLES
     ]
+
+
+def _state_rows(path: str | Path) -> list[dict[str, object]]:
+    """Return every basestation state code with its PHASE, source and count in the file."""
+    with xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False) as ds:
+        state = (
+            np.asarray(ds["gc_state_state"].values, dtype=float)
+            if "gc_state_state" in ds.variables
+            else np.array([])
+        )
+        eop = (
+            np.asarray(ds["gc_state_eop_code"].values, dtype=float)
+            if "gc_state_eop_code" in ds.variables
+            else np.full(state.size, np.nan)
+        )
+    rows = []
+    for code, (name, phase) in _phase.GC_STATE_CODES.items():
+        here = state == code
+        endings = sorted({int(e) for e in eop[here] if np.isfinite(e) and e >= 0})
+        rows.append(
+            {
+                "code": code,
+                "name": name,
+                "phase": _label(phase),
+                "color": PHASE_COLORS[phase],
+                "source": _phase.GC_STATE_SOURCE[code],
+                "count": int(here.sum()),
+                "eop": ", ".join(
+                    _phase.EOP_CODES[e] if e < len(_phase.EOP_CODES) else str(e)
+                    for e in endings
+                ),
+            }
+        )
+    return rows
 
 
 def phase_context(path: str | Path) -> dict[str, object] | None:
@@ -666,6 +700,7 @@ def phase_context(path: str | Path) -> dict[str, object] | None:
         "docs_url": DOCS_URL,
         "pseudocode": PSEUDOCODE,
         "inputs": _input_rows(path),
+        "states": _state_rows(path),
         "rows": _phase_rows(ds),
         "bars_png": bars_png,
         "bars_slot": "slot-three-fifths" if bars_width == W_THREE_FIFTHS else "",
@@ -681,40 +716,35 @@ PSEUDOCODE = """\
 for each dive:
     PHASE = 0 (unknown) on every row
 
-    # step 1: descent, inflection, ascent - from the first signal the file has
+    # step 1: from the first signal the file has
     if the dive has a state table (gc_state_state):
         sort states by time (same-second states keep file order)
-        each state sets PHASE from its time until the next state's time:
-            0 begin dive, 1 end dive            -> 2 descent
-            4 begin apogee, 5 end apogee        -> 5 inflection
-            2 begin climb, 3 end climb          -> 1 ascent
-            8 begin coast, 9 end coast          -> 3 surfacing   (provisional)
-            14 begin surface, 15 end surface    -> 3 surfacing
-            any other code                      -> 0, WARNING
+        each state sets PHASE from its time until the next state's time,
+        from the OG1 phase translation table (Seaglider column):
+            0 begin dive,  1 end dive               -> 2 descent
+            2 begin climb, 3 end climb              -> 1 ascent
+            4 begin apogee, 5 end apogee            -> 5 inflection
+            6 begin loiter, 7 end loiter            -> 4 parking
+            10/11 begin/end subsurface finish       -> 5 inflection
+            14 begin surface, 15 end surface        -> 3 surfacing
+          not in the OG1 table (provisional here):
+            8/9 begin/end surface coast             -> 3 surfacing
+            12/13 begin/end recovery                -> 3 surfacing
+          any other code                            -> 0, WARNING
         the last state runs to the end of the dive file
     elif the dive has G&C events (gc_vbd_ctl, gc_end_secs):
         apogee = first event with VBD at zero after an event with VBD bled (negative)
-        rows before apogee start -> 2 descent
-        rows in the apogee event -> 5 inflection
-        rows after it            -> 1 ascent
+        rows before the apogee event -> 2 descent
+        rows in the apogee event     -> 5 inflection
+        rows after it                -> 1 ascent
     else:
         rows up to the pressure maximum -> 2 descent, rows after -> 1 ascent
 
-    # step 3: transition at the bottom
-    if the deepest sample (PRES) comes after the inflection:
-        ascent rows from the end of the inflection to the deepest sample -> 7 transition
-
-    # step 2: transition at the start of the dive
-    if log_D_FLARE is recorded for this dive:
-        depth = DEPTH, or PRES if the dive has no DEPTH
-        look only before the first descent row deeper than log_D_FLARE + 10 m
-        last_above = the last descent row there shallower than log_D_FLARE
-        descent rows up to last_above -> 7 transition
-
-    # step 4: surfacing
+    # step 2: surfacing
     rows at a GPS fix time (TIME_GPS) -> 3 surfacing
 
 PHASE_QC = 0 (no QC performed) on every row
+No transition (7): the OG1 table gives Seaglider none.
 """
 
 

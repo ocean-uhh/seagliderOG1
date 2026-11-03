@@ -16,7 +16,7 @@ SG005 = DATA / "data" / "demo_sg005"
 SG033_BS210 = DATA / "tests" / "data" / "sg033_bs210"
 
 #: The order the Seaglider runs its phases in, per dive file.
-ORDER = (3, 7, 2, 5, 7, 1, 3)
+ORDER = (3, 2, 5, 1, 3)
 
 
 def _unmasked(path: pathlib.Path) -> xr.Dataset:
@@ -59,10 +59,8 @@ def _is_in_order(runs: list[int]) -> bool:
 
 
 @pytest.mark.parametrize("mission", ["sg271", "sg005"])
-def test_every_dive_runs_surface_transition_descent_inflection_ascent_surface(
-    mission, request
-):
-    """Per dive the phases follow 3 7 2 5 (7) 1 3 (sg271 dive 1 stops at the apogee)."""
+def test_every_dive_runs_surface_descent_inflection_ascent_surface(mission, request):
+    """Per dive the phases follow 3 2 5 1 3 (sg271 dive 1 stops at the apogee)."""
     ds = request.getfixturevalue(mission)
     dive = ds["DIVE_NUMBER"].values
     for number in np.unique(dive):
@@ -126,7 +124,8 @@ def test_attributes_follow_og1_and_qc_is_zero(sg271, sg005, tmp_path):
     assert attrs["ancillary_variables"] == "PHASE_QC"
     assert "state table" in attrs["phase_calculation_method"]
     assert "dives 1-3" in attrs["phase_calculation_method"]
-    assert "D_FLARE" in attrs["phase_calculation_method"]
+    assert "D_FLARE" not in attrs["phase_calculation_method"]
+    assert not (sg271["PHASE"].values == _phase.TRANSITION).any()
     assert attrs["phase_calculation_method_vocabulary"] == ""
     assert "guidance-and-control" in sg005["PHASE"].attrs["phase_calculation_method"]
     for ds in (sg271, sg005):
@@ -158,6 +157,9 @@ def test_inflection_is_the_state_tables_apogee(sg271):
     assert (phase[~window] != _phase.INFLECTION).all()
 
 
+@pytest.mark.skip(
+    reason="transition rules are off: the OG1 phase table gives Seaglider no transition"
+)
 def test_climb_is_transition_to_the_deepest_sample_then_ascent(sg271):
     """sg271 dive 2: from begin climb to the deepest sample is transition, then ascent to
     the start of the surface coast; from begin dive to begin apogee, transition then
@@ -198,6 +200,45 @@ def test_g_and_c_apogee_matches_the_state_table(sg271):
     assert differ.sum() < 0.01 * phase.size
 
 
+def test_ascent_runs_from_begin_climb_to_the_surface_coast(sg271):
+    """sg271 dive 2: every row from begin climb to begin surface coast is ascent; every
+    row from begin dive to begin apogee is descent."""
+    dive = sg271["DIVE_NUMBER"].values == 2
+    time = sg271["TIME"].values[dive]
+    phase = sg271["PHASE"].values[dive]
+    state = sg271["gc_state_state"].values[dive]
+    climb = (time >= time[state == 2][0]) & (time < time[state == 8][0])
+    assert climb.sum() > 1000
+    assert (phase[climb] == _phase.ASCENT).all()
+    descent = (time >= time[state == 0][0]) & (time < time[state == 4][0])
+    assert (phase[descent] == _phase.DESCENT).all()
+
+
+def test_state_codes_follow_the_og1_translation_table():
+    """Every basestation state 0-15 has a name and the phase the OG1 table gives it."""
+    assert sorted(_phase.GC_STATE_CODES) == list(range(16))
+    expected = {
+        0: 2,
+        1: 2,
+        2: 1,
+        3: 1,
+        4: 5,
+        5: 5,
+        6: 4,
+        7: 4,
+        10: 5,
+        11: 5,
+        14: 3,
+        15: 3,
+    }
+    for code, phase in expected.items():
+        assert _phase.GC_STATE_CODES[code][1] == phase
+        assert _phase.GC_STATE_SOURCE[code] == "OG1 phase table"
+    assert _phase.GC_STATE_CODES[6][0] == "begin loiter"
+    assert _phase.GC_STATE_CODES[10][0] == "begin subsurface finish"
+    assert _phase.EOP_CODES[1] == "TARGET_DEPTH_EXCEEDED"
+
+
 def test_states_written_at_the_same_second_keep_file_order(sg271):
     """End apogee and begin climb at one time: the climb still follows the apogee."""
     ds = sg271.copy(deep=True)
@@ -209,13 +250,15 @@ def test_states_written_at_the_same_second_keep_file_order(sg271):
     time[begin_climb] = time[end_apogee]
     ds = ds.assign_coords(TIME=("N_MEASUREMENTS", time))
     phase, _ = _phase.assign(ds)
-    # Only the end-apogee row, now at the begin-climb time, changes (5 -> 7: the climb's
-    # start, before the deepest sample, is transition).
+    # Only the end-apogee row, now at the begin-climb time, changes (5 -> 1).
     same = dive & (np.arange(dive.size) != end_apogee)
     np.testing.assert_array_equal(phase[same], sg271["PHASE"].values[same])
-    assert phase[end_apogee] == _phase.TRANSITION
+    assert phase[end_apogee] == _phase.ASCENT
 
 
+@pytest.mark.skip(
+    reason="transition rules are off: the OG1 phase table gives Seaglider no transition"
+)
 @pytest.mark.parametrize("mission", ["sg271", "sg005"])
 def test_transition_ends_at_the_last_sample_above_d_flare(mission, request):
     """Each dive's transition ends at its last sample shallower than log_D_FLARE before
@@ -237,6 +280,9 @@ def test_transition_ends_at_the_last_sample_above_d_flare(mission, request):
         assert depth[after][0] >= d_flare
 
 
+@pytest.mark.skip(
+    reason="transition rules are off: the OG1 phase table gives Seaglider no transition"
+)
 def test_sg537_transition_runs_to_the_last_rise_above_d_flare(dev_data, tmp_path):
     """sg537 dive 1 sinks past D_FLARE and comes back above it before diving: the
     transition runs to the last sample above D_FLARE, past the first dip."""
@@ -255,6 +301,9 @@ def test_sg537_transition_runs_to_the_last_rise_above_d_flare(dev_data, tmp_path
     assert depth[later][0] >= d_flare
 
 
+@pytest.mark.skip(
+    reason="transition rules are off: the OG1 phase table gives Seaglider no transition"
+)
 def test_one_bad_shallow_depth_mid_descent_does_not_move_the_flare(sg271):
     """A single 0 m DEPTH reading mid-descent leaves the transition where it was."""
     ds = sg271.copy(deep=True)
@@ -269,6 +318,9 @@ def test_one_bad_shallow_depth_mid_descent_does_not_move_the_flare(sg271):
     np.testing.assert_array_equal(phase[dive], sg271["PHASE"].values[dive])
 
 
+@pytest.mark.skip(
+    reason="transition rules are off: the OG1 phase table gives Seaglider no transition"
+)
 def test_without_depth_pressure_places_the_flare(sg271):
     """Without DEPTH the flare is read against PRES, to within a row of the DEPTH result."""
     phase, methods = _phase.assign(sg271.drop_vars("DEPTH"))
@@ -354,7 +406,7 @@ def test_basestation_2_10_dive_converts_with_its_own_date(tmp_path):
     assert ds["TIME"].values.min() > np.datetime64("2010-01-01")
     runs = _runs(ds["PHASE"].values)
     assert _is_in_order(runs)
-    assert {2, 3, 5, 1, 7} <= set(runs)
+    assert {2, 3, 5, 1} <= set(runs)
     assert "state table" in ds["PHASE"].attrs["phase_calculation_method"]
 
 

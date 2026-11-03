@@ -12,95 +12,89 @@ fallback. This page states the algorithm, its fallbacks, and shows it on the bun
 What a Seaglider dive looks like
 --------------------------------
 
-A Seaglider repeats one cycle per dive file (SGX manual, §2.2.3 *Run phases*):
+A Seaglider repeats one cycle per dive file (SGX manual, §2.2.3 *Run phases*), and records
+each stage in its state table (``gc_state_state``):
 
 =============== ======================================================================= ===============
-Seaglider phase what happens                                                            OG1 ``PHASE``
+Seaglider stage what happens                                                            OG1 ``PHASE``
 =============== ======================================================================= ===============
 surface         GPS fix, communications, a second GPS fix                               3 surfacing
-start of dive   bleeds oil at the surface, nose full down, until ``$D_FLARE``           7 transition
-dive            pitched to the dive angle at ``$D_FLARE``; sinks under G&C              2 descent
+dive            bleeds oil and sinks (nose down until ``$D_FLARE``, then at the dive    2 descent
+                angle)
 apogee          at the target depth, pitch to the apogee angle and VBD to zero          5 inflection
-start of climb  pumps oil and pitches up, but still sinking to its deepest point        7 transition
-climb           rises to ``$D_SURF``                                                    1 ascent
+climb           pumps oil, pitches up, rises to ``$D_SURF``                             1 ascent
 surface coast   above ``$D_SURF``, still rising and sampling, to the surface            3 surfacing
+loiter          held at a depth (when the pilot commands it)                            4 parking
 =============== ======================================================================= ===============
 
 The CTD samples from the start of the dive to the end of the coast; the surface interval is
-booked to the dive file that ends with it. ``PHASE`` 4 (parking) and 6 (propelled) are not
-assigned.
+split between the dive file that ends with it (the fix on surfacing) and the next (the two
+fixes before diving). ``PHASE`` 6 (propelled) and 7 (transition) are not assigned.
 
 The algorithm
 -------------
 
 Per dive file, in this order.
 
-**Step 1 — descent, inflection and ascent**, from the first of these signals the file has:
+**Step 1**, from the first of these signals the file has:
 
 #. **The state table** (``gc_state_state``; basestation 2.10 and later). Each state sets the
-   phase from its time until the next state's time:
+   phase from its time until the next state's time. The phases follow the Seaglider column
+   of the `OG1 phase translation table
+   <https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md>`_;
+   the state names and numbers are the basestation's own list:
 
-   ====== ============================ ==============
-   code   state                        ``PHASE``
-   ====== ============================ ==============
-   0, 1   begin dive, end dive         2 descent
-   4, 5   begin apogee, end apogee     5 inflection
-   2, 3   begin climb, end climb       1 ascent
-   8, 9   begin/end surface coast      3 surfacing
-   14, 15 begin surface, end surface   3 surfacing
-   ====== ============================ ==============
+   ====== ================================ ============== ==============================
+   code   state                            ``PHASE``      phase from
+   ====== ================================ ============== ==============================
+   0, 1   begin dive, end dive             2 descent      OG1 table
+   2, 3   begin climb, end climb           1 ascent       OG1 table
+   4, 5   begin apogee, end apogee         5 inflection   OG1 table
+   6, 7   begin loiter, end loiter         4 parking      OG1 table
+   8, 9   begin/end surface coast          3 surfacing    this converter (provisional)
+   10, 11 begin/end subsurface finish      5 inflection   OG1 table
+   12, 13 begin/end recovery               3 surfacing    this converter (provisional)
+   14, 15 begin surface, end surface       3 surfacing    OG1 table
+   ====== ================================ ============== ==============================
 
    States written at the same second (end apogee and begin climb, for example) keep the
-   order the file wrote them. Basestation 2.10 writes 8 and 9 for the surface as well. A
-   code not in the table leaves its samples at 0
-   (unknown) and is logged as a WARNING. The last state runs to the end of the dive file,
-   so a file cut off mid-dive keeps that state's phase to its end (sg271 dive 1 ends in the
-   apogee).
+   order the file wrote them. Basestation 2.10 writes 8 and 9 around the surface as well. A
+   code not in the table leaves its samples at 0 (unknown) and is logged as a WARNING. The
+   last state runs to the end of the dive file, so a file cut off mid-dive keeps that
+   state's phase to its end (sg271 dive 1 ends in the apogee, with end-of-phase code
+   ``ABORT_DEPTH_EXCEEDED``).
 
-   The codes' meanings were read from the data: every dive with a state table writes them in
-   the same order, "end dive" carries the end-of-phase code for the target depth and "end
-   climb" the one for ``$D_SURF``, and "begin apogee" and "end apogee" fall at the start and
-   end of the G&C event that moves the VBD to zero.
+   *Provisional:* surfacing starts at "begin surface coast". The OG1 table does not place
+   the coast; the glider is still rising above ``$D_SURF`` (typically 2 m) and sampling.
 #. **The G&C events** (``gc_st_secs``, ``gc_end_secs``, ``gc_vbd_ctl``), for files with no state
    table (basestation 2.8). The inflection is the first G&C event that moves the VBD to zero
    after the dive's bleed; descent before it, ascent after. Where a file has both, this event
-   is where the state table's apogee falls.
+   is where the state table's apogee falls. Without a state table the coast cannot be seen,
+   so it stays ascent.
 #. **Pressure**, for files with neither: descent up to and including the pressure maximum,
    ascent after. No inflection is assigned.
 
-*Provisional:* surfacing starts at "begin surface coast". The glider is still rising above
-``$D_SURF`` (typically 2 m) and sampling, so this start of surfacing is a choice, not settled;
-files without a state table cannot see the coast and stay ascent to the surface.
-
-**Step 2 — transition at the start of the dive.** Descent up to the *last* sample shallower
-than ``$D_FLARE`` (``log_D_FLARE``, compared with ``DEPTH``, or with ``PRES`` on a dive
-without ``DEPTH``) before the inflection is 7
-(transition): the glider is still bleeding at the surface, nose full down, and has not yet
-pitched to the dive angle. The last such sample is used, not the first deeper one, because a
-glider can sink past ``$D_FLARE`` and come back above it before the dive proper starts (on
-one test dive, to 7 m and back up to 3 m with ``$D_FLARE`` at 3 m). Only samples before the
-glider is first 10 m below ``$D_FLARE`` count, so a single bad shallow reading deeper in
-the dive cannot stretch the transition. A file without ``log_D_FLARE`` gets no transition
-here.
-
-**Step 3 — transition at the bottom.** Ascent from the end of the inflection up to and
-including the deepest sample (the pressure maximum) is 7 (transition): the apogee has ended
-and the glider is pumping and pitching up, but it is still sinking. On the samples the deepest
-sample falls after "end apogee" on about half the dives; where it falls inside the inflection,
-there is no transition here. Dives assigned from pressure alone have no inflection and no
-transition here.
-
-*Possible refinement (not implemented):* hold the transition until the glider first rises at
-its usual climbing rate rather than only to the deepest sample — for example, until the rise
-rate (−dP/dt) first reaches the 25th percentile of the rise rates from the end of the apogee
-to the start of surfacing.
-
-**Step 4 — surfacing.** Every row at a GPS fix time is 3 (surfacing). The converter writes
+**Step 2 — surfacing.** Every row at a GPS fix time is 3 (surfacing). The converter writes
 each fix as rows of their own (``TIME_GPS``, ``LATITUDE_GPS``, ``LONGITUDE_GPS``).
 
-A sample no step claims is 0 (unknown). ``log_D_FLARE`` is the only piloting command used:
-``log_D_TGT``, ``log_D_SURF`` and ``log_LOITER_*`` say what the glider was told to do, not what
-it did, and are drawn on the figures for comparison only.
+A sample no step claims is 0 (unknown). No piloting command is used: ``log_D_FLARE``,
+``log_D_TGT``, ``log_D_SURF`` and ``log_LOITER_*`` say what the glider was told to do, not
+what it did, and are drawn on the figures for comparison only.
+
+Discussed, not applied
+~~~~~~~~~~~~~~~~~~~~~~
+
+Two uses of 7 (transition) were tried and are switched off, because the OG1 translation table
+gives Seaglider no transition. The code is kept, commented, for discussion:
+
+* *the start of the dive*: descent up to the last sample shallower than ``$D_FLARE``, while
+  the glider bleeds at the surface nose-down before pitching to the dive angle. The last
+  such sample, not the first deeper one, because a glider can sink past ``$D_FLARE`` and
+  come back above it (one test dive went to 7 m and back to 3 m with ``$D_FLARE`` at 3 m);
+* *the bottom*: ascent from "end apogee" to the deepest sample, while the glider pumps and
+  pitches up but is still sinking (about half the sample dives reach their deepest sample
+  after "end apogee"). A refinement would hold it until the rise rate first reaches the
+  25th percentile of the rise rates from the end of the apogee to the start of surfacing.
 
 In the file
 -----------
@@ -113,9 +107,8 @@ In the file
    ``0 1 2 3 4 5 6 7`` and ``unknown ascent descent surfacing parking inflection propelled
    transition``.
 ``phase_calculation_method``
-   Which signal assigned which dives, and on which dives each transition was set, for
-   example "From the glider's state table (gc_state_state) on dives 1-3. Descent before the
-   last sample above $D_FLARE (log_D_FLARE) is transition (dives 1-3). …".
+   Which signal assigned which dives, for example "From the glider's state table
+   (gc_state_state) on dives 1-3. Rows at GPS fix times are surfacing; …".
 ``phase_calculation_method_vocabulary``
    Empty: OG1 has no vocabulary for methods yet.
 
@@ -130,7 +123,8 @@ In the report
 its own because how phase should be assigned is under discussion in the OceanGliders
 community. It shows:
 
-* the file's ``phase_calculation_method``, the algorithm as pseudocode, and the variables it
+* the file's ``phase_calculation_method``, the algorithm as pseudocode, every state code
+  with its phase and how often it appears in the file, and the variables the algorithm
   reads with whether the file has them;
 * the rows and dives per phase;
 * the dive figure below (without the old/new comparison) for three dives: dive 2 (or 1), and
@@ -164,8 +158,8 @@ sg005 dive 1 (basestation 2.8, G&C events):
    :alt: sg005 dive 1: pressure, pitch, G&C VBD settings and PHASE, new and old
 
 Every dive's share of rows in each phase (top); the digits above each bar are the dive's
-phases in the order they run. A complete dive reads ``3725713``, or ``372513`` when the
-deepest sample falls inside the inflection; sg271 dive 1 ends in the apogee. Below, the
+phases in the order they run. A complete dive reads ``32513``; sg271 dive 1 ends in the
+apogee. Below, the
 dive's maximum pressure (bars) and duration (dots), since a share means little without how
 deep and how long the dive was. Fewer than six dives are drawn in six slots.
 
@@ -177,8 +171,9 @@ deep and how long the dive was. Fewer than six dives are drawn in six slots.
 
 Pitch against the rate of pressure change, colored by phase, every dive. Descent sits at
 negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection
-lies between them; transition sits at steep negative pitch with dP/dt near zero (the start
-of the dive) and at positive pitch with dP/dt still positive (the bottom). Basestation 3
+lies between them. Descent rows at steep negative pitch with dP/dt near zero are the glider
+bleeding at the surface before the flare; ascent rows at positive pitch with dP/dt still
+positive are the glider still sinking after the apogee ends. Basestation 3
 records pitch and pressure on different rows, so sg271's pitch is interpolated in time onto
 the pressure rows.
 
