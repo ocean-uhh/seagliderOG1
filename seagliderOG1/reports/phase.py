@@ -571,7 +571,7 @@ INPUT_VARIABLES: tuple[tuple[str, str], ...] = (
     ("DIVE_NUMBER", "groups rows into dives"),
     ("TIME", "orders rows; compared with state and G&C event times"),
     ("gc_state_state", "step 1a: the state table, when the file has one"),
-    ("gc_state_eop_code", "check only: why each state ended (listed below)"),
+    ("gc_state_eop_code", "check only: why each state ended (in the table above)"),
     (
         "gc_vbd_ctl",
         "step 1b: the G&C event that moves the VBD to zero is the inflection",

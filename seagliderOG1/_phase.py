@@ -161,8 +161,8 @@ def method_text(methods: dict[str, list[int]]) -> str:
         else ""
     )
     return (
-        f"From {used}.{flare}{bottom} Rows at GPS fix times are surfacing; no other command "
-        "(log_D_TGT, log_D_SURF, log_LOITER_*) is used."
+        f"From {used}.{flare}{bottom} Rows at GPS fix times are surfacing; no command "
+        "(log_D_FLARE, log_D_TGT, log_D_SURF, log_LOITER_*) is used."
     )
 
 

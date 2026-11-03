@@ -124,7 +124,7 @@ def test_attributes_follow_og1_and_qc_is_zero(sg271, sg005, tmp_path):
     assert attrs["ancillary_variables"] == "PHASE_QC"
     assert "state table" in attrs["phase_calculation_method"]
     assert "dives 1-3" in attrs["phase_calculation_method"]
-    assert "D_FLARE" not in attrs["phase_calculation_method"]
+    assert "transition" not in attrs["phase_calculation_method"]
     assert not (sg271["PHASE"].values == _phase.TRANSITION).any()
     assert attrs["phase_calculation_method_vocabulary"] == ""
     assert "guidance-and-control" in sg005["PHASE"].attrs["phase_calculation_method"]
