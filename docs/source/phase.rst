@@ -227,7 +227,7 @@ deep and how long the dive was. Fewer than six dives are drawn in six slots.
    :alt: Per-dive share of data points in each phase, sg005
 
 Pitch against the rate of pressure change, colored by phase, every dive. Descent sits at
-negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection
+negative pitch and positive dP/dt (i.e., increasing pressure), ascent at positive pitch and negative dP/dt; inflection
 lies between them. Descent data points at steep negative pitch with dP/dt near zero are the glider
 bleeding at the surface before the flare; ascent data points at positive pitch with dP/dt still
 positive are the glider still sinking after the apogee ends. Basestation 3

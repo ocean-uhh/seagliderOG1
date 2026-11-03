@@ -65,7 +65,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 {%- if p.scatter_png %}
 <section id="pitch">
 <h2>3. Pitch and dP/dt</h2>
-<p class="caption">Dive {{ p.dives|join(", ") }}: pitch against the rate of pressure change, colored by <code>PHASE</code>. Descent sits at negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection lies between them. Descent points at steep negative pitch and dP/dt near zero are the glider bleeding at the surface before the flare; ascent points at positive pitch with dP/dt still positive are the glider still sinking after the apogee ends. Pitch is interpolated in time onto the pressure data points.</p>
+<p class="caption">Dive {{ p.dives|join(", ") }}: pitch against the rate of pressure change, colored by <code>PHASE</code>. Descent sits at negative pitch and positive dP/dt (i.e., increasing pressure), ascent at positive pitch and negative dP/dt; inflection lies between them. Descent points at steep negative pitch and dP/dt near zero are the glider bleeding at the surface before the flare; ascent points at positive pitch with dP/dt still positive are the glider still sinking after the apogee ends. Pitch is interpolated in time onto the pressure data points.</p>
 <figure{% if p.scatter_slot %} class="{{ p.scatter_slot }}"{% endif %}>
 <img alt="Pitch against dP/dt colored by PHASE" src="data:image/png;base64,{{ p.scatter_png }}">
 {%- if show_source and p.scatter_source %}<figcaption class="fig-source">source: {{ p.scatter_source }}</figcaption>{% endif %}
