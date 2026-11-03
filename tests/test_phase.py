@@ -48,9 +48,7 @@ def _runs(phase: np.ndarray) -> list[int]:
 
 
 def _is_in_order(runs: list[int]) -> bool:
-    """Return True when ``runs`` follows ORDER without going back (unknown runs aside: the
-    state table's surface coast is unknown, as the OG1 table does not list it)."""
-    runs = [run for run in runs if run != _phase.UNKNOWN]
+    """Return True when ``runs`` follows ORDER without going back."""
     position = 0
     for run in runs:
         while position < len(ORDER) and ORDER[position] != run:
@@ -68,7 +66,7 @@ def test_every_dive_runs_surface_descent_inflection_ascent_surface(mission, requ
     for number in np.unique(dive):
         runs = _runs(ds["PHASE"].values[dive == number])
         assert _is_in_order(runs), (number, runs)
-        assert 0 not in runs or mission == "sg271"  # sg271's surface coast is unknown
+        assert 0 not in runs
 
 
 @pytest.mark.parametrize("mission", ["sg271", "sg005"])
@@ -190,29 +188,22 @@ def test_g_and_c_apogee_matches_the_state_table(sg271):
     PHASE to within a row or two at each boundary (the apogee event spans the two states)."""
     phase, methods = _phase.assign(sg271.drop_vars("gc_state_state"))
     assert methods["events"] == [1, 2, 3]
-    # The G&C events cannot see the surface coast (unknown from the state table, ascent
-    # from the events); leave those rows out.
-    state_phase = sg271["PHASE"].values
-    gps = np.isin(
-        sg271["TIME"].values,
-        sg271["TIME_GPS"].values[~np.isnat(sg271["TIME_GPS"].values)],
-    )
-    coast = (state_phase == _phase.UNKNOWN) & ~gps & (phase == _phase.ASCENT)
-    differ = (phase != state_phase) & ~coast
+    differ = phase != sg271["PHASE"].values
     assert differ.sum() < 0.01 * phase.size
 
 
 def test_ascent_runs_from_begin_climb_to_the_surface_coast(sg271):
-    """sg271 dive 2: every row from begin climb to end climb is ascent; every row from begin
-    dive to end dive is descent."""
+    """sg271 dive 2: every row from begin climb to begin surface is ascent (the surface
+    coast, which the OG1 table does not name, holds it); every row from begin dive to begin
+    apogee is descent."""
     dive = sg271["dive_number"].values == 2
     time = sg271["TIME"].values[dive]
     phase = sg271["PHASE"].values[dive]
     state = sg271["gc_state_state"].values[dive]
-    climb = (time >= time[state == 2][0]) & (time <= time[state == 3][0])
+    climb = (time >= time[state == 2][0]) & (time < time[state == 14][0])
     assert climb.sum() > 1000
     assert (phase[climb] == _phase.ASCENT).all()
-    descent = (time >= time[state == 0][0]) & (time <= time[state == 1][0])
+    descent = (time >= time[state == 0][0]) & (time < time[state == 4][0])
     assert (phase[descent] == _phase.DESCENT).all()
 
 
@@ -354,16 +345,20 @@ def test_without_gc_events_pressure_decides(sg005):
     assert (phase[gps] == _phase.SURFACING).all()
 
 
-def test_unknown_state_code_is_phase_0_with_a_warning(sg271, caplog):
-    """A state code with no meaning here leaves its rows 0 and names the code."""
+def test_unknown_state_code_holds_the_phase_with_a_warning(sg271, caplog):
+    """A state code with no name changes nothing (the phase before it carries on) and is
+    named in a WARNING with its dives."""
     ds = sg271.copy()
     state = ds["gc_state_state"].values.copy()
     state[state == 2] = 42
     ds["gc_state_state"] = ("N_MEASUREMENTS", state)
     with caplog.at_level("WARNING", logger="seagliderOG1._phase"):
         phase, _ = _phase.assign(ds)
-    assert (phase == _phase.UNKNOWN).any()
     assert any("42 (dives" in r.message for r in caplog.records)
+    climbing = np.isin(ds["dive_number"].values, (2, 3)) & ~np.isin(
+        ds["TIME"].values, ds["TIME_GPS"].values[~np.isnat(ds["TIME_GPS"].values)]
+    )
+    assert _phase.ASCENT not in phase[climbing & (sg271["PHASE"].values == 1)]
 
 
 def test_add_phase_keeps_its_public_shape(sg271):

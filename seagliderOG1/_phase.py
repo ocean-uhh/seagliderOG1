@@ -9,9 +9,10 @@ Three signals, in order of precedence, per dive:
    zero, descent before it, ascent after;
 3. pressure, for files with neither: descent up to the pressure maximum, ascent after.
 
-GPS fixes are surfacing (3) in every case. The rows between a begin state and its end
-state take the phase the OG1 phase translation table's Seaglider column gives that
-transition; the state names and codes are the basestation's. No
+GPS fixes are surfacing (3) in every case. Each transition the OG1 phase translation table's
+Seaglider column names sets its phase from its begin state until the next named transition;
+states the table does not name change nothing. The state names and codes are the
+basestation's. No
 transition (7) is assigned. Commands (``log_D_*``, ``log_LOITER_*``) are not used. No
 quality control is applied: ``PHASE_QC`` is 0 throughout, and ``PHASE``'s
 ``phase_calculation_method`` says which signal assigned which dives.
@@ -54,10 +55,10 @@ GC_STATE_NAMES: dict[int, str] = {
     15: "end surface",
 }
 
-#: (begin state, end state) -> OG1 PHASE of the rows from the begin state to the end state,
-#: from the Seaglider column of the OG1 phase translation table. The surface coast (8 -> 9)
-#: and recovery (12 -> 13) are not in that table, so their rows stay 0 (unknown); they were
-#: surfacing, provisionally, before 2026-11-03.
+#: (begin state, end state) -> OG1 PHASE, from the Seaglider column of the OG1 phase
+#: translation table. The phase starts at the begin state and holds until the next named
+#: transition begins. The surface coast (8 -> 9) and recovery (12 -> 13) are not in that
+#: table, so they change nothing: the phase before them carries on (Eleanor, 2026-11-03).
 GC_TRANSITIONS: dict[tuple[int, int], int] = {
     (0, 1): DESCENT,
     (2, 3): ASCENT,
@@ -346,28 +347,41 @@ def _deepest_time(t: np.ndarray, pres: np.ndarray) -> float | None:
     return float(t[at_max[-1]])
 
 
+def _hold_previous(phase: np.ndarray) -> np.ndarray:
+    """Return ``phase`` with each 0 after a non-zero row set to the phase before it."""
+    held = phase.copy()
+    for i in range(1, held.size):
+        if held[i] == UNKNOWN:
+            held[i] = held[i - 1]
+    return held
+
+
 def _assign_from_states(
     t: np.ndarray, states: list[tuple[float, int]], phase: np.ndarray
 ) -> set[int]:
-    """Set phase from the state table's transitions; return codes with no name.
+    """Set phase from the state table's named transitions; return codes with no name.
 
-    Rows from a begin state to its end state (both included) take that transition's
-    PHASE (:data:`GC_TRANSITIONS`). A begin state whose end state never comes (a file cut
-    off mid-dive) runs to the end of the dive file. Rows outside any listed transition are
-    left as they are.
+    Each begin state of a transition the OG1 table lists (:data:`GC_TRANSITIONS`) sets that
+    transition's PHASE from its time until the next such begin state, so a state the table
+    does not list (the surface coast 8 -> 9, recovery 12 -> 13) and each end state leave the
+    phase as it was. The last named transition runs to the end of the dive file. Rows before
+    the first named begin state take the phase of the transition whose end state comes first
+    (a dive file opens with "end surface", the end of the surface the previous file began).
     """
     unknown = {code for _, code in states if code not in GC_STATE_NAMES}
-    begins = {begin: (end, value) for (begin, end), value in GC_TRANSITIONS.items()}
-    for k, (start, code) in enumerate(states):
-        if code not in begins:
-            continue
-        end_code, value = begins[code]
-        stop = np.inf
-        for later_time, later_code in states[k + 1 :]:
-            if later_code == end_code:
-                stop = later_time
-                break
-        phase[(t >= start) & (t <= stop)] = value
+    begins = {begin: value for (begin, _), value in GC_TRANSITIONS.items()}
+    ends = {end: value for (_, end), value in GC_TRANSITIONS.items()}
+    named = [(time, code) for time, code in states if code in begins]
+    for k, (start, code) in enumerate(named):
+        stop = named[k + 1][0] if k + 1 < len(named) else np.inf
+        phase[(t >= start) & (t < stop)] = begins[code]
+    first_begin = named[0][0] if named else np.inf
+    for time, code in states:
+        if time >= first_begin:
+            break
+        if code in ends:
+            phase[t < first_begin] = ends[code]
+            break
     return unknown
 
 
@@ -474,6 +488,11 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
         # if _mark_flare(t, depth, p_phase, d_flare):
         #     methods["flare"].append(int(number))
         p_phase[gps[rows]] = SURFACING
+        if states:
+            # A state the OG1 table does not name changes nothing: rows it left at 0 carry
+            # the phase of the row before them (a basestation 2.10 file opens with "end
+            # surface coast" after its GPS fixes, not "end surface").
+            p_phase = _hold_previous(p_phase)
         phase[rows] = p_phase
     if unknown_codes:
         unknown_rows = int((phase == UNKNOWN).sum())

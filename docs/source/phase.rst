@@ -23,7 +23,7 @@ dive            bleeds oil and sinks (nose down until ``$D_FLARE``, then at the 
                 angle)
 apogee          at the target depth, pitch to the apogee angle and VBD to zero          5 inflection
 climb           pumps oil, pitches up, rises to ``$D_SURF``                             1 ascent
-surface coast   above ``$D_SURF``, still rising and sampling, to the surface            0 unknown
+surface coast   above ``$D_SURF``, still rising and sampling, to the surface            1 ascent (held)
 loiter          held at a depth (when the pilot commands it)                            4 parking
 =============== ======================================================================= ===============
 
@@ -43,7 +43,8 @@ Per dive file, in this order.
    state to its end state take the phase the Seaglider column of the `OG1 phase translation
    table
    <https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md>`_
-   gives that transition; rows outside a listed transition stay 0 (unknown):
+   gives that transition; the phase holds from the begin state until the next named
+   transition begins:
 
    .. list-table::
       :header-rows: 1
@@ -70,7 +71,7 @@ Per dive file, in this order.
         - OG1 table
       * - 8 → 9
         - begin → end surface coast
-        - 0 unknown
+        - no change (held)
         - not in the OG1 table
       * - 10 → 11
         - begin → end subsurface finish
@@ -78,7 +79,7 @@ Per dive file, in this order.
         - OG1 table
       * - 12 → 13
         - begin → end recovery
-        - 0 unknown
+        - no change (held)
         - not in the OG1 table
       * - 14 → 15
         - begin surface → end surface
@@ -91,9 +92,12 @@ Per dive file, in this order.
    keeps that phase to its end (sg271 dive 1 ends in the apogee, with end-of-phase code
    ``ABORT_DEPTH_EXCEEDED``).
 
-   The surface coast (8, 9) and recovery (12, 13) are not in the OG1 table, so their rows
-   are 0 (unknown). Basestation 2.10 files write 8 and 9 around the surface and no 14 or
-   15, so on those files only the GPS fix rows are surfacing.
+   The surface coast (8, 9) and recovery (12, 13) are not named in the OG1 table, so they
+   change nothing: the phase before them carries on (ascent, through the coast). Rows
+   before the first named begin state take the phase of the first named end state (a file
+   opens with "end surface": surfacing). Rows still unset after step 2 take the phase of
+   the row before them. Basestation 2.10 files write 8 and 9 around the surface and no 14
+   or 15, so on those files the surface time is the GPS fix rows and what follows them.
 #. **The G&C events** (``gc_st_secs``, ``gc_end_secs``, ``gc_vbd_ctl``), for files with no state
    table (basestation 2.8). The inflection is the first G&C event that moves the VBD to zero
    after the dive's bleed; descent before it, ascent after. Where a file has both, this event
@@ -212,9 +216,7 @@ sg005 dive 1 (basestation 2.8, G&C events):
 .. image:: _static/phase/dive_sg005.png
    :alt: sg005 dive 1: pressure, pitch, G&C VBD settings and PHASE, new and old
 
-Every dive's share of rows in each phase (top); the digits above each bar are the dive's
-phases in the order they run. A complete dive reads ``32513``; sg271 dive 1 ends in the
-apogee. Below, the
+Every dive's share of rows in each phase (top). Below, the
 dive's maximum pressure (bars) and duration (dots), since a share means little without how
 deep and how long the dive was. Fewer than six dives are drawn in six slots.
 

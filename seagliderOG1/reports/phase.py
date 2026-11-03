@@ -404,8 +404,7 @@ def draw_phase_dive(
 def draw_phase_fractions(ds: xr.Dataset, *, width_in: float = W_FULL) -> Figure | None:
     """Draw each dive's share of rows in each phase, with its depth and duration below.
 
-    Top: stacked bars of each phase's share of the dive's rows, with the phases' run order
-    written above each bar (up to 30 dives). Bottom, shorter: the dive's maximum pressure
+    Top: stacked bars of each phase's share of the dive's rows. Bottom, shorter: the dive's maximum pressure
     (bars, left axis) and duration from first to last row (dots, right axis), so a share can
     be read against how deep and how long the dive was. Fewer than six dives are drawn in
     six slots, so the bars keep a sensible width.
@@ -469,13 +468,7 @@ def draw_phase_fractions(ds: xr.Dataset, *, width_in: float = W_FULL) -> Figure 
                 label=_label(k),
             )
         bottom += shares[:, j]
-    if few:
-        for i, n in enumerate(numbers):
-            text = "".join(str(r) for r in _runs(phase[dive == n]))
-            ax.text(i, 1.02, text, ha="center", fontsize=ANNOT_FS - 2)
-        ax.set_ylim(0, 1.12)
-    else:
-        ax.set_ylim(0, 1)
+    ax.set_ylim(0, 1)
     ax.set_ylabel("share of the dive's rows")
     ax.legend(loc="upper left", bbox_to_anchor=(1.0, 1.0), frameon=False)
     ax_depth.bar(x, max_pres, width=0.8 if few else 1.0, color="0.75")
@@ -657,7 +650,7 @@ def _state_rows(path: str | Path) -> list[dict[str, object]]:
 
     Every state code the basestation numbers appears in one pair. The PHASE is the one the
     OG1 phase translation table gives the transition from the begin state to the end state;
-    a pair that table does not list gives 0 (unknown).
+    a pair that table does not list changes nothing (the phase before it carries on).
     """
     with xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False) as ds:
         state = (
@@ -673,8 +666,8 @@ def _state_rows(path: str | Path) -> list[dict[str, object]]:
     rows = []
     for begin in range(0, max(_phase.GC_STATE_NAMES) + 1, 2):
         end = begin + 1
-        phase = _phase.GC_TRANSITIONS.get((begin, end), _phase.UNKNOWN)
         listed = (begin, end) in _phase.GC_TRANSITIONS
+        phase = _phase.GC_TRANSITIONS.get((begin, end))
         endings = sorted(
             {int(e) for e in eop[state == end] if np.isfinite(e) and e >= 0}
         )
@@ -684,8 +677,8 @@ def _state_rows(path: str | Path) -> list[dict[str, object]]:
                 "states": (
                     f"{_phase.GC_STATE_NAMES[begin]} → {_phase.GC_STATE_NAMES[end]}"
                 ),
-                "phase": _label(phase),
-                "color": PHASE_COLORS[phase],
+                "phase": _label(phase) if listed else "no change",
+                "color": PHASE_COLORS[phase] if listed else "transparent",
                 "source": "OG1 phase table" if listed else "not in the OG1 table",
                 "count": int((state == begin).sum()),
                 "eop": ", ".join(
@@ -787,20 +780,23 @@ for each dive:
     # step 1: from the first signal the file has
     if the dive has a state table (gc_state_state):
         sort states by time (same-second states keep file order)
-        for each transition from a begin state to its end state, the rows from
-        the begin state's time to the end state's time take the PHASE the OG1
-        phase translation table (Seaglider column) gives that transition:
-            0 begin dive    -> 1 end dive               2 descent
-            2 begin climb   -> 3 end climb              1 ascent
-            4 begin apogee  -> 5 end apogee             5 inflection
-            6 begin loiter  -> 7 end loiter             4 parking
-            10 begin subsurface finish -> 11 end        5 inflection
-            14 begin surface -> 15 end surface          3 surfacing
-          not in the OG1 table, rows stay 0 (unknown):
+        each begin state of a transition the OG1 phase translation table names
+        (Seaglider column) sets that PHASE from its time until the next named
+        begin state:
+            0 begin dive    (-> 1 end dive)             2 descent
+            2 begin climb   (-> 3 end climb)            1 ascent
+            4 begin apogee  (-> 5 end apogee)           5 inflection
+            6 begin loiter  (-> 7 end loiter)           4 parking
+            10 begin subsurface finish (-> 11 end)      5 inflection
+            14 begin surface (-> 15 end surface)        3 surfacing
+          not named in the OG1 table, so they change nothing (the phase
+          before them carries on):
             8 begin surface coast -> 9 end surface coast
             12 begin recovery     -> 13 end recovery
-          a code with no name -> WARNING
-        a begin state with no end state runs to the end of the dive file
+          a code with no name -> WARNING, changes nothing
+        the last named transition runs to the end of the dive file
+        rows before the first named begin state: the phase of the first named
+          end state (a file opens with 15 end surface -> 3 surfacing)
     elif the dive has G&C events (gc_vbd_ctl, gc_end_secs):
         apogee = the event with VBD at zero after an event with VBD bled (negative);
                  if several, the one nearest the deepest sample
@@ -813,6 +809,8 @@ for each dive:
     # step 2: GPS fixes
     rows at a GPS fix time (TIME_GPS) -> 3 surfacing
       (the CTD does not sample at the surface: these are the fix rows only)
+
+    # step 3 (state table only): rows still 0 take the phase of the row before
 
 PHASE_QC = 0 (no QC performed) on every row
 No transition (7): the OG1 table gives Seaglider none.

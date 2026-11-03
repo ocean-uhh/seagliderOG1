@@ -26,8 +26,8 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
   <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
 </div>
 
-<p class="caption"><code>PHASE</code> says what the glider was doing at each data point, in the <a href="{{ p.vocabulary }}">OG1 phase vocabulary</a>. How phase should be assigned is under discussion in the OceanGliders community; the rules this converter uses, their fallbacks and the refinements still open are on <a href="{{ p.docs_url }}">How the phase is assigned</a>. <code>PHASE_QC</code> is 0 (no QC performed) on every data point.</p>
 <nav class="jump-nav"><a href="#counts">OG1 phase counts</a> · <a href="#dive">Example dive cycles</a>{% if p.scatter_png %} · <a href="#pitch">Pitch and dP/dt</a>{% endif %} · <a href="#method">Algorithm</a> · <a href="#states">Seaglider state table</a> · <a href="#qc">PHASE_QC</a></nav>
+<p class="caption"><code>PHASE</code> says what the glider was doing at each data point, in the <a href="{{ p.vocabulary }}">OG1 phase vocabulary</a>. How phase should be assigned is under discussion in the OceanGliders community; the rules this converter uses, their fallbacks and the refinements still open are on <a href="{{ p.docs_url }}">How the phase is assigned</a>. <code>PHASE_QC</code> is 0 (no QC performed) on every data point.</p>
 
 <section id="counts">
 <h2>1. OG1 phase counts</h2>
@@ -39,7 +39,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 <tr><td class="swatch"><span style="background: {{ r.color }}"></span></td><td>{{ r.id }}</td><td>{{ r.name }}</td><td>{{ r.rows }}</td><td>{{ r.share }}</td><td>{{ r.dives }}</td></tr>
 {%- endfor %}
 </tbody></table>
-<p class="caption">Per dive. Top: each dive's share of data points in each phase{% if p.few_dives %}; the digits above each bar are its phases in the order they run (a complete dive reads 32513: surfacing, descent, inflection, ascent, surfacing; a 0 is the surface coast, which the OG1 table does not list){% endif %}. Bottom: the dive's maximum pressure (gray bars, left axis) and its duration from first to last data point (dots, right axis), to read each share against how deep and how long the dive was.</p>
+<p class="caption">Per dive. Top: each dive's share of data points in each phase. Bottom: the dive's maximum pressure (gray bars, left axis) and its duration from first to last data point (dots, right axis), to read each share against how deep and how long the dive was.</p>
 {%- if p.bars_png %}
 <figure{% if p.bars_slot %} class="{{ p.bars_slot }}"{% endif %}>
 <img alt="Per-dive share of data points in each phase, with maximum pressure and duration" src="data:image/png;base64,{{ p.bars_png }}">
@@ -77,7 +77,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 <h2>{{ 4 if p.scatter_png else 3 }}. Algorithm</h2>
 <p class="caption">The file's <code>phase_calculation_method</code>:</p>
 <p>{{ p.method }}</p>
-<p class="caption">The algorithm as the code runs it, per dive. Step 2 overrides step 1.</p>
+<p class="caption">The algorithm as the code runs it, per dive. Step 2 overrides step 1; step 3 fills what is left.</p>
 <pre class="pseudocode">{{ p.pseudocode }}</pre>
 <h3 class="table-title">Variables used by the algorithm</h3>
 <p class="caption">Each variable the algorithm reads, and whether this file has it. "Check only" variables are drawn on the figures above but never set a phase.</p>
@@ -92,7 +92,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 
 <section id="states">
 <h2>{{ 5 if p.scatter_png else 4 }}. Seaglider state table</h2>
-<p class="caption">Every state the Seaglider basestation numbers in <code>gc_state_state</code>, in begin/end pairs. The data points from a begin state to its end state take the <code>PHASE</code> the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a> gives that transition; a pair the table does not list leaves them 0 (unknown). Count: how many times the begin state appears in this file. Ended with: the end-of-phase codes (<code>gc_state_eop_code</code>) the end state carried. Names and numbers: the basestation's own list.</p>
+<p class="caption">Every state the Seaglider basestation numbers in <code>gc_state_state</code>, in begin/end pairs. Each begin state of a pair sets the <code>PHASE</code> the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a> gives that transition, held until the next named pair begins; a pair the table does not name changes nothing, so the phase before it carries on. Count: how many times the begin state appears in this file. Ended with: the end-of-phase codes (<code>gc_state_eop_code</code>) the end state carried. Names and numbers: the basestation's own list.</p>
 <table class="nc">
 <thead><tr><th>Transition</th><th>States</th><th></th><th>PHASE</th><th>Phase from</th><th>Count</th><th>Ended with</th></tr></thead>
 <tbody>
