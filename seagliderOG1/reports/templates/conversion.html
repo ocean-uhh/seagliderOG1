@@ -289,7 +289,7 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 {%- if show_source and phase_section.dive_source %}<figcaption class="fig-source">source: {{ phase_section.dive_source }}</figcaption>{% endif %}
 </figure>
 {%- endif %}
-<p class="caption">Every dive's share of rows in each phase. With 30 dives or fewer, the digits above each bar are the dive's phases in the order they run (a complete dive reads 372513: surfacing, transition, descent, inflection, ascent, surfacing).</p>
+<p class="caption">Every dive's share of rows in each phase. With 30 dives or fewer, the digits above each bar are the dive's phases in the order they run (a complete dive reads 3725713: surfacing, transition, descent, inflection, transition, ascent, surfacing; 372513 when the deepest sample falls inside the inflection).</p>
 {%- if phase_section.bars_png %}
 <figure>
 <img alt="Per-dive share of rows in each phase" src="data:image/png;base64,{{ phase_section.bars_png }}">
@@ -297,7 +297,7 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 </figure>
 {%- endif %}
 {%- if phase_section.scatter_png %}
-<p class="caption">Dive {{ phase_section.dive }}: pitch against the rate of pressure change, colored by <code>PHASE</code>. Descent sits at negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection lies between them, transition at steep negative pitch and dP/dt near zero. Pitch is interpolated in time onto the pressure rows.</p>
+<p class="caption">Dive {{ phase_section.dive }}: pitch against the rate of pressure change, colored by <code>PHASE</code>. Descent sits at negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection lies between them; transition sits at steep negative pitch with dP/dt near zero (the start of the dive) and at positive pitch with dP/dt still positive (the bottom). Pitch is interpolated in time onto the pressure rows.</p>
 <figure class="slot-three-fifths">
 <img alt="Pitch against dP/dt colored by PHASE for dive {{ phase_section.dive }}" src="data:image/png;base64,{{ phase_section.scatter_png }}">
 {%- if show_source and phase_section.scatter_source %}<figcaption class="fig-source">source: {{ phase_section.scatter_source }}</figcaption>{% endif %}

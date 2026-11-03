@@ -35,6 +35,10 @@ dive, 0.2.0 and 0.3.0 differ like this:
    * - start of the dive
      - descent
      - transition, up to the last sample above ``$D_FLARE``
+   * - bottom of the dive
+     - descent to the pressure maximum, then ascent
+     - inflection (the apogee), then transition from the end of the apogee to the deepest
+       sample
    * - GPS fixes
      - the first two 3, the last one ascent
      - every fix 3
@@ -47,8 +51,9 @@ dive, 0.2.0 and 0.3.0 differ like this:
        ``phase_calculation_method_vocabulary``
 
 Code that selects profiles with ``PHASE == 2`` / ``PHASE == 1`` still works, but the apogee
-samples (5) and the start of each dive (7) are no longer in either. To keep them, select
-``PHASE.isin([2, 7])`` for the descent and ``PHASE.isin([5, 1])`` for the climb.
+samples (5) and the transitions (7) are no longer in either. A 7 before the inflection belongs
+to the descent, a 7 after it to the climb; to keep every sample, split each dive at its
+inflection, or at its deepest sample as 0.2.0 did.
 
 xarray reads ``PHASE`` with its ``_FillValue`` 0 as missing, so ``PHASE`` 0 (unknown) comes back
 as NaN; ``xr.open_dataset(..., mask_and_scale=False)`` or ``ds.PHASE.fillna(0)`` keeps the 0.

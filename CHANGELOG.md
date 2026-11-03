@@ -12,7 +12,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 - `PHASE` is assigned from the glider's state table (`gc_state_state`), or its G&C events when
   the file has no state table, or pressure alone; descent before the last sample above
-  `$D_FLARE` is transition (7) and GPS fixes are surfacing (3). Files now carry transition,
+  `$D_FLARE` and ascent from the end of the apogee to the deepest sample are transition (7),
+  and GPS fixes are surfacing (3). Files now carry transition,
   surfacing and inflection (5); before, `PHASE` was descent to the pressure maximum and ascent
   after. `PHASE` is a byte with `_FillValue` 0, `flag_values`/`flag_meanings` from the OG1
   vocabulary and `phase_calculation_method` naming the signal per dive; `PHASE_QC` is 0 (no QC)

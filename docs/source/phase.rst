@@ -21,7 +21,8 @@ surface         GPS fix, communications, a second GPS fix                       
 start of dive   bleeds oil at the surface, nose full down, until ``$D_FLARE``           7 transition
 dive            pitched to the dive angle at ``$D_FLARE``; sinks under G&C              2 descent
 apogee          at the target depth, pitch to the apogee angle and VBD to zero          5 inflection
-climb           pumps oil, pitches up, rises to ``$D_SURF``, then coasts to the surface 1 ascent
+start of climb  pumps oil and pitches up, but still sinking to its deepest point        7 transition
+climb           rises to ``$D_SURF``, then coasts to the surface                        1 ascent
 =============== ======================================================================= ===============
 
 The CTD samples from the start of the dive to the end of the coast; the surface interval is
@@ -67,15 +68,27 @@ Per dive file, in this order.
 #. **Pressure**, for files with neither: descent up to and including the pressure maximum,
    ascent after. No inflection is assigned.
 
-**Step 2 — transition before the flare.** Descent up to the *last* sample shallower than
-``$D_FLARE`` (``log_D_FLARE``, compared with ``DEPTH``) before the inflection is 7
+**Step 2 — transition at the start of the dive.** Descent up to the *last* sample shallower
+than ``$D_FLARE`` (``log_D_FLARE``, compared with ``DEPTH``) before the inflection is 7
 (transition): the glider is still bleeding at the surface, nose full down, and has not yet
 pitched to the dive angle. The last such sample is used, not the first deeper one, because a
 glider can sink past ``$D_FLARE`` and come back above it before the dive proper starts (on
 one test dive, to 7 m and back up to 3 m with ``$D_FLARE`` at 3 m). A file
-without ``log_D_FLARE`` gets no transition.
+without ``log_D_FLARE`` gets no transition here.
 
-**Step 3 — surfacing.** Every row at a GPS fix time is 3 (surfacing). The converter writes
+**Step 3 — transition at the bottom.** Ascent from the end of the inflection up to and
+including the deepest sample (the pressure maximum) is 7 (transition): the apogee has ended
+and the glider is pumping and pitching up, but it is still sinking. On the samples the deepest
+sample falls after "end apogee" on about half the dives; where it falls inside the inflection,
+there is no transition here. Dives assigned from pressure alone have no inflection and no
+transition here.
+
+*Possible refinement (not implemented):* hold the transition until the glider first rises at
+its usual climbing rate rather than only to the deepest sample — for example, until the rise
+rate (−dP/dt) first reaches the 25th percentile of the rise rates from the end of the apogee
+to the start of surfacing.
+
+**Step 4 — surfacing.** Every row at a GPS fix time is 3 (surfacing). The converter writes
 each fix as rows of their own (``TIME_GPS``, ``LATITUDE_GPS``, ``LONGITUDE_GPS``).
 
 A sample no step claims is 0 (unknown). ``log_D_FLARE`` is the only piloting command used:
@@ -93,7 +106,7 @@ In the file
    ``0 1 2 3 4 5 6 7`` and ``unknown ascent descent surfacing parking inflection propelled
    transition``.
 ``phase_calculation_method``
-   Which signal assigned which dives, and whether the flare transition was set, for
+   Which signal assigned which dives, and on which dives each transition was set, for
    example "From the glider's state table (gc_state_state) on dives 1-3. Descent before the
    last sample above $D_FLARE (log_D_FLARE) is transition (dives 1-3). …".
 ``phase_calculation_method_vocabulary``
@@ -126,7 +139,8 @@ sg005 dive 1 (basestation 2.8, G&C events):
    :alt: sg005 dive 1: pressure, pitch, G&C VBD settings and PHASE, new and old
 
 Every dive's share of rows in each phase; the digits above each bar are the dive's phases in
-the order they run. A complete dive reads ``372513``; sg271 dive 1 ends in the apogee.
+the order they run. A complete dive reads ``3725713``, or ``372513`` when the deepest sample falls inside the
+inflection; sg271 dive 1 ends in the apogee.
 
 .. image:: _static/phase/fractions_sg271.png
    :alt: Per-dive share of rows in each phase, sg271
@@ -136,7 +150,8 @@ the order they run. A complete dive reads ``372513``; sg271 dive 1 ends in the a
 
 Pitch against the rate of pressure change, colored by phase, every dive. Descent sits at
 negative pitch and positive dP/dt, ascent at positive pitch and negative dP/dt; inflection
-lies between them, transition at steep negative pitch and dP/dt near zero. Basestation 3
+lies between them; transition sits at steep negative pitch with dP/dt near zero (the start
+of the dive) and at positive pitch with dP/dt still positive (the bottom). Basestation 3
 records pitch and pressure on different rows, so sg271's pitch is interpolated in time onto
 the pressure rows.
 

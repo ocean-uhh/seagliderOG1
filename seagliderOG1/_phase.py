@@ -13,7 +13,9 @@ GPS fixes are surfacing (3) in every case. The inflection (5) is the state table
 apogee, from "begin apogee" to "end apogee"; without a state table it is the G&C event
 that moves the VBD to zero, which is where those two states fall when both are recorded.
 Descent before the last sample shallower than ``$D_FLARE`` (``log_D_FLARE``) is
-transition (7): the glider bleeding at the surface before it pitches up to dive. That is
+transition (7): the glider bleeding at the surface before it pitches up to dive. So is
+ascent from the end of the apogee to the deepest sample: the glider is pumping and pitching
+up but still sinking. That is
 the one command used; ``log_D_TGT``, ``log_D_SURF`` and ``log_LOITER_*`` are not. No quality
 control is applied: ``PHASE_QC`` is 0 throughout, and ``PHASE``'s
 ``phase_calculation_method`` says which signal assigned which dives.
@@ -114,8 +116,14 @@ def method_text(methods: dict[str, list[int]]) -> str:
         if methods.get("flare")
         else ""
     )
+    bottom = (
+        " Ascent from the end of the apogee to the deepest sample is transition "
+        f"({_dives(methods['bottom'])})."
+        if methods.get("bottom")
+        else ""
+    )
     return (
-        f"From {used}.{flare} Rows at GPS fix times are surfacing; no other command "
+        f"From {used}.{flare}{bottom} Rows at GPS fix times are surfacing; no other command "
         "(log_D_TGT, log_D_SURF, log_LOITER_*) is used."
     )
 
@@ -299,6 +307,25 @@ def _mark_flare(
     return True
 
 
+def _mark_bottom_transition(t: np.ndarray, pres: np.ndarray, phase: np.ndarray) -> bool:
+    """Mark ascent before the pressure maximum as transition.
+
+    After the apogee ends the glider pumps oil and pitches up, but it often keeps sinking
+    for a while: its deepest sample falls after "end apogee". Ascent rows up to and
+    including the deepest sample are transition. Returns True when any row was marked.
+    """
+    inflection = phase == INFLECTION
+    ok = np.isfinite(pres)
+    if not inflection.any() or not ok.any():
+        return False
+    deepest = t[ok][np.argmax(pres[ok])]
+    sel = (phase == ASCENT) & (t > t[inflection].max()) & (t <= deepest)
+    if not sel.any():
+        return False
+    phase[sel] = TRANSITION
+    return True
+
+
 def _assign_from_states(
     t: np.ndarray, states: list[tuple[float, int]], phase: np.ndarray
 ) -> set[int]:
@@ -358,8 +385,9 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
         The OG1 phase id per sample (0 where no signal claims it).
     methods : dict of str to list of int
         Dive numbers by the method that assigned them: ``"states"``, ``"events"``,
-        ``"pressure"``; and under ``"flare"`` the dives with a transition before
-        ``$D_FLARE``.
+        ``"pressure"``; under ``"flare"`` the dives with a transition before
+        ``$D_FLARE``, and under ``"bottom"`` those with a transition between the end of the
+        apogee and the pressure maximum.
     """
     n = ds.sizes["N_MEASUREMENTS"]
     phase = np.zeros(n, dtype="int8")
@@ -368,6 +396,7 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
         "events": [],
         "pressure": [],
         "flare": [],
+        "bottom": [],
     }
     dive = np.asarray(ds[dive_variable(ds)].values, dtype=float)
     time = _seconds(ds["TIME"].values)
@@ -410,6 +439,8 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
             _assign_from_pressure(pres[rows][sample], sub)
             p_phase[sample] = sub
             methods["pressure"].append(int(number))
+        if _mark_bottom_transition(t, pres[rows], p_phase):
+            methods["bottom"].append(int(number))
         d_flare = command(ds, "log_D_FLARE", int(number), rows)
         if _mark_flare(t, depth[rows], p_phase, d_flare):
             methods["flare"].append(int(number))

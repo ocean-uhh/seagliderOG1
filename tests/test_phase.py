@@ -14,7 +14,7 @@ SG271 = DATA / "seagliderOG1" / "data" / "sg271"
 SG005 = DATA / "data" / "demo_sg005"
 
 #: The order the Seaglider runs its phases in, per dive file.
-ORDER = (3, 7, 2, 5, 1, 3)
+ORDER = (3, 7, 2, 5, 7, 1, 3)
 
 
 def _unmasked(path: pathlib.Path) -> xr.Dataset:
@@ -60,13 +60,12 @@ def _is_in_order(runs: list[int]) -> bool:
 def test_every_dive_runs_surface_transition_descent_inflection_ascent_surface(
     mission, request
 ):
-    """Per dive the phases follow 3 7 2 5 1 3, each once (sg271 dive 1 stops at the apogee)."""
+    """Per dive the phases follow 3 7 2 5 (7) 1 3 (sg271 dive 1 stops at the apogee)."""
     ds = request.getfixturevalue(mission)
     dive = ds["DIVE_NUMBER"].values
     for number in np.unique(dive):
         runs = _runs(ds["PHASE"].values[dive == number])
         assert _is_in_order(runs), (number, runs)
-        assert len(runs) == len(set(runs)) or runs.count(3) == 2, (number, runs)
         assert 0 not in runs
 
 
@@ -156,14 +155,20 @@ def test_inflection_is_the_state_tables_apogee(sg271):
     assert (phase[~window] != _phase.INFLECTION).all()
 
 
-def test_ascent_runs_from_begin_climb_to_end_of_coast(sg271):
-    """sg271 dive 2: every row from begin climb to end surface coast is ascent; from begin
-    dive to begin apogee, transition then descent."""
+def test_climb_is_transition_to_the_deepest_sample_then_ascent(sg271):
+    """sg271 dive 2: from begin climb to the deepest sample is transition, then ascent to
+    the end of the surface coast; from begin dive to begin apogee, transition then descent."""
     dive = sg271["DIVE_NUMBER"].values == 2
     time = sg271["TIME"].values[dive]
     phase = sg271["PHASE"].values[dive]
     state = sg271["gc_state_state"].values[dive]
-    climb = (time >= time[state == 2][0]) & (time < time[state == 9][0])
+    pres = sg271["PRES"].values[dive]
+    deepest = time[np.nanargmax(pres)]
+    begin_climb = time[state == 2][0]
+    assert deepest > begin_climb  # the glider sinks on after the apogee ends
+    bottom = (time >= begin_climb) & (time <= deepest)
+    assert (phase[bottom] == _phase.TRANSITION).all()
+    climb = (time > deepest) & (time < time[state == 9][0])
     assert climb.sum() > 1000
     assert (phase[climb] == _phase.ASCENT).all()
     descent = (time >= time[state == 0][0]) & (time < time[state == 4][0])
@@ -192,10 +197,11 @@ def test_states_written_at_the_same_second_keep_file_order(sg271):
     time[begin_climb] = time[end_apogee]
     ds = ds.assign_coords(TIME=("N_MEASUREMENTS", time))
     phase, _ = _phase.assign(ds)
-    # Only the end-apogee row, now at the begin-climb time, changes (5 -> 1).
+    # Only the end-apogee row, now at the begin-climb time, changes (5 -> 7: the climb's
+    # start, before the deepest sample, is transition).
     same = dive & (np.arange(dive.size) != end_apogee)
     np.testing.assert_array_equal(phase[same], sg271["PHASE"].values[same])
-    assert phase[end_apogee] == _phase.ASCENT
+    assert phase[end_apogee] == _phase.TRANSITION
 
 
 @pytest.mark.parametrize("mission", ["sg271", "sg005"])
@@ -212,7 +218,8 @@ def test_transition_ends_at_the_last_sample_above_d_flare(mission, request):
         apogee = time[phase == _phase.INFLECTION].min()
         above = (time < apogee) & (depth < d_flare) & ~(phase == _phase.SURFACING)
         last_above = time[above].max()
-        assert time[phase == _phase.TRANSITION].max() == last_above
+        start_of_dive = (phase == _phase.TRANSITION) & (time < apogee)
+        assert time[start_of_dive].max() == last_above
         after = (time > last_above) & np.isfinite(depth)
         assert phase[after][0] == _phase.DESCENT
         assert depth[after][0] >= d_flare
@@ -228,8 +235,10 @@ def test_sg537_transition_runs_to_the_last_rise_above_d_flare(dev_data, tmp_path
     d_flare = float(ds["log_D_FLARE"].values)
     phase, depth = ds["PHASE"].values, ds["DEPTH"].values
     transition = phase == _phase.TRANSITION
-    assert (depth[transition] >= d_flare).any()  # the dip is inside the transition
-    end = ds["TIME"].values[transition].max()
+    before = ds["TIME"].values < ds["TIME"].values[phase == _phase.INFLECTION].min()
+    assert (depth[transition & before] >= d_flare).any()  # the dip is in the transition
+    apogee = ds["TIME"].values[phase == _phase.INFLECTION].min()
+    end = ds["TIME"].values[transition & (ds["TIME"].values < apogee)].max()
     later = (ds["TIME"].values > end) & np.isfinite(depth) & (phase != _phase.SURFACING)
     assert depth[later][0] >= d_flare
 
@@ -302,4 +311,6 @@ def test_basestation_2_10_dives_convert_with_their_own_dates(dev_data, tmp_path)
         assert "1970" not in out.name
         with xr.open_dataset(out) as ds:
             assert ds["TIME"].values.min() > np.datetime64("2000-01-01")
-            assert _runs(ds["PHASE"].values) == list(ORDER)
+            runs = _runs(np.nan_to_num(ds["PHASE"].values).astype(int))
+            assert _is_in_order(runs)
+            assert {2, 3, 5, 1, 7} <= set(runs)
