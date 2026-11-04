@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1._convert &mdash; seagliderOG1 0.2.0.post1.dev3 documentation</title>
+  <title>seagliderOG1._convert &mdash; seagliderOG1 0.2.0.post1.dev4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=83c9898e"></script>
+      <script src="../../_static/documentation_options.js?v=48401943"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -1357,6 +1357,10 @@
 
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">processed_datasets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">)</span>
     <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">ds_og1</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span>
+    <span class="c1"># Drop a GPS fix re-logged at a dive boundary (dive N's end fix == dive N+1's start fix):</span>
+    <span class="c1"># the two copies only meet here, after the dives are joined. Before PHASE/profiles so they</span>
+    <span class="c1"># see one data point per fix.</span>
+    <span class="n">ds_og1</span> <span class="o">=</span> <span class="n">_dedup_boundary_gps</span><span class="p">(</span><span class="n">ds_og1</span><span class="p">)</span>
 
     <span class="c1"># TEOS-10 variables OG1 names that the basestation did not supply (SA, CT, POTDENS0, and</span>
     <span class="c1"># PSAL from conductivity when salinity is absent); one pass on the concatenated data.</span>
@@ -2212,7 +2216,7 @@
 <span class="sd">            - Converts units in the dataset (e.g., cm/s to m/s) where possible.</span>
 <span class="sd">            - Converts QC flags to int8.</span>
 <span class="sd">        3. Adds new variables:</span>
-<span class="sd">            - Adds GPS info as LATITUDE_GPS, LONGITUDE_GPS, and TIME_GPS (increasing the length of N_MEASUREMENTS).</span>
+<span class="sd">            - Adds GPS info as LATITUDE_GPS, LONGITUDE_GPS, and TIME_GPS onto each fix's existing data point (one data point per fix; no duplicate timestamps).</span>
 <span class="sd">            - Adds the divenum as a variable of length N_MEASUREMENTS.</span>
 <span class="sd">            - Adds the PROFILE_NUMBER (odd for dives, even for ascents).</span>
 <span class="sd">            - Adds PHASE and PHASE_QC from the state table, G&amp;C events, GPS fixes or pressure (see tools.add_phase).</span>
@@ -2542,86 +2546,266 @@
     <span class="k">return</span> <span class="n">sg_cal</span><span class="p">,</span> <span class="n">dc_log</span><span class="p">,</span> <span class="n">dc_other</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">add_gps_info_to_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">gps_ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Add GPS information (LATITUDE_GPS, LONGITUDE_GPS, TIME_GPS) to the dataset.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_missing_scalar</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return True when ``value`` is a NaN float or a NaT datetime (a missing cell)."""</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnat</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+    <span class="k">return</span> <span class="kc">False</span>
 
-<span class="sd">    The GPS values will be included within the N_MEASUREMENTS dimension, with non-NaN values</span>
-<span class="sd">    only when GPS information is available. The dataset will be sorted by TIME.</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_carries_only</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">later</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">kept</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return True when data point ``later`` carries nothing beyond data point ``kept``.</span>
+
+<span class="sd">    Every variable on ``N_MEASUREMENTS`` is either missing at ``later`` or equal to ``kept``</span>
+<span class="sd">    (``dive_number`` excepted, since the two copies belong to adjacent dives). Used to confirm</span>
+<span class="sd">    a re-logged boundary GPS fix can be dropped without losing any other data.</span>
+<span class="sd">    """</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">dims</span> <span class="o">!=</span> <span class="p">(</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">,)</span> <span class="ow">or</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">"dive_number"</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">vi</span><span class="p">,</span> <span class="n">vj</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">later</span><span class="p">],</span> <span class="n">values</span><span class="p">[</span><span class="n">kept</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">_missing_scalar</span><span class="p">(</span><span class="n">vi</span><span class="p">)</span> <span class="ow">or</span> <span class="n">vi</span> <span class="o">==</span> <span class="n">vj</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_dedup_boundary_gps</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Drop a GPS fix re-logged at a dive boundary (the same fix in two adjacent dive files).</span>
+
+<span class="sd">    The end-of-dive-N surfacing fix is written again as dive N+1's start fix, so after the</span>
+<span class="sd">    mission concat the two copies sit at the same ``TIME`` with the same position. The earlier</span>
+<span class="sd">    copy (dive N's, which owns the surfacing) is kept and the later dropped. Only GPS-fix data</span>
+<span class="sd">    points (finite ``TIME_GPS``) that tie on ``TIME`` with equal ``LATITUDE_GPS`` and</span>
+<span class="sd">    ``LONGITUDE_GPS`` are removed; a fix sharing a time with a real sample, or distinct fixes,</span>
+<span class="sd">    are left. Within-dive exact repeats are already dropped earlier, in the merge.</span>
+
+<span class="sd">    Each dropped fix is recorded in the ``conversion_dropped_gps_fixes`` global (JSON list of</span>
+<span class="sd">    ``{time, dive}``, ``dive`` being the later dive it was removed from), so the phase page can</span>
+<span class="sd">    still draw that dive's leading surface fix even though its own data no longer carries it.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    ds : xarray.Dataset</span>
-<span class="sd">        The dataset with renamed dimensions and variables, representing the main data.</span>
-<span class="sd">    gps_ds : xarray.Dataset</span>
-<span class="sd">        The dataset containing GPS information, typically extracted from the original</span>
-<span class="sd">        basestation dataset.</span>
+<span class="sd">        The concatenated mission dataset, sorted by ``TIME``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    xarray.Dataset</span>
-<span class="sd">        The updated dataset with added GPS information. This includes values for</span>
-<span class="sd">        LATITUDE_GPS, LONGITUDE_GPS, and TIME_GPS only when GPS information is available.</span>
+<span class="sd">        ``ds`` with a re-logged boundary fix removed, or unchanged when there is none.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="s2">"TIME_GPS"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ds</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"TIME"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"datetime64[ns]"</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"int64"</span><span class="p">)</span>
+    <span class="n">is_fix</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnat</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">lat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"LATITUDE_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">)</span>
+    <span class="n">lon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"LONGITUDE_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">)</span>
+    <span class="c1"># A later GPS fix that ties on TIME with the previous one and repeats its position is a</span>
+    <span class="c1"># boundary copy. Adjacent comparison is enough: the per-dive merge already puts everything</span>
+    <span class="c1"># at one second onto one data point, so only the two cross-dive copies tie at a boundary.</span>
+    <span class="n">candidate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">candidate</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="n">t</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="o">&amp;</span> <span class="n">is_fix</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="o">&amp;</span> <span class="n">is_fix</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="o">&amp;</span> <span class="p">(</span><span class="n">lat</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="n">lat</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="o">&amp;</span> <span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="n">lon</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">candidate</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">ds</span>
+    <span class="c1"># Drop a candidate only when its data point carries nothing but the repeated fix, so the</span>
+    <span class="c1"># drop loses nothing; otherwise keep both and warn (a duplicate timestamp then remains).</span>
+    <span class="n">times_ns</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"TIME"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"datetime64[ns]"</span><span class="p">)</span>
+    <span class="n">dive</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="s2">"dive_number"</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">drop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">records</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">candidate</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_carries_only</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">"GPS fix at </span><span class="si">%s</span><span class="s2"> is re-logged at a dive boundary but its data point carries "</span>
+                <span class="s2">"more than the fix; keeping both (a duplicate timestamp remains)."</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">datetime_as_string</span><span class="p">(</span><span class="n">times_ns</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"s"</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">drop</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"time"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">datetime_as_string</span><span class="p">(</span><span class="n">times_ns</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"ns"</span><span class="p">)),</span>
+                <span class="s2">"dive"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">dive</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">dive</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">dive</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">drop</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">ds</span>
+    <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Dropped </span><span class="si">%d</span><span class="s2"> GPS fix(es) re-logged at a dive boundary."</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">drop</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">N_MEASUREMENTS</span><span class="o">=~</span><span class="n">drop</span><span class="p">)</span>
+    <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"conversion_dropped_gps_fixes"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">records</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ds</span>
 
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    - The dataset is sorted by TIME (or ctd_time from the original basestation dataset).</span>
-<span class="sd">    - If the data are not sorted by time, there may be unintended consequences.</span>
-<span class="sd">    - The function assumes that the GPS dataset contains variables `log_gps_lon`,</span>
-<span class="sd">      `log_gps_lat`, and `log_gps_time` for longitude, latitude, and time respectively.</span>
-<span class="sd">    - The function uses the `sg_data_point` dimension as defined in the OG1 vocabulary.</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">add_gps_info_to_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">gps_ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Attach each GPS fix's position and time to its existing data point.</span>
+
+<span class="sd">    The ``gps_info`` records are already on the shared ``TIME`` axis: the merge folds each</span>
+<span class="sd">    fix onto ``N_MEASUREMENTS`` (``gps_info`` maps to ``log_gps_time`` in the time-variable</span>
+<span class="sd">    map), carrying the raw ``log_gps_*`` fields. This writes the OG1 ``LATITUDE_GPS``,</span>
+<span class="sd">    ``LONGITUDE_GPS`` and ``TIME_GPS`` onto that same data point, and fills the fix's surface</span>
+<span class="sd">    ``LATITUDE``/``LONGITUDE`` and ``DEPTH`` (0 m, surface) where they are NaN. It does not</span>
+<span class="sd">    append a second data point per fix.</span>
+
+<span class="sd">    Appending a copy per fix duplicated the fix ``TIME`` -- one gps_info data point carrying</span>
+<span class="sd">    ``log_gps_*`` and one appended copy carrying ``*_GPS`` at the same instant -- which left</span>
+<span class="sd">    ``TIME`` non-strictly-increasing and broke time-indexed reads (``sel(TIME=)``,</span>
+<span class="sd">    ``swap_dims``, resampling) on the non-unique index. One data point per fix removes the</span>
+<span class="sd">    duplicate while keeping every field: the engineering ``log_gps_*`` stay, and the OG1</span>
+<span class="sd">    ``*_GPS`` and the surface position/depth now sit on the same data point.</span>
+
+<span class="sd">    ``TIME_GPS`` is taken from the raw ``log_gps_time`` in ``gps_ds``, not from the merged</span>
+<span class="sd">    ``TIME``: :func:`merge_datasets_along_time` shifts a repeated timestamp by +0.5 s, so the</span>
+<span class="sd">    merged ``TIME`` of a shifted fix is a time the GPS never recorded. Taking the raw value</span>
+<span class="sd">    keeps ``TIME_GPS`` equal to its declared source; a shifted fix then reads 0.5 s before its</span>
+<span class="sd">    ``TIME``, which is the clock the GPS actually recorded.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds : xarray.Dataset</span>
+<span class="sd">        The merged dataset on ``N_MEASUREMENTS`` after dimension/variable renaming. Holds the</span>
+<span class="sd">        folded ``log_gps_lat``/``log_gps_lon`` and the ``LATITUDE``, ``LONGITUDE``, ``DEPTH``</span>
+<span class="sd">        and ``TIME`` coordinates.</span>
+<span class="sd">    gps_ds : xarray.Dataset</span>
+<span class="sd">        The ``gps_info`` split. Supplies the raw ``log_gps_time`` for ``TIME_GPS`` (the merged</span>
+<span class="sd">        axis has consumed and possibly shifted it) and is the call-site guard that the file</span>
+<span class="sd">        has GPS (``split_by_unique_dims`` raises earlier when it does not).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.Dataset</span>
+<span class="sd">        ``ds`` with ``LATITUDE_GPS``, ``LONGITUDE_GPS`` and ``TIME_GPS`` added and each fix's</span>
+<span class="sd">        ``LATITUDE``/``LONGITUDE``/``DEPTH`` filled where it was NaN. No data points are</span>
+<span class="sd">        appended, so ``TIME`` keeps the merge's order and gains no duplicate timestamps at the</span>
+<span class="sd">        fixes.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``log_gps_lat``/``log_gps_lon`` are absent from ``ds``, or are present but no fix</span>
+<span class="sd">        has both finite: the ``gps_info`` records did not fold onto ``TIME`` as expected, so</span>
+<span class="sd">        there is no data point to attach a fix to. Raised rather than falling back to</span>
+<span class="sd">        appending, which would silently reinstate the duplicate timestamps.</span>
 
 <span class="sd">    """</span>
-    <span class="c1"># Set new dimension name</span>
-    <span class="n">newdim</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">DIMENSION_RENAMES</span><span class="p">[</span><span class="s2">"sg_data_point"</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">"log_gps_lat"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span> <span class="ow">or</span> <span class="s2">"log_gps_lon"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"add_gps_info_to_dataset: 'log_gps_lat'/'log_gps_lon' are not on the merged "</span>
+            <span class="s2">"dataset, so the gps_info records did not fold onto the TIME axis; cannot place "</span>
+            <span class="s2">"GPS fixes."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-    <span class="c1"># Create a new dataset with GPS information</span>
-    <span class="n">gps_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
-        <span class="p">{</span>
-            <span class="s2">"LONGITUDE"</span><span class="p">:</span> <span class="p">([</span><span class="n">newdim</span><span class="p">],</span> <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"log_gps_lon"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
-        <span class="p">},</span>
-        <span class="n">coords</span><span class="o">=</span><span class="p">{</span>
-            <span class="s2">"LATITUDE"</span><span class="p">:</span> <span class="p">([</span><span class="n">newdim</span><span class="p">],</span> <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"log_gps_lat"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
-            <span class="s2">"TIME"</span><span class="p">:</span> <span class="p">([</span><span class="n">newdim</span><span class="p">],</span> <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"log_gps_time"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
-            <span class="s2">"DEPTH"</span><span class="p">:</span> <span class="p">([</span><span class="n">newdim</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gps_ds</span><span class="p">[</span><span class="s2">"log_gps_lat"</span><span class="p">]),</span> <span class="mi">0</span><span class="p">)),</span>
-        <span class="p">},</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">]</span>
+    <span class="n">lat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"log_gps_lat"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">)</span>
+    <span class="n">lon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"log_gps_lon"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">)</span>
+    <span class="c1"># A fix data point has a finite latitude AND longitude; a partial fix (one missing) is not</span>
+    <span class="c1"># placed. Exact selection (LATITUDE_GPS is log_gps_lat), so no time-matching is needed.</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">lat</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">lon</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"add_gps_info_to_dataset: log_gps_lat/log_gps_lon are on the dataset but no fix "</span>
+            <span class="s2">"has both finite; the gps_info merge produced no GPS data point to attach to."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="c1"># The merge drops exact-duplicate records (a fix logged twice at one second); drop them from</span>
+    <span class="c1"># the raw gps_info records the same way, so the raw fix times line up one-to-one with the</span>
+    <span class="c1"># merged fix points. Without this the counts differ and TIME_GPS falls back to the merged</span>
+    <span class="c1"># (possibly shifted) time -- the provenance problem again.</span>
+    <span class="p">(</span><span class="n">gps_dim</span><span class="p">,)</span> <span class="o">=</span> <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"log_gps_lat"</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span>
+    <span class="n">raw_exact</span> <span class="o">=</span> <span class="n">_pipeline</span><span class="o">.</span><span class="n">_exact_duplicate_rows</span><span class="p">(</span><span class="n">gps_ds</span><span class="p">,</span> <span class="n">gps_dim</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">raw_exact</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">gps_ds</span> <span class="o">=</span> <span class="n">gps_ds</span><span class="o">.</span><span class="n">isel</span><span class="p">({</span><span class="n">gps_dim</span><span class="p">:</span> <span class="o">~</span><span class="n">raw_exact</span><span class="p">})</span>
+
+    <span class="c1"># TIME_GPS is the raw recorded fix clock, from the gps_info split, so the variable matches</span>
+    <span class="c1"># its declared source (log_gps_time). It is NOT the merged TIME: merge_datasets_along_time</span>
+    <span class="c1"># shifts a repeated timestamp by +0.5 s (_pipeline), so a shifted fix's merged TIME is a</span>
+    <span class="c1"># time the GPS never recorded. GPS fixes are seconds apart, so the shift never reorders</span>
+    <span class="c1"># them -- the fixes in TIME order on the axis line up with the raw fix times sorted</span>
+    <span class="c1"># ascending.</span>
+    <span class="n">raw_lat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">gps_ds</span><span class="p">[</span><span class="s2">"log_gps_lat"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">)</span>
+    <span class="n">raw_lon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">gps_ds</span><span class="p">[</span><span class="s2">"log_gps_lon"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">)</span>
+    <span class="n">raw_keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">raw_lat</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">raw_lon</span><span class="p">)</span>
+    <span class="n">raw_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">gps_ds</span><span class="p">[</span><span class="s2">"log_gps_time"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"datetime64[ns]"</span><span class="p">)[</span><span class="n">raw_keep</span><span class="p">]</span>
     <span class="p">)</span>
-    <span class="n">gps_ds</span> <span class="o">=</span> <span class="n">gps_ds</span><span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="s2">"LONGITUDE"</span><span class="p">)</span>
+    <span class="n">fix_positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="n">time_gps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">(</span><span class="s2">"NaT"</span><span class="p">,</span> <span class="s2">"ns"</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">fix_positions</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">raw_times</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="n">time_gps</span><span class="p">[</span><span class="n">fix_positions</span><span class="p">]</span> <span class="o">=</span> <span class="n">raw_times</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># The merge did not fold the fixes one-to-one. Fall back to the merged TIME so TIME_GPS</span>
+        <span class="c1"># is still populated, and warn loudly: a count mismatch is a merge defect.</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">"GPS fixes on the time axis (</span><span class="si">%d</span><span class="s2">) differ from gps_info records (</span><span class="si">%d</span><span class="s2">); TIME_GPS "</span>
+            <span class="s2">"falls back to the merged time axis (which the duplicate-timestamp shift may have "</span>
+            <span class="s2">"moved). The merge dropped or duplicated GPS records."</span><span class="p">,</span>
+            <span class="n">fix_positions</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">raw_times</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">time_gps</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s2">"TIME"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"datetime64[ns]"</span><span class="p">)[</span><span class="n">mask</span><span class="p">]</span>
 
-    <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"LATITUDE_GPS"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="p">[</span><span class="n">newdim</span><span class="p">],</span>
-        <span class="n">gps_ds</span><span class="o">.</span><span class="n">LATITUDE</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"LATITUDE_GPS"</span><span class="p">],</span>
+    <span class="c1"># Fill the fix's surface position and depth onto its gps_info data point, but only where</span>
+    <span class="c1"># the merged value is NaN: a fix sharing a timestamp with a real sample must not have that</span>
+    <span class="c1"># sample's LATITUDE/LONGITUDE/DEPTH overwritten. On the merged point they are normally NaN</span>
+    <span class="c1"># (the old append path carried them on a separate point).</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fill_nan</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">here</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">here</span><span class="p">]</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="n">here</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">arr</span><span class="p">)</span>
+
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">(</span>
+        <span class="n">LATITUDE</span><span class="o">=</span><span class="n">_fill_nan</span><span class="p">(</span><span class="s2">"LATITUDE"</span><span class="p">,</span> <span class="n">lat</span><span class="p">),</span>
+        <span class="n">LONGITUDE</span><span class="o">=</span><span class="n">_fill_nan</span><span class="p">(</span><span class="s2">"LONGITUDE"</span><span class="p">,</span> <span class="n">lon</span><span class="p">),</span>
+        <span class="n">DEPTH</span><span class="o">=</span><span class="n">_fill_nan</span><span class="p">(</span><span class="s2">"DEPTH"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># The OG1 GPS variables, finite only on the fix data points.</span>
+    <span class="n">lat_gps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">lon_gps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+    <span class="c1"># dict(...) so setting the ledger attr below does not mutate the shared vocab table.</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">"LATITUDE_GPS"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
+        <span class="n">lat_gps</span><span class="p">,</span>
+        <span class="nb">dict</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"LATITUDE_GPS"</span><span class="p">]),</span>
         <span class="p">{</span><span class="s2">"dtype"</span><span class="p">:</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"LATITUDE"</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"LONGITUDE_GPS"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="p">[</span><span class="n">newdim</span><span class="p">],</span>
-        <span class="n">gps_ds</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"LONGITUDE_GPS"</span><span class="p">],</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">"LONGITUDE_GPS"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
+        <span class="n">lon_gps</span><span class="p">,</span>
+        <span class="nb">dict</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"LONGITUDE_GPS"</span><span class="p">]),</span>
         <span class="p">{</span><span class="s2">"dtype"</span><span class="p">:</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"LONGITUDE"</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="p">[</span><span class="n">newdim</span><span class="p">],</span>
-        <span class="n">gps_ds</span><span class="o">.</span><span class="n">TIME</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">],</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
+        <span class="n">time_gps</span><span class="p">,</span>
+        <span class="nb">dict</span><span class="p">(</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]),</span>
         <span class="p">{</span><span class="s2">"dtype"</span><span class="p">:</span> <span class="n">ds</span><span class="p">[</span><span class="s2">"TIME"</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">},</span>
     <span class="p">)</span>
     <span class="c1"># Record each GPS variable's basestation source for the conversion ledger; the</span>
     <span class="c1"># transient attr is consumed into conversion_derived_variables before the file is</span>
     <span class="c1"># written (see convert) and never reaches the output.</span>
-    <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"LATITUDE_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_lat"</span><span class="p">])</span>
-    <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"LONGITUDE_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_lon"</span><span class="p">])</span>
-    <span class="n">gps_ds</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_time"</span><span class="p">])</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">"LATITUDE_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_lat"</span><span class="p">])</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">"LONGITUDE_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_lon"</span><span class="p">])</span>
+    <span class="n">ds</span><span class="p">[</span><span class="s2">"TIME_GPS"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">_DERIVED_SOURCES_ATTR</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="s2">"log_gps_time"</span><span class="p">])</span>
     <span class="c1"># Their source dimension, as every merged variable carries, so they group with</span>
     <span class="c1"># gps_info. No original_name: a derived variable names its sources in the ledger.</span>
     <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"LATITUDE_GPS"</span><span class="p">,</span> <span class="s2">"LONGITUDE_GPS"</span><span class="p">,</span> <span class="s2">"TIME_GPS"</span><span class="p">):</span>
-        <span class="n">gps_ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"original_dimension"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"gps_info"</span>
-
-    <span class="c1"># Concatenate ds and gps_ds</span>
-    <span class="n">datasets</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
-    <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gps_ds</span><span class="p">)</span>
-    <span class="n">ds_new</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">newdim</span><span class="p">,</span> <span class="n">data_vars</span><span class="o">=</span><span class="s2">"all"</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">ds_new</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"TIME"</span><span class="p">)</span>
+        <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"original_dimension"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"gps_info"</span>
+    <span class="k">return</span> <span class="n">ds</span>
 
 
 <span class="c1">##-----------------------------------------------------------------------------------------</span>

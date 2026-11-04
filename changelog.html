@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.2.0.post1.dev3 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.2.0.post1.dev4 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=83c9898e"></script>
+      <script src="_static/documentation_options.js?v=48401943"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -154,6 +154,18 @@ numbered. <code class="docutils literal notranslate"><span class="pre">tools.add
 <code class="docutils literal notranslate"><span class="pre">tools.add_phase</span></code>, then <code class="docutils literal notranslate"><span class="pre">tools.add_profiles</span></code>.
 New: <code class="docutils literal notranslate"><span class="pre">PROFILE_DIRECTION</span></code> (1/-1/0) and <code class="docutils literal notranslate"><span class="pre">SEGMENT_NUMBER</span></code> (+1 on each entry to surfacing).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code> is renamed <code class="docutils literal notranslate"><span class="pre">dive_number</span></code> (lower case: not an OG1 variable). Rename it in your code.</p></li>
+<li><p>Each GPS fix is one data point, with no duplicate <code class="docutils literal notranslate"><span class="pre">TIME</span></code> at a fix (fixing <code class="docutils literal notranslate"><span class="pre">sel(TIME=)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">swap_dims</span></code> and resampling on the previously non-unique index). Three duplicate sources were
+removed: the second data point <code class="docutils literal notranslate"><span class="pre">add_gps_info_to_dataset</span></code> appended per fix (now the OG1
+<code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code>/<code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code>/<code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code> and the fix’s surface <code class="docutils literal notranslate"><span class="pre">LATITUDE</span></code>/<code class="docutils literal notranslate"><span class="pre">LONGITUDE</span></code>/<code class="docutils literal notranslate"><span class="pre">DEPTH</span></code>
+(0 m) are written onto the one <code class="docutils literal notranslate"><span class="pre">gps_info</span></code> data point); a fix logged twice within a dive (the
+merge now drops the exact repeat instead of shifting it +0.5 s); and the same fix re-logged
+across a dive boundary (deduplicated at the mission concat, keeping the end-of-dive copy).
+<code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code> is the raw <code class="docutils literal notranslate"><span class="pre">log_gps_time</span></code>, matching its declared source even where the merge
+shifted a repeated timestamp on <code class="docutils literal notranslate"><span class="pre">TIME</span></code>. <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> is shorter by the removed fixes. The
+phase page still draws each dive’s full set of fixes (a boundary fix dropped from one dive is
+recorded in <code class="docutils literal notranslate"><span class="pre">conversion_dropped_gps_fixes</span></code> and redrawn there). Reconvert. The raw <code class="docutils literal notranslate"><span class="pre">log_gps_*</span></code>
+engineering fields are unchanged.</p></li>
 <li><p>Sensor serial numbers and calibration dates are read from the calibration comments by named
 rules; files differ from 0.2.0 wherever the old parser was wrong. Reconvert. On the samples:</p>
 <table class="docutils align-default">
