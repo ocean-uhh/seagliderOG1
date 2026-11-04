@@ -23,6 +23,12 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   `tools.add_phase`, then `tools.add_profiles`.
   New: `PROFILE_DIRECTION` (1/-1/0) and `SEGMENT_NUMBER` (+1 on each entry to surfacing).
 - `DIVE_NUMBER` is renamed `dive_number` (lower case: not an OG1 variable). Rename it in your code.
+- Each GPS fix is one data point: `LATITUDE_GPS`/`LONGITUDE_GPS`/`TIME_GPS` and the fix's surface
+  `LATITUDE`/`LONGITUDE`/`DEPTH` (0) are written onto the merged `gps_info` data point instead of
+  an appended second data point at the same `TIME`. `N_MEASUREMENTS` is shorter by the number of
+  fixes and `TIME` no longer carries a duplicate timestamp at a fix, which fixes `sel(TIME=)`,
+  `swap_dims` and resampling on the previously non-unique index. Reconvert. The raw `log_gps_*`
+  engineering fields are unchanged.
 - Sensor serial numbers and calibration dates are read from the calibration comments by named
   rules; files differ from 0.2.0 wherever the old parser was wrong. Reconvert. On the samples:
 

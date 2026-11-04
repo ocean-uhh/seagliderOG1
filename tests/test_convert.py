@@ -372,6 +372,47 @@ def test_process_dataset():
     assert abs(meanZ + meanZpos) < 10
 
 
+def test_gps_fix_is_one_data_point_lossless():
+    """Each GPS fix is one data point: the OG1 *_GPS variables and the surface position/depth
+    sit on the merged gps_info data point, not an appended copy.
+
+    Before the collapse a fix made two data points at the same TIME: a gps_info one carrying
+    log_gps_* and an appended one carrying *_GPS. Now they are one, so the log_gps_lat-finite
+    data points and the TIME_GPS-finite data points are the same set, TIME does not tie at a
+    fix, and no field is lost. One dive isolates this from the cross-dive boundary fix (the
+    same fix shared by two adjacent dives), which is a separate matter.
+    """
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    ds = _convert.convert(datasets)
+
+    # Engineering fields are kept.
+    assert "log_gps_lat" in ds.variables
+    assert "log_gps_lon" in ds.variables
+
+    lat_finite = np.isfinite(ds["log_gps_lat"].values)
+    time_gps_finite = ~np.isnat(ds["TIME_GPS"].values)
+    assert lat_finite.any()
+    # The collapse invariant: the raw fix and the OG1 GPS variables are on the SAME data
+    # points (disjoint before the collapse, one appended copy per fix).
+    assert np.array_equal(lat_finite, time_gps_finite)
+
+    mask = lat_finite
+    # The fix's surface position and depth are filled from the fix.
+    assert np.allclose(ds["LATITUDE"].values[mask], ds["log_gps_lat"].values[mask])
+    assert np.allclose(ds["LONGITUDE"].values[mask], ds["log_gps_lon"].values[mask])
+    assert np.all(ds["DEPTH"].values[mask] == 0)
+    # The OG1 GPS variables carry the fix; TIME_GPS equals that data point's own TIME.
+    assert np.allclose(ds["LATITUDE_GPS"].values[mask], ds["log_gps_lat"].values[mask])
+    assert np.allclose(ds["LONGITUDE_GPS"].values[mask], ds["log_gps_lon"].values[mask])
+    assert np.array_equal(ds["TIME_GPS"].values[mask], ds["TIME"].values[mask])
+
+    # TIME never decreases, and a single dive introduces no duplicate timestamp at a fix.
+    t = ds["TIME"].values.astype("datetime64[ns]").astype("int64")
+    assert np.all(np.diff(t) >= 0)
+    ties = np.flatnonzero(np.diff(t) == 0)
+    assert not any(time_gps_finite[i] or time_gps_finite[i + 1] for i in ties)
+
+
 def test_output_dtypes_end_to_end(tmp_path: pathlib.Path) -> None:
     """Multi-dive conversion then write yields the intended on-disk dtypes and fills.
 

@@ -460,8 +460,8 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
     #     if "DEPTH" in ds.variables
     #     else np.full(n, np.nan)
     # )
-    # A GPS fix can reach N_MEASUREMENTS twice (the fix row and the gps_info row at the
-    # same time): every row at a fix time is surfacing.
+    # Every data point at a GPS fix time is surfacing. Matching by time (not by the fix data
+    # point itself) is robust to a fix sharing a timestamp with a science sample.
     gps = np.isin(time, gps_time[np.isfinite(gps_time)])
     unknown_codes: dict[int, list[int]] = {}
     for number in np.unique(dive[np.isfinite(dive)]):
