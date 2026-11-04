@@ -109,6 +109,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - Offline copies of the NERC OG1 collection, the P01 terms in use and the CF standard-name table
   (`tests/data/vocabularies/`, written by `scripts/fetch_vocabularies.py`); the tests check every
   `vocabulary` link and `standard_name` against them without the network.
+- Docs page "Variable vocabulary": every variable's `vocabulary` term (with its label) and
+  `standard_name`, and the variables without a term, written from the configuration on every
+  docs build.
 
 ### Fixed
 

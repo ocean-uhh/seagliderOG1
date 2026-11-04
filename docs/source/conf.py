@@ -33,9 +33,16 @@ version = release
 _GENERATED = pathlib.Path(__file__).parent / "_generated"
 
 
-def _list_table(columns: list[tuple[str, str]], rows: list[dict[str, str]]) -> str:
+def _list_table(
+    columns: list[tuple[str, str]],
+    rows: list[dict[str, str]],
+    widths: str | None = None,
+) -> str:
     """Return ``rows`` as an rst list-table with ``(key, header)`` columns."""
-    lines = [".. list-table::", "   :header-rows: 1", ""]
+    lines = [".. list-table::", "   :header-rows: 1"]
+    if widths:
+        lines.append(f"   :widths: {widths}")
+    lines.append("")
     lines.append("   * - " + "\n     - ".join(h for _, h in columns))
     for row in rows:
         cells = [f"``{row[columns[0][0]]}``"] + [row[k] or "—" for k, _ in columns[1:]]
@@ -114,6 +121,76 @@ def _write_generated_tables() -> None:
                 for row in rows
             ],
         )
+    )
+
+    _write_vocabulary_tables(vocabularies)
+
+
+def _write_vocabulary_tables(vocabularies: object) -> None:
+    """Write the two tables of the Variable vocabulary page.
+
+    Every variable in ``OG1_variable_attributes.yaml``: those with a ``vocabulary`` term (the
+    term, its preferred label from the offline copy the tests check against, and the
+    ``standard_name``), and those without one.
+    """
+    import yaml
+
+    cache = pathlib.Path(__file__).parents[2] / "tests" / "data" / "vocabularies"
+    labels = {}
+    for collection, name in (("OG1", "og1_terms.yaml"), ("P01", "p01_terms.yaml")):
+        terms = yaml.safe_load((cache / name).read_text(encoding="utf-8"))["terms"]
+        labels[collection] = {code: term["label"] for code, term in terms.items()}
+
+    with_term, without_term = [], []
+    for variable, attrs in vocabularies.vocab_attrs.items():
+        if not isinstance(attrs, dict):
+            continue
+        standard_name = attrs.get("standard_name")
+        standard_name = f"``{standard_name}``" if standard_name else ""
+        link = attrs.get("vocabulary")
+        if link:
+            collection, code = (
+                link.rstrip("/").split("/collection/")[1].split("/current/")
+            )
+            with_term.append(
+                {
+                    "variable": variable,
+                    "term": f"`{collection} {code} <{link}>`__",
+                    "label": labels[collection].get(code, ""),
+                    "standard_name": standard_name,
+                }
+            )
+        else:
+            without_term.append(
+                {
+                    "variable": variable,
+                    "long_name": str(attrs.get("long_name", "")),
+                    "standard_name": standard_name,
+                }
+            )
+    (_GENERATED / "vocabulary_terms.inc").write_text(
+        _list_table(
+            [
+                ("variable", "Variable"),
+                ("term", "vocabulary"),
+                ("label", "Term label"),
+                ("standard_name", "standard_name"),
+            ],
+            sorted(with_term, key=lambda r: r["variable"].lower()),
+            widths="22 16 34 28",
+        ),
+        encoding="utf-8",
+    )
+    (_GENERATED / "vocabulary_none.inc").write_text(
+        _list_table(
+            [
+                ("variable", "Variable"),
+                ("long_name", "long_name"),
+                ("standard_name", "standard_name"),
+            ],
+            sorted(without_term, key=lambda r: r["variable"].lower()),
+        ),
+        encoding="utf-8",
     )
 
 

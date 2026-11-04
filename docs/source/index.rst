@@ -39,6 +39,7 @@ https://github.com/ocean-uhh/seagliderOG1/issues/new.
    configuration
    mission_yaml
    units_mapping
+   variable_vocabulary
    defaults
 
 .. toctree::
