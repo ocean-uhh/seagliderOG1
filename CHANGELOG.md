@@ -56,6 +56,21 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   `None Found`) are no longer written.
 - `sensors.<key>.calibration_date` in `mission.yaml` must be an ISO date (`YYYY-MM-DD`);
   `seagliderOG1 validate` reports anything else as an ERROR.
+- The variable attribute `uri` is renamed `vocabulary`, OG1's name for it. Every link names a
+  current term in NERC's identifier form (`http://vocab.nerc.ac.uk/collection/OG1/current/TEMP/`):
+  the OG1 term wherever OG1 has one (`TIME`, `DOXY`, `CHLA`, the irradiance, backscatter and
+  attitude variables moved from P02; `TEMP_OXYGEN` → `TEMPDOXY`; `LATITUDE_GPS`/`LONGITUDE_GPS` →
+  `LAT_GPS`/`LON_GPS`), P01 only where OG1 has none. Twelve links that did not resolve are fixed,
+  `SA`'s link (no such OG1 term) is removed, and `DEPTH`, `PHASE`, `PROFILE_NUMBER` and
+  `SOUND_VELOCITY` (`SOUNDVEL`) gain one. Read `vocabulary` instead of `uri`.
+- `standard_name` is a current CF standard name on every variable: `CHLA` is
+  `mass_concentration_of_chlorophyll_a_in_sea_water` (was the deprecated
+  `concentration_of_chlorophyll_in_sea_water`), `OXYSAT` is
+  `fractional_saturation_of_oxygen_in_sea_water`; the names that are not CF are removed from
+  `ED380`, `ED490`, `GLIDER_HORZ_VELO_MODEL`, `GLIDER_VERT_VELO_MODEL`,
+  `GLIDER_VERT_VELO_PRESSURE` and `VERT_CURR_MODEL`.
+- The unused `HUMIDITY`, `PRESSURE_AIR`, `TEMP_AIR`, `WIND_SPEED` and `WIND_DIRECTION` entries
+  are removed from the variable attributes (no basestation variable maps to them).
 
 ### Added
 
@@ -91,6 +106,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - `tests/data/calibcomm_answers.csv` (50 comments from 13 gliders, basestation 2.8, 2.10 and 3.0.6) and
   `scripts/collect_calibcomm.py`; tests that read the out-of-repo dev pack run when
   `SEAGLIDEROG1_DEV_DATA` is set.
+- Offline copies of the NERC OG1 collection, the P01 terms in use and the CF standard-name table
+  (`tests/data/vocabularies/`, written by `scripts/fetch_vocabularies.py`); the tests check every
+  `vocabulary` link and `standard_name` against them without the network.
 
 ### Fixed
 

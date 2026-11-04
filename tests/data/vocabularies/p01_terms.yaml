@@ -1,0 +1,19 @@
+# The NERC P01 terms OG1_variable_attributes.yaml points at, fetched 2026-11-04.
+# Written by scripts/fetch_vocabularies.py; do not edit by hand.
+fetched: '2026-11-04'
+terms:
+  EPSIFY01:
+    label: Log10 turbulent kinetic energy dissipation {epsilon} per unit volume of the water body by turbulence profiler shear sensor
+    deprecated: false
+  EPSIFY02:
+    label: Log10 turbulent kinetic energy dissipation {epsilon} per unit volume of the water body by turbulence profiler shear sensor (second sensor)
+    deprecated: false
+  GTDHZZ01:
+    label: Significant wave height of waves {Hs} on the water body
+    deprecated: false
+  GTZHZZ01:
+    label: Zero-crossing period of waves (highest one third) {significant wave period Ts} on the water body
+    deprecated: false
+  LRZAZZZZ:
+    label: Upward velocity of water current in the water body
+    deprecated: false

@@ -1,0 +1,388 @@
+# NERC OG1 collection (http://vocab.nerc.ac.uk/collection/OG1/current/), fetched 2026-11-04.
+# Written by scripts/fetch_vocabularies.py; do not edit by hand.
+fetched: '2026-11-04'
+terms:
+  ALTITUDE:
+    label: Height above bed in the water body
+    deprecated: false
+  BBP:
+    label: Particle backscattering at x nanometers
+    deprecated: false
+  BBP412:
+    label: Particle backscattering at 412 nanometers
+    deprecated: false
+  BBP470:
+    label: Particle backscattering at 470 nanometers
+    deprecated: false
+  BBP532:
+    label: Particle backscattering at 532 nanometers
+    deprecated: false
+  BBP650:
+    label: Particle backscattering at 650 nanometers
+    deprecated: false
+  BBP700:
+    label: Particle backscattering at 700 nanometers
+    deprecated: false
+  BBP715:
+    label: Particle backscattering at 715 nanometers
+    deprecated: false
+  BBP880:
+    label: Particle backscattering at 880 nanometers
+    deprecated: false
+  BETA470:
+    label: Total angle specific volume from backscattering sensor at 470 nanometers
+    deprecated: false
+  BETA532:
+    label: Total angle specific volume from backscattering sensor at 532 nanometers
+    deprecated: false
+  BETA650:
+    label: Total angle specific volume from backscattering sensor at 650 nanometers
+    deprecated: false
+  BETA700:
+    label: Total angle specific volume from backscattering sensor at 700 nanometers
+    deprecated: false
+  BETA880:
+    label: Total angle specific volume from backscattering sensor at 880 nanometers
+    deprecated: false
+  BETABBP:
+    label: Total angle specific volume from backscattering sensor at x nanometers
+    deprecated: false
+  BPHDOXY:
+    label: Uncalibrated blue excitation light phase shift reported by oxygen sensor
+    deprecated: false
+  C1PHDOXY:
+    label: Uncalibrated phase shift reported by oxygen sensor
+    deprecated: true
+  C2PHDOXY:
+    label: Uncalibrated phase shift reported by oxygen sensor
+    deprecated: true
+  CDOM:
+    label: Concentration of coloured dissolved organic matter in sea water
+    deprecated: false
+  CHLA:
+    label: Chlorophyll-A
+    deprecated: false
+  CNDC:
+    label: Electrical conductivity
+    deprecated: false
+  CNDC2:
+    label: Electrical conductivity (second sensor)
+    deprecated: false
+  CNTDOXY:
+    label: Count reported by oxygen sensor
+    deprecated: false
+  COR_FACT:
+    label: Correlation factor of acoustic signal by altimeter
+    deprecated: false
+  CPITMPOS:
+    label: Setting (offset distance from neutral) of glider pitchmass
+    deprecated: false
+  CROLMPOS:
+    label: Setting (offset angle from neutral) of glider roll mass
+    deprecated: false
+  CYCLEENG:
+    label: Engineering data cycle number
+    deprecated: false
+  DENSITY:
+    label: Sea water density
+    deprecated: false
+  DEPTH:
+    label: Depth below sea surface (zero at sea level) of measurement platform
+    deprecated: false
+  DIC:
+    label: Dissolved inorganic carbon concentration of the water body
+    deprecated: false
+  DIST_ALT:
+    label: Altitude
+    deprecated: false
+  DOXY:
+    label: Dissolved oxygen
+    deprecated: false
+  DPAR:
+    label: Downwelling photosynthetic available radiation
+    deprecated: false
+  DPHDOXY:
+    label: Calibrated phase shift reported by oxygen sensor
+    deprecated: false
+  ED:
+    label: Downwelling irradiance at x nanometers
+    deprecated: false
+  ED380:
+    label: Downwelling irradiance at 380 nanometers
+    deprecated: false
+  ED412:
+    label: Downwelling irradiance at 412 nanometers
+    deprecated: false
+  ED443:
+    label: Downwelling irradiance at 443 nanometers
+    deprecated: false
+  ED490:
+    label: Downwelling irradiance at 490 nanometers
+    deprecated: false
+  ED532:
+    label: Downwelling irradiance at 532 nanometers
+    deprecated: false
+  ED555:
+    label: Downwelling irradiance at 555 nanometers
+    deprecated: false
+  ED655:
+    label: Downwelling irradiance at 655 nanometers
+    deprecated: false
+  EDLAM:
+    label: Raw downwelling irradiance at x nanometers
+    deprecated: false
+  EDLAM380:
+    label: Raw downwelling irradiance at 380 nanometers
+    deprecated: false
+  EDLAM412:
+    label: Raw downwelling irradiance at 412 nanometers
+    deprecated: false
+  EDLAM443:
+    label: Raw downwelling irradiance at 443 nanometers
+    deprecated: false
+  EDLAM490:
+    label: Raw downwelling irradiance at 490 nanometers
+    deprecated: false
+  EDLAM555:
+    label: Raw downwelling irradiance at 555 nanometers
+    deprecated: false
+  ENLEVEL:
+    label: Energy level of acoustic signal by altimeter
+    deprecated: false
+  FDOM:
+    label: Concentration of coloured dissolved organic matter expressed as quinine sulphate equivalent (FDOM) in seawater
+    deprecated: false
+  FLUOCDOM:
+    label: Raw fluorescence from coloured dissolved organic matter sensor
+    deprecated: false
+  FLUOCHLA:
+    label: Raw signal from chlorophyll-a fluorometer
+    deprecated: false
+  FLUOPHYC:
+    label: Phycoerythrin signal from fluorescence sensor
+    deprecated: false
+  FREQDOXY:
+    label: Frequency reported by oxygen sensor
+    deprecated: false
+  GLCOMPH:
+    label: Glider command phase
+    deprecated: true
+  HEADING:
+    label: Orientation (horizontal relative to magnetic north) of measurement platform {heading}
+    deprecated: false
+  HEADINGTN:
+    label: Orientation (horizontal relative to True North) of measurement platform {heading}
+    deprecated: false
+  LAT:
+    label: Latitude north
+    deprecated: false
+  LAT_GPS:
+    label: GPS fixed latitude
+    deprecated: false
+  LCNTDOXY:
+    label: Number of times oxygen sensor flashing to measure oxygen
+    deprecated: false
+  LON:
+    label: Longitude east
+    deprecated: false
+  LON_GPS:
+    label: GPS fixed longitude
+    deprecated: false
+  MLPLDOXY:
+    label: Oxygen concentration reported by the oxygen sensor
+    deprecated: false
+  MOLDOXY:
+    label: Uncompensated (pressure and salinity) oxygen concentration reported by the oxygen sensor
+    deprecated: false
+  NBSAMP:
+    label: Number of samples in bin
+    deprecated: false
+  NCNTTUR1:
+    label: Turbidity signal from side scattering sensor
+    deprecated: false
+  NITRATE_NITRITE:
+    label: Concentration of nitrate+nitrite by colorimetry
+    deprecated: false
+  OIL_VOL:
+    label: Oil volume in the measurement platform
+    deprecated: false
+  OXYSAT:
+    label: Oxygen saturation by Optode
+    deprecated: false
+  PHASE:
+    label: Identifier of glider phase
+    deprecated: false
+  PHDEDOXY:
+    label: Phase delay reported by oxygen sensor
+    deprecated: false
+  PHOS:
+    label: Concentration of phosphate by colorimetry
+    deprecated: false
+  PHYC:
+    label: Concentration of phycoerythrin by fluorometer
+    deprecated: false
+  PHYCOCYANIN:
+    label: Concentration of phycocyanin by fluorometer
+    deprecated: false
+  PH_IN_SITU_TOTAL:
+    label: pH (total scale) of the water body
+    deprecated: false
+  PITCH:
+    label: Orientation (pitch) of measurement platform by inclinometer
+    deprecated: false
+  PITMPOS:
+    label: Setting (counts) of glider pitch mass
+    deprecated: false
+  POTDENS0:
+    label: Potential density of water body at surface
+    deprecated: false
+  PPDOXY:
+    label: Partial pressure of oxygen in the water body
+    deprecated: false
+  PPOXDOXY:
+    label: Partial pressure of oxygen
+    deprecated: false
+  PRES:
+    label: Sea water pressure, equals 0 at sea-level
+    deprecated: false
+  PRES2:
+    label: Sea water pressure, equals 0 at sea-level (second sensor)
+    deprecated: false
+  PRES_ENG:
+    label: Sea water pressure, equals 0 at sea-level by non temperature compensated platform pressure sensor
+    deprecated: false
+  PROFILE_NUMBER:
+    label: Identifier of numbered profile
+    deprecated: false
+  PSAL:
+    label: Practical salinity
+    deprecated: false
+  RAWDPAR:
+    label: Raw downwelling photosynthetic available radiation
+    deprecated: false
+  RBBP700:
+    label: Raw signal from backscattering sensor at 700 nanometers
+    deprecated: false
+  REDOX_POTENTIAL_CORR:
+    label: Redox potential relative to Standard Hydrogen Electrode (SHE)
+    deprecated: false
+  RELVBD:
+    label: Setting (volume offset from neutrally buoyant) of glider variable buoyancy device
+    deprecated: false
+  ROLL:
+    label: Orientation (roll angle) of measurement platform by inclinometer
+    deprecated: false
+  ROLMPOS:
+    label: Setting (counts) of glider roll mass
+    deprecated: false
+  RPHDOXY:
+    label: Uncalibrated red excitation light phase shift reported by oxygen sensor
+    deprecated: false
+  RSHEAR_SD:
+    label: Raw signal (standard deviation) from turbulence profiler shear sensor
+    deprecated: false
+  RSHEAR_SD2:
+    label: Raw signal (standard deviation) from turbulence profiler shear sensor (second sensor)
+    deprecated: false
+  RTHERTUR_MN:
+    label: Raw signal (mean) from turbulence profiler thermistor
+    deprecated: false
+  RTHERTUR_MN2:
+    label: Raw signal (mean) from turbulence profiler thermistor (second sensor)
+    deprecated: false
+  RTHERTUR_SD:
+    label: Raw signal (standard deviation) from turbulence profiler thermistor
+    deprecated: false
+  RTHERTUR_SD2:
+    label: Raw signal (standard deviation) from turbulence profiler thermistor (second sensor)
+    deprecated: false
+  SIGMA_T:
+    label: Sigma-T
+    deprecated: false
+  SIGTHETA:
+    label: Sigma-theta
+    deprecated: false
+  SOUNDVEL:
+    label: Sound velocity in the water body
+    deprecated: false
+  TCNTDOXY:
+    label: Count which is expressive of uncalibrated temperature value reported by oxygen sensor
+    deprecated: false
+  TCPUCHLA:
+    label: Thermistor signal from backscattering meter and/or fluorometer
+    deprecated: false
+  TCPURADP:
+    label: Thermistor signal from radiometer
+    deprecated: false
+  TEMP:
+    label: Sea temperature in-situ ITS-90 scale
+    deprecated: false
+  TEMP2:
+    label: Sea temperature in-situ ITS-90 scale (second sensor)
+    deprecated: false
+  TEMPDOXY:
+    label: Sea temperature from oxygen sensor ITS-90 scale
+    deprecated: false
+  TEMP_CNDC:
+    label: Internal temperature of the conductivity cell
+    deprecated: false
+  TEMP_DIC:
+    label: Temperature of dissolved inorganic carbon determination
+    deprecated: false
+  TEMP_NITR:
+    label: Temperature of nitrate (+nitrite) determination
+    deprecated: false
+  TEMP_PH:
+    label: Temperature of pH determination
+    deprecated: false
+  TEMP_PHOS:
+    label: Temperature of phosphate determination
+    deprecated: false
+  TEMP_TOTALK:
+    label: Temperature of total alkalinity determination
+    deprecated: false
+  THETA:
+    label: Sea water potential temperature
+    deprecated: false
+  TIME:
+    label: epoch time (glider)
+    deprecated: false
+  TIMEDF:
+    label: Time elapsed since since start of day
+    deprecated: false
+  TIMEYO:
+    label: Time elapsed since since start of glider yo
+    deprecated: false
+  TKE_EPSILON:
+    label: Log10 turbulent kinetic energy dissipation {epsilon}
+    deprecated: false
+  TOTALK:
+    label: Total alkalinity of the water body
+    deprecated: false
+  TPHDOXY:
+    label: Uncalibrated (temperature compensated) phase shift reported by oxygen sensor
+    deprecated: false
+  TURB:
+    label: Turbidity of water in the water body
+    deprecated: false
+  TVLTDOXY:
+    label: Thermistor voltage reported by oxygen sensor
+    deprecated: false
+  VBD:
+    label: Setting (counts) of glider variable buoyancy device
+    deprecated: false
+  VLTDOXY:
+    label: Voltage reported by oxygen sensor
+    deprecated: false
+  WATER_VELOC_FINAL_U:
+    label: Eastward current velocity in the water body by dead reckoning and surface drift correction
+    deprecated: false
+  WATER_VELOC_FINAL_V:
+    label: Northward current velocity in the water body by dead reckoning and surface drift correction
+    deprecated: false
+  WCUR_X:
+    label: Eastward current velocity in the water body
+    deprecated: false
+  WCUR_Y:
+    label: Northward current velocity in the water body
+    deprecated: false

@@ -67,7 +67,6 @@ GLIDE_SPEED:
   comment: Vehicle speed based on hdm
 GLIDER_HORZ_VELO_MODEL:
   long_name: glider_horizontal_speed_from_glider_flight_model
-  standard_name: horizontal_glider_speed
   units: m s-1
   observation_type: calculated
   sensor: sensor_glider_model
@@ -75,26 +74,23 @@ GLIDER_HORZ_VELO_MODEL:
   comment: Vehicle horizontal speed based on hdm
 GLIDER_VERT_VELO_MODEL:
   long_name: glider vertical speed from glider flight model
-  standard_name: vertical_glider_speed
   units: m s-1
   observation_type: calculated
   sensor: sensor_glider_model
   positive: up
 GLIDER_VERT_VELO_PRESSURE:
   long_name: glider vertical speed from pressure
-  standard_name: vertical_glider_speed
   units: m s-1
   observation_type: calculated
   sensor: sensor_ctd
   positive: up
 VERT_CURR_MODEL:
   long_name: vertical current of seawater derived from glider flight model
-  standard_name: vertical_current
   units: m s-1
   observation_type: calculated
   sensor: sensor_ctd
   positive: up
-  uri: http://vocab.nerc.ac.uk/collection/P01/current/LRZAZZZZ/
+  vocabulary: http://vocab.nerc.ac.uk/collection/P01/current/LRZAZZZZ/
 DAVG_CURR_EAST:
   long_name: depth-averaged current in eastward direction
   standard_name: eastward_sea_water_velocity
@@ -125,7 +121,7 @@ LATITUDE:
   valid_max: 90
   valid_min: -90
   axis: Y
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/LAT/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/LAT/
 LONGITUDE:
   coordinate_reference_frame: urn:ogc:crs:EPSG::4326
   long_name: Longitude east
@@ -137,7 +133,7 @@ LONGITUDE:
   valid_max: 180
   valid_min: -180
   axis: X
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/LON/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/LON/
 LATITUDE_GPS:
   long_name: Latitude north by unspecified GPS system
   observation_type: measured
@@ -147,7 +143,7 @@ LATITUDE_GPS:
   valid_max: 90
   valid_min: -90
   axis: Y
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/LAT/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/LAT_GPS/
 LONGITUDE_GPS:
   long_name: Longitude east by unspecified GPS system
   observation_type: measured
@@ -157,14 +153,14 @@ LONGITUDE_GPS:
   valid_max: 180
   valid_min: -180
   axis: X
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/LON/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/LON_GPS/
 TIME_GPS:
   long_name: time of each GPS location
 TIME:
   long_name: time of measurement
   observation_type: measured
   standard_name: time
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/AYMD/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/TIME/
 AD2CP_TIME:
   long_name: time of measurement
   observation_type: measured
@@ -172,7 +168,7 @@ AD2CP_TIME:
   units: seconds since 1970-01-01T00:00:00Z
   calendar: gregorian
   axis: T
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/AYMD/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/TIME/
   comment: measured by AD2CP
 DEPTH:
   source: pressure
@@ -190,6 +186,7 @@ DEPTH:
   valid_max: 2000
   reference_datum: surface
   positive: down
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/DEPTH/
 DEPTH_Z:
   source: pressure
   long_name: glider depth
@@ -210,25 +207,25 @@ DOXY:
   units: mmol m-3
   valid_max: 425
   valid_min: 0
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/DOXY/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/DOXY/
 TIME_DOXY:
   long_name: time for oxygen concentration in GMT epoch format
 OXYSAT:
   long_name: Oxygen saturation by Optode
   observation_type: calculated
-  standard_name: mole_fraction_of_oxygen_in_sea_water
+  standard_name: fractional_saturation_of_oxygen_in_sea_water
   units: percent
   valid_max: 150
   valid_min: 0
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/OXYSAT/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/OXYSAT/
 CHLA:
   long_name: chlorophyll
   observation_type: calculated
-  standard_name: concentration_of_chlorophyll_in_sea_water
+  standard_name: mass_concentration_of_chlorophyll_a_in_sea_water
   units: mg m-3
   valid_max: 50
   valid_min: 0
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/CPWC/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/CHLA/
 CNDC:
   sensor: sensor_ctd
   long_name: Electrical conductivity of the water body by CTD
@@ -237,7 +234,7 @@ CNDC:
   units: mS cm-1
   valid_max: 85.0
   valid_min: 0.0
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/CNDC/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/CNDC/
 CNDC_RAW:
   sensor: sensor_ctd
   long_name: Electrical conductivity of the water body by CTD
@@ -246,7 +243,7 @@ CNDC_RAW:
   units: mS cm-1
   valid_max: 85.0
   valid_min: 0.0
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/CNDC/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/CNDC/
 PRES:
   comment: ctd pressure sensor
   sensor: sensor_ctd
@@ -259,7 +256,7 @@ PRES:
   units: dbar
   valid_max: 2000
   valid_min: 0
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/PRES
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/PRES/
 PSAL:
   long_name: water salinity
   standard_name: sea_water_practical_salinity
@@ -271,7 +268,7 @@ PSAL:
   sensor: sensor_ctd
   valid_max: 40
   valid_min: 0
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/PSAL/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/PSAL/
 PSAL_RAW:
   long_name: water salinity
   standard_name: sea_water_practical_salinity
@@ -283,7 +280,7 @@ PSAL_RAW:
   sensor: sensor_ctd
   valid_max: 40
   valid_min: 0
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/PSAL/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/PSAL/
 SA:
   long_name: Absolute salinity of the water body by CTD and computation using TEOS-10
     algorithm
@@ -296,7 +293,6 @@ SA:
   sensor: sensor_ctd
   valid_max: 120
   valid_min: 0
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/SA/
 TEMP:
   long_name: 'Temperature of the water body by CTD'
   observation_type: measured
@@ -304,7 +300,7 @@ TEMP:
   units: degree_Celsius
   valid_max: 42
   valid_min: -5
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
 TEMP_RAW:
   long_name: 'Temperature of the water body by CTD'
   observation_type: measured
@@ -312,7 +308,7 @@ TEMP_RAW:
   units: degree_Celsius
   valid_max: 42
   valid_min: -5
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
 THETA:
   long_name: Potential temperature of the water body by computation using UNESCO 1983
     algorithm.
@@ -322,7 +318,7 @@ THETA:
   units: degree_Celsius
   valid_max: 42
   valid_min: -5
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/THETA/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/THETA/
 CT:
   long_name: Conservative temperature
   standard_name: sea_water_conservative_temperature
@@ -337,7 +333,7 @@ POTDENS0:
   sources: salinity temperature pressure
   valid_min: 1000
   valid_max: 1040
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/POTDENS0/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/POTDENS0/
 SIGTHETA:
   long_name: Sigma-theta
   standard_name: sea_water_sigma_theta
@@ -346,7 +342,7 @@ SIGTHETA:
   sources: salinity temperature pressure
   valid_min: 0
   valid_max: 50
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/SIGTHETA/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/SIGTHETA/
 SIGMA_T:
   long_name: Sigma-t
   standard_name: sea_water_sigma_t
@@ -355,7 +351,7 @@ SIGMA_T:
   sources: salinity temperature pressure
   valid_min: 0
   valid_max: 50
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/SIGMA_T/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/SIGMA_T/
 DENSITY:
   long_name: The mass of a unit volume of any body of fresh or salt water
   standard_name: sea_water_density
@@ -365,13 +361,14 @@ DENSITY:
   sources: salinity temperature pressure
   valid_min: 1000
   valid_max: 1040
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/DENSITY/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/DENSITY/
 BUOYANCY:
   long_name: Buoyancy of vehicle, corrected for compression effects
   units: g
 PROFILE_NUMBER:
   long_name: Identifier of numbered profile within the dataset
   units: '1'
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/PROFILE_NUMBER/
 dive_number:
   long_name: dive number
   units: '1'
@@ -383,6 +380,7 @@ PHASE:
     phase_calculation_method says which signal assigned which dives.
   phase_vocabulary: https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase.md
   units: '1'
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/PHASE/
 AD2CP_PRES:
   comment: adcp pressure sensor
   sensor: sensor_adcp
@@ -395,12 +393,12 @@ AD2CP_PRES:
   units: dbar
   valid_max: 2000
   valid_min: 0
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/PRES
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/PRES/
 BBP700:
   long_name: Particle backscattering at 700 nanometers.
   observation_type: calculated
   units: m-1
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/BBP700/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/BBP700/
 #  processing: Particulate backscatter bbp calculated following methods in the Ocean
 #    Observatories Initiative document DATA PRODUCT SPECIFICATION FOR OPTICAL BACKSCATTER
 #    (RED WAVELENGTHS) Version 1-05 Document Control Number 1341-00540 2014-05-28.
@@ -409,7 +407,7 @@ BBP470:
   long_name: Particle backscattering at 470 nanometers.
   observation_type: calculated
   units: m-1
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/BBP470/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/BBP470/
 #  processing: Verify whether applied. Particulate backscatter bbp calculated following methods in #the Ocean
 #    (BLUE WAVELENGTHS) Version 1-05 Document Control Number 1341-00540 2014-05-28.
 ##    Observatories Initiative document DATA PRODUCT SPECIFICATION FOR OPTICAL BACKSCATTER
@@ -440,48 +438,46 @@ RBBP700:
   long_name: Raw signal from backscattering sensor.
   observation_type: observed
   units: '1'
-  uri: http://vocab.nerc.ac.uk/collection/OG1/current/RBBP700/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/RBBP700/
 ED380:
   average_method: geometric mean
   long_name: The vertical component of light at 380nm wavelength travelling downwards
   observation_type: measured
-  standard_name: 380nm_downwelling_irradiance
   units: W m-2 nm-1
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/ED380/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/ED380/
 ED490:
   average_method: geometric mean
   long_name: The vertical component of light at 490nm wavelength travelling downwards
   observation_type: measured
-  standard_name: 490nm_downwelling_irradiance
   units: W m-2 nm-1
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/ED490/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/ED490/
 DPAR:
   long_name: Downwelling vector irradiance as energy of electromagnetic radiation
     (PAR wavelengths) in the water body by cosine-collector radiometer.
   observation_type: measured
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/DPAR/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/DPAR/
 PITCH:
   long_name: Orientation (pitch) of measurement platform by inclinometer
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/PITCH/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/PITCH/
 ROLL:
   long_name: Orientation (roll angle) of measurement platform by inclinometer
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/ROLL/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/ROLL/
 HEADING:
   long_name: Orientation (horizontal relative to magnetic north) of measurement platform
     {heading} by compass
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/HEADING/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/HEADING/
 AD2CP_PITCH:
   long_name: Orientation (pitch) of measurement platform by inclinometer
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/PITCH/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/PITCH/
   comment: measured by AD2CP
 AD2CP_ROLL:
   long_name: Orientation (roll angle) of measurement platform by inclinometer
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/ROLL/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/ROLL/
   comment: measured by AD2CP
 AD2CP_HEADING:
   long_name: Orientation (horizontal relative to magnetic north) of measurement platform
     {heading} by compass
-  uri: https://vocab.nerc.ac.uk/collection/P02/current/HEADING/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/HEADING/
   comment: measured by AD2CP
 TEMP_OXYGEN:
   long_name: 'Temperature of the water body by CTD'
@@ -491,36 +487,36 @@ TEMP_OXYGEN:
   units: degree_Celsius
   valid_max: 42
   valid_min: -5
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/TEMP/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/TEMPDOXY/
 FLUOCHLA:
   long_name: Raw signal (counts) of instrument output by in-situ chlorophyll fluorometer
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/FLUOCHLA/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/FLUOCHLA/
 TURB:
   long_name: Turbidity of water in the water body
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/TURB/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/TURB/
 TCPUCHLA:
   long_name: Turbidity of water in the water body
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/TCPUCHLA/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/TCPUCHLA/
 CDOM:
   long_name: Concentration of coloured dissolved organic matter in sea water
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/CDOM/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/CDOM/
 FLUOCDOM:
   long_name: Raw fluorescence from coloured dissolved organic matter sensor
-  uri: https://vocab.nerc.ac.uk/collection/OG1/current/FLUOCDOM/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/FLUOCDOM/
 PHYC:
   long_name: Phycoerythrin concentration per unit volume of fresh or salt water.
-  uri: http://vocab.nerc.ac.uk/collection/OG1/current/PHYC/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/PHYC/
 FLUOPHYC:
   long_name: Phycoerythrin signal from fluorescence sensor
-  uri: http://vocab.nerc.ac.uk/collection/OG1/current/FLUOPHYC/
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/FLUOPHYC/
 EPSIFY01:
   long_name: Log10 turbulent kinetic energy dissipation {epsilon} per unit volume
     of the water body by turbulence profiler shear sensor
-  uri: http://vocab.nerc.ac.uk/collection/P01/current/EPSIFY01/
+  vocabulary: http://vocab.nerc.ac.uk/collection/P01/current/EPSIFY01/
 EPSIFY02:
   long_name: Log10 turbulent kinetic energy dissipation {epsilon} per unit volume
     of the water body by turbulence profiler shear sensor
-  uri: http://vocab.nerc.ac.uk/collection/P01/current/EPSIFY02/
+  vocabulary: http://vocab.nerc.ac.uk/collection/P01/current/EPSIFY02/
 vertical_displacement:
   long_name: Vertical displacement of platform, from MOSE sensor
   sensor: sensor_wave
@@ -550,37 +546,12 @@ significant_wave_period:
     Ts} on the water body
   sensor: sensor_wave
   units: s
-  uri: http://vocab.nerc.ac.uk/collection/P01/current/GTZHZZ01/
+  vocabulary: http://vocab.nerc.ac.uk/collection/P01/current/GTZHZZ01/
 significant_wave_height:
   long_name: Significant wave height of waves {Hs} on the water body
   sensor: sensor_wave
   units: m
-  uri: http://vocab.nerc.ac.uk/collection/P01/current/GTDHZZ01/
-HUMIDITY:
-  long_name: Relative humidity of the atmosphere
-  units: percent
-  sensor: sensor_meteorology
-  uri: http://vocab.nerc.ac.uk/collection/P01/current/CRELZZ01/
-PRESSURE_AIR:
-  long_name: Pressure (spatial coordinate) exerted by the atmosphere
-  units: dbar
-  sensor: sensor_meteorology
-  uri: http://vocab.nerc.ac.uk/collection/P01/current/CAPBZZ01/
-TEMP_AIR:
-  long_name: Temperature of the atmosphere by dry bulb thermometer
-  units: degree_Celsius
-  sensor: sensor_meteorology
-  uri: http://vocab.nerc.ac.uk/collection/P01/current/CDTASS01/
-WIND_SPEED:
-  long_name: Speed of wind {wind speed} in the atmosphere by in-situ anemometer
-  units: m s-1
-  sensor: sensor_meteorology
-  uri: http://vocab.nerc.ac.uk/collection/P01/current/EWSBSS01/
-WIND_DIRECTION:
-  long_name: Direction (from) of wind relative to True North {wind direction} in the
-    atmosphere by in-situ anemometer
-  sensor: sensor_meteorology
-  uri: http://vocab.nerc.ac.uk/collection/P01/current/EWDASS01/
+  vocabulary: http://vocab.nerc.ac.uk/collection/P01/current/GTDHZZ01/
 PITCH_CTL:
   long_name: Pitch control of the glider
   units: counts
@@ -605,6 +576,7 @@ SOUND_VELOCITY:
   long_name: sound velocity in water
   units: m s-1
   sensor: sensor_ctd
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/SOUNDVEL/
 DELTA_TIME_S:
   long_name: Difference between sample times
   units: seconds
