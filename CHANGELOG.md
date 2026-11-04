@@ -122,6 +122,10 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   other variables.
 - `TEMP_OXYGEN`'s `long_name` is OG1's `TEMPDOXY` label ("Sea temperature from oxygen sensor
   ITS-90 scale"); it said "by CTD".
+- Placeholder `long_name`s are replaced: `TEMP_FREQ` and `COND_FREQ` are the frequencies reported
+  by the CTD temperature and conductivity sensors; `O2_FREQ` takes OG1's `FREQDOXY` label and
+  term; `BBP470_REF` and `BBP700_REF` name the WET Labs BB2F `blueRef`/`redRef` as reported by
+  the instrument (they read "What is this variable?" and "maybe dark counts").
 - Basestation 2.10 files (`gc_state_secs` written as seconds from the dive start) no longer put rows
   in January 1970; the output name and `time_coverage_start` take the dive's real start.
 - A current-year calibration date is no longer rejected, and the same comment no longer parses

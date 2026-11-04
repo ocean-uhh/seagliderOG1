@@ -417,22 +417,23 @@ BBP_VFTEMP: ### eng_wlbb2f_VFtemp
   units: degree_Celsius
   observation_type: observed
 TEMP_FREQ: ### eng_tempFreq
-  long_name: What is this variable?
+  long_name: Frequency reported by the CTD temperature sensor
   units: Hz
   observation_type: observed
 O2_FREQ: ### eng_sbe43_O2Freq
-  long_name: What is this variable?
+  long_name: Frequency reported by oxygen sensor
+  vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/FREQDOXY/
   units: Hz
   observation_type: observed
 COND_FREQ: ### eng_condFreq
-  long_name: What is this variable?
+  long_name: Frequency reported by the CTD conductivity sensor
   units: Hz
   observation_type: observed
 BBP700_REF:
-  long_name: What is this - maybe dark counts. red.
+  long_name: WET Labs BB2F redRef, as reported by the instrument
   observation_type: observed
 BBP470_REF:
-  long_name: What is this - maybe dark counts. blue.
+  long_name: WET Labs BB2F blueRef, as reported by the instrument
   observation_type: observed
 RBBP700:
   long_name: Raw signal from backscattering sensor.
