@@ -44,8 +44,6 @@ temperature_raw: TEMP_RAW
 salinity_raw: PSAL_RAW
 conductivity_raw: CNDC_RAW
 salinity: PSAL
-absolute_salinity: SA
-conservative_temperature: CT
 ctd_density: DENSITY
 density_insitu: DENSITY
 profile_index: PROFILE_NUMBER
@@ -81,8 +79,11 @@ temperature_oxygen: TEMP_OXYGEN
 potential_density: POTDENS0
 # gsw_sigma0 is the density anomaly (sigma0 = potential density - 1000); OG1 POTDENS0 is full
 # potential density, so gsw_sigma0 is not mapped here (it would be ~1000 out of range). It passes
-# through under its own name; POTDENS0 is derived from SA and CT by the converter. See drop_variables and the
+# through under its own name; POTDENS0 is derived with TEOS-10 by the converter. See drop_variables and the
 # conversion page's drop recommendation.
+# absolute_salinity and conservative_temperature are not mapped to SA/CT: OG1 files carry
+# practical salinity (PSAL) and users compute SA and CT when needed; they pass through under
+# their own names.
 chlorophyll_raw: FLUOCHLA
 fluorCount: FLUOCHLA
 ad2cp_pitch: AD2CP_PITCH

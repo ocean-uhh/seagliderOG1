@@ -281,18 +281,6 @@ PSAL_RAW:
   valid_max: 40
   valid_min: 0
   vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/PSAL/
-SA:
-  long_name: Absolute salinity of the water body by CTD and computation using TEOS-10
-    algorithm
-  standard_name: sea_water_absolute_salinity
-  units: g kg-1
-  comment: Absolute salinity of the water body by CTD and computation using TEOS-10
-    algorithm
-  sources: CNDC, TEMP, PRES
-  observation_type: calculated
-  sensor: sensor_ctd
-  valid_max: 120
-  valid_min: 0
 TEMP:
   long_name: 'Temperature of the water body by CTD'
   observation_type: measured
@@ -319,12 +307,6 @@ THETA:
   valid_max: 42
   valid_min: -5
   vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/THETA/
-CT:
-  long_name: Conservative temperature
-  standard_name: sea_water_conservative_temperature
-  units: degree_Celsius
-  observation_type: calculated
-  sources: SA TEMP PRES
 POTDENS0:
   long_name: Potential density of water body at surface
   standard_name: sea_water_potential_density

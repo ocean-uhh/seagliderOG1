@@ -425,7 +425,7 @@ with (CONFIG_DIR / "OG1_unit_corrections.yaml").open() as file:
 DROP_RECOMMENDATIONS = {
     "gsw_sigma0": (
         "the density anomaly (sigma0 = potential density - 1000); OG1 POTDENS0 is full "
-        "potential density, which the converter derives from SA and CT, so gsw_sigma0 has no "
+        "potential density, which the converter derives with TEOS-10, so gsw_sigma0 has no "
         "OG1 home."
     ),
     "sbe43_dissolved_oxygen": (
@@ -617,22 +617,3 @@ with (CONFIG_DIR / "OG1_global_attributes.yaml").open() as file:
 # "suggested"; each maps an attribute name to its filling source ("derived",
 # "constant" or "config"). Transcribed from the OG1 manual (see the file header).
 REQUIRED_GLOBALS: dict[str, dict[str, str]] = global_attrs["required"]
-
-
-# --- deprecated v0.0.2 names (removed in 0.3.0; see seagliderOG1._deprecated) ----------
-from seagliderOG1 import _deprecated  # noqa: E402  # shim follows the definitions above
-
-_deprecated.install_removed(
-    globals(),
-    {
-        **dict.fromkeys(
-            ("load_default_contributors", "contrib_to_append"),
-            "contributors come from the mission.yaml contributors: block now.",
-        ),
-        **dict.fromkeys(
-            ("unit_str_format", "unit1_to_unit2", "preferred_units"),
-            "units resolve through vocabularies.UNITS (one view over the vendored "
-            "family tables) now.",
-        ),
-    },
-)

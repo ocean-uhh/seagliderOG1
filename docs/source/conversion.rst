@@ -61,9 +61,8 @@ The steps
 #. **Concatenate** the dives on ``N_MEASUREMENTS`` and sort by ``TIME``.
    *Page:* Before → after (samples on the shared axis).
 
-#. **TEOS-10 variables.** Add the ones OG1 names that the basestation did not write: ``SA``,
-   ``CT`` and ``POTDENS0`` (and ``PSAL`` from conductivity when the file has no salinity). See
-   `Derived TEOS-10 variables`_.
+#. **TEOS-10 variables.** Add ``POTDENS0`` when the basestation did not write it (and ``PSAL``
+   from conductivity when the file has no salinity). See `Derived TEOS-10 variables`_.
    *Page:* Derived variables; Same quantity, more than once.
 
 #. **Sensors.** Gather each instrument's record from the calibration comments, apply the
@@ -153,15 +152,25 @@ basestation file does not carry, computed per sample with `gsw <https://teos-10.
    * - ``PSAL``
      - ``gsw.SP_from_C(CNDC, TEMP, PRES)``
      - only when the file has conductivity but no salinity; no thermal-inertia correction
-   * - ``SA``
-     - ``gsw.SA_from_SP(PSAL, PRES, LONGITUDE, LATITUDE)``
-     - when the basestation did not write ``absolute_salinity``
-   * - ``CT``
-     - ``gsw.CT_from_t(SA, TEMP, PRES)``
-     - when the basestation did not write ``conservative_temperature``
    * - ``POTDENS0``
-     - ``gsw.sigma0(SA, CT) + 1000`` kg m-3
+     - ``gsw.sigma0(SA, CT) + 1000`` kg m-3, with ``SA = gsw.SA_from_SP(PSAL, PRES, LONGITUDE,
+       LATITUDE)`` and ``CT = gsw.CT_from_t(SA, TEMP, PRES)``
      - always, unless already present
+
+Absolute Salinity (SA) and Conservative Temperature (CT) are computed on the way to ``POTDENS0``
+but not written: ``PSAL`` is the salinity an OG1 file carries, as TEOS-10 recommends archiving
+practical salinity (SA depends on the version of the absolute-salinity-anomaly atlas in gsw).
+Compute them when needed:
+
+.. code-block:: python
+
+   import gsw
+
+   SA = gsw.SA_from_SP(ds.PSAL, ds.PRES, ds.LONGITUDE, ds.LATITUDE)
+   CT = gsw.CT_from_t(SA, ds.TEMP, ds.PRES)
+
+A basestation file's own ``absolute_salinity`` and ``conservative_temperature`` pass through under
+those names.
 
 A variable the basestation wrote is never overwritten. Each derived variable carries ``sources``
 (the OG1 inputs) and a ``comment`` naming the gsw function and version, and is listed in

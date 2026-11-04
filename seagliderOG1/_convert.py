@@ -1251,8 +1251,8 @@ def convert(
     # see one data point per fix.
     ds_og1 = _dedup_boundary_gps(ds_og1)
 
-    # TEOS-10 variables OG1 names that the basestation did not supply (SA, CT, POTDENS0, and
-    # PSAL from conductivity when salinity is absent); one pass on the concatenated data.
+    # TEOS-10 variables OG1 names that the basestation did not supply (POTDENS0, and PSAL
+    # from conductivity when salinity is absent); one pass on the concatenated data.
     ds_og1 = _pipeline.add_teos10_variables(ds_og1)
 
     # Add sensor information to the dataset - can be done on the concatenated data
