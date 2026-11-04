@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.writers &mdash; seagliderOG1 0.2.0.post1.dev4 documentation</title>
+  <title>seagliderOG1.writers &mdash; seagliderOG1 0.2.0.post1.dev5 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=48401943"></script>
+      <script src="../../_static/documentation_options.js?v=ec389d5a"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -64,6 +64,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../mission_yaml.html">mission.yaml reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../units_mapping.html">Unit mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../variable_vocabulary.html">Variable vocabulary</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
@@ -254,6 +255,7 @@
             <span class="n">var</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"units"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">var</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"calendar"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">encoding</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_TIME_ENCODING</span><span class="p">)</span>
+    <span class="n">_set_coordinates</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 
     <span class="n">ds</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"NETCDF4"</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">"netcdf4"</span><span class="p">)</span>
     <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Dataset successfully saved to </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
@@ -660,6 +662,41 @@
 <span class="sd">    so it must not require the (possibly moved) raw-data directory to still exist.</span>
 <span class="sd">    """</span>
     <span class="k">return</span> <span class="n">_mission</span><span class="o">.</span><span class="n">_load_raw</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="p">))</span>
+
+
+<span class="c1">#: OG1's spatiotemporal coordinates, in the manual's order. Written blank-separated, as CF</span>
+<span class="c1">#: requires of the ``coordinates`` attribute (the manual's example separates them with commas,</span>
+<span class="c1">#: which CF readers would take as part of the names).</span>
+<span class="n">OG1_COORDINATES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"TIME"</span><span class="p">,</span> <span class="s2">"LONGITUDE"</span><span class="p">,</span> <span class="s2">"LATITUDE"</span><span class="p">,</span> <span class="s2">"DEPTH"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_set_coordinates</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Give every variable on ``N_MEASUREMENTS`` OG1's ``coordinates`` attribute.</span>
+
+<span class="sd">    ``coordinates = "TIME LONGITUDE LATITUDE DEPTH"`` (the ones present) on each variable on</span>
+<span class="sd">    ``N_MEASUREMENTS`` other than those four, ``_QC`` variables included; none on scalars.</span>
+<span class="sd">    A ``coordinates`` attribute carried over from the basestation (e.g. ``"ctd_time longitude</span>
+<span class="sd">    latitude ctd_depth"``, naming variables the OG1 file does not have) is replaced. Set in</span>
+<span class="sd">    each variable's own encoding, which xarray writes in place of the one it would build</span>
+<span class="sd">    itself (the write-time ``encoding`` argument does not accept ``coordinates``).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds : xarray.Dataset</span>
+<span class="sd">        The dataset to be written; its variables' ``coordinates`` attributes and encodings</span>
+<span class="sd">        are replaced in place.</span>
+
+<span class="sd">    """</span>
+    <span class="n">present</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">OG1_COORDINATES</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">present</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">present</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"coordinates"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"coordinates"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">OG1_COORDINATES</span> <span class="ow">or</span> <span class="n">var</span><span class="o">.</span><span class="n">dims</span> <span class="o">!=</span> <span class="p">(</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">,):</span>
+            <span class="k">continue</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"coordinates"</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_compression_encoding</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>

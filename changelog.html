@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.2.0.post1.dev4 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.2.0.post1.dev5 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=48401943"></script>
+      <script src="_static/documentation_options.js?v=ec389d5a"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -66,6 +66,7 @@
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="units_mapping.html">Unit mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="variable_vocabulary.html">Variable vocabulary</a></li>
 <li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
@@ -203,6 +204,21 @@ and <code class="docutils literal notranslate"><span class="pre">on</span></code
 <code class="docutils literal notranslate"><span class="pre">None</span> <span class="pre">Found</span></code>) are no longer written.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sensors.&lt;key&gt;.calibration_date</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> must be an ISO date (<code class="docutils literal notranslate"><span class="pre">YYYY-MM-DD</span></code>);
 <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">validate</span></code> reports anything else as an ERROR.</p></li>
+<li><p>The variable attribute <code class="docutils literal notranslate"><span class="pre">uri</span></code> is renamed <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code>, OG1’s name for it. Every link names a
+current term in NERC’s identifier form (<code class="docutils literal notranslate"><span class="pre">http://vocab.nerc.ac.uk/collection/OG1/current/TEMP/</span></code>):
+the OG1 term wherever OG1 has one (<code class="docutils literal notranslate"><span class="pre">TIME</span></code>, <code class="docutils literal notranslate"><span class="pre">DOXY</span></code>, <code class="docutils literal notranslate"><span class="pre">CHLA</span></code>, the irradiance, backscatter and
+attitude variables moved from P02; <code class="docutils literal notranslate"><span class="pre">TEMP_OXYGEN</span></code> → <code class="docutils literal notranslate"><span class="pre">TEMPDOXY</span></code>; <code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code>/<code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code> →
+<code class="docutils literal notranslate"><span class="pre">LAT_GPS</span></code>/<code class="docutils literal notranslate"><span class="pre">LON_GPS</span></code>), P01 only where OG1 has none. Twelve links that did not resolve are fixed,
+<code class="docutils literal notranslate"><span class="pre">SA</span></code>’s link (no such OG1 term) is removed, and <code class="docutils literal notranslate"><span class="pre">DEPTH</span></code>, <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>, <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> and
+<code class="docutils literal notranslate"><span class="pre">SOUND_VELOCITY</span></code> (<code class="docutils literal notranslate"><span class="pre">SOUNDVEL</span></code>) gain one. Read <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> instead of <code class="docutils literal notranslate"><span class="pre">uri</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">standard_name</span></code> is a current CF standard name on every variable: <code class="docutils literal notranslate"><span class="pre">CHLA</span></code> is
+<code class="docutils literal notranslate"><span class="pre">mass_concentration_of_chlorophyll_a_in_sea_water</span></code> (was the deprecated
+<code class="docutils literal notranslate"><span class="pre">concentration_of_chlorophyll_in_sea_water</span></code>), <code class="docutils literal notranslate"><span class="pre">OXYSAT</span></code> is
+<code class="docutils literal notranslate"><span class="pre">fractional_saturation_of_oxygen_in_sea_water</span></code>; the names that are not CF are removed from
+<code class="docutils literal notranslate"><span class="pre">ED380</span></code>, <code class="docutils literal notranslate"><span class="pre">ED490</span></code>, <code class="docutils literal notranslate"><span class="pre">GLIDER_HORZ_VELO_MODEL</span></code>, <code class="docutils literal notranslate"><span class="pre">GLIDER_VERT_VELO_MODEL</span></code>,
+<code class="docutils literal notranslate"><span class="pre">GLIDER_VERT_VELO_PRESSURE</span></code> and <code class="docutils literal notranslate"><span class="pre">VERT_CURR_MODEL</span></code>.</p></li>
+<li><p>The unused <code class="docutils literal notranslate"><span class="pre">HUMIDITY</span></code>, <code class="docutils literal notranslate"><span class="pre">PRESSURE_AIR</span></code>, <code class="docutils literal notranslate"><span class="pre">TEMP_AIR</span></code>, <code class="docutils literal notranslate"><span class="pre">WIND_SPEED</span></code> and <code class="docutils literal notranslate"><span class="pre">WIND_DIRECTION</span></code> entries
+are removed from the variable attributes (no basestation variable maps to them).</p></li>
 </ul>
 </section>
 <section id="added">
@@ -240,11 +256,28 @@ parser is tested against, generated from <code class="docutils literal notransla
 <li><p><code class="docutils literal notranslate"><span class="pre">tests/data/calibcomm_answers.csv</span></code> (50 comments from 13 gliders, basestation 2.8, 2.10 and 3.0.6) and
 <code class="docutils literal notranslate"><span class="pre">scripts/collect_calibcomm.py</span></code>; tests that read the out-of-repo dev pack run when
 <code class="docutils literal notranslate"><span class="pre">SEAGLIDEROG1_DEV_DATA</span></code> is set.</p></li>
+<li><p>Offline copies of the NERC OG1 collection, the P01 terms in use and the CF standard-name table
+(<code class="docutils literal notranslate"><span class="pre">tests/data/vocabularies/</span></code>, written by <code class="docutils literal notranslate"><span class="pre">scripts/fetch_vocabularies.py</span></code>); the tests check every
+<code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> link and <code class="docutils literal notranslate"><span class="pre">standard_name</span></code> against them without the network.</p></li>
+<li><p>Docs page “Variable vocabulary”: every variable’s <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> term (with its label) and
+<code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, and the variables without a term, written from the configuration on every
+docs build.</p></li>
 </ul>
 </section>
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p>Every variable on <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>, <code class="docutils literal notranslate"><span class="pre">_QC</span></code> variables included, carries
+<code class="docutils literal notranslate"><span class="pre">coordinates</span> <span class="pre">=</span> <span class="pre">&quot;TIME</span> <span class="pre">LONGITUDE</span> <span class="pre">LATITUDE</span> <span class="pre">DEPTH&quot;</span></code> (OG1’s coordinates in the manual’s order,
+blank-separated as CF requires); the basestation’s <code class="docutils literal notranslate"><span class="pre">&quot;ctd_time</span> <span class="pre">longitude</span> <span class="pre">latitude</span> <span class="pre">ctd_depth&quot;</span></code>,
+which named variables the OG1 file does not have, no longer survives on the <code class="docutils literal notranslate"><span class="pre">_QC</span></code> and a few
+other variables.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TEMP_OXYGEN</span></code>’s <code class="docutils literal notranslate"><span class="pre">long_name</span></code> is OG1’s <code class="docutils literal notranslate"><span class="pre">TEMPDOXY</span></code> label (“Sea temperature from oxygen sensor
+ITS-90 scale”); it said “by CTD”.</p></li>
+<li><p>Placeholder <code class="docutils literal notranslate"><span class="pre">long_name</span></code>s are replaced: <code class="docutils literal notranslate"><span class="pre">TEMP_FREQ</span></code> and <code class="docutils literal notranslate"><span class="pre">COND_FREQ</span></code> are the frequencies reported
+by the CTD temperature and conductivity sensors; <code class="docutils literal notranslate"><span class="pre">O2_FREQ</span></code> takes OG1’s <code class="docutils literal notranslate"><span class="pre">FREQDOXY</span></code> label and
+term; <code class="docutils literal notranslate"><span class="pre">BBP470_REF</span></code> and <code class="docutils literal notranslate"><span class="pre">BBP700_REF</span></code> name the WET Labs BB2F <code class="docutils literal notranslate"><span class="pre">blueRef</span></code>/<code class="docutils literal notranslate"><span class="pre">redRef</span></code> as reported by
+the instrument (they read “What is this variable?” and “maybe dark counts”).</p></li>
 <li><p>Basestation 2.10 files (<code class="docutils literal notranslate"><span class="pre">gc_state_secs</span></code> written as seconds from the dive start) no longer put rows
 in January 1970; the output name and <code class="docutils literal notranslate"><span class="pre">time_coverage_start</span></code> take the dive’s real start.</p></li>
 <li><p>A current-year calibration date is no longer rejected, and the same comment no longer parses

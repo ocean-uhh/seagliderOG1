@@ -1,0 +1,668 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Variable vocabulary &mdash; seagliderOG1 0.2.0.post1.dev5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=ec389d5a"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Packaged defaults and your local tables" href="defaults.html" />
+    <link rel="prev" title="Unit mapping" href="units_mapping.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            seagliderOG1
+              <img src="_static/logo_seaglider.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demo: the sg271 sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo-output.html">Demo notebook</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">The conversion</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">What the conversion does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="phase.html">How the phase is assigned</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration_comments.html">How calibration comments are read</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Report</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_report.html">Example report</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_yaml.html">mission.yaml reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="units_mapping.html">Unit mapping</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Variable vocabulary</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#with-a-vocabulary-term">With a vocabulary term</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#without-a-vocabulary-term">Without a vocabulary term</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="defaults.html">Packaged defaults and your local tables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog / Migration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_3_0.html">Migrating to 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_1_0.html">Migrating to 0.1.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ocean-uhh/seagliderOG1">GitHub repository</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">seagliderOG1</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Variable vocabulary</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/variable_vocabulary.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="variable-vocabulary">
+<span id="id1"></span><h1>Variable vocabulary<a class="headerlink" href="#variable-vocabulary" title="Link to this heading"></a></h1>
+<p>Each variable in an OG1 file carries attributes from
+<code class="docutils literal notranslate"><span class="pre">seagliderOG1/config/OG1_variable_attributes.yaml</span></code>. This page lists, for every variable
+there, its <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> term and its <code class="docutils literal notranslate"><span class="pre">standard_name</span></code>. The tables are written from that file
+on every docs build.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">vocabulary</span></code></dt><dd><p>A link to the term that defines the variable, in NERC’s identifier form
+(<code class="docutils literal notranslate"><span class="pre">http://vocab.nerc.ac.uk/collection/OG1/current/TEMP/</span></code>). The term comes from the <a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/">OG1
+collection</a> wherever OG1 has one, and from
+<a class="reference external" href="http://vocab.nerc.ac.uk/collection/P01/current/">P01</a> only where it does not. A variable
+with no term in either carries no <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code>: platform and deployment metadata (OG1 gives
+them none), Seaglider engineering and flight-model variables, and times other than <code class="docutils literal notranslate"><span class="pre">TIME</span></code>.
+Variables ending <code class="docutils literal notranslate"><span class="pre">_RAW</span></code> share the term of the corrected variable: they are the same
+quantity before the basestation’s corrections.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">standard_name</span></code></dt><dd><p>A current name from the CF standard-name table, whose units the variable’s <code class="docutils literal notranslate"><span class="pre">units</span></code>
+convert to. Absent where CF has no name for the quantity.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">coordinates</span></code></dt><dd><p>Every variable on <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>, <code class="docutils literal notranslate"><span class="pre">_QC</span></code> variables included, carries
+<code class="docutils literal notranslate"><span class="pre">coordinates</span> <span class="pre">=</span> <span class="pre">&quot;TIME</span> <span class="pre">LONGITUDE</span> <span class="pre">LATITUDE</span> <span class="pre">DEPTH&quot;</span></code>: OG1’s four coordinates, in the
+manual’s order, separated by spaces as CF requires (the manual’s example separates them
+with commas).</p>
+</dd>
+</dl>
+<p>The tests check every term and name against offline copies of the OG1 collection, the P01 terms
+in use and the CF table (version 95), in <code class="docutils literal notranslate"><span class="pre">tests/data/vocabularies/</span></code>.
+<code class="docutils literal notranslate"><span class="pre">scripts/fetch_vocabularies.py</span></code> refreshes them.</p>
+<section id="with-a-vocabulary-term">
+<h2>With a vocabulary term<a class="headerlink" href="#with-a-vocabulary-term" title="Link to this heading"></a></h2>
+<p>The term label is the term’s preferred label in that copy.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 22.0%" />
+<col style="width: 16.0%" />
+<col style="width: 34.0%" />
+<col style="width: 28.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>vocabulary</p></th>
+<th class="head"><p>Term label</p></th>
+<th class="head"><p>standard_name</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AD2CP_HEADING</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/HEADING/">OG1 HEADING</a></p></td>
+<td><p>Orientation (horizontal relative to magnetic north) of measurement platform {heading}</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">AD2CP_PITCH</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/PITCH/">OG1 PITCH</a></p></td>
+<td><p>Orientation (pitch) of measurement platform by inclinometer</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AD2CP_PRES</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/PRES/">OG1 PRES</a></p></td>
+<td><p>Sea water pressure, equals 0 at sea-level</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_pressure</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">AD2CP_ROLL</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/ROLL/">OG1 ROLL</a></p></td>
+<td><p>Orientation (roll angle) of measurement platform by inclinometer</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AD2CP_TIME</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/TIME/">OG1 TIME</a></p></td>
+<td><p>epoch time (glider)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">time</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BBP470</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/BBP470/">OG1 BBP470</a></p></td>
+<td><p>Particle backscattering at 470 nanometers</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BBP700</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/BBP700/">OG1 BBP700</a></p></td>
+<td><p>Particle backscattering at 700 nanometers</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CDOM</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/CDOM/">OG1 CDOM</a></p></td>
+<td><p>Concentration of coloured dissolved organic matter in sea water</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CHLA</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/CHLA/">OG1 CHLA</a></p></td>
+<td><p>Chlorophyll-A</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mass_concentration_of_chlorophyll_a_in_sea_water</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CNDC</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/CNDC/">OG1 CNDC</a></p></td>
+<td><p>Electrical conductivity</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_electrical_conductivity</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CNDC_RAW</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/CNDC/">OG1 CNDC</a></p></td>
+<td><p>Electrical conductivity</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_electrical_conductivity</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DENSITY</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/DENSITY/">OG1 DENSITY</a></p></td>
+<td><p>Sea water density</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_density</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DEPTH</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/DEPTH/">OG1 DEPTH</a></p></td>
+<td><p>Depth below sea surface (zero at sea level) of measurement platform</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">depth</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DOXY</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/DOXY/">OG1 DOXY</a></p></td>
+<td><p>Dissolved oxygen</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mole_concentration_of_dissolved_molecular_oxygen_in_sea_water</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DPAR</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/DPAR/">OG1 DPAR</a></p></td>
+<td><p>Downwelling photosynthetic available radiation</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ED380</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/ED380/">OG1 ED380</a></p></td>
+<td><p>Downwelling irradiance at 380 nanometers</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ED490</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/ED490/">OG1 ED490</a></p></td>
+<td><p>Downwelling irradiance at 490 nanometers</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">EPSIFY01</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/P01/current/EPSIFY01/">P01 EPSIFY01</a></p></td>
+<td><p>Log10 turbulent kinetic energy dissipation {epsilon} per unit volume of the water body by turbulence profiler shear sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EPSIFY02</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/P01/current/EPSIFY02/">P01 EPSIFY02</a></p></td>
+<td><p>Log10 turbulent kinetic energy dissipation {epsilon} per unit volume of the water body by turbulence profiler shear sensor (second sensor)</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FLUOCDOM</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/FLUOCDOM/">OG1 FLUOCDOM</a></p></td>
+<td><p>Raw fluorescence from coloured dissolved organic matter sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">FLUOCHLA</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/FLUOCHLA/">OG1 FLUOCHLA</a></p></td>
+<td><p>Raw signal from chlorophyll-a fluorometer</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FLUOPHYC</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/FLUOPHYC/">OG1 FLUOPHYC</a></p></td>
+<td><p>Phycoerythrin signal from fluorescence sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">HEADING</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/HEADING/">OG1 HEADING</a></p></td>
+<td><p>Orientation (horizontal relative to magnetic north) of measurement platform {heading}</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LATITUDE</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/LAT/">OG1 LAT</a></p></td>
+<td><p>Latitude north</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">latitude</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/LAT_GPS/">OG1 LAT_GPS</a></p></td>
+<td><p>GPS fixed latitude</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">latitude</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LONGITUDE</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/LON/">OG1 LON</a></p></td>
+<td><p>Longitude east</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">longitude</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/LON_GPS/">OG1 LON_GPS</a></p></td>
+<td><p>GPS fixed longitude</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">longitude</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">O2_FREQ</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/FREQDOXY/">OG1 FREQDOXY</a></p></td>
+<td><p>Frequency reported by oxygen sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OXYSAT</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/OXYSAT/">OG1 OXYSAT</a></p></td>
+<td><p>Oxygen saturation by Optode</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fractional_saturation_of_oxygen_in_sea_water</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PHASE</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/PHASE/">OG1 PHASE</a></p></td>
+<td><p>Identifier of glider phase</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PHYC</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/PHYC/">OG1 PHYC</a></p></td>
+<td><p>Concentration of phycoerythrin by fluorometer</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PITCH</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/PITCH/">OG1 PITCH</a></p></td>
+<td><p>Orientation (pitch) of measurement platform by inclinometer</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/POTDENS0/">OG1 POTDENS0</a></p></td>
+<td><p>Potential density of water body at surface</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_potential_density</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PRES</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/PRES/">OG1 PRES</a></p></td>
+<td><p>Sea water pressure, equals 0 at sea-level</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_pressure</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/PROFILE_NUMBER/">OG1 PROFILE_NUMBER</a></p></td>
+<td><p>Identifier of numbered profile</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PSAL</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/PSAL/">OG1 PSAL</a></p></td>
+<td><p>Practical salinity</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_practical_salinity</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PSAL_RAW</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/PSAL/">OG1 PSAL</a></p></td>
+<td><p>Practical salinity</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_practical_salinity</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">RBBP700</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/RBBP700/">OG1 RBBP700</a></p></td>
+<td><p>Raw signal from backscattering sensor at 700 nanometers</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ROLL</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/ROLL/">OG1 ROLL</a></p></td>
+<td><p>Orientation (roll angle) of measurement platform by inclinometer</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SIGMA_T</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/SIGMA_T/">OG1 SIGMA_T</a></p></td>
+<td><p>Sigma-T</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_sigma_t</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">significant_wave_height</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/P01/current/GTDHZZ01/">P01 GTDHZZ01</a></p></td>
+<td><p>Significant wave height of waves {Hs} on the water body</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">significant_wave_period</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/P01/current/GTZHZZ01/">P01 GTZHZZ01</a></p></td>
+<td><p>Zero-crossing period of waves (highest one third) {significant wave period Ts} on the water body</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SIGTHETA</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/SIGTHETA/">OG1 SIGTHETA</a></p></td>
+<td><p>Sigma-theta</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_sigma_theta</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SOUND_VELOCITY</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/SOUNDVEL/">OG1 SOUNDVEL</a></p></td>
+<td><p>Sound velocity in the water body</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TCPUCHLA</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/TCPUCHLA/">OG1 TCPUCHLA</a></p></td>
+<td><p>Thermistor signal from backscattering meter and/or fluorometer</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TEMP</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/TEMP/">OG1 TEMP</a></p></td>
+<td><p>Sea temperature in-situ ITS-90 scale</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_temperature</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TEMP_OXYGEN</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/TEMPDOXY/">OG1 TEMPDOXY</a></p></td>
+<td><p>Sea temperature from oxygen sensor ITS-90 scale</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_temperature</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TEMP_RAW</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/TEMP/">OG1 TEMP</a></p></td>
+<td><p>Sea temperature in-situ ITS-90 scale</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_temperature</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">THETA</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/THETA/">OG1 THETA</a></p></td>
+<td><p>Sea water potential temperature</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_potential_temperature</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TIME</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/TIME/">OG1 TIME</a></p></td>
+<td><p>epoch time (glider)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">time</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TURB</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/OG1/current/TURB/">OG1 TURB</a></p></td>
+<td><p>Turbidity of water in the water body</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">VERT_CURR_MODEL</span></code></p></td>
+<td><p><a class="reference external" href="http://vocab.nerc.ac.uk/collection/P01/current/LRZAZZZZ/">P01 LRZAZZZZ</a></p></td>
+<td><p>Upward velocity of water current in the water body</p></td>
+<td><p>—</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="without-a-vocabulary-term">
+<h2>Without a vocabulary term<a class="headerlink" href="#without-a-vocabulary-term" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>long_name</p></th>
+<th class="head"><p>standard_name</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BATTERY_PACK</span></code></p></td>
+<td><p>battery packaging</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BATTERY_TYPE</span></code></p></td>
+<td><p>type of the battery</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BBP470_REF</span></code></p></td>
+<td><p>WET Labs BB2F blueRef, as reported by the instrument</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BBP700_REF</span></code></p></td>
+<td><p>WET Labs BB2F redRef, as reported by the instrument</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BBP_VFTEMP</span></code></p></td>
+<td><p>Raw temperature from backscatter sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BUOYANCY</span></code></p></td>
+<td><p>Buoyancy of vehicle, corrected for compression effects</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">COND_FREQ</span></code></p></td>
+<td><p>Frequency reported by the CTD conductivity sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CT</span></code></p></td>
+<td><p>Conservative temperature</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_conservative_temperature</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DAVG_CURR_EAST</span></code></p></td>
+<td><p>depth-averaged current in eastward direction</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">eastward_sea_water_velocity</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DAVG_CURR_EAST_QC</span></code></p></td>
+<td><p>depth-averaged current quality control</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">status_flag</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DAVG_CURR_NORTH</span></code></p></td>
+<td><p>depth-averaged current in northward direction</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">northward_sea_water_velocity</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DELTA_TIME_S</span></code></p></td>
+<td><p>Difference between sample times</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DEPLOYMENT_LATITUDE</span></code></p></td>
+<td><p>latitude of deployment</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">latitude</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DEPLOYMENT_LONGITUDE</span></code></p></td>
+<td><p>longitude of deployment</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">longitude</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DEPLOYMENT_TIME</span></code></p></td>
+<td><p>date of deployment</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">time</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DEPTH_Z</span></code></p></td>
+<td><p>glider depth</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">depth</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dive_number</span></code></p></td>
+<td><p>dive number</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">EAST_DISPLACEMENT</span></code></p></td>
+<td><p>eastward displacement of platform, from flight model</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GLIDE_ANGLE</span></code></p></td>
+<td><p>glide angle from hydrodynamic model</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GLIDE_SPEED</span></code></p></td>
+<td><p>glider speed from hydrodynamic model</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GLIDER_FIRMWARE_VERSION</span></code></p></td>
+<td><p>version of the internal glider firmware</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GLIDER_HORZ_VELO_MODEL</span></code></p></td>
+<td><p>glider_horizontal_speed_from_glider_flight_model</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GLIDER_VERT_VELO_MODEL</span></code></p></td>
+<td><p>glider vertical speed from glider flight model</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GLIDER_VERT_VELO_PRESSURE</span></code></p></td>
+<td><p>glider vertical speed from pressure</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ICES_CODE</span></code></p></td>
+<td><p>ICES platform code of the glider</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LANDSTATION_VERSION</span></code></p></td>
+<td><p>version of the server onshore</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">maximum_wave_height</span></code></p></td>
+<td><p>maximum wave height, from MOSE sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">mean_wave_period</span></code></p></td>
+<td><p>mean wave period, from MOSE sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">NORTH_DISPLACEMENT</span></code></p></td>
+<td><p>northward displacement of platform, from flight model</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">northward_displacement</span></code></p></td>
+<td><p>northward displacement of platform, from MOSE sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">percentage_error_lines</span></code></p></td>
+<td><p>percentage of error lines from MOSE sensor, used to calculate wave stats</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PITCH_CTL</span></code></p></td>
+<td><p>Pitch control of the glider</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_DEPTH_RATING</span></code></p></td>
+<td><p>depth limit in meters of the glider for this mission</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_MAKER</span></code></p></td>
+<td><p>glider manufacturer</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_MODEL</span></code></p></td>
+<td><p>model of the glider</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_NAME</span></code></p></td>
+<td><p>Local or nickname of the glider</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PLATFORM_SERIAL_NUMBER</span></code></p></td>
+<td><p>glider serial number</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ROLL_CTL</span></code></p></td>
+<td><p>Roll control of the glider</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SA</span></code></p></td>
+<td><p>Absolute salinity of the water body by CTD and computation using TEOS-10 algorithm</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sea_water_absolute_salinity</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SENSOR_type_serialnumber</span></code></p></td>
+<td><p>RBR Legato 3 CTD</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TELECOM_TYPE</span></code></p></td>
+<td><p>types of telecommunication systems used by the glider, multiple telecom type are separated by a comma</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TEMP_FREQ</span></code></p></td>
+<td><p>Frequency reported by the CTD temperature sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TIME_DOXY</span></code></p></td>
+<td><p>time for oxygen concentration in GMT epoch format</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code></p></td>
+<td><p>time of each GPS location</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TRACKING_SYSTEM</span></code></p></td>
+<td><p>type of tracking systems used by the glider, multiple tracking system are separated by a comma</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">VBD_CC</span></code></p></td>
+<td><p>Variable buoyancy device in cubic centimeters</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vertical_displacement</span></code></p></td>
+<td><p>Vertical displacement of platform, from MOSE sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">westward_displacement</span></code></p></td>
+<td><p>northward displacement of platform, from MOSE sensor</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">WMO_IDENTIFIER</span></code></p></td>
+<td><p>wmo id</p></td>
+<td><p>—</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="units_mapping.html" class="btn btn-neutral float-left" title="Unit mapping" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="defaults.html" class="btn btn-neutral float-right" title="Packaged defaults and your local tables" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Eleanor Frajka-Williams, Till Moritz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
