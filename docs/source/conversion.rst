@@ -54,7 +54,8 @@ The steps
    * add ``dive_number``, ``PROFILE_NUMBER`` and ``PHASE`` (from the glider's state table,
      G&C events and GPS fixes; see :ref:`phase`);
    * apply the OG1 vocabulary: rename, attach the OG1 attributes, convert units, mark the
-     coordinates, encode time. A variable with no OG1 name keeps its basestation name.
+     coordinates, encode time. A variable with no OG1 name keeps its basestation name, with
+     its units in the canonical spelling where the converter recognises them.
 
    *Page:* Derived variables; Variables.
 

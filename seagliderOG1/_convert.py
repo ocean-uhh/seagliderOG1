@@ -160,6 +160,69 @@ def _refuse_if_factor_off_range(
     )
 
 
+def _canonical_passthrough_units(
+    dsa: xr.Dataset, output_name: str, ledger: dict[str, list]
+) -> None:
+    """Write a passed-through variable's units in the canonical spelling, when it is known.
+
+    A variable with no OG1 name keeps its basestation name, values and attributes, but its
+    units are put in the same canonical spelling the mapped variables use, so downstream code
+    reads one spelling per unit: a spelling :data:`seagliderOG1.vocabularies.UNITS` relates to a
+    canonical one with factor 1 is relabelled (``g/kg`` -> ``g kg-1``); one with another
+    factor is converted the way a mapped variable is (values multiplied, ``original_units``
+    and a ``comment`` recorded, a ``conversion_units`` ledger entry). A per-dive scalar stored
+    as a string of per-dive values is relabelled only; one that would need its values
+    converted keeps its units as written. A spelling the table does not know, a variable
+    without units, and time variables are left as written.
+
+    Parameters
+    ----------
+    dsa : xarray.Dataset
+        The output dataset; the variable's values and attributes are changed in place.
+    output_name : str
+        The variable's name (its basestation name).
+    ledger : dict
+        The ``conversion_units`` accumulator (see :func:`_to_canonical_units`).
+
+    """
+    variable = dsa[output_name]
+    units = variable.attrs.get("units")
+    numeric = variable.dtype.kind in "iuf"
+    # A per-dive scalar of a multi-dive file is one string of per-dive values: its spelling
+    # can be relabelled, its values cannot be converted.
+    per_dive_string = variable.ndim == 0 and variable.dtype.kind in "USO"
+    if not isinstance(units, str) or not units or not (numeric or per_dive_string):
+        return
+    try:
+        canonical, factor = _vendored_units.resolve_units(
+            units, tables=vocabularies.UNITS
+        )
+    except _vendored_units.UnitsError:
+        return
+    if (canonical == units and factor == 1) or (factor != 1 and not numeric):
+        return
+    attributes = dict(variable.attrs)
+    attributes["units"] = canonical
+    if factor != 1:
+        dsa[output_name].data = variable.values * factor
+        dsa[output_name].encoding = {}
+        attributes.setdefault("original_units", units)
+        attributes["comment"] = _append_comment(
+            attributes.get("comment"), f"converted from {units} (x{factor:g})"
+        )
+        ledger[output_name] = [units, canonical, factor]
+        _warn_once(
+            _UNIT_CONVERTED,
+            output_name,
+            "%s: %s -> %s x%g",
+            output_name,
+            units,
+            canonical,
+            factor,
+        )
+    dsa[output_name].attrs = attributes
+
+
 def _to_canonical_units(
     ds: xr.Dataset,
     original_name: str,
@@ -1573,6 +1636,16 @@ def convert(
         {str(v) for ds in list_of_datasets for v in ds.variables}
     )
 
+    # Canonical unit spellings on the variables the per-dive step does not reach: the scalars
+    # added after the concat, a second sensor's suffixed copy (TEMP_2), and OG1-named
+    # variables whose configuration gives no units (PITCH). Variables already in canonical
+    # units are left alone.
+    units_ledger = json.loads(ds_og1.attrs.get("conversion_units", "{}"))
+    for name in list(ds_og1.variables):
+        _canonical_passthrough_units(ds_og1, name, units_ledger)
+    if units_ledger:
+        ds_og1.attrs["conversion_units"] = json.dumps(units_ledger)
+
     # Write down which source each global came from (names only; values are in the
     # file). Every written global is categorised; a converter-set global not otherwise
     # attributed is "derived".
@@ -2312,6 +2385,7 @@ def apply_og1_vocabulary(
                     correction["to"],
                     raw_units,
                 )
+            _canonical_passthrough_units(dsa, output_name, conversion_ledger)
             continue
 
         og1_attributes = vocabularies.vocab_attrs.get(

@@ -137,7 +137,13 @@ def add_profiles(ds: xr.Dataset) -> xr.Dataset:
         ("PROFILE_DIRECTION", direction, _phase.PROFILE_DIRECTION_ATTRS, 0),
         ("SEGMENT_NUMBER", segment, _phase.SEGMENT_NUMBER_ATTRS, _phase.NUMBER_FILL),
     ):
-        ds[name] = (["N_MEASUREMENTS"], values, dict(attrs))
+        # The OG1 attributes from the configuration (long_name, units, vocabulary), then the
+        # OG1 calculation-method text.
+        ds[name] = (
+            ["N_MEASUREMENTS"],
+            values,
+            {**vocabularies.vocab_attrs.get(name, {}), **attrs},
+        )
         ds[name].encoding["_FillValue"] = values.dtype.type(fill)
     return ds
 
@@ -173,7 +179,7 @@ def add_depth(ds: xr.Dataset) -> xr.Dataset:
     # Assign the calculated depth to a new variable in the dataset
 
     ds["DEPTH_Z"].attrs = {
-        "units": "meters",
+        "units": "m",
         "positive": "up",
         "standard_name": "depth",
         "comment": "Depth calculated from pressure using gsw library, positive up.",

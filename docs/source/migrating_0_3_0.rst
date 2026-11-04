@@ -94,6 +94,10 @@ Variable attributes
 * ``uri`` is renamed ``vocabulary`` (OG1's name); read ``vocabulary``. See
   :doc:`variable_vocabulary`.
 * Every variable on ``N_MEASUREMENTS`` carries ``coordinates = "TIME LONGITUDE LATITUDE DEPTH"``.
+* Units are written in one canonical spelling on every variable, including those that keep
+  their basestation names (``g kg-1``, ``kg m-3``, ``degree_Celsius``, ``m``, ``degree``). A
+  passed-through variable in ``cm/s`` is converted to ``m s-1``, with ``original_units`` and a
+  ``conversion_units`` entry. Spellings the converter does not recognise are left as written.
 
 Basestation 2.10 files
 ----------------------

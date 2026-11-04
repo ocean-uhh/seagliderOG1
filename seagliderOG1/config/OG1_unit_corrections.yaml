@@ -39,6 +39,11 @@ sigma_theta: {from: "g/m^3", to: "kg m-3"}
 # _convert.py is the guard: a value that is NOT degree-magnitude (e.g. a genuine cm/s
 # glide rate mislabelled the same way) lands out of range and is flagged, not hidden.
 glide_angle: {from: "cm/s", to: "degrees"}
+# glide_angle_gsm (the glide-slope-model angle, passed through under its own name) carries
+# the same mislabel on basestation 2.8 and 2.10: labelled cm/s, degree-magnitude values on
+# every sampler file (median ~20, range about [-82, 35]). Corrected so the canonical-units
+# step relabels it to degrees instead of converting degrees as if they were cm/s.
+glide_angle_gsm: {from: "cm/s", to: "degrees"}
 
 # --- Unlabelled source, OG1 label adopted -------------------------------------
 # from: null declares an unlabelled source (the basestation file carries no units; the values are

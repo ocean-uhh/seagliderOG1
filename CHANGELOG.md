@@ -56,6 +56,15 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   `None Found`) are no longer written.
 - `sensors.<key>.calibration_date` in `mission.yaml` must be an ISO date (`YYYY-MM-DD`);
   `seagliderOG1 validate` reports anything else as an ERROR.
+- Variables passed through under their basestation names now take the canonical unit spellings
+  the OG1 variables use (`g/kg` → `g kg-1`, `kg/m^3` → `kg m-3`, `degrees_Celsius` →
+  `degree_Celsius`, `meters` → `m`); one in `cm/s` is converted to `m s-1` (values ×0.01, with
+  `original_units`, a `comment` and a `conversion_units` entry). The same applies to the scalars and
+  to OG1-named variables whose configuration gives no units (`PITCH`, `ROLL`, `HEADING` in
+  `degree`). Spellings the units table does not know are left as written, and a per-dive scalar
+  stored as text keeps units that would need its values converted. `glide_angle_gsm`, labelled
+  `cm/s` by basestation 2.8 and 2.10 but holding degrees, is relabelled `degree` like
+  `glide_angle`. `GLIDE_ANGLE` is now `degree`; the wave periods `seconds`; `DEPTH_Z` `m`.
 - The pre-0.1.0 names that warned or raised through 0.1.x and 0.2.x are removed, with the
   `convertOG1` module; using one gives Python's ordinary `AttributeError` (`ImportError` for
   `from ... import`). `plotters.show_*` no
@@ -125,6 +134,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Fixed
 
+- `PROFILE_NUMBER` carries its `vocabulary` in the file (it was in the configuration but not
+  applied); `PROFILE_DIRECTION` and `SEGMENT_NUMBER` are in the configuration as OG1 variables,
+  so the conversion page and `seagliderOG1 list` treat them as OG1.
 - Every variable on `N_MEASUREMENTS`, `_QC` variables included, carries
   `coordinates = "TIME LONGITUDE LATITUDE DEPTH"` (OG1's coordinates in the manual's order,
   blank-separated as CF requires); the basestation's `"ctd_time longitude latitude ctd_depth"`,
