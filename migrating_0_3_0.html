@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Migrating to 0.3.0 &mdash; seagliderOG1 0.2.0.post1.dev5 documentation</title>
+  <title>Migrating to 0.3.0 &mdash; seagliderOG1 0.2.0.post1.dev6 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=ec389d5a"></script>
+      <script src="_static/documentation_options.js?v=dbc01730"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -79,6 +79,8 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Migrating to 0.3.0</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#phase">PHASE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#salinity-no-sa-or-ct">Salinity: no <code class="docutils literal notranslate"><span class="pre">SA</span></code> or <code class="docutils literal notranslate"><span class="pre">CT</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#variable-attributes">Variable attributes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#basestation-2-10-files">Basestation 2.10 files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sensor-serial-numbers-and-calibration-dates">Sensor serial numbers and calibration dates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#removed-names">Removed names</a></li>
@@ -125,8 +127,8 @@ that change what a file holds or what a call accepts, and will be completed befo
 tag.</p>
 </div>
 <p>0.3.0 changes the output: reconvert your missions. Nothing on this page needs a code change
-unless you read <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>, <code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code> or the <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> serial numbers and dates, or still
-import a pre-0.1.0 name.</p>
+unless you read <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>, <code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code>, <code class="docutils literal notranslate"><span class="pre">SA</span></code>/<code class="docutils literal notranslate"><span class="pre">CT</span></code>, <code class="docutils literal notranslate"><span class="pre">uri</span></code> or the <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> serial numbers
+and dates, or still import a pre-0.1.0 name.</p>
 <section id="phase">
 <h2>PHASE<a class="headerlink" href="#phase" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">PHASE</span></code> is assigned from what the glider recorded it did (see <a class="reference internal" href="phase.html"><span class="doc">How the phase is assigned</span></a>). On the same
@@ -198,6 +200,32 @@ it is written in lower case like the other non-OG1 variables.</p>
 </dd>
 </dl>
 </section>
+<section id="salinity-no-sa-or-ct">
+<h2>Salinity: no <code class="docutils literal notranslate"><span class="pre">SA</span></code> or <code class="docutils literal notranslate"><span class="pre">CT</span></code><a class="headerlink" href="#salinity-no-sa-or-ct" title="Link to this heading"></a></h2>
+<p>Files carry practical salinity (<code class="docutils literal notranslate"><span class="pre">PSAL</span></code>) only, as TEOS-10 recommends archiving. 0.2.0 renamed a
+basestation file’s <code class="docutils literal notranslate"><span class="pre">absolute_salinity</span></code> and <code class="docutils literal notranslate"><span class="pre">conservative_temperature</span></code> to <code class="docutils literal notranslate"><span class="pre">SA</span></code> and <code class="docutils literal notranslate"><span class="pre">CT</span></code>;
+they now pass through under those names, with the basestation’s own attributes (for example
+<code class="docutils literal notranslate"><span class="pre">units</span> <span class="pre">=</span> <span class="pre">&quot;g/kg&quot;</span></code>, no <code class="docutils literal notranslate"><span class="pre">standard_name</span></code>). <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> is still written (computed with TEOS-10).
+Compute SA and CT when you need them:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">gsw</span>
+
+<span class="n">SA</span> <span class="o">=</span> <span class="n">gsw</span><span class="o">.</span><span class="n">SA_from_SP</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">PSAL</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">PRES</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">LATITUDE</span><span class="p">)</span>
+<span class="n">CT</span> <span class="o">=</span> <span class="n">gsw</span><span class="o">.</span><span class="n">CT_from_t</span><span class="p">(</span><span class="n">SA</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">TEMP</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">PRES</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="variable-attributes">
+<h2>Variable attributes<a class="headerlink" href="#variable-attributes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">uri</span></code> is renamed <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> (OG1’s name); read <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code>. See
+<a class="reference internal" href="variable_vocabulary.html"><span class="doc">Variable vocabulary</span></a>.</p></li>
+<li><p>Every variable on <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> carries <code class="docutils literal notranslate"><span class="pre">coordinates</span> <span class="pre">=</span> <span class="pre">&quot;TIME</span> <span class="pre">LONGITUDE</span> <span class="pre">LATITUDE</span> <span class="pre">DEPTH&quot;</span></code>.</p></li>
+<li><p>Units are written in one canonical spelling on every variable, including those that keep
+their basestation names (<code class="docutils literal notranslate"><span class="pre">g</span> <span class="pre">kg-1</span></code>, <code class="docutils literal notranslate"><span class="pre">kg</span> <span class="pre">m-3</span></code>, <code class="docutils literal notranslate"><span class="pre">degree_Celsius</span></code>, <code class="docutils literal notranslate"><span class="pre">m</span></code>, <code class="docutils literal notranslate"><span class="pre">degree</span></code>). A
+passed-through variable in <code class="docutils literal notranslate"><span class="pre">cm/s</span></code> is converted to <code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">s-1</span></code>, with <code class="docutils literal notranslate"><span class="pre">original_units</span></code> and a
+<code class="docutils literal notranslate"><span class="pre">conversion_units</span></code> entry. Spellings the converter does not recognise are left as written.</p></li>
+</ul>
+</section>
 <section id="basestation-2-10-files">
 <h2>Basestation 2.10 files<a class="headerlink" href="#basestation-2-10-files" title="Link to this heading"></a></h2>
 <p>Files whose <code class="docutils literal notranslate"><span class="pre">gc_state_secs</span></code> are seconds from the dive start (basestation 2.10) no longer put
@@ -244,8 +272,26 @@ multi-channel instruments, <code class="docutils literal notranslate"><span clas
 </section>
 <section id="removed-names">
 <h2>Removed names<a class="headerlink" href="#removed-names" title="Link to this heading"></a></h2>
-<p><em>To be completed with the release.</em> The pre-0.1.0 names that warn in 0.1.x and 0.2.x are
-removed in 0.3.0; <a class="reference internal" href="migrating_0_1_0.html"><span class="doc">Migrating to 0.1.0</span></a> gives each one’s replacement.</p>
+<p>The pre-0.1.0 names that warned or raised through 0.1.x and 0.2.x are removed. Using one gives
+Python’s ordinary <code class="docutils literal notranslate"><span class="pre">AttributeError</span></code> (<code class="docutils literal notranslate"><span class="pre">ImportError</span></code> for <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">...</span> <span class="pre">import</span></code>); <a class="reference internal" href="migrating_0_1_0.html"><span class="doc">Migrating to 0.1.0</span></a> gives each one’s replacement:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">readers</span></code>: <code class="docutils literal notranslate"><span class="pre">load_basestation_files</span></code>, <code class="docutils literal notranslate"><span class="pre">load_first_basestation_file</span></code>,
+<code class="docutils literal notranslate"><span class="pre">scan_and_repair_files</span></code>, <code class="docutils literal notranslate"><span class="pre">repair_netcdf_time_metadata_inplace</span></code>, <code class="docutils literal notranslate"><span class="pre">profnum_from_filename</span></code>,
+<code class="docutils literal notranslate"><span class="pre">glider_sn_from_filename</span></code>, <code class="docutils literal notranslate"><span class="pre">load_sample_dataset</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">writers</span></code>: <code class="docutils literal notranslate"><span class="pre">save_dataset</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tools</span></code>: <code class="docutils literal notranslate"><span class="pre">calc_Z</span></code>, <code class="docutils literal notranslate"><span class="pre">assign_phase</span></code>, <code class="docutils literal notranslate"><span class="pre">reformat_units_str</span></code>, <code class="docutils literal notranslate"><span class="pre">reformat_units_var</span></code>,
+<code class="docutils literal notranslate"><span class="pre">convert_units_var</span></code>, <code class="docutils literal notranslate"><span class="pre">OG1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">print_OG1_mapping_summary</span></code> and the pipeline
+internals (<code class="docutils literal notranslate"><span class="pre">og1_name_mapping</span></code>, <code class="docutils literal notranslate"><span class="pre">gather_sensor_info</span></code>, <code class="docutils literal notranslate"><span class="pre">add_sensor_to_dataset</span></code>,
+<code class="docutils literal notranslate"><span class="pre">merge_datasets_along_time</span></code>, <code class="docutils literal notranslate"><span class="pre">extract_scalar_parameters</span></code>, <code class="docutils literal notranslate"><span class="pre">add_scalar_parameters</span></code>,
+<code class="docutils literal notranslate"><span class="pre">set_best_dtype</span></code>);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">contributors</span></code>: <code class="docutils literal notranslate"><span class="pre">registry_institutions</span></code>, <code class="docutils literal notranslate"><span class="pre">normalize_orcid</span></code>, <code class="docutils literal notranslate"><span class="pre">normalize_role</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vocabularies</span></code>: <code class="docutils literal notranslate"><span class="pre">load_default_contributors</span></code>, <code class="docutils literal notranslate"><span class="pre">contrib_to_append</span></code>, <code class="docutils literal notranslate"><span class="pre">unit_str_format</span></code>,
+<code class="docutils literal notranslate"><span class="pre">unit1_to_unit2</span></code>, <code class="docutils literal notranslate"><span class="pre">preferred_units</span></code>;</p></li>
+<li><p>the <code class="docutils literal notranslate"><span class="pre">convertOG1</span></code> module;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plotters.show_*</span></code> no longer accept a file path: pass an open dataset.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">tools.add_profile_number</span></code> (and its old name <code class="docutils literal notranslate"><span class="pre">assign_profile_number</span></code>) is also removed; see
+<code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> above.</p>
 </section>
 </section>
 

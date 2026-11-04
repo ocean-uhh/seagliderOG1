@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.tools &mdash; seagliderOG1 0.2.0.post1.dev5 documentation</title>
+  <title>seagliderOG1.tools &mdash; seagliderOG1 0.2.0.post1.dev6 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=ec389d5a"></script>
+      <script src="../../_static/documentation_options.js?v=dbc01730"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -255,7 +255,13 @@
         <span class="p">(</span><span class="s2">"PROFILE_DIRECTION"</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">_phase</span><span class="o">.</span><span class="n">PROFILE_DIRECTION_ATTRS</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">"SEGMENT_NUMBER"</span><span class="p">,</span> <span class="n">segment</span><span class="p">,</span> <span class="n">_phase</span><span class="o">.</span><span class="n">SEGMENT_NUMBER_ATTRS</span><span class="p">,</span> <span class="n">_phase</span><span class="o">.</span><span class="n">NUMBER_FILL</span><span class="p">),</span>
     <span class="p">):</span>
-        <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span> <span class="n">values</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">attrs</span><span class="p">))</span>
+        <span class="c1"># The OG1 attributes from the configuration (long_name, units, vocabulary), then the</span>
+        <span class="c1"># OG1 calculation-method text.</span>
+        <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">],</span>
+            <span class="n">values</span><span class="p">,</span>
+            <span class="p">{</span><span class="o">**</span><span class="n">vocabularies</span><span class="o">.</span><span class="n">vocab_attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{}),</span> <span class="o">**</span><span class="n">attrs</span><span class="p">},</span>
+        <span class="p">)</span>
         <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="s2">"_FillValue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">ds</span></div>
 
@@ -294,7 +300,7 @@
     <span class="c1"># Assign the calculated depth to a new variable in the dataset</span>
 
     <span class="n">ds</span><span class="p">[</span><span class="s2">"DEPTH_Z"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">"units"</span><span class="p">:</span> <span class="s2">"meters"</span><span class="p">,</span>
+        <span class="s2">"units"</span><span class="p">:</span> <span class="s2">"m"</span><span class="p">,</span>
         <span class="s2">"positive"</span><span class="p">:</span> <span class="s2">"up"</span><span class="p">,</span>
         <span class="s2">"standard_name"</span><span class="p">:</span> <span class="s2">"depth"</span><span class="p">,</span>
         <span class="s2">"comment"</span><span class="p">:</span> <span class="s2">"Depth calculated from pressure using gsw library, positive up."</span><span class="p">,</span>
@@ -457,50 +463,6 @@
                 <span class="n">ds</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"calendar"</span><span class="p">]</span> <span class="o">=</span> <span class="n">OG1_TIME_CALENDAR</span>
     <span class="k">return</span> <span class="n">ds</span></div>
 
-
-
-<span class="c1"># ===============================================================================</span>
-<span class="c1"># Unused functions</span>
-<span class="c1"># ===============================================================================</span>
-
-
-<span class="c1"># --- deprecated v0.0.2 names (removed in 0.3.0; see seagliderOG1._deprecated) ----------</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1</span><span class="w"> </span><span class="kn">import</span> <span class="n">_deprecated</span>  <span class="c1"># noqa: E402  # shims follow the definitions above</span>
-
-<span class="n">calc_Z</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">_renamed</span><span class="p">(</span><span class="n">add_depth</span><span class="p">,</span> <span class="s2">"tools.calc_Z"</span><span class="p">,</span> <span class="s2">"tools.add_depth"</span><span class="p">)</span>
-<span class="n">assign_phase</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">_renamed</span><span class="p">(</span><span class="n">add_phase</span><span class="p">,</span> <span class="s2">"tools.assign_phase"</span><span class="p">,</span> <span class="s2">"tools.add_phase"</span><span class="p">)</span>
-
-<span class="c1"># The three unit helpers now resolve through the units view (vocabularies.UNITS); the ad-hoc</span>
-<span class="c1"># unit tables they used are gone. Kept as warning shims for one release (removed 0.3.0).</span>
-<span class="n">reformat_units_str</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">reformat_units_str</span>
-<span class="n">reformat_units_var</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">reformat_units_var</span>
-<span class="n">convert_units_var</span> <span class="o">=</span> <span class="n">_deprecated</span><span class="o">.</span><span class="n">convert_units_var</span>
-
-<span class="n">_REMOVED_TOOLS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">"OG1_name_mapping"</span><span class="p">:</span> <span class="p">(</span>
-        <span class="s2">"the basestation -&gt; OG1 name mapping is built inside seagliderOG1.convert; "</span>
-        <span class="s2">"'seagliderOG1 inspect --conversion FILE.nc' prints what was renamed."</span>
-    <span class="p">),</span>
-    <span class="s2">"print_OG1_mapping_summary"</span><span class="p">:</span> <span class="p">(</span>
-        <span class="s2">"the mapping is built inside seagliderOG1.convert; "</span>
-        <span class="s2">"'seagliderOG1 inspect --conversion FILE.nc' prints what was renamed."</span>
-    <span class="p">),</span>
-<span class="p">}</span>
-<span class="n">_REMOVED_TOOLS</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-    <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span>
-        <span class="p">(</span>
-            <span class="s2">"og1_name_mapping"</span><span class="p">,</span>
-            <span class="s2">"gather_sensor_info"</span><span class="p">,</span>
-            <span class="s2">"add_sensor_to_dataset"</span><span class="p">,</span>
-            <span class="s2">"merge_datasets_along_time"</span><span class="p">,</span>
-            <span class="s2">"extract_scalar_parameters"</span><span class="p">,</span>
-            <span class="s2">"add_scalar_parameters"</span><span class="p">,</span>
-            <span class="s2">"set_best_dtype"</span><span class="p">,</span>
-        <span class="p">),</span>
-        <span class="s2">"a conversion-pipeline internal, private since 0.1.0; call seagliderOG1.convert."</span><span class="p">,</span>
-    <span class="p">)</span>
-<span class="p">)</span>
-<span class="n">_deprecated</span><span class="o">.</span><span class="n">install_removed</span><span class="p">(</span><span class="nb">globals</span><span class="p">(),</span> <span class="n">_REMOVED_TOOLS</span><span class="p">)</span>
 </pre></div>
 
            </div>

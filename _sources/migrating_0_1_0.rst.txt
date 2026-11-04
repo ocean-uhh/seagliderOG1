@@ -4,21 +4,28 @@ Migrating to 0.1.0
 ==================
 
 0.1.0 reshapes the public API into a small set of verbs and changes the output format. To ease
-the move, the pre-0.1.0 names are kept for one release: most are **still
-importable and warn**, a few are **removed and raise** with a message that points back here.
+the move, the pre-0.1.0 names were kept through 0.1.x and 0.2.x: most were **still
+importable and warned**, a few were **removed and raised** with a message that pointed back here.
+Since 0.3.0 all of them are gone (see the note below).
 ("Pre-0.1.0" because a few of these names never shipped in a tagged release — they lived on
 ``main`` between 0.0.2 and 0.1.0; they are marked where they appear.)
 
 This page is organised by what you do in a notebook — load, convert, write, plot, metadata —
 so you can find the line you have and read the line to write. Each old name is marked:
 
-- *(warns)* — still importable until 0.3.0. It works, delegates to the new name, and prints a
-  ``DeprecationWarning`` naming the new spelling. Change it at your leisure before 0.3.0.
-- *(raises)* — removed. Importing or calling it raises with a message that says why and what
-  to use instead (the same text as the relevant section below).
+- *(warns)* — in 0.1.x and 0.2.x, still importable: it delegated to the new name and printed a
+  ``DeprecationWarning`` naming the new spelling.
+- *(raises)* — in 0.1.x and 0.2.x, importing or calling it raised with a message that said why
+  and what to use instead (the same text as the relevant section below).
 - *(changed)* — not shimmed: the call shape changed, so update it now.
 
-The shims are removed in 0.3.0; see the :doc:`changelog`.
+.. note::
+
+   **Since 0.3.0 every old name on this page is gone**, *(warns)* and *(raises)* alike: using one
+   gives Python's ordinary ``AttributeError`` (``ImportError`` for ``from ... import``,
+   ``ModuleNotFoundError`` for ``convertOG1``).
+   The marks record how 0.1.x and 0.2.x behaved; the replacement in each row still applies.
+   See :doc:`migrating_0_3_0`.
 
 The whole mission in one call
 -----------------------------
@@ -69,8 +76,8 @@ the same function with the old positional arguments if you prefer them.
 Convert
 -------
 
-``convertOG1.convert_to_OG1`` *(warns)* → ``convert``. The old module ``convertOG1.py`` is a
-tombstone; importing it is silent, and each name warns or raises when used. ``convert``
+``convertOG1.convert_to_OG1`` *(warns)* → ``convert``. The old module ``convertOG1.py`` was a
+tombstone through 0.2.x and is removed in 0.3.0. ``convert``
 returns a single ``Dataset`` (not a ``(dataset, var_list)`` tuple) and takes a sequence:
 
 .. code-block:: python
@@ -143,8 +150,8 @@ unrecognised institution is no longer stamped with a default EDMO code. The remo
 Names that no longer exist, and why
 -----------------------------------
 
-These are *(raises)*: calling or importing one raises with the message below rather than
-returning something different from what it used to.
+These are *(raises)*: through 0.2.x, calling or importing one raised with the message below
+rather than returning something different from what it used to.
 
 - ``convertOG1.process_and_save_data`` — it filled platform, contributor and institution
   metadata from package defaults, which were removed so no file is written with someone else's
@@ -173,7 +180,7 @@ returning something different from what it used to.
 Other renamed names
 -------------------
 
-All *(warns)* — importable until 0.3.0, delegating to the new name. Rows marked *(main only)*
+All *(warns)* — importable through 0.2.x, delegating to the new name; removed in 0.3.0. Rows marked *(main only)*
 never shipped in a tagged release; they lived on ``main`` between 0.0.2 and 0.1.0, so if you
 installed from PyPI you never had them — they are shimmed for development installs.
 
@@ -204,7 +211,7 @@ installed from PyPI you never had them — they are shimmed for development inst
    * - ``contributors.registry_institutions`` / ``normalize_orcid`` / ``normalize_role`` *(main only)*
      - ``contributors.institution_registry`` / ``canonical_orcid`` / ``canonical_role``
    * - ``firstrun=`` keyword (e.g. ``tools.convert_units_var(..., firstrun=...)``)
-     - removed; accepted and ignored with a warning. Progress goes through
+     - removed (accepted and ignored with a warning through 0.2.x). Progress goes through
        ``logging.getLogger("seagliderOG1")`` (the CLI ``-v`` sets the level)
 
 Output-format changes

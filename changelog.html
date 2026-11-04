@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Changelog &mdash; seagliderOG1 0.2.0.post1.dev5 documentation</title>
+  <title>Changelog &mdash; seagliderOG1 0.2.0.post1.dev6 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=ec389d5a"></script>
+      <script src="_static/documentation_options.js?v=dbc01730"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -204,6 +204,25 @@ and <code class="docutils literal notranslate"><span class="pre">on</span></code
 <code class="docutils literal notranslate"><span class="pre">None</span> <span class="pre">Found</span></code>) are no longer written.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sensors.&lt;key&gt;.calibration_date</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> must be an ISO date (<code class="docutils literal notranslate"><span class="pre">YYYY-MM-DD</span></code>);
 <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">validate</span></code> reports anything else as an ERROR.</p></li>
+<li><p>Variables passed through under their basestation names now take the canonical unit spellings
+the OG1 variables use (<code class="docutils literal notranslate"><span class="pre">g/kg</span></code> → <code class="docutils literal notranslate"><span class="pre">g</span> <span class="pre">kg-1</span></code>, <code class="docutils literal notranslate"><span class="pre">kg/m^3</span></code> → <code class="docutils literal notranslate"><span class="pre">kg</span> <span class="pre">m-3</span></code>, <code class="docutils literal notranslate"><span class="pre">degrees_Celsius</span></code> →
+<code class="docutils literal notranslate"><span class="pre">degree_Celsius</span></code>, <code class="docutils literal notranslate"><span class="pre">meters</span></code> → <code class="docutils literal notranslate"><span class="pre">m</span></code>); one in <code class="docutils literal notranslate"><span class="pre">cm/s</span></code> is converted to <code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">s-1</span></code> (values ×0.01, with
+<code class="docutils literal notranslate"><span class="pre">original_units</span></code>, a <code class="docutils literal notranslate"><span class="pre">comment</span></code> and a <code class="docutils literal notranslate"><span class="pre">conversion_units</span></code> entry). The same applies to the scalars and
+to OG1-named variables whose configuration gives no units (<code class="docutils literal notranslate"><span class="pre">PITCH</span></code>, <code class="docutils literal notranslate"><span class="pre">ROLL</span></code>, <code class="docutils literal notranslate"><span class="pre">HEADING</span></code> in
+<code class="docutils literal notranslate"><span class="pre">degree</span></code>). Spellings the units table does not know are left as written, and a per-dive scalar
+stored as text keeps units that would need its values converted. <code class="docutils literal notranslate"><span class="pre">glide_angle_gsm</span></code>, labelled
+<code class="docutils literal notranslate"><span class="pre">cm/s</span></code> by basestation 2.8 and 2.10 but holding degrees, is relabelled <code class="docutils literal notranslate"><span class="pre">degree</span></code> like
+<code class="docutils literal notranslate"><span class="pre">glide_angle</span></code>. <code class="docutils literal notranslate"><span class="pre">GLIDE_ANGLE</span></code> is now <code class="docutils literal notranslate"><span class="pre">degree</span></code>; the wave periods <code class="docutils literal notranslate"><span class="pre">seconds</span></code>; <code class="docutils literal notranslate"><span class="pre">DEPTH_Z</span></code> <code class="docutils literal notranslate"><span class="pre">m</span></code>.</p></li>
+<li><p>The pre-0.1.0 names that warned or raised through 0.1.x and 0.2.x are removed, with the
+<code class="docutils literal notranslate"><span class="pre">convertOG1</span></code> module; using one gives Python’s ordinary <code class="docutils literal notranslate"><span class="pre">AttributeError</span></code> (<code class="docutils literal notranslate"><span class="pre">ImportError</span></code> for
+<code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">...</span> <span class="pre">import</span></code>). <code class="docutils literal notranslate"><span class="pre">plotters.show_*</span></code> no
+longer accept a file path. The replacements are in <em>Migrating to 0.1.0</em>; the list is in
+<em>Migrating to 0.3.0</em>.</p></li>
+<li><p>No <code class="docutils literal notranslate"><span class="pre">SA</span></code> or <code class="docutils literal notranslate"><span class="pre">CT</span></code> in the output: files carry practical salinity (<code class="docutils literal notranslate"><span class="pre">PSAL</span></code>), as TEOS-10 recommends
+archiving (SA depends on the gsw version’s absolute-salinity-anomaly atlas). A basestation file’s
+<code class="docutils literal notranslate"><span class="pre">absolute_salinity</span></code> and <code class="docutils literal notranslate"><span class="pre">conservative_temperature</span></code>, renamed <code class="docutils literal notranslate"><span class="pre">SA</span></code>/<code class="docutils literal notranslate"><span class="pre">CT</span></code> in 0.2.0, pass through
+under those names with the basestation’s own attributes. <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> is still derived (SA and CT computed on the way, not written).
+Compute SA and CT with <code class="docutils literal notranslate"><span class="pre">gsw.SA_from_SP</span></code> and <code class="docutils literal notranslate"><span class="pre">gsw.CT_from_t</span></code> when needed.</p></li>
 <li><p>The variable attribute <code class="docutils literal notranslate"><span class="pre">uri</span></code> is renamed <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code>, OG1’s name for it. Every link names a
 current term in NERC’s identifier form (<code class="docutils literal notranslate"><span class="pre">http://vocab.nerc.ac.uk/collection/OG1/current/TEMP/</span></code>):
 the OG1 term wherever OG1 has one (<code class="docutils literal notranslate"><span class="pre">TIME</span></code>, <code class="docutils literal notranslate"><span class="pre">DOXY</span></code>, <code class="docutils literal notranslate"><span class="pre">CHLA</span></code>, the irradiance, backscatter and
@@ -227,9 +246,9 @@ are removed from the variable attributes (no basestation variable maps to them).
 <li><p>A phase page, <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_phase.html</span></code>, is written beside the conversion page (<code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code>,
 <code class="docutils literal notranslate"><span class="pre">report</span></code>): how <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> was assigned, rows per phase, one dive from the middle of the
 mission, every dive’s phase shares with its depth and duration, and pitch against dP/dt.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">SA</span></code>, <code class="docutils literal notranslate"><span class="pre">CT</span></code> and <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> (TEOS-10, via gsw) are added when the basestation does not write them;
-<code class="docutils literal notranslate"><span class="pre">PSAL</span></code> is computed from conductivity only when a file has no salinity. Each carries <code class="docutils literal notranslate"><span class="pre">sources</span></code> and
-a <code class="docutils literal notranslate"><span class="pre">comment</span></code> naming the gsw function and version, and is listed in <code class="docutils literal notranslate"><span class="pre">conversion_derived_variables</span></code>.
+<li><p><code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> (TEOS-10, via gsw) is added when the basestation does not write it; <code class="docutils literal notranslate"><span class="pre">PSAL</span></code> is
+computed from conductivity only when a file has no salinity. Each carries <code class="docutils literal notranslate"><span class="pre">sources</span></code> and a
+<code class="docutils literal notranslate"><span class="pre">comment</span></code> naming the gsw functions and version, and is listed in <code class="docutils literal notranslate"><span class="pre">conversion_derived_variables</span></code>.
 Files have had no <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> since 0.2.0.</p></li>
 <li><p>The conversion page’s practical-salinity comparison adds salinity recomputed from <code class="docutils literal notranslate"><span class="pre">CNDC</span></code>, <code class="docutils literal notranslate"><span class="pre">TEMP</span></code>
 and <code class="docutils literal notranslate"><span class="pre">PRES</span></code>, showing the size of the basestation’s salinity correction.</p></li>
@@ -267,6 +286,9 @@ docs build.</p></li>
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> carries its <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> in the file (it was in the configuration but not
+applied); <code class="docutils literal notranslate"><span class="pre">PROFILE_DIRECTION</span></code> and <code class="docutils literal notranslate"><span class="pre">SEGMENT_NUMBER</span></code> are in the configuration as OG1 variables,
+so the conversion page and <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">list</span></code> treat them as OG1.</p></li>
 <li><p>Every variable on <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>, <code class="docutils literal notranslate"><span class="pre">_QC</span></code> variables included, carries
 <code class="docutils literal notranslate"><span class="pre">coordinates</span> <span class="pre">=</span> <span class="pre">&quot;TIME</span> <span class="pre">LONGITUDE</span> <span class="pre">LATITUDE</span> <span class="pre">DEPTH&quot;</span></code> (OG1’s coordinates in the manual’s order,
 blank-separated as CF requires); the basestation’s <code class="docutils literal notranslate"><span class="pre">&quot;ctd_time</span> <span class="pre">longitude</span> <span class="pre">latitude</span> <span class="pre">ctd_depth&quot;</span></code>,

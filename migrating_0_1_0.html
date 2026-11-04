@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Migrating to 0.1.0 &mdash; seagliderOG1 0.2.0.post1.dev5 documentation</title>
+  <title>Migrating to 0.1.0 &mdash; seagliderOG1 0.2.0.post1.dev6 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=ec389d5a"></script>
+      <script src="_static/documentation_options.js?v=dbc01730"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -124,20 +124,28 @@
   <section id="migrating-to-0-1-0">
 <span id="migrating-0-1-0"></span><h1>Migrating to 0.1.0<a class="headerlink" href="#migrating-to-0-1-0" title="Link to this heading"></a></h1>
 <p>0.1.0 reshapes the public API into a small set of verbs and changes the output format. To ease
-the move, the pre-0.1.0 names are kept for one release: most are <strong>still
-importable and warn</strong>, a few are <strong>removed and raise</strong> with a message that points back here.
+the move, the pre-0.1.0 names were kept through 0.1.x and 0.2.x: most were <strong>still
+importable and warned</strong>, a few were <strong>removed and raised</strong> with a message that pointed back here.
+Since 0.3.0 all of them are gone (see the note below).
 (“Pre-0.1.0” because a few of these names never shipped in a tagged release — they lived on
 <code class="docutils literal notranslate"><span class="pre">main</span></code> between 0.0.2 and 0.1.0; they are marked where they appear.)</p>
 <p>This page is organised by what you do in a notebook — load, convert, write, plot, metadata —
 so you can find the line you have and read the line to write. Each old name is marked:</p>
 <ul class="simple">
-<li><p><em>(warns)</em> — still importable until 0.3.0. It works, delegates to the new name, and prints a
-<code class="docutils literal notranslate"><span class="pre">DeprecationWarning</span></code> naming the new spelling. Change it at your leisure before 0.3.0.</p></li>
-<li><p><em>(raises)</em> — removed. Importing or calling it raises with a message that says why and what
-to use instead (the same text as the relevant section below).</p></li>
+<li><p><em>(warns)</em> — in 0.1.x and 0.2.x, still importable: it delegated to the new name and printed a
+<code class="docutils literal notranslate"><span class="pre">DeprecationWarning</span></code> naming the new spelling.</p></li>
+<li><p><em>(raises)</em> — in 0.1.x and 0.2.x, importing or calling it raised with a message that said why
+and what to use instead (the same text as the relevant section below).</p></li>
 <li><p><em>(changed)</em> — not shimmed: the call shape changed, so update it now.</p></li>
 </ul>
-<p>The shims are removed in 0.3.0; see the <a class="reference internal" href="changelog.html"><span class="doc">Changelog</span></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Since 0.3.0 every old name on this page is gone</strong>, <em>(warns)</em> and <em>(raises)</em> alike: using one
+gives Python’s ordinary <code class="docutils literal notranslate"><span class="pre">AttributeError</span></code> (<code class="docutils literal notranslate"><span class="pre">ImportError</span></code> for <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">...</span> <span class="pre">import</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ModuleNotFoundError</span></code> for <code class="docutils literal notranslate"><span class="pre">convertOG1</span></code>).
+The marks record how 0.1.x and 0.2.x behaved; the replacement in each row still applies.
+See <a class="reference internal" href="migrating_0_3_0.html"><span class="doc">Migrating to 0.3.0</span></a>.</p>
+</div>
 <section id="the-whole-mission-in-one-call">
 <h2>The whole mission in one call<a class="headerlink" href="#the-whole-mission-in-one-call" title="Link to this heading"></a></h2>
 <p>Most of what a conversion notebook does is read a mission, convert it, and write the file.
@@ -177,8 +185,8 @@ the same function with the old positional arguments if you prefer them.
 </section>
 <section id="convert">
 <h2>Convert<a class="headerlink" href="#convert" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">convertOG1.convert_to_OG1</span></code> <em>(warns)</em> → <code class="docutils literal notranslate"><span class="pre">convert</span></code>. The old module <code class="docutils literal notranslate"><span class="pre">convertOG1.py</span></code> is a
-tombstone; importing it is silent, and each name warns or raises when used. <code class="docutils literal notranslate"><span class="pre">convert</span></code>
+<p><code class="docutils literal notranslate"><span class="pre">convertOG1.convert_to_OG1</span></code> <em>(warns)</em> → <code class="docutils literal notranslate"><span class="pre">convert</span></code>. The old module <code class="docutils literal notranslate"><span class="pre">convertOG1.py</span></code> was a
+tombstone through 0.2.x and is removed in 0.3.0. <code class="docutils literal notranslate"><span class="pre">convert</span></code>
 returns a single <code class="docutils literal notranslate"><span class="pre">Dataset</span></code> (not a <code class="docutils literal notranslate"><span class="pre">(dataset,</span> <span class="pre">var_list)</span></code> tuple) and takes a sequence:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># before</span>
 <span class="n">ds_OG1</span><span class="p">,</span> <span class="n">var_list</span> <span class="o">=</span> <span class="n">convertOG1</span><span class="o">.</span><span class="n">convert_to_OG1</span><span class="p">(</span><span class="n">list_datasets</span><span class="p">)</span>
@@ -240,8 +248,8 @@ unrecognised institution is no longer stamped with a default EDMO code. The remo
 </section>
 <section id="names-that-no-longer-exist-and-why">
 <h2>Names that no longer exist, and why<a class="headerlink" href="#names-that-no-longer-exist-and-why" title="Link to this heading"></a></h2>
-<p>These are <em>(raises)</em>: calling or importing one raises with the message below rather than
-returning something different from what it used to.</p>
+<p>These are <em>(raises)</em>: through 0.2.x, calling or importing one raised with the message below
+rather than returning something different from what it used to.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">convertOG1.process_and_save_data</span></code> — it filled platform, contributor and institution
 metadata from package defaults, which were removed so no file is written with someone else’s
@@ -270,7 +278,7 @@ the OG1 canonical spelling and the factor to reach it (see <a class="reference i
 </section>
 <section id="other-renamed-names">
 <h2>Other renamed names<a class="headerlink" href="#other-renamed-names" title="Link to this heading"></a></h2>
-<p>All <em>(warns)</em> — importable until 0.3.0, delegating to the new name. Rows marked <em>(main only)</em>
+<p>All <em>(warns)</em> — importable through 0.2.x, delegating to the new name; removed in 0.3.0. Rows marked <em>(main only)</em>
 never shipped in a tagged release; they lived on <code class="docutils literal notranslate"><span class="pre">main</span></code> between 0.0.2 and 0.1.0, so if you
 installed from PyPI you never had them — they are shimmed for development installs.</p>
 <table class="docutils align-default">
@@ -312,7 +320,7 @@ installed from PyPI you never had them — they are shimmed for development inst
 <td><p><code class="docutils literal notranslate"><span class="pre">contributors.institution_registry</span></code> / <code class="docutils literal notranslate"><span class="pre">canonical_orcid</span></code> / <code class="docutils literal notranslate"><span class="pre">canonical_role</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">firstrun=</span></code> keyword (e.g. <code class="docutils literal notranslate"><span class="pre">tools.convert_units_var(...,</span> <span class="pre">firstrun=...)</span></code>)</p></td>
-<td><p>removed; accepted and ignored with a warning. Progress goes through
+<td><p>removed (accepted and ignored with a warning through 0.2.x). Progress goes through
 <code class="docutils literal notranslate"><span class="pre">logging.getLogger(&quot;seagliderOG1&quot;)</span></code> (the CLI <code class="docutils literal notranslate"><span class="pre">-v</span></code> sets the level)</p></td>
 </tr>
 </tbody>

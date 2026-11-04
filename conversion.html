@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.2.0.post1.dev5 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.2.0.post1.dev6 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=ec389d5a"></script>
+      <script src="_static/documentation_options.js?v=dbc01730"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -172,15 +172,15 @@ present in only some dives gets the same name everywhere.
 <li><p>add <code class="docutils literal notranslate"><span class="pre">dive_number</span></code>, <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> and <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> (from the glider’s state table,
 G&amp;C events and GPS fixes; see <a class="reference internal" href="phase.html#phase"><span class="std std-ref">How the phase is assigned</span></a>);</p></li>
 <li><p>apply the OG1 vocabulary: rename, attach the OG1 attributes, convert units, mark the
-coordinates, encode time. A variable with no OG1 name keeps its basestation name.</p></li>
+coordinates, encode time. A variable with no OG1 name keeps its basestation name, with
+its units in the canonical spelling where the converter recognises them.</p></li>
 </ul>
 <p><em>Page:</em> Derived variables; Variables.</p>
 </li>
 <li><p><strong>Concatenate</strong> the dives on <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> and sort by <code class="docutils literal notranslate"><span class="pre">TIME</span></code>.
 <em>Page:</em> Before → after (samples on the shared axis).</p></li>
-<li><p><strong>TEOS-10 variables.</strong> Add the ones OG1 names that the basestation did not write: <code class="docutils literal notranslate"><span class="pre">SA</span></code>,
-<code class="docutils literal notranslate"><span class="pre">CT</span></code> and <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> (and <code class="docutils literal notranslate"><span class="pre">PSAL</span></code> from conductivity when the file has no salinity). See
-<a class="reference internal" href="#derived-teos-10-variables">Derived TEOS-10 variables</a>.
+<li><p><strong>TEOS-10 variables.</strong> Add <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> when the basestation did not write it (and <code class="docutils literal notranslate"><span class="pre">PSAL</span></code>
+from conductivity when the file has no salinity). See <a class="reference internal" href="#derived-teos-10-variables">Derived TEOS-10 variables</a>.
 <em>Page:</em> Derived variables; Same quantity, more than once.</p></li>
 <li><p><strong>Sensors.</strong> Gather each instrument’s record from the calibration comments, apply the
 <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> corrections from the mission file, write one <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable per instrument
@@ -262,20 +262,25 @@ basestation file does not carry, computed per sample with <a class="reference ex
 <td><p><code class="docutils literal notranslate"><span class="pre">gsw.SP_from_C(CNDC,</span> <span class="pre">TEMP,</span> <span class="pre">PRES)</span></code></p></td>
 <td><p>only when the file has conductivity but no salinity; no thermal-inertia correction</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SA</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">gsw.SA_from_SP(PSAL,</span> <span class="pre">PRES,</span> <span class="pre">LONGITUDE,</span> <span class="pre">LATITUDE)</span></code></p></td>
-<td><p>when the basestation did not write <code class="docutils literal notranslate"><span class="pre">absolute_salinity</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CT</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">gsw.CT_from_t(SA,</span> <span class="pre">TEMP,</span> <span class="pre">PRES)</span></code></p></td>
-<td><p>when the basestation did not write <code class="docutils literal notranslate"><span class="pre">conservative_temperature</span></code></p></td>
-</tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">gsw.sigma0(SA,</span> <span class="pre">CT)</span> <span class="pre">+</span> <span class="pre">1000</span></code> kg m-3</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">gsw.sigma0(SA,</span> <span class="pre">CT)</span> <span class="pre">+</span> <span class="pre">1000</span></code> kg m-3, with <code class="docutils literal notranslate"><span class="pre">SA</span> <span class="pre">=</span> <span class="pre">gsw.SA_from_SP(PSAL,</span> <span class="pre">PRES,</span> <span class="pre">LONGITUDE,</span>
+<span class="pre">LATITUDE)</span></code> and <code class="docutils literal notranslate"><span class="pre">CT</span> <span class="pre">=</span> <span class="pre">gsw.CT_from_t(SA,</span> <span class="pre">TEMP,</span> <span class="pre">PRES)</span></code></p></td>
 <td><p>always, unless already present</p></td>
 </tr>
 </tbody>
 </table>
+<p>Absolute Salinity (SA) and Conservative Temperature (CT) are computed on the way to <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code>
+but not written: <code class="docutils literal notranslate"><span class="pre">PSAL</span></code> is the salinity an OG1 file carries, as TEOS-10 recommends archiving
+practical salinity (SA depends on the version of the absolute-salinity-anomaly atlas in gsw).
+Compute them when needed:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">gsw</span>
+
+<span class="n">SA</span> <span class="o">=</span> <span class="n">gsw</span><span class="o">.</span><span class="n">SA_from_SP</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">PSAL</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">PRES</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">LATITUDE</span><span class="p">)</span>
+<span class="n">CT</span> <span class="o">=</span> <span class="n">gsw</span><span class="o">.</span><span class="n">CT_from_t</span><span class="p">(</span><span class="n">SA</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">TEMP</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">PRES</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A basestation file’s own <code class="docutils literal notranslate"><span class="pre">absolute_salinity</span></code> and <code class="docutils literal notranslate"><span class="pre">conservative_temperature</span></code> pass through under
+those names.</p>
 <p>A variable the basestation wrote is never overwritten. Each derived variable carries <code class="docutils literal notranslate"><span class="pre">sources</span></code>
 (the OG1 inputs) and a <code class="docutils literal notranslate"><span class="pre">comment</span></code> naming the gsw function and version, and is listed in
 <code class="docutils literal notranslate"><span class="pre">conversion_derived_variables</span></code> with the basestation variables behind its inputs. <code class="docutils literal notranslate"><span class="pre">PSAL</span></code> is the
