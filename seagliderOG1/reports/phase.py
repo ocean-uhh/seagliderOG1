@@ -280,6 +280,34 @@ def pick_dives(ds: xr.Dataset) -> list[int]:
     return sorted(set(picked))
 
 
+def _dropped_fix_times(ds: xr.Dataset, dive: int) -> np.ndarray:
+    """Return the ``TIME`` values of GPS fixes dropped from ``dive`` at the boundary dedup.
+
+    The conversion removes a fix re-logged at a dive boundary (it is kept on the previous
+    dive), so the losing dive's data no longer carries it. Their times are recorded in the
+    ``conversion_dropped_gps_fixes`` global; this reads the ones belonging to ``dive`` so the
+    phase page can still draw them. Empty when the file records none (or predates the global).
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open OG1 dataset.
+    dive : int
+        The dive number whose dropped fixes to return.
+
+    Returns
+    -------
+    numpy.ndarray of datetime64[ns]
+        The dropped fix times for ``dive``, in file order; empty when there are none.
+    """
+    raw = ds.attrs.get("conversion_dropped_gps_fixes")
+    if not raw:
+        return np.array([], dtype="datetime64[ns]")
+    records = json.loads(str(raw))
+    times = [r["time"] for r in records if r.get("dive") == int(dive)]
+    return np.array(times, dtype="datetime64[ns]")
+
+
 def draw_phase_dive(
     ds: xr.Dataset,
     dive: int,
@@ -318,7 +346,11 @@ def draw_phase_dive(
     if rows.size == 0:
         return None
     times = ds["TIME"].values[rows]
-    t0 = times.min()
+    # A GPS fix shared with the previous dive was deduplicated at the concat and removed from
+    # this dive's data; draw it anyway, so each dive still shows its full surface bracket. t0
+    # reaches back to it, placing it near minute 0 as before the dedup.
+    dropped = _dropped_fix_times(ds, dive)
+    t0 = min(times.min(), dropped.min()) if dropped.size else times.min()
     t = _minutes(times, t0)
     phase = _phase_values(ds)[rows]
     has_events = (
@@ -386,9 +418,16 @@ def draw_phase_dive(
     ax_ph.set_xlabel("minutes from the start of the dive file")
     if "TIME_GPS" in ds.variables:
         gps = ds["TIME_GPS"].values[rows]
-        for fix in _minutes(np.unique(gps[~np.isnat(gps)]), t0):
+        fixes = np.unique(np.concatenate([gps[~np.isnat(gps)], dropped]))
+        fix_minutes = _minutes(fixes, t0)
+        for fix in fix_minutes:
             for ax in axes:
                 ax.axvline(fix, color=PHASE_COLORS[3], lw=0.9, alpha=0.8)
+        # A dropped boundary fix sits left of the dive's first sample; widen the axis so it
+        # shows (sharex propagates to every panel).
+        if dropped.size and fix_minutes.size:
+            span = float(t.max() - fix_minutes.min()) or 1.0
+            ax_ph.set_xlim(left=float(fix_minutes.min()) - 0.03 * span)
     shown = set(phase.tolist()) | (
         set(old[rows].tolist()) if old is not None else set()
     )
@@ -627,7 +666,7 @@ INPUT_VARIABLES: tuple[tuple[str, str], ...] = (
     ),
     ("gc_end_secs", "step 1b: where that G&C event ends"),
     ("PRES", "step 1c: the pressure maximum, when there are no G&C events"),
-    ("TIME_GPS", "step 2: rows at GPS fix times are surfacing"),
+    ("TIME_GPS", "step 2: GPS fix data points are surfacing"),
     ("PITCH", "check only: drawn, and plotted against dP/dt"),
     ("log_D_FLARE", "check only: drawn as a dashed line"),
     ("log_D_TGT", "check only: drawn as a dashed line"),
@@ -808,7 +847,7 @@ for each dive:
         data points after it                          -> 1 ascent
 
     # step 2: GPS fixes
-    data points at a GPS fix time (TIME_GPS) -> 3 surfacing
+    GPS fix data points (TIME_GPS finite) -> 3 surfacing
       (the CTD does not sample at the surface: these are the fix data points only)
 
     # step 3 (state table only): data points still 0 take the phase of the

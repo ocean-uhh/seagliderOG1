@@ -377,36 +377,42 @@ def test_gps_fix_is_one_data_point_lossless():
     sit on the merged gps_info data point, not an appended copy.
 
     Before the collapse a fix made two data points at the same TIME: a gps_info one carrying
-    log_gps_* and an appended one carrying *_GPS. Now they are one, so the log_gps_lat-finite
-    data points and the TIME_GPS-finite data points are the same set, TIME does not tie at a
-    fix, and no field is lost. One dive isolates this from the cross-dive boundary fix (the
-    same fix shared by two adjacent dives), which is a separate matter.
+    log_gps_* and an appended one carrying *_GPS. Now they are one, so the (lat & lon)-finite
+    data points and the TIME_GPS-finite data points are the same set, and no field is lost.
+    Checked over the whole mission (5 dives). TIME must not decrease, but it may still tie at a
+    cross-dive boundary fix (the same fix shared by two adjacent dives) -- a separate matter --
+    so this does not assert the fixes are tie-free.
     """
-    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+    datasets = readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 5)
     ds = _convert.convert(datasets)
 
     # Engineering fields are kept.
     assert "log_gps_lat" in ds.variables
     assert "log_gps_lon" in ds.variables
 
-    lat_finite = np.isfinite(ds["log_gps_lat"].values)
+    # A fix is a data point with latitude AND longitude finite.
+    mask = np.isfinite(ds["log_gps_lat"].values) & np.isfinite(ds["log_gps_lon"].values)
     time_gps_finite = ~np.isnat(ds["TIME_GPS"].values)
-    assert lat_finite.any()
-    # The collapse invariant: the raw fix and the OG1 GPS variables are on the SAME data
-    # points (disjoint before the collapse, one appended copy per fix).
-    assert np.array_equal(lat_finite, time_gps_finite)
+    assert mask.any()
+    # The collapse invariant: a fix and its OG1 GPS variables are on the SAME data points
+    # (disjoint before the collapse, which appended a second copy per fix).
+    assert np.array_equal(mask, time_gps_finite)
 
-    mask = lat_finite
     # The fix's surface position and depth are filled from the fix.
     assert np.allclose(ds["LATITUDE"].values[mask], ds["log_gps_lat"].values[mask])
     assert np.allclose(ds["LONGITUDE"].values[mask], ds["log_gps_lon"].values[mask])
     assert np.all(ds["DEPTH"].values[mask] == 0)
-    # The OG1 GPS variables carry the fix; TIME_GPS equals that data point's own TIME.
+    # The OG1 GPS variables carry the fix.
     assert np.allclose(ds["LATITUDE_GPS"].values[mask], ds["log_gps_lat"].values[mask])
     assert np.allclose(ds["LONGITUDE_GPS"].values[mask], ds["log_gps_lon"].values[mask])
+    # TIME_GPS is the raw fix clock. demo_sg005 has no within-dive duplicate fix time, so no
+    # +0.5 s merge shift fires and it equals the data point's TIME; on a file with a repeated
+    # fix time, TIME_GPS would read the raw (earlier) time, 0.5 s before TIME.
     assert np.array_equal(ds["TIME_GPS"].values[mask], ds["TIME"].values[mask])
 
-    # TIME never decreases, and a single dive introduces no duplicate timestamp at a fix.
+    # TIME never decreases, and no duplicate timestamp sits at a GPS fix: source 1 (append)
+    # removed, source 2 (within-dive repeat) dropped in the merge, source 3 (cross-dive
+    # boundary) deduplicated at the concat.
     t = ds["TIME"].values.astype("datetime64[ns]").astype("int64")
     assert np.all(np.diff(t) >= 0)
     ties = np.flatnonzero(np.diff(t) == 0)

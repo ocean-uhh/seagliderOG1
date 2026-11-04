@@ -450,19 +450,21 @@ def assign(ds: xr.Dataset) -> tuple[np.ndarray, dict[str, list[int]]]:
         if "PRES" in ds.variables
         else np.full(n, np.nan)
     )
-    gps_time = (
-        _seconds(ds["TIME_GPS"].values)
-        if "TIME_GPS" in ds.variables
-        else np.full(n, np.nan)
-    )
     # depth_all = (  # for the transition rules below, off
     #     np.asarray(ds["DEPTH"].values, dtype=float)
     #     if "DEPTH" in ds.variables
     #     else np.full(n, np.nan)
     # )
-    # Every data point at a GPS fix time is surfacing. Matching by time (not by the fix data
-    # point itself) is robust to a fix sharing a timestamp with a science sample.
-    gps = np.isin(time, gps_time[np.isfinite(gps_time)])
+    # Every GPS fix data point is surfacing. After the merge and the GPS collapse each fix is
+    # one data point carrying TIME_GPS, so a finite TIME_GPS marks it directly -- and a fix and
+    # a science sample at the same second are already one data point, so nothing is missed.
+    # (Matching the data point's TIME against TIME_GPS would miss a fix the merge shifted, whose
+    # TIME_GPS is the raw recorded time, 0.5 s off its TIME.)
+    gps = (
+        ~np.isnat(ds["TIME_GPS"].values)
+        if "TIME_GPS" in ds.variables
+        else np.zeros(n, dtype=bool)
+    )
     unknown_codes: dict[int, list[int]] = {}
     for number in np.unique(dive[np.isfinite(dive)]):
         rows = np.where(dive == number)[0]

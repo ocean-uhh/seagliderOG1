@@ -5,10 +5,12 @@ converted from ``data/demo_sg005``, so the reconciliation identity and the per-s
 logic are checked once each.
 """
 
+import json
 import pathlib
 import sys
 
 import netCDF4
+import numpy as np
 import yaml
 
 script_dir = pathlib.Path(__file__).parent.absolute()
@@ -23,6 +25,7 @@ from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
 from seagliderOG1.reports import (  # noqa: E402  # import after sys.path bootstrap
     _record,
     conversion,
+    phase,
 )
 
 DATA = str(parent_dir / "data/demo_sg005")
@@ -31,6 +34,32 @@ DATA = str(parent_dir / "data/demo_sg005")
 def _dataset():
     """Return the demo_sg005 OG1 dataset (dives 1-2)."""
     return _convert.convert(readers.read_mission(DATA, 1, 2))
+
+
+def test_boundary_gps_fix_recorded_and_redrawn_on_the_losing_dive():
+    """A GPS fix deduplicated at a dive boundary is recorded in the global, and the phase page
+    redraws it on the dive that lost it so each dive still shows its full set of fixes.
+
+    sg005 shares a boundary fix at dives 3->4 and 4->5, so the five-dive convert drops two.
+    """
+    import matplotlib.pyplot as plt
+
+    ds = _convert.convert(readers.read_mission(DATA, 1, 5))
+    records = json.loads(ds.attrs["conversion_dropped_gps_fixes"])
+    assert records and all({"time", "dive"} <= r.keys() for r in records)
+
+    losing_dive = records[0]["dive"]
+    recovered = phase._dropped_fix_times(ds, losing_dive)
+    assert recovered.size >= 1
+    # The dive's own fixes plus the recovered one are drawn: the figure renders, and the
+    # recovered time is not among the dive's own data (it was dropped).
+    own = ds["TIME_GPS"].values[
+        (ds["dive_number"].values == losing_dive) & ~np.isnat(ds["TIME_GPS"].values)
+    ]
+    assert recovered[0] not in own
+    fig = phase.draw_phase_dive(ds, losing_dive)
+    assert fig is not None
+    plt.close(fig)
 
 
 def test_dimension_rows_variables_sum_to_input_count():

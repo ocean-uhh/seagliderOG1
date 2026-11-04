@@ -106,7 +106,7 @@ Per dive file, in this order.
 #. **Pressure**, for files with neither: descent up to and including the pressure maximum,
    ascent after. No inflection is assigned.
 
-**Step 2 — GPS fixes.** Every data point at a GPS fix time is 3 (surfacing): a fix means the glider
+**Step 2 — GPS fixes.** Every GPS fix data point is 3 (surfacing): a fix means the glider
 is at the surface. The converter writes each fix as its own data points (``TIME_GPS``,
 ``LATITUDE_GPS``, ``LONGITUDE_GPS``); the CTD does not sample at the surface, so these are
 the only data points this step touches. It is the only way files without a state table get

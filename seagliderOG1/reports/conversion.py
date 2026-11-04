@@ -2699,6 +2699,7 @@ def render_conversion(
                 "conversion_attribute_sources",
                 "conversion_units",
                 "conversion_sensor_calibration",
+                "conversion_dropped_gps_fixes",
             ],
             requirement=requirement_labels,
         )

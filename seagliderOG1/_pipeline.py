@@ -1344,6 +1344,42 @@ def set_best_dtype(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
+def _exact_duplicate_rows(
+    ds: xr.Dataset, dim: str, time_values: np.ndarray | None = None
+) -> np.ndarray:
+    """Return a mask of rows on ``dim`` that exactly repeat an earlier row.
+
+    A row is an exact duplicate when it is identical to an earlier one in every 1-D data
+    variable on ``dim`` -- and in ``time_values`` when given, for a time coordinate that is not
+    itself a data variable. NaN counts as equal to NaN; ``keep="first"`` (the first is kept).
+    Used both to drop repeated records in the merge and to match the raw GPS records to the
+    merged axis in :func:`seagliderOG1._convert.add_gps_info_to_dataset`.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        A dataset on ``dim``.
+    dim : str
+        The dimension to scan for duplicate rows.
+    time_values : numpy.ndarray, optional
+        A time array to include in the comparison when the time is a coordinate (not a data
+        variable). Default is None.
+
+    Returns
+    -------
+    numpy.ndarray of bool
+        True for each row that duplicates an earlier one.
+    """
+    columns = {
+        name: ds[name].values for name in ds.data_vars if ds[name].dims == (dim,)
+    }
+    if time_values is not None:
+        columns["__time__"] = time_values
+    if not columns:
+        return np.zeros(ds.sizes[dim], dtype=bool)
+    return pd.DataFrame(columns).duplicated(keep="first").to_numpy()
+
+
 def merge_datasets_along_time(
     split_ds: dict[tuple[str, ...], xr.Dataset],
     time_variables: dict[str, list[str]],
@@ -1494,6 +1530,23 @@ def merge_datasets_along_time(
         ds = ds.swap_dims({dim: "time"})
         ds = ds.sortby("time")
 
+        # Drop exact-duplicate records (same time AND identical values in every variable)
+        # before shifting: a record logged twice carries nothing new, so keep the first rather
+        # than move its copy to an invented +0.5 s time (e.g. a GPS fix written twice at one
+        # second). Only same-time records that DIFFER in some value are shifted below. The
+        # comparison excludes the positional coordinate, which differs between the copies.
+        repeated = pd.Series(ds["time"].values)
+        if (repeated.duplicated(keep=False) & repeated.notna()).any():
+            exact = _exact_duplicate_rows(ds, "time", ds["time"].values)
+            if exact.any():
+                _log.info(
+                    "%s / %s: dropped %d exact-duplicate record(s) at a repeated timestamp.",
+                    dim,
+                    time_var,
+                    int(exact.sum()),
+                )
+                ds = ds.isel(time=~exact)
+
         # Keep the first occurrence; shift subsequent ones by 0.5 s each.
         original_times = pd.Series(ds["time"].values)
 
@@ -1573,8 +1626,9 @@ def merge_datasets_along_time(
         else "No duplicate time values were found."
     )
     merged_ds["time"].attrs["duplicate_timestamp_adjustment_rule"] = (
-        "First occurrence unchanged; subsequent occurrences shifted "
-        "forward by 0.5 seconds each. No measurements were discarded."
+        "First occurrence unchanged; a later occurrence that differs in any value is shifted "
+        "forward by 0.5 seconds; a later occurrence identical in every value (an exact "
+        "duplicate) is dropped. This attribute is per dive file."
     )
     # Stamp the axis with the basestation time variables it consumed; the attr survives the
     # rename to TIME (standardise copies source attrs forward) and is read into the

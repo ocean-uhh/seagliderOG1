@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from seagliderOG1 import _convert, _phase, _pipeline, tools
+from seagliderOG1 import _convert, _phase, _pipeline, readers, tools
 
 DATA = pathlib.Path(__file__).resolve().parent.parent
 SG271 = DATA / "seagliderOG1" / "data" / "sg271"
@@ -92,12 +92,15 @@ def test_one_inflection_run_at_the_bottom_of_the_dive(mission, request):
 
 @pytest.mark.parametrize("mission", ["sg271", "sg005"])
 def test_gps_fixes_are_surfacing(mission, request):
-    """Every row at a GPS fix time is 3; no CTD sample deeper than 5 dbar is 3 (surfacing
-    starts at the surface coast, above $D_SURF)."""
+    """Every GPS fix data point is 3; no CTD sample deeper than 5 dbar is 3 (surfacing
+    starts at the surface coast, above $D_SURF).
+
+    At least two fixes per dive survive: a dive logs ~3, but the cross-dive boundary fix shared
+    with the next dive is deduplicated at the concat, so a dive can keep as few as two.
+    """
     ds = request.getfixturevalue(mission)
-    fixes = ds["TIME_GPS"].values[~np.isnat(ds["TIME_GPS"].values)]
-    at_fix = np.isin(ds["TIME"].values, fixes)
-    assert at_fix.sum() >= 3 * np.unique(ds["dive_number"].values).size
+    at_fix = ~np.isnat(ds["TIME_GPS"].values)
+    assert at_fix.sum() >= 2 * np.unique(ds["dive_number"].values).size
     assert (ds["PHASE"].values[at_fix] == _phase.SURFACING).all()
     deep = ds["PRES"].values > 5
     assert not (ds["PHASE"].values[deep] == _phase.SURFACING).any()
@@ -486,3 +489,65 @@ def test_state_times_in_1970_are_not_used(sg271):
 def test_method_text_names_the_vbd_threshold(sg005):
     """The G&C fallback's VBD-at-zero threshold is written into phase_calculation_method."""
     assert "|gc_vbd_ctl| <= 1 cm3" in sg005["PHASE"].attrs["phase_calculation_method"]
+
+
+def _sg004_dir(dev_data, tmp_path, *, shift_lon=False):
+    """Copy the dev-pack p0040001 (sg004 dive 1) into a one-file folder.
+
+    p0040001 logs its last fix twice at the same second. With ``shift_lon`` the second copy's
+    longitude is moved 0.001 deg, so the two fixes differ and the merge must shift the copy
+    +0.5 s instead of dropping it. Skips when the file is not in the dev pack.
+    """
+    src = next(dev_data.glob("p0040001*.nc"), None)
+    if src is None:
+        pytest.skip("p0040001 not in the dev pack")
+    folder = tmp_path / "sg004"
+    folder.mkdir()
+    if not shift_lon:
+        shutil.copy2(src, folder / src.name)
+        return folder
+    raw = xr.open_dataset(src, decode_times=False, engine="netcdf4")
+    times = np.asarray(raw["log_gps_time"].values, dtype="float64")
+    values, counts = np.unique(times, return_counts=True)
+    repeated = values[counts > 1]
+    if repeated.size == 0:
+        pytest.skip("p0040001 has no repeated fix time")
+    where = np.flatnonzero(times == repeated[0])
+    lon = np.asarray(raw["log_gps_lon"].values, dtype="float64").copy()
+    lon[where[1]] += 0.001
+    raw = raw.assign(
+        log_gps_lon=(raw["log_gps_lon"].dims, lon, raw["log_gps_lon"].attrs)
+    )
+    raw.to_netcdf(folder / src.name, engine="netcdf4")
+    return folder
+
+
+def test_exact_repeat_gps_fix_is_one_data_point(dev_data, tmp_path):
+    """An exact-repeat fix (p0040001's last fix, logged twice at one second) is dropped in the
+    merge, not shifted: one data point per recorded second, no invented +0.5 s, TIME_GPS==TIME.
+    """
+    folder = _sg004_dir(dev_data, tmp_path)
+    ds = _convert.convert(
+        readers.read_mission(str(folder), 1, 1),
+        platform={"PLATFORM_SERIAL_NUMBER": "sg004"},
+    )
+    fix = ~np.isnat(ds["TIME_GPS"].values)
+    seconds = ds["TIME"].values[fix].astype("datetime64[s]")
+    assert fix.sum() == np.unique(seconds).size  # no two fixes share a whole second
+    assert (ds["TIME"].values[fix] == ds["TIME_GPS"].values[fix]).all()
+
+
+def test_shifted_gps_fix_is_still_surfacing(dev_data, tmp_path):
+    """A repeated fix that differs in position is shifted +0.5 s (not dropped); TIME_GPS keeps
+    the raw time, 0.5 s before TIME, and the shifted fix data point is still PHASE 3. Guards the
+    regression where surfacing was matched by TIME==TIME_GPS (which misses a shifted fix).
+    """
+    folder = _sg004_dir(dev_data, tmp_path, shift_lon=True)
+    ds = _convert.convert(
+        readers.read_mission(str(folder), 1, 1),
+        platform={"PLATFORM_SERIAL_NUMBER": "sg004"},
+    )
+    fix = ~np.isnat(ds["TIME_GPS"].values)
+    shifted = fix & (ds["TIME"].values != ds["TIME_GPS"].values)
+    assert shifted.any()
+    assert (ds["PHASE"].values[shifted] == _phase.SURFACING).all()

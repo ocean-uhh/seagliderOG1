@@ -114,6 +114,7 @@ ATTR_GROUP_EXTRAS: dict[str, tuple[str, ...]] = {
         "conversion_removed_variables",
         "conversion_input_variable_count",
         "conversion_sensor_calibration",
+        "conversion_dropped_gps_fixes",
     ),
 }
 
