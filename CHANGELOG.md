@@ -56,6 +56,16 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   `None Found`) are no longer written.
 - `sensors.<key>.calibration_date` in `mission.yaml` must be an ISO date (`YYYY-MM-DD`);
   `seagliderOG1 validate` reports anything else as an ERROR.
+- The pre-0.1.0 names that warned or raised through 0.1.x and 0.2.x are removed, with the
+  `convertOG1` module; using one gives Python's ordinary `AttributeError` (`ImportError` for
+  `from ... import`). `plotters.show_*` no
+  longer accept a file path. The replacements are in *Migrating to 0.1.0*; the list is in
+  *Migrating to 0.3.0*.
+- No `SA` or `CT` in the output: files carry practical salinity (`PSAL`), as TEOS-10 recommends
+  archiving (SA depends on the gsw version's absolute-salinity-anomaly atlas). A basestation file's
+  `absolute_salinity` and `conservative_temperature`, renamed `SA`/`CT` in 0.2.0, pass through
+  under those names with the basestation's own attributes. `POTDENS0` is still derived (SA and CT computed on the way, not written).
+  Compute SA and CT with `gsw.SA_from_SP` and `gsw.CT_from_t` when needed.
 - The variable attribute `uri` is renamed `vocabulary`, OG1's name for it. Every link names a
   current term in NERC's identifier form (`http://vocab.nerc.ac.uk/collection/OG1/current/TEMP/`):
   the OG1 term wherever OG1 has one (`TIME`, `DOXY`, `CHLA`, the irradiance, backscatter and
@@ -77,9 +87,9 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 - A phase page, `<id>_phase.html`, is written beside the conversion page (`process --report`,
   `report`): how `PHASE` was assigned, rows per phase, one dive from the middle of the
   mission, every dive's phase shares with its depth and duration, and pitch against dP/dt.
-- `SA`, `CT` and `POTDENS0` (TEOS-10, via gsw) are added when the basestation does not write them;
-  `PSAL` is computed from conductivity only when a file has no salinity. Each carries `sources` and
-  a `comment` naming the gsw function and version, and is listed in `conversion_derived_variables`.
+- `POTDENS0` (TEOS-10, via gsw) is added when the basestation does not write it; `PSAL` is
+  computed from conductivity only when a file has no salinity. Each carries `sources` and a
+  `comment` naming the gsw functions and version, and is listed in `conversion_derived_variables`.
   Files have had no `POTDENS0` since 0.2.0.
 - The conversion page's practical-salinity comparison adds salinity recomputed from `CNDC`, `TEMP`
   and `PRES`, showing the size of the basestation's salinity correction.

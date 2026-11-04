@@ -10,8 +10,8 @@ Migrating to 0.3.0
    tag.
 
 0.3.0 changes the output: reconvert your missions. Nothing on this page needs a code change
-unless you read ``PHASE``, ``PHASE_QC`` or the ``SENSOR_*`` serial numbers and dates, or still
-import a pre-0.1.0 name.
+unless you read ``PHASE``, ``PHASE_QC``, ``SA``/``CT``, ``uri`` or the ``SENSOR_*`` serial numbers
+and dates, or still import a pre-0.1.0 name.
 
 PHASE
 -----
@@ -72,6 +72,29 @@ as NaN; ``xr.open_dataset(..., mask_and_scale=False)`` or ``ds.PHASE.fillna(0)``
    0 (no QC performed) on every data point, with the OG1 flag scale 0–4 as ``flag_values`` and
    ``flag_meanings``. 0.2.0 wrote 0 with no flag attributes.
 
+Salinity: no ``SA`` or ``CT``
+-----------------------------
+
+Files carry practical salinity (``PSAL``) only, as TEOS-10 recommends archiving. 0.2.0 renamed a
+basestation file's ``absolute_salinity`` and ``conservative_temperature`` to ``SA`` and ``CT``;
+they now pass through under those names, with the basestation's own attributes (for example
+``units = "g/kg"``, no ``standard_name``). ``POTDENS0`` is still written (computed with TEOS-10).
+Compute SA and CT when you need them:
+
+.. code-block:: python
+
+   import gsw
+
+   SA = gsw.SA_from_SP(ds.PSAL, ds.PRES, ds.LONGITUDE, ds.LATITUDE)
+   CT = gsw.CT_from_t(SA, ds.TEMP, ds.PRES)
+
+Variable attributes
+-------------------
+
+* ``uri`` is renamed ``vocabulary`` (OG1's name); read ``vocabulary``. See
+  :doc:`variable_vocabulary`.
+* Every variable on ``N_MEASUREMENTS`` carries ``coordinates = "TIME LONGITUDE LATITUDE DEPTH"``.
+
 Basestation 2.10 files
 ----------------------
 
@@ -111,5 +134,23 @@ Serial numbers and calibration dates are read from the calibration comments by n
 Removed names
 -------------
 
-*To be completed with the release.* The pre-0.1.0 names that warn in 0.1.x and 0.2.x are
-removed in 0.3.0; :doc:`migrating_0_1_0` gives each one's replacement.
+The pre-0.1.0 names that warned or raised through 0.1.x and 0.2.x are removed. Using one gives
+Python's ordinary ``AttributeError`` (``ImportError`` for ``from ... import``); :doc:`migrating_0_1_0` gives each one's replacement:
+
+* ``readers``: ``load_basestation_files``, ``load_first_basestation_file``,
+  ``scan_and_repair_files``, ``repair_netcdf_time_metadata_inplace``, ``profnum_from_filename``,
+  ``glider_sn_from_filename``, ``load_sample_dataset``;
+* ``writers``: ``save_dataset``;
+* ``tools``: ``calc_Z``, ``assign_phase``, ``reformat_units_str``, ``reformat_units_var``,
+  ``convert_units_var``, ``OG1_name_mapping``, ``print_OG1_mapping_summary`` and the pipeline
+  internals (``og1_name_mapping``, ``gather_sensor_info``, ``add_sensor_to_dataset``,
+  ``merge_datasets_along_time``, ``extract_scalar_parameters``, ``add_scalar_parameters``,
+  ``set_best_dtype``);
+* ``contributors``: ``registry_institutions``, ``normalize_orcid``, ``normalize_role``;
+* ``vocabularies``: ``load_default_contributors``, ``contrib_to_append``, ``unit_str_format``,
+  ``unit1_to_unit2``, ``preferred_units``;
+* the ``convertOG1`` module;
+* ``plotters.show_*`` no longer accept a file path: pass an open dataset.
+
+``tools.add_profile_number`` (and its old name ``assign_profile_number``) is also removed; see
+``PROFILE_NUMBER`` above.

@@ -8,6 +8,8 @@ import pathlib
 import re
 import sys
 
+import pytest
+
 script_dir = pathlib.Path(__file__).parent.absolute()
 parent_dir = script_dir.parents[0]
 sys.path.append(str(parent_dir))
@@ -65,24 +67,28 @@ def test_pipeline_not_advertised():
         assert "_pipeline" not in getattr(mod, "__all__", [])
 
 
-def test_deprecation_shims_are_not_advertised():
-    """The shim module declares nothing public, and no public __all__ lists a shim name.
+@pytest.mark.parametrize(
+    ("module", "name"),
+    [
+        ("readers", "load_basestation_files"),
+        ("readers", "load_sample_dataset"),
+        ("writers", "save_dataset"),
+        ("tools", "calc_Z"),
+        ("tools", "reformat_units_str"),
+        ("tools", "set_best_dtype"),
+        ("contributors", "normalize_orcid"),
+        ("vocabularies", "unit1_to_unit2"),
+    ],
+)
+def test_pre_0_1_0_names_are_gone(module, name):
+    """The v0.0.2 names that warned or raised through 0.2.x are removed in 0.3.0."""
+    assert not hasattr(importlib.import_module(f"seagliderOG1.{module}"), name)
 
-    The shim names come from the single list ``_deprecated.SHIM_NAMES`` (not a copy here),
-    so this guard cannot drift from the actual shims.
-    """
-    deprecated = importlib.import_module("seagliderOG1._deprecated")
-    assert deprecated.__all__ == []
-    shim_names = set(deprecated.SHIM_NAMES)
-    for name in PUBLIC_MODULES:
-        advertised = set(
-            getattr(importlib.import_module(f"seagliderOG1.{name}"), "__all__", [])
-        )
-        leaked = advertised & shim_names
-        assert not leaked, f"{name}.__all__ advertises deprecated shim(s): {leaked}"
-    import seagliderOG1 as sg
 
-    assert not (set(sg.__all__) & shim_names)
+def test_convertOG1_module_is_gone():
+    """The v0.0.2 ``convertOG1`` module no longer exists."""
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("seagliderOG1.convertOG1")
 
 
 def test_no_external_private_imports():
