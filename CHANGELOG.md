@@ -112,6 +112,13 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ### Fixed
 
+- Every variable on `N_MEASUREMENTS`, `_QC` variables included, carries
+  `coordinates = "TIME LONGITUDE LATITUDE DEPTH"` (OG1's coordinates in the manual's order,
+  blank-separated as CF requires); the basestation's `"ctd_time longitude latitude ctd_depth"`,
+  which named variables the OG1 file does not have, no longer survives on the `_QC` and a few
+  other variables.
+- `TEMP_OXYGEN`'s `long_name` is OG1's `TEMPDOXY` label ("Sea temperature from oxygen sensor
+  ITS-90 scale"); it said "by CTD".
 - Basestation 2.10 files (`gc_state_secs` written as seconds from the dive start) no longer put rows
   in January 1970; the output name and `time_coverage_start` take the dive's real start.
 - A current-year calibration date is no longer rejected, and the same comment no longer parses

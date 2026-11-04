@@ -105,3 +105,19 @@ def test_converted_file_carries_vocabulary(tmp_path):
         temp = nc["TEMP"]
         assert temp.vocabulary == "http://vocab.nerc.ac.uk/collection/OG1/current/TEMP/"
         assert "uri" not in temp.ncattrs()
+
+
+def test_coordinates_on_every_measurement_variable(tmp_path):
+    """Every variable on N_MEASUREMENTS (``_QC`` included) names OG1's four coordinates,
+    blank-separated as CF requires; the coordinates themselves and scalars carry none, and a
+    basestation value naming variables the file lacks does not survive."""
+    path = _convert._convert_mission(str(DATA), tmp_path, dives=(1, 2))
+    coordinates = {"TIME", "LONGITUDE", "LATITUDE", "DEPTH"}
+    with netCDF4.Dataset(path) as nc:
+        for var in nc.variables.values():
+            value = getattr(var, "coordinates", None)
+            if var.dimensions == ("N_MEASUREMENTS",) and var.name not in coordinates:
+                assert value == "TIME LONGITUDE LATITUDE DEPTH", var.name
+            elif var.dimensions == () or var.name in coordinates:
+                assert value is None, var.name
+        assert nc["TEMP_QC"].coordinates == "TIME LONGITUDE LATITUDE DEPTH"

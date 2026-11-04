@@ -480,7 +480,7 @@ AD2CP_HEADING:
   vocabulary: http://vocab.nerc.ac.uk/collection/OG1/current/HEADING/
   comment: measured by AD2CP
 TEMP_OXYGEN:
-  long_name: 'Temperature of the water body by CTD'
+  long_name: 'Sea temperature from oxygen sensor ITS-90 scale'
   observation_type: measured
   standard_name: sea_water_temperature
   comment: measured by oxygen optode

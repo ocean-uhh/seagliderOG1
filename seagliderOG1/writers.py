@@ -143,6 +143,7 @@ def write(
             var.attrs.pop("units", None)
             var.attrs.pop("calendar", None)
             encoding.setdefault(name, {}).update(_TIME_ENCODING)
+    _set_coordinates(ds)
 
     ds.to_netcdf(path, encoding=encoding, format="NETCDF4", engine="netcdf4")
     _log.info("Dataset successfully saved to %s", path)
@@ -530,6 +531,41 @@ def _load_mission(config: str | Path) -> dict:
     so it must not require the (possibly moved) raw-data directory to still exist.
     """
     return _mission._load_raw(Path(config))
+
+
+#: OG1's spatiotemporal coordinates, in the manual's order. Written blank-separated, as CF
+#: requires of the ``coordinates`` attribute (the manual's example separates them with commas,
+#: which CF readers would take as part of the names).
+OG1_COORDINATES = ("TIME", "LONGITUDE", "LATITUDE", "DEPTH")
+
+
+def _set_coordinates(ds: xr.Dataset) -> None:
+    """Give every variable on ``N_MEASUREMENTS`` OG1's ``coordinates`` attribute.
+
+    ``coordinates = "TIME LONGITUDE LATITUDE DEPTH"`` (the ones present) on each variable on
+    ``N_MEASUREMENTS`` other than those four, ``_QC`` variables included; none on scalars.
+    A ``coordinates`` attribute carried over from the basestation (e.g. ``"ctd_time longitude
+    latitude ctd_depth"``, naming variables the OG1 file does not have) is replaced. Set in
+    each variable's own encoding, which xarray writes in place of the one it would build
+    itself (the write-time ``encoding`` argument does not accept ``coordinates``).
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset to be written; its variables' ``coordinates`` attributes and encodings
+        are replaced in place.
+
+    """
+    present = [name for name in OG1_COORDINATES if name in ds.variables]
+    if not present:
+        return
+    value = " ".join(present)
+    for name, var in ds.variables.items():
+        var.attrs.pop("coordinates", None)
+        var.encoding.pop("coordinates", None)
+        if name in OG1_COORDINATES or var.dims != ("N_MEASUREMENTS",):
+            continue
+        var.encoding["coordinates"] = value
 
 
 def _compression_encoding(ds: xr.Dataset) -> dict[str, dict]:
