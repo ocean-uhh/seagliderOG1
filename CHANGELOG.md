@@ -25,13 +25,14 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
   `tools.add_phase`, then `tools.add_profiles`.
   New: `PROFILE_DIRECTION` (1/-1/0) and `SEGMENT_NUMBER` (+1 on each entry to surfacing).
 - `DIVE_NUMBER` is renamed `dive_number` (lower case: not an OG1 variable). Rename it in your code.
-- Each GPS fix is one data point, with no duplicate `TIME` at a fix (fixing `sel(TIME=)`,
+- Each GPS fix is one data point, normally with no duplicate `TIME` at a fix (fixing `sel(TIME=)`,
   `swap_dims` and resampling on the previously non-unique index). Three duplicate sources were
   removed: the second data point `add_gps_info_to_dataset` appended per fix (now the OG1
   `LATITUDE_GPS`/`LONGITUDE_GPS`/`TIME_GPS` and the fix's surface `LATITUDE`/`LONGITUDE`/`DEPTH`
   (0 m) are written onto the one `gps_info` data point); a fix logged twice within a dive (the
   merge now drops the exact repeat instead of shifting it +0.5 s); and the same fix re-logged
-  across a dive boundary (deduplicated at the mission concat, keeping the end-of-dive copy).
+  across a dive boundary (deduplicated at the mission concat, keeping the end-of-dive copy, when
+  the later copy carries nothing but the fix; otherwise both are kept with a WARNING).
   `TIME_GPS` is the raw `log_gps_time`, matching its declared source even where the merge
   shifted a repeated timestamp on `TIME`. `N_MEASUREMENTS` is shorter by the removed fixes. The
   phase page still draws each dive's full set of fixes (a boundary fix dropped from one dive is

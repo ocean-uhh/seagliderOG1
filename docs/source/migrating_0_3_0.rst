@@ -98,14 +98,16 @@ Variable attributes
 GPS fixes: one data point each
 ------------------------------
 
-Each GPS fix is now one data point, so ``TIME`` has no duplicate at a fix and ``sel(TIME=...)``,
-``swap_dims`` and resampling work on it. 0.2.0 wrote each fix twice (the merged ``gps_info``
+Each GPS fix is now one data point, so ``TIME`` normally has no duplicate at a fix and
+``sel(TIME=...)``, ``swap_dims`` and resampling work on it. 0.2.0 wrote each fix twice (the merged ``gps_info``
 record and an appended copy carrying ``LATITUDE_GPS``/``LONGITUDE_GPS``/``TIME_GPS``); the
 ``*_GPS`` variables and the fix's surface ``LATITUDE``/``LONGITUDE`` and ``DEPTH`` (0 m) now sit on
-the one ``gps_info`` data point. A fix logged twice within a dive, and the same fix re-logged at
-a dive boundary, are written once (a dropped boundary copy is recorded in the
-``conversion_dropped_gps_fixes`` global). ``N_MEASUREMENTS`` is shorter by the removed fixes;
-``TIME_GPS`` is the fix time as the GPS recorded it (``log_gps_time``).
+the one ``gps_info`` data point. A fix logged twice within a dive is written once. The same fix
+re-logged at a dive boundary is written once when the later copy carries nothing but the fix
+(the dropped copy is recorded in the ``conversion_dropped_gps_fixes`` global); if it carries other
+data, both are kept, ``TIME`` keeps the duplicate there, and the conversion logs a WARNING.
+``N_MEASUREMENTS`` is shorter by the removed fixes; ``TIME_GPS`` is the fix time as the GPS
+recorded it (``log_gps_time``).
 
 Basestation 2.10 files
 ----------------------
