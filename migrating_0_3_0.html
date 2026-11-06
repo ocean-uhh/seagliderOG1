@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Migrating to 0.3.0 &mdash; seagliderOG1 0.2.0.post1.dev6 documentation</title>
+  <title>Migrating to 0.3.0 &mdash; seagliderOG1 0.2.0.post1.dev7 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=dbc01730"></script>
+      <script src="_static/documentation_options.js?v=7fb89329"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -81,6 +81,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#phase">PHASE</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#salinity-no-sa-or-ct">Salinity: no <code class="docutils literal notranslate"><span class="pre">SA</span></code> or <code class="docutils literal notranslate"><span class="pre">CT</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#variable-attributes">Variable attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gps-fixes-one-data-point-each">GPS fixes: one data point each</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#basestation-2-10-files">Basestation 2.10 files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sensor-serial-numbers-and-calibration-dates">Sensor serial numbers and calibration dates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#removed-names">Removed names</a></li>
@@ -120,15 +121,11 @@
              
   <section id="migrating-to-0-3-0">
 <span id="migrating-0-3-0"></span><h1>Migrating to 0.3.0<a class="headerlink" href="#migrating-to-0-3-0" title="Link to this heading"></a></h1>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><strong>Draft.</strong> 0.3.0 is not released. This page collects the changes on <code class="docutils literal notranslate"><span class="pre">main</span></code> since 0.2.0
-that change what a file holds or what a call accepts, and will be completed before the
-tag.</p>
-</div>
 <p>0.3.0 changes the output: reconvert your missions. Nothing on this page needs a code change
-unless you read <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>, <code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code>, <code class="docutils literal notranslate"><span class="pre">SA</span></code>/<code class="docutils literal notranslate"><span class="pre">CT</span></code>, <code class="docutils literal notranslate"><span class="pre">uri</span></code> or the <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> serial numbers
-and dates, or still import a pre-0.1.0 name.</p>
+unless you read <code class="docutils literal notranslate"><span class="pre">PHASE</span></code>, <code class="docutils literal notranslate"><span class="pre">PHASE_QC</span></code>, <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code>, <code class="docutils literal notranslate"><span class="pre">DIVE_NUMBER</span></code> (now
+<code class="docutils literal notranslate"><span class="pre">dive_number</span></code>), <code class="docutils literal notranslate"><span class="pre">SA</span></code>/<code class="docutils literal notranslate"><span class="pre">CT</span></code>, <code class="docutils literal notranslate"><span class="pre">uri</span></code>, a passed-through variable in <code class="docutils literal notranslate"><span class="pre">cm/s</span></code>, a data point by its
+index around a GPS fix, or the <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> serial numbers and dates, or still import a pre-0.1.0
+name.</p>
 <section id="phase">
 <h2>PHASE<a class="headerlink" href="#phase" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">PHASE</span></code> is assigned from what the glider recorded it did (see <a class="reference internal" href="phase.html"><span class="doc">How the phase is assigned</span></a>). On the same
@@ -225,6 +222,19 @@ their basestation names (<code class="docutils literal notranslate"><span class=
 passed-through variable in <code class="docutils literal notranslate"><span class="pre">cm/s</span></code> is converted to <code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">s-1</span></code>, with <code class="docutils literal notranslate"><span class="pre">original_units</span></code> and a
 <code class="docutils literal notranslate"><span class="pre">conversion_units</span></code> entry. Spellings the converter does not recognise are left as written.</p></li>
 </ul>
+</section>
+<section id="gps-fixes-one-data-point-each">
+<h2>GPS fixes: one data point each<a class="headerlink" href="#gps-fixes-one-data-point-each" title="Link to this heading"></a></h2>
+<p>Each GPS fix is now one data point, so <code class="docutils literal notranslate"><span class="pre">TIME</span></code> normally has no duplicate at a fix and
+<code class="docutils literal notranslate"><span class="pre">sel(TIME=...)</span></code>, <code class="docutils literal notranslate"><span class="pre">swap_dims</span></code> and resampling work on it. 0.2.0 wrote each fix twice (the merged <code class="docutils literal notranslate"><span class="pre">gps_info</span></code>
+record and an appended copy carrying <code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code>/<code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code>/<code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code>); the
+<code class="docutils literal notranslate"><span class="pre">*_GPS</span></code> variables and the fix’s surface <code class="docutils literal notranslate"><span class="pre">LATITUDE</span></code>/<code class="docutils literal notranslate"><span class="pre">LONGITUDE</span></code> and <code class="docutils literal notranslate"><span class="pre">DEPTH</span></code> (0 m) now sit on
+the one <code class="docutils literal notranslate"><span class="pre">gps_info</span></code> data point. A fix logged twice within a dive is written once. The same fix
+re-logged at a dive boundary is written once when the later copy carries nothing but the fix
+(the dropped copy is recorded in the <code class="docutils literal notranslate"><span class="pre">conversion_dropped_gps_fixes</span></code> global); if it carries other
+data, both are kept, <code class="docutils literal notranslate"><span class="pre">TIME</span></code> keeps the duplicate there, and the conversion logs a WARNING.
+<code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> is shorter by the removed fixes; <code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code> is the fix time as the GPS
+recorded it (<code class="docutils literal notranslate"><span class="pre">log_gps_time</span></code>).</p>
 </section>
 <section id="basestation-2-10-files">
 <h2>Basestation 2.10 files<a class="headerlink" href="#basestation-2-10-files" title="Link to this heading"></a></h2>
