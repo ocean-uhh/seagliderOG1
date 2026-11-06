@@ -182,7 +182,7 @@ Other renamed names
 
 All *(warns)* — importable through 0.2.x, delegating to the new name; removed in 0.3.0. Rows marked *(main only)*
 never shipped in a tagged release; they lived on ``main`` between 0.0.2 and 0.1.0, so if you
-installed from PyPI you never had them — they are shimmed for development installs.
+installed from PyPI you never had them — they were shimmed for development installs through 0.2.x.
 
 .. list-table::
    :header-rows: 1

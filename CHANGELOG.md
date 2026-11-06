@@ -8,6 +8,8 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-06
+
 ### Breaking changes
 
 - `PHASE` is assigned from the glider's state table (`gc_state_state`), or its G&C events when
