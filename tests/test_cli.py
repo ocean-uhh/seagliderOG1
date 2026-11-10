@@ -502,16 +502,18 @@ def test_report_writes_html_page(
     assert (tmp_path / "og1_variables.html").is_file()
     assert (tmp_path / "og1_processing.html").is_file()
     # Located by section id, so inserting or renumbering sections does not break it.
-    for section in ("losses", "globals"):
-        body = html.split(f'<section id="{section}">', 1)[1].split("</section>", 1)[0]
-        assert "<table" in body, section
-    assert "<h3>History</h3>" in html
+    body = html.split('<section id="losses">', 1)[1].split("</section>", 1)[0]
+    assert "<table" in body
+    # The global attributes and the history are on the OG1 format page.
+    og1_page = (tmp_path / "og1_og1.html").read_text(encoding="utf-8")
+    body = og1_page.split('<section id="globals">', 1)[1].split("</section>", 1)[0]
+    assert "<table" in body
+    assert "<h3>History</h3>" in og1_page
     assert "Interim text view" not in html
-    # Masthead (S18) and the renamed calibration group (S15).
+    # Masthead (S18).
     assert 'class="meta-grid"' in html
-    assert "<code>sg_calib_constants</code>" in html
     # Spatiotemporal coverage computed column (S17) and the OG1-requirement line (S25).
-    assert "Computed" in html
+    assert "Computed" in og1_page
     assert "OG1 requirement: mandatory 9/9 present" in html
     # Masthead polish (S19): meta-grid pairs are div-wrapped, and the jump-nav sits after the
     # masthead closes (not a descendant of it).
@@ -519,10 +521,9 @@ def test_report_writes_html_page(
     assert '</div>\n<nav class="jump-nav"' in html
     # The per-heading "↑ top" link script is emitted (S24); it appends .top-link client-side.
     assert "top-link" in html and "↑ top" in html
-    # Vendored features adopted at the sync-4 re-vendor: numbered rows and the OG1-requirement
-    # column on the globals table.
-    assert ">#<" in html
-    assert "Requirement" in html
+    # Vendored features adopted at the sync-4 re-vendor: the OG1-requirement column on the
+    # globals table (now on the OG1 format page).
+    assert "Requirement" in og1_page
 
 
 def test_report_output_dir_and_report_dir(

@@ -555,9 +555,13 @@ def flight_rows(rows: Sequence[VariableRow]) -> list[dict]:
     out = []
     for name, (role, reads_as) in vocabularies.FLIGHT_MODEL_VARIABLES.items():
         row = by_name.get(name)
-        if row is None or not row["name"]:
-            form = "not in these files" if row is None else "not written"
-            ready = "—" if not reads_as else f"no: {form}"
+        if row is None:
+            form = "not in these files"
+            ready = f"no: {form}" if reads_as else "—"
+        elif not row["name"]:
+            # Consumed into a derived variable, or not written: absent under this name.
+            form = f"{row['fate']}, not in the file under this name"
+            ready = f"no: {row['fate']}" if reads_as else "—"
         elif row["storage"] == "per_dive_scalar":
             form, ready = "JSON text, per dive", "no: JSON text" if reads_as else "—"
         elif row["scalar"]:
@@ -694,7 +698,7 @@ def render_processing(path: str | Path, *, title: str | None = None) -> str:
         version=__version__,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
         masthead_meta=masthead_meta,
-        page_nav=_pages.page_nav(path, "processing", has_phase=has_phase),
+        page_nav=_pages.page_nav(path, "processing", has_phase=has_phase, draft=draft),
         steps=steps,
         stages=stage_states(steps),
         stage_labels=dict(STAGES),

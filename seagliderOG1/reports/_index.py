@@ -14,6 +14,7 @@ import numpy as np
 import xarray as xr
 
 from seagliderOG1 import vocabularies
+from seagliderOG1._convert import count_values
 
 __all__ = ["FATES", "Mark", "VariableRow", "fate_sets", "variable_rows"]
 
@@ -138,26 +139,21 @@ def _dtype_out(var: xr.DataArray) -> str:
     return str(np.dtype(dtype))
 
 
-def _values_out(var: xr.DataArray, storage: str, values_in: int | None) -> int:
+def _values_out(var: xr.DataArray, storage: str, values_in: int | None) -> int | None:
     """Return the non-missing values of an output variable, comparable with the input count.
 
     A per-dive scalar counts its dives with a value; a constant scalar stands for every dive
-    that had it, so it counts as the input did.
+    that had it, so it counts as the input did. None when a per-dive payload cannot be read.
     """
     if storage == "per_dive_scalar":
-        payload = json.loads(str(var.values.item()))
-        return sum(v is not None for v in payload.get("values", []))
+        try:
+            payload = json.loads(str(np.asarray(var.values).item()))
+            return sum(v is not None for v in payload["values"])
+        except (ValueError, TypeError, KeyError):
+            return None
     if storage == "constant_scalar":
         return values_in if values_in is not None else 1
-    values = np.asarray(var.values)
-    kind = values.dtype.kind
-    if kind == "f":
-        return int(np.isfinite(values).sum())
-    if kind in "mM":
-        return int((~np.isnat(values)).sum())
-    if kind in "SUO":
-        return int(sum(bool(str(v).strip()) for v in values.ravel()))
-    return int(values.size)
+    return count_values(var.values)
 
 
 def _marks(
@@ -177,7 +173,7 @@ def _marks(
         return marks
     if factor is not None and factor != 1:
         marks.append({"kind": "step", "text": f"×{factor:g}"})
-    elif not units_in and units_out and "original_units" in var.attrs:
+    elif units_in == "" and units_out and "original_units" in var.attrs:
         marks.append({"kind": "step", "text": "units adopted"})
     elif units_in and units_out and units_in != units_out:
         if "original_units" in var.attrs:
@@ -186,9 +182,17 @@ def _marks(
             marks.append({"kind": "loss", "text": "unit spelling not kept"})
     if dtype_in == "float64" and dtype_out == "float32":
         marks.append({"kind": "step", "text": "float64 → float32"})
-    if dtype_out == "text (JSON)" and dtype_in and np.dtype(dtype_in).kind in "fiu":
+    if dtype_out == "text (JSON)" and dtype_in and _numeric(dtype_in):
         marks.append({"kind": "loss", "text": "numbers → JSON text"})
     return marks
+
+
+def _numeric(dtype: str) -> bool:
+    """Return whether a recorded dtype string names a numeric type (False if unreadable)."""
+    try:
+        return np.dtype(dtype).kind in "fiu"
+    except TypeError:
+        return False
 
 
 def _method(var: xr.DataArray) -> str:

@@ -64,7 +64,7 @@ def render_variables(path: str | Path, *, title: str | None = None) -> str:
         version=__version__,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
         masthead_meta=masthead_meta,
-        page_nav=_pages.page_nav(path, "variables", has_phase=has_phase),
+        page_nav=_pages.page_nav(path, "variables", has_phase=has_phase, draft=draft),
         rows=rows,
         fates=[(key, counts[key]) for key in fates if counts[key]],
         fate_meanings=dict(_index.FATES)

@@ -20,7 +20,7 @@ def sg271(tmp_path_factory: pytest.TempPathFactory):
     path = _convert._convert_mission(
         SG271, tmp_path_factory.mktemp("sg271_processing"), report=True
     )
-    ds = xr.open_dataset(path, decode_timedelta=False)
+    ds = xr.open_dataset(path, engine="netcdf4", decode_timedelta=False)
     ledger = _record.conversion_ledger(ds)
     record = _record.conversion_sidecar(path)
     rows = _index.variable_rows(ds, ledger, record)

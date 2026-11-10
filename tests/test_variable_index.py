@@ -21,7 +21,7 @@ SG271 = ROOT / "seagliderOG1" / "data" / "sg271"
 @pytest.fixture(scope="module")
 def sg271(tmp_path_factory: pytest.TempPathFactory):
     path = _convert._convert_mission(SG271, tmp_path_factory.mktemp("sg271_index"))
-    ds = xr.open_dataset(path, decode_timedelta=False)
+    ds = xr.open_dataset(path, engine="netcdf4", decode_timedelta=False)
     ledger = _record.conversion_ledger(ds)
     record = _record.conversion_sidecar(path)
     rows = _index.variable_rows(ds, ledger, record)
@@ -44,7 +44,7 @@ def test_input_record_matches_the_raw_files(sg271):
     _ds, _ledger, record, _by_name, _rows = sg271
     total = 0
     for path in sorted(SG271.glob("p*.nc")):
-        with xr.open_dataset(path, decode_timedelta=False) as raw:
+        with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as raw:
             total += int(np.isfinite(raw["temperature"].values).sum())
     entry = record["input_variables"]["temperature"]
     assert entry["values"] == total
@@ -124,7 +124,7 @@ def test_variables_page_lists_every_variable(tmp_path):
     page = writers.page_path(path, "variables")
     assert page.is_file()
     html = page.read_text(encoding="utf-8")
-    with xr.open_dataset(path, decode_timedelta=False) as ds:
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
         record = _record.conversion_sidecar(path)
         for name in record["input_variables"]:
             assert f'data-names="{name} ' in html, name
@@ -135,3 +135,45 @@ def test_variables_page_lists_every_variable(tmp_path):
     assert "nav-variables nav-current" in html
     conversion = writers.conversion_path(path, ".html").read_text(encoding="utf-8")
     assert f'href="{page.name}"' in conversion
+
+
+def test_text_variables_count_the_same_in_and_out(sg271):
+    """Input and output counts use one rule, so a passed-through text variable kept whole
+    has equal counts (no false "values differ" highlight)."""
+    _ds, _ledger, _record_, _by_name, rows = sg271
+    text = [
+        r
+        for r in rows
+        if r["fate"] == "passthrough"
+        and r["dtype_out"] == "text"
+        and r["storage"] != "per_dive_scalar"
+        and r["values_in"] is not None
+        and r["dimension"] != "scalar"
+    ]
+    assert text
+    differ = {
+        r["basestation"]: (r["values_in"], r["values_out"])
+        for r in text
+        if r["values_in"] != r["values_out"]
+    }
+    assert not differ
+
+
+def test_count_values_on_text_from_a_dive_file():
+    """Variable-length text counts each non-blank string; blank and None do not count."""
+    with xr.open_dataset(
+        sorted(SG271.glob("p*.nc"))[0], engine="netcdf4", decode_timedelta=False
+    ) as raw:
+        values = raw["sg_cal_calibcomm"].values
+    assert _convert.count_values(values) == 1
+    mixed = np.array(["a", "", " ", None, b"b"], dtype=object)
+    assert _convert.count_values(mixed) == 2
+
+
+def test_no_adopted_units_mark_without_a_record(sg271):
+    """Without the record the input units are unknown, so no units mark is claimed."""
+    ds, ledger, _record_, _by_name, _rows = sg271
+    rows = _index.variable_rows(ds, ledger, None)
+    texts = {m["text"] for r in rows for m in r["marks"]}
+    assert "units adopted" not in texts
+    assert "unit spelling not kept" not in texts

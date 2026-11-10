@@ -135,9 +135,14 @@ def write_page(
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(html, encoding="utf-8")
-        write_linked_pages(nc_path, target, title=title)
     except OSError as exc:
         return f"could not write {target}: {exc}"
+    try:
+        write_linked_pages(nc_path, target, title=title)
+    except OSError as exc:
+        return f"could not write the pages beside {target}: {exc}"
+    except (MetadataError, ValueError, TypeError, KeyError) as exc:
+        return f"{nc_path}: {type(exc).__name__}: {exc}"
     return None
 
 

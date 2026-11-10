@@ -11,8 +11,8 @@ from seagliderOG1 import writers
 
 __all__ = ["PAGES", "page_nav", "write_linked_pages"]
 
-#: The pages in nav order, as ``(kind, label)``. ``basestation`` and ``og1`` are planned
-#: inventory pages, not written yet, so their pills show as not generated.
+#: The pages in nav order, as ``(kind, label)``. ``basestation`` is a planned inventory
+#: page, not written yet, so its pill shows as not generated.
 PAGES: tuple[tuple[str, str], ...] = (
     ("conversion", "conversion"),
     ("variables", "variables"),
@@ -23,10 +23,14 @@ PAGES: tuple[tuple[str, str], ...] = (
 )
 
 #: The pages this package writes today; the others show as not generated.
-WRITTEN: frozenset[str] = frozenset({"conversion", "variables", "processing", "phase"})
+WRITTEN: frozenset[str] = frozenset(
+    {"conversion", "variables", "processing", "phase", "og1"}
+)
 
 
-def page_nav(path: str | Path, current: str, *, has_phase: bool = True) -> dict:
+def page_nav(
+    path: str | Path, current: str, *, has_phase: bool = True, draft: bool = False
+) -> dict:
     """Return the page-nav structure for the vendored ``page_nav`` macro.
 
     Parameters
@@ -38,6 +42,9 @@ def page_nav(path: str | Path, current: str, *, has_phase: bool = True) -> dict:
     has_phase : bool, default True
         Whether a phase page is written (the file has ``PHASE`` and is not a draft); no
         phase pill otherwise.
+    draft : bool, default False
+        Whether the file is a draft; a draft has no OG1 format page, so that pill shows
+        as not generated.
 
     Returns
     -------
@@ -51,7 +58,7 @@ def page_nav(path: str | Path, current: str, *, has_phase: bool = True) -> dict:
             continue
         if kind == current:
             state, href = "current", ""
-        elif kind in WRITTEN:
+        elif kind in WRITTEN and not (draft and kind == "og1"):
             state, href = "link", writers.page_path(path, kind).name
         else:
             state, href = "missing", ""
@@ -69,7 +76,8 @@ def write_linked_pages(
     """Write the pages the conversion page links to, beside it, and return them.
 
     The one place that decides which pages accompany a conversion page: Variables and
-    Processing always, Phase when asked and the file has ``PHASE``.
+    Processing always; Phase (when the file has ``PHASE``) and OG1 format unless the file
+    is a draft.
 
     Parameters
     ----------
@@ -80,7 +88,8 @@ def write_linked_pages(
     title : str, optional
         Page title; the file name by default.
     phase : bool, default True
-        Whether to write the phase page (a draft has none).
+        Whether to write the phase and OG1 format pages (a draft, which is not an OG1
+        file, has neither).
 
     Returns
     -------
@@ -89,6 +98,7 @@ def write_linked_pages(
 
     """
     # Lazy: these modules import this one at load time.
+    from seagliderOG1.reports.og1 import write_og1_page
     from seagliderOG1.reports.phase import write_phase_page
     from seagliderOG1.reports.processing import write_processing_page
     from seagliderOG1.reports.variables import write_variables_page
@@ -99,4 +109,6 @@ def write_linked_pages(
     ]
     if phase and (page := write_phase_page(nc_path, conversion_page, title=title)):
         written.append(page)
+    if phase:
+        written.append(write_og1_page(nc_path, conversion_page, title=title))
     return written
