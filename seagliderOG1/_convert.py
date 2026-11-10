@@ -810,6 +810,76 @@ def _presence_by_dive(list_of_datasets: Sequence[xr.Dataset]) -> dict:
     return {"dives": dives, "variables": variables}
 
 
+def _value_count(var: xr.Variable) -> int:
+    """Return how many non-missing values one basestation variable holds in one file.
+
+    The same tests as :func:`_has_values`, counted: finite floats, times that are not NaT,
+    text that is not blank. Integer and other data count every element.
+
+    Parameters
+    ----------
+    var : xarray.Variable
+        One variable of one basestation file.
+
+    Returns
+    -------
+    int
+        The number of non-missing values.
+
+    """
+    if var.size == 0:
+        return 0
+    values = np.asarray(var.values)
+    kind = values.dtype.kind
+    if kind == "f":
+        return int(np.isfinite(values).sum())
+    if kind in "mM":
+        return int((~np.isnat(values)).sum())
+    if kind in "SU":
+        return int((np.char.str_len(np.char.strip(values)) > 0).sum())
+    if kind == "O":
+        return int(_has_values(var))
+    return int(values.size)
+
+
+def _input_variables(list_of_datasets: Sequence[xr.Dataset]) -> dict[str, dict]:
+    """Return each basestation variable's form in the input files, for the variable index.
+
+    The OG1 file holds a variable's output form only; what it was in the basestation files
+    (its dimensions, units and storage type, and how many values it held) is read here, at
+    conversion time, so the report can show input beside output without the input files.
+
+    Parameters
+    ----------
+    list_of_datasets : sequence of xarray.Dataset
+        The basestation datasets that reach the output, one per dive.
+
+    Returns
+    -------
+    dict of str to dict
+        Basestation name to ``{"dimensions", "units", "dtype", "values"}``: the dimension
+        names, ``units`` and on-disk dtype from the first file that has the variable, and
+        the number of non-missing values summed over every file (a scalar counts one per
+        file that has a value).
+
+    """
+    found: dict[str, dict] = {}
+    for ds in sorted(list_of_datasets, key=lambda d: int(d.attrs["dive_number"])):
+        for name, var in ds.variables.items():
+            entry = found.get(str(name))
+            if entry is None:
+                # Decoded times carry their units and on-disk dtype in the encoding.
+                units = var.attrs.get("units", var.encoding.get("units", ""))
+                entry = found[str(name)] = {
+                    "dimensions": [str(d) for d in var.dims],
+                    "units": str(units),
+                    "dtype": str(var.encoding.get("dtype", var.dtype)),
+                    "values": 0,
+                }
+            entry["values"] += _value_count(var)
+    return dict(sorted(found.items()))
+
+
 def _institution_from_file(attrs: Mapping) -> dict | None:
     """Return a basestation file's ``institution`` global and its EDMO registry match.
 
@@ -1298,6 +1368,7 @@ def convert(
         # Only the dives that reach the output: a rejected dive contributed nothing.
         record["inputs"] = [_input_record(ds) for ds in used_inputs]
         record["presence"] = _presence_by_dive(used_inputs)
+        record["input_variables"] = _input_variables(used_inputs)
         record["basestation_globals"] = _basestation_globals(used_inputs)
         # What init would propose for platform:, from the file the resolver reads.
         record["platform_from_file"] = vocabularies.platform_from_file(
@@ -2080,6 +2151,9 @@ def _convert_mission(
         page.parent.mkdir(parents=True, exist_ok=True)
         page.write_text(render_conversion(path), encoding="utf-8")
         _log.info("wrote %s", page)
+        from seagliderOG1.reports.variables import write_variables_page
+
+        _log.info("wrote %s", write_variables_page(path, page))
         if not draft:
             # A draft is for setting up the mission metadata; no phase page.
             from seagliderOG1.reports.phase import write_phase_page

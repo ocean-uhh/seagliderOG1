@@ -1224,7 +1224,7 @@ def test_enrich_from_config_refuses_converter_owned_keys(
 def test_draft_writes_only_draft_files_and_a_draft_page(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """draft: four files, every name ends _draft*; the netCDF says it is not OG1."""
+    """draft: five files, every name ends _draft*; the netCDF says it is not OG1."""
     import xarray as xr
 
     out = tmp_path / "drafts"
@@ -1242,6 +1242,7 @@ def test_draft_writes_only_draft_files_and_a_draft_page(
             f"{stem}_conversion.html",
             f"{stem}_conversion.json",
             f"{stem}_mission.yaml",
+            f"{stem}_variables.html",
         ]
     )
     with xr.open_dataset(out / f"{stem}.nc", engine="netcdf4") as ds:

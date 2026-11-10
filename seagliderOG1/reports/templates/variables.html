@@ -1,0 +1,184 @@
+{% import "_nc_tables.html" as t -%}
+{% import "_nav.html" as navm -%}
+{% macro wbr(name) -%}
+{% for part in name.split("_") %}{{ part }}{% if not loop.last %}_<wbr>{% endif %}{% endfor %}
+{%- endmacro -%}
+{% macro two(a, b, nw="nw") -%}
+{%- if a is none %}<span class="before">not recorded</span>{% if b %}<br><span class="arr">→</span> {{ b }}{% endif %}
+{%- elif not a and not b %}—
+{%- elif not a %}<span class="before">none</span><br><span class="arr">→</span> {{ b }}
+{%- elif not b or a == b %}<span class="{{ nw }}">{{ a }}</span>
+{%- else %}<span class="before {{ nw }}">{{ a }}</span><br><span class="{{ nw }}"><span class="arr">→</span> {{ b }}</span>{% endif %}
+{%- endmacro -%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }} — variables</title>
+<style>
+{{ css | safe }}
+section { margin: 1.4rem 0; }
+.fate { font-size: var(--fs-xs); font-weight: 600; padding: 1px 6px; border-radius: var(--radius-btn); color: #fff; white-space: nowrap; }
+.fate-renamed { background: var(--role-landing); }
+.fate-passthrough { background: var(--gray-5); }
+.fate-consumed { background: var(--role-aggregate-a); }
+.fate-derived { background: var(--ok); }
+.fate-removed, .fate-dropped, .fate-skipped, .fate-unattributed { background: var(--error); }
+.mark { font-size: var(--fs-xs); padding: 0 5px; border-radius: var(--radius-btn); margin: 0 3px 2px 0; white-space: nowrap; border: 1px solid; display: inline-block; }
+.mark-loss { border-color: var(--error); color: var(--error); }
+.mark-step { border-color: var(--gray-4); color: var(--gray-5); }
+.mark-gap { border-color: var(--warn); color: var(--warn); }
+.arr { color: var(--gray-5); }
+.before { color: var(--muted); font-size: var(--fs-xs); }
+.nw { white-space: nowrap; }
+td.num { text-align: right; white-space: nowrap; }
+td.values-differ { background: var(--warn-bg); box-shadow: inset 3px 0 0 var(--warn); }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0.6rem 0; }
+.controls input { padding: 6px 10px; border: 1px solid var(--rule); border-radius: var(--radius-btn); min-width: 16rem; font: inherit; }
+.chip { border: 1px solid var(--rule); border-radius: var(--radius-pill); padding: 2px 10px; font: inherit; font-size: var(--fs-xs); cursor: pointer; background: var(--bg); color: var(--text); }
+.chip[aria-pressed="true"] { background: var(--ocean); color: #fff; border-color: var(--ocean); }
+.chip-gap { width: 10px; }
+#count { color: var(--gray-5); font-size: var(--fs-xs); margin-left: 6px; }
+.index-wrap { overflow-x: auto; }
+#index td.im { max-width: 22rem; }
+#index td.units-cell { min-width: 5rem; max-width: 7.5rem; }
+#index td.dim-cell { min-width: 7rem; max-width: 9rem; overflow-wrap: anywhere; }
+#index td.name-cell { min-width: 11rem; max-width: 15rem; overflow-wrap: anywhere; }
+#index td.im { max-width: 13rem; }
+#index { font-size: 0.9rem; }
+#index td, #index th { padding-left: 6px; padding-right: 6px; }
+#index td.im .muted { font-size: var(--fs-xs); }
+dl.glossary dt { font-weight: 600; margin-top: 0.5rem; }
+dl.glossary dd { margin: 0; color: var(--gray-5); max-width: 78ch; }
+@media (max-width: 700px) { #index { min-width: 760px; } }
+</style>
+</head>
+<body>
+<div id="top"></div>
+<div class="masthead">
+  <div class="masthead-header">
+    <h1>{{ title }}</h1>
+    <span class="masthead-type">variables</span>
+  </div>
+  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>Every variable: basestation input beside OG1 output</span><span>generated {{ generated_at }}</span></p>
+  {{ navm.page_nav(page_nav) }}
+  <dl class="meta-grid">
+  {%- for label, value in masthead_meta %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+  {%- endfor %}
+  </dl>
+  <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
+</div>
+<nav class="jump-nav"><a href="#variables">Variable index</a> · <a href="#glossary">Glossary</a></nav>
+
+<section id="variables">
+<h2>Variable index</h2>
+<p class="caption">Every basestation variable ({{ input_count }}), then every variable the converter built. The basestation name is above, the name in the OG1 file below; search either. Units, dtype and values show the basestation form above the OG1 form.
+<strong>Highlight rule:</strong> a <em>Values</em> cell is highlighted when the number of non-missing values in the OG1 file differs from the basestation files (for a scalar: the dives with a value).
+{%- if not record_present %} The conversion record beside this file has no input variables (written by an older version), so the basestation columns read <em>not recorded</em>.{% endif %}</p>
+<div class="controls" role="group" aria-label="Filter the variable index">
+<input id="q" type="search" placeholder="Search a basestation or OG1 name…" aria-label="Search by name">
+{%- for key, n in fates %}<button type="button" class="chip" data-fate="{{ key }}" aria-pressed="false" title="{{ fate_meanings[key] }}">{{ key }} ({{ n }})</button>{% endfor %}
+<span class="chip-gap"></span>
+{%- for s in subsystems %}<button type="button" class="chip" data-subsystem="{{ s }}" aria-pressed="false">{{ s }}</button>{% endfor %}
+<span class="chip-gap"></span>
+<button type="button" class="chip" data-mark="loss" aria-pressed="false" title="A loss: structure dropped or a label not kept">has a loss</button>
+<button type="button" class="chip" data-mark="scalar" aria-pressed="false">scalar</button>
+<button type="button" class="chip" data-mark="novocab" aria-pressed="false" title="An OG1 name without a vocabulary link">OG1 name, no vocabulary</button>
+<span id="count" aria-live="polite"></span>
+</div>
+<div class="index-wrap">
+<table id="index" class="nc sortable">
+<thead><tr>
+<th title="Basestation name (grey) and the name in the OG1 file">Name</th>
+<th title="What happened to the variable; see the glossary">Fate</th>
+<th title="The basestation dimension it was on">Dimension</th>
+<th title="Units in the basestation files, then in the OG1 file">Units</th>
+<th title="Storage type in the basestation files, then in the OG1 file">dtype</th>
+<th title="Non-missing values in the basestation files, then in the OG1 file">Values</th>
+<th title="OG1 or P01 vocabulary link, and the CF standard_name">Vocabulary</th>
+<th title="Inputs and method of a derived variable; marks for steps and losses">Inputs / marks</th>
+<th data-nosort>Attributes</th>
+</tr></thead>
+<tbody>
+{%- for r in rows %}
+{%- set loss = r.marks | selectattr("kind", "equalto", "loss") | list %}
+{%- set differ = r.values_in is not none and r.values_out is not none and r.values_in != r.values_out %}
+<tr data-fate="{{ r.fate }}" data-subsystem="{{ r.subsystem }}" data-loss="{{ 1 if loss else 0 }}" data-scalar="{{ 1 if r.scalar else 0 }}" data-novocab="{{ 1 if (r.name and r.name.isupper() and r.fate in ('renamed', 'derived') and not r.vocabulary) else 0 }}" data-names="{{ r.basestation }} {{ r.name }}">
+<td class="name-cell" data-sort="{{ r.basestation or r.name }}">{% if r.basestation %}<span class="var-orig"><code>{{ wbr(r.basestation) }}</code>{% if r.name %} →{% endif %}</span>{% if r.name %}<br>{% endif %}{% endif %}{% if r.name %}<code>{{ wbr(r.name) }}</code>{% elif not r.basestation %}—{% endif %}</td>
+<td><span class="fate fate-{{ r.fate }}">{{ r.fate }}</span></td>
+<td class="dim-cell"><code class="muted">{{ wbr(r.dimension) }}</code></td>
+{%- if r.fate == "derived" %}
+<td class="units-cell">{{ r.units_out or "—" }}</td>
+<td><code>{{ r.dtype_out }}</code></td>
+{%- else %}
+<td class="units-cell">{{ two(r.units_in, r.units_out, "") }}</td>
+<td><code>{{ two(r.dtype_in, r.dtype_out, "") }}</code></td>
+{%- endif %}
+<td class="num{% if differ %} values-differ{% endif %}" data-sort="{{ r.values_out if r.values_out is not none else -1 }}">
+{%- if r.values_in is none and r.values_out is none %}—
+{%- elif r.values_in is none %}{{ "{:,}".format(r.values_out) }}
+{%- elif r.values_out is none %}<span class="before">{{ "{:,}".format(r.values_in) }}</span><br><span class="arr">→</span> not written
+{%- else %}<span class="before">{{ "{:,}".format(r.values_in) }}</span><br><span class="arr">→</span> {{ "{:,}".format(r.values_out) }}{% endif %}</td>
+<td>{% if r.vocabulary %}<a href="{{ r.vocabulary }}">{{ r.vocabulary.rstrip("/").split("/")[-1] }}</a>{% endif %}{% if r.vocabulary and r.standard_name %}<br>{% endif %}{% if r.standard_name %}<code class="muted">{{ wbr(r.standard_name) }}</code>{% endif %}</td>
+<td class="im">{% if r.fate == "derived" %}{% if r.inputs %}<code class="muted">{{ r.inputs | join(" · ") }}</code><br>{% endif %}{% if r.method %}<span class="muted">{{ r.method }}</span><br>{% endif %}{% endif %}
+{%- for m in r.marks %}<span class="mark mark-{{ m.kind }}">{{ m.text }}</span>{% endfor %}</td>
+<td>{{ t.attr_disclosure(r.attrs) }}</td>
+</tr>
+{%- endfor %}
+</tbody>
+</table>
+</div>
+<p class="fig-source">source: seagliderOG1/reports/_index.py:variable_rows</p>
+</section>
+
+<section id="glossary">
+<h2>Glossary</h2>
+<dl class="glossary">
+{%- for key, n in fates %}<dt>{{ key }}</dt><dd>{{ fate_meanings[key] }}</dd>{% endfor %}
+<dt>shared axis (N_MEASUREMENTS)</dt><dd>The one time axis of the OG1 file. Every basestation dimension (CTD samples, engineering samples, guidance-and-control events, GPS fixes, each sensor's samples) is placed on it by time, so most variables are empty at most data points.</dd>
+<dt>numbered copy (_2, _3)</dt><dd>When two basestation variables map to one OG1 name, the first (CTD first, then non-QC, then input order) keeps it and the next becomes NAME_2.</dd>
+<dt>per-dive scalar</dt><dd>A basestation parameter whose value changes between dives, written as JSON text <code>{"dives": [...], "values": [...]}</code>.</dd>
+<dt>loss</dt><dd>Something in the basestation files that is not in the OG1 file in the same form: dropped structure, or a label (a unit spelling, an attribute) not kept.</dd>
+<dt>step</dt><dd>A recorded change that keeps the information: a unit factor (stored in <code>original_units</code>), units relabelled, a float64 value stored as float32.</dd>
+<dt>inputs not recorded</dt><dd>The conversion did not record which basestation variables this one was built from; the page says so instead of guessing.</dd>
+</dl>
+</section>
+
+<footer>Generated by seagliderOG1 v{{ version }} &nbsp;&middot;&nbsp; {{ generated_at }}</footer>
+{{ js_sort_tables | safe }}
+<script>
+(function () {
+  var q = document.getElementById("q");
+  var rows = Array.prototype.slice.call(document.querySelectorAll("#index > tbody > tr"));
+  var count = document.getElementById("count");
+  var on = { fate: new Set(), subsystem: new Set(), mark: new Set() };
+  document.querySelectorAll(".chip").forEach(function (c) {
+    c.addEventListener("click", function () {
+      var kind = c.dataset.fate ? "fate" : c.dataset.subsystem ? "subsystem" : "mark";
+      var value = c.dataset[kind];
+      if (on[kind].has(value)) { on[kind].delete(value); } else { on[kind].add(value); }
+      c.setAttribute("aria-pressed", on[kind].has(value) ? "true" : "false");
+      apply();
+    });
+  });
+  q.addEventListener("input", apply);
+  function apply() {
+    var text = q.value.trim().toLowerCase();
+    var shown = 0;
+    rows.forEach(function (r) {
+      var ok = !text || r.dataset.names.toLowerCase().indexOf(text) !== -1;
+      if (on.fate.size && !on.fate.has(r.dataset.fate)) { ok = false; }
+      if (on.subsystem.size && !on.subsystem.has(r.dataset.subsystem)) { ok = false; }
+      on.mark.forEach(function (m) { if (r.dataset[m] !== "1") { ok = false; } });
+      r.hidden = !ok;
+      if (ok) { shown += 1; }
+    });
+    count.textContent = shown + " of " + rows.length + " variables";
+  }
+  apply();
+})();
+</script>
+{{ js_top_links | safe }}
+</body>
+</html>

@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
 from seagliderOG1 import __version__, contributors, vocabularies, writers
-from seagliderOG1.reports import _record, design
+from seagliderOG1.reports import _index, _pages, _record, design
 from seagliderOG1.reports._env import get_template
 from seagliderOG1.reports._vendored import figure_png, nc_tables
 from seagliderOG1.reports._vendored.design_tokens import COLORS, W_FULL, W_THREE_FIFTHS
@@ -810,21 +810,13 @@ def _reconciliation(
         Whether the fates sum to the input count.
 
     """
-    renamed = {
-        str(ds[n].attrs["original_name"])
-        for n in ds.variables
-        if ds[n].attrs.get("original_name") not in (None, n)
-    }
-    passed = {str(n) for n in ds.variables if ds[n].attrs.get("original_name") == n}
-    consumed = {s for sources in ledger["derived"].values() for s in sources}
-    removed = set(ledger["removed"])
-    dropped = set(ledger["dropped"])
-    skipped = {
-        v
-        for info in ledger["dimensions"].values()
-        if info["fate"] == "skipped"
-        for v in info["variables"]
-    }
+    fates = _index.fate_sets(ds, ledger)
+    renamed, passed, consumed = (
+        fates["renamed"],
+        fates["passthrough"],
+        fates["consumed"],
+    )
+    removed, dropped, skipped = fates["removed"], fates["dropped"], fates["skipped"]
     # One fate per name, in priority order (an output wins over a dimension listing). The
     # third item is the Meaning text for the owned table; the fate histogram reads only the
     # label and count, so it is unaffected.
@@ -1587,50 +1579,6 @@ def _masthead_meta(ds: xr.Dataset, ledger: dict) -> list[tuple[str, str]]:
     # The input → output variable counts are the first row of the Before → after table (§1),
     # so the masthead no longer repeats them.
     return meta
-
-
-def _page_nav(
-    has_inventory: bool = False,
-    *,
-    current: str = "conversion",
-    conversion_href: str = "",
-    phase_href: str = "",
-) -> dict:
-    """Return the page-nav structure for the vendored ``page_nav`` macro.
-
-    One pill per page: conversion, phase (when the file has ``PHASE``) and inventory. The
-    current page's pill is marked current; the others link, or show "not yet generated".
-
-    Parameters
-    ----------
-    has_inventory : bool, default False
-        Whether an inventory page exists to link to.
-    current : {"conversion", "phase"}, default "conversion"
-        The page this nav sits on.
-    conversion_href : str, optional
-        The conversion page's file name, for the pill on the phase page.
-    phase_href : str, optional
-        The phase page's file name; no phase pill when empty.
-
-    Returns
-    -------
-    dict
-        ``{"rows": [...]}`` for ``page_nav``.
-
-    """
-
-    def pill(role: str, href: str) -> dict[str, str]:
-        if role == current:
-            return {"role": role, "state": "current", "label": role, "href": ""}
-        if href:
-            return {"role": role, "state": "link", "label": role, "href": href}
-        return {"role": role, "state": "missing", "label": role, "href": ""}
-
-    pills = [pill("conversion", conversion_href)]
-    if phase_href or current == "phase":
-        pills.append(pill("phase", phase_href))
-    pills.append(pill("inventory", "inventory.html" if has_inventory else ""))
-    return {"rows": [{"label": "", "pills": pills}]}
 
 
 def _format_bytes(total: int | None) -> str:
@@ -2740,11 +2688,11 @@ def render_conversion(
         version=__version__,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
         masthead_meta=masthead_meta,
-        page_nav=_page_nav(
+        page_nav=_pages.page_nav(
             # No phase page beside a draft.
-            phase_href=writers.phase_page_path(path).name
-            if "PHASE" in ds.variables and not draft
-            else ""
+            path,
+            "conversion",
+            has_phase="PHASE" in ds.variables and not draft,
         ),
         summary_rows=summary_rows,
         unit_corrections_rows=unit_corrections_rows,

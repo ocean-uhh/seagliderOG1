@@ -371,7 +371,7 @@ def report(
     title: str | None = None,
     overwrite: bool = False,
 ) -> pathlib.Path:
-    """Write the HTML conversion page for an OG1 file and return its path.
+    """Write the HTML conversion page (and its Variables and phase pages) and return its path.
 
     Parameters
     ----------
@@ -417,6 +417,8 @@ def report(
         render_conversion(nc_path, title=title, verify=True), encoding="utf-8"
     )
     from seagliderOG1.reports.phase import write_phase_page
+    from seagliderOG1.reports.variables import write_variables_page
 
+    write_variables_page(nc_path, target, title=title)
     write_phase_page(nc_path, target, title=title)
     return target

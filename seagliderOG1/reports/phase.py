@@ -875,10 +875,10 @@ def render_phase(path: str | Path, *, title: str | None = None) -> str | None:
     """
     from datetime import UTC, datetime
 
-    from seagliderOG1 import __version__, writers
+    from seagliderOG1 import __version__
     from seagliderOG1.reports import design
     from seagliderOG1.reports._env import get_template
-    from seagliderOG1.reports.conversion import _page_nav
+    from seagliderOG1.reports._pages import page_nav
 
     context = phase_context(path)
     if context is None:
@@ -888,10 +888,7 @@ def render_phase(path: str | Path, *, title: str | None = None) -> str | None:
         css=design.SHARED_CSS,
         version=__version__,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
-        page_nav=_page_nav(
-            current="phase",
-            conversion_href=writers.conversion_path(path, ".html").name,
-        ),
+        page_nav=page_nav(path, "phase"),
         p=context,
     )
 

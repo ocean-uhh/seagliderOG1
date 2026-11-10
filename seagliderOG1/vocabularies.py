@@ -31,7 +31,7 @@ OG1 format requirements without code changes.
 """
 
 import pathlib
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from typing import NamedTuple
 
 import yaml
@@ -310,6 +310,78 @@ def platform_from_file(attrs: dict) -> dict:
 # the package already writes on ROLL_CTL / PITCH_CTL.
 RAW_COUNT_SUFFIXES = ("redCount", "blueCount", "fluorCount", "redRef", "blueRef")
 RAW_COUNT_UNITS = "counts"
+
+# The basestation variables a glider flight model reads or writes, by role: the hydrodynamic
+# and buoyancy constants, the attitude and buoyancy measurements, and the model's outputs. The
+# conversion report's flight panel and the variable index's "flight" filter read this one list.
+FLIGHT_MODEL_VARIABLES: dict[str, str] = {
+    "eng_pitchAng": "attitude",
+    "eng_rollAng": "attitude",
+    "eng_head": "attitude",
+    "eng_pitchCtl": "control",
+    "eng_rollCtl": "control",
+    "eng_vbdCC": "buoyancy",
+    "log_C_VBD": "buoyancy",
+    "sg_cal_vbdbias": "buoyancy",
+    "sg_cal_volmax": "buoyancy",
+    "sg_cal_vbd_min_cnts": "buoyancy",
+    "sg_cal_vbd_cnts_per_cc": "buoyancy",
+    "sg_cal_mass": "buoyancy",
+    "sg_cal_abs_compress": "buoyancy",
+    "sg_cal_therm_expan": "buoyancy",
+    "sg_cal_temp_ref": "buoyancy",
+    "sg_cal_rho0": "buoyancy",
+    "sg_cal_hd_a": "hydrodynamic",
+    "sg_cal_hd_b": "hydrodynamic",
+    "sg_cal_hd_c": "hydrodynamic",
+    "glide_angle": "model output",
+    "speed": "model output",
+    "horz_speed": "model output",
+    "vert_speed": "model output",
+    "glide_angle_gsm": "model output (gsm)",
+    "speed_gsm": "model output (gsm)",
+    "horz_speed_gsm": "model output (gsm)",
+    "vert_speed_gsm": "model output (gsm)",
+}
+
+# Basestation name prefixes by subsystem, tested in order after the flight-model list and the
+# file's instruments; the variable index filters on these labels.
+SUBSYSTEM_PREFIXES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("GPS", ("log_gps", "gps", "GPS")),
+    ("G&C", ("gc_",)),
+    ("calibration", ("sg_cal_",)),
+    ("log", ("log_",)),
+    ("engineering", ("eng_",)),
+)
+
+
+def subsystem_of(name: str, instruments: Collection[str] = ()) -> str:
+    """Return the subsystem label of a basestation variable, for the variable index.
+
+    Parameters
+    ----------
+    name : str
+        A basestation variable name.
+    instruments : collections.abc.Collection of str, optional
+        The instrument names the file lists in its ``instrument`` global (``legato``,
+        ``codaTODO``, ...); a variable named for one of them is a sensor variable.
+
+    Returns
+    -------
+    str
+        ``"flight"``, ``"sensors"``, one of the :data:`SUBSYSTEM_PREFIXES` labels, or
+        ``"science"`` for the rest (the CTD-derived and navigation variables).
+
+    """
+    if name in FLIGHT_MODEL_VARIABLES:
+        return "flight"
+    if any(name == inst or name.startswith(f"{inst}_") for inst in instruments):
+        return "sensors"
+    for label, prefixes in SUBSYSTEM_PREFIXES:
+        if name.startswith(prefixes):
+            return label
+    return "science"
+
 
 # The package units view over the vendored family tables (reports/_vendored/units.py). One table
 # resolves a reader spelling to the OG1 variable's canonical spelling and the factor to reach it.
