@@ -78,8 +78,8 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
         "--report",
         action="store_true",
         help=(
-            "also write the HTML pages <id>_conversion.html and <id>_phase.html "
-            "beside each file"
+            "also write the HTML pages <id>_conversion.html, <id>_variables.html, "
+            "<id>_processing.html and <id>_phase.html beside each file"
         ),
     )
     parser.add_argument(

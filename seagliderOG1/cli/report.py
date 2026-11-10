@@ -27,11 +27,14 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
     """
     parser = subparsers.add_parser(
         "report",
-        help="write the HTML conversion and phase pages for an OG1 file",
+        help=(
+            "write the HTML conversion, variables, processing and phase pages for an "
+            "OG1 file"
+        ),
         description=(
-            "Write <id>_conversion.html and <id>_phase.html for an OG1 file written by "
-            "seagliderOG1: "
-            "beside the file, in -o DIR, or in --report-dir ROOT/<id>/."
+            "Write <id>_conversion.html, <id>_variables.html, <id>_processing.html and "
+            "<id>_phase.html for an OG1 file written by seagliderOG1: beside the file, "
+            "in -o DIR, or in --report-dir ROOT/<id>/."
         ),
         epilog=(
             "examples:\n"
@@ -118,8 +121,8 @@ def write_page(
 
     """
     from seagliderOG1.exceptions import MetadataError
+    from seagliderOG1.reports._pages import write_linked_pages
     from seagliderOG1.reports.conversion import render_conversion
-    from seagliderOG1.reports.phase import write_phase_page
 
     if not nc_path.is_file():
         return f"file not found: {nc_path}"
@@ -132,7 +135,7 @@ def write_page(
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(html, encoding="utf-8")
-        write_phase_page(nc_path, target, title=title)
+        write_linked_pages(nc_path, target, title=title)
     except OSError as exc:
         return f"could not write {target}: {exc}"
     return None

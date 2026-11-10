@@ -271,8 +271,8 @@ def test_history_rows_are_ordinal_numbered():
     assert [r[0] for r in rows] == [str(i) for i in range(1, len(rows) + 1)]
 
 
-def test_page_presence_section_with_and_without_sidecar(tmp_path) -> None:
-    """The page shows the pattern table from the sidecar, and says so when it is missing."""
+def test_page_summary_with_and_without_sidecar(tmp_path) -> None:
+    """The summary tiles read the conversion record, and say "not recorded" without it."""
     import pathlib
 
     from seagliderOG1 import _convert, writers
@@ -282,12 +282,11 @@ def test_page_presence_section_with_and_without_sidecar(tmp_path) -> None:
         tmp_path,
     )
     html = conversion.render_conversion(path)
-    assert "Presence across dives" in html
-    assert "from dive 2" in html and "dive 4 only" in html
-    assert "343 variables over 5 dives" in html
+    assert "<dt>Dive files read</dt><dd>5</dd>" in html
+    assert '<section id="losses">' in html
     writers.conversion_path(path, ".json").unlink()
     html = conversion.render_conversion(path)
-    assert "conversion record not found" in html
+    assert '<div class="tile bad"><dt>Dive files read</dt><dd>not recorded</dd>' in html
 
 
 def test_presence_strips_one_row_per_pattern() -> None:
@@ -464,31 +463,23 @@ def test_summary_rows_and_verdict_before_and_after(tmp_path) -> None:
     assert verdict[0]["text"].endswith("inputs accounted for")
 
 
-def test_page_section_order_and_scalars_collapsed(tmp_path) -> None:
-    """The sections render in the new-user order; the first scalar group is open, rest closed."""
+def test_page_section_order(tmp_path) -> None:
+    """The Conversion page's sections render summary first, then what to fix and what was lost."""
     import re
 
     path = _convert._convert_mission(DATA, tmp_path, dives=(1, 2))
     html = conversion.render_conversion(path)
     ids = re.findall(r'<section id="([^"]+)">', html)
     assert ids == [
-        "config-check",  # no platform given: PLATFORM_MODEL etc. are UNK
         "summary",
-        "units",
-        "og1",
-        "reconciliation",
-        "presence",
-        "dimensions",
-        "derived",
-        "dropped",
-        "variables",
+        "config-check",  # no platform given: PLATFORM_MODEL etc. are UNK
+        "losses",
+        "flight",
+        "calibration",
+        "traced",
+        "glossary",
         "globals",
-        "scalars",
     ]
-    assert "1. Before → after" in html
-    details = re.findall(r'<details class="scalar-group"( open)?>', html)
-    assert details and details[0] == " open"
-    assert all(flag == "" for flag in details[1:])
 
 
 def test_unit_corrections_table_lists_corrections_conversions_and_adoptions() -> None:

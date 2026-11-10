@@ -493,23 +493,20 @@ def test_report_writes_html_page(
     assert cli.main(["report", str(nc)]) == 0
     assert f"wrote {out}" in capsys.readouterr().out
     html = out.read_text(encoding="utf-8")
-    assert "Reconciliation" in html
-    assert "Variables on" in html  # grouped by original dimension
-    assert "Valid %" in html  # the merge diagnostic column
     assert "<table" in html
-    # The six fates account for every basestation variable (demo_sg005 dives 1-2: 342).
-    assert "sum to the 342 basestation input variables" in html
+    # Every basestation variable is accounted for (demo_sg005 dives 1-2: 342).
+    assert "<dt>Accounted for</dt><dd>342 / 342</dd>" in html
     # The transient derived-sources stamp is internal and never reaches the page.
     assert "_derived_sources" not in html
-    # Item #2 sections render as tables, not the earlier interim text block.
+    # The Variables and Processing pages are written beside it.
+    assert (tmp_path / "og1_variables.html").is_file()
+    assert (tmp_path / "og1_processing.html").is_file()
     # Located by section id, so inserting or renumbering sections does not break it.
-    for section in ("derived", "globals"):
+    for section in ("losses", "globals"):
         body = html.split(f'<section id="{section}">', 1)[1].split("</section>", 1)[0]
         assert "<table" in body, section
     assert "<h3>History</h3>" in html
-    assert "(scalar)" in html  # the Dimensions scalar row
     assert "Interim text view" not in html
-    assert "data:image/png;base64," in html  # the section-1 fate histogram
     # Masthead (S18) and the renamed calibration group (S15).
     assert 'class="meta-grid"' in html
     assert "<code>sg_calib_constants</code>" in html
@@ -1224,7 +1221,7 @@ def test_enrich_from_config_refuses_converter_owned_keys(
 def test_draft_writes_only_draft_files_and_a_draft_page(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """draft: five files, every name ends _draft*; the netCDF says it is not OG1."""
+    """draft: six files, every name ends _draft*; the netCDF says it is not OG1."""
     import xarray as xr
 
     out = tmp_path / "drafts"
@@ -1242,6 +1239,7 @@ def test_draft_writes_only_draft_files_and_a_draft_page(
             f"{stem}_conversion.html",
             f"{stem}_conversion.json",
             f"{stem}_mission.yaml",
+            f"{stem}_processing.html",
             f"{stem}_variables.html",
         ]
     )
@@ -1253,8 +1251,7 @@ def test_draft_writes_only_draft_files_and_a_draft_page(
     html = (out / f"{stem}_conversion.html").read_text(encoding="utf-8")
     assert '<span class="masthead-type">draft</span>' in html
     assert "this is not an OG1 file" in html
-    assert "9. Basestation global attributes" in html
-    assert "What an OG1 file would hold" in html
+    assert "Basestation global attributes" in html
     assert "Suggested mission.yaml lines" in html
     assert "dives: [1, 2]" in html and 'class="copy"' in html
     assert "mission.yaml against the data" not in html  # a draft has no config

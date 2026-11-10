@@ -32,9 +32,9 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
 from seagliderOG1 import __version__, contributors, vocabularies, writers
-from seagliderOG1.reports import _index, _pages, _record, design
+from seagliderOG1.reports import _index, _pages, _record, design, processing
 from seagliderOG1.reports._env import get_template
-from seagliderOG1.reports._vendored import figure_png, nc_tables
+from seagliderOG1.reports._vendored import nc_tables
 from seagliderOG1.reports._vendored.design_tokens import COLORS, W_FULL, W_THREE_FIFTHS
 
 __all__ = ["render_conversion"]
@@ -2513,6 +2513,110 @@ def _basestation_rows(found: dict | None, n_files: int) -> list[dict[str, object
     return rows
 
 
+def _fate_counts(rows: list[_index.VariableRow]) -> list[tuple[str, int]]:
+    """Return ``(fate, count)`` for every fate with entries, in :data:`_index.FATES` order."""
+    keys = [key for key, _meaning in _index.FATES] + ["derived"]
+    counts = {key: sum(r["fate"] == key for r in rows) for key in keys}
+    return [(key, counts[key]) for key in keys if counts[key]]
+
+
+def _tiles(
+    ds: xr.Dataset,
+    ledger: dict,
+    record: dict | None,
+    rows: list[_index.VariableRow],
+    loss_rows: list[processing.Loss],
+) -> list[dict[str, object]]:
+    """Return the summary tiles at the top of the Conversion page.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The open OG1 dataset.
+    ledger : dict
+        Its parsed ledger.
+    record : dict or None
+        The conversion record beside the file, or None.
+    rows : list of VariableRow
+        The variable index.
+    loss_rows : list of Loss
+        From :func:`seagliderOG1.reports.processing.losses`.
+
+    Returns
+    -------
+    list of dict
+        ``{"label", "value", "bad"}`` per tile, in display order; ``bad`` highlights it.
+
+    """
+    inputs = (record or {}).get("inputs") or []
+    n_in = ledger["input_variable_count"]
+    accounted = sum(1 for r in rows if r["basestation"] and r["fate"] != "unattributed")
+    counted = [loss for loss in loss_rows if loss["count"]]
+    unknown = [loss for loss in loss_rows if loss["count"] is None]
+    touched = sum(loss["count"] or 0 for loss in loss_rows)
+    fates = dict(_fate_counts(rows))
+    factors = sum(1 for r in rows if r["factor"] not in (None, 1) and r["basestation"])
+    downcast = sum(
+        1 for r in rows if any(m["text"] == "float64 → float32" for m in r["marks"])
+    )
+    return [
+        {
+            "label": "Dive files read",
+            "value": f"{len(inputs)}" if inputs else "not recorded",
+            "bad": not inputs,
+        },
+        {
+            "label": "Variables",
+            "value": f"{n_in} in → {len(ds.variables)} out",
+            "bad": False,
+        },
+        {
+            "label": "Accounted for",
+            "value": f"{accounted} / {n_in}",
+            "bad": accounted != n_in,
+        },
+        {
+            "label": "Losses",
+            "value": f"{len(counted)} kinds, {touched} items"
+            + (f"; {len(unknown)} not recorded" if unknown else ""),
+            "bad": bool(counted or unknown),
+        },
+        {
+            "label": "Renamed to OG1",
+            "value": str(fates.get("renamed", 0)),
+            "bad": False,
+        },
+        {
+            "label": "Passed through",
+            "value": str(fates.get("passthrough", 0)),
+            "bad": False,
+        },
+        {
+            "label": "Built by the converter",
+            "value": str(fates.get("derived", 0)),
+            "bad": False,
+        },
+        {
+            "label": "Consumed into others",
+            "value": str(fates.get("consumed", 0)),
+            "bad": False,
+        },
+        {"label": "Unit factors applied", "value": str(factors), "bad": False},
+        {"label": "float64 → float32", "value": str(downcast), "bad": False},
+        {
+            "label": "Data points",
+            "value": f"{ds.sizes.get('N_MEASUREMENTS', 0):,}",
+            "bad": False,
+        },
+        {
+            "label": "Dives in the file",
+            "value": str(len(((record or {}).get("presence") or {}).get("dives") or []))
+            or "—",
+            "bad": False,
+        },
+    ]
+
+
 def render_conversion(
     path: str | Path, *, title: str | None = None, verify: bool = False
 ) -> str:
@@ -2545,7 +2649,6 @@ def render_conversion(
     # it is missing. Which dives each variable came from is known only at conversion time.
     sidecar = _record.conversion_sidecar(path, verify=verify)
     inputs = sidecar.get("inputs") if sidecar else None
-    dim_samples = _dimension_samples(inputs)
 
     ds = xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False)
     try:
@@ -2569,22 +2672,7 @@ def render_conversion(
             if source == "config" and not str(ds.attrs.get(name, "")).strip()
         ]
         ledger = _record.conversion_ledger(ds)
-        groups, var_source = _variable_groups_by_original_dimension(ds)
-        # Each Variables group gets its own Valid % baseline caption (the share of the shared
-        # axis its dimension supplied), rendered one group at a time through the vendored macro.
-        axis_total = (
-            int(ds.sizes["N_MEASUREMENTS"]) if "N_MEASUREMENTS" in ds.sizes else None
-        )
-        variable_blocks = [
-            {
-                "title": title,
-                "rows": rows,
-                "caption": _variable_group_caption(
-                    title, rows, dim_samples, axis_total
-                ),
-            }
-            for title, rows in groups
-        ]
+        groups, _var_source = _variable_groups_by_original_dimension(ds)
         # OG1-first view, tier 1: the required variables. Valid % for the dimensioned ones
         # comes from the coordinate rows and the grouped variable rows already built.
         coord_rows, _coord_source = nc_tables.coords_rows(
@@ -2597,8 +2685,6 @@ def render_conversion(
         og1_required, og1_required_caption, og1_required_incomplete = (
             _og1_required_rows(ds, ledger, valid_by_name)
         )
-        og1_candidate_groups = _og1_candidate_groups(ds, ledger, valid_by_name)
-        og1_named, og1_carried = _og1_tiers(ds, ledger, valid_by_name)
         og1_sensors = _og1_sensor_rows(ds)
         calibration_comments = _calibration_comment_rows(ds)
         calibration_columns = (
@@ -2606,30 +2692,7 @@ def render_conversion(
             if calibration_comments
             else []
         )
-        duplicate_groups = _duplicate_groups(ds)
-        reconciliation, reconciliation_caption = _reconciliation(ds, ledger)
-        # The fate rows excluding the input-total row (the last), for the histogram.
-        fate_histogram = figure_png.render_b64(
-            draw_fate_histogram,
-            reconciliation[:-1],
-            source="conversion.py:draw_fate_histogram",
-        )
-        fate_histogram_source = figure_png.source_of(fate_histogram)
-        dimensions = _dimension_rows(ledger, dim_samples)
-        # Scalar parameters as a vendored table, so each row's Attributes disclosure shows a
-        # per-dive scalar's serialization / storage_type / original_name (how to decode it).
-        all_scalars, scalar_source = nc_tables.scalars_rows(
-            ds,
-            exclude=design.is_sensor,
-            original_name_attrs=design.ORIGINAL_NAME_ATTRS,
-        )
-        param_names = set(ledger["scalar_parameters"])
-        scalar_rows = [r for r in all_scalars if r["name"] in param_names]
-        _apply_decoded_scalar_values(scalar_rows, ledger["scalar_parameters"])
-        scalar_groups = _scalar_groups(scalar_rows)
-        derived_rows = _derived_rows(ds, ledger)
-        dropped = sorted(ledger["dropped"])
-        removed = sorted(ledger["removed"])
+        reconciliation, _reconciliation_caption = _reconciliation(ds, ledger)
         # Global attributes grouped into the five vendored convention groups (the package's own
         # names placed by meaning via extras). history has its own ordinal table below;
         # conversion_attribute_sources is provenance detail shown via the attribute marks, not here.
@@ -2653,34 +2716,20 @@ def render_conversion(
         )
         coverage_computed = _coverage_computed(ds)
         requirement_text, requirement_amber = _requirement_summary(ds)
-        summary_rows = _summary_rows(
-            ds, ledger, inputs, dim_samples, path, requirement_text
-        )
         verdict_clauses = _verdict_clauses(
             reconciliation, ledger, requirement_amber, og1_required_incomplete
         )
         history_rows = _history_rows(ledger)
         masthead_meta = _masthead_meta(ds, ledger)
-        unit_corrections_rows = _unit_corrections_rows(ds)
+        rows = _index.variable_rows(ds, ledger, sidecar)
+        steps = processing.processing_steps(ds, ledger, sidecar, rows)
+        loss_rows = processing.losses(sidecar, rows)
+        flight = processing.flight_rows(rows)
+        traced = processing.traced_variable(rows, steps)
+        tiles = _tiles(ds, ledger, sidecar, rows, loss_rows)
+        has_phase = "PHASE" in ds.variables and not draft
     finally:
         ds.close()
-
-    presence = sidecar.get("presence") if sidecar else None
-    if presence:
-        patterns = _record.presence_patterns(presence)
-        presence_rows = _presence_rows(patterns, len(presence["dives"]))
-        presence_strips = figure_png.render_b64(
-            draw_presence_strips,
-            patterns,
-            presence["dives"],
-            source="conversion.py:draw_presence_strips",
-        )
-        presence_summary = _record.presence_summary(presence) or (
-            f"Every variable has values on every one of the {len(presence['dives'])} "
-            "input dives."
-        )
-    else:
-        presence_rows, presence_strips, presence_summary = [], None, None
 
     return get_template("conversion.html").render(
         title=title or Path(path).name,
@@ -2688,48 +2737,31 @@ def render_conversion(
         version=__version__,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
         masthead_meta=masthead_meta,
-        page_nav=_pages.page_nav(
-            # No phase page beside a draft.
-            path,
-            "conversion",
-            has_phase="PHASE" in ds.variables and not draft,
-        ),
-        summary_rows=summary_rows,
-        unit_corrections_rows=unit_corrections_rows,
+        # No phase page beside a draft.
+        page_nav=_pages.page_nav(path, "conversion", has_phase=has_phase),
+        tiles=tiles,
+        stages=processing.stage_states(steps),
+        processing_href=writers.page_path(path, "processing").name,
+        variables_href=writers.page_path(path, "variables").name,
+        phase_href=writers.page_path(path, "phase").name if has_phase else "",
+        losses=loss_rows,
+        flight=flight,
+        traced=traced,
+        fates=_fate_counts(rows),
+        fate_meanings=dict(_index.FATES)
+        | {"derived": "Built by the converter; its inputs are listed."},
         verdict_clauses=verdict_clauses,
-        og1_required=og1_required,
-        og1_required_caption=og1_required_caption,
         og1_required_incomplete=og1_required_incomplete,
-        og1_candidate_groups=og1_candidate_groups,
-        og1_named=og1_named,
         og1_sensors=og1_sensors,
         calibration_comments=calibration_comments,
         calibration_columns=calibration_columns,
-        og1_carried=og1_carried,
-        duplicate_groups=duplicate_groups,
-        reconciliation=reconciliation,
-        reconciliation_caption=reconciliation_caption,
         record_present=sidecar is not None,
-        fate_histogram=fate_histogram,
-        fate_histogram_source=fate_histogram_source,
-        dimensions=dimensions,
-        variable_blocks=variable_blocks,
-        variables_source=var_source,
-        scalar_groups=scalar_groups,
-        scalar_source=scalar_source,
-        derived_rows=derived_rows,
-        dropped=dropped,
-        removed=removed,
         global_groups=global_groups,
         globals_source=globals_source,
         coverage_computed=coverage_computed,
         requirement_text=requirement_text,
         requirement_amber=requirement_amber,
         history_rows=history_rows,
-        presence_rows=presence_rows,
-        presence_strips=presence_strips,
-        presence_strips_source=figure_png.source_of(presence_strips),
-        presence_summary=presence_summary,
         record_name=writers.conversion_path(path, ".json").name,
         draft=draft,
         conventions=conventions,

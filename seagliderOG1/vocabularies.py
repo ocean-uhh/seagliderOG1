@@ -311,38 +311,40 @@ def platform_from_file(attrs: dict) -> dict:
 RAW_COUNT_SUFFIXES = ("redCount", "blueCount", "fluorCount", "redRef", "blueRef")
 RAW_COUNT_UNITS = "counts"
 
-# The basestation variables a glider flight model reads or writes, by role: the hydrodynamic
-# and buoyancy constants, the attitude and buoyancy measurements, and the model's outputs. The
-# conversion report's flight panel and the variable index's "flight" filter read this one list.
-FLIGHT_MODEL_VARIABLES: dict[str, str] = {
-    "eng_pitchAng": "attitude",
-    "eng_rollAng": "attitude",
-    "eng_head": "attitude",
-    "eng_pitchCtl": "control",
-    "eng_rollCtl": "control",
-    "eng_vbdCC": "buoyancy",
-    "log_C_VBD": "buoyancy",
-    "sg_cal_vbdbias": "buoyancy",
-    "sg_cal_volmax": "buoyancy",
-    "sg_cal_vbd_min_cnts": "buoyancy",
-    "sg_cal_vbd_cnts_per_cc": "buoyancy",
-    "sg_cal_mass": "buoyancy",
-    "sg_cal_abs_compress": "buoyancy",
-    "sg_cal_therm_expan": "buoyancy",
-    "sg_cal_temp_ref": "buoyancy",
-    "sg_cal_rho0": "buoyancy",
-    "sg_cal_hd_a": "hydrodynamic",
-    "sg_cal_hd_b": "hydrodynamic",
-    "sg_cal_hd_c": "hydrodynamic",
-    "glide_angle": "model output",
-    "speed": "model output",
-    "horz_speed": "model output",
-    "vert_speed": "model output",
-    "glide_angle_gsm": "model output (gsm)",
-    "speed_gsm": "model output (gsm)",
-    "horz_speed_gsm": "model output (gsm)",
-    "vert_speed_gsm": "model output (gsm)",
+# The basestation variables a glider flight model reads or writes: name -> (role, the name
+# gliderflightOG1 reads it under, or None). Roles: the hydrodynamic and buoyancy constants, the
+# attitude and buoyancy measurements, and the model's outputs. The conversion report's flight
+# panel and the variable index's "flight" filter read this one list.
+FLIGHT_MODEL_VARIABLES: dict[str, tuple[str, str | None]] = {
+    "eng_pitchAng": ("attitude", "PITCH"),
+    "eng_rollAng": ("attitude", None),
+    "eng_head": ("attitude", None),
+    "eng_pitchCtl": ("control", None),
+    "eng_rollCtl": ("control", None),
+    "eng_vbdCC": ("buoyancy", "VBD"),
+    "log_C_VBD": ("buoyancy", "C_VBD"),
+    "sg_cal_vbdbias": ("buoyancy", "vbdbias"),
+    "sg_cal_volmax": ("buoyancy", "volmax"),
+    "sg_cal_vbd_min_cnts": ("buoyancy", "vbd_min_cnts"),
+    "sg_cal_vbd_cnts_per_cc": ("buoyancy", "vbd_cnts_per_cc"),
+    "sg_cal_mass": ("buoyancy", "mass"),
+    "sg_cal_abs_compress": ("buoyancy", "abs_compress"),
+    "sg_cal_therm_expan": ("buoyancy", "therm_expan"),
+    "sg_cal_temp_ref": ("buoyancy", "temp_ref"),
+    "sg_cal_rho0": ("buoyancy", "rho0"),
+    "sg_cal_hd_a": ("hydrodynamic", "hd_a"),
+    "sg_cal_hd_b": ("hydrodynamic", "hd_b"),
+    "sg_cal_hd_c": ("hydrodynamic", "hd_c"),
+    "glide_angle": ("model output", None),
+    "speed": ("model output", None),
+    "horz_speed": ("model output", None),
+    "vert_speed": ("model output", None),
+    "glide_angle_gsm": ("model output (gsm)", None),
+    "speed_gsm": ("model output (gsm)", None),
+    "horz_speed_gsm": ("model output (gsm)", None),
+    "vert_speed_gsm": ("model output (gsm)", None),
 }
+
 
 # Basestation name prefixes by subsystem, tested in order after the flight-model list and the
 # file's instruments; the variable index filters on these labels.

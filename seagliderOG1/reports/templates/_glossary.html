@@ -1,0 +1,10 @@
+<dl class="glossary">
+{#- Shared by the Conversion and Variables pages; needs fates and fate_meanings. #}
+{%- for key, n in fates %}<dt>{{ key }}</dt><dd>{{ fate_meanings[key] }}</dd>{% endfor %}
+<dt>shared axis (N_MEASUREMENTS)</dt><dd>The one time axis of the OG1 file. Every basestation dimension (CTD samples, engineering samples, guidance-and-control events, GPS fixes, each sensor's samples) is placed on it by time, so most variables are empty at most data points.</dd>
+<dt>numbered copy (_2, _3)</dt><dd>When two basestation variables map to one OG1 name, the first (CTD first, then non-QC, then input order) keeps it and the next becomes NAME_2.</dd>
+<dt>per-dive scalar</dt><dd>A basestation parameter whose value changes between dives, written as JSON text <code>{"dives": [...], "values": [...]}</code>.</dd>
+<dt>loss</dt><dd>Something in the basestation files that is not in the OG1 file in the same form: dropped structure, or a label (a unit spelling, an attribute) not kept.</dd>
+<dt>step</dt><dd>A recorded change that keeps the information: a unit factor (stored in <code>original_units</code>), units relabelled, a float64 value stored as float32.</dd>
+<dt>inputs not recorded</dt><dd>The conversion did not record which basestation variables this one was built from; the page says so instead of guessing.</dd>
+</dl>

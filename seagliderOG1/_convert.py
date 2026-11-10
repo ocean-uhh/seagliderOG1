@@ -2151,16 +2151,11 @@ def _convert_mission(
         page.parent.mkdir(parents=True, exist_ok=True)
         page.write_text(render_conversion(path), encoding="utf-8")
         _log.info("wrote %s", page)
-        from seagliderOG1.reports.variables import write_variables_page
+        from seagliderOG1.reports._pages import write_linked_pages
 
-        _log.info("wrote %s", write_variables_page(path, page))
-        if not draft:
-            # A draft is for setting up the mission metadata; no phase page.
-            from seagliderOG1.reports.phase import write_phase_page
-
-            phase_page = write_phase_page(path, page)
-            if phase_page is not None:
-                _log.info("wrote %s", phase_page)
+        # A draft is for setting up the mission metadata; no phase page.
+        for linked in write_linked_pages(path, page, phase=not draft):
+            _log.info("wrote %s", linked)
     return path
 
 

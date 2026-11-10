@@ -9,7 +9,7 @@ from pathlib import Path
 
 from seagliderOG1 import writers
 
-__all__ = ["PAGES", "page_nav"]
+__all__ = ["PAGES", "page_nav", "write_linked_pages"]
 
 #: The pages in nav order, as ``(kind, label)``. ``basestation`` and ``og1`` are planned
 #: inventory pages, not written yet, so their pills show as not generated.
@@ -23,7 +23,7 @@ PAGES: tuple[tuple[str, str], ...] = (
 )
 
 #: The pages this package writes today; the others show as not generated.
-WRITTEN: frozenset[str] = frozenset({"conversion", "variables", "phase"})
+WRITTEN: frozenset[str] = frozenset({"conversion", "variables", "processing", "phase"})
 
 
 def page_nav(path: str | Path, current: str, *, has_phase: bool = True) -> dict:
@@ -57,3 +57,46 @@ def page_nav(path: str | Path, current: str, *, has_phase: bool = True) -> dict:
             state, href = "missing", ""
         pills.append({"role": kind, "state": state, "label": label, "href": href})
     return {"rows": [{"label": "", "pills": pills}]}
+
+
+def write_linked_pages(
+    nc_path: str | Path,
+    conversion_page: str | Path,
+    *,
+    title: str | None = None,
+    phase: bool = True,
+) -> list[Path]:
+    """Write the pages the conversion page links to, beside it, and return them.
+
+    The one place that decides which pages accompany a conversion page: Variables and
+    Processing always, Phase when asked and the file has ``PHASE``.
+
+    Parameters
+    ----------
+    nc_path : str or pathlib.Path
+        The OG1 file.
+    conversion_page : str or pathlib.Path
+        Where its conversion page was written; the others go in the same folder.
+    title : str, optional
+        Page title; the file name by default.
+    phase : bool, default True
+        Whether to write the phase page (a draft has none).
+
+    Returns
+    -------
+    list of pathlib.Path
+        The pages written, in nav order.
+
+    """
+    # Lazy: these modules import this one at load time.
+    from seagliderOG1.reports.phase import write_phase_page
+    from seagliderOG1.reports.processing import write_processing_page
+    from seagliderOG1.reports.variables import write_variables_page
+
+    written = [
+        write_variables_page(nc_path, conversion_page, title=title),
+        write_processing_page(nc_path, conversion_page, title=title),
+    ]
+    if phase and (page := write_phase_page(nc_path, conversion_page, title=title)):
+        written.append(page)
+    return written
