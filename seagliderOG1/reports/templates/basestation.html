@@ -30,7 +30,8 @@ svg.strip, svg.heat { margin-top: 4px; max-width: 100%; height: auto; display: b
 <div id="top"></div>
 {{ mh.masthead(masthead, page_nav) }}
 {%- set secs = number_sections([("dimensions", "Dimension sizes"), ("presence", "Variables not in every dive"),
-    ("per-dive", "Parameters that change"), ("globals", "Global attributes that differ"), ("variables", "Variables by dimension")]) %}
+    ("per-dive", "Parameters that change"), ("salinity", "Salinity") if salinity else none,
+    ("globals", "Global attributes that differ"), ("variables", "Variables by dimension")]) %}
 {{ mh.jump_nav(secs) }}
 
 <p class="caption">The {{ n_files }} basestation dive files <code>{{ first_file }}</code> … <code>{{ last_file }}</code>, described as they were read: {{ n_variables }} variables, {{ n_variables - n_partial }} in every dive. Nothing here is converted; how each variable became OG1 is on the Variables page.</p>
@@ -92,6 +93,26 @@ so a steady sample rate is one even shade whatever the dive depth; a step is a r
 {%- endif %}
 <p class="fig-source">source: seagliderOG1/reports/og1.py:per_dive_rows</p>
 </section>
+
+{%- if salinity %}
+<section id="salinity">
+<h2>{{ secs.mark["salinity"] }} Salinity: the basestation's corrections</h2>
+<p class="caption">The basestation writes salinity twice, corrected (<code>salinity</code>, written to the OG1 file as PSAL) and uncorrected (<code>salinity_raw</code>). Each line compares two of them, or one with practical salinity recomputed here from the basestation's conductivity, temperature and <code>ctd_pressure</code> with <code>gsw.SP_from_C</code> (<code>SP(…)</code>; for this page only, not in the file), where both have a value. Differences in practical-salinity units; the strip is each dive's median difference (hover a cell for its dive and value).
+{%- if salinity.raw_count is not none and salinity.count is not none and salinity.count < salinity.raw_count %} <code>salinity</code> has {{ "{:,}".format(salinity.raw_count - salinity.count) }} fewer values than <code>salinity_raw</code> ({{ "{:,}".format(salinity.count) }} of {{ "{:,}".format(salinity.raw_count) }}): the basestation set them to missing in its corrections.{% endif %}</p>
+<div class="table-wrap">
+<table class="nc">
+<thead><tr><th>Difference</th><th>Values</th><th>Median</th><th>RMS</th><th>Largest</th><th>By dive</th></tr></thead>
+<tbody>
+{%- for r in salinity.rows %}
+<tr><td><code>{{ r.label }}</code><br><span class="muted">{{ r.note }}</span></td>
+<td class="num">{{ "{:,}".format(r.n) }}</td><td class="num">{{ r.median }}</td><td class="num">{{ r.rmsd }}</td><td class="num">{{ r.max_abs }}</td>
+<td>{% if r.strip %}<svg class="strip" width="{{ strip_width }}" height="14" role="img" aria-label="{{ r.label }} by dive">{% for c in r.strip %}<rect x="{{ c.x }}" y="0" width="{{ c.width }}" height="14" fill="{{ c.fill }}"><title>{{ c.title }}</title></rect>{% endfor %}</svg><span class="muted strip-legend">{{ r.legend }}</span>{% else %}—{% endif %}</td></tr>
+{%- endfor %}
+</tbody></table>
+</div>
+<p class="fig-source">source: seagliderOG1/reports/basestation.py:salinity_checks</p>
+</section>
+{%- endif %}
 
 <section id="globals">
 <h2>{{ secs.mark["globals"] }} Global attributes that differ between files</h2>

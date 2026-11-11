@@ -30,6 +30,7 @@ section { margin: 1.4rem 0; }
 .mark-loss { border-color: var(--error); color: var(--error); }
 .mark-step { border-color: var(--gray-4); color: var(--gray-5); }
 .mark-gap { border-color: var(--warn); color: var(--warn); }
+.mark-candidate { border-color: var(--ocean); color: var(--ocean); }
 .arr { color: var(--gray-5); }
 .before { color: var(--muted); font-size: var(--fs-xs); }
 .nw { white-space: nowrap; }
@@ -75,8 +76,12 @@ dl.glossary dd { margin: 0; color: var(--gray-5); max-width: 78ch; }
 <button type="button" class="chip" data-mark="loss" aria-pressed="false" title="A loss: structure dropped or a label not kept">has a loss</button>
 <button type="button" class="chip" data-mark="scalar" aria-pressed="false">scalar</button>
 <button type="button" class="chip" data-mark="novocab" aria-pressed="false" title="An OG1 name without a vocabulary link">OG1 name, no vocabulary</button>
+{%- if n_candidates %}<button type="button" class="chip" data-mark="candidate" aria-pressed="false" title="A variable the project proposes as an OG1 parameter (vocabularies.OG1_CANDIDATE_VARS)">candidate for OG1 ({{ n_candidates }})</button>{% endif %}
 <span id="count" aria-live="polite"></span>
 </div>
+{%- if absent_candidates %}
+<details class="vars"><summary>{{ absent_candidates | length }} proposed OG1 parameters are not in this file</summary><p class="caption">The project's candidate list (<code>vocabularies.OG1_CANDIDATE_VARS</code>) names them; a flight model or a later basestation version may supply them: {% for v in absent_candidates %}<code>{{ v }}</code>{% if not loop.last %}, {% endif %}{% endfor %}.</p></details>
+{%- endif %}
 <div class="index-wrap">
 <table id="index" class="nc sortable">
 <thead><tr>
@@ -94,7 +99,7 @@ dl.glossary dd { margin: 0; color: var(--gray-5); max-width: 78ch; }
 {%- for r in rows %}
 {%- set loss = r.marks | selectattr("kind", "equalto", "loss") | list %}
 {%- set differ = r.values_in is not none and r.values_out is not none and r.values_in != r.values_out %}
-<tr data-fate="{{ r.fate }}" data-subsystem="{{ r.subsystem }}" data-loss="{{ 1 if loss else 0 }}" data-scalar="{{ 1 if r.scalar else 0 }}" data-novocab="{{ 1 if (r.name and r.name.isupper() and r.fate in ('renamed', 'derived') and not r.vocabulary) else 0 }}" data-names="{{ r.basestation }} {{ r.name }}">
+<tr data-fate="{{ r.fate }}" data-subsystem="{{ r.subsystem }}" data-loss="{{ 1 if loss else 0 }}" data-scalar="{{ 1 if r.scalar else 0 }}" data-novocab="{{ 1 if (r.name and r.name.isupper() and r.fate in ('renamed', 'derived') and not r.vocabulary) else 0 }}" data-candidate="{{ 1 if r.candidate else 0 }}" data-names="{{ r.basestation }} {{ r.name }}">
 <td class="name-cell" data-sort="{{ r.basestation or r.name }}">{% if r.basestation %}<span class="var-orig"><code>{{ wbr(r.basestation) }}</code>{% if r.name %} →{% endif %}</span>{% if r.name %}<br>{% endif %}{% endif %}{% if r.name %}<code>{{ wbr(r.name) }}</code>{% elif not r.basestation %}—{% endif %}</td>
 <td><span class="fate fate-{{ r.fate }}">{{ r.fate }}</span></td>
 <td class="dim-cell"><code class="muted">{{ wbr(r.dimension) }}</code></td>

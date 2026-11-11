@@ -177,3 +177,20 @@ def test_no_adopted_units_mark_without_a_record(sg271):
     texts = {m["text"] for r in rows for m in r["marks"]}
     assert "units adopted" not in texts
     assert "unit spelling not kept" not in texts
+
+
+def test_candidates_for_og1_are_marked(sg271):
+    """A variable on the project's candidate list carries its role and a mark; others
+    carry none."""
+    from seagliderOG1 import vocabularies
+
+    rows = sg271[4]
+    for row in rows:
+        listed = (
+            row["name"] in vocabularies.OG1_CANDIDATE_VARS
+            or row["basestation"] in vocabularies.OG1_CANDIDATE_VARS
+        )
+        assert bool(row["candidate"]) == listed
+        assert any(m["kind"] == "candidate" for m in row["marks"]) == listed, row[
+            "basestation"
+        ]

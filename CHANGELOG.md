@@ -8,6 +8,33 @@ old → new API table and output-format detail for the 0.1.0 break are in the mi
 
 ## [Unreleased]
 
+### Added
+
+- `report` (and `process --report`) writes six linked pages beside the OG1 file, not one:
+  Conversion (the summary), Variables, Processing, Phase, Basestation and OG1 format
+  (`<id>_<page>.html`). Open `<id>_conversion.html`; the nav reaches the others. See *The report
+  pages* in the docs.
+- The Variables page: every basestation variable once beside its OG1 counterpart (fate, units,
+  dtype, values, vocabulary, the steps it went through), with search and filters, including
+  *candidate for OG1* (`vocabularies.OG1_CANDIDATE_VARS`).
+- The Basestation page: the dive files as read, for missions of any length (dimension sizes by
+  dive, variables not in every dive, parameters that change, salinity corrections, global
+  attributes that differ, variables by dimension).
+- The Basestation page compares the basestation's corrected and uncorrected salinity with
+  salinity recomputed from its conductivity (`gsw.SP_from_C`, for the page only), overall and
+  by dive.
+- The conversion record (`<id>_conversion.json`) gains `input_variables`: each input variable's
+  dimensions, units, dtype and value count. Convert again to fill the input side of the pages
+  for older files.
+
+### Changed
+
+- The Conversion page is a summary (losses, flight-model inputs, sensors and calibration
+  comments, one variable traced); the per-variable tables, scalars and global attributes moved
+  to the Variables, Basestation and OG1 format pages. Every page shares one masthead and numbers
+  its sections.
+- The `process` presence line points at the Basestation page, which draws the patterns.
+
 ## [0.3.0] - 2026-11-06
 
 ### Breaking changes

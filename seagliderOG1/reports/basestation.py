@@ -11,9 +11,11 @@ no dive file, and it stays the same size for a mission of 600 dives:
 2. **Variables not in every dive**: one strip per presence pattern (the variables that
    are in exactly the same dives), with the variables it holds.
 3. **Parameters that change between dives**: change points, or a range and a strip.
-4. **Global attributes that differ between files**: the ones expected to (times, dive
+4. **Salinity**: the basestation's salinity against salinity recomputed from its
+   conductivity, so the size of its corrections is visible, overall and by dive.
+5. **Global attributes that differ between files**: the ones expected to (times, dive
    number, bounds) folded; any other highlighted.
-5. **Variables by dimension**, over the whole mission.
+6. **Variables by dimension**, over the whole mission.
 """
 
 from collections import defaultdict
@@ -21,6 +23,7 @@ from collections.abc import Iterable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
+import gsw
 import numpy as np
 import xarray as xr
 
@@ -35,7 +38,9 @@ __all__ = [
     "differing_globals",
     "dive_durations",
     "presence_patterns",
+    "SALINITY_COMPARISONS",
     "render_basestation",
+    "salinity_checks",
     "variables_by_dimension",
     "write_basestation_page",
 ]
@@ -322,6 +327,152 @@ def variables_by_dimension(
     )
 
 
+#: The salinity comparisons, by basestation name: ``(label, minuend, subtrahend, note)``.
+#: A name of the form ``SP(conductivity, temperature)`` is practical salinity recomputed
+#: with ``gsw.SP_from_C`` from those two and ``ctd_pressure``, for the page only.
+SALINITY_COMPARISONS: tuple[tuple[str, str, str, str], ...] = (
+    (
+        "salinity_raw − SP(conductivity_raw, temperature_raw)",
+        "salinity_raw",
+        "SP(conductivity_raw, temperature_raw)",
+        "the plain conversion: about zero when gsw and the basestation agree on it",
+    ),
+    (
+        "salinity − salinity_raw",
+        "salinity",
+        "salinity_raw",
+        "the basestation's corrections in total",
+    ),
+    (
+        "salinity − SP(conductivity, temperature)",
+        "salinity",
+        "SP(conductivity, temperature)",
+        "what is left after the corrected temperature and conductivity: corrections "
+        "the basestation applies to salinity itself",
+    ),
+)
+
+
+def _by_original_name(ds: xr.Dataset) -> dict[str, str]:
+    """Return the OG1 file's variables by their basestation name (``original_name``)."""
+    out = {str(name): str(name) for name in ds.data_vars}
+    for name, var in ds.variables.items():
+        original = var.attrs.get("original_name")
+        if original:
+            out[str(original)] = str(name)
+    return out
+
+
+def _series(ds: xr.Dataset, names: dict[str, str], wanted: str) -> np.ndarray | None:
+    """Return one comparison term as floats, or None when an input is missing.
+
+    Conductivity is brought to mS cm-1 (what ``gsw.SP_from_C`` takes); a units string
+    that cannot be resolved leaves the term out rather than guessing.
+    """
+    if not wanted.startswith("SP("):
+        return (
+            np.asarray(ds[names[wanted]].values, dtype=float)
+            if wanted in names
+            else None
+        )
+    conductivity, temperature = wanted[3:-1].split(", ")
+    if not all(n in names for n in (conductivity, temperature, "ctd_pressure")):
+        return None
+    var = ds[names[conductivity]]
+    factor = vocabularies.unit_factor(str(var.attrs.get("units", "")), "mS cm-1")
+    if factor is None:
+        return None
+    with np.errstate(invalid="ignore"):
+        return np.asarray(
+            gsw.SP_from_C(
+                np.asarray(var.values, dtype=float) * factor,
+                np.asarray(ds[names[temperature]].values, dtype=float),
+                np.asarray(ds[names["ctd_pressure"]].values, dtype=float),
+            ),
+            dtype=float,
+        )
+
+
+def _number(value: float) -> str:
+    """Return a salinity difference for the page: small ones in exponent form."""
+    if value != 0 and abs(value) < 1e-4:
+        return f"{value:.1e}"
+    return f"{value:+.4f}"
+
+
+def salinity_checks(ds: xr.Dataset, dives: list[int]) -> dict | None:
+    """Return the basestation's salinity against its conductivity, overall and by dive.
+
+    Each comparison of :data:`SALINITY_COMPARISONS` is computed where both terms have a
+    value: the median, root-mean-square and largest absolute difference, and the median
+    by dive as a strip. Recomputed salinity is for the page only; nothing is written.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        An open OG1 dataset holding the basestation's salinity, conductivity,
+        temperature and CTD pressure (under OG1 or basestation names, matched by
+        ``original_name``), with ``dive_number``.
+    dives : list of int
+        The mission's dives: the strips' cells.
+
+    Returns
+    -------
+    dict or None
+        ``rows`` (``label``, ``note``, ``n``, ``median``, ``rmsd``, ``max_abs`` as text,
+        ``strip`` and ``legend``), ``raw_count`` and ``count`` (values of
+        ``salinity_raw`` and ``salinity``); None when the file has no ``salinity``.
+
+    """
+    names = _by_original_name(ds)
+    if "salinity" not in names:
+        return None
+    dive_of = (
+        np.asarray(ds["dive_number"].values, dtype=float)
+        if "dive_number" in ds.variables
+        else None
+    )
+    rows = []
+    for label, minuend, subtrahend, note in SALINITY_COMPARISONS:
+        a, b = _series(ds, names, minuend), _series(ds, names, subtrahend)
+        if a is None or b is None:
+            continue
+        diff = a - b
+        ok = np.isfinite(diff)
+        if not ok.any():
+            continue
+        both = diff[ok]
+        strip, legend = [], ""
+        if dive_of is not None:
+            per_dive = []
+            for dive in dives:
+                mine = diff[ok & (dive_of == dive)]
+                per_dive.append(float(np.median(mine)) if mine.size else None)
+            strip, legend = og1.strip_cells(dives, per_dive)
+        rows.append(
+            {
+                "label": label,
+                "note": note,
+                "n": int(both.size),
+                "median": _number(float(np.median(both))),
+                "rmsd": _number(float(np.sqrt(np.mean(both**2)))).lstrip("+"),
+                "max_abs": _number(float(np.abs(both).max())).lstrip("+"),
+                "strip": strip,
+                "legend": legend,
+            }
+        )
+    counts = {
+        name: int(np.isfinite(_series(ds, names, name)).sum())
+        for name in ("salinity_raw", "salinity")
+        if name in names
+    }
+    return {
+        "rows": rows,
+        "raw_count": counts.get("salinity_raw"),
+        "count": counts.get("salinity"),
+    }
+
+
 def render_basestation(path: str | Path, *, title: str | None = None) -> str | None:
     """Return the Basestation page for an OG1 file, or None without a conversion record.
 
@@ -346,6 +497,9 @@ def render_basestation(path: str | Path, *, title: str | None = None) -> str | N
     with xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False) as ds:
         durations = dive_durations(ds)
         per_dive_og1, per_dive_families = og1.per_dive_rows(ds)
+        salinity = salinity_checks(
+            ds, sorted(int(entry["dive"]) for entry in record["inputs"])
+        )
         draft = ds.attrs.get("draft") == vocabularies.DRAFT_NOTE
         has_phase = "PHASE" in ds.variables and not draft
     presence = record.get("presence") or {}
@@ -379,6 +533,7 @@ def render_basestation(path: str | Path, *, title: str | None = None) -> str | N
         per_dive_families=per_dive_families,
         max_runs=og1.MAX_RUNS,
         strip_width=og1.STRIP_WIDTH,
+        salinity=salinity,
         unexpected=unexpected,
         expected=expected,
         groups=groups,

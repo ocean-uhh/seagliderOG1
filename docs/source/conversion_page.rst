@@ -1,15 +1,61 @@
 .. _conversion_page:
 
-The conversion page
-===================
+The report pages
+================
 
-``seagliderOG1 report`` (and ``process --report``) writes an HTML page for the OG1 file. A
-draft (``seagliderOG1 draft``) gets the same page with its global attributes replaced by the
-basestation files' own.
+``seagliderOG1 report`` (and ``process --report``) writes a set of linked HTML pages beside the
+OG1 file, each named ``<id>_<page>.html``. They describe the same mission for two readers: one
+who knows the basestation files, and one who knows OG1. See the :ref:`example_report`.
 
-The page opens with **mission.yaml against the data** when the ``mission.yaml`` the conversion
-was given (``process``, or ``seagliderOG1.process``) and the output disagree or fall short, as
-copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds something:
+.. list-table::
+   :header-rows: 1
+   :widths: 18 82
+
+   * - Page
+     - What it shows
+   * - **Conversion** (``_conversion``)
+     - The landing page: a summary of what went in and what came out, the losses, the flight
+       model's inputs, the sensors and their calibration comments, one variable traced from
+       the basestation file to the OG1 file, and the ``mission.yaml`` checks below.
+   * - **Variables** (``_variables``)
+     - Every basestation variable once, beside its OG1 counterpart: name, fate, dimension,
+       units, dtype and value counts (basestation form above, OG1 form below), vocabulary, the
+       inputs and method of each variable the converter built, and marks for each step and
+       loss. Search by either name; filter by fate, subsystem, a loss, a scalar, an OG1 name
+       without a vocabulary link, or *candidate for OG1* (the project's proposed OG1
+       parameters, :data:`seagliderOG1.vocabularies.OG1_CANDIDATE_VARS`; the ones the file
+       does not hold are listed under the filters).
+   * - **Processing** (``_processing``)
+     - Every step of the conversion in the order it ran, with what each step did to this
+       mission, and the unit changes.
+   * - **Phase** (``_phase``)
+     - How ``PHASE`` was assigned and what it gives; see :ref:`phase`. Not written for a
+       draft.
+   * - **Basestation** (``_basestation``)
+     - The dive files as read, for a mission of any length: the dimension sizes by dive
+       (shaded by samples per minute of dive), the variables not in every dive (one strip per
+       pattern), the parameters that change between dives, the basestation's salinity
+       corrections, the global attributes that differ between files, and every variable by
+       dimension. Needs the conversion record.
+   * - **OG1 format** (``_og1``)
+     - The OG1 file read as OG1: conformance against the OG1 requirements, the OG1 variables
+       by group, the sensors, the per-dive parameters decoded, the variables passed through
+       under basestation names, and the global attributes with the Conventions check and the
+       history. Not written for a draft.
+
+Each page opens with the same masthead: the glider and site, the deployment's facts, and the
+nav to the other pages. The pages' sections are numbered, ``(1)``, ``(2)``, …, with reference
+sections (the glossary, the global attributes) lettered ``(A)``, ``(B)``.
+
+A draft (``seagliderOG1 draft``) gets the Conversion, Variables, Processing and Basestation
+pages, with the basestation files' own global attributes on its Conversion page.
+
+The mission.yaml checks
+-----------------------
+
+The Conversion page has a section **mission.yaml against the data** when the ``mission.yaml``
+the conversion was given (``process``, or ``seagliderOG1.process``) and the output disagree or
+fall short, as copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds something:
 
 * *Dive range* — the requested ``dives`` against the first and last dive that reached the file
   (a dive outside the files, or an end dive rejected as empty or invalid), naming dives inside
@@ -45,49 +91,22 @@ copyable boxes of ``mission.yaml`` lines. Each check is shown only when it finds
 The dive, platform-pair and institution checks read the ``config`` the conversion record records, so a page
 for a file converted before it was recorded shows only the other two. A draft has no such section.
 
-Its sections, in order:
+Salinity on the Basestation page
+--------------------------------
 
-#. **Before → after** — files, dives, size on disk, samples on the shared axis, variable and
-   global-attribute counts, time span and OG1-requirement coverage, basestation input beside
-   OG1 output, with a one-line verdict. The input column reads the conversion record; its cells show
-   ``—`` when the conversion record is absent.
-#. **The OG1 file** — the output read by what OG1 says about each variable, not by where it
-   came from, with an *Orig var* / *Orig dim* column pair naming the basestation source:
+The basestation writes salinity twice: corrected (``salinity``, which becomes ``PSAL``) and
+uncorrected (``salinity_raw``). The Basestation page compares them, and each with practical
+salinity recomputed from the basestation's conductivity, temperature and ``ctd_pressure`` with
+``gsw.SP_from_C`` (for the page only; nothing is written):
 
-   * *Required by OG1* — the variables (and the ``N_MEASUREMENTS`` dimension) a valid OG1 file
-     must carry, present/absent, from :data:`seagliderOG1.vocabularies.OG1_REQUIRED_VARS` (the
-     upstream ``ioos/cc-plugin-og`` checker list).
-   * *Sensors named by OG1* — one row per ``SENSOR_*`` variable: type, maker, model, serial
-     number, calibration date, and the variables whose ``sensor`` attribute names it. Amber: a
-     serial or date that is ``UNK`` or empty (files from 0.2.0 and earlier wrote every digit
-     zero), or a serial shared by two sensors (a calibration comment copied between
-     instruments); correct either with ``sensors:`` in ``mission.yaml``.
-   * *Calibration comments* — one row per ``SENSOR_*`` variable: the basestation
-     ``sg_cal_calibcomm*`` variable and its text (source), beside the sensor variable, its
-     serial number, calibration date and per-channel dates, the rules that read them, and a
-     note (result). Amber: ``UNK``, a serial from a lone token, a calibration date after the
-     first sample or more than 30 years before it, or a shared serial. See
-     :ref:`calibration_comments`.
-   * *Named by OG1* — variables OG1 defines but does not require (science, phase, QC).
-   * *Candidate for OG1* — variables the project proposes to canonise, from
-     :data:`seagliderOG1.vocabularies.OG1_CANDIDATE_VARS` (e.g. the flight-model inputs and
-     outputs), shown present/absent; edit that list as candidates are agreed.
-   * *Carried through* — everything else, summarised by basestation family.
-   * *Same quantity, more than once* — where several variables share a ``standard_name``, each
-     compared (member − reference) to the OG1 reference member, in its units.
-#. **Reconciliation** — each basestation variable's one fate (renamed, passed through,
-   consumed, removed, dropped, skipped) with a count, a Meaning column, and a fate histogram.
-#. **Presence across dives** — the patterns above, with each pattern's share of the input dives.
-#. **Dimensions** — each basestation dimension's fate, the samples it supplied, and the
-   dimension it ended on.
-#. **Derived variables** — variables the converter built, with their basestation sources.
-#. **Dropped and removed variables** — variables left out by ``keep_variables`` or the package
-   drop list (empty, so every basestation variable is retained).
-#. **By basestation origin** — the same output variables grouped by original dimension, with a
-   Valid % column and a per-group baseline (the share of the axis that dimension supplied).
-#. **Global attributes** — grouped by convention and OG1 tier, with recomputed coverage bounds
-   and the history.
-#. **Scalar parameters** — the per-dive and constant scalars, split by group, each collapsible.
+* ``salinity_raw`` − SP(``conductivity_raw``, ``temperature_raw``) — the plain conversion;
+  about zero when gsw and the basestation agree on it;
+* ``salinity`` − ``salinity_raw`` — the basestation's corrections in total;
+* ``salinity`` − SP(``conductivity``, ``temperature``) — what is left after the corrected
+  temperature and conductivity: corrections the basestation applies to salinity itself.
+
+Each gives the median, RMS and largest difference, and the median by dive as a strip, so a
+correction that drifts through the mission shows.
 
 What the conversion records
 ---------------------------

@@ -756,7 +756,23 @@ def test_process_prints_presence_line_when_dives_disagree(
     config = _write_config(tmp_path / "mission.yaml", output_dir=str(tmp_path / "out"))
     assert cli.main(["process", str(config)]) == 0
     out = capsys.readouterr().out
-    assert "on every dive, 5 on some (3 patterns) — see seagliderOG1 report" in out
+    assert (
+        "on every dive, 5 on some (3 patterns) — see the Basestation page "
+        "(seagliderOG1 report"
+    ) in out
+
+
+def test_process_report_presence_line_names_the_basestation_page(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """With --report the presence line names the Basestation page, which it wrote."""
+    out = tmp_path / "out"
+    config = _write_config(tmp_path / "mission.yaml", output_dir=str(out))
+    assert cli.main(["process", str(config), "--report"]) == 0
+    (nc,) = out.glob("*.nc")
+    page = out / f"{nc.stem}_basestation.html"
+    assert page.is_file()
+    assert f"(3 patterns) — see {page}" in capsys.readouterr().out
 
 
 def test_process_save_failure_counts_as_failed(

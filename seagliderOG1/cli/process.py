@@ -149,11 +149,13 @@ def _print_presence(
     out_path : pathlib.Path
         The OG1 file just written; its sidecar holds the per-dive presence.
     report : bool
-        Whether the conversion page was written (else point at ``report``).
+        Whether the report pages were written: point at the Basestation page, else at
+        ``report``.
     report_dir : str or None, optional
-        The ``--report-dir`` root the page was written under, if any.
+        The ``--report-dir`` root the pages were written under, if any.
 
     """
+    from seagliderOG1 import writers
     from seagliderOG1.cli import report as report_cmd
     from seagliderOG1.reports import _record
 
@@ -163,10 +165,12 @@ def _print_presence(
     summary = _record.presence_summary(record["presence"])
     if summary is None:
         return
+    # The Basestation page draws the patterns: point at it, or at the command that writes it.
     if report:
-        where = f"see {report_cmd.page_target(out_path, report_dir=report_dir)}"
+        page = report_cmd.page_target(out_path, report_dir=report_dir)
+        where = f"see {page.with_name(writers.page_path(out_path, 'basestation').name)}"
     else:
-        where = f"see seagliderOG1 report {out_path}"
+        where = f"see the Basestation page (seagliderOG1 report {out_path})"
     print(f"  {out_path.stem}: {summary} — {where}")
 
 

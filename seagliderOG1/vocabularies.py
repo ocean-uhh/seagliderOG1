@@ -600,9 +600,9 @@ OG1_REQUIRED_VARS: tuple[str, ...] = (
 OG1_REQUIRED_DIMS: tuple[str, ...] = ("N_MEASUREMENTS",)
 
 # Variables the project proposes to canonise but the upstream OG1 vocabulary has not adopted
-# yet. The conversion page lifts these out of the carried-through tier into a named candidate
-# group, shown present/absent like the required tier, so "what a flight model needs" and "what
-# we hope to agree as OG1 parameters" are visible on the page. This is the project's editorial
+# yet. The Variables page marks these ("candidate for OG1", a filter chip) and lists the ones
+# the file does not hold, so "what a flight model needs" and "what we hope to agree as OG1
+# parameters" are visible on the page. This is the project's editorial
 # list: edit it as the data-format group agrees candidates, and remove a name once it appears in
 # OG1_variable_attributes.yaml upstream. Seeded from demo_sg005 (2026-10-19); the membership is
 # a proposal to prune, not a standard — the flight-model inputs in particular are a first guess.

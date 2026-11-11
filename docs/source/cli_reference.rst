@@ -32,27 +32,30 @@ determines the data-mode suffix of the output id: ``realtime`` gives the suffix 
 ``delayed`` gives ``delayed`` (``vocabularies.MODE_SUFFIX``). With neither set the mode is
 ``realtime``: a file is delayed mode only when you say so.
 
-Conversion page
----------------
+Report pages
+------------
 
-``seagliderOG1 report FILE.nc`` writes the HTML conversion page ``<id>_conversion.html`` for a
-written OG1 file: beside the file by default, directly into ``-o DIR``, or into ``ROOT/<id>/``
-with ``--report-dir ROOT`` — so the pages can live apart from the archived data. ``process
---report`` (or ``report: true`` in ``mission.yaml``) writes the same page as it converts, and
-``process --report-dir ROOT`` puts it under ROOT. An existing page is refused unless
-``--force``. ``inspect`` prints text only. See :ref:`conversion_page` for the sections the
-page shows.
+``seagliderOG1 report FILE.nc`` writes the HTML report pages for a written OG1 file —
+``<id>_conversion.html`` and, beside it, ``_variables``, ``_processing``, ``_phase``,
+``_basestation`` and ``_og1`` — beside the file by default, directly into ``-o DIR``, or into
+``ROOT/<id>/`` with ``--report-dir ROOT``, so the pages can live apart from the archived data.
+It reads the OG1 file and its conversion record; it does not convert again. ``process
+--report`` (or ``report: true`` in ``mission.yaml``) writes the same pages as it converts, and
+``process --report-dir ROOT`` puts them under ROOT. An existing page is refused unless
+``--force``. ``inspect`` prints text only. See :ref:`conversion_page` for what each page
+shows.
 
 ``process`` also writes ``<id>_conversion.json`` beside each OG1 file: the input files (name,
 size, dive number, dimension lengths and global-attribute count) and which dives each
 basestation variable was present in and had values in.
-The page reads it for its *Presence across dives* and *Before → after* sections. When the input dives disagree,
-``process`` prints one line per mission after ``wrote``:
+It also holds each input variable's dimensions, units, dtype and value count. The report pages
+read it for the basestation side: the Variables page's input columns and the whole Basestation
+page. When the input dives disagree, ``process`` prints one line per mission after ``wrote``:
 
 .. code-block:: console
 
    wrote outputs/sg271_20260302T193828_R.nc
-     sg271_20260302T193828_R: 542 variables over 3 dives; 500 on every dive, 42 on some (5 patterns) — see seagliderOG1 report outputs/sg271_20260302T193828_R.nc
+     sg271_20260302T193828_R: 542 variables over 3 dives; 500 on every dive, 42 on some (5 patterns) — see the Basestation page (seagliderOG1 report outputs/sg271_20260302T193828_R.nc)
 
 The conversion record belongs to its OG1 file: it is replaced whenever the file is written. It records
 the file's ``tracking_id`` (a new UUID on every write) and the SHA-256 of its bytes; ``report``

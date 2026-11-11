@@ -68,6 +68,12 @@ def render_variables(path: str | Path, *, title: str | None = None) -> str:
         subsystems=[s for s in SUBSYSTEMS if any(r["subsystem"] == s for r in rows)],
         record_present=bool(record and record.get("input_variables")),
         input_count=ledger["input_variable_count"],
+        n_candidates=sum(bool(r["candidate"]) for r in rows),
+        absent_candidates=sorted(
+            set(vocabularies.OG1_CANDIDATE_VARS)
+            - {r["name"] for r in rows}
+            - {r["basestation"] for r in rows}
+        ),
     )
 
 

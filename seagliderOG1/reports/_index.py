@@ -80,6 +80,7 @@ class VariableRow(TypedDict):
     storage: str
     marks: list[Mark]
     attrs: dict[str, str]
+    candidate: str
 
 
 def fate_sets(ds: xr.Dataset, ledger: Mapping) -> dict[str, set[str]]:
@@ -341,4 +342,12 @@ def variable_rows(
                 "attrs": {k: str(v) for k, v in var.attrs.items()},
             }
         )
+    for row in rows:
+        # The project's proposed OG1 parameters (vocabularies.OG1_CANDIDATE_VARS).
+        role = vocabularies.OG1_CANDIDATE_VARS.get(
+            row["name"]
+        ) or vocabularies.OG1_CANDIDATE_VARS.get(row["basestation"], "")
+        row["candidate"] = role
+        if role:
+            row["marks"].append({"kind": "candidate", "text": f"OG1 candidate: {role}"})
     return rows

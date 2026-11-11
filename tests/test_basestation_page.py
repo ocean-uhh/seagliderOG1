@@ -118,7 +118,7 @@ def test_page_is_written_and_linked(sg271):
     html = page.read_text(encoding="utf-8")
     assert "file-pill file-pill-active" in html
     assert '<a href="#dimensions">(1) Dimension sizes</a>' in html
-    assert "(5) Variables by dimension" in html
+    assert "(6) Variables by dimension" in html
     for kind in ("variables", "processing", "og1"):
         other = writers.page_path(path, kind).read_text(encoding="utf-8")
         assert f'href="{page.name}"' in other, kind
@@ -153,3 +153,21 @@ def test_nav_without_file_paths(sg271):
     _path, record = sg271
     inputs = [dict(entry, path=None) for entry in record["inputs"]]
     assert _pages._basestation_label(inputs) == "dives 1–3"
+
+
+def test_salinity_checks_on_sg271(sg271):
+    """The three comparisons are made; the plain conversion agrees with gsw to rounding;
+    the corrected salinity has no more values than the uncorrected."""
+    path, record = sg271
+    dives = [int(entry["dive"]) for entry in record["inputs"]]
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        checks = basestation.salinity_checks(ds, dives)
+    assert [r["label"] for r in checks["rows"]] == [
+        label for label, *_ in basestation.SALINITY_COMPARISONS
+    ]
+    plain = checks["rows"][0]
+    assert abs(float(plain["max_abs"])) < 1e-4
+    assert len(plain["strip"]) == len(dives)
+    assert checks["count"] <= checks["raw_count"]
+    html = writers.page_path(path, "basestation").read_text(encoding="utf-8")
+    assert "Salinity: the basestation" in html
