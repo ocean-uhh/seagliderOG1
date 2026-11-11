@@ -23,6 +23,7 @@ import numpy as np
 import xarray as xr
 
 from seagliderOG1 import __version__, vocabularies, writers
+from seagliderOG1._convert import count_values
 from seagliderOG1.reports import _masthead, _pages, _record, design
 from seagliderOG1.reports._env import get_template
 from seagliderOG1.reports._vendored import nc_tables
@@ -178,8 +179,10 @@ def _row(ds: xr.Dataset, name: str) -> dict:
     """Return one table row describing an output variable."""
     var = ds[name]
     if var.ndim:
-        value, count = _minmax(var), int(var.notnull().sum())
+        # One missing-value rule with the Variables page: blank text is missing.
+        value, count = _minmax(var), count_values(var.values)
     else:
+        # A one-value variable is one value; its content is shown, not counted.
         value, count = _text(var.values.item(), 50), 1
     dtype = var.encoding.get("dtype", var.dtype)
     return {

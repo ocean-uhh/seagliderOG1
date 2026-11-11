@@ -9,7 +9,9 @@ made), and a **Data inventory** strip naming the files that have an inventory pa
 import warnings
 from pathlib import Path
 
-from seagliderOG1 import writers
+import xarray as xr
+
+from seagliderOG1 import vocabularies, writers
 
 __all__ = [
     "NAV_ROWS",
@@ -198,13 +200,14 @@ def write_linked_pages(
     conversion_page: str | Path,
     *,
     title: str | None = None,
-    phase: bool = True,
 ) -> list[Path]:
     """Write the pages the conversion page links to, beside it, and return them.
 
     The one place that decides which pages accompany a conversion page: Variables and
     Processing always; Basestation when the conversion record lists the dive files; Phase
-    (when the file has ``PHASE``) and OG1 format unless the file is a draft.
+    (when the file has ``PHASE``) and OG1 format unless the file is a draft. Whether it is
+    a draft is read from the file, so every caller (``process``, ``report``,
+    :func:`seagliderOG1.reports.report`) writes the same set.
 
     Parameters
     ----------
@@ -214,9 +217,6 @@ def write_linked_pages(
         Where its conversion page was written; the others go in the same folder.
     title : str, optional
         Page title; the file name by default.
-    phase : bool, default True
-        Whether to write the phase and OG1 format pages (a draft, which is not an OG1
-        file, has neither).
 
     Returns
     -------
@@ -231,14 +231,17 @@ def write_linked_pages(
     from seagliderOG1.reports.processing import write_processing_page
     from seagliderOG1.reports.variables import write_variables_page
 
+    # A draft is not an OG1 file: no Phase or OG1 format page.
+    with xr.open_dataset(str(nc_path), engine="netcdf4", decode_times=False) as ds:
+        og1_file = ds.attrs.get("draft") != vocabularies.DRAFT_NOTE
     written = [
         write_variables_page(nc_path, conversion_page, title=title),
         write_processing_page(nc_path, conversion_page, title=title),
     ]
     if page := write_basestation_page(nc_path, conversion_page, title=title):
         written.append(page)
-    if phase and (page := write_phase_page(nc_path, conversion_page, title=title)):
+    if og1_file and (page := write_phase_page(nc_path, conversion_page, title=title)):
         written.append(page)
-    if phase:
+    if og1_file:
         written.append(write_og1_page(nc_path, conversion_page, title=title))
     return written

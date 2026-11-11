@@ -108,3 +108,16 @@ def test_page_written_with_the_report_and_linked(sg271):
     conversion = writers.conversion_path(path, ".html").read_text(encoding="utf-8")
     assert f'href="{page.name}#globals"' in conversion
     assert f'href="{page.name}"' in conversion
+
+
+def test_counts_follow_the_variables_page_rule(sg271):
+    """A dimensioned text variable is counted with the one missing-value rule, so the OG1
+    format page and the Variables page give the same count."""
+    from seagliderOG1._convert import count_values
+
+    path, ds = sg271
+    rows = [r for _group, rs in og1.passthrough_groups(ds) for r in rs]
+    text = [r for r in rows if ds[r["name"]].ndim and ds[r["name"]].dtype.kind in "OSU"]
+    assert text
+    for r in text:
+        assert r["count"] == count_values(ds[r["name"]].values), r["name"]

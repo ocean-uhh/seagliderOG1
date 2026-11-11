@@ -2140,8 +2140,7 @@ def _convert_mission(
         _log.info("wrote %s", page)
         from seagliderOG1.reports._pages import write_linked_pages
 
-        # A draft is for setting up the mission metadata; no phase page.
-        for linked in write_linked_pages(path, page, phase=not draft):
+        for linked in write_linked_pages(path, page):
             _log.info("wrote %s", linked)
     return path
 

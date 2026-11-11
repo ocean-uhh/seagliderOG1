@@ -27,14 +27,12 @@ def build_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentPar
     """
     parser = subparsers.add_parser(
         "report",
-        help=(
-            "write the HTML conversion, variables, processing and phase pages for an "
-            "OG1 file"
-        ),
+        help="write the HTML report pages for an OG1 file",
         description=(
-            "Write <id>_conversion.html, <id>_variables.html, <id>_processing.html and "
-            "<id>_phase.html for an OG1 file written by seagliderOG1: beside the file, "
-            "in -o DIR, or in --report-dir ROOT/<id>/."
+            "Write the report pages for an OG1 file written by seagliderOG1: "
+            "<id>_conversion.html and, beside it, the variables, processing, "
+            "basestation, phase and OG1 format pages (a draft has no phase or OG1 "
+            "format page), beside the file, in -o DIR, or in --report-dir ROOT/<id>/."
         ),
         epilog=(
             "examples:\n"

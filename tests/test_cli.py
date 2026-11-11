@@ -1273,6 +1273,13 @@ def test_draft_writes_only_draft_files_and_a_draft_page(
     assert "Suggested mission.yaml lines" in html
     assert "dives: [1, 2]" in html and 'class="copy"' in html
     assert "mission.yaml against the data" not in html  # a draft has no config
+
+    # report on the draft file writes the same set: no Phase or OG1 format page.
+    pages = tmp_path / "pages"
+    assert cli.main(["report", str(out / f"{stem}.nc"), "-o", str(pages)]) == 0
+    assert sorted(p.name for p in pages.iterdir()) == sorted(
+        n for n in written if n.endswith(".html")
+    )
     sidecar = json.loads((out / f"{stem}_conversion.json").read_text(encoding="utf-8"))
     assert "config" not in sidecar
     proposal = (out / f"{stem}_mission.yaml").read_text(encoding="utf-8")
