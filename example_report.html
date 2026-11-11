@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Example report &mdash; seagliderOG1 0.2.0.post1.dev7 documentation</title>
+  <title>Example report &mdash; seagliderOG1 0.3.0.post1.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=7fb89329"></script>
+      <script src="_static/documentation_options.js?v=a448664d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -22,7 +22,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Overview" href="configuration.html" />
-    <link rel="prev" title="The conversion page" href="conversion_page.html" /> 
+    <link rel="prev" title="The report pages" href="conversion_page.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -59,7 +59,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The report pages</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
@@ -112,15 +112,27 @@
              
   <section id="example-report">
 <span id="id1"></span><h1>Example report<a class="headerlink" href="#example-report" title="Link to this heading"></a></h1>
-<p>The HTML conversion report for the bundled sg271 sample — the page <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">process</span>
-<span class="pre">--report</span></code> writes beside each OG1 file. It checks the configuration against the data, lists the
-OG1 variables present and absent, names each basestation variable’s fate, and shows the scalar
-parameters and global attributes. This one is the sg271 Drygalski Trough sample (three dives, see
-<a class="reference internal" href="demo.html#demo"><span class="std std-ref">Demo: the sg271 sample</span></a>), rebuilt on every docs build.</p>
-<iframe src="_static/demo/conversion.html" title="sg271 conversion report"
-        width="100%" height="900" style="border: 1px solid #ccc;"></iframe><p>To make it yourself, from any directory:</p>
+<p><a class="reference external" href="_static/demo/index.html">Open the example report</a> — the pages <code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">process</span>
+<span class="pre">--report</span></code> writes beside the OG1 file for the bundled sg271 sample (Drygalski Trough, three
+dives; see <a class="reference internal" href="demo.html#demo"><span class="std std-ref">Demo: the sg271 sample</span></a>), rebuilt on every docs build. It opens on the Conversion page; the nav
+at the top of each page reaches the others.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="_static/demo/sg271_20260302T193828_R_conversion.html">Conversion</a> — the summary: what
+went in, what came out, what was lost, and anything to check in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>.</p></li>
+<li><p><a class="reference external" href="_static/demo/sg271_20260302T193828_R_variables.html">Variables</a> — every variable,
+basestation input beside OG1 output, searchable and filterable.</p></li>
+<li><p><a class="reference external" href="_static/demo/sg271_20260302T193828_R_processing.html">Processing</a> — every step of the
+conversion, in the order it ran.</p></li>
+<li><p><a class="reference external" href="_static/demo/sg271_20260302T193828_R_phase.html">Phase</a> — how <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> was assigned.</p></li>
+<li><p><a class="reference external" href="_static/demo/sg271_20260302T193828_R_basestation.html">Basestation</a> — the dive files as
+read, across the mission.</p></li>
+<li><p><a class="reference external" href="_static/demo/sg271_20260302T193828_R_og1.html">OG1 format</a> — the OG1 file: conformance
+and inventory.</p></li>
+</ul>
+<p>What each page shows is in <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">The report pages</span></a>. To make the report yourself, from any
+directory:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">init</span> <span class="o">--</span><span class="n">example</span>        <span class="c1"># writes sg271.yaml pointing at the packaged dives</span>
-<span class="n">seagliderOG1</span> <span class="n">process</span> <span class="n">sg271</span><span class="o">.</span><span class="n">yaml</span>    <span class="c1"># writes the OG1 file and this page beside it</span>
+<span class="n">seagliderOG1</span> <span class="n">process</span> <span class="n">sg271</span><span class="o">.</span><span class="n">yaml</span>    <span class="c1"># writes the OG1 file and the report pages beside it</span>
 </pre></div>
 </div>
 </section>
@@ -129,7 +141,7 @@ parameters and global attributes. This one is the sg271 Drygalski Trough sample 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="conversion_page.html" class="btn btn-neutral float-left" title="The conversion page" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="conversion_page.html" class="btn btn-neutral float-left" title="The report pages" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="configuration.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

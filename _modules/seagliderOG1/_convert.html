@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1._convert &mdash; seagliderOG1 0.2.0.post1.dev7 documentation</title>
+  <title>seagliderOG1._convert &mdash; seagliderOG1 0.3.0.post1.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=7fb89329"></script>
+      <script src="../../_static/documentation_options.js?v=a448664d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -56,7 +56,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conversion_page.html">The report pages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../example_report.html">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
@@ -839,12 +839,52 @@
     <span class="k">return</span> <span class="n">runs</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">count_values</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return how many non-missing values an array holds: the one missing-value rule.</span>
+
+<span class="sd">    Floating data counts its finite values (the reader has already turned fill values into</span>
+<span class="sd">    NaN), times those that are not NaT, and text (fixed-width or variable-length) the</span>
+<span class="sd">    strings that are not blank; variable-length object data counts every item that is not</span>
+<span class="sd">    None and, if text, not blank. Other data counts every element. The conversion record's</span>
+<span class="sd">    input counts and the Variables page's output counts both use this, so they compare.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    values : numpy.ndarray</span>
+<span class="sd">        The values of one variable.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        The number of non-missing values.</span>
+
+<span class="sd">    """</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">values</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="n">kind</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"f"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s2">"mM"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">((</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnat</span><span class="p">(</span><span class="n">values</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s2">"SU"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">char</span><span class="o">.</span><span class="n">str_len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">char</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"O"</span><span class="p">:</span>
+        <span class="c1"># netCDF4 variable-length text decodes to an object array: ""/whitespace/None is</span>
+        <span class="c1"># missing; genuinely non-text object data (rare) counts.</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="s2">"replace"</span><span class="p">)</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">count</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_has_values</span><span class="p">(</span><span class="n">var</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Variable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Return True when a basestation variable holds at least one non-missing value.</span>
-
-<span class="sd">    Floating data is tested for any finite value (the reader has already turned fill</span>
-<span class="sd">    values into NaN), times for any value that is not NaT, and text for any string that is</span>
-<span class="sd">    not blank; other data counts as values when the variable is not empty.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -854,31 +894,10 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    bool</span>
-<span class="sd">        Whether the variable has any value in this file.</span>
+<span class="sd">        Whether the variable has any value in this file (see :func:`count_values`).</span>
 
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">False</span>
-    <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-    <span class="n">kind</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"f"</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">())</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s2">"mM"</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">bool</span><span class="p">((</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnat</span><span class="p">(</span><span class="n">values</span><span class="p">))</span><span class="o">.</span><span class="n">any</span><span class="p">())</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s2">"SU"</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">bool</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">char</span><span class="o">.</span><span class="n">str_len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">char</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">())</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"O"</span><span class="p">:</span>
-        <span class="c1"># netCDF4 variable-length text decodes to an object array: a dive of only</span>
-        <span class="c1"># ""/whitespace/None has no value; genuinely non-text object data (rare) counts.</span>
-        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
-                <span class="n">item</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="s2">"replace"</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">item</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-                <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">return</span> <span class="kc">False</span>
-    <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">count_values</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_presence_by_dive</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -918,6 +937,44 @@
             <span class="s2">"valid"</span><span class="p">:</span> <span class="n">_dive_runs</span><span class="p">(</span><span class="n">valid</span><span class="p">,</span> <span class="n">dives</span><span class="p">),</span>
         <span class="p">}</span>
     <span class="k">return</span> <span class="p">{</span><span class="s2">"dives"</span><span class="p">:</span> <span class="n">dives</span><span class="p">,</span> <span class="s2">"variables"</span><span class="p">:</span> <span class="n">variables</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_input_variables</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Return each basestation variable's form in the input files, for the variable index.</span>
+
+<span class="sd">    The OG1 file holds a variable's output form only; what it was in the basestation files</span>
+<span class="sd">    (its dimensions, units and storage type, and how many values it held) is read here, at</span>
+<span class="sd">    conversion time, so the report can show input beside output without the input files.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    list_of_datasets : sequence of xarray.Dataset</span>
+<span class="sd">        The basestation datasets that reach the output, one per dive.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict of str to dict</span>
+<span class="sd">        Basestation name to ``{"dimensions", "units", "dtype", "values"}``: the dimension</span>
+<span class="sd">        names, ``units`` and on-disk dtype from the first file that has the variable, and</span>
+<span class="sd">        the number of non-missing values summed over every file (a scalar counts one per</span>
+<span class="sd">        file that has a value).</span>
+
+<span class="sd">    """</span>
+    <span class="n">found</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">list_of_datasets</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"dive_number"</span><span class="p">])):</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="n">found</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">entry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Decoded times carry their units and on-disk dtype in the encoding.</span>
+                <span class="n">units</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"units"</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"units"</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span>
+                <span class="n">entry</span> <span class="o">=</span> <span class="n">found</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">"dimensions"</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">var</span><span class="o">.</span><span class="n">dims</span><span class="p">],</span>
+                    <span class="s2">"units"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">units</span><span class="p">),</span>
+                    <span class="s2">"dtype"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">encoding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dtype"</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">dtype</span><span class="p">)),</span>
+                    <span class="s2">"values"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="n">entry</span><span class="p">[</span><span class="s2">"values"</span><span class="p">]</span> <span class="o">+=</span> <span class="n">count_values</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_institution_from_file</span><span class="p">(</span><span class="n">attrs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
@@ -1410,6 +1467,7 @@
         <span class="c1"># Only the dives that reach the output: a rejected dive contributed nothing.</span>
         <span class="n">record</span><span class="p">[</span><span class="s2">"inputs"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">_input_record</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">used_inputs</span><span class="p">]</span>
         <span class="n">record</span><span class="p">[</span><span class="s2">"presence"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_presence_by_dive</span><span class="p">(</span><span class="n">used_inputs</span><span class="p">)</span>
+        <span class="n">record</span><span class="p">[</span><span class="s2">"input_variables"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_input_variables</span><span class="p">(</span><span class="n">used_inputs</span><span class="p">)</span>
         <span class="n">record</span><span class="p">[</span><span class="s2">"basestation_globals"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_basestation_globals</span><span class="p">(</span><span class="n">used_inputs</span><span class="p">)</span>
         <span class="c1"># What init would propose for platform:, from the file the resolver reads.</span>
         <span class="n">record</span><span class="p">[</span><span class="s2">"platform_from_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">vocabularies</span><span class="o">.</span><span class="n">platform_from_file</span><span class="p">(</span>
@@ -2199,13 +2257,10 @@
         <span class="n">page</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">page</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">render_conversion</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
         <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"wrote </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">draft</span><span class="p">:</span>
-            <span class="c1"># A draft is for setting up the mission metadata; no phase page.</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1.reports.phase</span><span class="w"> </span><span class="kn">import</span> <span class="n">write_phase_page</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">seagliderOG1.reports._pages</span><span class="w"> </span><span class="kn">import</span> <span class="n">write_linked_pages</span>
 
-            <span class="n">phase_page</span> <span class="o">=</span> <span class="n">write_phase_page</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">phase_page</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"wrote </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">phase_page</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">linked</span> <span class="ow">in</span> <span class="n">write_linked_pages</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">page</span><span class="p">):</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"wrote </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">linked</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">path</span>
 
 

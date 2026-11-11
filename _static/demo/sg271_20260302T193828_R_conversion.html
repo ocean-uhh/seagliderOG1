@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sg271 · Drygalski Trough — Conversion</title>
+<style>
+:root {
+  --ocean: #1a3a5c;
+  --seafoam: #e8f4f8;
+  --muted: #95a5a6;
+  --text: #2c3e50;
+  --rule: #dfe6e9;
+  --bg: #ffffff;
+  --bg-sunken: #f7f9fa;
+  --warn: #e67e22;
+  --warn-bg: #fdf3e7;
+  --error: #c0392b;
+  --gray-1: #f5f7fa;
+  --gray-2: #e0e0e0;
+  --gray-3: #aaaaaa;
+  --gray-4: #888888;
+  --gray-5: #555555;
+  --gray-6: #333333;
+  --gray-7: #111111;
+  --ok: #2c6e49;
+  --role-landing: #2980b9;
+  --role-entity: #1a3a5c;
+  --role-collection: #1a3a5c;
+  --role-component: #1a3a5c;
+  --role-aggregate-a: #8e44ad;
+  --role-aggregate-b: #27ae60;
+  --role-map: #ee3377;
+  --role-up: #5d6d7e;
+  --qc-mark: var(--ok);
+  --package-accent: var(--ocean);
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  --fs-root: 14px;
+  --fs-h1: 1.75rem;
+  --fs-type: 1.35rem;
+  --fs-h2: 1rem;
+  --fs-h3: 0.88rem;
+  --fs-meta: 0.84rem;
+  --fs-note: 0.92rem;
+  --fs-nav: 0.8rem;
+  --fs-cap: 0.92rem;
+  --fs-xs: 0.75rem;
+  --fs-top: 0.72rem;
+  --fs-dt: 0.7rem;
+  --lh-root: 1.5;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --radius-card: 8px;
+  --radius-btn: 4px;
+  --radius-pill: 999px;
+  --qc-0: #999999;
+  --qc-1: #009E73;
+  --qc-2: #56B4E9;
+  --qc-3: #E69F00;
+  --qc-4: #D55E00;
+  --qc-7: #CC79A7;
+  --qc-8: #0072B2;
+  --qc-9: #bdbdbd;
+  --qc-3-text: #9A6B00;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-root); color: var(--text);
+  max-width: 1150px; margin: 0 auto;
+  padding: 1.5rem 2rem 4rem; line-height: var(--lh-root);
+}
+p, li { max-width: 78ch; }
+.masthead {
+  background: var(--ocean); color: #fff; position: relative;
+  padding: 1.6rem 2rem; border-radius: var(--radius-card); margin-bottom: 0.9rem;
+}
+.masthead h1 { margin: 0 0 0.3rem; font-size: var(--fs-h1); font-weight: 700; }
+.masthead .sub { font-size: var(--fs-meta); opacity: 0.85; margin: 0 0 0.15rem; max-width: none; }
+.wordmark {
+  position: absolute; right: 2rem; bottom: 1.2rem;
+  font-size: var(--fs-dt); font-weight: 700; letter-spacing: 0.04em;
+  color: var(--package-accent); background: #fff; opacity: 0.85;
+  padding: 0.1rem 0.5rem; border-radius: var(--radius-pill); text-decoration: none;
+}
+.wordmark:hover { opacity: 1; }
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.5rem 2rem; font-size: var(--fs-meta); margin-top: 0.9rem;
+}
+.meta-grid dt {
+  opacity: 0.7; text-transform: uppercase; font-size: var(--fs-dt);
+  letter-spacing: 0.06em; margin-bottom: 0.1rem;
+}
+.meta-grid dd { margin: 0; font-weight: 600; }
+h2 {
+  color: var(--ocean); font-size: var(--fs-h2);
+  border-bottom: 2px solid var(--seafoam);
+  padding-bottom: 0.3rem; margin: 2.5rem 0 1rem;
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.top-link {
+  font-size: var(--fs-top); font-weight: 400; color: var(--muted);
+  text-decoration: none; margin-left: auto;
+}
+.top-link:hover { color: var(--ocean); text-decoration: underline; }
+.caption {
+  color: var(--gray-5); font-size: var(--fs-note);
+  margin-top: 0.75rem; margin-bottom: 0.75rem;
+}
+/* A section intro (the caption directly under a heading) is a lede for the whole
+   figure block, so it spans the content width rather than the 78ch prose measure a
+   paragraph would otherwise inherit — which left it stranded under full-width figures. */
+h2 + .caption { margin-top: -0.5rem; max-width: none; }
+/* Subsection headings inside a panel's own HTML — un-numbered, outside the jump
+   nav (the page model numbers Sections, not these).  Same navy as h2, smaller. */
+h3 {
+  color: var(--ocean); font-size: var(--fs-h3); margin: 1.2rem 0 0.4rem;
+}
+h3 + .caption { margin-top: -0.2rem; }
+figure h3, .fig-row > h3 { margin-top: 0.6rem; }  /* first heading inside a panel sits closer */
+.explainer {
+  font-size: var(--fs-note); color: var(--text);
+  background: var(--bg-sunken); border-left: 3px solid var(--muted);
+  padding: var(--sp-3); margin: -0.25rem 0 0.75rem; border-radius: var(--radius-btn);
+}
+.warn {
+  font-size: var(--fs-note); color: var(--text);
+  background: var(--warn-bg); border-left: 3px solid var(--warn);
+  padding: var(--sp-3); margin-bottom: 0.5rem; border-radius: var(--radius-btn);
+}
+.warn::before { content: "⚠ "; }
+.warn.error { border-left-color: var(--error); }
+.jump-nav {
+  background: var(--seafoam); padding: 0.55rem 1rem;
+  border-radius: 6px; margin-bottom: 1.5rem;
+  font-size: var(--fs-nav); line-height: 2.2;
+}
+.jump-nav::before { content: "Jump to: "; opacity: 0.55; font-size: var(--fs-xs); margin-right: 0.25rem; }
+.jump-nav a {
+  color: var(--ocean); text-decoration: none;
+  font-weight: 600; margin: 0 0.5rem 0 0;
+}
+.jump-nav a::before { content: "▸ "; font-size: var(--fs-dt); }
+.fig-row {
+  display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+.fig-col { display: flex; flex-direction: column; gap: 0.75rem; }
+.fig-row.center { justify-content: center; }
+/* A multi-table panel (processing provenance) is one full-width flex item so its
+   headings and tables stack instead of tiling across the row. */
+.prov-panel { flex: 1 1 100%; }
+/* Conformance status pips — a green ✓ (matches), a red ✗ (differs) and a neutral
+   ringed dash (no reference), matching the LADCP-present/absent badges. */
+.conf {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.4em; height: 1.4em; border-radius: 50%;
+  font-size: var(--fs-xs); font-weight: 700; line-height: 1;
+}
+.conf-match { background: var(--ok); color: #fff; }
+.conf-differ { background: var(--error); color: #fff; }
+.conf-none { background: #fff; color: #000; border: 1px solid #000; }
+figure { margin: 0; }
+figure img {
+  border: 1px solid var(--rule); border-radius: var(--radius-btn);
+  display: block; width: 100%; height: auto;
+}
+figcaption { font-size: var(--fs-cap); color: var(--gray-5); margin-bottom: 0.25rem; }
+/* Optional provenance line under a figure: which draw function produced it.
+   Off by default (vendored SHOW_FIGURE_SOURCE); a package turns it on in its
+   owned design module. */
+.fig-source {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--fs-xs); color: var(--muted); margin-top: 0.15rem;
+}
+/* A stub panel's warning fills the figure slot it stands in for, rather than the
+   78ch prose reading measure it would otherwise inherit as a paragraph. */
+figure .warn { max-width: none; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: var(--fs-note); margin: 0.6rem 0 1.2rem;
+}
+th {
+  background: var(--package-accent); color: #fff; text-align: left;
+  font-weight: 600; padding: 0.4rem 0.65rem;
+}
+th.num { text-align: right; }
+td {
+  padding: 0.35rem 0.65rem; border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--bg-sunken); }
+td.num, .num { text-align: right; font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--font-mono); font-size: var(--fs-xs); }
+/* netCDF inventory tables (vendored nc_tables): variable / coord / scalar / sensor /
+   global tables.  Package-neutral — the markup is emitted by templates/_nc_tables.html. */
+.var-table code { font-family: var(--font-mono); font-size: var(--fs-xs); }
+.muted { color: var(--muted); }
+.var-qc { color: var(--qc-mark); font-size: var(--fs-xs); }
+/* The original source name on its own muted line above the canonical name (name_cell), so the
+   Variable column does not widen to fit both on one line. */
+.var-orig { color: var(--muted); font-size: var(--fs-xs); }
+/* A long unbroken token (a tracking_id, a path, a dotted standard_name) in a scalar value or a
+   standard/long-name cell would widen the whole table; cap the width and break inside the word. */
+.cell-wrap { overflow-wrap: anywhere; max-width: 28rem; }
+.cell-bad { color: var(--warn); font-variant-numeric: tabular-nums; }
+tr.units th {
+  background: transparent; color: var(--muted); font-weight: 400;
+  font-size: var(--fs-xs); padding-top: 0;
+}
+.attr-disclosure summary { cursor: pointer; color: var(--muted); font-size: var(--fs-xs); }
+.attr-disclosure table { margin: 0.3rem 0; width: auto; }
+.attr-disclosure th { background: transparent; color: var(--text); font-weight: 600; }
+/* QC flag-count distribution bar and legend (qc_counts_table). Flag colours are inline on each
+   segment (from the vendored QC_FLAG_COLORS), so these rules carry only the layout. */
+.qc-bar { display: flex; width: 200px; height: 13px; border-radius: 3px; overflow: hidden; gap: 1px; background: #ecf0f1; }
+.qc-bar div { height: 100%; }
+.qc-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; font-size: 0.75rem; margin: 0.2rem 0 0.6rem; }
+.qc-legend span { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 3px; }
+/* The source: caption hugs the table it belongs to, not the next one: a table has 1.2rem
+   bottom margin, so pull the caption up under it and keep the gap below before the next table. */
+table + .fig-source { margin-top: -0.9rem; margin-bottom: 1.2rem; }
+/* Click-to-sort affordance: _JS_SORT_TABLES gives every sortable heading a tabindex, so
+   keying on th[tabindex] styles exactly the headings it wired (a data-nosort table or th
+   gets none).  The heading is a pointer; the active one shows the direction. */
+th[tabindex] { cursor: pointer; user-select: none; }
+th.sorted-asc::after { content: " \25B2"; font-size: 0.8em; }
+th.sorted-desc::after { content: " \25BC"; font-size: 0.8em; }
+.slot-full         { width: 100%; }
+.slot-twothirds     { width: calc(66.67% - 0.33rem); }
+.slot-three-fifths  { width: calc(60% - 0.40rem); }
+.slot-half          { width: calc(50% - 0.50rem); }
+.slot-two-fifths    { width: calc(40% - 0.60rem); }
+.slot-third         { width: calc(33.33% - 0.67rem); }
+.slot-quarter       { width: calc(25% - 0.75rem); }
+.masthead-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 0.3rem;
+}
+.masthead-header h1 { margin: 0 0 0.1rem; font-size: var(--fs-h1); font-weight: 700; }
+.masthead-type {
+  font-size: var(--fs-type); font-weight: 700; opacity: 0.88; line-height: 1.35;
+  padding-top: 0.25rem;
+}
+.nav-btns { display: flex; gap: 0.5rem; }
+.btn-nav {
+  background: var(--ocean); color: #fff; padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-pill); text-decoration: none; font-size: var(--fs-nav);
+}
+.btn-nav:hover { opacity: 0.85; }
+/* Masthead page-nav (vendored): the row of role pills under the masthead, and the
+   "Data inventory:" file strip.  A pill's colour is its role, never its page; the
+   current page's pill and an already-viewed file pill are muted the same way. */
+.page-nav { margin: 0.65rem 0 0.5rem; }
+/* Consecutive nav rows (a multi-row masthead) stack tighter than the first row's
+   top margin, which is sized for a single row. */
+.page-nav + .page-nav { margin-top: 0.15rem; }
+.page-nav-label { font-size: var(--fs-top); opacity: 0.75; margin-right: 0.3rem; }
+.nav-pill {
+  display: inline-block; padding: 0.2em 0.65em; border-radius: var(--radius-btn);
+  font-size: var(--fs-nav); font-weight: 700; text-decoration: none; color: #fff;
+  margin: 0 0.2rem 0.25rem 0;
+  /* A contrasting inner edge keeps a pill visible when its role colour matches the
+     masthead background, so colour-is-role holds on any masthead. */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+.nav-landing { background: var(--role-landing); }
+.nav-entity { background: var(--role-entity); }
+.nav-collection { background: var(--role-collection); }
+.nav-component { background: var(--role-component); }
+.nav-aggregate-a { background: var(--role-aggregate-a); }
+.nav-aggregate-b { background: var(--role-aggregate-b); }
+.nav-map { background: var(--role-map); }
+.nav-up { background: var(--role-up); }
+.masthead.role-landing { background: var(--role-landing); }
+.masthead.role-entity { background: var(--role-entity); }
+.masthead.role-collection { background: var(--role-collection); }
+.masthead.role-component { background: var(--role-component); }
+.masthead.role-aggregate-a { background: var(--role-aggregate-a); }
+.masthead.role-aggregate-b { background: var(--role-aggregate-b); }
+.masthead.role-map { background: var(--role-map); }
+.masthead.role-up { background: var(--role-up); }
+.nav-current { opacity: 0.5; pointer-events: none; }
+.nav-missing { background: var(--gray-3); opacity: 0.5; pointer-events: none; }
+.inventory-strip { margin: 0 0 1rem; }
+.inventory-strip .label { font-size: var(--fs-top); opacity: 0.75; margin-right: 0.3rem; }
+.file-pill {
+  display: inline-block; background: var(--role-component); color: #fff;
+  padding: 0.2rem 0.7rem; border-radius: var(--radius-pill);
+  font-family: var(--font-mono); font-size: 0.78rem;
+  text-decoration: none; margin: 0.1rem 0.05rem;
+}
+.file-pill:hover { opacity: 0.85; }
+.file-pill-active { opacity: 0.5; pointer-events: none; }
+/* Opt-in plain masthead (vendored) for landing / navigator pages: white panel,
+   ink text, rule border, wordmark hidden.  No ctdcast page uses it yet. */
+.masthead-plain { background: #fff; color: var(--text); border: 1px solid var(--rule); }
+.masthead-plain .wordmark { display: none; }
+footer {
+  text-align: center; padding: 1rem;
+  border-top: 1px solid var(--package-accent);
+  font-size: var(--fs-xs); color: var(--muted);
+}
+footer a { color: var(--muted); }
+@media print {
+  body { max-width: 100%; }
+  .masthead { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0.9rem 1.25rem; }
+  .masthead-header h1, .masthead h1 { font-size: 1.35rem; }
+  .meta-grid { grid-template-columns: repeat(4, 1fr); gap: 0.3rem 1rem; font-size: var(--fs-xs); }
+  h2 { page-break-after: avoid; }
+  h3 { page-break-after: avoid; }
+  .fig-row, figure, table { break-inside: avoid; }
+  .jump-nav { display: none; }
+}
+
+section { margin: 1.4rem 0; }
+details.vars > summary { cursor: pointer; color: var(--muted); }
+details.scalar-group > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
+table.summary td.indent { padding-left: 1.4rem; color: var(--muted); }
+p.verdict span.cell-bad { padding: 0 0.3rem; }
+.snippets { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 0.8rem; }
+.snippet-title { margin: 0 0 0.2rem; color: var(--muted); }
+.snippet textarea { width: 100%; height: auto; min-height: 2.4em; font-family: ui-monospace, monospace; border: 1px solid var(--ocean); border-radius: 4px; padding: 0.4rem; resize: vertical; box-sizing: border-box; }
+button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
+.howto { border-left: 4px solid var(--ocean); background: var(--bg-tint, var(--gray-1)); padding: 0.6rem 1rem; border-radius: var(--radius-btn); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.6rem 1.2rem; margin: 0.8rem 0; }
+.tile { border-top: 3px solid var(--ocean); padding-top: 0.3rem; }
+.tile.bad { border-top-color: var(--warn); }
+.tile dt { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--gray-5); }
+.tile dd { margin: 0; font-weight: 600; }
+.stage-pills { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 0.4rem 0; }
+.stage-pill { font-size: var(--fs-xs); font-weight: 600; padding: 2px 9px; border-radius: var(--radius-btn); color: #fff; text-decoration: none; }
+.stage-ok { background: var(--ok); }
+.stage-gap { background: var(--warn); }
+.stage-sep { color: var(--gray-4); }
+td.loss-bad { background: var(--warn-bg); box-shadow: inset 3px 0 0 var(--warn); }
+.var-orig { color: var(--muted); font-size: var(--fs-xs); }
+dl.glossary dt { font-weight: 600; margin-top: 0.5rem; }
+dl.glossary dd { margin: 0; color: var(--gray-5); max-width: 78ch; }
+details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
+</style>
+</head>
+<body>
+<div id="top"></div>
+<div class="masthead role-landing">
+  <div class="masthead-header">
+    <h1>sg271 · Drygalski Trough</h1>
+    <span class="masthead-type">Conversion</span>
+  </div>
+  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>Conversion summary · Seaglider basestation to OG1</span><span>generated 2026-11-11 11:59 UTC</span></p>
+  
+
+<nav class="page-nav">
+  <span class="page-nav-label">Pages:</span>
+  
+  <span class="nav-pill nav-landing nav-current" title="current page">Conversion</span><a class="nav-pill nav-aggregate-a" href="sg271_20260302T193828_R_phase.html">Phase</a>
+</nav>
+
+<nav class="page-nav">
+  <span class="page-nav-label">Provenance:</span>
+  
+  <a class="nav-pill nav-component" href="sg271_20260302T193828_R_variables.html">Variables</a><a class="nav-pill nav-component" href="sg271_20260302T193828_R_processing.html">Processing</a>
+</nav>
+
+
+
+  
+
+<nav class="inventory-strip">
+  <span class="label">Data inventory:</span>
+  <a class="file-pill" href="sg271_20260302T193828_R_basestation.html">p2710001–0003.nc</a><a class="file-pill" href="sg271_20260302T193828_R_og1.html">sg271_20260302T193828_R.nc</a>
+</nav>
+
+
+  <dl class="meta-grid"><div><dt>Glider</dt><dd>sg271 · WMO 8901140</dd></div><div><dt>Model</dt><dd>University of Washington Seaglider SGX glider</dd></div><div><dt>Project</dt><dd>PycnMix</dd></div><div><dt>Institution</dt><dd>University of Hamburg</dd></div><div><dt>Site</dt><dd>Drygalski Trough</dd></div><div><dt>Deployed</dt><dd>2026-03-02 19:24 UTC</dd></div><div><dt>Deployment position</dt><dd>72° 58.80′ S, 171° 24.50′ E</dd></div><div><dt>Duration</dt><dd>2 h 07 m</dd></div><div><dt>Dives</dt><dd>3 (1–3)</dd></div><div><dt>Max depth</dt><dd>108 m</dd></div><div><dt>Basestation</dt><dd>basestation v3.0.6 · seaglider 67.01</dd></div><div><dt>Mode</dt><dd>real time</dd></div><div><dt>Source</dt><dd>3 dive files</dd></div><div><dt>Processed</dt><dd>2026-11-11 11:59 UTC</dd></div><div><dt>Losses</dt><dd style="color:var(--warn);">⚠ 8 kinds</dd></div><div><dt>OG1 conformance</dt><dd style="color:var(--warn);">⚠ 1 mandatory not met</dd></div>
+  </dl>
+  <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
+</div>
+<nav class="jump-nav"> <a href="#summary">(1) Summary</a> <a href="#config-check">(2) mission.yaml against the data</a> <a href="#losses">(3) Losses</a> <a href="#flight">(4) Flight model</a> <a href="#calibration">(5) Sensors and calibration</a> <a href="#traced">(6) One variable traced</a> <a href="#glossary">(A) Glossary</a> <a href="#globals">(B) Global attributes</a></nav>
+<section id="summary">
+<h2>(1) Summary</h2>
+<div class="howto"><p><strong>How to read this report.</strong> The tiles say whether the conversion is complete. <a href="#losses">Losses</a> lists what did <em>not</em> reach the OG1 file in the same form; empty means lossless. The <a href="sg271_20260302T193828_R_variables.html">Variables</a> page finds any variable by its basestation or OG1 name; the <a href="sg271_20260302T193828_R_processing.html">Processing</a> page lists every step in the order it ran; the <a href="sg271_20260302T193828_R_phase.html">Phase</a> page shows how PHASE was assigned. Terms are in the <a href="#glossary">glossary</a>.</p></div>
+<p class="caption">Counts from the OG1 file and the conversion record beside it. <strong>Highlight rule:</strong> a tile is marked when its count is short (inputs not all accounted for, a dive record missing) or when any loss applies.</p>
+<dl class="tiles"><div class="tile"><dt>Dive files read</dt><dd>3</dd></div><div class="tile"><dt>Variables</dt><dd>542 in → 562 out</dd></div><div class="tile"><dt>Accounted for</dt><dd>542 / 542</dd></div><div class="tile bad"><dt>Losses</dt><dd>5 kinds, 173 items; 3 not recorded</dd></div><div class="tile"><dt>Renamed to OG1</dt><dd>55</dd></div><div class="tile"><dt>Passed through</dt><dd>477</dd></div><div class="tile"><dt>Built by the converter</dt><dd>30</dd></div><div class="tile"><dt>Consumed into others</dt><dd>9</dd></div><div class="tile"><dt>Unit factors applied</dt><dd>11</dd></div><div class="tile"><dt>float64 → float32</dt><dd>280</dd></div><div class="tile"><dt>Data points</dt><dd>9,309</dd></div><div class="tile"><dt>Dives in the file</dt><dd>3</dd></div>
+</dl>
+<p class="caption">Stages (each links to its first step on the Processing page; amber: a step of the stage is not recorded in the file):</p>
+<div class="stage-pills"><a class="stage-pill stage-gap" href="sg271_20260302T193828_R_processing.html#step-1">Read</a><span class="stage-sep">›</span><a class="stage-pill stage-gap" href="sg271_20260302T193828_R_processing.html#step-3">Map names</a><span class="stage-sep">›</span><a class="stage-pill stage-gap" href="sg271_20260302T193828_R_processing.html#step-5">Units</a><span class="stage-sep">›</span><a class="stage-pill stage-gap" href="sg271_20260302T193828_R_processing.html#step-8">Merge onto TIME</a><span class="stage-sep">›</span><a class="stage-pill stage-gap" href="sg271_20260302T193828_R_processing.html#step-14">Derive</a><span class="stage-sep">›</span><a class="stage-pill stage-gap" href="sg271_20260302T193828_R_processing.html#step-17">Store</a><span class="stage-sep">›</span><a class="stage-pill stage-ok" href="sg271_20260302T193828_R_processing.html#step-20">Write</a>
+</div>
+<p class="caption verdict"><span>542 of 542 inputs accounted for</span> · <span>nothing dropped</span> · <span>nothing removed</span> · <span>OG1 mandatory complete</span></p>
+</section>
+<section id="config-check">
+<h2>(2) mission.yaml against the data</h2>
+<p class="caption">Lines for the <code>mission.yaml</code> this conversion was given, where it and the output disagree or fall short: the requested <code>dives</code> against the dives that reached the file; platform fields set in the config against the values the files carry (the config wins by design, e.g. a local nickname for <code>PLATFORM_SERIAL_NUMBER</code>, so a pair is a value to check, not an error); platform fields written as <code>UNK</code> or omitted; institution ids the registry resolved; and missing ACDD globals. Only checks that find something are shown.</p>
+<h3>Missing globals</h3>
+<p class="caption">OG1 highly desirable and ACDD 1.3 globals the file does not carry (the OG1 ones are those validate warns about). Not listed, because the converter should supply them (computed from the data, or a constant): geospatial_bounds_crs, geospatial_bounds_vertical_crs, standard_name_vocabulary, time_coverage_resolution. Not listed, because OG1 records people and organisations in contributor_* and contributing_institutions_* instead: creator_email, creator_name, creator_url, publisher_email, publisher_name, publisher_url.</p>
+<div class="snippets">
+<div class="snippet">
+<p class="snippet-title">identity_and_discovery: <button type="button" class="copy" data-copy="config-1-1">copy</button></p>
+<textarea id="config-1-1" readonly wrap="off" rows="3">identity_and_discovery:
+  site_vocabulary: null   # OG1 highly desirable
+  data_url: null   # OG1 highly desirable</textarea>
+</div>
+<div class="snippet">
+<p class="snippet-title">rights_and_access: <button type="button" class="copy" data-copy="config-1-2">copy</button></p>
+<textarea id="config-1-2" readonly wrap="off" rows="2">rights_and_access:
+  doi: null   # OG1 highly desirable</textarea>
+</div>
+<div class="snippet">
+<p class="snippet-title">global_attributes: <button type="button" class="copy" data-copy="config-1-3">copy</button></p>
+<textarea id="config-1-3" readonly wrap="off" rows="7">global_attributes:
+  internal_mission_identifier: null   # OG1 highly desirable
+  program: null   # OG1 highly desirable
+  program_vocabulary: null   # OG1 highly desirable
+  summary: null   # ACDD highly recommended
+  processing_level: null   # ACDD recommended
+  source: null   # ACDD recommended</textarea>
+</div>
+</div>
+<h3>Variables OG1 defines differently</h3>
+<p class="caption">These passed through under their basestation names; OG1 has no home for them, or names them for a different quantity. Add them to drop_variables to leave them out of the file. dissolved_oxygen_sat: a per-mass saturation concentration (micromoles/kg); OG1 OXYSAT is percent saturation, a different quantity, so this is not mapped to OXYSAT. gsw_sigma0: the density anomaly (sigma0 = potential density - 1000); OG1 POTDENS0 is full potential density, which the converter derives with TEOS-10, so gsw_sigma0 has no OG1 home.</p>
+<div class="snippets">
+<div class="snippet">
+<p class="snippet-title">In the config <button type="button" class="copy" data-copy="config-2-1">copy</button></p>
+<textarea id="config-2-1" readonly wrap="off" rows="3">drop_variables:
+  - dissolved_oxygen_sat
+  - gsw_sigma0</textarea>
+</div>
+</div>
+<h3>Duplicate variables</h3>
+<p class="caption">These passed through under their basestation names but hold the same values as a mapped OG1 variable, so they are redundant. density is identical to DENSITY, which maps to the OG1 variable; legato_conduc is identical to CNDC_RAW, which maps to the OG1 variable. Keep the mapped one and drop the copy.</p>
+<div class="snippets">
+<div class="snippet">
+<p class="snippet-title">In the config <button type="button" class="copy" data-copy="config-3-1">copy</button></p>
+<textarea id="config-3-1" readonly wrap="off" rows="3">drop_variables:
+  - density
+  - legato_conduc</textarea>
+</div>
+</div>
+</section>
+
+<section id="losses">
+<h2>(3) Losses</h2>
+<p class="caption">A loss is something in the basestation files that is not in the OG1 file in the same form: dropped structure, or a label not kept. Changed values that are recorded (unit factors, float32 storage, time shifts) and additions are steps, on the Processing page. <strong>Highlight rule:</strong> a loss that applies to this file, or one the conversion does not count ("not recorded").</p>
+<table class="nc">
+<thead><tr><th>Loss</th><th>Kind</th><th>Count</th><th>Examples</th><th>Recorded in the file</th></tr></thead>
+<tbody>
+<tr><td class="loss-bad">Variables not written</td><td>structure</td><td>1</td>
+<td class="cell-wrap"><code class="muted">trajectory</code></td><td>conversion_dimensions, conversion_removed_variables</td></tr>
+<tr><td class="loss-bad">Dives left out (no ctd_time or position)</td><td>structure</td><td>not recorded</td>
+<td class="cell-wrap"><code class="muted"></code></td><td>not recorded</td></tr>
+<tr><td class="loss-bad">Exact-duplicate records dropped</td><td>structure</td><td>not recorded</td>
+<td class="cell-wrap"><code class="muted"></code></td><td>not recorded</td></tr>
+<tr><td class="loss-bad">Per-dive numbers stored as JSON text</td><td>structure</td><td>80</td>
+<td class="cell-wrap"><code class="muted">avg_latitude, avg_longitude, codaTODO_ontime_a, codaTODO_ontime_b, codaTODO_samples_a, …</code></td><td>storage_type on each</td></tr>
+<tr><td class="loss-bad">Unit spelling replaced (factor 1)</td><td>label</td><td>76</td>
+<td class="cell-wrap"><code class="muted">absolute_salinity, codaTODO_ontime_a, codaTODO_ontime_b, codaTODO_temp, conservative_temperature, …</code></td><td>not recorded</td></tr>
+<tr><td class="loss-bad">The per-variable sensor attribute</td><td>label</td><td>not recorded</td>
+<td class="cell-wrap"><code class="muted"></code></td><td>not recorded</td></tr>
+<tr><td class="loss-bad">Global attributes that differ between dives (first file kept)</td><td>label</td><td>15</td>
+<td class="cell-wrap"><code class="muted">date_created, date_modified, dive_number, geospatial_lat_max, geospatial_lat_min, …</code></td><td>every file&#39;s values in the conversion record</td></tr>
+<tr><td class="loss-bad">Basestation history</td><td>label</td><td>1</td>
+<td class="cell-wrap"><code class="muted">history</code></td><td>not recorded</td></tr>
+</tbody></table>
+<p class="fig-source">source: seagliderOG1/reports/processing.py:losses</p>
+</section>
+
+<section id="flight">
+<h2>(4) Flight model</h2>
+<p class="caption">The basestation variables a glider flight model reads or writes: where each went in the OG1 file, its units, and its form. <em>gliderflightOG1 reads</em> names the input that package expects. <strong>Highlight rule:</strong> an input gliderflightOG1 reads that is not usable here as a number (stored as per-dive JSON text, or not written).</p>
+<table class="nc">
+<thead><tr><th>Role</th><th>Basestation → OG1 file</th><th>Units</th><th>Form</th><th>gliderflightOG1 reads</th><th>Ready?</th></tr></thead>
+<tbody>
+<tr><td>attitude</td>
+<td><span class="var-orig"><code>eng_pitchAng</code> →</span><br><code>PITCH</code></td>
+<td><span class="var-orig">degrees</span><br>→ degree</td>
+<td>on N_MEASUREMENTS</td><td><code>PITCH</code></td>
+<td>yes</td></tr>
+<tr><td>attitude</td>
+<td><span class="var-orig"><code>eng_rollAng</code> →</span><br><code>ROLL</code></td>
+<td><span class="var-orig">degrees</span><br>→ degree</td>
+<td>on N_MEASUREMENTS</td><td><code></code></td>
+<td>—</td></tr>
+<tr><td>attitude</td>
+<td><span class="var-orig"><code>eng_head</code> →</span><br><code>HEADING</code></td>
+<td><span class="var-orig">degrees</span><br>→ degree</td>
+<td>on N_MEASUREMENTS</td><td><code></code></td>
+<td>—</td></tr>
+<tr><td>control</td>
+<td><span class="var-orig"><code>eng_pitchCtl</code></span></td>
+<td></td>
+<td>not in these files</td><td><code></code></td>
+<td>—</td></tr>
+<tr><td>control</td>
+<td><span class="var-orig"><code>eng_rollCtl</code></span></td>
+<td></td>
+<td>not in these files</td><td><code></code></td>
+<td>—</td></tr>
+<tr><td>buoyancy</td>
+<td><span class="var-orig"><code>eng_vbdCC</code> →</span><br><code>VBD_CC</code></td>
+<td>cm3</td>
+<td>on N_MEASUREMENTS</td><td><code>VBD</code></td>
+<td>yes</td></tr>
+<tr><td>buoyancy</td>
+<td><span class="var-orig"><code>log_C_VBD</code> →</span><br><code>C_VBD</code></td>
+<td>—</td>
+<td>JSON text, per dive</td><td><code>C_VBD</code></td>
+<td class="loss-bad">no: JSON text</td></tr>
+<tr><td>buoyancy</td>
+<td><span class="var-orig"><code>sg_cal_vbdbias</code> →</span><br><code>VBD_BIAS</code></td>
+<td><span class="var-orig">cc</span><br>→ cm3</td>
+<td>JSON text, per dive</td><td><code>vbdbias</code></td>
+<td class="loss-bad">no: JSON text</td></tr>
+<tr><td>buoyancy</td>
+<td><span class="var-orig"><code>sg_cal_volmax</code> →</span><br><code>VOLMAX</code></td>
+<td>m^3</td>
+<td>one value</td><td><code>volmax</code></td>
+<td>yes</td></tr>
+<tr><td>buoyancy</td>
+<td><span class="var-orig"><code>sg_cal_vbd_min_cnts</code></span></td>
+<td></td>
+<td>not in these files</td><td><code>vbd_min_cnts</code></td>
+<td class="loss-bad">no: not in these files</td></tr>
+<tr><td>buoyancy</td>
+<td><span class="var-orig"><code>sg_cal_vbd_cnts_per_cc</code></span></td>
+<td></td>
+<td>not in these files</td><td><code>vbd_cnts_per_cc</code></td>
+<td class="loss-bad">no: not in these files</td></tr>
+<tr><td>buoyancy</td>
+<td><span class="var-orig"><code>sg_cal_mass</code> →</span><br><code>MASS</code></td>
+<td>kg</td>
+<td>one value</td><td><code>mass</code></td>
+<td>yes</td></tr>
+<tr><td>buoyancy</td>
+<td><span class="var-orig"><code>sg_cal_abs_compress</code> →</span><br><code>sg_cal_abs_compress</code></td>
+<td>cc/dbar</td>
+<td>JSON text, per dive</td><td><code>abs_compress</code></td>
+<td class="loss-bad">no: JSON text</td></tr>
+<tr><td>buoyancy</td>
+<td><span class="var-orig"><code>sg_cal_therm_expan</code> →</span><br><code>sg_cal_therm_expan</code></td>
+<td>cc/degrees_Celsius</td>
+<td>one value</td><td><code>therm_expan</code></td>
+<td>yes</td></tr>
+<tr><td>buoyancy</td>
+<td><span class="var-orig"><code>sg_cal_temp_ref</code> →</span><br><code>sg_cal_temp_ref</code></td>
+<td><span class="var-orig">degrees_Celsius</span><br>→ degree_Celsius</td>
+<td>one value</td><td><code>temp_ref</code></td>
+<td>yes</td></tr>
+<tr><td>buoyancy</td>
+<td><span class="var-orig"><code>sg_cal_rho0</code> →</span><br><code>sg_cal_rho0</code></td>
+<td><span class="var-orig">kg/m^3</span><br>→ kg m-3</td>
+<td>one value</td><td><code>rho0</code></td>
+<td>yes</td></tr>
+<tr><td>hydrodynamic</td>
+<td><span class="var-orig"><code>sg_cal_hd_a</code> →</span><br><code>HD_A</code></td>
+<td>—</td>
+<td>one value</td><td><code>hd_a</code></td>
+<td>yes</td></tr>
+<tr><td>hydrodynamic</td>
+<td><span class="var-orig"><code>sg_cal_hd_b</code> →</span><br><code>HD_B</code></td>
+<td>—</td>
+<td>JSON text, per dive</td><td><code>hd_b</code></td>
+<td class="loss-bad">no: JSON text</td></tr>
+<tr><td>hydrodynamic</td>
+<td><span class="var-orig"><code>sg_cal_hd_c</code> →</span><br><code>HD_C</code></td>
+<td>—</td>
+<td>one value</td><td><code>hd_c</code></td>
+<td>yes</td></tr>
+<tr><td>model output</td>
+<td><span class="var-orig"><code>glide_angle</code> →</span><br><code>GLIDE_ANGLE</code></td>
+<td><span class="var-orig">degrees</span><br>→ degree</td>
+<td>on N_MEASUREMENTS</td><td><code></code></td>
+<td>—</td></tr>
+<tr><td>model output</td>
+<td><span class="var-orig"><code>speed</code> →</span><br><code>GLIDE_SPEED</code></td>
+<td><span class="var-orig">cm/s</span><br>→ m s-1 (×0.01)</td>
+<td>on N_MEASUREMENTS</td><td><code></code></td>
+<td>—</td></tr>
+<tr><td>model output</td>
+<td><span class="var-orig"><code>horz_speed</code> →</span><br><code>GLIDER_HORZ_VELO_MODEL</code></td>
+<td><span class="var-orig">cm/s</span><br>→ m s-1 (×0.01)</td>
+<td>on N_MEASUREMENTS</td><td><code></code></td>
+<td>—</td></tr>
+<tr><td>model output</td>
+<td><span class="var-orig"><code>vert_speed</code> →</span><br><code>GLIDER_VERT_VELO_MODEL</code></td>
+<td><span class="var-orig">cm/s</span><br>→ m s-1 (×0.01)</td>
+<td>on N_MEASUREMENTS</td><td><code></code></td>
+<td>—</td></tr>
+<tr><td>model output (gsm)</td>
+<td><span class="var-orig"><code>glide_angle_gsm</code> →</span><br><code>glide_angle_gsm</code></td>
+<td><span class="var-orig">degrees</span><br>→ degree</td>
+<td>on N_MEASUREMENTS</td><td><code></code></td>
+<td>—</td></tr>
+<tr><td>model output (gsm)</td>
+<td><span class="var-orig"><code>speed_gsm</code> →</span><br><code>speed_gsm</code></td>
+<td><span class="var-orig">cm/s</span><br>→ m s-1 (×0.01)</td>
+<td>on N_MEASUREMENTS</td><td><code></code></td>
+<td>—</td></tr>
+<tr><td>model output (gsm)</td>
+<td><span class="var-orig"><code>horz_speed_gsm</code> →</span><br><code>horz_speed_gsm</code></td>
+<td><span class="var-orig">cm/s</span><br>→ m s-1 (×0.01)</td>
+<td>on N_MEASUREMENTS</td><td><code></code></td>
+<td>—</td></tr>
+<tr><td>model output (gsm)</td>
+<td><span class="var-orig"><code>vert_speed_gsm</code> →</span><br><code>vert_speed_gsm</code></td>
+<td><span class="var-orig">cm/s</span><br>→ m s-1 (×0.01)</td>
+<td>on N_MEASUREMENTS</td><td><code></code></td>
+<td>—</td></tr>
+</tbody></table>
+<p class="caption">gliderflightOG1 also reads <code>DIVENUM</code> and <code>UPDN</code> (here <code>dive_number</code> and <code>PROFILE_DIRECTION</code>), and its constants as global attributes (here one-value variables); it is to read the OG1 names.</p>
+<p class="fig-source">source: seagliderOG1/reports/processing.py:flight_rows</p>
+</section>
+
+<section id="calibration">
+<h2>(5) Sensors and calibration comments</h2>
+<h3>Sensors named by OG1 (not required)</h3>
+<p class="caption">3 <code>SENSOR_*</code> variables, from the basestation calibration comments and <code>config/OG1_sensor_attributes.yaml</code>. Used by lists the variables whose <code>sensor</code> attribute names the sensor. Amber: the serial number or calibration date is <code>UNK</code> or empty (not read from the calibration comment; files from 0.2.0 and earlier wrote every digit zero instead); or two sensors share a serial number, which usually means a calibration comment was copied from another instrument. Both come from the basestation <code>sg_calib_constants</code>; check them against the calibration sheets.</p>
+<table class="nc sortable">
+<colgroup><col style="width:15%"><col style="width:7%"><col style="width:7%"><col style="width:16%"><col style="width:9%"><col style="width:11%"><col style="width:35%"></colgroup>
+<thead><tr><th>Sensor</th><th>Type</th><th>Maker</th><th>Model</th><th>Serial</th><th>Calibration</th><th>Used by</th></tr></thead>
+<tbody>
+<tr><td class="cell-wrap">SENSOR_CTD_238007</td><td>CTD</td><td>RBR</td><td>RBR Legato3 CTD</td><td>238007</td><td>2025-02-27</td><td class="cell-wrap">22: CNDC, CNDC_QC, CNDC_RAW, CNDC_RAW_QC, DENSITY, DEPTH, PRES, PRES_2, PRES_QC, PSAL, PSAL_QC, PSAL_RAW, PSAL_RAW_QC, SIGMA_T, SIGTHETA, SOUND_VELOCITY, TEMP, TEMP_2, TEMP_QC, TEMP_RAW, TEMP_RAW_QC, THETA</td></tr>
+<tr><td class="cell-wrap">SENSOR_FLUOROMETER_237998</td><td>fluorometer</td><td>RBR</td><td>RBR tridente scattering fluorescence sensor</td><td>237998</td><td>2025-03-11</td><td class="cell-wrap">2: CDOM, CHLA</td></tr>
+<tr><td class="cell-wrap">SENSOR_OXYGEN_237790</td><td>Oxygen</td><td>RBR</td><td>RBR Coda T.ODO Temperature and Dissolved Oxygen Sensor</td><td>237790</td><td>2025-03-20</td><td class="cell-wrap">2: OXYSAT, TEMP_3</td></tr>
+</tbody></table>
+
+<h3>Calibration comments: basestation → <code>SENSOR_*</code></h3>
+<p class="caption">How each sensor's serial number and calibration date were read. Basestation variable and Original are the source: the <code>sg_cal_calibcomm*</code> variable (from <code>sg_calib_constants.m</code>, typed by the operator) and its text, kept in the file as <code>original_calibcomm</code>. The remaining columns are the result: the OG1 <code>SENSOR_*</code> variable and its <code>sensor_serial_number</code> and <code>sensor_calibration_date</code>, per-channel dates (<code>sensor_calibration_dates</code>, RBR), with the serial / date rules that read them (named on the <a href="https://ocean-uhh.github.io/seagliderOG1/calibration_comments.html">calibration comments</a> docs page). Amber: the serial or date is <code>UNK</code> (not read), the serial is a lone token with no label (it may be a model number), the calibration date is after the mission's first sample or more than 30 years before it, the date has two readings and was chosen by convention (slashes month-first, dots and dashes day-first), or two sensors share a serial number. Correct any of these with <code>sensors:</code> in <code>mission.yaml</code>.</p>
+<table class="nc sortable">
+<colgroup><col style="width:13%"><col style="width:21%"><col style="width:15%"><col style="width:7%"><col style="width:9%"><col style="width:13%"><col style="width:10%"><col style="width:13%"></colgroup>
+<thead><tr><th>Basestation variable</th><th>Original</th><th>OG1 Sensor</th><th>Serial</th><th>Calibration</th><th>Channel dates</th><th>Rules (serial / date)</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td class="cell-wrap">sg_cal_calibcomm</td><td class="cell-wrap">Legato s/n 238007, calibration 27 Feb 2025</td><td class="cell-wrap">SENSOR_CTD_238007</td><td style="white-space:nowrap">238007</td><td style="white-space:nowrap">2025-02-27</td><td class="cell-wrap"></td><td style="white-space:nowrap">label / dd Mon yyyy</td><td class="cell-wrap"></td></tr>
+<tr><td class="cell-wrap">sg_cal_calibcomm_tridentebb700chla470fdom365</td><td class="cell-wrap">RBRtridente serialnum:237790 backscatter_00:2025-02-26T13:58:29Z chlorophyll_00:2025-03-11T12:50:27Z fdom_00:2025-03-11T12:54:10Z</td><td class="cell-wrap">SENSOR_FLUOROMETER_237998</td><td style="white-space:nowrap">237998</td><td style="white-space:nowrap">2025-03-11</td><td class="cell-wrap">backscatter_00: 2025-02-26; chlorophyll_00: 2025-03-11; fdom_00: 2025-03-11</td><td style="white-space:nowrap">label / rbr-iso</td><td class="cell-wrap">sensor_serial_number from the mission config</td></tr>
+<tr><td class="cell-wrap">sg_cal_calibcomm_coda</td><td class="cell-wrap">RBRcoda serialnum:237790 temp15:2025-02-26T13:58:29Z doxy24:2025-03-20T11:45:16Z</td><td class="cell-wrap">SENSOR_OXYGEN_237790</td><td style="white-space:nowrap">237790</td><td style="white-space:nowrap">2025-03-20</td><td class="cell-wrap">temp15: 2025-02-26; doxy24: 2025-03-20</td><td style="white-space:nowrap">label / rbr-iso</td><td class="cell-wrap"></td></tr>
+</tbody></table>
+
+</section>
+
+<section id="traced">
+<h2>(6) One variable traced</h2>
+<p class="caption"><code>speed</code> → <code>GLIDE_SPEED</code>, through every step that touched it; the numbers are the Processing page's steps.</p>
+<table class="nc">
+<thead><tr><th>#</th><th>Step</th><th>Before</th><th>After</th></tr></thead>
+<tbody>
+<tr><td><a href="sg271_20260302T193828_R_processing.html#step-3">3</a></td><td>rename to OG1</td><td><span class="var-orig">speed</span></td><td>GLIDE_SPEED</td></tr>
+<tr><td><a href="sg271_20260302T193828_R_processing.html#step-5">5</a></td><td>convert units</td><td><span class="var-orig">cm/s</span></td><td>m s-1, values ×0.01; original_units = cm/s</td></tr>
+<tr><td><a href="sg271_20260302T193828_R_processing.html#step-8">8</a></td><td>split by dimension</td><td><span class="var-orig">ctd_data_point</span></td><td>original_dimension = ctd_data_point</td></tr>
+<tr><td><a href="sg271_20260302T193828_R_processing.html#step-10">10</a></td><td>merge onto one time axis</td><td><span class="var-orig">3,872 values on ctd_data_point</span></td><td>on N_MEASUREMENTS; empty at data points from other dimensions</td></tr>
+<tr><td><a href="sg271_20260302T193828_R_processing.html#step-18">18</a></td><td>storage types</td><td><span class="var-orig">float64</span></td><td>float32</td></tr>
+<tr><td><a href="sg271_20260302T193828_R_processing.html#step-21">21</a></td><td>write the file</td><td><span class="var-orig"></span></td><td>coordinates = TIME LONGITUDE LATITUDE DEPTH</td></tr>
+</tbody></table>
+</section>
+
+<section id="glossary">
+<h2>(A) Glossary</h2>
+<dl class="glossary"><dt>renamed</dt><dd>In the file under its OG1 name; original_name holds the basestation name.</dd><dt>passthrough</dt><dd>In the file under its basestation name.</dd><dt>consumed</dt><dd>Not in the file itself; its data went into a variable the converter built.</dd><dt>skipped</dt><dd>Not in the file; its dimension is not placed on N_MEASUREMENTS.</dd><dt>derived</dt><dd>Built by the converter; its inputs are listed.</dd>
+<dt>shared axis (N_MEASUREMENTS)</dt><dd>The one time axis of the OG1 file. Every basestation dimension (CTD samples, engineering samples, guidance-and-control events, GPS fixes, each sensor's samples) is placed on it by time, so most variables are empty at most data points.</dd>
+<dt>numbered copy (_2, _3)</dt><dd>When two basestation variables map to one OG1 name, the first (CTD first, then non-QC, then input order) keeps it and the next becomes NAME_2.</dd>
+<dt>per-dive scalar</dt><dd>A basestation parameter whose value changes between dives, written as JSON text <code>{"dives": [...], "values": [...]}</code>.</dd>
+<dt>loss</dt><dd>Something in the basestation files that is not in the OG1 file in the same form: dropped structure, or a label (a unit spelling, an attribute) not kept.</dd>
+<dt>step</dt><dd>A recorded change that keeps the information: a unit factor (stored in <code>original_units</code>), units relabelled, a float64 value stored as float32.</dd>
+<dt>inputs not recorded</dt><dd>The conversion did not record which basestation variables this one was built from; the page says so instead of guessing.</dd>
+</dl>
+</section>
+
+<section id="globals">
+<h2>(B) Global attributes</h2>
+<p class="caption">OG1 requirement: mandatory 9/9 present · highly desirable 8/14 (missing: internal_mission_identifier, site_vocabulary, program, program_vocabulary, data_url, doi) · suggested 8/11 (missing: network, uri, web_link) The attributes, grouped with their OG1 tier and source, the Conventions check and the history are on the <a href="sg271_20260302T193828_R_og1.html#globals">OG1 format</a> page.</p>
+</section>
+
+<footer>Generated by seagliderOG1 v0.3.0.post1.dev1 &nbsp;&middot;&nbsp; 2026-11-11T11:59:07+00:00</footer>
+<script>
+document.querySelectorAll('table').forEach(function (table) {
+  if (table.hasAttribute('data-nosort')) { return; }
+  var head = table.tHead && table.tHead.rows[0];
+  var body = table.tBodies[0];
+  if (!head || !body) { return; }
+  function cellKey(row, idx) {
+    var cell = row.cells[idx];
+    if (!cell) { return ''; }
+    var ds = cell.getAttribute('data-sort');
+    return ds !== null ? ds : cell.textContent.trim();
+  }
+  function numeric(idx) {
+    var rows = body.rows, seen = false;
+    for (var i = 0; i < rows.length; i++) {
+      var k = cellKey(rows[i], idx);
+      if (k === '') { continue; }
+      if (!/^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(k)) { return false; }
+      seen = true;
+    }
+    return seen;
+  }
+  Array.prototype.forEach.call(head.cells, function (th, idx) {
+    if (th.hasAttribute('data-nosort')) { return; }
+    th.tabIndex = 0;
+    function sort() {
+      var asc = !(th.classList.contains('sorted-asc'));
+      var isNum = numeric(idx);
+      var rows = Array.prototype.slice.call(body.rows);
+      rows.sort(function (a, b) {
+        var ka = cellKey(a, idx), kb = cellKey(b, idx);
+        if (isNum) { ka = parseFloat(ka) || 0; kb = parseFloat(kb) || 0; }
+        else { ka = ka.toLowerCase(); kb = kb.toLowerCase(); }
+        if (ka < kb) { return asc ? -1 : 1; }
+        if (ka > kb) { return asc ? 1 : -1; }
+        return 0;
+      });
+      rows.forEach(function (r) { body.appendChild(r); });
+      Array.prototype.forEach.call(head.cells, function (o) {
+        o.classList.remove('sorted-asc', 'sorted-desc');
+      });
+      th.classList.add(asc ? 'sorted-asc' : 'sorted-desc');
+    }
+    th.addEventListener('click', sort);
+    th.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sort(); }
+    });
+  });
+});
+</script>
+
+<script>
+document.querySelectorAll("button.copy").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var box = document.getElementById(b.dataset.copy);
+    box.select();
+    (navigator.clipboard ? navigator.clipboard.writeText(box.value) : Promise.reject())
+      .catch(function () { document.execCommand("copy"); });
+    b.textContent = "copied";
+  });
+});
+</script>
+<script>
+document.querySelectorAll('h2').forEach(h => {
+  const a = document.createElement('a');
+  a.href = '#top'; a.className = 'top-link'; a.textContent = '↑ top';
+  h.appendChild(a);
+});
+</script>
+
+</body>
+</html>

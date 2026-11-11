@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What the conversion does &mdash; seagliderOG1 0.2.0.post1.dev7 documentation</title>
+  <title>What the conversion does &mdash; seagliderOG1 0.3.0.post1.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=7fb89329"></script>
+      <script src="_static/documentation_options.js?v=a448664d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -74,7 +74,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The report pages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="example_report.html">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
@@ -149,7 +149,7 @@ institutions, raw-data directory, dive range, mode; see <a class="reference inte
 (<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> becomes <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>);</p></li>
 <li><p>a conversion record <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside it (what was renamed, merged and dropped,
 and each variable’s per-dive presence);</p></li>
-<li><p>optionally an HTML conversion page (see <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">The conversion page</span></a>).</p></li>
+<li><p>optionally the HTML report pages (see <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">The report pages</span></a>).</p></li>
 </ul>
 <p><strong>Overall action</strong> — concatenate the dives onto one measurement axis; rename variables to OG1,
 attach CF and OG1 attributes, and convert units; add platform, sensor, contributor and
@@ -164,41 +164,44 @@ and dive phase. A basestation variable OG1 does not name is passed through under
 measurement axis (<code class="docutils literal notranslate"><span class="pre">sg_data_point</span></code> becomes <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code>) and which are carried as
 scalars. Build the basestation → OG1 name mapping once, across all files, so a variable
 present in only some dives gets the same name everywhere.
-<em>Page:</em> Dimensions; Reconciliation.</p></li>
+<em>Pages:</em> Basestation (dimension sizes); Variables (fate); Processing.</p></li>
 <li><p><strong>Per dive file:</strong></p>
 <ul class="simple">
 <li><p>merge that file’s dimensions onto the measurement axis;</p></li>
-<li><p>append the GPS fixes as extra rows (<code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code>);</p></li>
+<li><p>merge the GPS fixes onto the axis, one data point per fix (<code class="docutils literal notranslate"><span class="pre">LATITUDE_GPS</span></code>,
+<code class="docutils literal notranslate"><span class="pre">LONGITUDE_GPS</span></code>, <code class="docutils literal notranslate"><span class="pre">TIME_GPS</span></code>);</p></li>
 <li><p>add <code class="docutils literal notranslate"><span class="pre">dive_number</span></code>, <code class="docutils literal notranslate"><span class="pre">PROFILE_NUMBER</span></code> and <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> (from the glider’s state table,
 G&amp;C events and GPS fixes; see <a class="reference internal" href="phase.html#phase"><span class="std std-ref">How the phase is assigned</span></a>);</p></li>
 <li><p>apply the OG1 vocabulary: rename, attach the OG1 attributes, convert units, mark the
 coordinates, encode time. A variable with no OG1 name keeps its basestation name, with
 its units in the canonical spelling where the converter recognises them.</p></li>
 </ul>
-<p><em>Page:</em> Derived variables; Variables.</p>
+<p><em>Pages:</em> Variables (each variable, with the steps it went through); Phase.</p>
 </li>
 <li><p><strong>Concatenate</strong> the dives on <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> and sort by <code class="docutils literal notranslate"><span class="pre">TIME</span></code>.
-<em>Page:</em> Before → after (samples on the shared axis).</p></li>
+<em>Page:</em> Conversion (summary).</p></li>
 <li><p><strong>TEOS-10 variables.</strong> Add <code class="docutils literal notranslate"><span class="pre">POTDENS0</span></code> when the basestation did not write it (and <code class="docutils literal notranslate"><span class="pre">PSAL</span></code>
 from conductivity when the file has no salinity). See <a class="reference internal" href="#derived-teos-10-variables">Derived TEOS-10 variables</a>.
-<em>Page:</em> Derived variables; Same quantity, more than once.</p></li>
+<em>Pages:</em> Variables (the derived variables, with their inputs); Basestation (salinity).</p></li>
 <li><p><strong>Sensors.</strong> Gather each instrument’s record from the calibration comments, apply the
 <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> corrections from the mission file, write one <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable per instrument
 and point each measured variable’s <code class="docutils literal notranslate"><span class="pre">sensor</span></code> attribute at it.
-<em>Mission file:</em> <code class="docutils literal notranslate"><span class="pre">sensors:</span></code>. <em>Page:</em> Sensors named by OG1.</p></li>
+<em>Mission file:</em> <code class="docutils literal notranslate"><span class="pre">sensors:</span></code>. <em>Pages:</em> Conversion (sensors and calibration comments);
+OG1 format (sensors).</p></li>
 <li><p><strong>Scalars.</strong> Collect the per-dive parameters (<code class="docutils literal notranslate"><span class="pre">log_*</span></code>, <code class="docutils literal notranslate"><span class="pre">sg_cal_*</span></code>, <code class="docutils literal notranslate"><span class="pre">gc_*</span></code>); a value
 constant across the mission is stored as a scalar, one that varies is stored per dive.
-<em>Page:</em> Scalar parameters.</p></li>
+<em>Pages:</em> Basestation and OG1 format (parameters that change between dives).</p></li>
 <li><p><strong>Identity and metadata.</strong> Resolve the platform fields (mission file over the first dive
 file’s attributes), add <code class="docutils literal notranslate"><span class="pre">TRAJECTORY</span></code>, apply the global attributes from the three sections,
 the contributor and institution records, the coverage bounds computed from the data, and the
 conversion record.
 <em>Mission file:</em> <code class="docutils literal notranslate"><span class="pre">platform:</span></code>, <code class="docutils literal notranslate"><span class="pre">identity_and_discovery:</span></code>, <code class="docutils literal notranslate"><span class="pre">rights_and_access:</span></code>,
 <code class="docutils literal notranslate"><span class="pre">provenance_and_processing:</span></code>, <code class="docutils literal notranslate"><span class="pre">contributors:</span></code>, <code class="docutils literal notranslate"><span class="pre">institutions:</span></code>.
-<em>Page:</em> mission.yaml against the data; Global attributes.</p></li>
+<em>Pages:</em> Conversion (mission.yaml against the data); OG1 format (global attributes).</p></li>
 </ol>
-<p>Steps 1 and 3–7 run once per mission; step 2 runs once per dive file. Each <em>Page:</em> note names the
-section of the <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">The conversion page</span></a> that shows that step’s result.</p>
+<p>Steps 1 and 3–7 run once per mission; step 2 runs once per dive file. Each <em>Pages:</em> note names
+the <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">report pages</span></a> that show that step’s result; the Processing page
+lists every step as it ran for the mission.</p>
 </section>
 <section id="what-changes">
 <h2>What changes<a class="headerlink" href="#what-changes" title="Link to this heading"></a></h2>

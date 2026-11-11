@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sg271 · Drygalski Trough — Processing</title>
+<style>
+:root {
+  --ocean: #1a3a5c;
+  --seafoam: #e8f4f8;
+  --muted: #95a5a6;
+  --text: #2c3e50;
+  --rule: #dfe6e9;
+  --bg: #ffffff;
+  --bg-sunken: #f7f9fa;
+  --warn: #e67e22;
+  --warn-bg: #fdf3e7;
+  --error: #c0392b;
+  --gray-1: #f5f7fa;
+  --gray-2: #e0e0e0;
+  --gray-3: #aaaaaa;
+  --gray-4: #888888;
+  --gray-5: #555555;
+  --gray-6: #333333;
+  --gray-7: #111111;
+  --ok: #2c6e49;
+  --role-landing: #2980b9;
+  --role-entity: #1a3a5c;
+  --role-collection: #1a3a5c;
+  --role-component: #1a3a5c;
+  --role-aggregate-a: #8e44ad;
+  --role-aggregate-b: #27ae60;
+  --role-map: #ee3377;
+  --role-up: #5d6d7e;
+  --qc-mark: var(--ok);
+  --package-accent: var(--ocean);
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  --fs-root: 14px;
+  --fs-h1: 1.75rem;
+  --fs-type: 1.35rem;
+  --fs-h2: 1rem;
+  --fs-h3: 0.88rem;
+  --fs-meta: 0.84rem;
+  --fs-note: 0.92rem;
+  --fs-nav: 0.8rem;
+  --fs-cap: 0.92rem;
+  --fs-xs: 0.75rem;
+  --fs-top: 0.72rem;
+  --fs-dt: 0.7rem;
+  --lh-root: 1.5;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --radius-card: 8px;
+  --radius-btn: 4px;
+  --radius-pill: 999px;
+  --qc-0: #999999;
+  --qc-1: #009E73;
+  --qc-2: #56B4E9;
+  --qc-3: #E69F00;
+  --qc-4: #D55E00;
+  --qc-7: #CC79A7;
+  --qc-8: #0072B2;
+  --qc-9: #bdbdbd;
+  --qc-3-text: #9A6B00;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-root); color: var(--text);
+  max-width: 1150px; margin: 0 auto;
+  padding: 1.5rem 2rem 4rem; line-height: var(--lh-root);
+}
+p, li { max-width: 78ch; }
+.masthead {
+  background: var(--ocean); color: #fff; position: relative;
+  padding: 1.6rem 2rem; border-radius: var(--radius-card); margin-bottom: 0.9rem;
+}
+.masthead h1 { margin: 0 0 0.3rem; font-size: var(--fs-h1); font-weight: 700; }
+.masthead .sub { font-size: var(--fs-meta); opacity: 0.85; margin: 0 0 0.15rem; max-width: none; }
+.wordmark {
+  position: absolute; right: 2rem; bottom: 1.2rem;
+  font-size: var(--fs-dt); font-weight: 700; letter-spacing: 0.04em;
+  color: var(--package-accent); background: #fff; opacity: 0.85;
+  padding: 0.1rem 0.5rem; border-radius: var(--radius-pill); text-decoration: none;
+}
+.wordmark:hover { opacity: 1; }
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.5rem 2rem; font-size: var(--fs-meta); margin-top: 0.9rem;
+}
+.meta-grid dt {
+  opacity: 0.7; text-transform: uppercase; font-size: var(--fs-dt);
+  letter-spacing: 0.06em; margin-bottom: 0.1rem;
+}
+.meta-grid dd { margin: 0; font-weight: 600; }
+h2 {
+  color: var(--ocean); font-size: var(--fs-h2);
+  border-bottom: 2px solid var(--seafoam);
+  padding-bottom: 0.3rem; margin: 2.5rem 0 1rem;
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.top-link {
+  font-size: var(--fs-top); font-weight: 400; color: var(--muted);
+  text-decoration: none; margin-left: auto;
+}
+.top-link:hover { color: var(--ocean); text-decoration: underline; }
+.caption {
+  color: var(--gray-5); font-size: var(--fs-note);
+  margin-top: 0.75rem; margin-bottom: 0.75rem;
+}
+/* A section intro (the caption directly under a heading) is a lede for the whole
+   figure block, so it spans the content width rather than the 78ch prose measure a
+   paragraph would otherwise inherit — which left it stranded under full-width figures. */
+h2 + .caption { margin-top: -0.5rem; max-width: none; }
+/* Subsection headings inside a panel's own HTML — un-numbered, outside the jump
+   nav (the page model numbers Sections, not these).  Same navy as h2, smaller. */
+h3 {
+  color: var(--ocean); font-size: var(--fs-h3); margin: 1.2rem 0 0.4rem;
+}
+h3 + .caption { margin-top: -0.2rem; }
+figure h3, .fig-row > h3 { margin-top: 0.6rem; }  /* first heading inside a panel sits closer */
+.explainer {
+  font-size: var(--fs-note); color: var(--text);
+  background: var(--bg-sunken); border-left: 3px solid var(--muted);
+  padding: var(--sp-3); margin: -0.25rem 0 0.75rem; border-radius: var(--radius-btn);
+}
+.warn {
+  font-size: var(--fs-note); color: var(--text);
+  background: var(--warn-bg); border-left: 3px solid var(--warn);
+  padding: var(--sp-3); margin-bottom: 0.5rem; border-radius: var(--radius-btn);
+}
+.warn::before { content: "⚠ "; }
+.warn.error { border-left-color: var(--error); }
+.jump-nav {
+  background: var(--seafoam); padding: 0.55rem 1rem;
+  border-radius: 6px; margin-bottom: 1.5rem;
+  font-size: var(--fs-nav); line-height: 2.2;
+}
+.jump-nav::before { content: "Jump to: "; opacity: 0.55; font-size: var(--fs-xs); margin-right: 0.25rem; }
+.jump-nav a {
+  color: var(--ocean); text-decoration: none;
+  font-weight: 600; margin: 0 0.5rem 0 0;
+}
+.jump-nav a::before { content: "▸ "; font-size: var(--fs-dt); }
+.fig-row {
+  display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+.fig-col { display: flex; flex-direction: column; gap: 0.75rem; }
+.fig-row.center { justify-content: center; }
+/* A multi-table panel (processing provenance) is one full-width flex item so its
+   headings and tables stack instead of tiling across the row. */
+.prov-panel { flex: 1 1 100%; }
+/* Conformance status pips — a green ✓ (matches), a red ✗ (differs) and a neutral
+   ringed dash (no reference), matching the LADCP-present/absent badges. */
+.conf {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.4em; height: 1.4em; border-radius: 50%;
+  font-size: var(--fs-xs); font-weight: 700; line-height: 1;
+}
+.conf-match { background: var(--ok); color: #fff; }
+.conf-differ { background: var(--error); color: #fff; }
+.conf-none { background: #fff; color: #000; border: 1px solid #000; }
+figure { margin: 0; }
+figure img {
+  border: 1px solid var(--rule); border-radius: var(--radius-btn);
+  display: block; width: 100%; height: auto;
+}
+figcaption { font-size: var(--fs-cap); color: var(--gray-5); margin-bottom: 0.25rem; }
+/* Optional provenance line under a figure: which draw function produced it.
+   Off by default (vendored SHOW_FIGURE_SOURCE); a package turns it on in its
+   owned design module. */
+.fig-source {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--fs-xs); color: var(--muted); margin-top: 0.15rem;
+}
+/* A stub panel's warning fills the figure slot it stands in for, rather than the
+   78ch prose reading measure it would otherwise inherit as a paragraph. */
+figure .warn { max-width: none; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: var(--fs-note); margin: 0.6rem 0 1.2rem;
+}
+th {
+  background: var(--package-accent); color: #fff; text-align: left;
+  font-weight: 600; padding: 0.4rem 0.65rem;
+}
+th.num { text-align: right; }
+td {
+  padding: 0.35rem 0.65rem; border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--bg-sunken); }
+td.num, .num { text-align: right; font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--font-mono); font-size: var(--fs-xs); }
+/* netCDF inventory tables (vendored nc_tables): variable / coord / scalar / sensor /
+   global tables.  Package-neutral — the markup is emitted by templates/_nc_tables.html. */
+.var-table code { font-family: var(--font-mono); font-size: var(--fs-xs); }
+.muted { color: var(--muted); }
+.var-qc { color: var(--qc-mark); font-size: var(--fs-xs); }
+/* The original source name on its own muted line above the canonical name (name_cell), so the
+   Variable column does not widen to fit both on one line. */
+.var-orig { color: var(--muted); font-size: var(--fs-xs); }
+/* A long unbroken token (a tracking_id, a path, a dotted standard_name) in a scalar value or a
+   standard/long-name cell would widen the whole table; cap the width and break inside the word. */
+.cell-wrap { overflow-wrap: anywhere; max-width: 28rem; }
+.cell-bad { color: var(--warn); font-variant-numeric: tabular-nums; }
+tr.units th {
+  background: transparent; color: var(--muted); font-weight: 400;
+  font-size: var(--fs-xs); padding-top: 0;
+}
+.attr-disclosure summary { cursor: pointer; color: var(--muted); font-size: var(--fs-xs); }
+.attr-disclosure table { margin: 0.3rem 0; width: auto; }
+.attr-disclosure th { background: transparent; color: var(--text); font-weight: 600; }
+/* QC flag-count distribution bar and legend (qc_counts_table). Flag colours are inline on each
+   segment (from the vendored QC_FLAG_COLORS), so these rules carry only the layout. */
+.qc-bar { display: flex; width: 200px; height: 13px; border-radius: 3px; overflow: hidden; gap: 1px; background: #ecf0f1; }
+.qc-bar div { height: 100%; }
+.qc-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; font-size: 0.75rem; margin: 0.2rem 0 0.6rem; }
+.qc-legend span { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 3px; }
+/* The source: caption hugs the table it belongs to, not the next one: a table has 1.2rem
+   bottom margin, so pull the caption up under it and keep the gap below before the next table. */
+table + .fig-source { margin-top: -0.9rem; margin-bottom: 1.2rem; }
+/* Click-to-sort affordance: _JS_SORT_TABLES gives every sortable heading a tabindex, so
+   keying on th[tabindex] styles exactly the headings it wired (a data-nosort table or th
+   gets none).  The heading is a pointer; the active one shows the direction. */
+th[tabindex] { cursor: pointer; user-select: none; }
+th.sorted-asc::after { content: " \25B2"; font-size: 0.8em; }
+th.sorted-desc::after { content: " \25BC"; font-size: 0.8em; }
+.slot-full         { width: 100%; }
+.slot-twothirds     { width: calc(66.67% - 0.33rem); }
+.slot-three-fifths  { width: calc(60% - 0.40rem); }
+.slot-half          { width: calc(50% - 0.50rem); }
+.slot-two-fifths    { width: calc(40% - 0.60rem); }
+.slot-third         { width: calc(33.33% - 0.67rem); }
+.slot-quarter       { width: calc(25% - 0.75rem); }
+.masthead-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 0.3rem;
+}
+.masthead-header h1 { margin: 0 0 0.1rem; font-size: var(--fs-h1); font-weight: 700; }
+.masthead-type {
+  font-size: var(--fs-type); font-weight: 700; opacity: 0.88; line-height: 1.35;
+  padding-top: 0.25rem;
+}
+.nav-btns { display: flex; gap: 0.5rem; }
+.btn-nav {
+  background: var(--ocean); color: #fff; padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-pill); text-decoration: none; font-size: var(--fs-nav);
+}
+.btn-nav:hover { opacity: 0.85; }
+/* Masthead page-nav (vendored): the row of role pills under the masthead, and the
+   "Data inventory:" file strip.  A pill's colour is its role, never its page; the
+   current page's pill and an already-viewed file pill are muted the same way. */
+.page-nav { margin: 0.65rem 0 0.5rem; }
+/* Consecutive nav rows (a multi-row masthead) stack tighter than the first row's
+   top margin, which is sized for a single row. */
+.page-nav + .page-nav { margin-top: 0.15rem; }
+.page-nav-label { font-size: var(--fs-top); opacity: 0.75; margin-right: 0.3rem; }
+.nav-pill {
+  display: inline-block; padding: 0.2em 0.65em; border-radius: var(--radius-btn);
+  font-size: var(--fs-nav); font-weight: 700; text-decoration: none; color: #fff;
+  margin: 0 0.2rem 0.25rem 0;
+  /* A contrasting inner edge keeps a pill visible when its role colour matches the
+     masthead background, so colour-is-role holds on any masthead. */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+.nav-landing { background: var(--role-landing); }
+.nav-entity { background: var(--role-entity); }
+.nav-collection { background: var(--role-collection); }
+.nav-component { background: var(--role-component); }
+.nav-aggregate-a { background: var(--role-aggregate-a); }
+.nav-aggregate-b { background: var(--role-aggregate-b); }
+.nav-map { background: var(--role-map); }
+.nav-up { background: var(--role-up); }
+.masthead.role-landing { background: var(--role-landing); }
+.masthead.role-entity { background: var(--role-entity); }
+.masthead.role-collection { background: var(--role-collection); }
+.masthead.role-component { background: var(--role-component); }
+.masthead.role-aggregate-a { background: var(--role-aggregate-a); }
+.masthead.role-aggregate-b { background: var(--role-aggregate-b); }
+.masthead.role-map { background: var(--role-map); }
+.masthead.role-up { background: var(--role-up); }
+.nav-current { opacity: 0.5; pointer-events: none; }
+.nav-missing { background: var(--gray-3); opacity: 0.5; pointer-events: none; }
+.inventory-strip { margin: 0 0 1rem; }
+.inventory-strip .label { font-size: var(--fs-top); opacity: 0.75; margin-right: 0.3rem; }
+.file-pill {
+  display: inline-block; background: var(--role-component); color: #fff;
+  padding: 0.2rem 0.7rem; border-radius: var(--radius-pill);
+  font-family: var(--font-mono); font-size: 0.78rem;
+  text-decoration: none; margin: 0.1rem 0.05rem;
+}
+.file-pill:hover { opacity: 0.85; }
+.file-pill-active { opacity: 0.5; pointer-events: none; }
+/* Opt-in plain masthead (vendored) for landing / navigator pages: white panel,
+   ink text, rule border, wordmark hidden.  No ctdcast page uses it yet. */
+.masthead-plain { background: #fff; color: var(--text); border: 1px solid var(--rule); }
+.masthead-plain .wordmark { display: none; }
+footer {
+  text-align: center; padding: 1rem;
+  border-top: 1px solid var(--package-accent);
+  font-size: var(--fs-xs); color: var(--muted);
+}
+footer a { color: var(--muted); }
+@media print {
+  body { max-width: 100%; }
+  .masthead { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0.9rem 1.25rem; }
+  .masthead-header h1, .masthead h1 { font-size: 1.35rem; }
+  .meta-grid { grid-template-columns: repeat(4, 1fr); gap: 0.3rem 1rem; font-size: var(--fs-xs); }
+  h2 { page-break-after: avoid; }
+  h3 { page-break-after: avoid; }
+  .fig-row, figure, table { break-inside: avoid; }
+  .jump-nav { display: none; }
+}
+
+section { margin: 1.4rem 0; }
+.stage-pills { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 0.4rem 0 0.8rem; }
+.stage-pill { font-size: var(--fs-xs); font-weight: 600; padding: 2px 9px; border-radius: var(--radius-btn); color: #fff; text-decoration: none; }
+.stage-ok { background: var(--ok); }
+.stage-gap { background: var(--warn); }
+.stage-sep { color: var(--gray-4); }
+#steps td.not-recorded { background: var(--warn-bg); box-shadow: inset 3px 0 0 var(--warn); }
+#steps .stage { color: var(--gray-5); font-size: var(--fs-xs); }
+#steps td { overflow-wrap: anywhere; }
+#steps td:first-child { overflow-wrap: normal; white-space: nowrap; }
+#steps td.code code { font-size: var(--fs-xs); color: var(--gray-5); overflow-wrap: anywhere; }
+#steps td.vars { font-size: var(--fs-xs); overflow-wrap: anywhere; }
+#steps { table-layout: fixed; width: 100%; }
+#steps { font-size: 0.92rem; }
+.table-wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<div id="top"></div>
+<div class="masthead">
+  <div class="masthead-header">
+    <h1>sg271 · Drygalski Trough</h1>
+    <span class="masthead-type">Processing</span>
+  </div>
+  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>Every step of the conversion, in the order it ran</span><span>generated 2026-11-11 11:59 UTC</span></p>
+  
+
+<nav class="page-nav">
+  <span class="page-nav-label">Pages:</span>
+  
+  <a class="nav-pill nav-landing" href="sg271_20260302T193828_R_conversion.html">Conversion</a><a class="nav-pill nav-aggregate-a" href="sg271_20260302T193828_R_phase.html">Phase</a>
+</nav>
+
+<nav class="page-nav">
+  <span class="page-nav-label">Provenance:</span>
+  
+  <a class="nav-pill nav-component" href="sg271_20260302T193828_R_variables.html">Variables</a><span class="nav-pill nav-component nav-current" title="current page">Processing</span>
+</nav>
+
+
+
+  
+
+<nav class="inventory-strip">
+  <span class="label">Data inventory:</span>
+  <a class="file-pill" href="sg271_20260302T193828_R_basestation.html">p2710001–0003.nc</a><a class="file-pill" href="sg271_20260302T193828_R_og1.html">sg271_20260302T193828_R.nc</a>
+</nav>
+
+
+  <dl class="meta-grid"><div><dt>Glider</dt><dd>sg271 · WMO 8901140</dd></div><div><dt>Model</dt><dd>University of Washington Seaglider SGX glider</dd></div><div><dt>Project</dt><dd>PycnMix</dd></div><div><dt>Institution</dt><dd>University of Hamburg</dd></div><div><dt>Site</dt><dd>Drygalski Trough</dd></div><div><dt>Deployed</dt><dd>2026-03-02 19:24 UTC</dd></div><div><dt>Deployment position</dt><dd>72° 58.80′ S, 171° 24.50′ E</dd></div><div><dt>Duration</dt><dd>2 h 07 m</dd></div><div><dt>Dives</dt><dd>3 (1–3)</dd></div><div><dt>Max depth</dt><dd>108 m</dd></div><div><dt>Basestation</dt><dd>basestation v3.0.6 · seaglider 67.01</dd></div><div><dt>Mode</dt><dd>real time</dd></div><div><dt>Source</dt><dd>3 dive files</dd></div><div><dt>Processed</dt><dd>2026-11-11 11:59 UTC</dd></div><div><dt>Losses</dt><dd style="color:var(--warn);">⚠ 8 kinds</dd></div><div><dt>OG1 conformance</dt><dd style="color:var(--warn);">⚠ 1 mandatory not met</dd></div>
+  </dl>
+  <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
+</div>
+<nav class="jump-nav"> <a href="#steps-section">(1) Steps</a> <a href="#units">(2) Unit changes</a></nav>
+
+<section id="steps-section">
+<h2>(1) Steps</h2>
+<p class="caption">The conversion's steps in run order, grouped into stages. <em>Lossless?</em> says whether the basestation input can be recovered from the output; <em>Recorded</em> says where a reader of the OG1 file alone finds what the step did.
+<strong>Highlight rule:</strong> a <em>Recorded</em> cell is highlighted when the OG1 file does not record the step's effect (the stage pill is then amber too).</p>
+<div class="stage-pills" aria-label="Stages"><a class="stage-pill stage-gap" href="#step-1" title="a step not recorded in the file">Read</a><span class="stage-sep">›</span><a class="stage-pill stage-gap" href="#step-3" title="a step not recorded in the file">Map names</a><span class="stage-sep">›</span><a class="stage-pill stage-gap" href="#step-5" title="a step not recorded in the file">Units</a><span class="stage-sep">›</span><a class="stage-pill stage-gap" href="#step-8" title="a step not recorded in the file">Merge onto TIME</a><span class="stage-sep">›</span><a class="stage-pill stage-gap" href="#step-14" title="a step not recorded in the file">Derive</a><span class="stage-sep">›</span><a class="stage-pill stage-gap" href="#step-17" title="a step not recorded in the file">Store</a><span class="stage-sep">›</span><a class="stage-pill stage-ok" href="#step-20" title="every step recorded in the file">Write</a>
+</div>
+<div class="table-wrap">
+<table id="steps" class="nc">
+<colgroup><col style="width:4%"><col style="width:12%"><col style="width:27%"><col style="width:19%"><col style="width:12%"><col style="width:17%"><col style="width:9%"></colgroup>
+<thead><tr><th>#</th><th>Step</th><th>Rule</th><th>Variables</th><th>Lossless?</th><th>Recorded</th><th>Code</th></tr></thead>
+<tbody>
+<tr id="step-1"><td>1</td><td><span class="stage">Read</span><br><strong>read dive files</strong></td><td>every p&lt;SSS&gt;&lt;DDDD&gt;.nc in the mission&#39;s raw_dir, in dive order</td>
+<td class="vars">3 dive files</td><td>yes</td>
+<td>conversion record: inputs (file, size, checksum)</td><td class="code"><code>_convert._convert_mission</code></td></tr>
+<tr id="step-2"><td>2</td><td><span class="stage">Read</span><br><strong>reject a dive</strong></td><td>a dive without ctd_time or a usable position is left out</td>
+<td class="vars">not recorded</td><td>no: the dive&#39;s data is not written</td>
+<td class="not-recorded">log only</td><td class="code"><code>_pipeline._validate_coords</code></td></tr>
+<tr id="step-3"><td>3</td><td><span class="stage">Map names</span><br><strong>rename to OG1</strong></td><td>config/OG1_variable_names.yaml; eng_, instrument_, ctd_ and &lt;instrument&gt;_ prefixes are stripped before the lookup</td>
+<td class="vars">55: buoyancy, codaTODO_O2_sat, codaTODO_temp, conductivity, …</td><td>yes</td>
+<td>original_name on each variable</td><td class="code"><code>_pipeline.og1_name_mapping</code></td></tr>
+<tr id="step-4"><td>4</td><td><span class="stage">Map names</span><br><strong>shared OG1 name</strong></td><td>when several basestation variables map to one OG1 name, the first (CTD first, then not QC, then input order) keeps it; the others become NAME_2, NAME_3, without OG1 attributes</td>
+<td class="vars">6: DEPTH_2, DEPTH_3, PRES_2, PRES_3, …</td><td>yes</td>
+<td class="not-recorded">original_name; the rule is stated only here</td><td class="code"><code>_pipeline.og1_name_mapping</code></td></tr>
+<tr id="step-5"><td>5</td><td><span class="stage">Units</span><br><strong>convert units</strong></td><td>config/OG1_unit_corrections.yaml and the units table: values scaled by the factor (cm/s to m s-1 ×0.01, S/m to mS cm-1 ×10)</td>
+<td class="vars">11: conductivity, conductivity_raw, gc_ob_vertv, horz_speed, …</td><td>yes: the factor is stored</td>
+<td>original_units and comment on each; conversion_units global</td><td class="code"><code>_convert._to_canonical_units</code></td></tr>
+<tr id="step-6"><td>6</td><td><span class="stage">Units</span><br><strong>correct or adopt a unit label</strong></td><td>a wrong basestation label is corrected (values unchanged); a variable with no units takes the OG1 label</td>
+<td class="vars">5: density, density_insitu, sigma_t, codaTODO_O2_sat, …</td><td>yes</td>
+<td>original_units and comment on each</td><td class="code"><code>_convert._to_canonical_units</code></td></tr>
+<tr id="step-7"><td>7</td><td><span class="stage">Units</span><br><strong>respell units</strong></td><td>a known spelling is replaced by the canonical one (meters to m, degrees to degree), factor 1</td>
+<td class="vars">76: absolute_salinity, codaTODO_ontime_a, codaTODO_ontime_b, codaTODO_temp, …</td><td>the original spelling is not kept</td>
+<td class="not-recorded">not recorded</td><td class="code"><code>_convert._canonical_passthrough_units</code></td></tr>
+<tr id="step-8"><td>8</td><td><span class="stage">Merge onto TIME</span><br><strong>split by dimension</strong></td><td>the variables of each basestation dimension are grouped with that dimension&#39;s time variable</td>
+<td class="vars">10: codaTODO_data_point, ctd_data_point, depth_data_point, gc_event, …</td><td>yes</td>
+<td>original_dimension on each variable; conversion_dimensions global</td><td class="code"><code>tools.split_by_unique_dims</code></td></tr>
+<tr id="step-9"><td>9</td><td><span class="stage">Merge onto TIME</span><br><strong>make G&amp;C state times absolute</strong></td><td>gc_state_secs written as seconds since the dive start (all below 1990 s) gets the file&#39;s start_time added</td>
+<td class="vars">gc_state_secs</td><td>yes</td>
+<td class="not-recorded">log only</td><td class="code"><code>_pipeline._absolute_state_times</code></td></tr>
+<tr id="step-10"><td>10</td><td><span class="stage">Merge onto TIME</span><br><strong>merge onto one time axis</strong></td><td>every dimension is joined on exact time (outer join) into N_MEASUREMENTS; the magnetometer by position</td>
+<td class="vars">9: codaTODO_time, ctd_time, depth_time, gc_st_secs, …</td><td>yes</td>
+<td>conversion_derived_variables[TIME]</td><td class="code"><code>_pipeline.merge_datasets_along_time</code></td></tr>
+<tr id="step-11"><td>11</td><td><span class="stage">Merge onto TIME</span><br><strong>drop exact duplicates</strong></td><td>a record repeating an earlier one at the same time, identical in every value, is dropped</td>
+<td class="vars">not recorded</td><td>yes: identical</td>
+<td class="not-recorded">log only</td><td class="code"><code>_pipeline._exact_duplicate_rows</code></td></tr>
+<tr id="step-12"><td>12</td><td><span class="stage">Merge onto TIME</span><br><strong>shift same-time records</strong></td><td>a later record at the same time that differs is moved +0.5 s per repeat</td>
+<td class="vars">recorded for the first dive only</td><td>no: the time is moved</td>
+<td class="not-recorded">TIME attributes, first dive only</td><td class="code"><code>_pipeline.merge_datasets_along_time</code></td></tr>
+<tr id="step-13"><td>13</td><td><span class="stage">Merge onto TIME</span><br><strong>join the dives</strong></td><td>dives concatenated and sorted by TIME</td>
+<td class="vars">9,309 data points</td><td>yes</td>
+<td>the data</td><td class="code"><code>_convert._convert</code></td></tr>
+<tr id="step-14"><td>14</td><td><span class="stage">Derive</span><br><strong>GPS fixes</strong></td><td>each fix is one data point carrying LATITUDE_GPS, LONGITUDE_GPS and TIME_GPS; LATITUDE and LONGITUDE take the fix and DEPTH 0 m where they were empty; a re-logged fix at a dive boundary is dropped</td>
+<td class="vars">LATITUDE_GPS, LONGITUDE_GPS, TIME_GPS</td><td>yes: adds</td>
+<td class="not-recorded">the fill of LATITUDE, LONGITUDE and DEPTH is not recorded</td><td class="code"><code>_convert.add_gps_info_to_dataset</code></td></tr>
+<tr id="step-15"><td>15</td><td><span class="stage">Derive</span><br><strong>derive variables</strong></td><td>PHASE from the OG1 phase table, then PROFILE_NUMBER, PROFILE_DIRECTION, SEGMENT_NUMBER; DEPTH_Z; POTDENS0 (and PSAL from conductivity) where the basestation has none; platform and deployment from mission.yaml</td>
+<td class="vars">29: BATTERY_PACK, BATTERY_TYPE, DEPLOYMENT_LATITUDE, DEPLOYMENT_LONGITUDE, …</td><td>yes: adds</td>
+<td class="not-recorded">conversion_derived_variables; inputs not recorded for 25</td><td class="code"><code>tools.add_phase, tools.add_profiles, _pipeline.add_teos10_variables</code></td></tr>
+<tr id="step-16"><td>16</td><td><span class="stage">Derive</span><br><strong>sensors</strong></td><td>a SENSOR_* variable per instrument, with serial number and calibration date read from the calibration comments</td>
+<td class="vars">3: SENSOR_CTD_238007, SENSOR_FLUOROMETER_237998, SENSOR_OXYGEN_237790</td><td>yes; the per-variable sensor attribute is removed</td>
+<td>conversion_sensor_calibration; original_calibcomm on each</td><td class="code"><code>_pipeline.add_sensor_to_dataset</code></td></tr>
+<tr id="step-17"><td>17</td><td><span class="stage">Store</span><br><strong>per-dive parameters</strong></td><td>a scalar constant across dives is one value; one that changes is JSON text {&#34;dives&#34;: [...], &#34;values&#34;: [...]}</td>
+<td class="vars">80: avg_latitude, avg_longitude, codaTODO_ontime_a, codaTODO_ontime_b, …</td><td>no: numbers become text; _FillValue and valid_* are removed</td>
+<td>storage_type on each</td><td class="code"><code>_pipeline.add_scalar_parameters</code></td></tr>
+<tr id="step-18"><td>18</td><td><span class="stage">Store</span><br><strong>storage types</strong></td><td>float64 becomes float32 unless the name contains latitude, longitude or time; an integer on the shared axis becomes float32</td>
+<td class="vars">280: absolute_salinity, buoyancy, codaTODO_compensated_O2, codaTODO_O2_sat, …</td><td>no: precision</td>
+<td class="not-recorded">not recorded</td><td class="code"><code>_pipeline.set_best_dtype</code></td></tr>
+<tr id="step-19"><td>19</td><td><span class="stage">Store</span><br><strong>QC flags</strong></td><td>basestation flag text becomes int8; an empty flag becomes 6</td>
+<td class="vars">10: CNDC_QC, CNDC_RAW_QC, DAVG_CURR_EAST_QC, GLIDE_SPEED_QC, …</td><td>yes</td>
+<td class="not-recorded">flag_values and flag_meanings; the empty-to-6 rule is not recorded</td><td class="code"><code>tools.convert_qc_flags</code></td></tr>
+<tr id="step-20"><td>20</td><td><span class="stage">Write</span><br><strong>global attributes</strong></td><td>OG1 and ACDD attributes from mission.yaml, the first dive file and the data; the basestation history is not carried</td>
+<td class="vars">42 attributes</td><td>later dives&#39; values are not in the file</td>
+<td>conversion_attribute_sources; every file&#39;s values in the conversion record</td><td class="code"><code>_convert.update_dataset_attributes</code></td></tr>
+<tr id="step-21"><td>21</td><td><span class="stage">Write</span><br><strong>write the file</strong></td><td>zlib-compressed netCDF4; times as seconds since 1970-01-01T00:00:00Z</td>
+<td class="vars"></td><td>yes</td>
+<td>the file&#39;s encoding</td><td class="code"><code>writers.save_dataset</code></td></tr>
+</tbody></table>
+</div>
+<p class="fig-source">source: seagliderOG1/reports/processing.py:processing_steps</p>
+</section>
+
+<section id="units">
+<h2>(2) Unit changes (steps 5–6)</h2>
+<p class="caption">Each variable whose units the conversion corrected, converted or adopted. <em>Label corrected</em>: the basestation label was wrong for the magnitude, so only the label was fixed. <em>Converted</em>: the values were scaled by the factor shown. <em>OG1 label adopted</em>: the basestation file carried no units, so the OG1 label was taken. Spelling-only changes (step 7) are marked on the Variables page.</p>
+<table class="nc sortable">
+<thead><tr><th>Variable</th><th>Label as written</th><th>Units written</th><th>What happened</th></tr></thead>
+<tbody>
+<tr><td>CNDC</td><td>S/m</td><td>mS cm-1</td><td>converted (×10)</td></tr>
+<tr><td>CNDC_RAW</td><td>S/m</td><td>mS cm-1</td><td>converted (×10)</td></tr>
+<tr><td>DENSITY</td><td>g/m^3</td><td>kg m-3</td><td>label corrected (value unchanged)</td></tr>
+<tr><td>GLIDER_HORZ_VELO_MODEL</td><td>cm/s</td><td>m s-1</td><td>converted (×0.01)</td></tr>
+<tr><td>GLIDER_VERT_VELO_MODEL</td><td>cm/s</td><td>m s-1</td><td>converted (×0.01)</td></tr>
+<tr><td>GLIDE_SPEED</td><td>cm/s</td><td>m s-1</td><td>converted (×0.01)</td></tr>
+<tr><td>OXYSAT</td><td>— (none)</td><td>percent</td><td>OG1 label adopted (source unlabelled)</td></tr>
+<tr><td>SIGMA_T</td><td>g/m^3</td><td>kg m-3</td><td>label corrected (value unchanged)</td></tr>
+<tr><td>VBD_CC</td><td>— (none)</td><td>cm3</td><td>OG1 label adopted (source unlabelled)</td></tr>
+<tr><td>density</td><td>g/m^3</td><td>kg m-3</td><td>label corrected (value unchanged)</td></tr>
+<tr><td>gc_ob_vertv</td><td>cm/s</td><td>m s-1</td><td>converted (×0.01)</td></tr>
+<tr><td>horz_speed_gsm</td><td>cm/s</td><td>m s-1</td><td>converted (×0.01)</td></tr>
+<tr><td>sg_cal_max_stall_speed</td><td>cm/s</td><td>m s-1</td><td>converted (×0.01)</td></tr>
+<tr><td>sg_cal_min_stall_speed</td><td>cm/s</td><td>m s-1</td><td>converted (×0.01)</td></tr>
+<tr><td>speed_gsm</td><td>cm/s</td><td>m s-1</td><td>converted (×0.01)</td></tr>
+<tr><td>vert_speed_gsm</td><td>cm/s</td><td>m s-1</td><td>converted (×0.01)</td></tr>
+</tbody></table>
+</section>
+
+<footer>Generated by seagliderOG1 v0.3.0.post1.dev1 &nbsp;&middot;&nbsp; 2026-11-11T11:59:13+00:00</footer>
+<script>
+document.querySelectorAll('table').forEach(function (table) {
+  if (table.hasAttribute('data-nosort')) { return; }
+  var head = table.tHead && table.tHead.rows[0];
+  var body = table.tBodies[0];
+  if (!head || !body) { return; }
+  function cellKey(row, idx) {
+    var cell = row.cells[idx];
+    if (!cell) { return ''; }
+    var ds = cell.getAttribute('data-sort');
+    return ds !== null ? ds : cell.textContent.trim();
+  }
+  function numeric(idx) {
+    var rows = body.rows, seen = false;
+    for (var i = 0; i < rows.length; i++) {
+      var k = cellKey(rows[i], idx);
+      if (k === '') { continue; }
+      if (!/^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(k)) { return false; }
+      seen = true;
+    }
+    return seen;
+  }
+  Array.prototype.forEach.call(head.cells, function (th, idx) {
+    if (th.hasAttribute('data-nosort')) { return; }
+    th.tabIndex = 0;
+    function sort() {
+      var asc = !(th.classList.contains('sorted-asc'));
+      var isNum = numeric(idx);
+      var rows = Array.prototype.slice.call(body.rows);
+      rows.sort(function (a, b) {
+        var ka = cellKey(a, idx), kb = cellKey(b, idx);
+        if (isNum) { ka = parseFloat(ka) || 0; kb = parseFloat(kb) || 0; }
+        else { ka = ka.toLowerCase(); kb = kb.toLowerCase(); }
+        if (ka < kb) { return asc ? -1 : 1; }
+        if (ka > kb) { return asc ? 1 : -1; }
+        return 0;
+      });
+      rows.forEach(function (r) { body.appendChild(r); });
+      Array.prototype.forEach.call(head.cells, function (o) {
+        o.classList.remove('sorted-asc', 'sorted-desc');
+      });
+      th.classList.add(asc ? 'sorted-asc' : 'sorted-desc');
+    }
+    th.addEventListener('click', sort);
+    th.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sort(); }
+    });
+  });
+});
+</script>
+
+<script>
+document.querySelectorAll('h2').forEach(h => {
+  const a = document.createElement('a');
+  a.href = '#top'; a.className = 'top-link'; a.textContent = '↑ top';
+  h.appendChild(a);
+});
+</script>
+
+</body>
+</html>

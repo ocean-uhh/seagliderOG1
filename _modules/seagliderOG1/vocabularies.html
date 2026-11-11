@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.2.0.post1.dev7 documentation</title>
+  <title>seagliderOG1.vocabularies &mdash; seagliderOG1 0.3.0.post1.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=20758594" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=7fb89329"></script>
+      <script src="../../_static/documentation_options.js?v=a448664d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -56,7 +56,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conversion_page.html">The report pages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../example_report.html">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
@@ -141,7 +141,7 @@
 <span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Collection</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
@@ -427,6 +427,80 @@
 <span class="n">RAW_COUNT_SUFFIXES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"redCount"</span><span class="p">,</span> <span class="s2">"blueCount"</span><span class="p">,</span> <span class="s2">"fluorCount"</span><span class="p">,</span> <span class="s2">"redRef"</span><span class="p">,</span> <span class="s2">"blueRef"</span><span class="p">)</span>
 <span class="n">RAW_COUNT_UNITS</span> <span class="o">=</span> <span class="s2">"counts"</span>
 
+<span class="c1"># The basestation variables a glider flight model reads or writes: name -&gt; (role, the name</span>
+<span class="c1"># gliderflightOG1 reads it under, or None). Roles: the hydrodynamic and buoyancy constants, the</span>
+<span class="c1"># attitude and buoyancy measurements, and the model's outputs. The conversion report's flight</span>
+<span class="c1"># panel and the variable index's "flight" filter read this one list.</span>
+<span class="n">FLIGHT_MODEL_VARIABLES</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"eng_pitchAng"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"attitude"</span><span class="p">,</span> <span class="s2">"PITCH"</span><span class="p">),</span>
+    <span class="s2">"eng_rollAng"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"attitude"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s2">"eng_head"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"attitude"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s2">"eng_pitchCtl"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"control"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s2">"eng_rollCtl"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"control"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s2">"eng_vbdCC"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"buoyancy"</span><span class="p">,</span> <span class="s2">"VBD"</span><span class="p">),</span>
+    <span class="s2">"log_C_VBD"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"buoyancy"</span><span class="p">,</span> <span class="s2">"C_VBD"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_vbdbias"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"buoyancy"</span><span class="p">,</span> <span class="s2">"vbdbias"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_volmax"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"buoyancy"</span><span class="p">,</span> <span class="s2">"volmax"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_vbd_min_cnts"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"buoyancy"</span><span class="p">,</span> <span class="s2">"vbd_min_cnts"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_vbd_cnts_per_cc"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"buoyancy"</span><span class="p">,</span> <span class="s2">"vbd_cnts_per_cc"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_mass"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"buoyancy"</span><span class="p">,</span> <span class="s2">"mass"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_abs_compress"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"buoyancy"</span><span class="p">,</span> <span class="s2">"abs_compress"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_therm_expan"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"buoyancy"</span><span class="p">,</span> <span class="s2">"therm_expan"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_temp_ref"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"buoyancy"</span><span class="p">,</span> <span class="s2">"temp_ref"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_rho0"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"buoyancy"</span><span class="p">,</span> <span class="s2">"rho0"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_hd_a"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"hydrodynamic"</span><span class="p">,</span> <span class="s2">"hd_a"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_hd_b"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"hydrodynamic"</span><span class="p">,</span> <span class="s2">"hd_b"</span><span class="p">),</span>
+    <span class="s2">"sg_cal_hd_c"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"hydrodynamic"</span><span class="p">,</span> <span class="s2">"hd_c"</span><span class="p">),</span>
+    <span class="s2">"glide_angle"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"model output"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s2">"speed"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"model output"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s2">"horz_speed"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"model output"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s2">"vert_speed"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"model output"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s2">"glide_angle_gsm"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"model output (gsm)"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s2">"speed_gsm"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"model output (gsm)"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s2">"horz_speed_gsm"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"model output (gsm)"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s2">"vert_speed_gsm"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"model output (gsm)"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+<span class="p">}</span>
+
+
+<span class="c1"># Basestation name prefixes by subsystem, tested in order after the flight-model list and the</span>
+<span class="c1"># file's instruments; the variable index filters on these labels.</span>
+<span class="n">SUBSYSTEM_PREFIXES</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="s2">"GPS"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"log_gps"</span><span class="p">,</span> <span class="s2">"gps"</span><span class="p">,</span> <span class="s2">"GPS"</span><span class="p">)),</span>
+    <span class="p">(</span><span class="s2">"G&amp;C"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"gc_"</span><span class="p">,)),</span>
+    <span class="p">(</span><span class="s2">"calibration"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"sg_cal_"</span><span class="p">,)),</span>
+    <span class="p">(</span><span class="s2">"log"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"log_"</span><span class="p">,)),</span>
+    <span class="p">(</span><span class="s2">"engineering"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"eng_"</span><span class="p">,)),</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">subsystem_of</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">instruments</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">())</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the subsystem label of a basestation variable, for the variable index.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        A basestation variable name.</span>
+<span class="sd">    instruments : collections.abc.Collection of str, optional</span>
+<span class="sd">        The instrument names the file lists in its ``instrument`` global (``legato``,</span>
+<span class="sd">        ``codaTODO``, ...); a variable named for one of them is a sensor variable.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        ``"flight"``, ``"sensors"``, one of the :data:`SUBSYSTEM_PREFIXES` labels, or</span>
+<span class="sd">        ``"science"`` for the rest (the CTD-derived and navigation variables).</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">FLIGHT_MODEL_VARIABLES</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"flight"</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">name</span> <span class="o">==</span> <span class="n">inst</span> <span class="ow">or</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_"</span><span class="p">)</span> <span class="k">for</span> <span class="n">inst</span> <span class="ow">in</span> <span class="n">instruments</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">"sensors"</span>
+    <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">prefixes</span> <span class="ow">in</span> <span class="n">SUBSYSTEM_PREFIXES</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefixes</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">label</span>
+    <span class="k">return</span> <span class="s2">"science"</span>
+
+
 <span class="c1"># The package units view over the vendored family tables (reports/_vendored/units.py). One table</span>
 <span class="c1"># resolves a reader spelling to the OG1 variable's canonical spelling and the factor to reach it.</span>
 <span class="c1"># Each row below is a spelling the bundled samples carry that the family default does not already</span>
@@ -642,9 +716,9 @@
 <span class="n">OG1_REQUIRED_DIMS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"N_MEASUREMENTS"</span><span class="p">,)</span>
 
 <span class="c1"># Variables the project proposes to canonise but the upstream OG1 vocabulary has not adopted</span>
-<span class="c1"># yet. The conversion page lifts these out of the carried-through tier into a named candidate</span>
-<span class="c1"># group, shown present/absent like the required tier, so "what a flight model needs" and "what</span>
-<span class="c1"># we hope to agree as OG1 parameters" are visible on the page. This is the project's editorial</span>
+<span class="c1"># yet. The Variables page marks these ("candidate for OG1", a filter chip) and lists the ones</span>
+<span class="c1"># the file does not hold, so "what a flight model needs" and "what we hope to agree as OG1</span>
+<span class="c1"># parameters" are visible on the page. This is the project's editorial</span>
 <span class="c1"># list: edit it as the data-format group agrees candidates, and remove a name once it appears in</span>
 <span class="c1"># OG1_variable_attributes.yaml upstream. Seeded from demo_sg005 (2026-10-19); the membership is</span>
 <span class="c1"># a proposal to prune, not a standard — the flight-model inputs in particular are a first guess.</span>

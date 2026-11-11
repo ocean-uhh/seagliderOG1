@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLI reference &mdash; seagliderOG1 0.2.0.post1.dev7 documentation</title>
+  <title>CLI reference &mdash; seagliderOG1 0.3.0.post1.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=7fb89329"></script>
+      <script src="_static/documentation_options.js?v=a448664d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -59,7 +59,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The conversion page</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conversion_page.html">The report pages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="example_report.html">Example report</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Configuration</span></p>
@@ -74,7 +74,7 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">CLI reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#data-mode">Data mode</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#conversion-page">Conversion page</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#report-pages">Report pages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#draft">Draft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#adding-metadata-later">Adding metadata later</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#listing-the-vocabulary">Listing the vocabulary</a></li>
@@ -159,22 +159,25 @@ determines the data-mode suffix of the output id: <code class="docutils literal 
 <code class="docutils literal notranslate"><span class="pre">delayed</span></code> gives <code class="docutils literal notranslate"><span class="pre">delayed</span></code> (<code class="docutils literal notranslate"><span class="pre">vocabularies.MODE_SUFFIX</span></code>). With neither set the mode is
 <code class="docutils literal notranslate"><span class="pre">realtime</span></code>: a file is delayed mode only when you say so.</p>
 </section>
-<section id="conversion-page">
-<h2>Conversion page<a class="headerlink" href="#conversion-page" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span> <span class="pre">FILE.nc</span></code> writes the HTML conversion page <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> for a
-written OG1 file: beside the file by default, directly into <code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">DIR</span></code>, or into <code class="docutils literal notranslate"><span class="pre">ROOT/&lt;id&gt;/</span></code>
-with <code class="docutils literal notranslate"><span class="pre">--report-dir</span> <span class="pre">ROOT</span></code> — so the pages can live apart from the archived data. <code class="docutils literal notranslate"><span class="pre">process</span>
-<span class="pre">--report</span></code> (or <code class="docutils literal notranslate"><span class="pre">report:</span> <span class="pre">true</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>) writes the same page as it converts, and
-<code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report-dir</span> <span class="pre">ROOT</span></code> puts it under ROOT. An existing page is refused unless
-<code class="docutils literal notranslate"><span class="pre">--force</span></code>. <code class="docutils literal notranslate"><span class="pre">inspect</span></code> prints text only. See <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">The conversion page</span></a> for the sections the
-page shows.</p>
+<section id="report-pages">
+<h2>Report pages<a class="headerlink" href="#report-pages" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span> <span class="pre">FILE.nc</span></code> writes the HTML report pages for a written OG1 file —
+<code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.html</span></code> and, beside it, <code class="docutils literal notranslate"><span class="pre">_variables</span></code>, <code class="docutils literal notranslate"><span class="pre">_processing</span></code>, <code class="docutils literal notranslate"><span class="pre">_phase</span></code>,
+<code class="docutils literal notranslate"><span class="pre">_basestation</span></code> and <code class="docutils literal notranslate"><span class="pre">_og1</span></code> — beside the file by default, directly into <code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">DIR</span></code>, or into
+<code class="docutils literal notranslate"><span class="pre">ROOT/&lt;id&gt;/</span></code> with <code class="docutils literal notranslate"><span class="pre">--report-dir</span> <span class="pre">ROOT</span></code>, so the pages can live apart from the archived data.
+It reads the OG1 file and its conversion record; it does not convert again. <code class="docutils literal notranslate"><span class="pre">process</span>
+<span class="pre">--report</span></code> (or <code class="docutils literal notranslate"><span class="pre">report:</span> <span class="pre">true</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>) writes the same pages as it converts, and
+<code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report-dir</span> <span class="pre">ROOT</span></code> puts them under ROOT. An existing page is refused unless
+<code class="docutils literal notranslate"><span class="pre">--force</span></code>. <code class="docutils literal notranslate"><span class="pre">inspect</span></code> prints text only. See <a class="reference internal" href="conversion_page.html#conversion-page"><span class="std std-ref">The report pages</span></a> for what each page
+shows.</p>
 <p><code class="docutils literal notranslate"><span class="pre">process</span></code> also writes <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_conversion.json</span></code> beside each OG1 file: the input files (name,
 size, dive number, dimension lengths and global-attribute count) and which dives each
 basestation variable was present in and had values in.
-The page reads it for its <em>Presence across dives</em> and <em>Before → after</em> sections. When the input dives disagree,
-<code class="docutils literal notranslate"><span class="pre">process</span></code> prints one line per mission after <code class="docutils literal notranslate"><span class="pre">wrote</span></code>:</p>
+It also holds each input variable’s dimensions, units, dtype and value count. The report pages
+read it for the basestation side: the Variables page’s input columns and the whole Basestation
+page. When the input dives disagree, <code class="docutils literal notranslate"><span class="pre">process</span></code> prints one line per mission after <code class="docutils literal notranslate"><span class="pre">wrote</span></code>:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">wrote outputs/sg271_20260302T193828_R.nc</span>
-<span class="go">  sg271_20260302T193828_R: 542 variables over 3 dives; 500 on every dive, 42 on some (5 patterns) — see seagliderOG1 report outputs/sg271_20260302T193828_R.nc</span>
+<span class="go">  sg271_20260302T193828_R: 542 variables over 3 dives; 500 on every dive, 42 on some (5 patterns) — see the Basestation page (seagliderOG1 report outputs/sg271_20260302T193828_R.nc)</span>
 </pre></div>
 </div>
 <p>The conversion record belongs to its OG1 file: it is replaced whenever the file is written. It records
@@ -400,7 +403,7 @@ seagliderOG1 init sg005.yaml –raw-dir /data/005/  that file</p>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--report</kbd></dt>
-<dd><p>also write the HTML pages &lt;id&gt;_conversion.html and &lt;id&gt;_phase.html beside each file</p>
+<dd><p>also write the HTML pages &lt;id&gt;_conversion.html, &lt;id&gt;_variables.html, &lt;id&gt;_processing.html and &lt;id&gt;_phase.html beside each file</p>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--report-dir</kbd></dt>
@@ -415,7 +418,7 @@ seagliderOG1 init sg005.yaml –raw-dir /data/005/  that file</p>
 </section>
 <section id="seagliderOG1-report">
 <span id="report"></span><h4>report<a class="headerlink" href="#seagliderOG1-report" title="Link to this heading"></a></h4>
-<p>Write &lt;id&gt;_conversion.html and &lt;id&gt;_phase.html for an OG1 file written by seagliderOG1: beside the file, in -o DIR, or in –report-dir ROOT/&lt;id&gt;/.</p>
+<p>Write the report pages for an OG1 file written by seagliderOG1: &lt;id&gt;_conversion.html and, beside it, the variables, processing, basestation, phase and OG1 format pages (a draft has no phase or OG1 format page), beside the file, in -o DIR, or in –report-dir ROOT/&lt;id&gt;/.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">seagliderOG1</span> <span class="n">report</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">DIR</span> <span class="o">|</span> <span class="o">--</span><span class="n">report</span><span class="o">-</span><span class="nb">dir</span> <span class="n">ROOT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">title</span> <span class="n">TEXT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">force</span><span class="p">]</span>
                     <span class="n">files</span> <span class="p">[</span><span class="n">files</span> <span class="o">...</span><span class="p">]</span>
 </pre></div>

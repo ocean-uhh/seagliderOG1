@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sg271 · Drygalski Trough — Basestation</title>
+<style>
+:root {
+  --ocean: #1a3a5c;
+  --seafoam: #e8f4f8;
+  --muted: #95a5a6;
+  --text: #2c3e50;
+  --rule: #dfe6e9;
+  --bg: #ffffff;
+  --bg-sunken: #f7f9fa;
+  --warn: #e67e22;
+  --warn-bg: #fdf3e7;
+  --error: #c0392b;
+  --gray-1: #f5f7fa;
+  --gray-2: #e0e0e0;
+  --gray-3: #aaaaaa;
+  --gray-4: #888888;
+  --gray-5: #555555;
+  --gray-6: #333333;
+  --gray-7: #111111;
+  --ok: #2c6e49;
+  --role-landing: #2980b9;
+  --role-entity: #1a3a5c;
+  --role-collection: #1a3a5c;
+  --role-component: #1a3a5c;
+  --role-aggregate-a: #8e44ad;
+  --role-aggregate-b: #27ae60;
+  --role-map: #ee3377;
+  --role-up: #5d6d7e;
+  --qc-mark: var(--ok);
+  --package-accent: var(--ocean);
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  --fs-root: 14px;
+  --fs-h1: 1.75rem;
+  --fs-type: 1.35rem;
+  --fs-h2: 1rem;
+  --fs-h3: 0.88rem;
+  --fs-meta: 0.84rem;
+  --fs-note: 0.92rem;
+  --fs-nav: 0.8rem;
+  --fs-cap: 0.92rem;
+  --fs-xs: 0.75rem;
+  --fs-top: 0.72rem;
+  --fs-dt: 0.7rem;
+  --lh-root: 1.5;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --radius-card: 8px;
+  --radius-btn: 4px;
+  --radius-pill: 999px;
+  --qc-0: #999999;
+  --qc-1: #009E73;
+  --qc-2: #56B4E9;
+  --qc-3: #E69F00;
+  --qc-4: #D55E00;
+  --qc-7: #CC79A7;
+  --qc-8: #0072B2;
+  --qc-9: #bdbdbd;
+  --qc-3-text: #9A6B00;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-root); color: var(--text);
+  max-width: 1150px; margin: 0 auto;
+  padding: 1.5rem 2rem 4rem; line-height: var(--lh-root);
+}
+p, li { max-width: 78ch; }
+.masthead {
+  background: var(--ocean); color: #fff; position: relative;
+  padding: 1.6rem 2rem; border-radius: var(--radius-card); margin-bottom: 0.9rem;
+}
+.masthead h1 { margin: 0 0 0.3rem; font-size: var(--fs-h1); font-weight: 700; }
+.masthead .sub { font-size: var(--fs-meta); opacity: 0.85; margin: 0 0 0.15rem; max-width: none; }
+.wordmark {
+  position: absolute; right: 2rem; bottom: 1.2rem;
+  font-size: var(--fs-dt); font-weight: 700; letter-spacing: 0.04em;
+  color: var(--package-accent); background: #fff; opacity: 0.85;
+  padding: 0.1rem 0.5rem; border-radius: var(--radius-pill); text-decoration: none;
+}
+.wordmark:hover { opacity: 1; }
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.5rem 2rem; font-size: var(--fs-meta); margin-top: 0.9rem;
+}
+.meta-grid dt {
+  opacity: 0.7; text-transform: uppercase; font-size: var(--fs-dt);
+  letter-spacing: 0.06em; margin-bottom: 0.1rem;
+}
+.meta-grid dd { margin: 0; font-weight: 600; }
+h2 {
+  color: var(--ocean); font-size: var(--fs-h2);
+  border-bottom: 2px solid var(--seafoam);
+  padding-bottom: 0.3rem; margin: 2.5rem 0 1rem;
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.top-link {
+  font-size: var(--fs-top); font-weight: 400; color: var(--muted);
+  text-decoration: none; margin-left: auto;
+}
+.top-link:hover { color: var(--ocean); text-decoration: underline; }
+.caption {
+  color: var(--gray-5); font-size: var(--fs-note);
+  margin-top: 0.75rem; margin-bottom: 0.75rem;
+}
+/* A section intro (the caption directly under a heading) is a lede for the whole
+   figure block, so it spans the content width rather than the 78ch prose measure a
+   paragraph would otherwise inherit — which left it stranded under full-width figures. */
+h2 + .caption { margin-top: -0.5rem; max-width: none; }
+/* Subsection headings inside a panel's own HTML — un-numbered, outside the jump
+   nav (the page model numbers Sections, not these).  Same navy as h2, smaller. */
+h3 {
+  color: var(--ocean); font-size: var(--fs-h3); margin: 1.2rem 0 0.4rem;
+}
+h3 + .caption { margin-top: -0.2rem; }
+figure h3, .fig-row > h3 { margin-top: 0.6rem; }  /* first heading inside a panel sits closer */
+.explainer {
+  font-size: var(--fs-note); color: var(--text);
+  background: var(--bg-sunken); border-left: 3px solid var(--muted);
+  padding: var(--sp-3); margin: -0.25rem 0 0.75rem; border-radius: var(--radius-btn);
+}
+.warn {
+  font-size: var(--fs-note); color: var(--text);
+  background: var(--warn-bg); border-left: 3px solid var(--warn);
+  padding: var(--sp-3); margin-bottom: 0.5rem; border-radius: var(--radius-btn);
+}
+.warn::before { content: "⚠ "; }
+.warn.error { border-left-color: var(--error); }
+.jump-nav {
+  background: var(--seafoam); padding: 0.55rem 1rem;
+  border-radius: 6px; margin-bottom: 1.5rem;
+  font-size: var(--fs-nav); line-height: 2.2;
+}
+.jump-nav::before { content: "Jump to: "; opacity: 0.55; font-size: var(--fs-xs); margin-right: 0.25rem; }
+.jump-nav a {
+  color: var(--ocean); text-decoration: none;
+  font-weight: 600; margin: 0 0.5rem 0 0;
+}
+.jump-nav a::before { content: "▸ "; font-size: var(--fs-dt); }
+.fig-row {
+  display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+.fig-col { display: flex; flex-direction: column; gap: 0.75rem; }
+.fig-row.center { justify-content: center; }
+/* A multi-table panel (processing provenance) is one full-width flex item so its
+   headings and tables stack instead of tiling across the row. */
+.prov-panel { flex: 1 1 100%; }
+/* Conformance status pips — a green ✓ (matches), a red ✗ (differs) and a neutral
+   ringed dash (no reference), matching the LADCP-present/absent badges. */
+.conf {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.4em; height: 1.4em; border-radius: 50%;
+  font-size: var(--fs-xs); font-weight: 700; line-height: 1;
+}
+.conf-match { background: var(--ok); color: #fff; }
+.conf-differ { background: var(--error); color: #fff; }
+.conf-none { background: #fff; color: #000; border: 1px solid #000; }
+figure { margin: 0; }
+figure img {
+  border: 1px solid var(--rule); border-radius: var(--radius-btn);
+  display: block; width: 100%; height: auto;
+}
+figcaption { font-size: var(--fs-cap); color: var(--gray-5); margin-bottom: 0.25rem; }
+/* Optional provenance line under a figure: which draw function produced it.
+   Off by default (vendored SHOW_FIGURE_SOURCE); a package turns it on in its
+   owned design module. */
+.fig-source {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--fs-xs); color: var(--muted); margin-top: 0.15rem;
+}
+/* A stub panel's warning fills the figure slot it stands in for, rather than the
+   78ch prose reading measure it would otherwise inherit as a paragraph. */
+figure .warn { max-width: none; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: var(--fs-note); margin: 0.6rem 0 1.2rem;
+}
+th {
+  background: var(--package-accent); color: #fff; text-align: left;
+  font-weight: 600; padding: 0.4rem 0.65rem;
+}
+th.num { text-align: right; }
+td {
+  padding: 0.35rem 0.65rem; border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--bg-sunken); }
+td.num, .num { text-align: right; font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--font-mono); font-size: var(--fs-xs); }
+/* netCDF inventory tables (vendored nc_tables): variable / coord / scalar / sensor /
+   global tables.  Package-neutral — the markup is emitted by templates/_nc_tables.html. */
+.var-table code { font-family: var(--font-mono); font-size: var(--fs-xs); }
+.muted { color: var(--muted); }
+.var-qc { color: var(--qc-mark); font-size: var(--fs-xs); }
+/* The original source name on its own muted line above the canonical name (name_cell), so the
+   Variable column does not widen to fit both on one line. */
+.var-orig { color: var(--muted); font-size: var(--fs-xs); }
+/* A long unbroken token (a tracking_id, a path, a dotted standard_name) in a scalar value or a
+   standard/long-name cell would widen the whole table; cap the width and break inside the word. */
+.cell-wrap { overflow-wrap: anywhere; max-width: 28rem; }
+.cell-bad { color: var(--warn); font-variant-numeric: tabular-nums; }
+tr.units th {
+  background: transparent; color: var(--muted); font-weight: 400;
+  font-size: var(--fs-xs); padding-top: 0;
+}
+.attr-disclosure summary { cursor: pointer; color: var(--muted); font-size: var(--fs-xs); }
+.attr-disclosure table { margin: 0.3rem 0; width: auto; }
+.attr-disclosure th { background: transparent; color: var(--text); font-weight: 600; }
+/* QC flag-count distribution bar and legend (qc_counts_table). Flag colours are inline on each
+   segment (from the vendored QC_FLAG_COLORS), so these rules carry only the layout. */
+.qc-bar { display: flex; width: 200px; height: 13px; border-radius: 3px; overflow: hidden; gap: 1px; background: #ecf0f1; }
+.qc-bar div { height: 100%; }
+.qc-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; font-size: 0.75rem; margin: 0.2rem 0 0.6rem; }
+.qc-legend span { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 3px; }
+/* The source: caption hugs the table it belongs to, not the next one: a table has 1.2rem
+   bottom margin, so pull the caption up under it and keep the gap below before the next table. */
+table + .fig-source { margin-top: -0.9rem; margin-bottom: 1.2rem; }
+/* Click-to-sort affordance: _JS_SORT_TABLES gives every sortable heading a tabindex, so
+   keying on th[tabindex] styles exactly the headings it wired (a data-nosort table or th
+   gets none).  The heading is a pointer; the active one shows the direction. */
+th[tabindex] { cursor: pointer; user-select: none; }
+th.sorted-asc::after { content: " \25B2"; font-size: 0.8em; }
+th.sorted-desc::after { content: " \25BC"; font-size: 0.8em; }
+.slot-full         { width: 100%; }
+.slot-twothirds     { width: calc(66.67% - 0.33rem); }
+.slot-three-fifths  { width: calc(60% - 0.40rem); }
+.slot-half          { width: calc(50% - 0.50rem); }
+.slot-two-fifths    { width: calc(40% - 0.60rem); }
+.slot-third         { width: calc(33.33% - 0.67rem); }
+.slot-quarter       { width: calc(25% - 0.75rem); }
+.masthead-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 0.3rem;
+}
+.masthead-header h1 { margin: 0 0 0.1rem; font-size: var(--fs-h1); font-weight: 700; }
+.masthead-type {
+  font-size: var(--fs-type); font-weight: 700; opacity: 0.88; line-height: 1.35;
+  padding-top: 0.25rem;
+}
+.nav-btns { display: flex; gap: 0.5rem; }
+.btn-nav {
+  background: var(--ocean); color: #fff; padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-pill); text-decoration: none; font-size: var(--fs-nav);
+}
+.btn-nav:hover { opacity: 0.85; }
+/* Masthead page-nav (vendored): the row of role pills under the masthead, and the
+   "Data inventory:" file strip.  A pill's colour is its role, never its page; the
+   current page's pill and an already-viewed file pill are muted the same way. */
+.page-nav { margin: 0.65rem 0 0.5rem; }
+/* Consecutive nav rows (a multi-row masthead) stack tighter than the first row's
+   top margin, which is sized for a single row. */
+.page-nav + .page-nav { margin-top: 0.15rem; }
+.page-nav-label { font-size: var(--fs-top); opacity: 0.75; margin-right: 0.3rem; }
+.nav-pill {
+  display: inline-block; padding: 0.2em 0.65em; border-radius: var(--radius-btn);
+  font-size: var(--fs-nav); font-weight: 700; text-decoration: none; color: #fff;
+  margin: 0 0.2rem 0.25rem 0;
+  /* A contrasting inner edge keeps a pill visible when its role colour matches the
+     masthead background, so colour-is-role holds on any masthead. */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+.nav-landing { background: var(--role-landing); }
+.nav-entity { background: var(--role-entity); }
+.nav-collection { background: var(--role-collection); }
+.nav-component { background: var(--role-component); }
+.nav-aggregate-a { background: var(--role-aggregate-a); }
+.nav-aggregate-b { background: var(--role-aggregate-b); }
+.nav-map { background: var(--role-map); }
+.nav-up { background: var(--role-up); }
+.masthead.role-landing { background: var(--role-landing); }
+.masthead.role-entity { background: var(--role-entity); }
+.masthead.role-collection { background: var(--role-collection); }
+.masthead.role-component { background: var(--role-component); }
+.masthead.role-aggregate-a { background: var(--role-aggregate-a); }
+.masthead.role-aggregate-b { background: var(--role-aggregate-b); }
+.masthead.role-map { background: var(--role-map); }
+.masthead.role-up { background: var(--role-up); }
+.nav-current { opacity: 0.5; pointer-events: none; }
+.nav-missing { background: var(--gray-3); opacity: 0.5; pointer-events: none; }
+.inventory-strip { margin: 0 0 1rem; }
+.inventory-strip .label { font-size: var(--fs-top); opacity: 0.75; margin-right: 0.3rem; }
+.file-pill {
+  display: inline-block; background: var(--role-component); color: #fff;
+  padding: 0.2rem 0.7rem; border-radius: var(--radius-pill);
+  font-family: var(--font-mono); font-size: 0.78rem;
+  text-decoration: none; margin: 0.1rem 0.05rem;
+}
+.file-pill:hover { opacity: 0.85; }
+.file-pill-active { opacity: 0.5; pointer-events: none; }
+/* Opt-in plain masthead (vendored) for landing / navigator pages: white panel,
+   ink text, rule border, wordmark hidden.  No ctdcast page uses it yet. */
+.masthead-plain { background: #fff; color: var(--text); border: 1px solid var(--rule); }
+.masthead-plain .wordmark { display: none; }
+footer {
+  text-align: center; padding: 1rem;
+  border-top: 1px solid var(--package-accent);
+  font-size: var(--fs-xs); color: var(--muted);
+}
+footer a { color: var(--muted); }
+@media print {
+  body { max-width: 100%; }
+  .masthead { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0.9rem 1.25rem; }
+  .masthead-header h1, .masthead h1 { font-size: 1.35rem; }
+  .meta-grid { grid-template-columns: repeat(4, 1fr); gap: 0.3rem 1rem; font-size: var(--fs-xs); }
+  h2 { page-break-after: avoid; }
+  h3 { page-break-after: avoid; }
+  .fig-row, figure, table { break-inside: avoid; }
+  .jump-nav { display: none; }
+}
+
+section { margin: 1.4rem 0; }
+.table-wrap { overflow-x: auto; }
+td.num { text-align: right; white-space: nowrap; }
+details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
+svg.strip, svg.heat { margin-top: 4px; max-width: 100%; height: auto; display: block; }
+.strip-legend { font-size: var(--fs-xs); }
+.heat-table td { vertical-align: middle; }
+.heat-table td.cell-svg { min-width: 240px; width: 60%; }
+.dive-axis { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--muted, #667); max-width: 720px; }
+.ramp { display: inline-flex; vertical-align: middle; margin: 0 0.3rem; }
+.ramp span { width: 14px; height: 10px; display: inline-block; }
+.pattern-vars { font-size: 0.9rem; }
+.var-list { font-size: 0.92rem; }
+</style>
+</head>
+<body>
+<div id="top"></div>
+<div class="masthead">
+  <div class="masthead-header">
+    <h1>sg271 · Drygalski Trough</h1>
+    <span class="masthead-type">Basestation</span>
+  </div>
+  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>The basestation dive files: what they hold, across the mission</span><span>generated 2026-11-11 11:59 UTC</span></p>
+  
+
+<nav class="page-nav">
+  <span class="page-nav-label">Pages:</span>
+  
+  <a class="nav-pill nav-landing" href="sg271_20260302T193828_R_conversion.html">Conversion</a><a class="nav-pill nav-aggregate-a" href="sg271_20260302T193828_R_phase.html">Phase</a>
+</nav>
+
+<nav class="page-nav">
+  <span class="page-nav-label">Provenance:</span>
+  
+  <a class="nav-pill nav-component" href="sg271_20260302T193828_R_variables.html">Variables</a><a class="nav-pill nav-component" href="sg271_20260302T193828_R_processing.html">Processing</a>
+</nav>
+
+
+
+  
+
+<nav class="inventory-strip">
+  <span class="label">Data inventory:</span>
+  <span class="file-pill file-pill-active">p2710001–0003.nc</span><a class="file-pill" href="sg271_20260302T193828_R_og1.html">sg271_20260302T193828_R.nc</a>
+</nav>
+
+
+  <dl class="meta-grid"><div><dt>Glider</dt><dd>sg271 · WMO 8901140</dd></div><div><dt>Model</dt><dd>University of Washington Seaglider SGX glider</dd></div><div><dt>Project</dt><dd>PycnMix</dd></div><div><dt>Institution</dt><dd>University of Hamburg</dd></div><div><dt>Site</dt><dd>Drygalski Trough</dd></div><div><dt>Deployed</dt><dd>2026-03-02 19:24 UTC</dd></div><div><dt>Deployment position</dt><dd>72° 58.80′ S, 171° 24.50′ E</dd></div><div><dt>Duration</dt><dd>2 h 07 m</dd></div><div><dt>Dives</dt><dd>3 (1–3)</dd></div><div><dt>Max depth</dt><dd>108 m</dd></div><div><dt>Basestation</dt><dd>basestation v3.0.6 · seaglider 67.01</dd></div><div><dt>Mode</dt><dd>real time</dd></div><div><dt>Source</dt><dd>3 dive files</dd></div><div><dt>Processed</dt><dd>2026-11-11 11:59 UTC</dd></div><div><dt>Losses</dt><dd style="color:var(--warn);">⚠ 8 kinds</dd></div><div><dt>OG1 conformance</dt><dd style="color:var(--warn);">⚠ 1 mandatory not met</dd></div>
+  </dl>
+  <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
+</div>
+<nav class="jump-nav"> <a href="#dimensions">(1) Dimension sizes</a> <a href="#presence">(2) Variables not in every dive</a> <a href="#per-dive">(3) Parameters that change</a> <a href="#salinity">(4) Salinity</a> <a href="#globals">(5) Global attributes that differ</a> <a href="#variables">(6) Variables by dimension</a></nav>
+
+<p class="caption">The 3 basestation dive files <code>p2710001.nc</code> … <code>p2710003.nc</code>, described as they were read: 542 variables, 500 in every dive. Nothing here is converted; how each variable became OG1 is on the Variables page.</p>
+
+<section id="dimensions">
+<h2>(1) Dimension sizes by dive</h2>
+<p class="caption">One row per dimension, one cell per dive (dives 1–3, left to right; hover a cell for its dive and size). <strong>Shading:</strong> samples per minute of the dive (from its first to its last data point in the OG1 file), lightest to darkest across that row's dives
+<span class="ramp" aria-hidden="true"><span style="background:#dbeaf7"></span><span style="background:#b5d4ee"></span><span style="background:#86b8e2"></span><span style="background:#5799d1"></span><span style="background:#2f7bbd"></span><span style="background:#1d5f9b"></span><span style="background:#123f6b"></span></span>,
+so a steady sample rate is one even shade whatever the dive depth; a step is a rate change, a gap is a dive without the dimension. A dimension of the same size in every dive is one mid shade.</p>
+<div class="table-wrap">
+<table class="nc heat-table">
+<thead><tr><th>Dimension</th><th>By dive</th><th>Median size</th><th>Median per minute</th><th>Dives</th></tr></thead>
+<tbody>
+<tr><td><code>legato_<wbr>data_<wbr>point</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="legato_data_point by dive"><rect x="0.0" y="0" width="239.6" height="14" fill="#dbeaf7"><title>dive 1: 492 samples, 18.2 per minute</title></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#2f7bbd"><title>dive 2: 1,246 samples, 36.6 per minute</title></rect><rect x="480.0" y="0" width="239.6" height="14" fill="#123f6b"><title>dive 3: 2,166 samples, 48.9 per minute</title></rect></svg></td>
+<td class="num">1,246</td>
+<td class="num">36.6</td>
+<td class="num">3</td></tr>
+<tr><td><code>ctd_<wbr>data_<wbr>point</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="ctd_data_point by dive"><rect x="0.0" y="0" width="239.6" height="14" fill="#dbeaf7"><title>dive 1: 492 samples, 18.2 per minute</title></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#2f7bbd"><title>dive 2: 1,246 samples, 36.6 per minute</title></rect><rect x="480.0" y="0" width="239.6" height="14" fill="#123f6b"><title>dive 3: 2,166 samples, 48.9 per minute</title></rect></svg></td>
+<td class="num">1,246</td>
+<td class="num">36.6</td>
+<td class="num">3</td></tr>
+<tr><td><code>tridentebb700chla470fdom365_<wbr>data_<wbr>point</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="tridentebb700chla470fdom365_data_point by dive"><rect x="0.0" y="0" width="239.6" height="14" fill="#dbeaf7"><title>dive 1: 246 samples, 9.1 per minute</title></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#2f7bbd"><title>dive 2: 628 samples, 18.5 per minute</title></rect><rect x="480.0" y="0" width="239.6" height="14" fill="#123f6b"><title>dive 3: 1,083 samples, 24.4 per minute</title></rect></svg></td>
+<td class="num">628</td>
+<td class="num">18.5</td>
+<td class="num">3</td></tr>
+<tr><td><code>codaTODO_<wbr>data_<wbr>point</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="codaTODO_data_point by dive"><rect x="0.0" y="0" width="239.6" height="14" fill="#dbeaf7"><title>dive 1: 246 samples, 9.1 per minute</title></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#2f7bbd"><title>dive 2: 627 samples, 18.4 per minute</title></rect><rect x="480.0" y="0" width="239.6" height="14" fill="#123f6b"><title>dive 3: 1,083 samples, 24.4 per minute</title></rect></svg></td>
+<td class="num">627</td>
+<td class="num">18.4</td>
+<td class="num">3</td></tr>
+<tr><td><code>sg_<wbr>data_<wbr>point</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="sg_data_point by dive"><rect x="0.0" y="0" width="239.6" height="14" fill="#dbeaf7"><title>dive 1: 89 samples, 3.29 per minute</title></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#2f7bbd"><title>dive 2: 241 samples, 7.08 per minute</title></rect><rect x="480.0" y="0" width="239.6" height="14" fill="#123f6b"><title>dive 3: 391 samples, 8.82 per minute</title></rect></svg></td>
+<td class="num">241</td>
+<td class="num">7.08</td>
+<td class="num">3</td></tr>
+<tr><td><code>magnetometer_<wbr>data_<wbr>point</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="magnetometer_data_point by dive"><rect x="0.0" y="0" width="239.6" height="14" fill="#dbeaf7"><title>dive 1: 89 samples, 3.29 per minute</title></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#2f7bbd"><title>dive 2: 241 samples, 7.08 per minute</title></rect><rect x="480.0" y="0" width="239.6" height="14" fill="#123f6b"><title>dive 3: 391 samples, 8.82 per minute</title></rect></svg></td>
+<td class="num">241</td>
+<td class="num">7.08</td>
+<td class="num">3</td></tr>
+<tr><td><code>depth_<wbr>data_<wbr>point</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="depth_data_point by dive"><rect x="0.0" y="0" width="239.6" height="14" fill="#dbeaf7"><title>dive 1: 89 samples, 3.29 per minute</title></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#2f7bbd"><title>dive 2: 240 samples, 7.05 per minute</title></rect><rect x="480.0" y="0" width="239.6" height="14" fill="#123f6b"><title>dive 3: 390 samples, 8.8 per minute</title></rect></svg></td>
+<td class="num">240</td>
+<td class="num">7.05</td>
+<td class="num">3</td></tr>
+<tr><td><code>gc_<wbr>state</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="gc_state by dive"><rect x="0.0" y="0" width="239.6" height="14" fill="#dbeaf7"><title>dive 1: 5 samples, 0.185 per minute</title></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#123f6b"><title>dive 2: 10 samples, 0.294 per minute</title></rect><rect x="480.0" y="0" width="239.6" height="14" fill="#86b8e2"><title>dive 3: 10 samples, 0.226 per minute</title></rect></svg></td>
+<td class="num">10</td>
+<td class="num">0.226</td>
+<td class="num">3</td></tr>
+<tr><td><code>gc_<wbr>event</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="gc_event by dive"><rect x="0.0" y="0" width="239.6" height="14" fill="#dbeaf7"><title>dive 1: 3 samples, 0.111 per minute</title></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#2f7bbd"><title>dive 2: 7 samples, 0.206 per minute</title></rect><rect x="480.0" y="0" width="239.6" height="14" fill="#123f6b"><title>dive 3: 11 samples, 0.248 per minute</title></rect></svg></td>
+<td class="num">7</td>
+<td class="num">0.206</td>
+<td class="num">3</td></tr>
+<tr><td><code>gps_<wbr>info</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="gps_info by dive"><rect x="0.0" y="0" width="239.6" height="14" fill="#5799d1"><title>dive 1: 3 samples</title></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#5799d1"><title>dive 2: 3 samples</title></rect><rect x="480.0" y="0" width="239.6" height="14" fill="#5799d1"><title>dive 3: 3 samples</title></rect></svg></td>
+<td class="num">3</td>
+<td class="num"><span class="muted">same size every dive</span></td>
+<td class="num">3</td></tr>
+<tr><td><code>trajectory</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="trajectory by dive"><rect x="0.0" y="0" width="239.6" height="14" fill="#5799d1"><title>dive 1: 1 samples</title></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#5799d1"><title>dive 2: 1 samples</title></rect><rect x="480.0" y="0" width="239.6" height="14" fill="#5799d1"><title>dive 3: 1 samples</title></rect></svg></td>
+<td class="num">1</td>
+<td class="num"><span class="muted">same size every dive</span></td>
+<td class="num">3</td></tr>
+</tbody></table>
+</div>
+<p class="fig-source">source: seagliderOG1/reports/basestation.py:dimension_heatmap</p>
+</section>
+
+<section id="presence">
+<h2>(2) Variables not in every dive</h2>
+<p class="caption">42 of 542 variables are missing from some dives. Variables in exactly the same dives share a strip: a filled cell is a dive the variable is in (hover for the dives). The other 500 are in every dive.</p>
+<div class="table-wrap">
+<table class="nc">
+<thead><tr><th>In</th><th>Dives</th><th>Variables</th></tr></thead>
+<tbody>
+<tr><td class="cell-svg" style="min-width:240px;width:45%;"><svg class="strip" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="dives 2–3"><rect x="0" y="0" width="720" height="14" fill="var(--surface-2, #eef1f5)"></rect><rect x="240.0" y="0" width="479.6" height="14" fill="#1d5f9b"><title>dives 2–3</title></rect></svg><span class="muted strip-legend">dives 2–3</span></td>
+<td class="num">2</td>
+<td class="pattern-vars"><code>codaTODO_ontime_b</code>, <code>codaTODO_samples_b</code>, <code>codaTODO_starttime_b</code>, <code>codaTODO_stoptime_b</code>, <code>codaTODO_timeouts_b</code>, <code>depth_ontime_b</code>
+<details class="vars"><summary>and 21 more</summary><code>depth_samples_b</code>, <code>depth_starttime_b</code>, <code>depth_stoptime_b</code>, <code>depth_timeouts_b</code>, <code>legato_errors_b</code>, <code>legato_ontime_b</code>, <code>legato_samples_b</code>, <code>legato_starttime_b</code>, <code>legato_stoptime_b</code>, <code>legato_timeouts_b</code>, <code>log_CURRENT</code>, <code>log_FINISH</code>, <code>log_IMPLIED_C_PITCH</code>, <code>log_IMPLIED_C_VBD</code>, <code>log_MAGCAL</code>, <code>log_SURF</code>, <code>tridentebb700chla470fdom365_ontime_b</code>, <code>tridentebb700chla470fdom365_samples_b</code>, <code>tridentebb700chla470fdom365_starttime_b</code>, <code>tridentebb700chla470fdom365_stoptime_b</code>, <code>tridentebb700chla470fdom365_timeouts_b</code></details></td></tr>
+<tr><td class="cell-svg" style="min-width:240px;width:45%;"><svg class="strip" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="dives 1–2"><rect x="0" y="0" width="720" height="14" fill="var(--surface-2, #eef1f5)"></rect><rect x="0.0" y="0" width="479.6" height="14" fill="#1d5f9b"><title>dives 1–2</title></rect></svg><span class="muted strip-legend">dives 1–2</span></td>
+<td class="num">2</td>
+<td class="pattern-vars"><code>codaTODO_ontime_a</code>, <code>codaTODO_samples_a</code>, <code>codaTODO_stoptime_a</code>, <code>depth_ontime_a</code>, <code>depth_samples_a</code>, <code>depth_stoptime_a</code>
+<details class="vars"><summary>and 6 more</summary><code>legato_ontime_a</code>, <code>legato_samples_a</code>, <code>legato_stoptime_a</code>, <code>tridentebb700chla470fdom365_ontime_a</code>, <code>tridentebb700chla470fdom365_samples_a</code>, <code>tridentebb700chla470fdom365_stoptime_a</code></details></td></tr>
+<tr><td class="cell-svg" style="min-width:240px;width:45%;"><svg class="strip" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="dive 1"><rect x="0" y="0" width="720" height="14" fill="var(--surface-2, #eef1f5)"></rect><rect x="0.0" y="0" width="239.6" height="14" fill="#1d5f9b"><title>dive 1</title></rect></svg><span class="muted strip-legend">dive 1</span></td>
+<td class="num">1</td>
+<td class="pattern-vars"><code>log_EOP_CODE</code>, <code>log_RECOV_CODE</code></td></tr>
+<tr><td class="cell-svg" style="min-width:240px;width:45%;"><svg class="strip" viewBox="0 0 720 14" width="720" height="14" preserveAspectRatio="none" role="img" aria-label="dive 2"><rect x="0" y="0" width="720" height="14" fill="var(--surface-2, #eef1f5)"></rect><rect x="240.0" y="0" width="239.6" height="14" fill="#1d5f9b"><title>dive 2</title></rect></svg><span class="muted strip-legend">dive 2</span></td>
+<td class="num">1</td>
+<td class="pattern-vars"><code>legato_timeouts_times_b</code></td></tr>
+</tbody></table>
+</div>
+<p class="fig-source">source: seagliderOG1/reports/basestation.py:presence_patterns</p>
+</section>
+
+<section id="per-dive">
+<h2>(3) Parameters that change between dives</h2>
+<p class="caption">The one-value variables (calibration constants, pilot settings, log entries) whose value is not the same in every dive file. One with at most 6 runs of equal values lists them by dive range; one that changes more often is given as its range, with a strip of one cell per dive (hover a cell for its dive and value), so the table stays the same size for a long mission. Names are as written in the OG1 file: OG1-named ones first, the rest folded by family.</p><div class="table-wrap">
+<table class="nc sortable">
+<thead><tr><th>Parameter</th><th>Units</th><th>Dives with a value</th><th>Over the mission</th></tr></thead>
+<tbody>
+<tr><td><code>DAVG_<wbr>CURR_<wbr>EAST</code></td><td>m s-1</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.167398; dive 2: 0.0882018; dive 3: 0.0780722</span></td></tr>
+<tr><td><code>DAVG_<wbr>CURR_<wbr>NORTH</code></td><td>m s-1</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: -0.136301; dive 2: -0.00319739; dive 3: -0.0218868</span></td></tr>
+</tbody></table>
+</div>
+<details class="fold"><summary>log_* (52)</summary><div class="table-wrap">
+<table class="nc sortable">
+<thead><tr><th>Parameter</th><th>Units</th><th>Dives with a value</th><th>Over the mission</th></tr></thead>
+<tbody>
+<tr><td><code>log_<wbr>10V_<wbr>AH</code></td><td></td><td class="num">3</td>
+<td>2 values over the mission<br><span class="muted">dive 1: 15.00,0.000; dives 2–3: 14.74,0.000</span></td></tr>
+<tr><td><code>log_<wbr>24V_<wbr>AH</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 14.77,3.749; dive 2: 14.72,4.019; dive 3: 14.72,4.291</span></td></tr>
+<tr><td><code>log_<wbr>CAP_<wbr>FILE_<wbr>SIZE</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 120747,0; dive 2: 132531,0; dive 3: 160360,0</span></td></tr>
+<tr><td><code>log_<wbr>CURRENT</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 0.059,124.1,1; dive 3: 0.078,141.1,1</span></td></tr>
+<tr><td><code>log_<wbr>C_<wbr>PITCH</code></td><td></td><td class="num">3</td>
+<td>2 values over the mission<br><span class="muted">dive 1: 2050; dives 2–3: 2300</span></td></tr>
+<tr><td><code>log_<wbr>DATA_<wbr>FILE_<wbr>SIZE</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 152,89; dive 2: 5157,241; dive 3: 10155,391</span></td></tr>
+<tr><td><code>log_<wbr>DEVICE_<wbr>MAMPS</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1188.701,169.908,117.428,0.000,420.000,…; dive 2: 1165.042,146.350,117.470,0.000,420.000,…; dive 3: 1198.388,149.398,124.050,0.000,420.000,…</span></td></tr>
+<tr><td><code>log_<wbr>DEVICE_<wbr>MAX_<wbr>MAMPS</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1706.008,261.168,188.352,0.000,420.000,…; dive 2: 1669.600,266.088,184.744,0.000,420.000,…; dive 3: 1724.048,269.368,218.856,0.000,420.000,…</span></td></tr>
+<tr><td><code>log_<wbr>DEVICE_<wbr>SECS</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 744.535,23.115,7.165,0.000,19.500,12.98…; dive 2: 755.980,33.190,14.275,0.000,7.750,12.73…; dive 3: 727.485,33.895,35.885,0.000,36.500,12.1…</span></td></tr>
+<tr><td><code>log_<wbr>DIVE</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1; dive 2: 2; dive 3: 3</span></td></tr>
+<tr><td><code>log_<wbr>D_<wbr>ABORT</code></td><td></td><td class="num">3</td>
+<td>2 values over the mission<br><span class="muted">dives 1–2: 60; dive 3: 150</span></td></tr>
+<tr><td><code>log_<wbr>D_<wbr>TGT</code></td><td></td><td class="num">3</td>
+<td>2 values over the mission<br><span class="muted">dives 1–2: 45; dive 3: 100</span></td></tr>
+<tr><td><code>log_<wbr>EOP_<wbr>CODE</code></td><td></td><td class="num">1</td>
+<td>2 values over the mission<br><span class="muted">dive 1: ABORT_DEPTH_EXCEEDED; dives 2–3: no value</span></td></tr>
+<tr><td><code>log_<wbr>FG_<wbr>AHR_<wbr>10V</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.344167; dive 2: 0.350552; dive 3: 0.360091</span></td></tr>
+<tr><td><code>log_<wbr>FG_<wbr>AHR_<wbr>10Vo</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.349; dive 2: 0.359; dive 3: 0.374</span></td></tr>
+<tr><td><code>log_<wbr>FG_<wbr>AHR_<wbr>24V</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 3.6469; dive 2: 3.90988; dive 3: 4.17998</span></td></tr>
+<tr><td><code>log_<wbr>FG_<wbr>AHR_<wbr>24Vo</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 3.896; dive 2: 4.167; dive 3: 4.443</span></td></tr>
+<tr><td><code>log_<wbr>FINISH</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 0.3,1.027218; dive 3: 0.3,1.024822</span></td></tr>
+<tr><td><code>log_<wbr>GPS</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: $GPS,020326,200530,-7258.839,17125.023,…; dive 2: $GPS,020326,205125,-7258.832,17125.598,…; dive 3: $GPS,020326,214551,-7258.776,17126.246,…</span></td></tr>
+<tr><td><code>log_<wbr>GPS1</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: $GPS1,020326,193828,-7258.783,17124.508…; dive 2: $GPS1,020326,201723,-7258.873,17125.125…; dive 3: $GPS1,020326,210131,-7258.864,17125.600…</span></td></tr>
+<tr><td><code>log_<wbr>GPS2</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: $GPS2,020326,194126,-7258.780,17124.537…; dive 2: $GPS2,020326,202432,-7258.873,17125.162…; dive 3: $GPS2,020326,210333,-7258.871,17125.596…</span></td></tr>
+<tr><td><code>log_<wbr>HUMID</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 49.44; dive 2: 49.29; dive 3: 49.26</span></td></tr>
+<tr><td><code>log_<wbr>IMPLIED_<wbr>C_<wbr>PITCH</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 2324,12.49,113,0.0,0.00; dive 3: 2310,12.84,259,0.0,0.00</span></td></tr>
+<tr><td><code>log_<wbr>IMPLIED_<wbr>C_<wbr>VBD</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 2539,22.424601,113,0; dive 3: 2404,28.752964,259,0</span></td></tr>
+<tr><td><code>log_<wbr>INTERNAL_<wbr>PRESSURE</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 8.21518,9.38026; dive 2: 8.21097,9.38026; dive 3: 8.21022,9.38026</span></td></tr>
+<tr><td><code>log_<wbr>IRIDIUM_<wbr>FIX</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: -7258.81,17131.42,270515,154522; dive 2: -7258.81,17131.42,270515,162919; dive 3: -7258.81,17131.42,270515,170824</span></td></tr>
+<tr><td><code>log_<wbr>MAGCAL</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 1.000000,-0.076319,-0.018705,0.003829,1…; dive 3: 1.000000,0.068775,0.048020,-0.015543,1.…</span></td></tr>
+<tr><td><code>log_<wbr>MEM2</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 993272,25,53196,80; dive 2: 993264,24,53224,80; dive 3: 993304,24,53184,80</span></td></tr>
+<tr><td><code>log_<wbr>MHEAD_<wbr>RNG_<wbr>PITCHd_<wbr>Wd</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 337.6,31535,-17.6,-10.000,-21.24,2209,0…; dive 2: 337.2,31198,-17.6,-10.000,-21.24,2209,0…; dive 3: 329.5,30964,-17.8,-10.101,-21.36,2187,0…</span></td></tr>
+<tr><td><code>log_<wbr>N_<wbr>DIVES</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1; dive 2: 2; dive 3: 3</span></td></tr>
+<tr><td><code>log_<wbr>PITCH_<wbr>ADJ_<wbr>GAIN</code></td><td></td><td class="num">3</td>
+<td>2 values over the mission<br><span class="muted">dive 1: 0.01; dives 2–3: 0.03</span></td></tr>
+<tr><td><code>log_<wbr>RECOV_<wbr>CODE</code></td><td></td><td class="num">1</td>
+<td>2 values over the mission<br><span class="muted">dive 1: EXCEEDED_ABORT_DEPTH; dives 2–3: no value</span></td></tr>
+<tr><td><code>log_<wbr>SC_<wbr>FREEKB</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 3.87856e+06; dive 2: 3.87821e+06; dive 3: 3.87782e+06</span></td></tr>
+<tr><td><code>log_<wbr>SDFILEDIR</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 31,2; dive 2: 36,3; dive 3: 42,4</span></td></tr>
+<tr><td><code>log_<wbr>SDSIZE</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 3887104,3877472; dive 2: 3887104,3877216; dive 3: 3887104,3876960</span></td></tr>
+<tr><td><code>log_<wbr>SENSOR_<wbr>MAMPS</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.000,0.000,0.000,0.000,0.000,0.000,11.…; dive 2: 0.000,0.000,0.000,0.000,0.000,0.000,10.…; dive 3: 0.000,0.000,0.000,0.000,0.000,0.000,11.…</span></td></tr>
+<tr><td><code>log_<wbr>SENSOR_<wbr>SECS</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.000,0.000,0.000,0.000,0.000,0.000,512…; dive 2: 0.000,0.000,0.000,0.000,0.000,0.000,128…; dive 3: 0.000,0.000,0.000,0.000,0.000,0.000,119…</span></td></tr>
+<tr><td><code>log_<wbr>SM_<wbr>CCo</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 987.18,447.33,1.592,0,500.2,612.0,388.4…; dive 2: 1579.83,244.29,1.509,0,501.0,606.2,395.…; dive 3: 2504.19,234.86,1.530,0,500.3,602.5,398.…</span></td></tr>
+<tr><td><code>log_<wbr>SM_<wbr>GC</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1.41,0.00,10.65,0.08,0.000,0.074,0.182,…; dive 2: 1.32,244.29,15.16,0.08,1.509,0.056,0.18…; dive 3: 1.38,234.86,15.05,0.06,1.530,0.056,0.20…</span></td></tr>
+<tr><td><code>log_<wbr>SPEED_<wbr>LIMITS</code></td><td></td><td class="num">3</td>
+<td>2 values over the mission<br><span class="muted">dives 1–2: 0.173,0.257; dive 3: 0.175,0.258</span></td></tr>
+<tr><td><code>log_<wbr>SUPER</code></td><td></td><td class="num">3</td>
+<td>2 values over the mission<br><span class="muted">dive 1: 27,71,254,1,0,0; dives 2–3: 19,71,254,1,0,0</span></td></tr>
+<tr><td><code>log_<wbr>SURF</code></td><td></td><td class="num">2</td>
+<td>2 values over the mission<br><span class="muted">dive 1: no value; dives 2–3: forcing</span></td></tr>
+<tr><td><code>log_<wbr>TCM_<wbr>TEMP</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 3.83; dive 2: 3.99; dive 3: 3.86</span></td></tr>
+<tr><td><code>log_<wbr>TEMP</code></td><td>C</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.07; dive 2: 0.1; dive 3: -0.07</span></td></tr>
+<tr><td><code>log_<wbr>T_<wbr>DIVE</code></td><td></td><td class="num">3</td>
+<td>2 values over the mission<br><span class="muted">dives 1–2: 15; dive 3: 33</span></td></tr>
+<tr><td><code>log_<wbr>T_<wbr>MISSION</code></td><td></td><td class="num">3</td>
+<td>2 values over the mission<br><span class="muted">dives 1–2: 30; dive 3: 48</span></td></tr>
+<tr><td><code>log_<wbr>XPDR_<wbr>PINGS</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 78,13.0,11.5; dive 2: 31,13.0,11.5; dive 3: 146,13.0,11.5</span></td></tr>
+<tr><td><code>log_<wbr>_<wbr>CALLS</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1; dive 2: 3; dive 3: 1</span></td></tr>
+<tr><td><code>log_<wbr>_<wbr>SM_<wbr>ANGLEo</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: -40.5; dive 2: -43.6; dive 3: -45.9</span></td></tr>
+<tr><td><code>log_<wbr>_<wbr>SM_<wbr>DEPTHo</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1.21; dive 2: 1.27; dive 3: 1.3</span></td></tr>
+<tr><td><code>log_<wbr>dive</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1; dive 2: 2; dive 3: 3</span></td></tr>
+<tr><td><code>log_<wbr>start</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1.77248e+09; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+</tbody></table>
+</div></details>
+<details class="fold"><summary>other (57)</summary><div class="table-wrap">
+<table class="nc sortable">
+<thead><tr><th>Parameter</th><th>Units</th><th>Dives with a value</th><th>Over the mission</th></tr></thead>
+<tbody>
+<tr><td><code>C_<wbr>VBD</code></td><td></td><td class="num">3</td>
+<td>2 values over the mission<br><span class="muted">dives 1–2: 2750; dive 3: 2650</span></td></tr>
+<tr><td><code>GPS_<wbr>east_<wbr>displacement_<wbr>m</code></td><td>m</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 263.928; dive 2: 236.765; dive 3: 352.985</span></td></tr>
+<tr><td><code>GPS_<wbr>north_<wbr>displacement_<wbr>m</code></td><td>m</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: -109.465; dive 2: 76.0686; dive 3: 176.257</span></td></tr>
+<tr><td><code>HD_<wbr>B</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.0179167; dive 2: 0.0167083; dive 3: 0.0179167</span></td></tr>
+<tr><td><code>VBD_<wbr>BIAS</code></td><td>cm3</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 53.2758; dive 2: 11.2907; dive 3: 25.6543</span></td></tr>
+<tr><td><code>avg_<wbr>latitude</code></td><td>degrees_north</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: -72.9802; dive 2: -72.9809; dive 3: -72.9804</span></td></tr>
+<tr><td><code>avg_<wbr>longitude</code></td><td>degrees_east</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 171.413; dive 2: 171.423; dive 3: 171.432</span></td></tr>
+<tr><td><code>codaTODO_<wbr>ontime_<wbr>a</code></td><td>seconds</td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 162.582; dive 2: 200.348; dive 3: no value</span></td></tr>
+<tr><td><code>codaTODO_<wbr>ontime_<wbr>b</code></td><td>seconds</td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 214.366; dive 3: 386.059</span></td></tr>
+<tr><td><code>codaTODO_<wbr>samples_<wbr>a</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 246; dive 2: 303; dive 3: no value</span></td></tr>
+<tr><td><code>codaTODO_<wbr>samples_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 324; dive 3: 585</span></td></tr>
+<tr><td><code>codaTODO_<wbr>starttime_<wbr>a</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1.77248e+09; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>codaTODO_<wbr>starttime_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>codaTODO_<wbr>stoptime_<wbr>a</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1.77248e+09; dive 2: 1.77248e+09; dive 3: no value</span></td></tr>
+<tr><td><code>codaTODO_<wbr>stoptime_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>codaTODO_<wbr>timeouts_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>2 values over the mission<br><span class="muted">dive 1: no value; dives 2–3: 0</span></td></tr>
+<tr><td><code>depth_<wbr>avg_<wbr>curr_<wbr>east_<wbr>gsm</code></td><td>m s-1</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.168041; dive 2: 0.0748633; dive 3: 0.07655</span></td></tr>
+<tr><td><code>depth_<wbr>avg_<wbr>curr_<wbr>error</code></td><td>m s-1</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.0760388; dive 2: 0.0680099; dive 3: 0.043026</span></td></tr>
+<tr><td><code>depth_<wbr>avg_<wbr>curr_<wbr>north_<wbr>gsm</code></td><td>m s-1</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: -0.131699; dive 2: -0.0312372; dive 3: -0.035715</span></td></tr>
+<tr><td><code>depth_<wbr>ontime_<wbr>a</code></td><td>seconds</td><td class="num">2</td>
+<td>2 values over the mission<br><span class="muted">dives 1–2: 0; dive 3: no value</span></td></tr>
+<tr><td><code>depth_<wbr>ontime_<wbr>b</code></td><td>seconds</td><td class="num">2</td>
+<td>2 values over the mission<br><span class="muted">dive 1: no value; dives 2–3: 0</span></td></tr>
+<tr><td><code>depth_<wbr>samples_<wbr>a</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 89; dive 2: 114; dive 3: no value</span></td></tr>
+<tr><td><code>depth_<wbr>samples_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 126; dive 3: 212</span></td></tr>
+<tr><td><code>depth_<wbr>starttime_<wbr>a</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1.77248e+09; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>depth_<wbr>starttime_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>depth_<wbr>stoptime_<wbr>a</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1.77248e+09; dive 2: 1.77248e+09; dive 3: no value</span></td></tr>
+<tr><td><code>depth_<wbr>stoptime_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>depth_<wbr>timeouts_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>2 values over the mission<br><span class="muted">dive 1: no value; dives 2–3: 0</span></td></tr>
+<tr><td><code>flight_<wbr>avg_<wbr>speed_<wbr>east</code></td><td>m s-1</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.013833; dive 2: 0.0597755; dive 3: 0.0617309</span></td></tr>
+<tr><td><code>flight_<wbr>avg_<wbr>speed_<wbr>east_<wbr>gsm</code></td><td>m s-1</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.0131895; dive 2: 0.073114; dive 3: 0.0632531</span></td></tr>
+<tr><td><code>flight_<wbr>avg_<wbr>speed_<wbr>north</code></td><td>m s-1</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.061135; dive 2: 0.05074; dive 3: 0.0916948</span></td></tr>
+<tr><td><code>flight_<wbr>avg_<wbr>speed_<wbr>north_<wbr>gsm</code></td><td>m s-1</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.056533; dive 2: 0.0787799; dive 3: 0.105523</span></td></tr>
+<tr><td><code>legato_<wbr>errors_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>2 values over the mission<br><span class="muted">dive 1: no value; dives 2–3: 0</span></td></tr>
+<tr><td><code>legato_<wbr>ontime_<wbr>a</code></td><td>seconds</td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 500.043; dive 2: 613.733; dive 3: no value</span></td></tr>
+<tr><td><code>legato_<wbr>ontime_<wbr>b</code></td><td>seconds</td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 655.034; dive 3: 1177.9</span></td></tr>
+<tr><td><code>legato_<wbr>samples_<wbr>a</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 492; dive 2: 606; dive 3: no value</span></td></tr>
+<tr><td><code>legato_<wbr>samples_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 640; dive 3: 1171</span></td></tr>
+<tr><td><code>legato_<wbr>starttime_<wbr>a</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1.77248e+09; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>legato_<wbr>starttime_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>legato_<wbr>stoptime_<wbr>a</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1.77248e+09; dive 2: 1.77248e+09; dive 3: no value</span></td></tr>
+<tr><td><code>legato_<wbr>stoptime_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>legato_<wbr>timeouts_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 1; dive 3: 0</span></td></tr>
+<tr><td><code>legato_<wbr>timeouts_<wbr>times_<wbr>b</code></td><td></td><td class="num">1</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 1772483805.998; dive 3: no value</span></td></tr>
+<tr><td><code>start_<wbr>of_<wbr>climb_<wbr>time</code></td><td>seconds</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 490.128; dive 2: 619.62; dive 3: 1031.72</span></td></tr>
+<tr><td><code>surface_<wbr>curr_<wbr>east</code></td><td>cm/s</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 8.84786; dive 2: 4.68346; dive 3: -1.78043</span></td></tr>
+<tr><td><code>surface_<wbr>curr_<wbr>error</code></td><td>m s-1</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 0.104494; dive 2: 0.0368298; dive 3: 0.157377</span></td></tr>
+<tr><td><code>surface_<wbr>curr_<wbr>north</code></td><td>cm/s</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 3.12696; dive 2: 0; dive 3: -10.6453</span></td></tr>
+<tr><td><code>total_<wbr>flight_<wbr>time_<wbr>s</code></td><td>seconds</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1456.31; dive 2: 1600.01; dive 3: 2524.87</span></td></tr>
+<tr><td><code>tridentebb700chla470fdom365_<wbr>ontime_<wbr>a</code></td><td>seconds</td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 33.386; dive 2: 41.073; dive 3: no value</span></td></tr>
+<tr><td><code>tridentebb700chla470fdom365_<wbr>ontime_<wbr>b</code></td><td>seconds</td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 44.396; dive 3: 79.468</span></td></tr>
+<tr><td><code>tridentebb700chla470fdom365_<wbr>samples_<wbr>a</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 246; dive 2: 303; dive 3: no value</span></td></tr>
+<tr><td><code>tridentebb700chla470fdom365_<wbr>samples_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 325; dive 3: 585</span></td></tr>
+<tr><td><code>tridentebb700chla470fdom365_<wbr>starttime_<wbr>a</code></td><td></td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1.77248e+09; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>tridentebb700chla470fdom365_<wbr>starttime_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>tridentebb700chla470fdom365_<wbr>stoptime_<wbr>a</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 1.77248e+09; dive 2: 1.77248e+09; dive 3: no value</span></td></tr>
+<tr><td><code>tridentebb700chla470fdom365_<wbr>stoptime_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>3 values over the mission<br><span class="muted">dive 1: no value; dive 2: 1.77248e+09; dive 3: 1.77249e+09</span></td></tr>
+<tr><td><code>tridentebb700chla470fdom365_<wbr>timeouts_<wbr>b</code></td><td></td><td class="num">2</td>
+<td>2 values over the mission<br><span class="muted">dive 1: no value; dives 2–3: 0</span></td></tr>
+</tbody></table>
+</div></details>
+<details class="fold"><summary>sg_cal_* (1)</summary><div class="table-wrap">
+<table class="nc sortable">
+<thead><tr><th>Parameter</th><th>Units</th><th>Dives with a value</th><th>Over the mission</th></tr></thead>
+<tbody>
+<tr><td><code>sg_<wbr>cal_<wbr>abs_<wbr>compress</code></td><td>cc/dbar</td><td class="num">3</td>
+<td>3 values over the mission<br><span class="muted">dive 1: 8.13637e-06; dive 2: 8.63627e-07; dive 3: 4.4513e-06</span></td></tr>
+</tbody></table>
+</div></details>
+<p class="fig-source">source: seagliderOG1/reports/og1.py:per_dive_rows</p>
+</section>
+<section id="salinity">
+<h2>(4) Salinity: the basestation's corrections</h2>
+<p class="caption">The basestation writes salinity twice, corrected (<code>salinity</code>, written to the OG1 file as PSAL) and uncorrected (<code>salinity_raw</code>). Each line compares two of them, or one with practical salinity recomputed here from the basestation's conductivity, temperature and <code>ctd_pressure</code> with <code>gsw.SP_from_C</code> (<code>SP(…)</code>; for this page only, not in the file), where both have a value. Differences in practical-salinity units; the strip is each dive's median difference (hover a cell for its dive and value). <code>salinity</code> has 38 fewer values than <code>salinity_raw</code> (3,866 of 3,904): the basestation set them to missing in its corrections.</p>
+<div class="table-wrap">
+<table class="nc">
+<thead><tr><th>Difference</th><th>Values</th><th>Median</th><th>RMS</th><th>Largest</th><th>By dive</th></tr></thead>
+<tbody>
+<tr><td><code>salinity_raw − SP(conductivity_raw, temperature_raw)</code><br><span class="muted">the plain conversion: about zero when gsw and the basestation agree on it</span></td>
+<td class="num">3,904</td><td class="num">-2.1e-08</td><td class="num">1.3e-06</td><td class="num">3.2e-06</td>
+<td><svg class="strip" width="360" height="14" role="img" aria-label="salinity_raw − SP(conductivity_raw, temperature_raw) by dive"><rect x="0.0" y="0" width="119.5" height="14" fill="#dbeaf7"><title>dive 1: -8.88437e-08</title></rect><rect x="120.0" y="0" width="119.5" height="14" fill="#2f7bbd"><title>dive 2: -2.75347e-08</title></rect><rect x="240.0" y="0" width="119.5" height="14" fill="#123f6b"><title>dive 3: 1.0531e-08</title></rect></svg><span class="muted strip-legend">light -8.88437e-08, dark 1.0531e-08</span></td></tr>
+<tr><td><code>salinity − salinity_raw</code><br><span class="muted">the basestation&#39;s corrections in total</span></td>
+<td class="num">3,866</td><td class="num">-0.0681</td><td class="num">0.0694</td><td class="num">0.6877</td>
+<td><svg class="strip" width="360" height="14" role="img" aria-label="salinity − salinity_raw by dive"><rect x="0.0" y="0" width="119.5" height="14" fill="#123f6b"><title>dive 1: -0.0662804</title></rect><rect x="120.0" y="0" width="119.5" height="14" fill="#2f7bbd"><title>dive 2: -0.0675125</title></rect><rect x="240.0" y="0" width="119.5" height="14" fill="#dbeaf7"><title>dive 3: -0.0695877</title></rect></svg><span class="muted strip-legend">light -0.0695877, dark -0.0662804</span></td></tr>
+<tr><td><code>salinity − SP(conductivity, temperature)</code><br><span class="muted">what is left after the corrected temperature and conductivity: corrections the basestation applies to salinity itself</span></td>
+<td class="num">3,866</td><td class="num">-0.0679</td><td class="num">0.0681</td><td class="num">0.0844</td>
+<td><svg class="strip" width="360" height="14" role="img" aria-label="salinity − SP(conductivity, temperature) by dive"><rect x="0.0" y="0" width="119.5" height="14" fill="#123f6b"><title>dive 1: -0.066823</title></rect><rect x="120.0" y="0" width="119.5" height="14" fill="#1d5f9b"><title>dive 2: -0.0671645</title></rect><rect x="240.0" y="0" width="119.5" height="14" fill="#dbeaf7"><title>dive 3: -0.0689787</title></rect></svg><span class="muted strip-legend">light -0.0689787, dark -0.066823</span></td></tr>
+</tbody></table>
+</div>
+<p class="fig-source">source: seagliderOG1/reports/basestation.py:salinity_checks</p>
+</section>
+
+<section id="globals">
+<h2>(5) Global attributes that differ between files</h2>
+<p class="caption">The global attributes with more than one value across the dive files (the distinct values only, not which dive had which).
+<strong>Highlight rule:</strong> an attribute not expected to change from dive to dive (expected: times, dive number, bounds, identifiers, history).</p>
+<p>None beyond those expected to change.</p>
+<details class="fold"><summary>Expected to differ (15)</summary>
+<table class="nc">
+<thead><tr><th>Attribute</th><th>Distinct values</th><th>Values (up to 5)</th></tr></thead>
+<tbody><tr><td><code>date_created</code></td><td class="num">3</td><td class="cell-wrap">2026-03-04T03:03:05Z · 2026-03-04T03:03:06Z · 2026-03-04T03:03:07Z</td></tr><tr><td><code>date_modified</code></td><td class="num">3</td><td class="cell-wrap">2026-03-04T03:03:05Z · 2026-03-04T03:03:06Z · 2026-03-04T03:03:07Z</td></tr><tr><td><code>dive_number</code></td><td class="num">3</td><td class="cell-wrap">1 · 2 · 3</td></tr><tr><td><code>geospatial_lat_max</code></td><td class="num">3</td><td class="cell-wrap">-72.97946730813256 · -72.98044049407784 · -72.97952957666482</td></tr><tr><td><code>geospatial_lat_min</code></td><td class="num">3</td><td class="cell-wrap">-72.97984082491809 · -72.98122053363595 · -72.98120910420563</td></tr><tr><td><code>geospatial_lon_max</code></td><td class="num">3</td><td class="cell-wrap">171.41208246924162 · 171.4257348176427 · 171.43666050364735</td></tr><tr><td><code>geospatial_lon_min</code></td><td class="num">3</td><td class="cell-wrap">171.40895 · 171.41936666666666 · 171.42660000000004</td></tr><tr><td><code>geospatial_vertical_max</code></td><td class="num">3</td><td class="cell-wrap">59.98103213485199 · 53.87616179806273 · 108.42510299474323</td></tr><tr><td><code>geospatial_vertical_min</code></td><td class="num">3</td><td class="cell-wrap">1.006137574487642 · 0.22912086602813775 · 0.21915910008105308</td></tr><tr><td><code>history</code></td><td class="num">3</td><td class="cell-wrap">Processing start:
+INFO: FlightModel.py(917): Updating FM parameters using per-dive estimations for dive 1 (1.00,1.00)
+INFO: MakeDiveProfiles.py(178): Overriding sg_ct_type=4.0 (default: 1)
+INFO: MakeDiveProfiles.py(2931): FM: volmax=71497.4
+INFO: MakeDiveProfiles.py(2931): FM: abs_compress=8.13637e-06
+INFO: MakeDiveProfiles.py(2931): FM: hd_a=0.00158489
+INFO: MakeDiveProfiles.py(2931): FM: hd_b=0.0179167
+INFO: MakeDiveProfiles.py(2931): FM: vbdbias=53.2758
+INFO: MakeDiveProfiles.py(2931): FM: rho0=1027.5
+INFO: MakeDiveProfiles.py(2931): FM: glider_length=1.8
+INFO: MakeDiveProfiles.py(2931): FM: hd_c=5.7e-06
+INFO: MakeDiveProfiles.py(2931): FM: hd_s=-0.25
+INFO: MakeDiveProfiles.py(2931): FM: therm_expan=7.05e-05
+INFO: MakeDiveProfiles.py(2931): FM: temp_ref=15
+INFO: MakeDiveProfiles.py(2951): auxcompass data not present, auxPressure data not present
+INFO: MakeDiveProfiles.py(3114): Not using auxcompass Not using auxPressure
+INFO: MakeDiveProfiles.py(3189): Directive: correct_thermal_inertia_effects
+INFO: MakeDiveProfiles.py(3189): Directive: detect_conductivity_anomalies
+INFO: MakeDiveProfiles.py(3189): Directive: no_interp_gc_temperatures
+INFO: MakeDiveProfiles.py(3189): Directive: no_interp_suspect_thermal_inertia_salinities
+INFO: MakeDiveProfiles.py(3189): Directive: no_detect_vbd_bleed
+INFO: MakeDiveProfiles.py(3189): Directive: no_detect_slow_apogee_flow
+WARNING: MakeDiveProfiles.py(3592): Can&#39;t find the climb pump!
+INFO: MakeDiveProfiles.py(4095): ct_type:unpumped RBR Legato
+INFO: QC.py(536): Changed (1/492) 13 to QC_BAD because raw legato salinity below bound
+INFO: QC.py(552): Changed (1/492) 13 to QC_BAD because bad raw legato salinity indicates raw legato conductivity issues
+WARNING: MakeDiveProfiles.py(5254): Unable to converge during initial glide-slope speed calculations
+INFO: QC.py(515): Changed (68/492) 2:4 7 8 10 12 13 15 18 23 24 26:28 30 32 35 36 43:46 49 52 54 58:61 64 66 67 70 73 76 78 81 82 85 94 96 99 103 104 110 115 120 124:126 128:130 133:136 139 142 143 156:158 162 171 176 266 to QC_PROBABLY_BAD because raw temperature spikes
+INFO: QC.py(597): Changed (54/492) 2 4 5 7:9 14 15 18 19 23:26 28 29 33 34 36 37 39 42 46 50 51 59:61 63 64 69 70 72 76 77 82 85 93 99 106 111 117 129:131 139 140 158 161 162 165 172 265 322 to QC_PROBABLY_BAD because raw conductivity spikes
+INFO: QC.py(252): Changed (67/492) 2:4 7 8 10 12 15 18 23 24 26:28 30 32 35 36 43:46 49 52 54 58:61 64 66 67 70 73 76 78 81 82 85 94 96 99 103 104 110 115 120 124:126 128:130 133:136 139 142 143 156:158 162 171 176 266 to QC_PROBABLY_BAD because changed raw temp implies changed raw salinity
+INFO: QC.py(252): Changed (28/492) 5 9 14 19 25 29 33 34 37 39 42 50 51 63 69 72 77 93 106 111 117 131 140 161 165 172 265 322 to QC_PROBABLY_BAD because changed raw cond implies changed raw salinity
+INFO: QC.py(515): Changed (68/492) 2:4 7 8 10 12 13 15 18 23 24 26:28 30 32 35 36 43:46 49 52 54 58:61 64 66 67 70 73 76 78 81 82 85 94 96 99 103 104 110 115 120 124:126 128:130 133:136 139 142 143 156:158 162 171 176 266 to QC_INTERPOLATED because temperature spikes
+INFO: QC.py(536): Changed (1/492) 13 to QC_BAD because salinity below bound
+INFO: QC.py(597): Changed (54/492) 2 4 5 7:9 14 15 18 19 23:26 28 29 33 34 36 37 39 42 46 50 51 59:61 63 64 69 70 72 76 77 82 85 93 99 106 111 117 129:131 139 140 158 161 162 165 172 265 322 to QC_INTERPOLATED because conductivity spikes
+WARNING: MakeDiveProfiles.py(5945): Engineering data ends at 61.98 meters; truncated dive? - continuing
+INFO: QC.py(713): Changed (2/492) 14 15 to QC_PROBABLY_BAD because bad interpolation anchors
+INFO: QC.py(714): SUGGESTION: 1 bad_conductivity data_points in_between 12 15 % bad interpolation anchors
+INFO: MakeDiveProfiles.py(6019): Changed (1/492) 13 to QC_BAD because bad corrected temperature and conductivity suggests bad salinity
+INFO: MakeDiveProfiles.py(6194): Skipping TSV based thermal-inertia correction for Legatto.
+INFO: QC.py(252): Changed (1/492) 13 to QC_BAD because changed corrected salin implies changed speed
+INFO: TempSalinityVelocity.py(1461): TSV:  0 104 stalled points 1:7 10:12 14:22 25:32 37:51 55:64 67:79 83:94 97:114 119:127
+INFO: TempSalinityVelocity.py(1502): TSV exiting after 0 iterations
+INFO: LegatoCorrections.py(204): Applying conductivity correction for pressure
+INFO: QC.py(252): Changed (68/492) 2:4 7 8 10 12 13 15 18 23 24 26:28 30 32 35 36 43:46 49 52 54 58:61 64 66 67 70 73 76 78 81 82 85 94 96 99 103 104 110 115 120 124:126 128:130 133:136 139 142 143 156:158 162 171 176 266 to QC_INTERPOLATED because changed legato temp implies changed legato corrected temp
+INFO: QC.py(252): Changed (2/492) 14 15 to QC_PROBABLY_BAD because changed legato cond implies changed legato corrected cond
+INFO: QC.py(252): Changed (1/492) 13 to QC_BAD because changed legato cond implies changed legato corrected cond
+INFO: QC.py(252): Changed (52/492) 2 4 5 7:9 18 19 23:26 28 29 33 34 36 37 39 42 46 50 51 59:61 63 64 69 70 72 76 77 82 85 93 99 106 111 117 129:131 139 140 158 161 162 165 172 265 322 to QC_INTERPOLATED because changed legato cond implies changed legato corrected cond
+INFO: QC.py(252): Changed (1/492) 13 to QC_BAD because changed legato salinity implies changed legato corrected salinity
+INFO: QC.py(252): Changed (67/492) 2:4 7 8 10 12 15 18 23 24 26:28 30 32 35 36 43:46 49 52 54 58:61 64 66 67 70 73 76 78 81 82 85 94 96 99 103 104 110 115 120 124:126 128:130 133:136 139 142 143 156:158 162 171 176 266 to QC_INTERPOLATED because changed corrected temp implies changed corrected salinity
+INFO: QC.py(252): Changed (2/492) 14 15 to QC_PROBABLY_BAD because changed corrected cond implies changed corrected salinity
+INFO: QC.py(252): Changed (27/492) 5 9 19 25 29 33 34 37 39 42 50 51 63 69 72 77 93 106 111 117 131 140 161 165 172 265 322 to QC_INTERPOLATED because changed corrected cond implies changed corrected salinity
+INFO: MakeDiveProfiles.py(6679): 0 (0.00%) HDM speeds are QC_BAD; 131 (26.63%) are stalled (492)
+INFO: QC.py(252): Changed (67/492) 2:4 7 8 10 12 15 18 23 24 26:28 30 32 35 36 43:46 49 52 54 58:61 64 66 67 70 73 76 78 81 82 85 94 96 99 103 104 110 115 120 124:126 128:130 133:136 139 142 143 156:158 162 171 176 266 to QC_INTERPOLATED because changed corrected temp implies changed speed
+INFO: MakeDiveProfiles.py(6889): Estimated total flight and drift time: 1456.3s (SM: 966.2s)
+WARNING: MakeDiveProfiles.py(6920): Substantial unmodeled flight time (86.2% of total time); DAC is bad.
+WARNING: MakeDiveProfiles.py(6945): Large mis-match between predicted and observed w; significant up/downwelling or poor flight model. DAC suspect.
+INFO: MakeDiveProfiles.py(7175): Computing QC_BAD depth-average current.
+INFO: MakeDiveProfiles.py(7256): DAC east: 16.74 cm/s DAC north: -13.63 cm/s
+INFO: MakeDiveProfiles.py(7387): Starting sensor extensions data processing
+WARNING: coda_ext.py(429): Found data codaTODO coda data, but codaTODO_c0 not found in sg_calib_constants.m - not correcting codaTODO data
+INFO: MakeDiveProfiles.py(7391): Finished sensor extensions data processing
+ · Processing start:
+INFO: FlightModel.py(917): Updating FM parameters using per-dive estimations for dive 2 (1.00,1.00)
+INFO: MakeDiveProfiles.py(178): Overriding sg_ct_type=4.0 (default: 1)
+INFO: MakeDiveProfiles.py(2931): FM: volmax=71497.4
+INFO: MakeDiveProfiles.py(2931): FM: abs_compress=8.63627e-07
+INFO: MakeDiveProfiles.py(2931): FM: hd_a=0.00158489
+INFO: MakeDiveProfiles.py(2931): FM: hd_b=0.0167083
+INFO: MakeDiveProfiles.py(2931): FM: vbdbias=11.2907
+INFO: MakeDiveProfiles.py(2931): FM: rho0=1027.5
+INFO: MakeDiveProfiles.py(2931): FM: glider_length=1.8
+INFO: MakeDiveProfiles.py(2931): FM: hd_c=5.7e-06
+INFO: MakeDiveProfiles.py(2931): FM: hd_s=-0.25
+INFO: MakeDiveProfiles.py(2931): FM: therm_expan=7.05e-05
+INFO: MakeDiveProfiles.py(2931): FM: temp_ref=15
+INFO: MakeDiveProfiles.py(2951): auxcompass data not present, auxPressure data not present
+INFO: MakeDiveProfiles.py(3114): Not using auxcompass Not using auxPressure
+INFO: MakeDiveProfiles.py(3189): Directive: correct_thermal_inertia_effects
+INFO: MakeDiveProfiles.py(3189): Directive: detect_conductivity_anomalies
+INFO: MakeDiveProfiles.py(3189): Directive: no_interp_gc_temperatures
+INFO: MakeDiveProfiles.py(3189): Directive: no_interp_suspect_thermal_inertia_salinities
+INFO: MakeDiveProfiles.py(3189): Directive: no_detect_vbd_bleed
+INFO: MakeDiveProfiles.py(3189): Directive: no_detect_slow_apogee_flow
+INFO: MakeDiveProfiles.py(4095): ct_type:unpumped RBR Legato
+INFO: QC.py(536): Changed (2/1246) 1241 1246 to QC_BAD because raw legato salinity below bound
+INFO: QC.py(552): Changed (2/1246) 1241 1246 to QC_BAD because bad raw legato salinity indicates raw legato conductivity issues
+WARNING: MakeDiveProfiles.py(5254): Unable to converge during initial glide-slope speed calculations
+INFO: QC.py(515): Changed (87/1246) 2 5 9:12 14 16 17 22 25 28 31 34 36 40 41 47 50:55 57 60:63 65 66 68 70 71 74 77:80 89 91 92 94:97 100 101 104 106:108 111:113 115:117 119 123:126 128 131 135 136 138 140 145 147 148 150 154 158 164 182 707 730 786 970 971 1116 1234 1236 1237 1242 to QC_PROBABLY_BAD because raw temperature spikes
+INFO: QC.py(597): Changed (93/1246) 2:5 10 13 16 17 19:22 29 37 44 49 50 52:55 58 60 61 65 68 69 74 77 81 83 85 89:92 95:97 101 107 110 111 113 116 117 122 123 125:128 132 141:145 147:150 152 154 155 158:161 165 413 520 621 632:634 644 647 664 781 785 801 969 970 975 976 1016 1017 1115 1130 1232 1236 1240 to QC_PROBABLY_BAD because raw conductivity spikes
+INFO: QC.py(252): Changed (87/1246) 2 5 9:12 14 16 17 22 25 28 31 34 36 40 41 47 50:55 57 60:63 65 66 68 70 71 74 77:80 89 91 92 94:97 100 101 104 106:108 111:113 115:117 119 123:126 128 131 135 136 138 140 145 147 148 150 154 158 164 182 707 730 786 970 971 1116 1234 1236 1237 1242 to QC_PROBABLY_BAD because changed raw temp implies changed raw salinity
+INFO: QC.py(252): Changed (52/1246) 3 4 13 19:21 29 37 44 49 58 69 81 83 85 90 110 122 127 132 141:144 149 152 155 159:161 165 413 520 621 632:634 644 647 664 781 785 801 969 975 976 1016 1017 1115 1130 1232 1240 to QC_PROBABLY_BAD because changed raw cond implies changed raw salinity
+INFO: QC.py(515): Changed (87/1246) 2 5 9:12 14 16 17 22 25 28 31 34 36 40 41 47 50:55 57 60:63 65 66 68 70 71 74 77:80 89 91 92 94:97 100 101 104 106:108 111:113 115:117 119 123:126 128 131 135 136 138 140 145 147 148 150 154 158 164 182 707 730 786 970 971 1116 1234 1236 1237 1242 to QC_INTERPOLATED because temperature spikes
+INFO: QC.py(536): Changed (2/1246) 1241 1246 to QC_BAD because salinity below bound
+INFO: QC.py(597): Changed (93/1246) 2:5 10 13 16 17 19:22 29 37 44 49 50 52:55 58 60 61 65 68 69 74 77 81 83 85 89:92 95:97 101 107 110 111 113 116 117 122 123 125:128 132 141:145 147:150 152 154 155 158:161 165 413 520 621 632:634 644 647 664 781 785 801 969 970 975 976 1016 1017 1115 1130 1232 1236 1240 to QC_INTERPOLATED because conductivity spikes
+INFO: MakeDiveProfiles.py(5955): Changed (16/1246) 1229:1240 1242:1245 to QC_BAD because end of climb
+INFO: MakeDiveProfiles.py(6019): Changed (18/1246) 1229:1246 to QC_BAD because bad corrected temperature and conductivity suggests bad salinity
+INFO: MakeDiveProfiles.py(6194): Skipping TSV based thermal-inertia correction for Legatto.
+INFO: QC.py(252): Changed (18/1246) 1229:1246 to QC_BAD because changed corrected salin implies changed speed
+INFO: TempSalinityVelocity.py(1461): TSV:  0 203 stalled points 7:12 53:61 88:97 123:137 480:641 1228
+INFO: TempSalinityVelocity.py(1502): TSV exiting after 0 iterations
+INFO: LegatoCorrections.py(204): Applying conductivity correction for pressure
+INFO: QC.py(252): Changed (87/1246) 2 5 9:12 14 16 17 22 25 28 31 34 36 40 41 47 50:55 57 60:63 65 66 68 70 71 74 77:80 89 91 92 94:97 100 101 104 106:108 111:113 115:117 119 123:126 128 131 135 136 138 140 145 147 148 150 154 158 164 182 707 730 786 970 971 1116 1234 1236 1237 1242 to QC_INTERPOLATED because changed legato temp implies changed legato corrected temp
+INFO: QC.py(252): Changed (18/1246) 1229:1246 to QC_BAD because changed legato cond implies changed legato corrected cond
+INFO: QC.py(252): Changed (90/1246) 2:5 10 13 16 17 19:22 29 37 44 49 50 52:55 58 60 61 65 68 69 74 77 81 83 85 89:92 95:97 101 107 110 111 113 116 117 122 123 125:128 132 141:145 147:150 152 154 155 158:161 165 413 520 621 632:634 644 647 664 781 785 801 969 970 975 976 1016 1017 1115 1130 to QC_INTERPOLATED because changed legato cond implies changed legato corrected cond
+INFO: QC.py(252): Changed (18/1246) 1229:1246 to QC_BAD because changed legato salinity implies changed legato corrected salinity
+INFO: QC.py(252): Changed (83/1246) 2 5 9:12 14 16 17 22 25 28 31 34 36 40 41 47 50:55 57 60:63 65 66 68 70 71 74 77:80 89 91 92 94:97 100 101 104 106:108 111:113 115:117 119 123:126 128 131 135 136 138 140 145 147 148 150 154 158 164 182 707 730 786 970 971 1116 to QC_INTERPOLATED because changed corrected temp implies changed corrected salinity
+INFO: QC.py(252): Changed (50/1246) 3 4 13 19:21 29 37 44 49 58 69 81 83 85 90 110 122 127 132 141:144 149 152 155 159:161 165 413 520 621 632:634 644 647 664 781 785 801 969 975 976 1016 1017 1115 1130 to QC_INTERPOLATED because changed corrected cond implies changed corrected salinity
+INFO: MakeDiveProfiles.py(6679): 0 (0.00%) HDM speeds are QC_BAD; 300 (24.08%) are stalled (1246)
+INFO: QC.py(252): Changed (83/1246) 2 5 9:12 14 16 17 22 25 28 31 34 36 40 41 47 50:55 57 60:63 65 66 68 70 71 74 77:80 89 91 92 94:97 100 101 104 106:108 111:113 115:117 119 123:126 128 131 135 136 138 140 145 147 148 150 154 158 164 182 707 730 786 970 971 1116 to QC_INTERPOLATED because changed corrected temp implies changed speed
+INFO: MakeDiveProfiles.py(6889): Estimated total flight and drift time: 1600.0s (SM: 331.4s)
+WARNING: MakeDiveProfiles.py(6920): Substantial unmodeled flight time (49.6% of total time); DAC is bad.
+WARNING: MakeDiveProfiles.py(6945): Large mis-match between predicted and observed w; significant up/downwelling or poor flight model. DAC suspect.
+INFO: MakeDiveProfiles.py(7175): Computing QC_BAD depth-average current.
+INFO: MakeDiveProfiles.py(7256): DAC east: 8.82 cm/s DAC north: -0.32 cm/s
+INFO: MakeDiveProfiles.py(7387): Starting sensor extensions data processing
+WARNING: coda_ext.py(429): Found data codaTODO coda data, but codaTODO_c0 not found in sg_calib_constants.m - not correcting codaTODO data
+INFO: MakeDiveProfiles.py(7391): Finished sensor extensions data processing
+ · Processing start:
+INFO: FlightModel.py(917): Updating FM parameters using per-dive estimations for dive 3 (1.00,1.00)
+INFO: MakeDiveProfiles.py(2931): FM: volmax=71497.4
+INFO: MakeDiveProfiles.py(2931): FM: abs_compress=4.4513e-06
+INFO: MakeDiveProfiles.py(2931): FM: hd_a=0.00158489
+INFO: MakeDiveProfiles.py(2931): FM: hd_b=0.0179167
+INFO: MakeDiveProfiles.py(2931): FM: vbdbias=25.6543
+INFO: MakeDiveProfiles.py(2931): FM: rho0=1027.5
+INFO: MakeDiveProfiles.py(2931): FM: glider_length=1.8
+INFO: MakeDiveProfiles.py(2931): FM: hd_c=5.7e-06
+INFO: MakeDiveProfiles.py(2931): FM: hd_s=-0.25
+INFO: MakeDiveProfiles.py(2931): FM: therm_expan=7.05e-05
+INFO: MakeDiveProfiles.py(2931): FM: temp_ref=15
+INFO: MakeDiveProfiles.py(2951): auxcompass data not present, auxPressure data not present
+INFO: MakeDiveProfiles.py(3114): Not using auxcompass Not using auxPressure
+INFO: MakeDiveProfiles.py(3189): Directive: correct_thermal_inertia_effects
+INFO: MakeDiveProfiles.py(3189): Directive: detect_conductivity_anomalies
+INFO: MakeDiveProfiles.py(3189): Directive: no_interp_gc_temperatures
+INFO: MakeDiveProfiles.py(3189): Directive: no_interp_suspect_thermal_inertia_salinities
+INFO: MakeDiveProfiles.py(3189): Directive: no_detect_vbd_bleed
+INFO: MakeDiveProfiles.py(3189): Directive: no_detect_slow_apogee_flow
+INFO: MakeDiveProfiles.py(4095): ct_type:unpumped RBR Legato
+INFO: QC.py(536): Changed (1/2166) 2163 to QC_BAD because raw legato salinity below bound
+INFO: QC.py(552): Changed (1/2166) 2163 to QC_BAD because bad raw legato salinity indicates raw legato conductivity issues
+WARNING: MakeDiveProfiles.py(5254): Unable to converge during initial glide-slope speed calculations
+INFO: QC.py(515): Changed (35/2166) 2 6 12 14 16 23 26 32 41 42 44 47 48 56 58 61 62 64 67 79 81 89 94 104 108 116 133 136 144 146 155 160 1206 2164 2165 to QC_PROBABLY_BAD because raw temperature spikes
+INFO: QC.py(597): Changed (105/2166) 4 5 7 10:12 14 16 17 21 23 26 29 30 36 40:42 44:47 50 53 54 56 60:64 69:71 74 78 79 81:85 89 90 92 94 96 98 100:105 107:114 117 130 131 134:138 140:142 144 146 148 150 153 160 161 292 315 947 1004:1007 1011 1022 1025 1043 1205:1207 1210 1211 1485 1837 1840 2057 2159 2160 2162 2164 2165 to QC_PROBABLY_BAD because raw conductivity spikes
+INFO: MakeDiveProfiles.py(5393): Changed (1/2166) 2166 to QC_BAD because uncorrectable 0.0m raw conductivity bubble on climb
+INFO: QC.py(252): Changed (35/2166) 2 6 12 14 16 23 26 32 41 42 44 47 48 56 58 61 62 64 67 79 81 89 94 104 108 116 133 136 144 146 155 160 1206 2164 2165 to QC_PROBABLY_BAD because changed raw temp implies changed raw salinity
+INFO: QC.py(252): Changed (79/2166) 4 5 7 10 11 17 21 29 30 36 40 45 46 50 53 54 60 63 69:71 74 78 82:85 90 92 96 98 100:103 105 107 109:114 117 130 131 134 135 137 138 140:142 148 150 153 161 292 315 947 1004:1007 1011 1022 1025 1043 1205 1207 1210 1211 1485 1837 1840 2057 2159 2160 2162 to QC_PROBABLY_BAD because changed raw cond implies changed raw salinity
+INFO: QC.py(252): Changed (1/2166) 2166 to QC_BAD because changed raw cond implies changed raw salinity
+INFO: QC.py(515): Changed (35/2166) 2 6 12 14 16 23 26 32 41 42 44 47 48 56 58 61 62 64 67 79 81 89 94 104 108 116 133 136 144 146 155 160 1206 2164 2165 to QC_INTERPOLATED because temperature spikes
+INFO: QC.py(536): Changed (1/2166) 2163 to QC_BAD because salinity below bound
+INFO: QC.py(597): Changed (105/2166) 4 5 7 10:12 14 16 17 21 23 26 29 30 36 40:42 44:47 50 53 54 56 60:64 69:71 74 78 79 81:85 89 90 92 94 96 98 100:105 107:114 117 130 131 134:138 140:142 144 146 148 150 153 160 161 292 315 947 1004:1007 1011 1022 1025 1043 1205:1207 1210 1211 1485 1837 1840 2057 2159 2160 2162 2164 2165 to QC_INTERPOLATED because conductivity spikes
+INFO: MakeDiveProfiles.py(5449): Changed (1/2166) 2166 to QC_BAD because uncorrectable 0.0m conductivity bubble on climb
+INFO: MakeDiveProfiles.py(5955): Changed (11/2166) 2154:2162 2164 2165 to QC_BAD because end of climb
+INFO: MakeDiveProfiles.py(6019): Changed (13/2166) 2154:2166 to QC_BAD because bad corrected temperature and conductivity suggests bad salinity
+INFO: MakeDiveProfiles.py(6194): Skipping TSV based thermal-inertia correction for Legatto.
+INFO: QC.py(252): Changed (13/2166) 2154:2166 to QC_BAD because changed corrected salin implies changed speed
+INFO: TempSalinityVelocity.py(1461): TSV:  0 261 stalled points 1 2 8:15 20:31 36:45 48:59 63:71 76:90 97:105 112:129 872:1036 2153
+INFO: TempSalinityVelocity.py(1502): TSV exiting after 0 iterations
+INFO: LegatoCorrections.py(204): Applying conductivity correction for pressure
+INFO: QC.py(252): Changed (35/2166) 2 6 12 14 16 23 26 32 41 42 44 47 48 56 58 61 62 64 67 79 81 89 94 104 108 116 133 136 144 146 155 160 1206 2164 2165 to QC_INTERPOLATED because changed legato temp implies changed legato corrected temp
+INFO: QC.py(252): Changed (13/2166) 2154:2166 to QC_BAD because changed legato cond implies changed legato corrected cond
+INFO: QC.py(252): Changed (100/2166) 4 5 7 10:12 14 16 17 21 23 26 29 30 36 40:42 44:47 50 53 54 56 60:64 69:71 74 78 79 81:85 89 90 92 94 96 98 100:105 107:114 117 130 131 134:138 140:142 144 146 148 150 153 160 161 292 315 947 1004:1007 1011 1022 1025 1043 1205:1207 1210 1211 1485 1837 1840 2057 to QC_INTERPOLATED because changed legato cond implies changed legato corrected cond
+INFO: QC.py(252): Changed (13/2166) 2154:2166 to QC_BAD because changed legato salinity implies changed legato corrected salinity
+INFO: QC.py(252): Changed (33/2166) 2 6 12 14 16 23 26 32 41 42 44 47 48 56 58 61 62 64 67 79 81 89 94 104 108 116 133 136 144 146 155 160 1206 to QC_INTERPOLATED because changed corrected temp implies changed corrected salinity
+INFO: QC.py(252): Changed (76/2166) 4 5 7 10 11 17 21 29 30 36 40 45 46 50 53 54 60 63 69:71 74 78 82:85 90 92 96 98 100:103 105 107 109:114 117 130 131 134 135 137 138 140:142 148 150 153 161 292 315 947 1004:1007 1011 1022 1025 1043 1205 1207 1210 1211 1485 1837 1840 2057 to QC_INTERPOLATED because changed corrected cond implies changed corrected salinity
+INFO: MakeDiveProfiles.py(6679): 0 (0.00%) HDM speeds are QC_BAD; 303 (13.99%) are stalled (2166)
+INFO: QC.py(252): Changed (33/2166) 2 6 12 14 16 23 26 32 41 42 44 47 48 56 58 61 62 64 67 79 81 89 94 104 108 116 133 136 144 146 155 160 1206 to QC_INTERPOLATED because changed corrected temp implies changed speed
+INFO: MakeDiveProfiles.py(6889): Estimated total flight and drift time: 2524.9s (SM: 322.0s)
+WARNING: MakeDiveProfiles.py(6920): Substantial unmodeled flight time (31.5% of total time); DAC is bad.
+INFO: MakeDiveProfiles.py(7175): Computing QC_BAD depth-average current.
+INFO: MakeDiveProfiles.py(7256): DAC east: 7.81 cm/s DAC north: -2.19 cm/s
+INFO: MakeDiveProfiles.py(7387): Starting sensor extensions data processing
+WARNING: coda_ext.py(429): Found data codaTODO coda data, but codaTODO_c0 not found in sg_calib_constants.m - not correcting codaTODO data
+INFO: MakeDiveProfiles.py(7391): Finished sensor extensions data processing
+</td></tr><tr><td><code>id</code></td><td class="num">3</td><td class="cell-wrap">p2710001_20260302 · p2710002_20260302 · p2710003_20260302</td></tr><tr><td><code>start_time</code></td><td class="num">3</td><td class="cell-wrap">1772480516.0 · 1772483092.0 · 1772485433.0</td></tr><tr><td><code>time_coverage_end</code></td><td class="num">3</td><td class="cell-wrap">2026-03-02T19:03:53Z · 2026-03-02T20:03:13Z · 2026-03-02T21:03:48Z</td></tr><tr><td><code>time_coverage_start</code></td><td class="num">3</td><td class="cell-wrap">2026-03-02T19:03:07Z · 2026-03-02T20:03:03Z · 2026-03-02T21:03:04Z</td></tr><tr><td><code>uuid</code></td><td class="num">3</td><td class="cell-wrap">aa14e3fa-1776-11f1-8dd8-e3cb84ffd70c · aa14e3fb-1776-11f1-8dd8-e3cb84ffd70c · ab832e9a-1776-11f1-8dd8-e3cb84ffd70c</td></tr>
+</tbody></table></details>
+<p class="fig-source">source: seagliderOG1/reports/basestation.py:differing_globals</p>
+</section>
+
+<section id="variables">
+<h2>(6) Variables by dimension</h2>
+<p class="caption">All 542 variables as read, folded by their dimensions. <em>Values</em> counts the non-missing values summed over the dive files; <em>Dives</em> the files the variable is in.</p>
+<details class="fold"><summary><code>scalar</code> (404)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>avg_<wbr>latitude</code></td><td>degrees_north</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>avg_<wbr>longitude</code></td><td>degrees_east</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>codaTODO</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>codaTODO_<wbr>ontime_<wbr>a</code></td><td>secs</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>codaTODO_<wbr>ontime_<wbr>b</code></td><td>secs</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>codaTODO_<wbr>samples_<wbr>a</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>codaTODO_<wbr>samples_<wbr>b</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>codaTODO_<wbr>starttime_<wbr>a</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>codaTODO_<wbr>starttime_<wbr>b</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>codaTODO_<wbr>stoptime_<wbr>a</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>codaTODO_<wbr>stoptime_<wbr>b</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>codaTODO_<wbr>timeouts_<wbr>a</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>codaTODO_<wbr>timeouts_<wbr>b</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>CTD_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>depth_<wbr>avg_<wbr>curr_<wbr>east</code></td><td>m/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>depth_<wbr>avg_<wbr>curr_<wbr>east_<wbr>gsm</code></td><td>m/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>depth_<wbr>avg_<wbr>curr_<wbr>error</code></td><td>m/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>depth_<wbr>avg_<wbr>curr_<wbr>north</code></td><td>m/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>depth_<wbr>avg_<wbr>curr_<wbr>north_<wbr>gsm</code></td><td>m/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>depth_<wbr>avg_<wbr>curr_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>depth_<wbr>ontime_<wbr>a</code></td><td>secs</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>depth_<wbr>ontime_<wbr>b</code></td><td>secs</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>depth_<wbr>samples_<wbr>a</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>depth_<wbr>samples_<wbr>b</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>depth_<wbr>starttime_<wbr>a</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>depth_<wbr>starttime_<wbr>b</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>depth_<wbr>stoptime_<wbr>a</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>depth_<wbr>stoptime_<wbr>b</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>depth_<wbr>timeouts_<wbr>a</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>depth_<wbr>timeouts_<wbr>b</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>flight_<wbr>avg_<wbr>speed_<wbr>east</code></td><td>m/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>flight_<wbr>avg_<wbr>speed_<wbr>east_<wbr>gsm</code></td><td>m/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>flight_<wbr>avg_<wbr>speed_<wbr>north</code></td><td>m/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>flight_<wbr>avg_<wbr>speed_<wbr>north_<wbr>gsm</code></td><td>m/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>glider</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>GPS1_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>GPS2_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>GPS_<wbr>east_<wbr>displacement_<wbr>m</code></td><td>m</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>GPS_<wbr>north_<wbr>displacement_<wbr>m</code></td><td>m</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>GPSE_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>hdm_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>latlong_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>legato</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>legato_<wbr>errors_<wbr>a</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>legato_<wbr>errors_<wbr>b</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>legato_<wbr>ontime_<wbr>a</code></td><td>secs</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>legato_<wbr>ontime_<wbr>b</code></td><td>secs</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>legato_<wbr>samples_<wbr>a</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>legato_<wbr>samples_<wbr>b</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>legato_<wbr>starttime_<wbr>a</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>legato_<wbr>starttime_<wbr>b</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>legato_<wbr>stoptime_<wbr>a</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>legato_<wbr>stoptime_<wbr>b</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>legato_<wbr>timeouts_<wbr>a</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>legato_<wbr>timeouts_<wbr>b</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>legato_<wbr>timeouts_<wbr>times_<wbr>b</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="1">1</td><td class="num">1</td></tr><tr><td><code>log_<wbr>10V_<wbr>AH</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>24V_<wbr>AH</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>_<wbr>CALLS</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>_<wbr>SM_<wbr>ANGLEo</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>_<wbr>SM_<wbr>DEPTHo</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>AH0_<wbr>10V</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>AH0_<wbr>24V</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ALTIM_<wbr>BOTTOM_<wbr>TURN_<wbr>MARGIN</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ALTIM_<wbr>FREQUENCY</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ALTIM_<wbr>PING_<wbr>DELTA</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ALTIM_<wbr>PING_<wbr>DEPTH</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ALTIM_<wbr>PING_<wbr>FIT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ALTIM_<wbr>PULSE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ALTIM_<wbr>SENSITIVITY</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ALTIM_<wbr>TOP_<wbr>MIN_<wbr>OBSTACLE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ALTIM_<wbr>TOP_<wbr>PING_<wbr>RANGE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ALTIM_<wbr>TOP_<wbr>TURN_<wbr>MARGIN</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>APOGEE_<wbr>PITCH</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>C_<wbr>PITCH</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>C_<wbr>PITCH_<wbr>AUTO_<wbr>DELTA</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>C_<wbr>PITCH_<wbr>AUTO_<wbr>MAX</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>C_<wbr>ROLL_<wbr>CLIMB</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>C_<wbr>ROLL_<wbr>DIVE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>C_<wbr>VBD</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>C_<wbr>VBD_<wbr>AUTO_<wbr>DELTA</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>C_<wbr>VBD_<wbr>AUTO_<wbr>MAX</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>CALL_<wbr>NDIVES</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>CALL_<wbr>TRIES</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>CALL_<wbr>WAIT</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>CAP_<wbr>FILE_<wbr>SIZE</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>CAPMAXSIZE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>CAPUPLOAD</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>CF8_<wbr>MAXERRORS</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>COMM_<wbr>SEQ</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>COMPASS2_<wbr>DEVICE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>COMPASS_<wbr>DEVICE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>COMPASS_<wbr>USE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>CURRENT</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>log_<wbr>D_<wbr>ABORT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>BATHY_<wbr>OFFSET</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>BOOST</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>CALL</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>FINISH</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>FLARE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>GRID</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>NO_<wbr>BLEED</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>OFFGRID</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>PITCH</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>SAFE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>SURF</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>D_<wbr>TGT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DATA_<wbr>FILE_<wbr>SIZE</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DBDW</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEEPGLIDER</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEEPGLIDERMB</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEVICE1</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEVICE2</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEVICE3</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEVICE4</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEVICE5</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEVICE6</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEVICE_<wbr>MAMPS</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEVICE_<wbr>MAX_<wbr>MAMPS</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEVICE_<wbr>SECS</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DEVICES</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>DIVE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>dive</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>EOP_<wbr>CODE</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="1">1</td><td class="num">1</td></tr><tr><td><code>log_<wbr>ERRORS</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ESCAPE_<wbr>HEADING</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ESCAPE_<wbr>HEADING_<wbr>DELTA</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>FERRY_<wbr>MAX</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>FG_<wbr>AHR_<wbr>10V</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>FG_<wbr>AHR_<wbr>10Vo</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>FG_<wbr>AHR_<wbr>24V</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>FG_<wbr>AHR_<wbr>24Vo</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>FILEMGR</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>FINISH</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>log_<wbr>FIX_<wbr>MISSING_<wbr>TIMEOUT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>GLIDE_<wbr>SLOPE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>glider</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>GPS</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>GPS1</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>GPS2</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>GPS_<wbr>DEVICE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>HD_<wbr>A</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>HD_<wbr>B</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>HD_<wbr>C</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>HEAD_<wbr>ERRBAND</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>HEADING</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>HUMID</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ICE_<wbr>FREEZE_<wbr>MARGIN</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ID</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>IMPLIED_<wbr>C_<wbr>PITCH</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>log_<wbr>IMPLIED_<wbr>C_<wbr>VBD</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>log_<wbr>INT_<wbr>PRESSURE_<wbr>SLOPE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>INT_<wbr>PRESSURE_<wbr>YINT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>INTERNAL_<wbr>PRESSURE</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>IRIDIUM_<wbr>FIX</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>IRON</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>KALMAN_<wbr>CONTROL</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>KALMAN_<wbr>USE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>KALMAN_<wbr>X</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>KALMAN_<wbr>Y</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>LOGGERDEVICE1</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>LOGGERDEVICE2</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>LOGGERDEVICE3</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>LOGGERDEVICE4</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>LOGGERS</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>LOITER_<wbr>D_<wbr>BOTTOM</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>LOITER_<wbr>D_<wbr>TOP</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>LOITER_<wbr>DBDW</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>LOITER_<wbr>N_<wbr>DIVE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>LOITER_<wbr>W_<wbr>DBAND</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MAGCAL</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>log_<wbr>MASS</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MAX_<wbr>BUOY</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MAXI_<wbr>10V</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MAXI_<wbr>24V</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MEM0</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MEM1</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MEM2</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MHEAD_<wbr>RNG_<wbr>PITCHd_<wbr>Wd</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MINV_<wbr>10V</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MINV_<wbr>24V</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MISSION</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>mission</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>MOTHERBOARD</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>N_<wbr>DIVES</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>N_<wbr>FILEKB</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>N_<wbr>GPS</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>N_<wbr>NOCOMM</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>N_<wbr>NOSURFACE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>NAV2_<wbr>DEVICE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>NAV3_<wbr>DEVICE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>NAV4_<wbr>DEVICE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>NAV_<wbr>DEVICE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>NAV_<wbr>MODE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>NETBOX</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>NETWORK_<wbr>DEVICE</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>NOCOMM_<wbr>ACTION</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>OPTIONS</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>OSC</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PHONE_<wbr>DEVICE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PHONE_<wbr>SUPPLY</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>ADJ_<wbr>DBAND</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>ADJ_<wbr>GAIN</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>CNV</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>DBAND</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>GAIN</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>GAIN_<wbr>AUTO_<wbr>DELTA</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>GAIN_<wbr>AUTO_<wbr>MAX</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>MAX</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>MAXERRORS</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>MIN</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>TIMEOUT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>VBD_<wbr>SHIFT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>W_<wbr>DBAND</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PITCH_<wbr>W_<wbr>GAIN</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PRESSURE_<wbr>DEVICE</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PRESSURE_<wbr>SLOPE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PRESSURE_<wbr>YINT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>PROTOCOL</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>RAFOS_<wbr>CORR_<wbr>THRESH</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>RAFOS_<wbr>DEVICE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>RAFOS_<wbr>HIT_<wbr>WINDOW</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>RAFOS_<wbr>MMODEM</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>RAFOS_<wbr>PEAK_<wbr>OFFSET</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>RECOV_<wbr>CODE</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="1">1</td><td class="num">1</td></tr><tr><td><code>log_<wbr>RELAUNCH</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>RHO</code></td><td>gram/cc</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ROLL_<wbr>ADJ_<wbr>DBAND</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ROLL_<wbr>ADJ_<wbr>GAIN</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ROLL_<wbr>CNV</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ROLL_<wbr>DEG</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ROLL_<wbr>MAX</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ROLL_<wbr>MAXERRORS</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ROLL_<wbr>MIN</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>ROLL_<wbr>TIMEOUT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SC_<wbr>FREEKB</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SC_<wbr>NDIVE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SC_<wbr>PROFILE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SC_<wbr>RECORDABOVE</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SC_<wbr>XMITPROFILE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SDFILEDIR</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SDSIZE</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SEABIRD_<wbr>C_<wbr>G</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SEABIRD_<wbr>C_<wbr>H</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SEABIRD_<wbr>C_<wbr>I</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SEABIRD_<wbr>C_<wbr>J</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SEABIRD_<wbr>T_<wbr>G</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SEABIRD_<wbr>T_<wbr>H</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SEABIRD_<wbr>T_<wbr>I</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SEABIRD_<wbr>T_<wbr>J</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SENSOR_<wbr>MAMPS</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SENSOR_<wbr>SECS</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SENSORS</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SIM_<wbr>W</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SIMULATE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SM_<wbr>CC</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SM_<wbr>CCo</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SM_<wbr>GC</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SPEED_<wbr>FACTOR</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SPEED_<wbr>LIMITS</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>start</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>STOP_<wbr>T</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>STROBE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SUPER</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SURF</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>log_<wbr>SURFACE_<wbr>URGENCY</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SURFACE_<wbr>URGENCY_<wbr>FORCE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>SURFACE_<wbr>URGENCY_<wbr>TRY</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>T_<wbr>ABORT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>T_<wbr>BOOST</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>T_<wbr>DIVE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>T_<wbr>EPIRB</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>T_<wbr>GPS</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>T_<wbr>LOITER</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>T_<wbr>MISSION</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>T_<wbr>NO_<wbr>W</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>T_<wbr>RSLEEP</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>T_<wbr>TURN</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>T_<wbr>TURN_<wbr>SAMPINT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>TCM_<wbr>TEMP</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>TEMP</code></td><td>C</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>TGT_<wbr>AUTO_<wbr>DEFAULT</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>TGT_<wbr>DEFAULT_<wbr>LAT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>TGT_<wbr>DEFAULT_<wbr>LON</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>TGT_<wbr>LATLONG</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>TGT_<wbr>NAME</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>TGT_<wbr>RADIUS</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>UNCOM_<wbr>BLEED</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>UPLOAD_<wbr>DIVES_<wbr>MAX</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>USE_<wbr>BATHY</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>USE_<wbr>ICE</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>VBD_<wbr>CNV</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>VBD_<wbr>DBAND</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>VBD_<wbr>LP_<wbr>IGNORE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>VBD_<wbr>MAX</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>VBD_<wbr>MAXERRORS</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>VBD_<wbr>MIN</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>VBD_<wbr>TIMEOUT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>version</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>W_<wbr>ADJ_<wbr>DBAND</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>XPDR_<wbr>DEVICE</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>XPDR_<wbr>INHIBIT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>XPDR_<wbr>INT</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>XPDR_<wbr>PINGS</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>XPDR_<wbr>REP</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>log_<wbr>XPDR_<wbr>VALID</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>magnetic_<wbr>variation</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>magnetometer</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>reviewed</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>abs_<wbr>compress</code></td><td>cc/dbar</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>calibcomm</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>calibcomm_<wbr>coda</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>calibcomm_<wbr>tridentebb700chla470fdom365</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>cond_<wbr>bias</code></td><td>mS/cm</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>cpcor</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>ctcor</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>depth_<wbr>bias</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>depth_<wbr>slope_<wbr>correction</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>glider_<wbr>interstitial_<wbr>length</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>glider_<wbr>interstitial_<wbr>volume</code></td><td>m^3</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>glider_<wbr>length</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>glider_<wbr>r_<wbr>en</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>glider_<wbr>r_<wbr>fair</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>glider_<wbr>vol_<wbr>wake</code></td><td>m^3</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>glider_<wbr>wake_<wbr>entry_<wbr>thickness</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>glider_<wbr>xP</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>glider_<wbr>xT</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>glider_<wbr>zP</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>glider_<wbr>zT</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>GPS_<wbr>position_<wbr>error</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>hd_<wbr>a</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>hd_<wbr>b</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>hd_<wbr>c</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>hd_<wbr>s</code></td><td>fraction</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>id_<wbr>str</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>legato_<wbr>alpha</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>legato_<wbr>cond_<wbr>press_<wbr>correction</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>legato_<wbr>ctcoeff</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>legato_<wbr>sealevel</code></td><td>dbar * 1000</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>legato_<wbr>tau</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>legato_<wbr>time_<wbr>lag</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>legato_<wbr>use_<wbr>truck_<wbr>pressure</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>mass</code></td><td>kg</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>mass_<wbr>comp</code></td><td>kg</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>max_<wbr>stall_<wbr>speed</code></td><td>cm/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>min_<wbr>stall_<wbr>angle</code></td><td>degrees</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>min_<wbr>stall_<wbr>speed</code></td><td>cm/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>mission_<wbr>title</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>pitchbias</code></td><td>degrees</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>bound_<wbr>action</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>cond_<wbr>max</code></td><td>mS/cm</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>cond_<wbr>min</code></td><td>mS/cm</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>cond_<wbr>spike_<wbr>deep</code></td><td>mS/cm/m</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>cond_<wbr>spike_<wbr>depth</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>cond_<wbr>spike_<wbr>shallow</code></td><td>mS/cm/m</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>high_<wbr>freq_<wbr>noise</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>overall_<wbr>ctd_<wbr>percentage</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>overall_<wbr>speed_<wbr>percentage</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>salin_<wbr>max</code></td><td>1e-3</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>salin_<wbr>min</code></td><td>1e-3</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>spike_<wbr>action</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>temp_<wbr>max</code></td><td>degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>temp_<wbr>min</code></td><td>degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>temp_<wbr>spike_<wbr>deep</code></td><td>degrees_Celsius/meter</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>temp_<wbr>spike_<wbr>depth</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>QC_<wbr>temp_<wbr>spike_<wbr>shallow</code></td><td>degrees_Celsius/meter</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>rho0</code></td><td>kg/m^3</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>rollbias</code></td><td>degrees</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>sbe_<wbr>cond_<wbr>freq_<wbr>offset</code></td><td>Hz</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>sbe_<wbr>temp_<wbr>freq_<wbr>offset</code></td><td>Hz</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>sbect_<wbr>modes</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>sbect_<wbr>tau_<wbr>T</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>sbect_<wbr>unpumped</code></td><td>flag</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>sg_<wbr>configuration</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>sg_<wbr>ct_<wbr>geometry</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>sg_<wbr>ct_<wbr>type</code></td><td>flag</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>sg_<wbr>sensor_<wbr>geometry</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>sg_<wbr>vehicle_<wbr>geometry</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>solve_<wbr>flare_<wbr>apogee_<wbr>speed</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>temp_<wbr>bias</code></td><td>degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>temp_<wbr>ref</code></td><td>degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>therm_<wbr>expan</code></td><td>cc/degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>use_<wbr>adcppressure</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>use_<wbr>auxcompass</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>use_<wbr>auxpressure</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>vbdbias</code></td><td>cc</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>sg_<wbr>cal_<wbr>volmax</code></td><td>m^3</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>start_<wbr>of_<wbr>climb_<wbr>time</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>surface_<wbr>curr_<wbr>east</code></td><td>cm/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>surface_<wbr>curr_<wbr>error</code></td><td>m/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>surface_<wbr>curr_<wbr>north</code></td><td>cm/s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>surface_<wbr>curr_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>total_<wbr>flight_<wbr>time_<wbr>s</code></td><td>s</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>tridentebb700chla470fdom365</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>ontime_<wbr>a</code></td><td>secs</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>ontime_<wbr>b</code></td><td>secs</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>samples_<wbr>a</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>samples_<wbr>b</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>starttime_<wbr>a</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>starttime_<wbr>b</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>stoptime_<wbr>a</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>stoptime_<wbr>b</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>timeouts_<wbr>a</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>timeouts_<wbr>b</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="2">2</td><td class="num">2</td></tr>
+</tbody></table></div></details>
+<details class="fold"><summary><code>ctd_data_point</code> (48)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>absolute_<wbr>salinity</code></td><td>g/kg</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>buoyancy</code></td><td>g</td><td><code>float64</code></td><td class="num" data-sort="3706">3,706</td><td class="num">3</td></tr><tr><td><code>conductivity</code></td><td>S/m</td><td><code>float64</code></td><td class="num" data-sort="3872">3,872</td><td class="num">3</td></tr><tr><td><code>conductivity_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>conductivity_<wbr>raw</code></td><td>S/m</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>conductivity_<wbr>raw_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>conservative_<wbr>temperature</code></td><td>degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>ctd_<wbr>depth</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>ctd_<wbr>pressure</code></td><td>dbar</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>ctd_<wbr>pressure_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>ctd_<wbr>time</code></td><td>seconds since 1970-1-1 00:00:00</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>delta_<wbr>time_<wbr>s</code></td><td>s</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>density</code></td><td>g/m^3</td><td><code>float64</code></td><td class="num" data-sort="3706">3,706</td><td class="num">3</td></tr><tr><td><code>density_<wbr>insitu</code></td><td>g/m^3</td><td><code>float64</code></td><td class="num" data-sort="3706">3,706</td><td class="num">3</td></tr><tr><td><code>dissolved_<wbr>oxygen_<wbr>sat</code></td><td>micromoles/kg</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>east_<wbr>displacement</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>east_<wbr>displacement_<wbr>gsm</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>glide_<wbr>angle</code></td><td>degrees</td><td><code>float64</code></td><td class="num" data-sort="3872">3,872</td><td class="num">3</td></tr><tr><td><code>glide_<wbr>angle_<wbr>gsm</code></td><td>degrees</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>gsw_<wbr>sigma0</code></td><td>kg/m^3</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>gsw_<wbr>sigma3</code></td><td>kg/m^3</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>gsw_<wbr>sigma4</code></td><td>kg/m^3</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>horz_<wbr>speed</code></td><td>cm/s</td><td><code>float64</code></td><td class="num" data-sort="3872">3,872</td><td class="num">3</td></tr><tr><td><code>horz_<wbr>speed_<wbr>gsm</code></td><td>cm/s</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>latitude</code></td><td>degrees_north</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>latitude_<wbr>gsm</code></td><td>degrees_north</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>longitude</code></td><td>degrees_east</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>longitude_<wbr>gsm</code></td><td>degrees_east</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>north_<wbr>displacement</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>north_<wbr>displacement_<wbr>gsm</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>polar_<wbr>heading</code></td><td>radians</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>salinity</code></td><td>1e-3</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>salinity_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>salinity_<wbr>raw</code></td><td>1e-3</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>salinity_<wbr>raw_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>sigma_<wbr>t</code></td><td>g/m^3</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>sigma_<wbr>theta</code></td><td>kg/m^3</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>sound_<wbr>velocity</code></td><td>m/s</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>speed</code></td><td>cm/s</td><td><code>float64</code></td><td class="num" data-sort="3872">3,872</td><td class="num">3</td></tr><tr><td><code>speed_<wbr>gsm</code></td><td>cm/s</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>speed_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>temperature</code></td><td>degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>temperature_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>temperature_<wbr>raw</code></td><td>degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>temperature_<wbr>raw_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>theta</code></td><td>degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="3866">3,866</td><td class="num">3</td></tr><tr><td><code>vert_<wbr>speed</code></td><td>cm/s</td><td><code>float64</code></td><td class="num" data-sort="3872">3,872</td><td class="num">3</td></tr><tr><td><code>vert_<wbr>speed_<wbr>gsm</code></td><td>cm/s</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr>
+</tbody></table></div></details>
+<details class="fold"><summary><code>gc_event</code> (42)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>gc_<wbr>data_<wbr>pts</code></td><td>1</td><td><code>int32</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>depth</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>end_<wbr>secs</code></td><td>seconds  since 1970-1-1 00:00:00</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>flags</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>humid</code></td><td>percent</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>intP</code></td><td>psia</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>ob_<wbr>vertv</code></td><td>cm/s</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>pitch_<wbr>ad</code></td><td>1</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>pitch_<wbr>ad_<wbr>start</code></td><td>1</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>pitch_<wbr>ctl</code></td><td>cm</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>pitch_<wbr>end_<wbr>time</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="15">15</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>pitch_<wbr>errors</code></td><td>1</td><td><code>int32</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>pitch_<wbr>i</code></td><td>A</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>pitch_<wbr>secs</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>pitch_<wbr>st</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>pitch_<wbr>start_<wbr>time</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="15">15</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>pitch_<wbr>volts</code></td><td>V</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>roll_<wbr>ad</code></td><td>1</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>roll_<wbr>ad_<wbr>start</code></td><td>1</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>roll_<wbr>ctl</code></td><td>cm</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>roll_<wbr>end_<wbr>time</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="16">16</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>roll_<wbr>errors</code></td><td>1</td><td><code>int32</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>roll_<wbr>i</code></td><td>A</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>roll_<wbr>secs</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>roll_<wbr>st</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>roll_<wbr>start_<wbr>time</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="16">16</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>roll_<wbr>volts</code></td><td>V</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>st_<wbr>secs</code></td><td>seconds since 1970-1-1 00:00:00</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>ad</code></td><td>1</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>ad_<wbr>start</code></td><td>1</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>ctl</code></td><td>cm</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>end_<wbr>time</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="16">16</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>errors</code></td><td>1</td><td><code>int32</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>i</code></td><td>A</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>pot1_<wbr>ad</code></td><td>1</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>pot1_<wbr>ad_<wbr>start</code></td><td>1</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>pot2_<wbr>ad</code></td><td>1</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>pot2_<wbr>ad_<wbr>start</code></td><td>1</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>secs</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>st</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>start_<wbr>time</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="16">16</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>vbd_<wbr>volts</code></td><td>V</td><td><code>float64</code></td><td class="num" data-sort="21">21</td><td class="num">3</td></tr>
+</tbody></table></div></details>
+<details class="fold"><summary><code>gps_info</code> (12)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>log_<wbr>gps_<wbr>driftheading</code></td><td>degrees true</td><td><code>float64</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr><tr><td><code>log_<wbr>gps_<wbr>driftspeed</code></td><td>knots</td><td><code>float64</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr><tr><td><code>log_<wbr>gps_<wbr>final_<wbr>fix_<wbr>time</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr><tr><td><code>log_<wbr>gps_<wbr>first_<wbr>fix_<wbr>time</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr><tr><td><code>log_<wbr>gps_<wbr>hdop</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr><tr><td><code>log_<wbr>gps_<wbr>hpe</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr><tr><td><code>log_<wbr>gps_<wbr>lat</code></td><td>degrees_north</td><td><code>float64</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr><tr><td><code>log_<wbr>gps_<wbr>lon</code></td><td>degrees_east</td><td><code>float64</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr><tr><td><code>log_<wbr>gps_<wbr>magvar</code></td><td>degrees</td><td><code>float64</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr><tr><td><code>log_<wbr>gps_<wbr>n_<wbr>satellites</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr><tr><td><code>log_<wbr>gps_<wbr>qc</code></td><td>—</td><td><code>|S1</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr><tr><td><code>log_<wbr>gps_<wbr>time</code></td><td>seconds since 1970-1-1 00:00:00</td><td><code>float64</code></td><td class="num" data-sort="9">9</td><td class="num">3</td></tr>
+</tbody></table></div></details>
+<details class="fold"><summary><code>sg_data_point</code> (12)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>depth</code></td><td>meters</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>eng_<wbr>depth</code></td><td>cm</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>eng_<wbr>elaps_<wbr>t</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>eng_<wbr>elaps_<wbr>t_<wbr>0000</code></td><td>seconds</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>eng_<wbr>GC_<wbr>state</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>eng_<wbr>head</code></td><td>degrees</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>eng_<wbr>pitchAng</code></td><td>degrees</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>eng_<wbr>rec</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>eng_<wbr>rollAng</code></td><td>degrees</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>eng_<wbr>vbdCC</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>pressure</code></td><td>dbar</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>time</code></td><td>seconds since 1970-1-1 00:00:00</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr>
+</tbody></table></div></details>
+<details class="fold"><summary><code>codaTODO_data_point</code> (6)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>codaTODO_<wbr>compensated_<wbr>O2</code></td><td>micromoles/L</td><td><code>float64</code></td><td class="num" data-sort="1956">1,956</td><td class="num">3</td></tr><tr><td><code>codaTODO_<wbr>O2_<wbr>sat</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="1956">1,956</td><td class="num">3</td></tr><tr><td><code>codaTODO_<wbr>phase</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="1956">1,956</td><td class="num">3</td></tr><tr><td><code>codaTODO_<wbr>temp</code></td><td>degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="1956">1,956</td><td class="num">3</td></tr><tr><td><code>codaTODO_<wbr>time</code></td><td>seconds since 1970-1-1 00:00:00</td><td><code>float64</code></td><td class="num" data-sort="1956">1,956</td><td class="num">3</td></tr><tr><td><code>codaTODO_<wbr>uncompensated_<wbr>O2</code></td><td>micromoles/L</td><td><code>float64</code></td><td class="num" data-sort="1956">1,956</td><td class="num">3</td></tr>
+</tbody></table></div></details>
+<details class="fold"><summary><code>legato_data_point</code> (5)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>legato_<wbr>conduc</code></td><td>mS/cm</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>legato_<wbr>conducTemp</code></td><td>degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>legato_<wbr>pressure</code></td><td>dbar</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>legato_<wbr>temp</code></td><td>degrees_Celsius</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr><tr><td><code>legato_<wbr>time</code></td><td>seconds since 1970-1-1 00:00:00</td><td><code>float64</code></td><td class="num" data-sort="3904">3,904</td><td class="num">3</td></tr>
+</tbody></table></div></details>
+<details class="fold"><summary><code>tridentebb700chla470fdom365_data_point</code> (4)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>tridentebb700chla470fdom365_<wbr>bb700</code></td><td>meter^-1 steradian^-1</td><td><code>float64</code></td><td class="num" data-sort="1957">1,957</td><td class="num">3</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>chla470</code></td><td>micrograms/liter</td><td><code>float64</code></td><td class="num" data-sort="1957">1,957</td><td class="num">3</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>fdom365</code></td><td>1e-9</td><td><code>float64</code></td><td class="num" data-sort="1957">1,957</td><td class="num">3</td></tr><tr><td><code>tridentebb700chla470fdom365_<wbr>time</code></td><td>seconds since 1970-1-1 00:00:00</td><td><code>float64</code></td><td class="num" data-sort="1957">1,957</td><td class="num">3</td></tr>
+</tbody></table></div></details>
+<details class="fold"><summary><code>gc_state</code> (3)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>gc_<wbr>state_<wbr>eop_<wbr>code</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="25">25</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>state_<wbr>secs</code></td><td>seconds since 1970-1-1 00:00:00</td><td><code>float64</code></td><td class="num" data-sort="25">25</td><td class="num">3</td></tr><tr><td><code>gc_<wbr>state_<wbr>state</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="25">25</td><td class="num">3</td></tr>
+</tbody></table></div></details>
+<details class="fold"><summary><code>magnetometer_data_point</code> (3)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>eng_<wbr>mag_<wbr>x</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>eng_<wbr>mag_<wbr>y</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr><tr><td><code>eng_<wbr>mag_<wbr>z</code></td><td>—</td><td><code>float64</code></td><td class="num" data-sort="721">721</td><td class="num">3</td></tr>
+</tbody></table></div></details>
+<details class="fold"><summary><code>depth_data_point</code> (2)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>depth_<wbr>depth</code></td><td>cm</td><td><code>float64</code></td><td class="num" data-sort="719">719</td><td class="num">3</td></tr><tr><td><code>depth_<wbr>time</code></td><td>seconds since 1970-1-1 00:00:00</td><td><code>float64</code></td><td class="num" data-sort="719">719</td><td class="num">3</td></tr>
+</tbody></table></div></details>
+<details class="fold"><summary><code>trajectory</code> (1)</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody><tr><td><code>trajectory</code></td><td>—</td><td><code>int32</code></td><td class="num" data-sort="3">3</td><td class="num">3</td></tr>
+</tbody></table></div></details>
+<p class="fig-source">source: seagliderOG1/reports/basestation.py:variables_by_dimension</p>
+</section>
+
+<footer>Generated by seagliderOG1 v0.3.0.post1.dev1 &nbsp;&middot;&nbsp; 2026-11-11T11:59:16+00:00</footer>
+<script>
+document.querySelectorAll('table').forEach(function (table) {
+  if (table.hasAttribute('data-nosort')) { return; }
+  var head = table.tHead && table.tHead.rows[0];
+  var body = table.tBodies[0];
+  if (!head || !body) { return; }
+  function cellKey(row, idx) {
+    var cell = row.cells[idx];
+    if (!cell) { return ''; }
+    var ds = cell.getAttribute('data-sort');
+    return ds !== null ? ds : cell.textContent.trim();
+  }
+  function numeric(idx) {
+    var rows = body.rows, seen = false;
+    for (var i = 0; i < rows.length; i++) {
+      var k = cellKey(rows[i], idx);
+      if (k === '') { continue; }
+      if (!/^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(k)) { return false; }
+      seen = true;
+    }
+    return seen;
+  }
+  Array.prototype.forEach.call(head.cells, function (th, idx) {
+    if (th.hasAttribute('data-nosort')) { return; }
+    th.tabIndex = 0;
+    function sort() {
+      var asc = !(th.classList.contains('sorted-asc'));
+      var isNum = numeric(idx);
+      var rows = Array.prototype.slice.call(body.rows);
+      rows.sort(function (a, b) {
+        var ka = cellKey(a, idx), kb = cellKey(b, idx);
+        if (isNum) { ka = parseFloat(ka) || 0; kb = parseFloat(kb) || 0; }
+        else { ka = ka.toLowerCase(); kb = kb.toLowerCase(); }
+        if (ka < kb) { return asc ? -1 : 1; }
+        if (ka > kb) { return asc ? 1 : -1; }
+        return 0;
+      });
+      rows.forEach(function (r) { body.appendChild(r); });
+      Array.prototype.forEach.call(head.cells, function (o) {
+        o.classList.remove('sorted-asc', 'sorted-desc');
+      });
+      th.classList.add(asc ? 'sorted-asc' : 'sorted-desc');
+    }
+    th.addEventListener('click', sort);
+    th.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sort(); }
+    });
+  });
+});
+</script>
+
+<script>
+document.querySelectorAll('h2').forEach(h => {
+  const a = document.createElement('a');
+  a.href = '#top'; a.className = 'top-link'; a.textContent = '↑ top';
+  h.appendChild(a);
+});
+</script>
+
+</body>
+</html>

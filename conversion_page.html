@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The conversion page &mdash; seagliderOG1 0.2.0.post1.dev7 documentation</title>
+  <title>The report pages &mdash; seagliderOG1 0.3.0.post1.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=20758594" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=7fb89329"></script>
+      <script src="_static/documentation_options.js?v=a448664d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -59,7 +59,9 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Report</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">The conversion page</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The report pages</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-mission-yaml-checks">The mission.yaml checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#salinity-on-the-basestation-page">Salinity on the Basestation page</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#what-the-conversion-records">What the conversion records</a></li>
 </ul>
 </li>
@@ -103,7 +105,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">The conversion page</li>
+      <li class="breadcrumb-item active">The report pages</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/conversion_page.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -113,14 +115,69 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="the-conversion-page">
-<span id="conversion-page"></span><h1>The conversion page<a class="headerlink" href="#the-conversion-page" title="Link to this heading"></a></h1>
-<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span></code> (and <code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code>) writes an HTML page for the OG1 file. A
-draft (<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">draft</span></code>) gets the same page with its global attributes replaced by the
-basestation files’ own.</p>
-<p>The page opens with <strong>mission.yaml against the data</strong> when the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> the conversion
-was given (<code class="docutils literal notranslate"><span class="pre">process</span></code>, or <code class="docutils literal notranslate"><span class="pre">seagliderOG1.process</span></code>) and the output disagree or fall short, as
-copyable boxes of <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> lines. Each check is shown only when it finds something:</p>
+  <section id="the-report-pages">
+<span id="conversion-page"></span><h1>The report pages<a class="headerlink" href="#the-report-pages" title="Link to this heading"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">report</span></code> (and <code class="docutils literal notranslate"><span class="pre">process</span> <span class="pre">--report</span></code>) writes a set of linked HTML pages beside the
+OG1 file, each named <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_&lt;page&gt;.html</span></code>. They describe the same mission for two readers: one
+who knows the basestation files, and one who knows OG1. See the <a class="reference internal" href="example_report.html#example-report"><span class="std std-ref">Example report</span></a>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 18.0%" />
+<col style="width: 82.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Page</p></th>
+<th class="head"><p>What it shows</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Conversion</strong> (<code class="docutils literal notranslate"><span class="pre">_conversion</span></code>)</p></td>
+<td><p>The landing page: a summary of what went in and what came out, the losses, the flight
+model’s inputs, the sensors and their calibration comments, one variable traced from
+the basestation file to the OG1 file, and the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> checks below.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Variables</strong> (<code class="docutils literal notranslate"><span class="pre">_variables</span></code>)</p></td>
+<td><p>Every basestation variable once, beside its OG1 counterpart: name, fate, dimension,
+units, dtype and value counts (basestation form above, OG1 form below), vocabulary, the
+inputs and method of each variable the converter built, and marks for each step and
+loss. Search by either name; filter by fate, subsystem, a loss, a scalar, an OG1 name
+without a vocabulary link, or <em>candidate for OG1</em> (the project’s proposed OG1
+parameters, <code class="xref py py-data docutils literal notranslate"><span class="pre">seagliderOG1.vocabularies.OG1_CANDIDATE_VARS</span></code>; the ones the file
+does not hold are listed under the filters).</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Processing</strong> (<code class="docutils literal notranslate"><span class="pre">_processing</span></code>)</p></td>
+<td><p>Every step of the conversion in the order it ran, with what each step did to this
+mission, and the unit changes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Phase</strong> (<code class="docutils literal notranslate"><span class="pre">_phase</span></code>)</p></td>
+<td><p>How <code class="docutils literal notranslate"><span class="pre">PHASE</span></code> was assigned and what it gives; see <a class="reference internal" href="phase.html#phase"><span class="std std-ref">How the phase is assigned</span></a>. Not written for a
+draft.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Basestation</strong> (<code class="docutils literal notranslate"><span class="pre">_basestation</span></code>)</p></td>
+<td><p>The dive files as read, for a mission of any length: the dimension sizes by dive
+(shaded by samples per minute of dive), the variables not in every dive (one strip per
+pattern), the parameters that change between dives, the basestation’s salinity
+corrections, the global attributes that differ between files, and every variable by
+dimension. Needs the conversion record.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>OG1 format</strong> (<code class="docutils literal notranslate"><span class="pre">_og1</span></code>)</p></td>
+<td><p>The OG1 file read as OG1: conformance against the OG1 requirements, the OG1 variables
+by group, the sensors, the per-dive parameters decoded, the variables passed through
+under basestation names, and the global attributes with the Conventions check and the
+history. Not written for a draft.</p></td>
+</tr>
+</tbody>
+</table>
+<p>Each page opens with the same masthead: the glider and site, the deployment’s facts, and the
+nav to the other pages. The pages’ sections are numbered, <code class="docutils literal notranslate"><span class="pre">(1)</span></code>, <code class="docutils literal notranslate"><span class="pre">(2)</span></code>, …, with reference
+sections (the glossary, the global attributes) lettered <code class="docutils literal notranslate"><span class="pre">(A)</span></code>, <code class="docutils literal notranslate"><span class="pre">(B)</span></code>.</p>
+<p>A draft (<code class="docutils literal notranslate"><span class="pre">seagliderOG1</span> <span class="pre">draft</span></code>) gets the Conversion, Variables, Processing and Basestation
+pages, with the basestation files’ own global attributes on its Conversion page.</p>
+<section id="the-mission-yaml-checks">
+<h2>The mission.yaml checks<a class="headerlink" href="#the-mission-yaml-checks" title="Link to this heading"></a></h2>
+<p>The Conversion page has a section <strong>mission.yaml against the data</strong> when the <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>
+the conversion was given (<code class="docutils literal notranslate"><span class="pre">process</span></code>, or <code class="docutils literal notranslate"><span class="pre">seagliderOG1.process</span></code>) and the output disagree or
+fall short, as copyable boxes of <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code> lines. Each check is shown only when it finds something:</p>
 <ul class="simple">
 <li><p><em>Dive range</em> — the requested <code class="docutils literal notranslate"><span class="pre">dives</span></code> against the first and last dive that reached the file
 (a dive outside the files, or an end dive rejected as empty or invalid), naming dives inside
@@ -155,52 +212,23 @@ itself (<code class="docutils literal notranslate"><span class="pre">standard_na
 </ul>
 <p>The dive, platform-pair and institution checks read the <code class="docutils literal notranslate"><span class="pre">config</span></code> the conversion record records, so a page
 for a file converted before it was recorded shows only the other two. A draft has no such section.</p>
-<p>Its sections, in order:</p>
-<ol class="arabic simple">
-<li><p><strong>Before → after</strong> — files, dives, size on disk, samples on the shared axis, variable and
-global-attribute counts, time span and OG1-requirement coverage, basestation input beside
-OG1 output, with a one-line verdict. The input column reads the conversion record; its cells show
-<code class="docutils literal notranslate"><span class="pre">—</span></code> when the conversion record is absent.</p></li>
-<li><p><strong>The OG1 file</strong> — the output read by what OG1 says about each variable, not by where it
-came from, with an <em>Orig var</em> / <em>Orig dim</em> column pair naming the basestation source:</p>
+</section>
+<section id="salinity-on-the-basestation-page">
+<h2>Salinity on the Basestation page<a class="headerlink" href="#salinity-on-the-basestation-page" title="Link to this heading"></a></h2>
+<p>The basestation writes salinity twice: corrected (<code class="docutils literal notranslate"><span class="pre">salinity</span></code>, which becomes <code class="docutils literal notranslate"><span class="pre">PSAL</span></code>) and
+uncorrected (<code class="docutils literal notranslate"><span class="pre">salinity_raw</span></code>). The Basestation page compares them, and each with practical
+salinity recomputed from the basestation’s conductivity, temperature and <code class="docutils literal notranslate"><span class="pre">ctd_pressure</span></code> with
+<code class="docutils literal notranslate"><span class="pre">gsw.SP_from_C</span></code> (for the page only; nothing is written):</p>
 <ul class="simple">
-<li><p><em>Required by OG1</em> — the variables (and the <code class="docutils literal notranslate"><span class="pre">N_MEASUREMENTS</span></code> dimension) a valid OG1 file
-must carry, present/absent, from <code class="xref py py-data docutils literal notranslate"><span class="pre">seagliderOG1.vocabularies.OG1_REQUIRED_VARS</span></code> (the
-upstream <code class="docutils literal notranslate"><span class="pre">ioos/cc-plugin-og</span></code> checker list).</p></li>
-<li><p><em>Sensors named by OG1</em> — one row per <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable: type, maker, model, serial
-number, calibration date, and the variables whose <code class="docutils literal notranslate"><span class="pre">sensor</span></code> attribute names it. Amber: a
-serial or date that is <code class="docutils literal notranslate"><span class="pre">UNK</span></code> or empty (files from 0.2.0 and earlier wrote every digit
-zero), or a serial shared by two sensors (a calibration comment copied between
-instruments); correct either with <code class="docutils literal notranslate"><span class="pre">sensors:</span></code> in <code class="docutils literal notranslate"><span class="pre">mission.yaml</span></code>.</p></li>
-<li><p><em>Calibration comments</em> — one row per <code class="docutils literal notranslate"><span class="pre">SENSOR_*</span></code> variable: the basestation
-<code class="docutils literal notranslate"><span class="pre">sg_cal_calibcomm*</span></code> variable and its text (source), beside the sensor variable, its
-serial number, calibration date and per-channel dates, the rules that read them, and a
-note (result). Amber: <code class="docutils literal notranslate"><span class="pre">UNK</span></code>, a serial from a lone token, a calibration date after the
-first sample or more than 30 years before it, or a shared serial. See
-<a class="reference internal" href="calibration_comments.html#calibration-comments"><span class="std std-ref">How calibration comments are read</span></a>.</p></li>
-<li><p><em>Named by OG1</em> — variables OG1 defines but does not require (science, phase, QC).</p></li>
-<li><p><em>Candidate for OG1</em> — variables the project proposes to canonise, from
-<code class="xref py py-data docutils literal notranslate"><span class="pre">seagliderOG1.vocabularies.OG1_CANDIDATE_VARS</span></code> (e.g. the flight-model inputs and
-outputs), shown present/absent; edit that list as candidates are agreed.</p></li>
-<li><p><em>Carried through</em> — everything else, summarised by basestation family.</p></li>
-<li><p><em>Same quantity, more than once</em> — where several variables share a <code class="docutils literal notranslate"><span class="pre">standard_name</span></code>, each
-compared (member − reference) to the OG1 reference member, in its units.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">salinity_raw</span></code> − SP(<code class="docutils literal notranslate"><span class="pre">conductivity_raw</span></code>, <code class="docutils literal notranslate"><span class="pre">temperature_raw</span></code>) — the plain conversion;
+about zero when gsw and the basestation agree on it;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">salinity</span></code> − <code class="docutils literal notranslate"><span class="pre">salinity_raw</span></code> — the basestation’s corrections in total;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">salinity</span></code> − SP(<code class="docutils literal notranslate"><span class="pre">conductivity</span></code>, <code class="docutils literal notranslate"><span class="pre">temperature</span></code>) — what is left after the corrected
+temperature and conductivity: corrections the basestation applies to salinity itself.</p></li>
 </ul>
-</li>
-<li><p><strong>Reconciliation</strong> — each basestation variable’s one fate (renamed, passed through,
-consumed, removed, dropped, skipped) with a count, a Meaning column, and a fate histogram.</p></li>
-<li><p><strong>Presence across dives</strong> — the patterns above, with each pattern’s share of the input dives.</p></li>
-<li><p><strong>Dimensions</strong> — each basestation dimension’s fate, the samples it supplied, and the
-dimension it ended on.</p></li>
-<li><p><strong>Derived variables</strong> — variables the converter built, with their basestation sources.</p></li>
-<li><p><strong>Dropped and removed variables</strong> — variables left out by <code class="docutils literal notranslate"><span class="pre">keep_variables</span></code> or the package
-drop list (empty, so every basestation variable is retained).</p></li>
-<li><p><strong>By basestation origin</strong> — the same output variables grouped by original dimension, with a
-Valid % column and a per-group baseline (the share of the axis that dimension supplied).</p></li>
-<li><p><strong>Global attributes</strong> — grouped by convention and OG1 tier, with recomputed coverage bounds
-and the history.</p></li>
-<li><p><strong>Scalar parameters</strong> — the per-dive and constant scalars, split by group, each collapsible.</p></li>
-</ol>
+<p>Each gives the median, RMS and largest difference, and the median by dive as a strip, so a
+correction that drifts through the mission shows.</p>
+</section>
 <section id="what-the-conversion-records">
 <h2>What the conversion records<a class="headerlink" href="#what-the-conversion-records" title="Link to this heading"></a></h2>
 <p>The output file records what the conversion did, so the treatment can be read back from the
