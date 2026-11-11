@@ -1,0 +1,21 @@
+{#- The per-dive parameters table, shared by the OG1 format and Basestation pages;
+    rows from reports/og1.py:per_dive_rows. -#}
+{% macro wbr(name) -%}
+{% for part in name.split("_") %}{{ part }}{% if not loop.last %}_<wbr>{% endif %}{% endfor %}
+{%- endmacro -%}
+{% macro caption(max_runs) -%}
+One with at most {{ max_runs }} runs of equal values lists them by dive range; one that changes more often is given as its range, with a strip of one cell per dive (hover a cell for its dive and value), so the table stays the same size for a long mission.
+{%- endmacro -%}
+{% macro dive_table(rows, strip_width) -%}
+<div class="table-wrap">
+<table class="nc sortable">
+<thead><tr><th>Parameter</th><th>Units</th><th>Dives with a value</th><th>Over the mission</th></tr></thead>
+<tbody>
+{%- for r in rows %}
+<tr><td><code>{{ wbr(r.name) }}</code></td><td>{{ r.units }}</td><td class="num">{{ r.dives }}</td>
+<td>{{ r.summary }}{% if r.runs %}<br><span class="muted">{{ r.runs | join("; ") }}</span>{% endif %}
+{%- if r.strip %}<br><svg class="strip" width="{{ strip_width }}" height="14" role="img" aria-label="{{ r.name }} by dive">{% for c in r.strip %}<rect x="{{ c.x }}" y="0" width="{{ c.width }}" height="14" fill="{{ c.fill }}"><title>{{ c.title }}</title></rect>{% endfor %}</svg><br><span class="muted strip-legend">{{ r.legend }}</span>{% endif %}</td></tr>
+{%- endfor %}
+</tbody></table>
+</div>
+{%- endmacro %}

@@ -1,0 +1,136 @@
+{% import "_nc_tables.html" as t -%}
+{% import "_nav.html" as navm -%}
+{% import "_masthead.html" as mh -%}
+{% macro wbr(name) -%}
+{% for part in name.split("_") %}{{ part }}{% if not loop.last %}_<wbr>{% endif %}{% endfor %}
+{%- endmacro -%}
+{% macro var_table(rows, show_vocab=true) -%}
+<div class="table-wrap">
+<table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>long_name / standard_name</th><th>Units</th><th>dtype</th><th>Min / max or value</th><th>Values</th>{% if show_vocab %}<th>Vocabulary</th>{% endif %}<th data-nosort>Attributes</th></tr></thead>
+<tbody>
+{%- for r in rows %}
+<tr><td><code>{{ wbr(r.name) }}</code></td><td>{{ r.long_name }}{% if r.standard_name %}<br><code class="muted">{{ wbr(r.standard_name) }}</code>{% endif %}</td>
+<td>{{ r.units or "—" }}</td><td><code>{{ r.dtype }}</code></td><td class="num">{{ r.value }}</td><td class="num" data-sort="{{ r.count }}">{{ "{:,}".format(r.count) }}</td>
+{%- if show_vocab %}<td>{% if r.vocabulary %}<a href="{{ r.vocabulary }}">{{ r.vocabulary.rstrip("/").split("/")[-1] }}</a>{% endif %}</td>{% endif %}
+<td>{{ t.attr_disclosure(r.attrs) }}</td></tr>
+{%- endfor %}
+</tbody></table>
+</div>
+{%- endmacro -%}
+{% import "_per_dive.html" as pd -%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ masthead.title }} — {{ masthead.type }}</title>
+<style>
+{{ css | safe }}
+section { margin: 1.4rem 0; }
+.table-wrap { overflow-x: auto; }
+td.num { text-align: right; white-space: nowrap; }
+td.unmet { background: var(--warn-bg); box-shadow: inset 3px 0 0 var(--warn); }
+.met { color: var(--ok); font-weight: 600; }
+.missing { color: var(--error); font-weight: 600; }
+details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
+.var-list { font-size: 0.92rem; }
+svg.strip { margin-top: 4px; max-width: 100%; }
+.strip-legend { font-size: var(--fs-xs); }
+.tier-line { font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="top"></div>
+{{ mh.masthead(masthead, page_nav) }}
+{%- set secs = number_sections([("conformance", "Conformance"), ("og1-variables", "OG1 variables"), ("sensors", "Sensors"),
+    ("per-dive", "Per-dive parameters"), ("passthrough", "Passed through"), ("globals", "Global attributes")]) %}
+{{ mh.jump_nav(secs) }}
+
+<section id="conformance">
+<h2>{{ secs.mark["conformance"] }} OG1 conformance</h2>
+<p class="caption">What the OG1 format asks of the file, and whether this file meets it, checked against the package's OG1 tables (cc-plugin-og runs in CI). This page describes the file only; how it was made is on the <a href="{{ conversion_href }}">Conversion</a> page.
+<strong>Highlight rule:</strong> a mandatory requirement the file does not meet.</p>
+<p class="tier-line">{% for tier, met, total in tier_counts %}{{ tier }} {{ met }} / {{ total }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+{%- set mand = requirements | selectattr("tier", "equalto", "mandatory") | list %}
+{%- set rest = requirements | rejectattr("tier", "equalto", "mandatory") | list %}
+{% macro req_table(rows) -%}
+<table class="nc">
+<thead><tr><th>Kind</th><th>Requirement</th><th>OG1 tier</th><th>Met</th><th>Value</th></tr></thead>
+<tbody>
+{%- for r in rows %}
+<tr><td>{{ r.kind }}</td><td><code>{{ r.name }}</code></td><td>{{ r.tier }}</td>
+<td{% if not r.met and r.tier == "mandatory" %} class="unmet"{% endif %}><span class="{{ 'met' if r.met else 'missing' }}">{{ "yes" if r.met else "no" }}</span></td>
+<td class="cell-wrap">{{ r.value }}</td></tr>
+{%- endfor %}
+</tbody></table>
+{%- endmacro %}
+{{ req_table(mand) }}
+<details class="fold"><summary>Highly desirable and suggested ({{ rest | length }})</summary>{{ req_table(rest) }}</details>
+<p class="fig-source">source: seagliderOG1/reports/og1.py:conformance_rows</p>
+</section>
+
+<section id="og1-variables">
+<h2>{{ secs.mark["og1-variables"] }} OG1 variables</h2>
+<p class="caption">The {{ n_og1 }} variables under OG1 names, grouped. <em>Values</em> counts the non-missing values (on N_MEASUREMENTS) or 1 for a single value. The per-dive ones are decoded in <a href="#per-dive">Per-dive parameters</a>; variables kept under basestation names are in <a href="#passthrough">Passed through</a>.</p>
+{%- for group, rows in groups %}
+<h3>{{ group }} ({{ rows | length }})</h3>
+{{ var_table(rows) }}
+{%- endfor %}
+<p class="fig-source">source: seagliderOG1/reports/og1.py:og1_variable_groups</p>
+</section>
+
+<section id="sensors">
+<h2>{{ secs.mark["sensors"] }} Sensors</h2>
+<p class="caption">The <code>SENSOR_*</code> records. How each serial number and calibration date was read from the basestation calibration comments is on the <a href="{{ conversion_href }}#calibration">Conversion</a> page.</p>
+{{ t.sensor_table(sensors, source=sensor_source) }}
+</section>
+
+<section id="per-dive">
+<h2>{{ secs.mark["per-dive"] }} Per-dive parameters</h2>
+<p class="caption">{{ n_per_dive }} parameters change between dives. The file stores each as JSON text <code>{"dives": [...], "values": [...]}</code>; decoded here. {{ pd.caption(max_runs) }} OG1-named ones first; the rest folded by family.</p>
+{%- if per_dive_og1 %}{{ pd.dive_table(per_dive_og1, strip_width) }}{% endif %}
+{%- for family, rows in per_dive_families %}
+<details class="fold"><summary>{{ family }} ({{ rows | length }})</summary>{{ pd.dive_table(rows, strip_width) }}</details>
+{%- endfor %}
+<p class="fig-source">source: seagliderOG1/reports/og1.py:per_dive_rows</p>
+</section>
+
+<section id="passthrough">
+<h2>{{ secs.mark["passthrough"] }} Passed-through variables</h2>
+<p class="caption">{{ n_passthrough }} variables kept under their basestation names (OG1 allows variables it does not define), folded by the basestation dimension they came from.</p>
+{%- for dim, rows in passthrough %}
+<details class="fold"><summary><code>{{ dim }}</code> ({{ rows | length }})</summary>{{ var_table(rows, show_vocab=false) }}</details>
+{%- endfor %}
+<p class="fig-source">source: seagliderOG1/reports/og1.py:passthrough_groups</p>
+</section>
+
+<section id="globals">
+<h2>{{ secs.mark["globals"] }} Global attributes</h2>
+<p class="caption{% if requirement_amber %} cell-bad{% endif %}">{{ requirement_text }}</p>
+{{ t.globals_tables(global_groups, computed=coverage_computed, source=globals_source,
+   coverage_note="amber: the file's stated bound differs from the value recomputed from the data by more than the tolerance.") }}
+<div class="{% if conventions.short %}warn{% else %}caption{% endif %} conventions-box">
+<p><strong>Conventions</strong> claims <code>{{ conventions.claim or "(none)" }}</code>. What the file holds against it (presence only; amber when any count is short):</p>
+<ul>
+{%- for level in conventions.acdd %}
+<li>ACDD 1.3 {{ level.level }}: {{ level.have }} of {{ level.total }} present{% if level.missing %} — missing {{ level.missing|join(", ") }}{% endif %}</li>
+{%- endfor %}
+<li>CF: {% if conventions.no_units %}{{ conventions.no_units|length }} floating-point variables on a dimension have no <code>units</code> <details class="vars"><summary>list</summary>{{ conventions.no_units|join(", ") }}</details>{% else %}every floating-point variable on a dimension has <code>units</code>{% endif %}</li>
+</ul>
+<p>Not a compliance check: run cc-plugin-og (OG1) or the IOOS compliance-checker (CF, ACDD) on the file.</p>
+</div>
+<h3>History</h3>
+{{ t.properties_table(history_rows, header=("#", "History")) }}
+<details class="fold"><summary>Conversion records ({{ record_sizes | length }} global attributes, JSON)</summary>
+<p class="caption">What the conversion recorded in the file; the Conversion, Variables and Processing pages read these.</p>
+<table class="nc"><thead><tr><th>Attribute</th><th>Size</th></tr></thead><tbody>
+{%- for name, size in record_sizes %}<tr><td><code>{{ name }}</code></td><td class="num">{{ "{:,}".format(size) }} characters</td></tr>{% endfor %}
+</tbody></table></details>
+</section>
+
+<footer>Generated by seagliderOG1 v{{ version }} &nbsp;&middot;&nbsp; {{ generated_at }}</footer>
+{{ js_sort_tables | safe }}
+{{ js_top_links | safe }}
+</body>
+</html>

@@ -875,10 +875,11 @@ def render_phase(path: str | Path, *, title: str | None = None) -> str | None:
     """
     from datetime import UTC, datetime
 
-    from seagliderOG1 import __version__, writers
+    from seagliderOG1 import __version__
     from seagliderOG1.reports import design
     from seagliderOG1.reports._env import get_template
-    from seagliderOG1.reports.conversion import _page_nav
+    from seagliderOG1.reports._masthead import masthead
+    from seagliderOG1.reports._pages import page_nav
 
     context = phase_context(path)
     if context is None:
@@ -888,10 +889,8 @@ def render_phase(path: str | Path, *, title: str | None = None) -> str | None:
         css=design.SHARED_CSS,
         version=__version__,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
-        page_nav=_page_nav(
-            current="phase",
-            conversion_href=writers.conversion_path(path, ".html").name,
-        ),
+        page_nav=page_nav(path, "phase"),
+        masthead=masthead(path, "phase", title=title),
         p=context,
     )
 
@@ -915,12 +914,9 @@ def write_phase_page(
     pathlib.Path or None
         The phase page, or None when the file has no ``PHASE``.
     """
-    from seagliderOG1 import writers
+    from seagliderOG1.reports import _pages
 
     html = render_phase(nc_path, title=title)
     if html is None:
         return None
-    target = Path(conversion_page).with_name(writers.phase_page_path(nc_path).name)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(html, encoding="utf-8")
-    return target
+    return _pages.write_page(nc_path, conversion_page, "phase", html)

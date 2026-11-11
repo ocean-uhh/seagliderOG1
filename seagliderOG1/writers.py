@@ -244,6 +244,28 @@ def write_record(path: str | Path, attrs: dict, contents: dict) -> Path:
     return target
 
 
+def page_path(path: str | Path, kind: str) -> Path:
+    """Return a report page beside an OG1 file: ``<stem>_<kind>.html``.
+
+    The one place the report pages' names are built (``conversion``, ``variables``,
+    ``processing``, ``phase``).
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The OG1 netCDF file.
+    kind : str
+        The page, as it appears in the file name.
+
+    Returns
+    -------
+    pathlib.Path
+        The path, in the same directory as ``path``.
+    """
+    path = Path(path)
+    return path.with_name(f"{path.stem}_{kind}.html")
+
+
 def phase_page_path(path: str | Path) -> Path:
     """Return the phase page beside an OG1 file: ``<stem>_phase.html``.
 
@@ -257,8 +279,7 @@ def phase_page_path(path: str | Path) -> Path:
     pathlib.Path
         The path, in the same directory as ``path``.
     """
-    path = Path(path)
-    return path.with_name(f"{path.stem}_phase.html")
+    return page_path(path, "phase")
 
 
 def conversion_path(path: str | Path, suffix: str) -> Path:

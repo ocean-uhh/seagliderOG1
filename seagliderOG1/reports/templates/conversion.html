@@ -1,5 +1,6 @@
 {% import "_nc_tables.html" as t -%}
 {% import "_nav.html" as navm -%}
+{% import "_masthead.html" as mh -%}
 {% macro snippet(id, title, text) -%}
 <div class="snippet">
 <p class="snippet-title">{{ title }} <button type="button" class="copy" data-copy="{{ id }}">copy</button></p>
@@ -11,7 +12,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ title }}</title>
+<title>{{ masthead.title }} — {{ masthead.type }}</title>
 <style>
 {{ css | safe }}
 section { margin: 1.4rem 0; }
@@ -23,36 +24,54 @@ p.verdict span.cell-bad { padding: 0 0.3rem; }
 .snippet-title { margin: 0 0 0.2rem; color: var(--muted); }
 .snippet textarea { width: 100%; height: auto; min-height: 2.4em; font-family: ui-monospace, monospace; border: 1px solid var(--ocean); border-radius: 4px; padding: 0.4rem; resize: vertical; box-sizing: border-box; }
 button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
+.howto { border-left: 4px solid var(--ocean); background: var(--bg-tint, var(--gray-1)); padding: 0.6rem 1rem; border-radius: var(--radius-btn); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.6rem 1.2rem; margin: 0.8rem 0; }
+.tile { border-top: 3px solid var(--ocean); padding-top: 0.3rem; }
+.tile.bad { border-top-color: var(--warn); }
+.tile dt { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--gray-5); }
+.tile dd { margin: 0; font-weight: 600; }
+.stage-pills { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 0.4rem 0; }
+.stage-pill { font-size: var(--fs-xs); font-weight: 600; padding: 2px 9px; border-radius: var(--radius-btn); color: #fff; text-decoration: none; }
+.stage-ok { background: var(--ok); }
+.stage-gap { background: var(--warn); }
+.stage-sep { color: var(--gray-4); }
+td.loss-bad { background: var(--warn-bg); box-shadow: inset 3px 0 0 var(--warn); }
+.var-orig { color: var(--muted); font-size: var(--fs-xs); }
+dl.glossary dt { font-weight: 600; margin-top: 0.5rem; }
+dl.glossary dd { margin: 0; color: var(--gray-5); max-width: 78ch; }
+details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
 </style>
 </head>
 <body>
 <div id="top"></div>
-<div class="masthead">
-  <div class="masthead-header">
-    <h1>{{ title }}</h1>
-    <span class="masthead-type">{{ "draft" if draft else "conversion" }}</span>
-  </div>
-  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>{{ title }}</span><span>generated {{ generated_at }}</span></p>
-  {{ navm.page_nav(page_nav) }}
-  <dl class="meta-grid">
-  {%- for label, value in masthead_meta %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
-  {%- endfor %}
-  </dl>
-  <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
-</div>
+{{ mh.masthead(masthead, page_nav) }}
 {%- if draft %}
 <p class="caption cell-bad draft-banner">Draft: converted with no mission config, so platform, contributor and institution metadata are absent or <code>UNK</code> and this is not an OG1 file (amber: every draft page carries this line). It shows what the basestation files hold and what the conversion does to them; write the config with <code>seagliderOG1 init --raw-dir …</code>, then <code>seagliderOG1 process</code>.</p>
 {%- endif %}
-<nav class="jump-nav"><a href="#summary">Before → after</a> ·
-  <a href="#og1">{{ "What an OG1 file would hold" if draft else "The OG1 file" }}</a> · <a href="#reconciliation">Reconciliation</a> ·
-  <a href="#presence">Presence across dives</a> · <a href="#dimensions">Dimensions</a> ·
-  <a href="#derived">Derived</a> · <a href="#dropped">Dropped</a> ·
-  <a href="#variables">By basestation origin</a> · <a href="#globals">Globals</a> ·
-  <a href="#scalars">Scalar parameters</a></nav>
+{%- set secs = number_sections([("summary", "Summary"),
+    ("suggested", "Suggested mission.yaml lines") if draft_snippets else none,
+    ("config-check", "mission.yaml against the data") if config_suggestions else none,
+    ("losses", "Losses"), ("flight", "Flight model"), ("calibration", "Sensors and calibration"),
+    ("traced", "One variable traced"), ("glossary", "Glossary", "reference"),
+    ("globals", "Basestation global attributes" if draft else "Global attributes", "reference")]) %}
+{{ mh.jump_nav(secs) }}
+<section id="summary">
+<h2>{{ secs.mark["summary"] }} Summary</h2>
+<div class="howto"><p><strong>How to read this report.</strong> The tiles say whether the conversion is complete. <a href="#losses">Losses</a> lists what did <em>not</em> reach the OG1 file in the same form; empty means lossless. The <a href="{{ variables_href }}">Variables</a> page finds any variable by its basestation or OG1 name; the <a href="{{ processing_href }}">Processing</a> page lists every step in the order it ran{% if phase_href %}; the <a href="{{ phase_href }}">Phase</a> page shows how PHASE was assigned{% endif %}. Terms are in the <a href="#glossary">glossary</a>.</p></div>
+<p class="caption">Counts from the OG1 file and the conversion record beside it{% if not record_present %}, which was not found, so the basestation counts read "not recorded"{% endif %}. <strong>Highlight rule:</strong> a tile is marked when its count is short (inputs not all accounted for, a dive record missing) or when any loss applies.</p>
+<dl class="tiles">
+{%- for t in tiles %}<div class="tile{% if t.bad %} bad{% endif %}"><dt>{{ t.label }}</dt><dd>{{ t.value }}</dd></div>{% endfor %}
+</dl>
+<p class="caption">Stages (each links to its first step on the Processing page; amber: a step of the stage is not recorded in the file):</p>
+<div class="stage-pills">
+{%- for s in stages %}<a class="stage-pill stage-{{ s.state }}" href="{{ processing_href }}#step-{{ s.first }}">{{ s.label }}</a>{% if not loop.last %}<span class="stage-sep">›</span>{% endif %}{% endfor %}
+</div>
+<p class="caption verdict">{% for c in verdict_clauses %}<span{% if c.bad %} class="cell-bad"{% endif %}>{{ c.text }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+</section>
 
 {%- if draft_snippets %}
 <section id="suggested">
-<h2>Suggested mission.yaml lines</h2>
+<h2>{{ secs.mark["suggested"] }} Suggested mission.yaml lines</h2>
 <p class="caption">What this draft read from the basestation files, as lines to paste into a <code>mission.yaml</code> (start one with <code>seagliderOG1 init</code>, or use <code>&lt;id&gt;_draft_mission.yaml</code> written beside this page, which also has <code>raw_dir</code>). Only values the files carry are filled; <code>null</code> is yours to fill.</p>
 <div class="snippets">
 {%- for s in draft_snippets %}
@@ -64,7 +83,7 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 
 {%- if config_suggestions %}
 <section id="config-check">
-<h2>mission.yaml against the data</h2>
+<h2>{{ secs.mark["config-check"] }} mission.yaml against the data</h2>
 <p class="caption">Lines for the <code>mission.yaml</code> this conversion was given, where it and the output disagree or fall short: the requested <code>dives</code> against the dives that reached the file; platform fields set in the config against the values the files carry (the config wins by design, e.g. a local nickname for <code>PLATFORM_SERIAL_NUMBER</code>, so a pair is a value to check, not an error); platform fields written as <code>UNK</code> or omitted; institution ids the registry resolved; and missing ACDD globals. Only checks that find something are shown.</p>
 {%- for s in config_suggestions %}
 {%- set block = loop.index %}
@@ -79,47 +98,40 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 </section>
 {%- endif %}
 
-<section id="summary">
-<h2>1. Before → after</h2>
-<p class="caption">What the conversion read and what it wrote. The basestation column is read from the conversion record beside the file{% if not record_present %}, which was not found, so its cells show "—"{% endif %}. "same" means the quantity is unchanged by conversion.</p>
-<table class="nc summary">
-<thead><tr><th>Quantity</th><th>Basestation input</th><th>{{ "Draft output" if draft else "OG1 output" }}</th></tr></thead>
+<section id="losses">
+<h2>{{ secs.mark["losses"] }} Losses</h2>
+<p class="caption">A loss is something in the basestation files that is not in the OG1 file in the same form: dropped structure, or a label not kept. Changed values that are recorded (unit factors, float32 storage, time shifts) and additions are steps, on the Processing page. <strong>Highlight rule:</strong> a loss that applies to this file, or one the conversion does not count ("not recorded").</p>
+<table class="nc">
+<thead><tr><th>Loss</th><th>Kind</th><th>Count</th><th>Examples</th><th>Recorded in the file</th></tr></thead>
 <tbody>
-{%- for r in summary_rows %}
-<tr><td{% if r.indent %} class="indent"{% endif %}>{{ r.quantity }}</td><td>{{ r.input }}</td><td>{{ r.output }}</td></tr>
+{%- for l in losses %}
+<tr><td{% if l.count or l.count is none %} class="loss-bad"{% endif %}>{{ l.loss }}</td><td>{{ l.kind }}</td><td>{{ "not recorded" if l.count is none else l.count }}</td>
+<td class="cell-wrap"><code class="muted">{{ l.examples[:5] | join(", ") }}{% if l.examples | length > 5 %}, …{% endif %}</code></td><td>{{ l.recorded }}</td></tr>
 {%- endfor %}
 </tbody></table>
-<p class="caption verdict">{% for c in verdict_clauses %}<span{% if c.bad %} class="cell-bad"{% endif %}>{{ c.text }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+<p class="fig-source">source: seagliderOG1/reports/processing.py:losses</p>
 </section>
 
-<section id="units">
-<h2>1b. Unit corrections</h2>
-<p class="caption">What the conversion did to each variable's units. <em>Label corrected</em>: the basestation label was wrong for the magnitude, so only the label was fixed and the value left unchanged. <em>Converted</em>: the values were scaled by the factor shown to reach the OG1 units. <em>OG1 label adopted</em>: the basestation file carried no units, so the OG1 label was taken (the value is unchanged, assumed to be in those units). A pure spelling rewrite with no value change is not listed; the Unit mapping docs page carries the full spelling view. Only variables whose units were corrected, converted, or adopted are shown.</p>
-{%- if unit_corrections_rows %}
-<table class="nc sortable">
-<thead><tr><th>Variable</th><th>Label as written</th><th>Units written</th><th>What happened</th></tr></thead>
+<section id="flight">
+<h2>{{ secs.mark["flight"] }} Flight model</h2>
+<p class="caption">The basestation variables a glider flight model reads or writes: where each went in the OG1 file, its units, and its form. <em>gliderflightOG1 reads</em> names the input that package expects. <strong>Highlight rule:</strong> an input gliderflightOG1 reads that is not usable here as a number (stored as per-dive JSON text, or not written).</p>
+<table class="nc">
+<thead><tr><th>Role</th><th>Basestation → OG1 file</th><th>Units</th><th>Form</th><th>gliderflightOG1 reads</th><th>Ready?</th></tr></thead>
 <tbody>
-{%- for r in unit_corrections_rows %}
-<tr><td>{{ r.name }}</td><td>{{ r.original }}</td><td>{{ r.written }}</td><td>{{ r.action }}</td></tr>
+{%- for f in flight %}
+<tr><td>{{ f.role }}</td>
+<td><span class="var-orig"><code>{{ f.basestation }}</code>{% if f.row and f.row.name %} →{% endif %}</span>{% if f.row and f.row.name %}<br><code>{{ f.row.name }}</code>{% endif %}</td>
+<td>{% if f.row %}{% if f.row.units_in and f.row.units_in != f.row.units_out %}<span class="var-orig">{{ f.row.units_in }}</span><br>→ {% endif %}{{ f.row.units_out or "—" }}{% if f.row.factor not in (none, 1) %} (×{{ "%g" | format(f.row.factor) }}){% endif %}{% endif %}</td>
+<td>{{ f.form }}</td><td><code>{{ f.reads_as }}</code></td>
+<td{% if f.ready.startswith("no") %} class="loss-bad"{% endif %}>{{ f.ready }}</td></tr>
 {%- endfor %}
 </tbody></table>
-{%- else %}<p class="caption">Not applicable to this file: no variable's units were corrected, converted, or adopted.</p>{% endif %}
+<p class="caption">gliderflightOG1 also reads <code>DIVENUM</code> and <code>UPDN</code> (here <code>dive_number</code> and <code>PROFILE_DIRECTION</code>), and its constants as global attributes (here one-value variables); it is to read the OG1 names.</p>
+<p class="fig-source">source: seagliderOG1/reports/processing.py:flight_rows</p>
 </section>
 
-<section id="og1">
-<h2>2. {{ "What an OG1 file would hold" if draft else "The OG1 file" }}</h2>
-<p class="caption">The output read by what OG1 says it must and may contain, not by where it came from — the view that answers "where did the elements of my OG1 file come from". Orig var names the basestation variable (or how the converter built it) and Orig dim its basestation dimension.</p>
-<h3>Required by OG1</h3>
-<p class="caption{% if og1_required_incomplete %} cell-bad{% endif %}">{{ og1_required_caption }}. The list is the upstream checker's (<code>ioos/cc-plugin-og</code>); amber: a required variable or the required dimension is absent.</p>
-<table class="nc sortable">
-<thead><tr><th>Required</th><th>Orig var</th><th>Orig dim</th><th>Dims</th><th>Units</th><th>Valid %</th></tr></thead>
-<tbody>
-{%- for r in og1_required %}
-<tr{% if not r.present %} class="cell-bad"{% endif %}><td>{{ r.name }}</td>
-<td>{{ r.orig_var }}</td><td>{{ r.orig_dim }}</td><td>{{ r.dims }}</td><td>{{ r.units }}</td><td>{{ r.valid }}</td></tr>
-{%- endfor %}
-</tbody></table>
-
+<section id="calibration">
+<h2>{{ secs.mark["calibration"] }} Sensors and calibration comments</h2>
 <h3>Sensors named by OG1 (not required)</h3>
 {%- if og1_sensors %}
 <p class="caption">{{ og1_sensors|length }} <code>SENSOR_*</code> variables, from the basestation calibration comments and <code>config/OG1_sensor_attributes.yaml</code>. Used by lists the variables whose <code>sensor</code> attribute names the sensor. Amber: the serial number or calibration date is <code>UNK</code> or empty (not read from the calibration comment; files from 0.2.0 and earlier wrote every digit zero instead); or two sensors share a serial number, which usually means a calibration comment was copied from another instrument. Both come from the basestation <code>sg_calib_constants</code>; check them against the calibration sheets.</p>
@@ -147,163 +159,31 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 {%- elif calibration_comments is none %}<p class="caption">Not available: this file was written before the conversion recorded how calibration comments were read (seagliderOG1 0.2.0 or earlier); reconvert to see it.</p>
 {%- else %}<p class="caption">Not applicable to this file: no <code>SENSOR_*</code> variables.</p>{% endif %}
 
-<h3>Named by OG1 (not required)</h3>
-{%- if og1_named %}
-<p class="caption">{{ og1_named|length }} variables OG1 has a defined name and meaning for, present but not required — the science payload, phase and profile variables, and QC flags (the sensors are in the table above).</p>
-<table class="nc sortable">
-<thead><tr><th>Variable</th><th>Orig var</th><th>Orig dim</th><th>Dims</th><th>Units</th><th>Valid %</th></tr></thead>
-<tbody>
-{%- for r in og1_named %}
-<tr><td>{{ r.name }}</td><td>{{ r.orig_var }}</td><td>{{ r.orig_dim }}</td><td>{{ r.dims }}</td><td>{{ r.units }}</td><td>{{ r.valid }}</td></tr>
-{%- endfor %}
-</tbody></table>
-{%- else %}<p class="caption">Not applicable to this file: no OG1-named variables beyond the required ones.</p>{% endif %}
-
-{%- for g in og1_candidate_groups %}
-<h3>Candidate for OG1 — {{ g.label }}</h3>
-<p class="caption">{{ g.n_present }} of {{ g.n_total }} present. Variables the project proposes to canonise (not yet in the OG1 vocabulary); recorded in <code>vocabularies.OG1_CANDIDATE_VARS</code>. An absent candidate (amber) is informational — a file may predate it.</p>
-<table class="nc sortable">
-<thead><tr><th>Candidate</th><th>Orig var</th><th>Orig dim</th><th>Dims</th><th>Units</th><th>Valid %</th></tr></thead>
-<tbody>
-{%- for r in g.rows %}
-<tr{% if not r.present %} class="cell-bad"{% endif %}><td>{{ r.name }}</td>
-<td>{{ r.orig_var }}</td><td>{{ r.orig_dim }}</td><td>{{ r.dims }}</td><td>{{ r.units }}</td><td>{{ r.valid }}</td></tr>
-{%- endfor %}
-</tbody></table>
-{%- endfor %}
-
-<h3>Carried through (not OG1)</h3>
-{%- if og1_carried %}
-<p class="caption">Basestation variables kept so the conversion loses nothing, summarised by family; expand a row to list its variables.</p>
-<table class="nc sortable">
-<thead><tr><th>Family</th><th>Count</th><th>What they are</th><th>Variables</th></tr></thead>
-<tbody>
-{%- for f in og1_carried %}
-<tr><td><code>{{ f.family }}</code></td><td>{{ f.count }}</td><td>{{ f.what }}</td>
-<td><details class="vars"><summary>list</summary>{{ f.names }}</details></td></tr>
-{%- endfor %}
-</tbody></table>
-{%- else %}<p class="caption">Not applicable to this file: every variable is required or OG1-named.</p>{% endif %}
-
-<h3>Same quantity, more than once</h3>
-{%- if duplicate_groups %}
-<p class="caption">Where more than one output variable encodes the same quantity (shared standard_name, not matched by name). The reference row (first, from the OG1-required or OG1-named member) sets the baseline; each other row is that variable minus the reference (mean offset, RMSD and max |diff|), over the samples both carry, in the reference's units. "not comparable" where the unit alias table relates no conversion. In the practical-salinity group (shown when the file has a second salinity, such as PSAL_RAW), "SP from CNDC, TEMP, PRES" is salinity recomputed from the file's conductivity for this page (not written to the file): its offset is what the basestation applied to salinity but not to the conductivity it wrote (for example a thermal-inertia correction). The difference-against-depth figure is a deferred follow-up.</p>
-{%- for g in duplicate_groups %}
-<h4><code>{{ g.standard_name }}</code> — reference <code>{{ g.reference }}</code> ({{ g.reference_units }})</h4>
-<table class="nc sortable">
-<thead><tr><th>Variable</th><th>Units</th><th>N overlap</th><th>Mean offset (var − ref)</th><th>RMSD</th><th>Max |diff|</th><th>Note</th></tr></thead>
-<tbody>
-{%- for r in g.rows %}
-<tr><td>{{ r.name }}</td><td>{{ r.units }}</td><td>{{ r.n_overlap }}</td><td>{{ r.offset }}</td><td>{{ r.rmsd }}</td><td>{{ r.max_abs }}</td><td>{{ r.note }}</td></tr>
-{%- endfor %}
-</tbody></table>
-{%- endfor %}
-{%- else %}<p class="caption">Not applicable to this file: no quantity appears under more than one variable.</p>{% endif %}
 </section>
 
-<section id="reconciliation">
-<h2>3. Reconciliation — where the variables went</h2>
-<div class="fig-row">
-<div class="slot-two-fifths">
-<p class="caption">{{ reconciliation_caption }}</p>
+<section id="traced">
+<h2>{{ secs.mark["traced"] }} One variable traced</h2>
+{%- if traced %}
+{%- set row, trace = traced %}
+<p class="caption"><code>{{ row.basestation }}</code> → <code>{{ row.name }}</code>, through every step that touched it; the numbers are the Processing page's steps.</p>
 <table class="nc">
-<thead><tr><th>Fate</th><th>Count</th><th>Meaning</th></tr></thead>
+<thead><tr><th>#</th><th>Step</th><th>Before</th><th>After</th></tr></thead>
 <tbody>
-{%- for label, count, meaning in reconciliation[:-1] %}
-<tr><td>{{ label }}</td><td>{{ count }}</td><td>{{ meaning }}</td></tr>
-{%- endfor %}
-</tbody>
-<tfoot><tr><th>{{ reconciliation[-1][0] }}</th><th>{{ reconciliation[-1][1] }}</th><th></th></tr></tfoot>
-</table>
-</div>
-{%- if fate_histogram %}
-<figure class="slot-three-fifths">
-<img alt="Bar chart of the variable counts per fate" src="data:image/png;base64,{{ fate_histogram }}">
-{%- if show_source and fate_histogram_source %}<figcaption class="fig-source">source: {{ fate_histogram_source }}</figcaption>{% endif %}
-</figure>
-{%- endif %}
-</div>
-</section>
-
-<section id="presence">
-<h2>4. Presence across dives</h2>
-{%- if presence_rows %}
-<p class="caption{% if presence_rows|selectattr('bad')|list %} cell-bad{% endif %}">{{ presence_summary }}. The converter works from the union of the input files' variables.</p>
-<p class="caption">One row per pattern: the dives a group of variables has values in (Valid in) and the dives it exists in at all (Present in), each with its share of the input dives. Amber: a Valid % below 100 — has values on fewer than every input dive (a sensor switched on or off mid-mission, a quantity only computed after the first dive, or an occasional log entry). Each % is the share of the input dives.</p>
-<table class="nc presence sortable">
-<thead><tr><th>Pattern</th><th>Valid in</th><th>Valid %</th><th>Present in</th><th>Present %</th><th>Variables</th></tr></thead>
-<tbody>
-{%- for r in presence_rows %}
-<tr><td>{{ r.label }}</td><td>{{ r.valid }}</td><td{% if r.bad %} class="cell-bad"{% endif %}>{{ r.valid_pct }}</td><td>{{ r.present }}</td><td>{{ r.present_pct }}</td>
-<td>{{ r.n }} <details class="vars"><summary>list</summary>{{ r.variables }}</details></td></tr>
+{%- for t in trace %}
+<tr><td><a href="{{ processing_href }}#step-{{ t.number }}">{{ t.number }}</a></td><td>{{ t.step }}</td><td><span class="var-orig">{{ t.before }}</span></td><td>{{ t.after }}</td></tr>
 {%- endfor %}
 </tbody></table>
-{%- if presence_strips %}
-<figure>
-<img alt="Strips of the dives each variable pattern is present in and has values in" src="data:image/png;base64,{{ presence_strips }}">
-{%- if show_source and presence_strips_source %}<figcaption class="fig-source">source: {{ presence_strips_source }}</figcaption>{% endif %}
-</figure>
-{%- endif %}
-{%- else %}
-<p class="caption cell-bad">Presence across dives: conversion record not found ({{ record_name }}). The variables are the union over the input files; which dives carried which is not recorded in the file.</p>
-{%- endif %}
+{%- else %}<p class="caption">Not applicable to this file: no renamed variable had its units converted.</p>{% endif %}
 </section>
 
-<section id="dimensions">
-<h2>5. Dimensions</h2>
-<p class="caption">Amber: dimension skipped — no variable from it reaches this file. Fate is read from the output: backbone — the dimension whose samples define <code>N_MEASUREMENTS</code>; merged — its samples are added to <code>N_MEASUREMENTS</code> at their own times; skipped — not in the file. Samples in is that dimension's length summed over the input files ("—" when the conversion record is absent).</p>
-<table class="nc dims sortable">
-<thead><tr><th>Original dimension</th><th>Fate</th><th>Variables</th><th>Samples in</th><th>Dimension after conversion</th></tr></thead>
-<tbody>
-{%- for d in dimensions %}
-<tr><td>{{ d.dimension }}</td><td{% if d.fate == "skipped" %} class="cell-bad"{% endif %}>{{ d.fate }}</td>
-<td>{{ d.n }} <details class="vars"><summary>list</summary>{{ d.variables }}</details></td>
-<td>{{ d.samples_in }}</td>
-<td>{{ d.ended_on }}</td></tr>
-{%- endfor %}
-</tbody></table>
-</section>
-
-<section id="derived">
-<h2>6. Derived variables</h2>
-<p class="caption">Variables the converter built rather than renamed. Sources names the basestation variables consumed, or "(computed)" when built from other OG1 variables, vocabulary or global attributes.</p>
-{%- if derived_rows %}
-<table class="sortable var-table">
-{{ t.thead(("Variable", "Sources", "Attributes"), nosort=("Attributes",)) }}
-<tbody>
-{%- for r in derived_rows %}
-<tr>{{ t.name_cell(r) }}<td>{{ r.sources }}</td><td data-nosort>{{ t.attr_disclosure(r.attrs) }}</td></tr>
-{%- endfor %}
-</tbody></table>
-{%- else %}<p class="caption">Not applicable to this file: no derived variables.</p>{% endif %}
-</section>
-
-<section id="dropped">
-<h2>7. Dropped and removed variables</h2>
-<h3>Dropped on request (keep_variables)</h3>
-{%- if dropped %}
-<p class="caption">Recorded here because nothing in the file carries them.</p>
-<ul class="dropped">{% for name in dropped %}<li><code>{{ name }}</code></li>{% endfor %}</ul>
-{%- else %}<p class="caption">Not applicable to this file: no variables were dropped on request.</p>{% endif %}
-<h3>Removed by the converter (package drop list)</h3>
-{%- if removed %}
-<p class="caption">Basestation variables the converter always removes; recorded here because they leave no trace in the file.</p>
-<ul class="dropped">{% for name in removed %}<li><code>{{ name }}</code></li>{% endfor %}</ul>
-{%- else %}<p class="caption">Not applicable to this file: the package drop list is empty, so every basestation variable is retained.</p>{% endif %}
-</section>
-
-<section id="variables">
-<h2>8. By basestation origin (variables grouped by original dimension)</h2>
-<p class="caption">The same output variables read the other way — what became of each dive file's variables, grouped by the basestation dimension they came from.</p>
-{%- for b in variable_blocks %}
-{{ t.variables_tables([(b.title, b.rows)], source=(variables_source if loop.last else None),
-   numbered=True, optional=("units", "minmax", "attrs", "stdname"), caption=b.caption) }}
-{%- endfor %}
+<section id="glossary">
+<h2>{{ secs.mark["glossary"] }} Glossary</h2>
+{% include "_glossary.html" %}
 </section>
 
 <section id="globals">
 {%- if draft %}
-<h2>9. Basestation global attributes</h2>
+<h2>{{ secs.mark["globals"] }} Basestation global attributes</h2>
 <p class="caption{% if requirement_amber %} cell-bad{% endif %}">For an OG1 file, mission.yaml must supply what is missing here — {{ requirement_text }}</p>
 {%- if basestation_rows %}
 <p class="caption">The input files' own global attributes, before any OG1 enrichment; the value is the first file's. Amber: the attribute differs between files or is missing from some.</p>
@@ -318,36 +198,9 @@ button.copy { font-size: 0.8em; margin-left: 0.4rem; cursor: pointer; }
 <p class="caption cell-bad">Basestation global attributes: not in the conversion record ({{ record_name }}); convert again with this version to record them.</p>
 {%- endif %}
 {%- else %}
-<h2>9. Global attributes</h2>
-<p class="caption{% if requirement_amber %} cell-bad{% endif %}">{{ requirement_text }}</p>
-{{ t.globals_tables(global_groups, computed=coverage_computed, source=globals_source,
-   coverage_note="amber: the file's stated bound differs from the value recomputed from the data by more than the tolerance.") }}
+<h2>{{ secs.mark["globals"] }} Global attributes</h2>
+<p class="caption{% if requirement_amber %} cell-bad{% endif %}">{{ requirement_text }} The attributes, grouped with their OG1 tier and source, the Conventions check and the history are on the <a href="{{ og1_href }}#globals">OG1 format</a> page.</p>
 {%- endif %}
-<div class="{% if conventions.short %}warn{% else %}caption{% endif %} conventions-box">
-<p><strong>Conventions</strong> claims <code>{{ conventions.claim or "(none)" }}</code>. What the file holds against it (presence only; amber when any count is short):</p>
-<ul>
-{%- for level in conventions.acdd %}
-<li>ACDD 1.3 {{ level.level }}: {{ level.have }} of {{ level.total }} present{% if level.missing %} — missing {{ level.missing|join(", ") }}{% endif %}</li>
-{%- endfor %}
-<li>CF: {% if conventions.no_units %}{{ conventions.no_units|length }} floating-point variables on a dimension have no <code>units</code> <details class="vars"><summary>list</summary>{{ conventions.no_units|join(", ") }}</details>{% else %}every floating-point variable on a dimension has <code>units</code>{% endif %}</li>
-</ul>
-<p>Not a compliance check: run cc-plugin-og (OG1) or the IOOS compliance-checker (CF, ACDD) on the file.</p>
-</div>
-<h3>History</h3>
-{{ t.properties_table(history_rows, header=("#", "History")) }}
-</section>
-
-<section id="scalars">
-<h2>10. Scalar parameters</h2>
-<p class="caption">Split by whether the converter renamed the scalar to an OG1 name, then by basestation prefix. A per-dive scalar's Value shows the decoded per-dive values; its raw JSON serialization stays in the Attributes disclosure. The renamed group is open; expand the others as needed.</p>
-{%- for g in scalar_groups %}
-<details class="scalar-group"{% if loop.first %} open{% endif %}>
-<summary>{% if g.mono %}<code>{{ g.title }}</code>{% else %}{{ g.title }}{% endif %} ({{ g.rows|length }})</summary>
-{{ t.scalars_table(g.rows, source=(scalar_source if loop.last else None),
-   optional=("units", "attrs", "stdname"),
-   caption="amber: a numeric parameter with no units attribute") }}
-</details>
-{%- endfor %}
 </section>
 
 <footer>Generated by seagliderOG1 v{{ version }} &nbsp;&middot;&nbsp; {{ generated_at }}</footer>

@@ -1,10 +1,11 @@
 {% import "_nav.html" as navm -%}
+{% import "_masthead.html" as mh -%}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ title }} — phase</title>
+<title>{{ masthead.title }} — {{ masthead.type }}</title>
 <style>
 {{ css | safe }}
 section { margin: 1.4rem 0; }
@@ -16,21 +17,16 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 </head>
 <body>
 <div id="top"></div>
-<div class="masthead">
-  <div class="masthead-header">
-    <h1>{{ title }}</h1>
-    <span class="masthead-type">phase</span>
-  </div>
-  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>{{ title }}</span><span>generated {{ generated_at }}</span></p>
-  {{ navm.page_nav(page_nav) }}
-  <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
-</div>
+{{ mh.masthead(masthead, page_nav) }}
 
-<nav class="jump-nav"><a href="#counts">OG1 phase counts</a> · <a href="#dive">Example dive cycles</a>{% if p.scatter_png %} · <a href="#pitch">Pitch and dP/dt</a>{% endif %} · <a href="#method">Algorithm</a> · <a href="#states">Seaglider state table</a> · <a href="#qc">PHASE_QC</a></nav>
+{%- set secs = number_sections([("counts", "OG1 phase counts"), ("dive", "Example dive cycles"),
+    ("pitch", "Pitch and dP/dt") if p.scatter_png else none, ("method", "Algorithm"),
+    ("states", "Seaglider state table"), ("qc", "PHASE_QC")]) %}
+{{ mh.jump_nav(secs) }}
 <p class="caption"><code>PHASE</code> says what the glider was doing at each data point, in the <a href="{{ p.vocabulary }}">OG1 phase vocabulary</a>. How phase should be assigned is under discussion in the OceanGliders community.</p>
 
 <section id="counts">
-<h2>1. OG1 phase counts</h2>
+<h2>{{ secs.mark["counts"] }} OG1 phase counts</h2>
 <p class="caption">Every OG1 phase id, with the number of data points (entries on <code>N_MEASUREMENTS</code>) assigned it over the {{ p.n_dives }} dive{{ "s" if p.n_dives != 1 }}, its share of all data points, and the number of dives it appears in. We use the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a> to determine how to assign phase for Seagliders. 6 (propelled) and 7 (transition) are never assigned to a Seaglider.</p>
 <table class="nc">
 <thead><tr><th></th><th>id</th><th>phase</th><th>Count</th><th>%</th><th>dives</th></tr></thead>
@@ -49,7 +45,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 </section>
 
 <section id="dive">
-<h2>2. Example dive cycles</h2>
+<h2>{{ secs.mark["dive"] }} Example dive cycles</h2>
 <p class="caption">Plots below show how phase is assigned against dive cycles. Up to three are chosen to demonstrate how the rules apply. The x-axis is time and the panels show the pressure (each data point colored by its <code>PHASE</code>, with some of the commanded depths in dashed horizontal lines), pitch, the guidance and control (G&amp;C) events' VBD setting, the glider's state table (<code>gc_state_state</code>, if available), and <code>PHASE</code> as a band. Dotted lines show the start of each G&amp;C event. Yellow vertical lines are the GPS fixes. Note that when the CTD does not sample at the surface, there is no colored pressure line.</p>
 {%- for f in p.dive_figures %}
 <h3>Dive {{ f.dive }}{% if not f.complete %} (no descent, inflection and ascent){% endif %}</h3>
@@ -64,7 +60,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 
 {%- if p.scatter_png %}
 <section id="pitch">
-<h2>3. Pitch and dP/dt</h2>
+<h2>{{ secs.mark["pitch"] }} Pitch and dP/dt</h2>
 <p class="caption">Dive {{ p.dives|join(", ") }}: pitch against the rate of pressure change, colored by <code>PHASE</code>. Descent sits at negative pitch and positive dP/dt (i.e., increasing pressure), ascent at positive pitch and negative dP/dt; inflection lies between them. Descent points at steep negative pitch and dP/dt near zero are the glider bleeding at the surface before the flare; ascent points at positive pitch with dP/dt still positive are the glider still sinking after the apogee ends. Pitch is interpolated in time onto the pressure data points.</p>
 <figure{% if p.scatter_slot %} class="{{ p.scatter_slot }}"{% endif %}>
 <img alt="Pitch against dP/dt colored by PHASE" src="data:image/png;base64,{{ p.scatter_png }}">
@@ -74,7 +70,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 {%- endif %}
 
 <section id="method">
-<h2>{{ 4 if p.scatter_png else 3 }}. Algorithm</h2>
+<h2>{{ secs.mark["method"] }} Algorithm</h2>
 <p class="caption">The code: <code>PHASE</code> is assigned by <code>assign()</code> in <code>seagliderOG1/_phase.py</code>, called through the public wrapper <code>seagliderOG1.tools.add_phase()</code>; <code>PROFILE_NUMBER</code>, <code>PROFILE_DIRECTION</code> and <code>SEGMENT_NUMBER</code> follow from it in <code>tools.add_profiles()</code>.</p>
 <p class="caption">The file's <code>phase_calculation_method</code>:</p>
 <p>{{ p.method }}</p>
@@ -92,7 +88,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 </section>
 
 <section id="states">
-<h2>{{ 5 if p.scatter_png else 4 }}. Seaglider state table</h2>
+<h2>{{ secs.mark["states"] }} Seaglider state table</h2>
 <p class="caption">Every state the Seaglider basestation numbers in <code>gc_state_state</code>, in begin/end pairs. Each begin state of a pair sets the <code>PHASE</code> the <a href="https://github.com/OceanGlidersCommunity/OG-format-user-manual/blob/main/vocabularyCollection/phase_translation_tables.md">OG1 phase translation table</a> specifies the transition, held until the next listed pair begins; a pair the table does not list is ignored, so the phase before it holds. Count: how many times the begin state appears in this file. Ended with: the end-of-phase codes (<code>gc_state_eop_code</code>) the end state carried. Names and numbers: the basestation's own list.</p>
 <table class="nc">
 <thead><tr><th>Transition</th><th>States</th><th></th><th>PHASE</th><th>Phase from</th><th>Count</th><th>Ended with</th></tr></thead>
@@ -104,7 +100,7 @@ td.swatch span { display: inline-block; width: 0.9em; height: 0.9em; border-radi
 </section>
 
 <section id="qc">
-<h2>{{ 6 if p.scatter_png else 5 }}. PHASE_QC differences from OG1</h2>
+<h2>{{ secs.mark["qc"] }} PHASE_QC differences from OG1</h2>
 <p class="caption"><code>PHASE_QC</code> is 0 (no QC performed) on every data point. Amber: an attribute this file writes differently from the OG1 format table, following the <a href="https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#flags">CF conventions for flags</a> instead; the reason is given for each, and both are points to take to the OG1 format group.</p>
 <table class="nc">
 <thead><tr><th>Attribute</th><th>OG1 format table</th><th>This file</th><th>Why</th></tr></thead>

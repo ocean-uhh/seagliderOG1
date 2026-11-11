@@ -493,28 +493,27 @@ def test_report_writes_html_page(
     assert cli.main(["report", str(nc)]) == 0
     assert f"wrote {out}" in capsys.readouterr().out
     html = out.read_text(encoding="utf-8")
-    assert "Reconciliation" in html
-    assert "Variables on" in html  # grouped by original dimension
-    assert "Valid %" in html  # the merge diagnostic column
     assert "<table" in html
-    # The six fates account for every basestation variable (demo_sg005 dives 1-2: 342).
-    assert "sum to the 342 basestation input variables" in html
+    # Every basestation variable is accounted for (demo_sg005 dives 1-2: 342).
+    assert "<dt>Accounted for</dt><dd>342 / 342</dd>" in html
     # The transient derived-sources stamp is internal and never reaches the page.
     assert "_derived_sources" not in html
-    # Item #2 sections render as tables, not the earlier interim text block.
+    # The Variables and Processing pages are written beside it.
+    assert (tmp_path / "og1_variables.html").is_file()
+    assert (tmp_path / "og1_processing.html").is_file()
     # Located by section id, so inserting or renumbering sections does not break it.
-    for section in ("derived", "globals"):
-        body = html.split(f'<section id="{section}">', 1)[1].split("</section>", 1)[0]
-        assert "<table" in body, section
-    assert "<h3>History</h3>" in html
-    assert "(scalar)" in html  # the Dimensions scalar row
+    body = html.split('<section id="losses">', 1)[1].split("</section>", 1)[0]
+    assert "<table" in body
+    # The global attributes and the history are on the OG1 format page.
+    og1_page = (tmp_path / "og1_og1.html").read_text(encoding="utf-8")
+    body = og1_page.split('<section id="globals">', 1)[1].split("</section>", 1)[0]
+    assert "<table" in body
+    assert "<h3>History</h3>" in og1_page
     assert "Interim text view" not in html
-    assert "data:image/png;base64," in html  # the section-1 fate histogram
-    # Masthead (S18) and the renamed calibration group (S15).
+    # Masthead (S18).
     assert 'class="meta-grid"' in html
-    assert "<code>sg_calib_constants</code>" in html
     # Spatiotemporal coverage computed column (S17) and the OG1-requirement line (S25).
-    assert "Computed" in html
+    assert "Computed" in og1_page
     assert "OG1 requirement: mandatory 9/9 present" in html
     # Masthead polish (S19): meta-grid pairs are div-wrapped, and the jump-nav sits after the
     # masthead closes (not a descendant of it).
@@ -522,10 +521,9 @@ def test_report_writes_html_page(
     assert '</div>\n<nav class="jump-nav"' in html
     # The per-heading "↑ top" link script is emitted (S24); it appends .top-link client-side.
     assert "top-link" in html and "↑ top" in html
-    # Vendored features adopted at the sync-4 re-vendor: numbered rows and the OG1-requirement
-    # column on the globals table.
-    assert ">#<" in html
-    assert "Requirement" in html
+    # Vendored features adopted at the sync-4 re-vendor: the OG1-requirement column on the
+    # globals table (now on the OG1 format page).
+    assert "Requirement" in og1_page
 
 
 def test_report_output_dir_and_report_dir(
@@ -758,7 +756,23 @@ def test_process_prints_presence_line_when_dives_disagree(
     config = _write_config(tmp_path / "mission.yaml", output_dir=str(tmp_path / "out"))
     assert cli.main(["process", str(config)]) == 0
     out = capsys.readouterr().out
-    assert "on every dive, 5 on some (3 patterns) — see seagliderOG1 report" in out
+    assert (
+        "on every dive, 5 on some (3 patterns) — see the Basestation page "
+        "(seagliderOG1 report"
+    ) in out
+
+
+def test_process_report_presence_line_names_the_basestation_page(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """With --report the presence line names the Basestation page, which it wrote."""
+    out = tmp_path / "out"
+    config = _write_config(tmp_path / "mission.yaml", output_dir=str(out))
+    assert cli.main(["process", str(config), "--report"]) == 0
+    (nc,) = out.glob("*.nc")
+    page = out / f"{nc.stem}_basestation.html"
+    assert page.is_file()
+    assert f"(3 patterns) — see {page}" in capsys.readouterr().out
 
 
 def test_process_save_failure_counts_as_failed(
@@ -1224,7 +1238,7 @@ def test_enrich_from_config_refuses_converter_owned_keys(
 def test_draft_writes_only_draft_files_and_a_draft_page(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """draft: four files, every name ends _draft*; the netCDF says it is not OG1."""
+    """draft: seven files, every name ends _draft*; the netCDF says it is not OG1."""
     import xarray as xr
 
     out = tmp_path / "drafts"
@@ -1239,9 +1253,12 @@ def test_draft_writes_only_draft_files_and_a_draft_page(
     assert written == sorted(
         [
             f"{stem}.nc",
+            f"{stem}_basestation.html",
             f"{stem}_conversion.html",
             f"{stem}_conversion.json",
             f"{stem}_mission.yaml",
+            f"{stem}_processing.html",
+            f"{stem}_variables.html",
         ]
     )
     with xr.open_dataset(out / f"{stem}.nc", engine="netcdf4") as ds:
@@ -1250,13 +1267,19 @@ def test_draft_writes_only_draft_files_and_a_draft_page(
         assert "OG-1.0" not in ds.attrs["Conventions"]
         assert "CF-1.10" in ds.attrs["Conventions"]
     html = (out / f"{stem}_conversion.html").read_text(encoding="utf-8")
-    assert '<span class="masthead-type">draft</span>' in html
+    assert '<span class="masthead-type">Draft</span>' in html
     assert "this is not an OG1 file" in html
-    assert "9. Basestation global attributes" in html
-    assert "What an OG1 file would hold" in html
+    assert "Basestation global attributes" in html
     assert "Suggested mission.yaml lines" in html
     assert "dives: [1, 2]" in html and 'class="copy"' in html
     assert "mission.yaml against the data" not in html  # a draft has no config
+
+    # report on the draft file writes the same set: no Phase or OG1 format page.
+    pages = tmp_path / "pages"
+    assert cli.main(["report", str(out / f"{stem}.nc"), "-o", str(pages)]) == 0
+    assert sorted(p.name for p in pages.iterdir()) == sorted(
+        n for n in written if n.endswith(".html")
+    )
     sidecar = json.loads((out / f"{stem}_conversion.json").read_text(encoding="utf-8"))
     assert "config" not in sidecar
     proposal = (out / f"{stem}_mission.yaml").read_text(encoding="utf-8")

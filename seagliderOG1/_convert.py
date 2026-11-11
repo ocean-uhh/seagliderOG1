@@ -729,12 +729,52 @@ def _dive_runs(flags: Sequence[bool], dives: Sequence[int]) -> list[list[int]]:
     return runs
 
 
+def count_values(values: np.ndarray) -> int:
+    """Return how many non-missing values an array holds: the one missing-value rule.
+
+    Floating data counts its finite values (the reader has already turned fill values into
+    NaN), times those that are not NaT, and text (fixed-width or variable-length) the
+    strings that are not blank; variable-length object data counts every item that is not
+    None and, if text, not blank. Other data counts every element. The conversion record's
+    input counts and the Variables page's output counts both use this, so they compare.
+
+    Parameters
+    ----------
+    values : numpy.ndarray
+        The values of one variable.
+
+    Returns
+    -------
+    int
+        The number of non-missing values.
+
+    """
+    values = np.asarray(values)
+    if values.size == 0:
+        return 0
+    kind = values.dtype.kind
+    if kind == "f":
+        return int(np.isfinite(values).sum())
+    if kind in "mM":
+        return int((~np.isnat(values)).sum())
+    if kind in "SU":
+        return int((np.char.str_len(np.char.strip(values)) > 0).sum())
+    if kind == "O":
+        # netCDF4 variable-length text decodes to an object array: ""/whitespace/None is
+        # missing; genuinely non-text object data (rare) counts.
+        count = 0
+        for item in values.ravel().tolist():
+            if item is None:
+                continue
+            if isinstance(item, bytes):
+                item = item.decode("utf-8", "replace")
+            count += not isinstance(item, str) or bool(item.strip())
+        return count
+    return int(values.size)
+
+
 def _has_values(var: xr.Variable) -> bool:
     """Return True when a basestation variable holds at least one non-missing value.
-
-    Floating data is tested for any finite value (the reader has already turned fill
-    values into NaN), times for any value that is not NaT, and text for any string that is
-    not blank; other data counts as values when the variable is not empty.
 
     Parameters
     ----------
@@ -744,31 +784,10 @@ def _has_values(var: xr.Variable) -> bool:
     Returns
     -------
     bool
-        Whether the variable has any value in this file.
+        Whether the variable has any value in this file (see :func:`count_values`).
 
     """
-    if var.size == 0:
-        return False
-    values = np.asarray(var.values)
-    kind = values.dtype.kind
-    if kind == "f":
-        return bool(np.isfinite(values).any())
-    if kind in "mM":
-        return bool((~np.isnat(values)).any())
-    if kind in "SU":
-        return bool((np.char.str_len(np.char.strip(values)) > 0).any())
-    if kind == "O":
-        # netCDF4 variable-length text decodes to an object array: a dive of only
-        # ""/whitespace/None has no value; genuinely non-text object data (rare) counts.
-        for item in values.ravel().tolist():
-            if item is None:
-                continue
-            if isinstance(item, bytes):
-                item = item.decode("utf-8", "replace")
-            if not isinstance(item, str) or item.strip():
-                return True
-        return False
-    return True
+    return count_values(var.values) > 0
 
 
 def _presence_by_dive(list_of_datasets: Sequence[xr.Dataset]) -> dict:
@@ -808,6 +827,44 @@ def _presence_by_dive(list_of_datasets: Sequence[xr.Dataset]) -> dict:
             "valid": _dive_runs(valid, dives),
         }
     return {"dives": dives, "variables": variables}
+
+
+def _input_variables(list_of_datasets: Sequence[xr.Dataset]) -> dict[str, dict]:
+    """Return each basestation variable's form in the input files, for the variable index.
+
+    The OG1 file holds a variable's output form only; what it was in the basestation files
+    (its dimensions, units and storage type, and how many values it held) is read here, at
+    conversion time, so the report can show input beside output without the input files.
+
+    Parameters
+    ----------
+    list_of_datasets : sequence of xarray.Dataset
+        The basestation datasets that reach the output, one per dive.
+
+    Returns
+    -------
+    dict of str to dict
+        Basestation name to ``{"dimensions", "units", "dtype", "values"}``: the dimension
+        names, ``units`` and on-disk dtype from the first file that has the variable, and
+        the number of non-missing values summed over every file (a scalar counts one per
+        file that has a value).
+
+    """
+    found: dict[str, dict] = {}
+    for ds in sorted(list_of_datasets, key=lambda d: int(d.attrs["dive_number"])):
+        for name, var in ds.variables.items():
+            entry = found.get(str(name))
+            if entry is None:
+                # Decoded times carry their units and on-disk dtype in the encoding.
+                units = var.attrs.get("units", var.encoding.get("units", ""))
+                entry = found[str(name)] = {
+                    "dimensions": [str(d) for d in var.dims],
+                    "units": str(units),
+                    "dtype": str(var.encoding.get("dtype", var.dtype)),
+                    "values": 0,
+                }
+            entry["values"] += count_values(var.values)
+    return dict(sorted(found.items()))
 
 
 def _institution_from_file(attrs: Mapping) -> dict | None:
@@ -1298,6 +1355,7 @@ def convert(
         # Only the dives that reach the output: a rejected dive contributed nothing.
         record["inputs"] = [_input_record(ds) for ds in used_inputs]
         record["presence"] = _presence_by_dive(used_inputs)
+        record["input_variables"] = _input_variables(used_inputs)
         record["basestation_globals"] = _basestation_globals(used_inputs)
         # What init would propose for platform:, from the file the resolver reads.
         record["platform_from_file"] = vocabularies.platform_from_file(
@@ -2080,13 +2138,10 @@ def _convert_mission(
         page.parent.mkdir(parents=True, exist_ok=True)
         page.write_text(render_conversion(path), encoding="utf-8")
         _log.info("wrote %s", page)
-        if not draft:
-            # A draft is for setting up the mission metadata; no phase page.
-            from seagliderOG1.reports.phase import write_phase_page
+        from seagliderOG1.reports._pages import write_linked_pages
 
-            phase_page = write_phase_page(path, page)
-            if phase_page is not None:
-                _log.info("wrote %s", phase_page)
+        for linked in write_linked_pages(path, page):
+            _log.info("wrote %s", linked)
     return path
 
 

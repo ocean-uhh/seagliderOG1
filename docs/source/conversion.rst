@@ -29,7 +29,7 @@ changed over time. OG1 is a single, CF-compliant layout for sharing glider data.
   (``sg_data_point`` becomes ``N_MEASUREMENTS``);
 * a conversion record ``<id>_conversion.json`` beside it (what was renamed, merged and dropped,
   and each variable's per-dive presence);
-* optionally an HTML conversion page (see :ref:`conversion_page`).
+* optionally the HTML report pages (see :ref:`conversion_page`).
 
 **Overall action** — concatenate the dives onto one measurement axis; rename variables to OG1,
 attach CF and OG1 attributes, and convert units; add platform, sensor, contributor and
@@ -45,35 +45,37 @@ The steps
    measurement axis (``sg_data_point`` becomes ``N_MEASUREMENTS``) and which are carried as
    scalars. Build the basestation → OG1 name mapping once, across all files, so a variable
    present in only some dives gets the same name everywhere.
-   *Page:* Dimensions; Reconciliation.
+   *Pages:* Basestation (dimension sizes); Variables (fate); Processing.
 
 #. **Per dive file:**
 
    * merge that file's dimensions onto the measurement axis;
-   * append the GPS fixes as extra rows (``LATITUDE_GPS``, ``LONGITUDE_GPS``, ``TIME_GPS``);
+   * merge the GPS fixes onto the axis, one data point per fix (``LATITUDE_GPS``,
+     ``LONGITUDE_GPS``, ``TIME_GPS``);
    * add ``dive_number``, ``PROFILE_NUMBER`` and ``PHASE`` (from the glider's state table,
      G&C events and GPS fixes; see :ref:`phase`);
    * apply the OG1 vocabulary: rename, attach the OG1 attributes, convert units, mark the
      coordinates, encode time. A variable with no OG1 name keeps its basestation name, with
      its units in the canonical spelling where the converter recognises them.
 
-   *Page:* Derived variables; Variables.
+   *Pages:* Variables (each variable, with the steps it went through); Phase.
 
 #. **Concatenate** the dives on ``N_MEASUREMENTS`` and sort by ``TIME``.
-   *Page:* Before → after (samples on the shared axis).
+   *Page:* Conversion (summary).
 
 #. **TEOS-10 variables.** Add ``POTDENS0`` when the basestation did not write it (and ``PSAL``
    from conductivity when the file has no salinity). See `Derived TEOS-10 variables`_.
-   *Page:* Derived variables; Same quantity, more than once.
+   *Pages:* Variables (the derived variables, with their inputs); Basestation (salinity).
 
 #. **Sensors.** Gather each instrument's record from the calibration comments, apply the
    ``sensors:`` corrections from the mission file, write one ``SENSOR_*`` variable per instrument
    and point each measured variable's ``sensor`` attribute at it.
-   *Mission file:* ``sensors:``. *Page:* Sensors named by OG1.
+   *Mission file:* ``sensors:``. *Pages:* Conversion (sensors and calibration comments);
+   OG1 format (sensors).
 
 #. **Scalars.** Collect the per-dive parameters (``log_*``, ``sg_cal_*``, ``gc_*``); a value
    constant across the mission is stored as a scalar, one that varies is stored per dive.
-   *Page:* Scalar parameters.
+   *Pages:* Basestation and OG1 format (parameters that change between dives).
 
 #. **Identity and metadata.** Resolve the platform fields (mission file over the first dive
    file's attributes), add ``TRAJECTORY``, apply the global attributes from the three sections,
@@ -81,10 +83,11 @@ The steps
    conversion record.
    *Mission file:* ``platform:``, ``identity_and_discovery:``, ``rights_and_access:``,
    ``provenance_and_processing:``, ``contributors:``, ``institutions:``.
-   *Page:* mission.yaml against the data; Global attributes.
+   *Pages:* Conversion (mission.yaml against the data); OG1 format (global attributes).
 
-Steps 1 and 3–7 run once per mission; step 2 runs once per dive file. Each *Page:* note names the
-section of the :ref:`conversion_page` that shows that step's result.
+Steps 1 and 3–7 run once per mission; step 2 runs once per dive file. Each *Pages:* note names
+the :ref:`report pages <conversion_page>` that show that step's result; the Processing page
+lists every step as it ran for the mission.
 
 What changes
 ------------

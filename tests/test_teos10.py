@@ -8,7 +8,6 @@ import pytest
 import xarray as xr
 
 from seagliderOG1 import _convert, _pipeline
-from seagliderOG1.reports import conversion
 
 SG271 = (
     pathlib.Path(__file__).resolve().parent.parent / "seagliderOG1" / "data" / "sg271"
@@ -117,15 +116,3 @@ def test_inputs_in_other_units_are_refused(sg271_og1, caplog, name, units):
         ds = _pipeline.add_teos10_variables(ds)
     assert "POTDENS0" not in ds.variables
     assert any(f"{name} ('{units}'" in r.message for r in caplog.records)
-
-
-def test_report_compares_psal_with_conductivity(sg271_og1):
-    """The practical-salinity group gains the page-only row from CNDC, TEMP and PRES."""
-    with xr.open_dataset(sg271_og1, engine="netcdf4") as ds:
-        groups = {g["standard_name"]: g for g in conversion._duplicate_groups(ds)}
-    rows = {r["name"]: r for r in groups["sea_water_practical_salinity"]["rows"]}
-    row = rows["SP from CNDC, TEMP, PRES"]
-    assert row["note"].startswith("computed for this page")
-    # sg271's salinity is ~0.067 below salinity from its conductivity (the offset the row
-    # exists to show); the row reports it, member minus reference.
-    assert 0.06 < float(row["offset"]) < 0.075

@@ -6,6 +6,9 @@ format <https://oceangliderscommunity.github.io/OG-format-user-manual/OG_Format.
 mission in, one OG1 file out; the platform, contributor and institution metadata come from a
 ``mission.yaml`` you keep with your data, never from defaults inside the package.
 
+`Open the example report <_static/demo/index.html>`__ — the linked HTML pages a conversion
+writes, for the bundled sg271 sample (three dives); see :ref:`example_report`.
+
 For recommendations or bug reports, open an issue at
 https://github.com/ocean-uhh/seagliderOG1/issues/new.
 

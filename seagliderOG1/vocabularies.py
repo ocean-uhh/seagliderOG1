@@ -31,7 +31,7 @@ OG1 format requirements without code changes.
 """
 
 import pathlib
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from typing import NamedTuple
 
 import yaml
@@ -311,6 +311,80 @@ def platform_from_file(attrs: dict) -> dict:
 RAW_COUNT_SUFFIXES = ("redCount", "blueCount", "fluorCount", "redRef", "blueRef")
 RAW_COUNT_UNITS = "counts"
 
+# The basestation variables a glider flight model reads or writes: name -> (role, the name
+# gliderflightOG1 reads it under, or None). Roles: the hydrodynamic and buoyancy constants, the
+# attitude and buoyancy measurements, and the model's outputs. The conversion report's flight
+# panel and the variable index's "flight" filter read this one list.
+FLIGHT_MODEL_VARIABLES: dict[str, tuple[str, str | None]] = {
+    "eng_pitchAng": ("attitude", "PITCH"),
+    "eng_rollAng": ("attitude", None),
+    "eng_head": ("attitude", None),
+    "eng_pitchCtl": ("control", None),
+    "eng_rollCtl": ("control", None),
+    "eng_vbdCC": ("buoyancy", "VBD"),
+    "log_C_VBD": ("buoyancy", "C_VBD"),
+    "sg_cal_vbdbias": ("buoyancy", "vbdbias"),
+    "sg_cal_volmax": ("buoyancy", "volmax"),
+    "sg_cal_vbd_min_cnts": ("buoyancy", "vbd_min_cnts"),
+    "sg_cal_vbd_cnts_per_cc": ("buoyancy", "vbd_cnts_per_cc"),
+    "sg_cal_mass": ("buoyancy", "mass"),
+    "sg_cal_abs_compress": ("buoyancy", "abs_compress"),
+    "sg_cal_therm_expan": ("buoyancy", "therm_expan"),
+    "sg_cal_temp_ref": ("buoyancy", "temp_ref"),
+    "sg_cal_rho0": ("buoyancy", "rho0"),
+    "sg_cal_hd_a": ("hydrodynamic", "hd_a"),
+    "sg_cal_hd_b": ("hydrodynamic", "hd_b"),
+    "sg_cal_hd_c": ("hydrodynamic", "hd_c"),
+    "glide_angle": ("model output", None),
+    "speed": ("model output", None),
+    "horz_speed": ("model output", None),
+    "vert_speed": ("model output", None),
+    "glide_angle_gsm": ("model output (gsm)", None),
+    "speed_gsm": ("model output (gsm)", None),
+    "horz_speed_gsm": ("model output (gsm)", None),
+    "vert_speed_gsm": ("model output (gsm)", None),
+}
+
+
+# Basestation name prefixes by subsystem, tested in order after the flight-model list and the
+# file's instruments; the variable index filters on these labels.
+SUBSYSTEM_PREFIXES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("GPS", ("log_gps", "gps", "GPS")),
+    ("G&C", ("gc_",)),
+    ("calibration", ("sg_cal_",)),
+    ("log", ("log_",)),
+    ("engineering", ("eng_",)),
+)
+
+
+def subsystem_of(name: str, instruments: Collection[str] = ()) -> str:
+    """Return the subsystem label of a basestation variable, for the variable index.
+
+    Parameters
+    ----------
+    name : str
+        A basestation variable name.
+    instruments : collections.abc.Collection of str, optional
+        The instrument names the file lists in its ``instrument`` global (``legato``,
+        ``codaTODO``, ...); a variable named for one of them is a sensor variable.
+
+    Returns
+    -------
+    str
+        ``"flight"``, ``"sensors"``, one of the :data:`SUBSYSTEM_PREFIXES` labels, or
+        ``"science"`` for the rest (the CTD-derived and navigation variables).
+
+    """
+    if name in FLIGHT_MODEL_VARIABLES:
+        return "flight"
+    if any(name == inst or name.startswith(f"{inst}_") for inst in instruments):
+        return "sensors"
+    for label, prefixes in SUBSYSTEM_PREFIXES:
+        if name.startswith(prefixes):
+            return label
+    return "science"
+
+
 # The package units view over the vendored family tables (reports/_vendored/units.py). One table
 # resolves a reader spelling to the OG1 variable's canonical spelling and the factor to reach it.
 # Each row below is a spelling the bundled samples carry that the family default does not already
@@ -526,9 +600,9 @@ OG1_REQUIRED_VARS: tuple[str, ...] = (
 OG1_REQUIRED_DIMS: tuple[str, ...] = ("N_MEASUREMENTS",)
 
 # Variables the project proposes to canonise but the upstream OG1 vocabulary has not adopted
-# yet. The conversion page lifts these out of the carried-through tier into a named candidate
-# group, shown present/absent like the required tier, so "what a flight model needs" and "what
-# we hope to agree as OG1 parameters" are visible on the page. This is the project's editorial
+# yet. The Variables page marks these ("candidate for OG1", a filter chip) and lists the ones
+# the file does not hold, so "what a flight model needs" and "what we hope to agree as OG1
+# parameters" are visible on the page. This is the project's editorial
 # list: edit it as the data-format group agrees candidates, and remove a name once it appears in
 # OG1_variable_attributes.yaml upstream. Seeded from demo_sg005 (2026-10-19); the membership is
 # a proposal to prune, not a standard — the flight-model inputs in particular are a first guess.

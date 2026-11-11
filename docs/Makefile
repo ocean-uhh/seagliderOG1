@@ -14,18 +14,21 @@ help:
 
 .PHONY: help Makefile report units phase
 
-# Regenerate the hosted sg271 conversion report into _static/demo/ before building, so a local
-# `make html` mirrors CI. Uses the CLI (init --example -> process), not the demo notebook, so it
-# needs no jupyter kernel; the sample is converted in a temp dir and only the HTML page is kept.
+# Regenerate the hosted sg271 report pages into _static/demo/ before building, so a local
+# `make html` mirrors CI. Uses the CLI (init --example -> process --report), not the demo
+# notebook, so it needs no jupyter kernel; the sample is converted in a temp dir and only the
+# HTML pages are kept, under their own names (they link to each other by name), with the
+# conversion page also as index.html, the entry the docs link to.
 report:
 	@cd .. && tmp=$$(mktemp -d) && \
 	  python -m seagliderOG1.cli init --example "$$tmp/sg271.yaml" --force >/dev/null && \
 	  ( cd "$$tmp" && python -m seagliderOG1.cli process sg271.yaml --force >/dev/null ) && \
 	  id=$$(python -c "import seagliderOG1.readers as r; print(r.SAMPLE_ID)") && \
-	  mkdir -p docs/source/_static/demo && \
-	  cp "$$tmp/$${id}_conversion.html" docs/source/_static/demo/conversion.html && \
+	  rm -rf docs/source/_static/demo && mkdir -p docs/source/_static/demo && \
+	  cp "$$tmp/$${id}"_*.html docs/source/_static/demo/ && \
+	  cp "$$tmp/$${id}_conversion.html" docs/source/_static/demo/index.html && \
 	  rm -rf "$$tmp" && \
-	  echo "regenerated docs/source/_static/demo/conversion.html"
+	  echo "regenerated docs/source/_static/demo/ ($$(ls docs/source/_static/demo | wc -l | tr -d ' ') pages)"
 
 units:
 	@cd .. && python docs/generate_units_map.py
