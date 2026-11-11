@@ -1,5 +1,6 @@
 {% import "_nc_tables.html" as t -%}
 {% import "_nav.html" as navm -%}
+{% import "_masthead.html" as mh -%}
 {% macro wbr(name) -%}
 {% for part in name.split("_") %}{{ part }}{% if not loop.last %}_<wbr>{% endif %}{% endfor %}
 {%- endmacro -%}
@@ -15,7 +16,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ title }} — variables</title>
+<title>{{ masthead.title }} — {{ masthead.type }}</title>
 <style>
 {{ css | safe }}
 section { margin: 1.4rem 0; }
@@ -56,23 +57,12 @@ dl.glossary dd { margin: 0; color: var(--gray-5); max-width: 78ch; }
 </head>
 <body>
 <div id="top"></div>
-<div class="masthead">
-  <div class="masthead-header">
-    <h1>{{ title }}</h1>
-    <span class="masthead-type">variables</span>
-  </div>
-  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>Every variable: basestation input beside OG1 output</span><span>generated {{ generated_at }}</span></p>
-  {{ navm.page_nav(page_nav) }}
-  <dl class="meta-grid">
-  {%- for label, value in masthead_meta %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
-  {%- endfor %}
-  </dl>
-  <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
-</div>
-<nav class="jump-nav"><a href="#variables">Variable index</a> · <a href="#glossary">Glossary</a></nav>
+{{ mh.masthead(masthead, page_nav) }}
+{%- set secs = number_sections([("variables", "Variable index"), ("glossary", "Glossary", "reference")]) %}
+{{ mh.jump_nav(secs) }}
 
 <section id="variables">
-<h2>Variable index</h2>
+<h2>{{ secs.mark["variables"] }} Variable index</h2>
 <p class="caption">Every basestation variable ({{ input_count }}), then every variable the converter built. The basestation name is above, the name in the OG1 file below; search either. Units, dtype and values show the basestation form above the OG1 form.
 <strong>Highlight rule:</strong> a <em>Values</em> cell is highlighted when the number of non-missing values in the OG1 file differs from the basestation files (for a scalar: the dives with a value).
 {%- if not record_present %} The conversion record beside this file has no input variables (written by an older version), so the basestation columns read <em>not recorded</em>.{% endif %}</p>
@@ -133,7 +123,7 @@ dl.glossary dd { margin: 0; color: var(--gray-5); max-width: 78ch; }
 </section>
 
 <section id="glossary">
-<h2>Glossary</h2>
+<h2>{{ secs.mark["glossary"] }} Glossary</h2>
 {% include "_glossary.html" %}
 </section>
 

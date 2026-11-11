@@ -1,0 +1,138 @@
+{% import "_masthead.html" as mh -%}
+{% macro wbr(name) -%}
+{% for part in name.split("_") %}{{ part }}{% if not loop.last %}_<wbr>{% endif %}{% endfor %}
+{%- endmacro -%}
+{% import "_per_dive.html" as pd -%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ masthead.title }} — {{ masthead.type }}</title>
+<style>
+{{ css | safe }}
+section { margin: 1.4rem 0; }
+.table-wrap { overflow-x: auto; }
+td.num { text-align: right; white-space: nowrap; }
+details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
+svg.strip, svg.heat { margin-top: 4px; max-width: 100%; height: auto; display: block; }
+.strip-legend { font-size: var(--fs-xs); }
+.heat-table td { vertical-align: middle; }
+.heat-table td.cell-svg { min-width: 240px; width: 60%; }
+.dive-axis { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--muted, #667); max-width: {{ width }}px; }
+.ramp { display: inline-flex; vertical-align: middle; margin: 0 0.3rem; }
+.ramp span { width: 14px; height: 10px; display: inline-block; }
+.pattern-vars { font-size: 0.9rem; }
+.var-list { font-size: 0.92rem; }
+</style>
+</head>
+<body>
+<div id="top"></div>
+{{ mh.masthead(masthead, page_nav) }}
+{%- set secs = number_sections([("dimensions", "Dimension sizes"), ("presence", "Variables not in every dive"),
+    ("per-dive", "Parameters that change"), ("globals", "Global attributes that differ"), ("variables", "Variables by dimension")]) %}
+{{ mh.jump_nav(secs) }}
+
+<p class="caption">The {{ n_files }} basestation dive files <code>{{ first_file }}</code> … <code>{{ last_file }}</code>, described as they were read: {{ n_variables }} variables, {{ n_variables - n_partial }} in every dive. Nothing here is converted; how each variable became OG1 is on the Variables page.</p>
+
+<section id="dimensions">
+<h2>{{ secs.mark["dimensions"] }} Dimension sizes by dive</h2>
+<p class="caption">One row per dimension, one cell per dive (dives {{ dives[0] }}–{{ dives[-1] }}, left to right; hover a cell for its dive and size).
+{%- if has_durations %} <strong>Shading:</strong> samples per minute of the dive (from its first to its last data point in the OG1 file), lightest to darkest across that row's dives
+<span class="ramp" aria-hidden="true">{% for c in ramp %}<span style="background:{{ c }}"></span>{% endfor %}</span>,
+so a steady sample rate is one even shade whatever the dive depth; a step is a rate change, a gap is a dive without the dimension. A dimension of the same size in every dive is one mid shade.{% else %} The dive durations could not be read from the OG1 file, so every cell is one shade.{% endif %}</p>
+<div class="table-wrap">
+<table class="nc heat-table">
+<thead><tr><th>Dimension</th><th>By dive</th><th>Median size</th><th>Median per minute</th><th>Dives</th></tr></thead>
+<tbody>
+{%- for r in heatmap %}
+<tr><td><code>{{ wbr(r.name) }}</code></td>
+<td class="cell-svg"><svg class="heat" viewBox="0 0 {{ width }} 14" width="{{ width }}" height="14" preserveAspectRatio="none" role="img" aria-label="{{ r.name }} by dive">{% for c in r.cells %}<rect x="{{ c.x }}" y="0" width="{{ c.width }}" height="14" fill="{{ c.fill }}"><title>{{ c.title }}</title></rect>{% endfor %}</svg></td>
+<td class="num">{{ "{:,}".format(r.median_size) }}</td>
+<td class="num">{% if r.constant %}<span class="muted">same size every dive</span>{% elif r.median_rate is not none %}{{ "%.3g" | format(r.median_rate) }}{% else %}—{% endif %}</td>
+<td class="num">{{ r.dives }}</td></tr>
+{%- endfor %}
+</tbody></table>
+</div>
+<p class="fig-source">source: seagliderOG1/reports/basestation.py:dimension_heatmap</p>
+</section>
+
+<section id="presence">
+<h2>{{ secs.mark["presence"] }} Variables not in every dive</h2>
+{%- if patterns %}
+<p class="caption">{{ n_partial }} of {{ n_variables }} variables are missing from some dives. Variables in exactly the same dives share a strip: a filled cell is a dive the variable is in (hover for the dives). The other {{ n_variables - n_partial }} are in every dive.</p>
+<div class="table-wrap">
+<table class="nc">
+<thead><tr><th>In</th><th>Dives</th><th>Variables</th></tr></thead>
+<tbody>
+{%- for p in patterns %}
+<tr><td class="cell-svg" style="min-width:240px;width:45%;"><svg class="strip" viewBox="0 0 {{ width }} 14" width="{{ width }}" height="14" preserveAspectRatio="none" role="img" aria-label="{{ p.text }}"><rect x="0" y="0" width="{{ width }}" height="14" fill="var(--surface-2, #eef1f5)"></rect>{% for c in p.cells %}<rect x="{{ c.x }}" y="0" width="{{ c.width }}" height="14" fill="{{ fill }}"><title>{{ c.title }}</title></rect>{% endfor %}</svg><span class="muted strip-legend">{{ p.text }}</span></td>
+<td class="num">{{ p.count }}</td>
+<td class="pattern-vars">{% if p.variables | length > 8 %}{% for v in p.variables[:6] %}<code>{{ v }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+<details class="vars"><summary>and {{ p.variables | length - 6 }} more</summary>{% for v in p.variables[6:] %}<code>{{ v }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</details>
+{%- else %}{% for v in p.variables %}<code>{{ v }}</code>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</td></tr>
+{%- endfor %}
+</tbody></table>
+</div>
+{%- else %}
+<p class="caption">Every variable is in every dive.</p>
+{%- endif %}
+<p class="fig-source">source: seagliderOG1/reports/basestation.py:presence_patterns</p>
+</section>
+
+<section id="per-dive">
+<h2>{{ secs.mark["per-dive"] }} Parameters that change between dives</h2>
+<p class="caption">The one-value variables (calibration constants, pilot settings, log entries) whose value is not the same in every dive file. {{ pd.caption(max_runs) }} Names are as written in the OG1 file: OG1-named ones first, the rest folded by family.</p>
+{%- if per_dive_og1 %}{{ pd.dive_table(per_dive_og1, strip_width) }}{% endif %}
+{%- for family, rows in per_dive_families %}
+<details class="fold"><summary>{{ family }} ({{ rows | length }})</summary>{{ pd.dive_table(rows, strip_width) }}</details>
+{%- endfor %}
+{%- if not per_dive_og1 and not per_dive_families %}
+<p class="caption">None: every one-value variable is the same in every dive file.</p>
+{%- endif %}
+<p class="fig-source">source: seagliderOG1/reports/og1.py:per_dive_rows</p>
+</section>
+
+<section id="globals">
+<h2>{{ secs.mark["globals"] }} Global attributes that differ between files</h2>
+<p class="caption">The global attributes with more than one value across the dive files (the distinct values only, not which dive had which).
+<strong>Highlight rule:</strong> an attribute not expected to change from dive to dive (expected: times, dive number, bounds, identifiers, history).</p>
+{%- if unexpected %}
+<table class="nc">
+<thead><tr><th>Attribute</th><th>Distinct values</th><th>Values (up to 5)</th></tr></thead>
+<tbody>
+{%- for r in unexpected %}<tr><td class="cell-bad"><code>{{ r.name }}</code></td><td class="num">{{ r.count }}</td><td class="cell-wrap">{{ r["values"] | join(" · ") }}</td></tr>{% endfor %}
+</tbody></table>
+{%- else %}
+<p>None beyond those expected to change.</p>
+{%- endif %}
+{%- if expected %}
+<details class="fold"><summary>Expected to differ ({{ expected | length }})</summary>
+<table class="nc">
+<thead><tr><th>Attribute</th><th>Distinct values</th><th>Values (up to 5)</th></tr></thead>
+<tbody>
+{%- for r in expected %}<tr><td><code>{{ r.name }}</code></td><td class="num">{{ r.count }}</td><td class="cell-wrap">{{ r["values"] | join(" · ") }}</td></tr>{% endfor %}
+</tbody></table></details>
+{%- endif %}
+<p class="fig-source">source: seagliderOG1/reports/basestation.py:differing_globals</p>
+</section>
+
+<section id="variables">
+<h2>{{ secs.mark["variables"] }} Variables by dimension</h2>
+<p class="caption">All {{ n_variables }} variables as read, folded by their dimensions. <em>Values</em> counts the non-missing values summed over the dive files; <em>Dives</em> the files the variable is in.</p>
+{%- for dim, rows in groups %}
+<details class="fold"><summary><code>{{ dim }}</code> ({{ rows | length }})</summary>
+<div class="table-wrap"><table class="nc sortable var-list">
+<thead><tr><th>Name</th><th>Units</th><th>dtype</th><th>Values</th><th>Dives</th></tr></thead>
+<tbody>
+{%- for r in rows %}<tr><td><code>{{ wbr(r.name) }}</code></td><td>{{ r.units or "—" }}</td><td><code>{{ r.dtype }}</code></td><td class="num" data-sort="{{ r["values"] }}">{{ "{:,}".format(r["values"]) }}</td><td class="num">{{ r.dives if r.dives is not none else "—" }}</td></tr>{% endfor %}
+</tbody></table></div></details>
+{%- endfor %}
+<p class="fig-source">source: seagliderOG1/reports/basestation.py:variables_by_dimension</p>
+</section>
+
+<footer>Generated by seagliderOG1 v{{ version }} &nbsp;&middot;&nbsp; {{ generated_at }}</footer>
+{{ js_sort_tables | safe }}
+{{ js_top_links | safe }}
+</body>
+</html>

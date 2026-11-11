@@ -88,15 +88,6 @@ def test_variable_groups_put_derived_no_dimension_last():
     assert all(row["name"] in ledger["derived"] for row in rows)
 
 
-def test_time_coverage_span_is_compact_same_day():
-    """A same-day span states the date once and drops the seconds."""
-    assert (
-        conversion._time_coverage_span("20080606T180256", "20080606T203001")
-        == "2008-06-06 18:02 → 20:30"
-    )
-    assert conversion._time_coverage_span(None, "20080606T203001") == ""
-
-
 def test_global_attribute_groups_are_the_five_conventions_no_other():
     """Globals group into the five vendored conventions; nothing falls to Other on demo."""
     from seagliderOG1.reports import design
@@ -164,17 +155,6 @@ def test_requirement_summary_counts_the_mandatory_tier():
     text, amber = conversion._requirement_summary(ds)
     assert text.startswith("OG1 requirement: mandatory 9/9 present")
     assert amber is False
-
-
-def test_masthead_meta_names_platform_not_input_output_counts():
-    """The masthead carries the platform/serial; the input → output counts moved to §1."""
-    ds = _dataset()
-    ledger = _record.conversion_ledger(ds)
-    meta = dict(conversion._masthead_meta(ds, ledger))
-    assert "sg005" in meta["Platform"]
-    assert (
-        "Inputs → outputs" not in meta
-    )  # now the first row of the Before → after table
 
 
 def test_history_rows_are_ordinal_numbered():
@@ -613,7 +593,7 @@ def test_config_suggestions_on_the_page(tmp_path):
     with netCDF4.Dataset(path, "a") as nc:
         nc.setncattr("draft", "v2 of the cruise report")
     html = conversion.render_conversion(path)
-    assert '<span class="masthead-type">conversion</span>' in html
+    assert '<span class="masthead-type">Conversion</span>' in html
 
 
 def test_importing_reports_pins_a_headless_backend() -> None:

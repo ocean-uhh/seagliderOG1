@@ -1222,7 +1222,7 @@ def test_enrich_from_config_refuses_converter_owned_keys(
 def test_draft_writes_only_draft_files_and_a_draft_page(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """draft: six files, every name ends _draft*; the netCDF says it is not OG1."""
+    """draft: seven files, every name ends _draft*; the netCDF says it is not OG1."""
     import xarray as xr
 
     out = tmp_path / "drafts"
@@ -1237,6 +1237,7 @@ def test_draft_writes_only_draft_files_and_a_draft_page(
     assert written == sorted(
         [
             f"{stem}.nc",
+            f"{stem}_basestation.html",
             f"{stem}_conversion.html",
             f"{stem}_conversion.json",
             f"{stem}_mission.yaml",
@@ -1250,7 +1251,7 @@ def test_draft_writes_only_draft_files_and_a_draft_page(
         assert "OG-1.0" not in ds.attrs["Conventions"]
         assert "CF-1.10" in ds.attrs["Conventions"]
     html = (out / f"{stem}_conversion.html").read_text(encoding="utf-8")
-    assert '<span class="masthead-type">draft</span>' in html
+    assert '<span class="masthead-type">Draft</span>' in html
     assert "this is not an OG1 file" in html
     assert "Basestation global attributes" in html
     assert "Suggested mission.yaml lines" in html

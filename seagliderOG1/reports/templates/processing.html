@@ -1,10 +1,11 @@
 {% import "_nav.html" as navm -%}
+{% import "_masthead.html" as mh -%}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ title }} — processing</title>
+<title>{{ masthead.title }} — {{ masthead.type }}</title>
 <style>
 {{ css | safe }}
 section { margin: 1.4rem 0; }
@@ -26,23 +27,12 @@ section { margin: 1.4rem 0; }
 </head>
 <body>
 <div id="top"></div>
-<div class="masthead">
-  <div class="masthead-header">
-    <h1>{{ title }}</h1>
-    <span class="masthead-type">processing</span>
-  </div>
-  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>Every step of the conversion, in the order it ran</span><span>generated {{ generated_at }}</span></p>
-  {{ navm.page_nav(page_nav) }}
-  <dl class="meta-grid">
-  {%- for label, value in masthead_meta %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
-  {%- endfor %}
-  </dl>
-  <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
-</div>
-<nav class="jump-nav"><a href="#steps-section">Steps</a> · <a href="#units">Unit changes</a></nav>
+{{ mh.masthead(masthead, page_nav) }}
+{%- set secs = number_sections([("steps-section", "Steps"), ("units", "Unit changes")]) %}
+{{ mh.jump_nav(secs) }}
 
 <section id="steps-section">
-<h2>Steps</h2>
+<h2>{{ secs.mark["steps-section"] }} Steps</h2>
 <p class="caption">The conversion's steps in run order, grouped into stages. <em>Lossless?</em> says whether the basestation input can be recovered from the output; <em>Recorded</em> says where a reader of the OG1 file alone finds what the step did.
 <strong>Highlight rule:</strong> a <em>Recorded</em> cell is highlighted when the OG1 file does not record the step's effect (the stage pill is then amber too).</p>
 <div class="stage-pills" aria-label="Stages">
@@ -65,7 +55,7 @@ section { margin: 1.4rem 0; }
 
 <section id="units">
 {%- set us = steps | selectattr("stage", "equalto", "units") | list %}
-<h2>Unit changes (steps {{ us[0].number }}–{{ us[1].number }})</h2>
+<h2>{{ secs.mark["units"] }} Unit changes (steps {{ us[0].number }}–{{ us[1].number }})</h2>
 <p class="caption">Each variable whose units the conversion corrected, converted or adopted. <em>Label corrected</em>: the basestation label was wrong for the magnitude, so only the label was fixed. <em>Converted</em>: the values were scaled by the factor shown. <em>OG1 label adopted</em>: the basestation file carried no units, so the OG1 label was taken. Spelling-only changes (step {{ us[2].number }}) are marked on the Variables page.</p>
 {%- if unit_corrections_rows %}
 <table class="nc sortable">

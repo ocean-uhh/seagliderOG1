@@ -1,5 +1,6 @@
 {% import "_nc_tables.html" as t -%}
 {% import "_nav.html" as navm -%}
+{% import "_masthead.html" as mh -%}
 {% macro snippet(id, title, text) -%}
 <div class="snippet">
 <p class="snippet-title">{{ title }} <button type="button" class="copy" data-copy="{{ id }}">copy</button></p>
@@ -11,7 +12,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ title }}</title>
+<title>{{ masthead.title }} — {{ masthead.type }}</title>
 <style>
 {{ css | safe }}
 section { margin: 1.4rem 0; }
@@ -43,27 +44,19 @@ details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
 </head>
 <body>
 <div id="top"></div>
-<div class="masthead">
-  <div class="masthead-header">
-    <h1>{{ title }}</h1>
-    <span class="masthead-type">{{ "draft" if draft else "conversion" }}</span>
-  </div>
-  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>{{ title }}</span><span>generated {{ generated_at }}</span></p>
-  {{ navm.page_nav(page_nav) }}
-  <dl class="meta-grid">
-  {%- for label, value in masthead_meta %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
-  {%- endfor %}
-  </dl>
-  <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
-</div>
+{{ mh.masthead(masthead, page_nav) }}
 {%- if draft %}
 <p class="caption cell-bad draft-banner">Draft: converted with no mission config, so platform, contributor and institution metadata are absent or <code>UNK</code> and this is not an OG1 file (amber: every draft page carries this line). It shows what the basestation files hold and what the conversion does to them; write the config with <code>seagliderOG1 init --raw-dir …</code>, then <code>seagliderOG1 process</code>.</p>
 {%- endif %}
-<nav class="jump-nav"><a href="#summary">Summary</a> ·{% if draft_snippets %} <a href="#suggested">Suggested mission.yaml lines</a> ·{% endif %}{% if config_suggestions %} <a href="#config-check">mission.yaml against the data</a> ·{% endif %} <a href="#losses">Losses</a> ·
-  <a href="#flight">Flight model</a> · <a href="#calibration">Sensors and calibration</a> ·
-  <a href="#traced">One variable traced</a> · <a href="#glossary">Glossary</a> · <a href="#globals">Global attributes</a></nav>
+{%- set secs = number_sections([("summary", "Summary"),
+    ("suggested", "Suggested mission.yaml lines") if draft_snippets else none,
+    ("config-check", "mission.yaml against the data") if config_suggestions else none,
+    ("losses", "Losses"), ("flight", "Flight model"), ("calibration", "Sensors and calibration"),
+    ("traced", "One variable traced"), ("glossary", "Glossary", "reference"),
+    ("globals", "Basestation global attributes" if draft else "Global attributes", "reference")]) %}
+{{ mh.jump_nav(secs) }}
 <section id="summary">
-<h2>Summary</h2>
+<h2>{{ secs.mark["summary"] }} Summary</h2>
 <div class="howto"><p><strong>How to read this report.</strong> The tiles say whether the conversion is complete. <a href="#losses">Losses</a> lists what did <em>not</em> reach the OG1 file in the same form; empty means lossless. The <a href="{{ variables_href }}">Variables</a> page finds any variable by its basestation or OG1 name; the <a href="{{ processing_href }}">Processing</a> page lists every step in the order it ran{% if phase_href %}; the <a href="{{ phase_href }}">Phase</a> page shows how PHASE was assigned{% endif %}. Terms are in the <a href="#glossary">glossary</a>.</p></div>
 <p class="caption">Counts from the OG1 file and the conversion record beside it{% if not record_present %}, which was not found, so the basestation counts read "not recorded"{% endif %}. <strong>Highlight rule:</strong> a tile is marked when its count is short (inputs not all accounted for, a dive record missing) or when any loss applies.</p>
 <dl class="tiles">
@@ -78,7 +71,7 @@ details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
 
 {%- if draft_snippets %}
 <section id="suggested">
-<h2>Suggested mission.yaml lines</h2>
+<h2>{{ secs.mark["suggested"] }} Suggested mission.yaml lines</h2>
 <p class="caption">What this draft read from the basestation files, as lines to paste into a <code>mission.yaml</code> (start one with <code>seagliderOG1 init</code>, or use <code>&lt;id&gt;_draft_mission.yaml</code> written beside this page, which also has <code>raw_dir</code>). Only values the files carry are filled; <code>null</code> is yours to fill.</p>
 <div class="snippets">
 {%- for s in draft_snippets %}
@@ -90,7 +83,7 @@ details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
 
 {%- if config_suggestions %}
 <section id="config-check">
-<h2>mission.yaml against the data</h2>
+<h2>{{ secs.mark["config-check"] }} mission.yaml against the data</h2>
 <p class="caption">Lines for the <code>mission.yaml</code> this conversion was given, where it and the output disagree or fall short: the requested <code>dives</code> against the dives that reached the file; platform fields set in the config against the values the files carry (the config wins by design, e.g. a local nickname for <code>PLATFORM_SERIAL_NUMBER</code>, so a pair is a value to check, not an error); platform fields written as <code>UNK</code> or omitted; institution ids the registry resolved; and missing ACDD globals. Only checks that find something are shown.</p>
 {%- for s in config_suggestions %}
 {%- set block = loop.index %}
@@ -106,7 +99,7 @@ details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
 {%- endif %}
 
 <section id="losses">
-<h2>Losses</h2>
+<h2>{{ secs.mark["losses"] }} Losses</h2>
 <p class="caption">A loss is something in the basestation files that is not in the OG1 file in the same form: dropped structure, or a label not kept. Changed values that are recorded (unit factors, float32 storage, time shifts) and additions are steps, on the Processing page. <strong>Highlight rule:</strong> a loss that applies to this file, or one the conversion does not count ("not recorded").</p>
 <table class="nc">
 <thead><tr><th>Loss</th><th>Kind</th><th>Count</th><th>Examples</th><th>Recorded in the file</th></tr></thead>
@@ -120,7 +113,7 @@ details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
 </section>
 
 <section id="flight">
-<h2>Flight model</h2>
+<h2>{{ secs.mark["flight"] }} Flight model</h2>
 <p class="caption">The basestation variables a glider flight model reads or writes: where each went in the OG1 file, its units, and its form. <em>gliderflightOG1 reads</em> names the input that package expects. <strong>Highlight rule:</strong> an input gliderflightOG1 reads that is not usable here as a number (stored as per-dive JSON text, or not written).</p>
 <table class="nc">
 <thead><tr><th>Role</th><th>Basestation → OG1 file</th><th>Units</th><th>Form</th><th>gliderflightOG1 reads</th><th>Ready?</th></tr></thead>
@@ -138,7 +131,7 @@ details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
 </section>
 
 <section id="calibration">
-<h2>Sensors and calibration comments</h2>
+<h2>{{ secs.mark["calibration"] }} Sensors and calibration comments</h2>
 <h3>Sensors named by OG1 (not required)</h3>
 {%- if og1_sensors %}
 <p class="caption">{{ og1_sensors|length }} <code>SENSOR_*</code> variables, from the basestation calibration comments and <code>config/OG1_sensor_attributes.yaml</code>. Used by lists the variables whose <code>sensor</code> attribute names the sensor. Amber: the serial number or calibration date is <code>UNK</code> or empty (not read from the calibration comment; files from 0.2.0 and earlier wrote every digit zero instead); or two sensors share a serial number, which usually means a calibration comment was copied from another instrument. Both come from the basestation <code>sg_calib_constants</code>; check them against the calibration sheets.</p>
@@ -169,7 +162,7 @@ details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
 </section>
 
 <section id="traced">
-<h2>One variable traced</h2>
+<h2>{{ secs.mark["traced"] }} One variable traced</h2>
 {%- if traced %}
 {%- set row, trace = traced %}
 <p class="caption"><code>{{ row.basestation }}</code> → <code>{{ row.name }}</code>, through every step that touched it; the numbers are the Processing page's steps.</p>
@@ -184,13 +177,13 @@ details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
 </section>
 
 <section id="glossary">
-<h2>Glossary</h2>
+<h2>{{ secs.mark["glossary"] }} Glossary</h2>
 {% include "_glossary.html" %}
 </section>
 
 <section id="globals">
 {%- if draft %}
-<h2>Basestation global attributes</h2>
+<h2>{{ secs.mark["globals"] }} Basestation global attributes</h2>
 <p class="caption{% if requirement_amber %} cell-bad{% endif %}">For an OG1 file, mission.yaml must supply what is missing here — {{ requirement_text }}</p>
 {%- if basestation_rows %}
 <p class="caption">The input files' own global attributes, before any OG1 enrichment; the value is the first file's. Amber: the attribute differs between files or is missing from some.</p>
@@ -205,7 +198,7 @@ details.fold > summary { cursor: pointer; font-weight: 600; margin: 0.6rem 0; }
 <p class="caption cell-bad">Basestation global attributes: not in the conversion record ({{ record_name }}); convert again with this version to record them.</p>
 {%- endif %}
 {%- else %}
-<h2>Global attributes</h2>
+<h2>{{ secs.mark["globals"] }} Global attributes</h2>
 <p class="caption{% if requirement_amber %} cell-bad{% endif %}">{{ requirement_text }} The attributes, grouped with their OG1 tier and source, the Conventions check and the history are on the <a href="{{ og1_href }}#globals">OG1 format</a> page.</p>
 {%- endif %}
 </section>

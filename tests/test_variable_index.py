@@ -132,7 +132,7 @@ def test_variables_page_lists_every_variable(tmp_path):
             record["input_variables"]
         )
     assert f'href="{writers.conversion_path(path, ".html").name}"' in html
-    assert "nav-variables nav-current" in html
+    assert 'title="current page">Variables<' in html
     conversion = writers.conversion_path(path, ".html").read_text(encoding="utf-8")
     assert f'href="{page.name}"' in conversion
 

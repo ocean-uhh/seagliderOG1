@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     pass
 
 from seagliderOG1 import __version__, contributors, vocabularies, writers
-from seagliderOG1.reports import _index, _pages, _record, design, processing
+from seagliderOG1.reports import _index, _masthead, _pages, _record, design, processing
 from seagliderOG1.reports._env import get_template
 from seagliderOG1.reports._vendored import nc_tables
 
@@ -627,99 +627,6 @@ def _coverage_computed(ds: xr.Dataset) -> dict[str, dict[str, object]]:
                     "over": diff_s > tol["time"],
                 }
     return out
-
-
-def _time_coverage_span(start: object, end: object) -> str:
-    """Return a compact ``YYYY-MM-DD HH:MM → HH:MM`` span (date stated once when same day).
-
-    The ``time_coverage_*`` globals are compact ``YYYYmmddTHHMMSS`` strings; render them to the
-    minute so one coverage pair fits one masthead line. Returns ``""`` if either is missing or
-    unparseable.
-
-    Parameters
-    ----------
-    start, end : object
-        The ``time_coverage_start`` / ``time_coverage_end`` global values.
-
-    Returns
-    -------
-    str
-        The formatted span, or ``""``.
-
-    """
-    if not start or not end:
-        return ""
-    try:
-        t0 = datetime.strptime(str(start), "%Y%m%dT%H%M%S")
-        t1 = datetime.strptime(str(end), "%Y%m%dT%H%M%S")
-    except ValueError:
-        return ""
-    left = t0.strftime("%Y-%m-%d %H:%M")
-    right = (
-        t1.strftime("%H:%M")
-        if t0.date() == t1.date()
-        else t1.strftime("%Y-%m-%d %H:%M")
-    )
-    return f"{left} → {right}"
-
-
-def _masthead_meta(ds: xr.Dataset, ledger: dict) -> list[tuple[str, str]]:
-    """Return the masthead metadata as ``(label, value)`` pairs, absent fields omitted.
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        An open OG1 dataset.
-    ledger : dict
-        The parsed ledger.
-
-    Returns
-    -------
-    list of (str, str)
-        The brief metadata shown in the masthead grid.
-
-    """
-    attrs = ds.attrs
-    meta: list[tuple[str, str]] = []
-    if "PLATFORM_SERIAL_NUMBER" in ds.variables:
-        serial = str(ds["PLATFORM_SERIAL_NUMBER"].values)
-        platform = str(attrs.get("platform", "")).strip()
-        meta.append(("Platform", f"{platform} ({serial})" if platform else serial))
-    dives = sorted(
-        {
-            dive
-            for entry in ledger["scalar_parameters"].values()
-            if entry["storage"] == "per_dive_scalar"
-            for dive in entry.get("dives", [])
-        }
-    )
-    if dives:
-        span = f"{dives[0]}" if dives[0] == dives[-1] else f"{dives[0]}–{dives[-1]}"
-        meta.append(("Dives", span))
-    coverage = _time_coverage_span(
-        attrs.get("time_coverage_start"), attrs.get("time_coverage_end")
-    )
-    if coverage:
-        meta.append(("Time coverage", coverage))
-
-    def _range(label: str, lo: str, hi: str) -> None:
-        if lo not in attrs or hi not in attrs:
-            return
-        try:
-            lo_val = float(np.asarray(attrs[lo]).ravel()[0])
-            hi_val = float(np.asarray(attrs[hi]).ravel()[0])
-        except (TypeError, ValueError, IndexError):
-            return
-        meta.append((label, f"{lo_val:.3f} → {hi_val:.3f}"))
-
-    _range("Latitude", "geospatial_lat_min", "geospatial_lat_max")
-    _range("Longitude", "geospatial_lon_min", "geospatial_lon_max")
-    if "file_version" in attrs:
-        meta.append(("Basestation version", str(attrs["file_version"])))
-    meta.append(("seagliderOG1 version", __version__))
-    # The input → output variable counts are the first row of the Before → after table (§1),
-    # so the masthead no longer repeats them.
-    return meta
 
 
 def _verdict_clauses(
@@ -1685,7 +1592,6 @@ def render_conversion(
         verdict_clauses = _verdict_clauses(
             reconciliation, ledger, requirement_amber, og1_required_incomplete
         )
-        masthead_meta = _masthead_meta(ds, ledger)
         rows = _index.variable_rows(ds, ledger, sidecar)
         steps = processing.processing_steps(ds, ledger, sidecar, rows)
         loss_rows = processing.losses(sidecar, rows)
@@ -1701,7 +1607,7 @@ def render_conversion(
         css=design.SHARED_CSS,
         version=__version__,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
-        masthead_meta=masthead_meta,
+        masthead=_masthead.masthead(path, "conversion", title=title),
         # No phase page beside a draft.
         page_nav=_pages.page_nav(path, "conversion", has_phase=has_phase, draft=draft),
         tiles=tiles,

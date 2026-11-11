@@ -23,7 +23,7 @@ import numpy as np
 import xarray as xr
 
 from seagliderOG1 import __version__, vocabularies, writers
-from seagliderOG1.reports import _pages, _record, design
+from seagliderOG1.reports import _masthead, _pages, _record, design
 from seagliderOG1.reports._env import get_template
 from seagliderOG1.reports._vendored import nc_tables
 
@@ -32,6 +32,7 @@ __all__ = [
     "conformance_rows",
     "og1_variable_groups",
     "per_dive_rows",
+    "strip_cells",
     "value_runs",
     "passthrough_groups",
     "render_og1",
@@ -46,8 +47,6 @@ OG1_GROUPS: tuple[str, ...] = (
     "QC flags",
     "Platform and deployment",
 )
-
-_COORDINATES = ("TIME", "LATITUDE", "LONGITUDE", "DEPTH")
 
 
 class Requirement(TypedDict):
@@ -196,16 +195,21 @@ def _row(ds: xr.Dataset, name: str) -> dict:
     }
 
 
-def _group_of(ds: xr.Dataset, name: str) -> str:
-    """Return the page group of an OG1-named variable."""
+def _group_of(ds: xr.Dataset, name: str, derived: frozenset[str] | None) -> str:
+    """Return the page group of an OG1-named variable.
+
+    ``derived`` is the conversion ledger's derived set, the one source the other pages
+    use; a file without a ledger falls back to the variable having no ``original_name``.
+    """
     var = ds[name]
-    if name in _COORDINATES:
+    if name in writers.OG1_COORDINATES:
         return "Coordinates"
     if name.endswith("_QC"):
         return "QC flags"
     if not var.ndim:
         return "Platform and deployment"
-    if "original_name" not in var.attrs:
+    built = name in derived if derived else "original_name" not in var.attrs
+    if built:
         return "Built by the converter"
     return "Measured and model"
 
@@ -224,17 +228,99 @@ def og1_variable_groups(ds: xr.Dataset) -> list[tuple[str, list[dict]]]:
         ``(group, rows)`` in :data:`OG1_GROUPS` order, empty groups left out.
 
     """
+    derived = frozenset(_record.conversion_ledger(ds).get("derived") or {})
     groups: dict[str, list[dict]] = defaultdict(list)
     for name in _og1_names(ds):
         if ds[name].attrs.get("storage_type") == "per_dive_scalar":
             continue
-        groups[_group_of(ds, name)].append(_row(ds, name))
+        groups[_group_of(ds, name, derived)].append(_row(ds, name))
     return [(g, groups[g]) for g in OG1_GROUPS if groups.get(g)]
 
 
 #: A per-dive parameter with at most this many runs of equal values is shown as its runs
-#: ("dives 1-45: 0.0036; 46-600: 0.0041"); one that changes more often as a range.
+#: ("dives 1-45: 0.0036; 46-600: 0.0041"); one that changes more often as a range, with a
+#: strip of one cell per dive beside it.
 MAX_RUNS = 6
+
+#: The strip's width in pixels, whatever the number of dives.
+STRIP_WIDTH = 360
+
+#: Light-to-dark steps of one hue for a numeric strip (sequential: magnitude only).
+STRIP_RAMP: tuple[str, ...] = (
+    "#dbeaf7",
+    "#b5d4ee",
+    "#86b8e2",
+    "#5799d1",
+    "#2f7bbd",
+    "#1d5f9b",
+    "#123f6b",
+)
+
+#: The two shades a text strip alternates between, one per run of equal values.
+STRIP_RUN_SHADES: tuple[str, str] = ("#86b8e2", "#1d5f9b")
+
+
+def strip_cells(dives: list[int], values: list[object]) -> tuple[list[dict], str]:
+    """Return a per-dive parameter as strip cells, one per dive, and the strip's legend.
+
+    Numbers are shaded by value, light (lowest) to dark (highest); anything else
+    alternates two shades, one per run of equal values. A dive without a value has no
+    cell.
+
+    Parameters
+    ----------
+    dives : list of int
+        The dive numbers, in order.
+    values : list
+        One value per dive (None where the dive has none).
+
+    Returns
+    -------
+    cells : list of dict
+        ``x``, ``width`` and ``fill`` in pixels and colour, and ``title`` (the hover text).
+    legend : str
+        What the shades mean.
+
+    """
+    width = STRIP_WIDTH / max(len(dives), 1)
+    numbers = [
+        v for v in values if isinstance(v, int | float) and not isinstance(v, bool)
+    ]
+    cells: list[dict] = []
+    if numbers and len(numbers) == sum(v is not None for v in values):
+        low, high = min(numbers), max(numbers)
+        for i, (dive, value) in enumerate(zip(dives, values, strict=True)):
+            if value is None:
+                continue
+            step = (
+                0
+                if high == low
+                else round((value - low) / (high - low) * (len(STRIP_RAMP) - 1))
+            )
+            cells.append(
+                {
+                    "x": round(i * width, 2),
+                    "width": round(max(width - 0.5, 0.8), 2),
+                    "fill": STRIP_RAMP[step],
+                    "title": f"dive {dive}: {_fmt(value)}",
+                }
+            )
+        return cells, f"light {_fmt(low)}, dark {_fmt(high)}"
+    position = {dive: i for i, dive in enumerate(dives)}
+    for n, (first, last, value) in enumerate(value_runs(dives, values)):
+        if value is None:
+            continue
+        span = position[last] - position[first] + 1
+        cells.append(
+            {
+                "x": round(position[first] * width, 2),
+                "width": round(max(span * width - 0.5, 0.8), 2),
+                "fill": STRIP_RUN_SHADES[n % 2],
+                "title": (f"dive {first}" if first == last else f"dives {first}–{last}")
+                + f": {_fmt(value)}",
+            }
+        )
+    return cells, "each run of equal values alternates shade"
 
 
 def _fmt(value: object) -> str:
@@ -331,12 +417,19 @@ def per_dive_rows(ds: xr.Dataset) -> tuple[list[dict], list[tuple[str, list[dict
         summary, runs = (
             _summary(dives, values) if dives else ("not readable as per-dive JSON", [])
         )
+        cells, legend = (
+            strip_cells(dives, values)
+            if len(value_runs(dives, values)) > MAX_RUNS
+            else ([], "")
+        )
         row = {
             "name": name,
             "units": str(var.attrs.get("units", "")),
             "dives": sum(v is not None for v in values),
             "summary": summary,
             "runs": runs,
+            "strip": cells,
+            "legend": legend,
         }
         if isinstance(vocabularies.vocab_attrs.get(name), dict):
             og1.append(row)
@@ -424,7 +517,6 @@ def render_og1(path: str | Path, *, title: str | None = None) -> str:
         requirement_text, requirement_amber = conv._requirement_summary(ds)
         conventions = conv._conventions_check(ds)
         history_rows = conv._history_rows(ledger)
-        masthead_meta = conv._masthead_meta(ds, ledger)
         n_points = int(ds.sizes.get("N_MEASUREMENTS", 0))
         n_vars = len(ds.variables)
         has_phase = "PHASE" in ds.variables
@@ -437,7 +529,7 @@ def render_og1(path: str | Path, *, title: str | None = None) -> str:
         css=design.SHARED_CSS,
         version=__version__,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
-        masthead_meta=masthead_meta,
+        masthead=_masthead.masthead(path, "og1", title=title),
         page_nav=_pages.page_nav(path, "og1", has_phase=has_phase),
         requirements=requirements,
         tier_counts=[(t, met, total) for t, (met, total) in tiers.items()],
@@ -446,6 +538,7 @@ def render_og1(path: str | Path, *, title: str | None = None) -> str:
         sensors=sensors,
         sensor_source=sensor_source,
         max_runs=MAX_RUNS,
+        strip_width=STRIP_WIDTH,
         per_dive_og1=per_dive_og1,
         per_dive_families=per_dive_families,
         n_per_dive=len(per_dive_og1) + sum(len(r) for _f, r in per_dive_families),
@@ -485,7 +578,6 @@ def write_og1_page(
         The page written.
 
     """
-    target = Path(conversion_page).with_name(writers.page_path(nc_path, "og1").name)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(render_og1(nc_path, title=title), encoding="utf-8")
-    return target
+    return _pages.write_page(
+        nc_path, conversion_page, "og1", render_og1(nc_path, title=title)
+    )

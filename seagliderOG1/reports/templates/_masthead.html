@@ -1,0 +1,24 @@
+{#- The masthead every report page shares; built by reports/_masthead.py:masthead. -#}
+{% import "_nav.html" as navm -%}
+{% macro masthead(m, nav) -%}
+<div class="masthead{% if m.role %} role-{{ m.role }}{% endif %}">
+  <div class="masthead-header">
+    <h1>{{ m.title }}</h1>
+    <span class="masthead-type">{{ m.type }}</span>
+  </div>
+  <p class="sub" style="margin:0 0 0.6rem; display:flex; justify-content:space-between; gap:1rem;"><span>{{ m.subtitle }}</span><span>generated {{ m.generated }}</span></p>
+  {{ navm.page_nav(nav) }}
+  {{ navm.inventory_strip(nav) }}
+  <dl class="meta-grid">
+  {%- for label, value, warn in m.facts %}<div><dt>{{ label }}</dt><dd{% if warn %} style="color:var(--warn);"{% endif %}>{{ value }}</dd></div>
+  {%- endfor %}
+  </dl>
+  <a class="wordmark" href="https://github.com/ocean-uhh/seagliderOG1">seagliderOG1</a>
+</div>
+{%- endmacro %}
+
+{#- The jump-to line, numbered as the section headings (reports/_pages.py:number_sections).
+    No separators: the shared stylesheet puts a ▸ before each link. -#}
+{% macro jump_nav(secs) -%}
+<nav class="jump-nav">{% for s in secs["items"] %} <a href="#{{ s.id }}">{{ s.mark }} {{ s.label }}</a>{% endfor %}</nav>
+{%- endmacro %}

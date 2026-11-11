@@ -18,8 +18,8 @@ from typing import TypedDict
 
 import xarray as xr
 
-from seagliderOG1 import __version__, vocabularies, writers
-from seagliderOG1.reports import _index, _pages, _record, design
+from seagliderOG1 import __version__, vocabularies
+from seagliderOG1.reports import _index, _masthead, _pages, _record, design
 from seagliderOG1.reports._env import get_template
 from seagliderOG1.reports._index import VariableRow
 
@@ -46,6 +46,16 @@ STAGES: tuple[tuple[str, str], ...] = (
     ("store", "Store"),
     ("write", "Write"),
 )
+
+
+#: The titles of the steps the traced variable is followed through: one name for the step
+#: table and the trace, so a copy-edit of a title cannot break the trace.
+_RENAME = "rename to OG1"
+_UNITS = "convert units"
+_SPLIT = "split by dimension"
+_MERGE = "merge onto one time axis"
+_DTYPES = "storage types"
+_WRITE = "write the file"
 
 
 class Step(TypedDict):
@@ -145,10 +155,10 @@ def processing_steps(
     ]
     unrecorded = _marked(rows, "inputs not recorded")
     qc = sorted(str(n) for n in ds.variables if str(n).endswith("_QC"))
-    sensors = sorted(str(n) for n in ds.variables if str(n).startswith("SENSOR_"))
+    sensors = sorted(str(n) for n in ds.variables if design.is_sensor(str(n)))
     gps = "LATITUDE_GPS" in ds.variables
     dropped_fixes = ds.attrs.get("conversion_dropped_gps_fixes")
-    input_ok = bool(record and record.get("input_variables"))
+    input_ok = record is not None and "input_variables" in record
 
     raw: list[tuple[str, str, str, str, str, str, bool, str]] = [
         (
@@ -175,9 +185,9 @@ def processing_steps(
         ),
         (
             "map",
-            "rename to OG1",
-            "config/OG1_variable_names.yaml; eng_, ctd_ and <instrument>_ prefixes "
-            "are stripped before the lookup",
+            _RENAME,
+            "config/OG1_variable_names.yaml; eng_, instrument_, ctd_ and "
+            "<instrument>_ prefixes are stripped before the lookup",
             _count(renamed),
             "yes",
             "original_name on each variable",
@@ -198,7 +208,7 @@ def processing_steps(
         ),
         (
             "units",
-            "convert units",
+            _UNITS,
             "config/OG1_unit_corrections.yaml and the units table: values scaled "
             "by the factor (cm/s to m s-1 ×0.01, S/m to mS cm-1 ×10)",
             _count(factors),
@@ -231,7 +241,7 @@ def processing_steps(
         ),
         (
             "merge",
-            "split by dimension",
+            _SPLIT,
             "the variables of each basestation dimension are grouped with that "
             "dimension's time variable",
             _count(placed),
@@ -253,7 +263,7 @@ def processing_steps(
         ),
         (
             "merge",
-            "merge onto one time axis",
+            _MERGE,
             "every dimension is joined on exact time (outer join) into "
             "N_MEASUREMENTS; the magnetometer by position",
             _count(time_sources),
@@ -348,7 +358,7 @@ def processing_steps(
         ),
         (
             "store",
-            "storage types",
+            _DTYPES,
             "float64 becomes float32 unless the name contains latitude, longitude "
             "or time; an integer on the shared axis becomes float32",
             _count(downcast) if input_ok else "not recorded",
@@ -382,7 +392,7 @@ def processing_steps(
         ),
         (
             "write",
-            "write the file",
+            _WRITE,
             "zlib-compressed netCDF4; times as seconds since 1970-01-01T00:00:00Z",
             "",
             "yes",
@@ -465,7 +475,7 @@ def losses(record: Mapping | None, rows: Sequence[VariableRow]) -> list[Loss]:
         not record it.
 
     """
-    input_ok = bool(record and record.get("input_variables"))
+    input_ok = record is not None and "input_variables" in record
     not_written = [
         r["basestation"] for r in rows if r["fate"] in ("removed", "dropped", "skipped")
     ]
@@ -614,27 +624,27 @@ def traced_variable(
     number = {s["step"]: s["number"] for s in steps}
     trace = [
         {
-            "number": number["rename to OG1"],
-            "step": "rename to OG1",
+            "number": number[_RENAME],
+            "step": _RENAME,
             "before": row["basestation"],
             "after": row["name"],
         },
         {
-            "number": number["convert units"],
-            "step": "convert units",
+            "number": number[_UNITS],
+            "step": _UNITS,
             "before": row["units_in"],
             "after": f"{row['units_out']}, values ×{row['factor']:g}; "
             f"original_units = {row['units_in']}",
         },
         {
-            "number": number["split by dimension"],
-            "step": "split by dimension",
+            "number": number[_SPLIT],
+            "step": _SPLIT,
             "before": row["dimension"],
             "after": f"original_dimension = {row['dimension']}",
         },
         {
-            "number": number["merge onto one time axis"],
-            "step": "merge onto one time axis",
+            "number": number[_MERGE],
+            "step": _MERGE,
             "before": f"{row['values_in']:,} values on {row['dimension']}"
             if row["values_in"] is not None
             else row["dimension"],
@@ -644,16 +654,16 @@ def traced_variable(
     if row["dtype_in"] and row["dtype_out"] and row["dtype_in"] != row["dtype_out"]:
         trace.append(
             {
-                "number": number["storage types"],
-                "step": "storage types",
+                "number": number[_DTYPES],
+                "step": _DTYPES,
                 "before": row["dtype_in"],
                 "after": row["dtype_out"],
             }
         )
     trace.append(
         {
-            "number": number["write the file"],
-            "step": "write the file",
+            "number": number[_WRITE],
+            "step": _WRITE,
             "before": "",
             "after": "vocabulary, coordinates = TIME LONGITUDE LATITUDE DEPTH"
             if row["vocabulary"]
@@ -681,14 +691,13 @@ def render_processing(path: str | Path, *, title: str | None = None) -> str:
 
     """
     # Lazy: the conversion module imports this one at load time.
-    from seagliderOG1.reports.conversion import _masthead_meta, _unit_corrections_rows
+    from seagliderOG1.reports.conversion import _unit_corrections_rows
 
     record = _record.conversion_sidecar(path)
     with xr.open_dataset(str(path), engine="netcdf4", decode_timedelta=False) as ds:
         ledger = _record.conversion_ledger(ds)
         rows = _index.variable_rows(ds, ledger, record)
         steps = processing_steps(ds, ledger, record, rows)
-        masthead_meta = _masthead_meta(ds, ledger)
         unit_rows = _unit_corrections_rows(ds)
         draft = ds.attrs.get("draft") == vocabularies.DRAFT_NOTE
         has_phase = "PHASE" in ds.variables and not draft
@@ -697,7 +706,7 @@ def render_processing(path: str | Path, *, title: str | None = None) -> str:
         css=design.SHARED_CSS,
         version=__version__,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
-        masthead_meta=masthead_meta,
+        masthead=_masthead.masthead(path, "processing", title=title),
         page_nav=_pages.page_nav(path, "processing", has_phase=has_phase, draft=draft),
         steps=steps,
         stages=stage_states(steps),
@@ -726,9 +735,6 @@ def write_processing_page(
         The page written.
 
     """
-    target = Path(conversion_page).with_name(
-        writers.page_path(nc_path, "processing").name
+    return _pages.write_page(
+        nc_path, conversion_page, "processing", render_processing(nc_path, title=title)
     )
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(render_processing(nc_path, title=title), encoding="utf-8")
-    return target

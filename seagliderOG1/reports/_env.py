@@ -10,7 +10,7 @@ from pathlib import Path
 
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, Template
 
-from seagliderOG1.reports import design
+from seagliderOG1.reports import _pages, design
 from seagliderOG1.reports._vendored.css import _JS_SORT_TABLES, _JS_TOP_LINKS
 from seagliderOG1.reports._vendored.figure_png import source_of
 
@@ -32,6 +32,8 @@ _env.globals["show_source"] = design.FIGURE_SOURCE
 # Click-to-sort script and the per-heading "↑ top" links, each emitted once per page.
 _env.globals["js_sort_tables"] = _JS_SORT_TABLES
 _env.globals["js_top_links"] = _JS_TOP_LINKS
+# The jump-to line and the section headings number their sections from one list.
+_env.globals["number_sections"] = _pages.number_sections
 
 
 def get_template(name: str) -> Template:

@@ -7,6 +7,7 @@ on the page; nothing is inferred.
 """
 
 import json
+import re
 from collections.abc import Mapping
 from typing import TypedDict
 
@@ -203,6 +204,19 @@ def _method(var: xr.DataArray) -> str:
     return ""
 
 
+def _factor(entry: object) -> float | None:
+    """Return the factor of one ``conversion_units`` entry ``[from, to, factor]``.
+
+    None when the entry is missing or not in that form (an older or hand-edited file),
+    so the page shows no factor rather than failing.
+    """
+    if isinstance(entry, list | tuple) and len(entry) >= 3:
+        factor = entry[2]
+        if isinstance(factor, int | float) and not isinstance(factor, bool):
+            return float(factor)
+    return None
+
+
 def variable_rows(
     ds: xr.Dataset, ledger: Mapping, record: Mapping | None
 ) -> list[VariableRow]:
@@ -226,13 +240,15 @@ def variable_rows(
 
     """
     inputs: Mapping[str, Mapping] = (record or {}).get("input_variables") or {}
-    instruments = set(
-        " ".join(
-            ((record or {}).get("basestation_globals") or {})
-            .get("instrument", {})
-            .get("values", [])
-        ).split()
-    )
+    # The instrument global is space- or comma-separated, depending on the basestation.
+    instruments = {
+        token
+        for value in ((record or {}).get("basestation_globals") or {})
+        .get("instrument", {})
+        .get("values", [])
+        for token in re.split(r"[\s,;]+", str(value))
+        if token
+    }
     units_ledger = json.loads(ds.attrs.get("conversion_units", "{}"))
     fates = fate_sets(ds, ledger)
     fate_of = {name: key for key, names in fates.items() for name in names}
@@ -254,7 +270,7 @@ def variable_rows(
         values_in = given["values"] if given else None
         units_out = _units(var) if var is not None else ""
         dtype_out = _dtype_out(var) if var is not None else ""
-        factor = units_ledger.get(out, [None, None, None])[2] if out else None
+        factor = _factor(units_ledger.get(out)) if out else None
         storage = str(var.attrs.get("storage_type", "")) if var is not None else ""
         dims = given["dimensions"] if given else []
         rows.append(
