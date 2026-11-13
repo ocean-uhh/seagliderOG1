@@ -7,7 +7,7 @@ import pytest
 from seagliderOG1 import _convert, writers
 from seagliderOG1.reports import _masthead, _pages, og1
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).parent.resolve().parents[1]
 SG271 = ROOT / "seagliderOG1" / "data" / "sg271"
 
 

@@ -1,4 +1,9 @@
-"""Tests for the seagliderOG1 command-line interface (``init``, ``validate``)."""
+"""The seagliderOG1 command line: init, validate, process, inspect, report, list, enrich
+and draft.
+
+Data: the sg005 demo; some process tests replace the conversion with a stand-in to test
+the command's handling around it.
+"""
 
 import json
 import os
@@ -12,7 +17,7 @@ import yaml
 from seagliderOG1 import cli, mission
 from seagliderOG1.cli import _mission
 
-DATA_DIR = pathlib.Path(__file__).resolve().parent.parent / "data" / "demo_sg005"
+DATA_DIR = pathlib.Path(__file__).parent.resolve().parent.parent / "data" / "demo_sg005"
 
 
 def _write_config(path: pathlib.Path, **overrides: object) -> pathlib.Path:
@@ -49,7 +54,26 @@ def _write_config(path: pathlib.Path, **overrides: object) -> pathlib.Path:
     return path
 
 
-# --- parser ---------------------------------------------------------------
+def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:
+    """Stand in for to_og1: no real conversion, deterministic id from mode."""
+    import xarray as xr
+
+    suffix = "R" if kwargs.get("mode") == "realtime" else "delayed"
+    return xr.Dataset({"x": ("n", [1.0, 2.0])}, attrs={"id": f"sg005_{suffix}"})
+
+
+def _build_root(tmp_path: pathlib.Path) -> pathlib.Path:
+    """Build a two-mission SN/DATE root in tmp_path from the sample files."""
+    names = [f.name for f in DATA_DIR.iterdir() if f.name.endswith(".nc")]
+    for date in ("20080606", "20080607"):
+        dest = tmp_path / "005" / date
+        dest.mkdir(parents=True)
+        for name in names:
+            (dest / name).write_bytes((DATA_DIR / name).read_bytes())
+    return tmp_path
+
+
+# --- The command line ---------------------------------------------------------------------
 
 
 def test_version_exits_zero(capsys: pytest.CaptureFixture[str]) -> None:
@@ -96,7 +120,7 @@ def test_cli_respects_an_explicit_backend(monkeypatch: pytest.MonkeyPatch) -> No
     assert os.environ["MPLBACKEND"] == "pdf"
 
 
-# --- init ------------------------------------------------------------------
+# --- init ---------------------------------------------------------------------------------
 
 
 def test_init_writes_template(tmp_path: pathlib.Path) -> None:
@@ -171,6 +195,29 @@ def test_init_from_fills_raw_dir_and_serial(tmp_path: pathlib.Path) -> None:
     assert data["platform"]["PLATFORM_SERIAL_NUMBER"] == "sg005"
     # The UW-specific model/maker/depth are no longer baked in; they stay null.
     assert data["platform"]["PLATFORM_MODEL"] is None
+
+
+def test_template_comments_name_the_destination() -> None:
+    """Each generated line's comment says where the key goes (variable/attribute/global)."""
+    template = _mission.render_template(raw_dir="/tmp/x")
+    assert "UPPER keys become OG1 variables" in template
+    assert "PLATFORM_MODEL: null   # required -> variable" in template
+    assert (
+        "platform_model_vocabulary: null   # optional -> attribute on PLATFORM_MODEL"
+        in (template)
+    )
+    assert "id: null   # mandatory -> global attribute" in template
+
+
+def test_init_dest_is_a_directory_or_a_yaml_file(tmp_path: pathlib.Path) -> None:
+    """init dest: a directory gets mission.yaml inside (created); a .yaml path is used."""
+    assert cli.main(["init", str(tmp_path / "new" / "dir")]) == 0
+    assert (tmp_path / "new" / "dir" / "mission.yaml").is_file()
+    assert cli.main(["init", str(tmp_path / "sg271.yaml")]) == 0
+    assert (tmp_path / "sg271.yaml").is_file()
+
+
+# --- validate -----------------------------------------------------------------------------
 
 
 def test_validate_errors_on_null_platform_fields_then_passes(
@@ -347,18 +394,6 @@ def test_validate_accepts_known_deployment_keys(tmp_path: pathlib.Path) -> None:
     assert cli.main(["validate", str(cfg)]) == 0
 
 
-def test_template_comments_name_the_destination() -> None:
-    """Each generated line's comment says where the key goes (variable/attribute/global)."""
-    template = _mission.render_template(raw_dir="/tmp/x")
-    assert "UPPER keys become OG1 variables" in template
-    assert "PLATFORM_MODEL: null   # required -> variable" in template
-    assert (
-        "platform_model_vocabulary: null   # optional -> attribute on PLATFORM_MODEL"
-        in (template)
-    )
-    assert "id: null   # mandatory -> global attribute" in template
-
-
 def test_case_hint_helper() -> None:
     """_case_hint returns a correctly-cased match only for a mis-cased key."""
     assert mission._case_hint("program", ["id", "program"]) is None  # exact: no hint
@@ -390,7 +425,188 @@ def test_validate_warns_on_unset_highly_desirable_global() -> None:
     assert all(i.level == "WARNING" for i in issues)  # advisory only, never ERROR
 
 
-# --- process ---------------------------------------------------------------
+def test_validate_report_must_be_bool(tmp_path: pathlib.Path) -> None:
+    """The report: key is known and must be a boolean."""
+    good = _write_config(tmp_path / "good.yaml", report=True)
+    assert not [i for i in mission.check(good) if i.level == "ERROR"]
+    bad = _write_config(tmp_path / "bad.yaml", report="yes")
+    assert any(i.key == "report" for i in mission.check(bad))
+
+
+def test_validate_raw_dir_override_rescues_missing_config_raw_dir(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A --raw-dir override is validated, rescuing a config whose raw_dir is missing."""
+    path = tmp_path / "mission.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "contributors": [{"name": "Jane", "role": "PI"}],
+                "institutions": [{"name": "Inst", "role": "Operator"}],
+            }
+        )
+    )
+    assert any(i.key == "raw_dir" for i in mission.check(path))
+    issues = mission.check(path, raw_dir_override=str(DATA_DIR))
+    assert not any(i.key == "raw_dir" for i in issues)
+
+
+def test_validate_accepts_valid_config(tmp_path: pathlib.Path) -> None:
+    """A minimal valid config validates with exit 0."""
+    config = _write_config(tmp_path / "mission.yaml")
+    assert cli.main(["validate", str(config)]) == 0
+
+
+def test_validate_role_and_roles_together_is_error(tmp_path: pathlib.Path) -> None:
+    """Setting both role: and roles: on one entry is an ERROR (not a silent drop)."""
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        raw_dir=str(tmp_path),
+        contributors=[{"name": "Ann", "role": "PI", "roles": ["Operator"]}],
+    )
+    issues = mission.check(config)
+    assert any(
+        i.level == "ERROR" and "both role: and roles:" in i.message for i in issues
+    )
+
+
+def test_validate_rejects_unknown_key(tmp_path: pathlib.Path) -> None:
+    """An unknown top-level key is an ERROR (pure schema check, no real data)."""
+    config = _write_config(tmp_path / "mission.yaml", raw_dir=str(tmp_path), nonsense=1)
+    assert cli.main(["validate", str(config)]) == 1
+    issues = mission.check(config)
+    assert any(i.level == "ERROR" and i.key == "nonsense" for i in issues)
+
+
+def test_validate_rejects_bad_types(tmp_path: pathlib.Path) -> None:
+    """mode, dives, keep_variables and drop_variables type errors surface without real data."""
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        raw_dir=str(tmp_path),
+        mode="sideways",
+        dives="all",
+        keep_variables="TEMP",
+        drop_variables="gsw_sigma0",
+    )
+    bad = {i.key for i in mission.check(config) if i.level == "ERROR"}
+    assert {"mode", "dives", "keep_variables", "drop_variables"} <= bad
+
+
+def test_validate_rejects_non_w08_role(tmp_path: pathlib.Path) -> None:
+    """A role outside the W08 vocabulary is an ERROR."""
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        raw_dir=str(tmp_path),
+        contributors=[{"name": "Ann", "role": "Chief Wrangler"}],
+    )
+    assert any(i.level == "ERROR" and "W08" in i.message for i in mission.check(config))
+
+
+def test_validate_rejects_name_with_comma(tmp_path: pathlib.Path) -> None:
+    """A contributor name containing a comma is an ERROR."""
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        raw_dir=str(tmp_path),
+        contributors=[{"name": "Doe, Jane", "role": "PI"}],
+    )
+    assert any(
+        i.level == "ERROR" and "comma" in i.message for i in mission.check(config)
+    )
+
+
+def test_validate_requires_pi_and_operator(tmp_path: pathlib.Path) -> None:
+    """Missing a PI contributor and an Operator institution are both ERRORs."""
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        raw_dir=str(tmp_path),
+        contributors=[{"name": "Ann", "role": "Data scientist"}],
+        institutions=[{"name": "Inst", "role": "Owner"}],
+    )
+    errors = [i.message for i in mission.check(config) if i.level == "ERROR"]
+    assert any("PI" in message for message in errors)
+    assert any("Operator" in message for message in errors)
+
+
+def test_validate_warns_on_roles_list(tmp_path: pathlib.Path) -> None:
+    """A single-element roles: is a warning (prefer role:), not an error."""
+    config = _write_config(
+        tmp_path / "mission.yaml",
+        raw_dir=str(tmp_path),
+        contributors=[{"name": "Ann", "roles": ["PI"]}],
+    )
+    issues = mission.check(config)
+    assert any(i.level == "WARNING" and "roles:" in i.message for i in issues)
+    assert not any(
+        i.level == "ERROR" and (i.key or "").startswith("contributors") for i in issues
+    )
+
+
+def test_validate_requires_source(tmp_path: pathlib.Path) -> None:
+    """A missing ``source`` is an ERROR."""
+    path = tmp_path / "mission.yaml"
+    path.write_text(yaml.safe_dump({"contributors": [{"name": "Jane"}]}))
+    assert cli.main(["validate", str(path)]) == 1
+
+
+def test_validate_missing_file_is_exit_one(tmp_path: pathlib.Path) -> None:
+    """Validating a non-existent config exits 1 (an input failure, not a usage error)."""
+    assert cli.main(["validate", str(tmp_path / "nope.yaml")]) == 1
+
+
+def test_validate_dives_out_of_range(tmp_path: pathlib.Path) -> None:
+    """A ``dives`` range beyond the files present is an ERROR."""
+    config = _write_config(tmp_path / "mission.yaml", dives=[1, 99])
+    issues = mission.check(config)
+    assert any(i.level == "ERROR" and i.key == "dives" for i in issues)
+
+
+def test_validate_strict_flags_gap(tmp_path: pathlib.Path) -> None:
+    """``--strict`` reports a dive missing from the range."""
+    mission_dir = tmp_path / "mission_dir"
+    mission_dir.mkdir()
+    for name in ("p0050001_20080606.nc", "p0050003_20080606.nc"):
+        (mission_dir / name).write_bytes((DATA_DIR / name).read_bytes())
+    config = _write_config(
+        tmp_path / "mission.yaml", raw_dir=str(mission_dir), dives=[1, 3]
+    )
+    assert not [i for i in mission.check(config, strict=False) if i.key == "dives"]
+    strict = mission.check(config, strict=True)
+    assert any(i.level == "ERROR" and "missing" in i.message for i in strict)
+
+
+def test_bundled_example_config_validates_and_plans(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The committed data/demo_sg005/mission.yaml validates and plans, so it cannot rot."""
+    example = DATA_DIR / "mission.yaml"
+    assert cli.main(["validate", str(example)]) == 0
+    assert cli.main(["process", str(example), "-n"]) == 0
+    out = capsys.readouterr().out
+    assert "1 would convert" in out
+    assert "outputs" in out
+
+
+def test_deprecated_source_key_is_read_as_raw_dir_with_a_warning(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A config that still says source: validates with a WARNING; both keys is an ERROR."""
+    config = _write_config(tmp_path / "old.yaml")
+    data = yaml.safe_load(config.read_text(encoding="utf-8"))
+    data["source"] = data.pop("raw_dir")
+    config.write_text(yaml.safe_dump(data))
+    issues = mission.check(config)
+    assert [i.level for i in issues if i.key == "source"] == ["WARNING"]
+    assert not [i for i in issues if i.level == "ERROR"]
+    assert mission._load_raw(config)["raw_dir"] == str(DATA_DIR)
+    data["raw_dir"] = str(DATA_DIR)
+    config.write_text(yaml.safe_dump(data))
+    assert any(
+        i.level == "ERROR" and "both 'raw_dir'" in i.message
+        for i in mission.check(config)
+    )
+
+
+# --- process ------------------------------------------------------------------------------
 
 
 def test_process_v_flag_controls_library_logging(
@@ -409,179 +625,6 @@ def test_process_v_flag_controls_library_logging(
     # -v is accepted after the verb too, not only before it.
     assert cli.main(["process", str(cfg), "-o", str(tmp_path / "loud2"), "-v"]) == 0
     assert "Start converting" in capsys.readouterr().err
-
-
-def test_inspect_conversion_shows_ledger(
-    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """inspect --conversion prints the ledger sections read from the OG1 file."""
-    from seagliderOG1 import _convert, readers, writers
-
-    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 1))
-    nc = tmp_path / "og1.nc"
-    writers.write(ds, str(nc), overwrite=True)
-    assert cli.main(["inspect", str(nc), "--conversion"]) == 0
-    out = capsys.readouterr().out
-    assert "Dimensions" in out
-    assert "backbone" in out and "gps_info" in out
-    assert "Global attributes by source" in out
-    assert "History" in out
-
-
-def test_inspect_conversion_rejects_pre_ledger_file(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """A basestation file has no ledger, so --conversion is a plain error (exit 1)."""
-    raw = sorted(DATA_DIR.glob("p*.nc"))[0]
-    assert cli.main(["inspect", str(raw), "--conversion"]) == 1
-    assert "conversion_dimensions" in capsys.readouterr().err
-
-
-def test_inspect_conversion_lists_scalar_parameters(
-    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """--conversion has a Scalar parameters section naming the per-dive JSON storage."""
-    from seagliderOG1 import _convert, readers, writers
-
-    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
-    nc = tmp_path / "og1.nc"
-    writers.write(ds, str(nc), overwrite=True)
-    assert cli.main(["inspect", str(nc), "--conversion"]) == 0
-    out = capsys.readouterr().out
-    assert "Scalar parameters" in out
-    assert "per-dive JSON" in out
-    # Constants are summarised as a count, not listed, unless --all is given.
-    assert "constant scalars (storage_type: constant_scalar)" in out
-    assert cli.main(["inspect", str(nc), "--conversion", "--all"]) == 0
-    assert "constant scalars (storage_type" not in capsys.readouterr().out
-
-
-def test_inspect_parameter_conflicts_with_conversion() -> None:
-    """--parameter and --conversion are mutually exclusive (argparse usage error)."""
-    with pytest.raises(SystemExit):
-        cli.main(["inspect", "any.nc", "--conversion", "--parameter", "x"])
-
-
-def test_inspect_parameter_decodes_per_dive_scalar(
-    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """--parameter decodes one per-dive JSON scalar; a non-per-dive variable is an error."""
-    from seagliderOG1 import _convert, readers, writers
-
-    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
-    per_dive = next(
-        v for v in ds.data_vars if ds[v].attrs.get("storage_type") == "per_dive_scalar"
-    )
-    nc = tmp_path / "og1.nc"
-    writers.write(ds, str(nc), overwrite=True)
-    assert cli.main(["inspect", str(nc), "--parameter", per_dive]) == 0
-    out = capsys.readouterr().out
-    assert "dive" in out and "value" in out
-    assert cli.main(["inspect", str(nc), "--parameter", "TEMP"]) == 1
-
-
-def test_report_writes_html_page(
-    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """report writes a self-contained HTML conversion page beside the file."""
-    from seagliderOG1 import _convert, readers, writers
-
-    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
-    nc = tmp_path / "og1.nc"
-    writers.write(ds, str(nc), overwrite=True)
-    out = tmp_path / "og1_conversion.html"
-    assert cli.main(["report", str(nc)]) == 0
-    assert f"wrote {out}" in capsys.readouterr().out
-    html = out.read_text(encoding="utf-8")
-    assert "<table" in html
-    # Every basestation variable is accounted for (demo_sg005 dives 1-2: 342).
-    assert "<dt>Accounted for</dt><dd>342 / 342</dd>" in html
-    # The transient derived-sources stamp is internal and never reaches the page.
-    assert "_derived_sources" not in html
-    # The Variables and Processing pages are written beside it.
-    assert (tmp_path / "og1_variables.html").is_file()
-    assert (tmp_path / "og1_processing.html").is_file()
-    # Located by section id, so inserting or renumbering sections does not break it.
-    body = html.split('<section id="losses">', 1)[1].split("</section>", 1)[0]
-    assert "<table" in body
-    # The global attributes and the history are on the OG1 format page.
-    og1_page = (tmp_path / "og1_og1.html").read_text(encoding="utf-8")
-    body = og1_page.split('<section id="globals">', 1)[1].split("</section>", 1)[0]
-    assert "<table" in body
-    assert "<h3>History</h3>" in og1_page
-    assert "Interim text view" not in html
-    # Masthead (S18).
-    assert 'class="meta-grid"' in html
-    # Spatiotemporal coverage computed column (S17) and the OG1-requirement line (S25).
-    assert "Computed" in og1_page
-    assert "OG1 requirement: mandatory 9/9 present" in html
-    # Masthead polish (S19): meta-grid pairs are div-wrapped, and the jump-nav sits after the
-    # masthead closes (not a descendant of it).
-    assert "<div><dt>" in html
-    assert '</div>\n<nav class="jump-nav"' in html
-    # The per-heading "↑ top" link script is emitted (S24); it appends .top-link client-side.
-    assert "top-link" in html and "↑ top" in html
-    # Vendored features adopted at the sync-4 re-vendor: the OG1-requirement column on the
-    # globals table (now on the OG1 format page).
-    assert "Requirement" in og1_page
-
-
-def test_report_output_dir_and_report_dir(
-    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """report -o DIR writes into DIR; --report-dir ROOT into ROOT/<id>/; no overwrite."""
-    from seagliderOG1 import _convert, readers, writers
-
-    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
-    nc = tmp_path / "og1.nc"
-    writers.write(ds, str(nc), overwrite=True)
-    out_dir = tmp_path / "pages"
-    assert cli.main(["report", str(nc), "-o", str(out_dir)]) == 0
-    expected = out_dir / writers.conversion_path(nc, ".html").name
-    assert expected.is_file()
-    assert f"wrote {expected}" in capsys.readouterr().out
-    assert cli.main(["report", str(nc), "-o", str(out_dir)]) == 1  # exists
-    assert "use --force" in capsys.readouterr().err
-    assert cli.main(["report", str(nc), "-o", str(out_dir), "--force"]) == 0
-    assert cli.main(["report", str(nc), "--report-dir", str(tmp_path / "site")]) == 0
-    assert (tmp_path / "site" / "og1" / "og1_conversion.html").is_file()
-
-
-def test_inspect_output_points_at_report(
-    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """inspect prints text only: -o/--title exit 2 and name the report verb."""
-    from seagliderOG1 import _convert, readers, writers
-
-    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 1))
-    nc = tmp_path / "og1.nc"
-    writers.write(ds, str(nc), overwrite=True)
-    out = tmp_path / "x.html"
-    assert cli.main(["inspect", str(nc), "--conversion", "-o", str(out)]) == 2
-    assert "seagliderOG1 report" in capsys.readouterr().err
-    assert not out.exists()  # nothing written
-    assert cli.main(["inspect", str(nc), "--parameter", "C_VBD", "-o", str(out)]) == 2
-    assert cli.main(["inspect", str(nc), "--title", "x"]) == 2
-    assert not out.exists()
-
-
-def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:
-    """Stand in for to_og1: no real conversion, deterministic id from mode."""
-    import xarray as xr
-
-    suffix = "R" if kwargs.get("mode") == "realtime" else "delayed"
-    return xr.Dataset({"x": ("n", [1.0, 2.0])}, attrs={"id": f"sg005_{suffix}"})
-
-
-def _build_root(tmp_path: pathlib.Path) -> pathlib.Path:
-    """Build a two-mission SN/DATE root in tmp_path from the sample files."""
-    names = [f.name for f in DATA_DIR.iterdir() if f.name.endswith(".nc")]
-    for date in ("20080606", "20080607"):
-        dest = tmp_path / "005" / date
-        dest.mkdir(parents=True)
-        for name in names:
-            (dest / name).write_bytes((DATA_DIR / name).read_bytes())
-    return tmp_path
 
 
 def test_process_writes_output(
@@ -741,14 +784,6 @@ def test_process_report_writes_page_and_refuses_existing(
     assert nc.is_file()
 
 
-def test_validate_report_must_be_bool(tmp_path: pathlib.Path) -> None:
-    """The report: key is known and must be a boolean."""
-    good = _write_config(tmp_path / "good.yaml", report=True)
-    assert not [i for i in mission.check(good) if i.level == "ERROR"]
-    bad = _write_config(tmp_path / "bad.yaml", report="yes")
-    assert any(i.key == "report" for i in mission.check(bad))
-
-
 def test_process_prints_presence_line_when_dives_disagree(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -794,25 +829,115 @@ def test_process_save_failure_counts_as_failed(
     assert cli.main(["process", str(config)]) == 1
 
 
-def test_validate_raw_dir_override_rescues_missing_config_raw_dir(
-    tmp_path: pathlib.Path,
+def test_process_missing_config_is_exit_one(tmp_path: pathlib.Path) -> None:
+    """Processing a non-existent config exits 1 (an input failure, not a usage error)."""
+    assert cli.main(["process", str(tmp_path / "nope.yaml")]) == 1
+
+
+def test_process_report_dir_writes_pages_apart_from_the_data(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """A --raw-dir override is validated, rescuing a config whose raw_dir is missing."""
-    path = tmp_path / "mission.yaml"
-    path.write_text(
-        yaml.safe_dump(
-            {
-                "contributors": [{"name": "Jane", "role": "PI"}],
-                "institutions": [{"name": "Inst", "role": "Operator"}],
-            }
-        )
+    """process --report-dir ROOT writes the page in ROOT/<id>/, nothing beside the data."""
+    out = tmp_path / "data"
+    site = tmp_path / "site"
+    config = _write_config(tmp_path / "mission.yaml", output_dir=str(out), dives=[1, 1])
+    assert cli.main(["process", str(config), "--report-dir", str(site)]) == 0
+    (nc,) = out.glob("*.nc")
+    assert (site / nc.stem / f"{nc.stem}_conversion.html").is_file()
+    assert not list(out.glob("*.html"))
+    assert (
+        out / f"{nc.stem}_conversion.json"
+    ).is_file()  # the sidecar stays with the data
+
+
+# --- inspect ------------------------------------------------------------------------------
+
+
+def test_inspect_conversion_shows_ledger(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """inspect --conversion prints the ledger sections read from the OG1 file."""
+    from seagliderOG1 import _convert, readers, writers
+
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 1))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    assert cli.main(["inspect", str(nc), "--conversion"]) == 0
+    out = capsys.readouterr().out
+    assert "Dimensions" in out
+    assert "backbone" in out and "gps_info" in out
+    assert "Global attributes by source" in out
+    assert "History" in out
+
+
+def test_inspect_conversion_rejects_pre_ledger_file(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A basestation file has no ledger, so --conversion is a plain error (exit 1)."""
+    raw = sorted(DATA_DIR.glob("p*.nc"))[0]
+    assert cli.main(["inspect", str(raw), "--conversion"]) == 1
+    assert "conversion_dimensions" in capsys.readouterr().err
+
+
+def test_inspect_conversion_lists_scalar_parameters(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--conversion has a Scalar parameters section naming the per-dive JSON storage."""
+    from seagliderOG1 import _convert, readers, writers
+
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    assert cli.main(["inspect", str(nc), "--conversion"]) == 0
+    out = capsys.readouterr().out
+    assert "Scalar parameters" in out
+    assert "per-dive JSON" in out
+    # Constants are summarised as a count, not listed, unless --all is given.
+    assert "constant scalars (storage_type: constant_scalar)" in out
+    assert cli.main(["inspect", str(nc), "--conversion", "--all"]) == 0
+    assert "constant scalars (storage_type" not in capsys.readouterr().out
+
+
+def test_inspect_parameter_conflicts_with_conversion() -> None:
+    """--parameter and --conversion are mutually exclusive (argparse usage error)."""
+    with pytest.raises(SystemExit):
+        cli.main(["inspect", "any.nc", "--conversion", "--parameter", "x"])
+
+
+def test_inspect_parameter_decodes_per_dive_scalar(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--parameter decodes one per-dive JSON scalar; a non-per-dive variable is an error."""
+    from seagliderOG1 import _convert, readers, writers
+
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
+    per_dive = next(
+        v for v in ds.data_vars if ds[v].attrs.get("storage_type") == "per_dive_scalar"
     )
-    assert any(i.key == "raw_dir" for i in mission.check(path))
-    issues = mission.check(path, raw_dir_override=str(DATA_DIR))
-    assert not any(i.key == "raw_dir" for i in issues)
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    assert cli.main(["inspect", str(nc), "--parameter", per_dive]) == 0
+    out = capsys.readouterr().out
+    assert "dive" in out and "value" in out
+    assert cli.main(["inspect", str(nc), "--parameter", "TEMP"]) == 1
 
 
-# --- inspect / list --------------------------------------------------------
+def test_inspect_output_points_at_report(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """inspect prints text only: -o/--title exit 2 and name the report verb."""
+    from seagliderOG1 import _convert, readers, writers
+
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 1))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    out = tmp_path / "x.html"
+    assert cli.main(["inspect", str(nc), "--conversion", "-o", str(out)]) == 2
+    assert "seagliderOG1 report" in capsys.readouterr().err
+    assert not out.exists()  # nothing written
+    assert cli.main(["inspect", str(nc), "--parameter", "C_VBD", "-o", str(out)]) == 2
+    assert cli.main(["inspect", str(nc), "--title", "x"]) == 2
+    assert not out.exists()
 
 
 def test_inspect_variables(capsys: pytest.CaptureFixture[str]) -> None:
@@ -831,6 +956,90 @@ def test_inspect_attrs() -> None:
 def test_inspect_missing_file_is_exit_one(tmp_path: pathlib.Path) -> None:
     """Inspecting a non-existent file exits 1 (a failure, not a usage error)."""
     assert cli.main(["inspect", str(tmp_path / "nope.nc")]) == 1
+
+
+# --- report -------------------------------------------------------------------------------
+
+
+def test_report_writes_html_page(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """report writes a self-contained HTML conversion page beside the file."""
+    from seagliderOG1 import _convert, readers, writers
+
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    out = tmp_path / "og1_conversion.html"
+    assert cli.main(["report", str(nc)]) == 0
+    assert f"wrote {out}" in capsys.readouterr().out
+    html = out.read_text(encoding="utf-8")
+    assert "<table" in html
+    # Every basestation variable is accounted for (demo_sg005 dives 1-2: 342).
+    assert "<dt>Accounted for</dt><dd>342 / 342</dd>" in html
+    # The transient derived-sources stamp is internal and never reaches the page.
+    assert "_derived_sources" not in html
+    # The Variables and Processing pages are written beside it.
+    assert (tmp_path / "og1_variables.html").is_file()
+    assert (tmp_path / "og1_processing.html").is_file()
+    # Located by section id, so inserting or renumbering sections does not break it.
+    body = html.split('<section id="losses">', 1)[1].split("</section>", 1)[0]
+    assert "<table" in body
+    # The global attributes and the history are on the OG1 format page.
+    og1_page = (tmp_path / "og1_og1.html").read_text(encoding="utf-8")
+    body = og1_page.split('<section id="globals">', 1)[1].split("</section>", 1)[0]
+    assert "<table" in body
+    assert "<h3>History</h3>" in og1_page
+    assert "Interim text view" not in html
+    # Masthead (S18).
+    assert 'class="meta-grid"' in html
+    # Spatiotemporal coverage computed column (S17) and the OG1-requirement line (S25).
+    assert "Computed" in og1_page
+    assert "OG1 requirement: mandatory 9/9 present" in html
+    # Masthead polish (S19): meta-grid pairs are div-wrapped, and the jump-nav sits after the
+    # masthead closes (not a descendant of it).
+    assert "<div><dt>" in html
+    assert '</div>\n<nav class="jump-nav"' in html
+    # The per-heading "↑ top" link script is emitted (S24); it appends .top-link client-side.
+    assert "top-link" in html and "↑ top" in html
+    # Vendored features adopted at the sync-4 re-vendor: the OG1-requirement column on the
+    # globals table (now on the OG1 format page).
+    assert "Requirement" in og1_page
+
+
+def test_report_output_dir_and_report_dir(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """report -o DIR writes into DIR; --report-dir ROOT into ROOT/<id>/; no overwrite."""
+    from seagliderOG1 import _convert, readers, writers
+
+    ds = _convert.convert(readers.read_mission(str(DATA_DIR), 1, 2))
+    nc = tmp_path / "og1.nc"
+    writers.write(ds, str(nc), overwrite=True)
+    out_dir = tmp_path / "pages"
+    assert cli.main(["report", str(nc), "-o", str(out_dir)]) == 0
+    expected = out_dir / writers.conversion_path(nc, ".html").name
+    assert expected.is_file()
+    assert f"wrote {expected}" in capsys.readouterr().out
+    assert cli.main(["report", str(nc), "-o", str(out_dir)]) == 1  # exists
+    assert "use --force" in capsys.readouterr().err
+    assert cli.main(["report", str(nc), "-o", str(out_dir), "--force"]) == 0
+    assert cli.main(["report", str(nc), "--report-dir", str(tmp_path / "site")]) == 0
+    assert (tmp_path / "site" / "og1" / "og1_conversion.html").is_file()
+
+
+def test_report_output_dir_is_created(tmp_path: pathlib.Path) -> None:
+    """report -o new/ (not yet existing) writes <id>_conversion.html inside it."""
+    from seagliderOG1 import _convert, readers, writers
+
+    nc = tmp_path / "og1.nc"
+    writers.write(_convert.convert(readers.read_mission(str(DATA_DIR), 1, 1)), str(nc))
+    out_dir = tmp_path / "reports"
+    assert cli.main(["report", str(nc), "-o", f"{out_dir}/"]) == 0
+    assert (out_dir / "og1_conversion.html").is_file()
+
+
+# --- list ---------------------------------------------------------------------------------
 
 
 def test_list_roles(capsys: pytest.CaptureFixture[str]) -> None:
@@ -976,202 +1185,7 @@ def test_list_rejects_argument_where_none_is_taken() -> None:
     assert cli.main(["list", "roles", "extra"]) == 2
 
 
-# --- validate --------------------------------------------------------------
-
-
-def test_validate_accepts_valid_config(tmp_path: pathlib.Path) -> None:
-    """A minimal valid config validates with exit 0."""
-    config = _write_config(tmp_path / "mission.yaml")
-    assert cli.main(["validate", str(config)]) == 0
-
-
-def test_validate_role_and_roles_together_is_error(tmp_path: pathlib.Path) -> None:
-    """Setting both role: and roles: on one entry is an ERROR (not a silent drop)."""
-    config = _write_config(
-        tmp_path / "mission.yaml",
-        raw_dir=str(tmp_path),
-        contributors=[{"name": "Ann", "role": "PI", "roles": ["Operator"]}],
-    )
-    issues = mission.check(config)
-    assert any(
-        i.level == "ERROR" and "both role: and roles:" in i.message for i in issues
-    )
-
-
-def test_validate_rejects_unknown_key(tmp_path: pathlib.Path) -> None:
-    """An unknown top-level key is an ERROR (pure schema check, no real data)."""
-    config = _write_config(tmp_path / "mission.yaml", raw_dir=str(tmp_path), nonsense=1)
-    assert cli.main(["validate", str(config)]) == 1
-    issues = mission.check(config)
-    assert any(i.level == "ERROR" and i.key == "nonsense" for i in issues)
-
-
-def test_validate_rejects_bad_types(tmp_path: pathlib.Path) -> None:
-    """mode, dives, keep_variables and drop_variables type errors surface without real data."""
-    config = _write_config(
-        tmp_path / "mission.yaml",
-        raw_dir=str(tmp_path),
-        mode="sideways",
-        dives="all",
-        keep_variables="TEMP",
-        drop_variables="gsw_sigma0",
-    )
-    bad = {i.key for i in mission.check(config) if i.level == "ERROR"}
-    assert {"mode", "dives", "keep_variables", "drop_variables"} <= bad
-
-
-def test_validate_rejects_non_w08_role(tmp_path: pathlib.Path) -> None:
-    """A role outside the W08 vocabulary is an ERROR."""
-    config = _write_config(
-        tmp_path / "mission.yaml",
-        raw_dir=str(tmp_path),
-        contributors=[{"name": "Ann", "role": "Chief Wrangler"}],
-    )
-    assert any(i.level == "ERROR" and "W08" in i.message for i in mission.check(config))
-
-
-def test_validate_rejects_name_with_comma(tmp_path: pathlib.Path) -> None:
-    """A contributor name containing a comma is an ERROR."""
-    config = _write_config(
-        tmp_path / "mission.yaml",
-        raw_dir=str(tmp_path),
-        contributors=[{"name": "Doe, Jane", "role": "PI"}],
-    )
-    assert any(
-        i.level == "ERROR" and "comma" in i.message for i in mission.check(config)
-    )
-
-
-def test_validate_requires_pi_and_operator(tmp_path: pathlib.Path) -> None:
-    """Missing a PI contributor and an Operator institution are both ERRORs."""
-    config = _write_config(
-        tmp_path / "mission.yaml",
-        raw_dir=str(tmp_path),
-        contributors=[{"name": "Ann", "role": "Data scientist"}],
-        institutions=[{"name": "Inst", "role": "Owner"}],
-    )
-    errors = [i.message for i in mission.check(config) if i.level == "ERROR"]
-    assert any("PI" in message for message in errors)
-    assert any("Operator" in message for message in errors)
-
-
-def test_validate_warns_on_roles_list(tmp_path: pathlib.Path) -> None:
-    """A single-element roles: is a warning (prefer role:), not an error."""
-    config = _write_config(
-        tmp_path / "mission.yaml",
-        raw_dir=str(tmp_path),
-        contributors=[{"name": "Ann", "roles": ["PI"]}],
-    )
-    issues = mission.check(config)
-    assert any(i.level == "WARNING" and "roles:" in i.message for i in issues)
-    assert not any(
-        i.level == "ERROR" and (i.key or "").startswith("contributors") for i in issues
-    )
-
-
-def test_validate_requires_source(tmp_path: pathlib.Path) -> None:
-    """A missing ``source`` is an ERROR."""
-    path = tmp_path / "mission.yaml"
-    path.write_text(yaml.safe_dump({"contributors": [{"name": "Jane"}]}))
-    assert cli.main(["validate", str(path)]) == 1
-
-
-def test_validate_missing_file_is_exit_one(tmp_path: pathlib.Path) -> None:
-    """Validating a non-existent config exits 1 (an input failure, not a usage error)."""
-    assert cli.main(["validate", str(tmp_path / "nope.yaml")]) == 1
-
-
-def test_process_missing_config_is_exit_one(tmp_path: pathlib.Path) -> None:
-    """Processing a non-existent config exits 1 (an input failure, not a usage error)."""
-    assert cli.main(["process", str(tmp_path / "nope.yaml")]) == 1
-
-
-def test_validate_dives_out_of_range(tmp_path: pathlib.Path) -> None:
-    """A ``dives`` range beyond the files present is an ERROR."""
-    config = _write_config(tmp_path / "mission.yaml", dives=[1, 99])
-    issues = mission.check(config)
-    assert any(i.level == "ERROR" and i.key == "dives" for i in issues)
-
-
-def test_validate_strict_flags_gap(tmp_path: pathlib.Path) -> None:
-    """``--strict`` reports a dive missing from the range."""
-    mission_dir = tmp_path / "mission_dir"
-    mission_dir.mkdir()
-    for name in ("p0050001_20080606.nc", "p0050003_20080606.nc"):
-        (mission_dir / name).write_bytes((DATA_DIR / name).read_bytes())
-    config = _write_config(
-        tmp_path / "mission.yaml", raw_dir=str(mission_dir), dives=[1, 3]
-    )
-    assert not [i for i in mission.check(config, strict=False) if i.key == "dives"]
-    strict = mission.check(config, strict=True)
-    assert any(i.level == "ERROR" and "missing" in i.message for i in strict)
-
-
-def test_bundled_example_config_validates_and_plans(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """The committed data/demo_sg005/mission.yaml validates and plans, so it cannot rot."""
-    example = DATA_DIR / "mission.yaml"
-    assert cli.main(["validate", str(example)]) == 0
-    assert cli.main(["process", str(example), "-n"]) == 0
-    out = capsys.readouterr().out
-    assert "1 would convert" in out
-    assert "outputs" in out
-
-
-def test_report_output_dir_is_created(tmp_path: pathlib.Path) -> None:
-    """report -o new/ (not yet existing) writes <id>_conversion.html inside it."""
-    from seagliderOG1 import _convert, readers, writers
-
-    nc = tmp_path / "og1.nc"
-    writers.write(_convert.convert(readers.read_mission(str(DATA_DIR), 1, 1)), str(nc))
-    out_dir = tmp_path / "reports"
-    assert cli.main(["report", str(nc), "-o", f"{out_dir}/"]) == 0
-    assert (out_dir / "og1_conversion.html").is_file()
-
-
-def test_deprecated_source_key_is_read_as_raw_dir_with_a_warning(
-    tmp_path: pathlib.Path,
-) -> None:
-    """A config that still says source: validates with a WARNING; both keys is an ERROR."""
-    config = _write_config(tmp_path / "old.yaml")
-    data = yaml.safe_load(config.read_text(encoding="utf-8"))
-    data["source"] = data.pop("raw_dir")
-    config.write_text(yaml.safe_dump(data))
-    issues = mission.check(config)
-    assert [i.level for i in issues if i.key == "source"] == ["WARNING"]
-    assert not [i for i in issues if i.level == "ERROR"]
-    assert mission._load_raw(config)["raw_dir"] == str(DATA_DIR)
-    data["raw_dir"] = str(DATA_DIR)
-    config.write_text(yaml.safe_dump(data))
-    assert any(
-        i.level == "ERROR" and "both 'raw_dir'" in i.message
-        for i in mission.check(config)
-    )
-
-
-def test_init_dest_is_a_directory_or_a_yaml_file(tmp_path: pathlib.Path) -> None:
-    """init dest: a directory gets mission.yaml inside (created); a .yaml path is used."""
-    assert cli.main(["init", str(tmp_path / "new" / "dir")]) == 0
-    assert (tmp_path / "new" / "dir" / "mission.yaml").is_file()
-    assert cli.main(["init", str(tmp_path / "sg271.yaml")]) == 0
-    assert (tmp_path / "sg271.yaml").is_file()
-
-
-def test_process_report_dir_writes_pages_apart_from_the_data(
-    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """process --report-dir ROOT writes the page in ROOT/<id>/, nothing beside the data."""
-    out = tmp_path / "data"
-    site = tmp_path / "site"
-    config = _write_config(tmp_path / "mission.yaml", output_dir=str(out), dives=[1, 1])
-    assert cli.main(["process", str(config), "--report-dir", str(site)]) == 0
-    (nc,) = out.glob("*.nc")
-    assert (site / nc.stem / f"{nc.stem}_conversion.html").is_file()
-    assert not list(out.glob("*.html"))
-    assert (
-        out / f"{nc.stem}_conversion.json"
-    ).is_file()  # the sidecar stays with the data
+# --- enrich -------------------------------------------------------------------------------
 
 
 def test_enrich_sets_the_doi_and_rebinds_the_sidecar(
@@ -1233,6 +1247,9 @@ def test_enrich_from_config_refuses_converter_owned_keys(
     for key in ("date_modified", "tracking_id", "history", "conversion_dimensions"):
         owned = _write_config(tmp_path / "owned.yaml", global_attributes={key: "x"})
         assert cli.main(["enrich", str(nc), str(owned)]) == 1, key
+
+
+# --- draft --------------------------------------------------------------------------------
 
 
 def test_draft_writes_only_draft_files_and_a_draft_page(

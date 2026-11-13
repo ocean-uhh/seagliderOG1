@@ -1,0 +1,744 @@
+"""The Conversion page and the report helpers it shares with the other pages.
+
+Data: the sg005 demo conversion.
+"""
+
+import json
+import pathlib
+import sys
+
+import netCDF4
+import numpy as np
+import yaml
+
+from seagliderOG1 import _convert, readers, vocabularies
+from seagliderOG1.reports import _record, conversion, phase
+
+script_dir = pathlib.Path(__file__).parent.parent.absolute()
+parent_dir = script_dir.parents[0]
+DATA = str(parent_dir / "data/demo_sg005")
+# The yaml section slugs are this schema's own names, not derived from the vendored page
+# labels (which ctdcast owns). This maps each to the page group it must correspond to; a
+# vendored relabel or regroup breaks this test, never a user's mission.yaml.
+_LABEL_BY_SECTION = {
+    "identity_and_discovery": "Identity & discovery",
+    "rights_and_access": "Rights & access",
+    "provenance_and_processing": "Provenance & processing",
+}
+
+
+def _dataset():
+    """Return the demo_sg005 OG1 dataset (dives 1-2)."""
+    return _convert.convert(readers.read_mission(DATA, 1, 2))
+
+
+def _texts(block):
+    """Return the box texts of a config-suggestion block."""
+    return [box["text"] for box in block["boxes"]]
+
+
+# --- The page -----------------------------------------------------------------------------
+
+
+def test_page_section_order(tmp_path) -> None:
+    """The Conversion page's sections render summary first, then what to fix and what was lost."""
+    import re
+
+    path = _convert._convert_mission(DATA, tmp_path, dives=(1, 2))
+    html = conversion.render_conversion(path)
+    ids = re.findall(r'<section id="([^"]+)">', html)
+    assert ids == [
+        "summary",
+        "config-check",  # no platform given: PLATFORM_MODEL etc. are UNK
+        "losses",
+        "flight",
+        "calibration",
+        "traced",
+        "glossary",
+        "globals",
+    ]
+
+
+def test_page_summary_with_and_without_sidecar(tmp_path) -> None:
+    """The summary tiles read the conversion record, and say "not recorded" without it."""
+    import pathlib
+
+    from seagliderOG1 import _convert, writers
+
+    path = _convert._convert_mission(
+        pathlib.Path(__file__).parent.resolve().parent.parent / "data" / "demo_sg005",
+        tmp_path,
+    )
+    html = conversion.render_conversion(path)
+    assert "<dt>Dive files read</dt><dd>5</dd>" in html
+    assert '<section id="losses">' in html
+    writers.conversion_path(path, ".json").unlink()
+    html = conversion.render_conversion(path)
+    assert '<div class="tile bad"><dt>Dive files read</dt><dd>not recorded</dd>' in html
+
+
+def test_phase_page_beside_the_conversion_page(tmp_path) -> None:
+    """report() writes <stem>_phase.html beside the conversion page; the two link each other;
+    a file without PHASE gets no phase page and no phase pill."""
+    import xarray as xr
+
+    from seagliderOG1 import writers
+    from seagliderOG1.reports import phase as phase_page
+    from seagliderOG1.reports import report
+
+    path = _convert._convert_mission(DATA, tmp_path / "a", dives=(1, 3))
+    page = report(path, overwrite=True)
+    written = writers.phase_page_path(path)
+    assert written.exists()
+    html = written.read_text(encoding="utf-8")
+    assert (
+        "Dive 2, 3:" in html
+    )  # three dives: 2 near the start, then middle and end thirds
+    assert html.count("data:image/png;base64") >= 4
+    assert "gc_state_state" in html and "for each dive:" in html
+    assert (
+        html.index('id="counts"') < html.index('id="dive"') < html.index('id="method"')
+    )
+    assert html.index('id="method"') < html.index('id="states"') < html.index('id="qc"')
+    assert "14 → 15" in html and 'class="row-bad"' in html
+    assert f'href="{page.name}"' in html
+    assert f'href="{written.name}"' in page.read_text(encoding="utf-8")
+    stripped = tmp_path / "b" / path.name
+    stripped.parent.mkdir()
+    with xr.open_dataset(path) as ds:
+        ds.drop_vars(["PHASE", "PHASE_QC"]).to_netcdf(stripped)
+    assert phase_page.render_phase(stripped) is None
+    assert phase_page.write_phase_page(stripped, stripped.with_suffix(".html")) is None
+
+
+def test_importing_reports_pins_a_headless_backend() -> None:
+    """Importing the report layer forces a non-interactive backend, even with none set, so a
+    render (CLI, notebook, script or test) never blocks on a GUI window."""
+    import os
+    import subprocess
+
+    env = {k: v for k, v in os.environ.items() if k != "MPLBACKEND"}
+    code = (
+        "import matplotlib; from seagliderOG1 import reports; "
+        "assert matplotlib.get_backend().lower() == 'agg', matplotlib.get_backend()"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+# --- Requirements and reconciliation ------------------------------------------------------
+
+
+def test_requirement_summary_counts_the_mandatory_tier():
+    """The requirement line reports every mandatory global present on demo (not amber)."""
+    ds = _dataset()
+    text, amber = conversion._requirement_summary(ds)
+    assert text.startswith("OG1 requirement: mandatory 9/9 present")
+    assert amber is False
+
+
+def test_verdict_counts_required_variables_and_meanings_name_sections():
+    """Mandatory covers variables too; Meaning texts name sections, not numbers."""
+    recon = [("Renamed", "1", "x"), ("Basestation inputs", "1", "")]
+    ledger = {"dropped": [], "removed": []}
+    clause = conversion._verdict_clauses(recon, ledger, False, True)[-1]
+    assert clause == {"text": "OG1 mandatory incomplete (variables)", "bad": True}
+    clause = conversion._verdict_clauses(recon, ledger, False, False)[-1]
+    assert clause == {"text": "OG1 mandatory complete", "bad": False}
+    ds = _dataset()
+    ledger = _record.conversion_ledger(ds)
+    rows, _caption = conversion._reconciliation(ds, ledger)
+    assert not any("§" in meaning for _label, _count, meaning in rows)
+
+
+def test_og1_required_rows_all_present_on_demo() -> None:
+    """The OG1-required tier lists the checker's 14 names + the dimension, all present on demo."""
+    ds = _dataset()
+    ledger = _record.conversion_ledger(ds)
+    rows, caption, incomplete = conversion._og1_required_rows(
+        ds, ledger, {"LATITUDE": 91.0}
+    )
+    assert not incomplete
+    assert "14 of 14 variables present" in caption
+    names = {r["name"] for r in rows}
+    assert {"LATITUDE", "LONGITUDE", "DEPTH", "TIME_GPS"} <= names
+    # The required-dimension row carries the same orig_var/orig_dim fields the table reads.
+    dim_row = next(r for r in rows if str(r["name"]).startswith("N_MEASUREMENTS"))
+    assert dim_row["orig_var"] == "—" and dim_row["orig_dim"] == "—"
+    lat = next(r for r in rows if r["name"] == "LATITUDE")
+    assert lat["present"] is True
+    assert lat["valid"] == "91.0"  # pulled from the passed valid-by-name map
+    assert lat["orig_var"] == "latitude"  # basestation source variable
+    assert lat["orig_dim"] == "sg_data_point"  # and its original dimension
+
+
+def test_reconciliation_rows_carry_a_meaning() -> None:
+    """Every fate row has Meaning text; the basestation-input total row has none."""
+    ds = _dataset()
+    rows, _caption = conversion._reconciliation(ds, _record.conversion_ledger(ds))
+    assert all(row[2] for row in rows[:-1])  # each fate explains itself
+    assert rows[-1][2] == ""  # the input-total row carries no meaning
+
+
+# --- Variables ----------------------------------------------------------------------------
+
+
+def test_variable_groups_put_derived_no_dimension_last():
+    """The converter-built (no original dimension) group is titled and placed last, all derived."""
+    ds = _dataset()
+    ledger = _record.conversion_ledger(ds)
+    groups, _source = conversion._variable_groups_by_original_dimension(ds)
+    title, rows = groups[-1]
+    assert title == "Derived (no basestation dimension)"
+    assert all(row["name"] in ledger["derived"] for row in rows)
+
+
+def test_basestation_rows_flag_values_that_differ_or_are_missing():
+    """Pure logic: one row per attribute; amber when it varies or misses some files."""
+    found = {
+        "platform_id": {"values": ["SG005"], "n_files": 3},
+        "dive_number": {"values": ["1", "2", "3"], "n_files": 3},
+        "wmo_id": {"values": ["123"], "n_files": 1},
+    }
+    rows = {r["name"]: r for r in conversion._basestation_rows(found, 3)}
+    assert (
+        rows["platform_id"]["status"] == "all 3 files"
+        and not rows["platform_id"]["bad"]
+    )
+    assert (
+        rows["dive_number"]["distinct"] == ["1", "2", "3"]
+        and rows["dive_number"]["bad"]
+    )
+    assert rows["wmo_id"]["status"] == "1 of 3 files" and rows["wmo_id"]["bad"]
+    assert conversion._basestation_rows(None, 3) == []
+
+
+def test_unit_corrections_table_lists_corrections_conversions_and_adoptions() -> None:
+    """The Unit corrections table reports a label correction, a conversion, and an adoption."""
+    from seagliderOG1 import readers
+
+    dsets = readers.read_mission(str(readers.SAMPLE_DIR), 1, 1)
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ds = _convert.convert(dsets)
+    rows = {r["name"]: r for r in conversion._unit_corrections_rows(ds)}
+    # label correction (value unchanged): density family corrected g/m^3 -> kg m-3
+    assert "DENSITY" in rows
+    assert rows["DENSITY"]["original"] == "g/m^3"
+    assert "corrected" in rows["DENSITY"]["action"]
+    # conversion (values scaled): conductivity S/m -> mS cm-1 x10
+    assert rows["CNDC"]["written"] == "mS cm-1"
+    assert "×10" in rows["CNDC"]["action"]
+    # adoption (source unlabelled): OXYSAT took the OG1 label
+    assert rows["OXYSAT"]["original"] == "— (none)"
+    assert "adopted" in rows["OXYSAT"]["action"]
+
+
+def test_duplicate_recommendation_flags_passthrough_copy():
+    """A pass-through variable identical to a mapped OG1 variable is recommended for drop."""
+    import numpy as np
+    import xarray as xr
+
+    ds = xr.Dataset(
+        {
+            "DENSITY": ("N", np.array([1027.0, 1028.0, np.nan])),
+            "density": ("N", np.array([1027.0, 1028.0, np.nan])),
+            "TEMP": ("N", np.array([10.0, 11.0, 12.0])),
+        }
+    )
+    ds["DENSITY"].attrs["original_name"] = "density_insitu"  # mapped
+    ds["density"].attrs["original_name"] = "density"  # pass-through, identical
+    ds["TEMP"].attrs["original_name"] = "temperature"  # mapped, not a duplicate
+    rec = conversion._duplicate_recommendation(ds)
+    assert rec is not None
+    assert rec["boxes"][0]["text"] == "drop_variables:\n  - density"
+    assert "DENSITY" in rec["note"]
+    assert "TEMP" not in rec["boxes"][0]["text"]
+
+
+def test_duplicate_recommendation_none_without_duplicates():
+    """No duplicate pass-through variable, no recommendation."""
+    import numpy as np
+    import xarray as xr
+
+    ds = xr.Dataset({"TEMP": ("N", np.array([10.0, 11.0]))})
+    ds["TEMP"].attrs["original_name"] = "temperature"
+    assert conversion._duplicate_recommendation(ds) is None
+
+
+def test_boundary_gps_fix_recorded_and_redrawn_on_the_losing_dive():
+    """A GPS fix deduplicated at a dive boundary is recorded in the global, and the phase page
+    redraws it on the dive that lost it so each dive still shows its full set of fixes.
+
+    sg005 shares a boundary fix at dives 3->4 and 4->5, so the five-dive convert drops two.
+    """
+    import matplotlib.pyplot as plt
+
+    ds = _convert.convert(readers.read_mission(DATA, 1, 5))
+    records = json.loads(ds.attrs["conversion_dropped_gps_fixes"])
+    assert records and all({"time", "dive"} <= r.keys() for r in records)
+
+    losing_dive = records[0]["dive"]
+    recovered = phase._dropped_fix_times(ds, losing_dive)
+    assert recovered.size >= 1
+    # The dive's own fixes plus the recovered one are drawn: the figure renders, and the
+    # recovered time is not among the dive's own data (it was dropped).
+    own = ds["TIME_GPS"].values[
+        (ds["dive_number"].values == losing_dive) & ~np.isnat(ds["TIME_GPS"].values)
+    ]
+    assert recovered[0] not in own
+    fig = phase.draw_phase_dive(ds, losing_dive)
+    assert fig is not None
+    plt.close(fig)
+
+
+# --- Global attributes --------------------------------------------------------------------
+
+
+def test_global_attribute_groups_are_the_five_conventions_no_other():
+    """Globals group into the five vendored conventions; nothing falls to Other on demo."""
+    from seagliderOG1.reports import design
+    from seagliderOG1.reports._vendored import nc_tables
+
+    ds = _dataset()
+    groups, _source = nc_tables.globals_rows(
+        ds,
+        extras=design.ATTR_GROUP_EXTRAS,
+        exclude=["history", "conversion_attribute_sources", "conversion_units"],
+    )
+    titles = [title for title, _rows in groups]
+    assert titles == [
+        "Identity & discovery",
+        "Spatiotemporal coverage",
+        "People & institutions",
+        "Rights & access",
+        "Provenance & processing",
+    ]
+    assert "Other" not in titles  # every global is placed by meaning
+
+
+def test_config_global_sections_correspond_to_the_page_groups():
+    """Every section key groups under its page label; the map is complete (no vacuous pass)."""
+    from seagliderOG1 import vocabularies
+    from seagliderOG1.reports import design
+    from seagliderOG1.reports._vendored import nc_tables
+
+    # (1) the map covers exactly the sections — adding a section cannot silently skip the check.
+    assert set(_LABEL_BY_SECTION) == set(vocabularies.CONFIG_GLOBAL_SECTIONS)
+    # (2) every label is a real page group (vendored ATTR_GROUPS or the package extras).
+    page_labels = {label for label, _ in nc_tables.ATTR_GROUPS} | set(
+        design.ATTR_GROUP_EXTRAS
+    )
+    assert set(_LABEL_BY_SECTION.values()) <= page_labels
+    # (3) per-key correspondence, resolved as the report resolves it (vendored then extras).
+    group_of: dict[str, str] = {}
+    for label, names in nc_tables.ATTR_GROUPS:
+        for name in names:
+            group_of[name] = label
+    for label, names in design.ATTR_GROUP_EXTRAS.items():
+        for name in names:
+            group_of.setdefault(name, label)
+    for slug, keys in vocabularies.CONFIG_GLOBAL_SECTIONS.items():
+        for key in keys:
+            assert group_of.get(key) == _LABEL_BY_SECTION[slug], (slug, key)
+
+
+def test_coverage_computed_matches_the_data_on_demo():
+    """Recomputed coverage agrees with the stated geospatial/time globals within tolerance."""
+    ds = _dataset()
+    computed = conversion._coverage_computed(ds)
+    # Every geospatial and time-coverage bound is present and within tolerance (not amber).
+    assert {
+        "geospatial_lat_min",
+        "geospatial_lat_max",
+        "geospatial_lon_min",
+        "geospatial_lon_max",
+        "time_coverage_start",
+        "time_coverage_end",
+    } <= set(computed)
+    assert all(not entry["over"] for entry in computed.values())
+
+
+def test_conventions_check_counts_acdd_and_cf_units():
+    """The box reads Conventions and counts ACDD 1.3 globals and CF units on sg005."""
+    ds = _dataset()
+    box = conversion._conventions_check(ds)
+    assert box["claim"] == ds.attrs["Conventions"]
+    levels = {level["level"]: level for level in box["acdd"]}
+    assert levels["highly recommended"]["total"] == 4
+    assert levels["recommended"]["total"] == 31
+    assert "summary" in levels["highly recommended"]["missing"]
+    assert box["short"]
+    for name in box["no_units"]:
+        assert "units" not in ds[name].attrs and ds[name].ndim
+
+
+def test_history_rows_are_ordinal_numbered():
+    """History rows carry a 1-based ordinal in the first column, in file order."""
+    ledger = _record.conversion_ledger(_dataset())
+    rows = conversion._history_rows(ledger)
+    assert rows  # at least the conversion line
+    assert [r[0] for r in rows] == [str(i) for i in range(1, len(rows) + 1)]
+
+
+def test_basestation_identity_globals_are_not_carried(sg005_og1):
+    """sg005's naming_authority, uuid and summary describe the basestation files, not OG1."""
+    import xarray as xr
+
+    with xr.open_dataset(sg005_og1, engine="netcdf4") as ds:
+        assert "naming_authority" not in ds.attrs  # was edu.washington.apl
+        assert "uri" not in ds.attrs  # was dive 1's uuid
+        assert "site" not in ds.attrs  # was the basestation summary text
+        assert ds.attrs["id"].endswith("_R")  # no mode given: realtime
+
+
+def test_demo_config_institution_is_one_record_in_people_and_institutions():
+    """The demo mission.yaml's Operator merges with the file's institution, grouped right.
+
+    The basestation ``institution`` global is a postal address the registry knows; the
+    config name must resolve to the same registry entry, or the file writes two
+    institutions (one role-less, one without an EDMO id).
+    """
+    from seagliderOG1.reports import design
+    from seagliderOG1.reports._vendored import nc_tables
+
+    config = yaml.safe_load(
+        (pathlib.Path(DATA) / "mission.yaml").read_text(encoding="utf-8")
+    )
+    ds = _convert.convert(
+        readers.read_mission(DATA, 1, 1), institutions=config["institutions"]
+    )
+    assert ds.attrs["contributing_institutions"] == (
+        "University of Washington (School of Oceanography)"
+    )
+    assert ds.attrs["contributing_institutions_role"] == "Operator"
+    assert ds.attrs["contributing_institutions_vocabulary"].endswith("/report/1434")
+    groups, _source = nc_tables.globals_rows(
+        ds,
+        extras=design.ATTR_GROUP_EXTRAS,
+        exclude=["history", "conversion_attribute_sources", "conversion_units"],
+    )
+    people = {
+        row[0]
+        for title, rows in groups
+        if title == "People & institutions"
+        for row in rows
+    }
+    assert {
+        "contributing_institutions_role",
+        "contributing_institutions_role_vocabulary",
+    } <= people
+    assert "Other" not in [title for title, _rows in groups]
+
+
+# --- mission.yaml suggestions -------------------------------------------------------------
+
+
+def test_config_suggestions_pair_config_with_the_files(sg005_og1):
+    """Pure logic on the real sidecar: only the values that differ get a pair."""
+    sidecar = _record.conversion_sidecar(sg005_og1)
+    assert sidecar["config"] == {
+        "dives": [1, 1],
+        "platform": {},
+        "deployment_id": None,
+        "institutions": [],
+    }
+    assert conversion._config_suggestions(sidecar) == []  # nothing differs
+    assert conversion._config_suggestions(None) == []
+    edited = {
+        **sidecar,
+        "config": {
+            "dives": [1, 3],
+            "platform": {
+                "PLATFORM_SERIAL_NUMBER": "sg005",  # agrees with the file
+                "PLATFORM_MODEL": "a model",  # config-only field
+                "LANDSTATION_VERSION": "basestation v2.9",
+            },
+        },
+    }
+    dives, platform = conversion._config_suggestions(edited)
+    assert _texts(dives) == ["dives: [1, 3]", "dives: [1, 1]"]
+    assert _texts(platform) == [
+        "platform:\n  LANDSTATION_VERSION: basestation v2.9",
+        "platform:\n  LANDSTATION_VERSION: basestation v2.8",
+    ]
+    assert platform["note"] == "From the first basestation file."
+    # A source global that varies across the files is named in the note.
+    edited["basestation_globals"] = {
+        **sidecar["basestation_globals"],
+        "base_station_version": {"values": ["2.8", "2.9"], "n_files": 2},
+    }
+    note = conversion._config_suggestions(edited)[1]["note"]
+    assert "base_station_version has 2 values (2.8, 2.9)" in note
+    # Dives rejected inside the converted span are named; the range is the span.
+    edited["presence"] = {**sidecar["presence"], "dives": [1, 2, 4]}
+    edited["config"]["dives"] = [1, 5]
+    dives = conversion._config_suggestions(edited)[0]
+    assert _texts(dives)[1] == "dives: [1, 4]"
+    assert dives["note"] == "3 dives converted, 1 to 4; not converted: 3."
+
+
+def test_config_suggestions_fill_gaps_from_the_file(sg005_og1):
+    """The fixture (no platform, no institutions) has UNK and omitted platform fields."""
+    import xarray as xr
+
+    with xr.open_dataset(sg005_og1, engine="netcdf4") as ds:
+        gaps = conversion._platform_gaps(ds)
+        box = conversion._conventions_check(ds)
+    assert gaps == {
+        "PLATFORM_MODEL": "written as UNK",
+        "PLATFORM_DEPTH_RATING": "omitted",
+        "PLATFORM_MAKER": "written as UNK",
+        "WMO_IDENTIFIER": "written as UNK",
+    }
+    missing = {n: lv["level"] for lv in box["acdd"] for n in lv["missing"]}
+    blocks = conversion._config_suggestions(None, gaps, missing)
+    assert [b["title"] for b in blocks] == [
+        "Platform not filled",
+        "Missing globals",
+    ]
+    assert "  PLATFORM_DEPTH_RATING: null   # omitted" in _texts(blocks[0])[0]
+    texts = {b["label"]: b["text"] for b in blocks[1]["boxes"]}
+    assert texts["identity_and_discovery:"] == (
+        "identity_and_discovery:\n  naming_authority: null   # ACDD recommended"
+    )
+    assert texts["provenance_and_processing:"] == (
+        "provenance_and_processing:\n  comment: null   # ACDD recommended"
+    )
+    escape = texts["global_attributes:"]
+    # OG1 records people in contributor_*: no creator_* / publisher_* box.
+    assert "creator_name" not in escape and "publisher_name" not in escape
+    assert "creator_name" in blocks[1]["note"]
+    assert "  summary: null   # ACDD highly recommended" in escape
+    # Globals the converter supplies itself are named in the note, never boxed.
+    assert "geospatial_bounds" not in escape
+    assert "standard_name_vocabulary" in blocks[1]["note"]
+
+
+def test_config_suggestions_offer_the_id_from_dive_1(sg005_og1):
+    """A conversion from dive 1 with no deployment.id is offered its derived id to pin."""
+    sidecar = _record.conversion_sidecar(sg005_og1)
+    (block,) = conversion._config_suggestions(sidecar, og1_id="sg005_x_R")
+    assert block["title"] == "Deployment id"
+    assert block["boxes"][0]["text"] == "identity_and_discovery:\n  id: sg005_x_R"
+    # Not from a later dive (the derived start is not the deployment's), and not when set.
+    later = {**sidecar, "presence": {**sidecar["presence"], "dives": [2, 3]}}
+    titles = [b["title"] for b in conversion._config_suggestions(later, og1_id="x")]
+    assert "Deployment id" not in titles
+    pinned = {**sidecar, "config": {**sidecar["config"], "deployment_id": "sg005_x_R"}}
+    assert conversion._config_suggestions(pinned, og1_id="sg005_x_R") == []
+
+
+def test_config_suggestions_offer_registry_entries_for_an_unmatched_name():
+    """A config name the registry does not match exactly gets entries containing its words."""
+    assert conversion._registry_candidates("University of Hamburg Oceanography") == [
+        ("3323", "University of Hamburg")
+    ]
+    assert conversion._registry_candidates("No Such Institute") == []
+    sidecar = {
+        "config": {
+            "institutions": [
+                {"name": "University of Hamburg Oceanography", "role": "Operator"}
+            ]
+        }
+    }
+    (block,) = conversion._config_suggestions(sidecar)
+    assert block["title"] == "Institution not in the registry"
+    assert [b["label"] for b in block["boxes"]] == ["EDMO 3323"]
+    assert yaml.safe_load(block["boxes"][0]["text"]) == {
+        "institutions": [
+            {"name": "University of Hamburg", "role": "Operator", "id": None}
+        ]
+    }
+
+
+def test_config_suggestions_pin_registry_institution_ids(sg005_og1):
+    """A config institution with no id that the registry matches gets a pinned block."""
+    sidecar = _record.conversion_sidecar(sg005_og1)
+    sidecar["config"]["institutions"] = [
+        {"name": "UW School of Oceanography", "role": "Operator", "id": None},
+        {"name": "No Such Institute", "role": "Owner"},
+    ]
+    (block,) = conversion._config_suggestions(sidecar)
+    assert block["title"] == "Institution ids"
+    assert yaml.safe_load(_texts(block)[0]) == {
+        "institutions": [
+            {
+                "name": "University of Washington (School of Oceanography)",
+                "role": "Operator",
+                "id": "https://edmo.seadatanet.org/report/1434",
+            },
+            {"name": "No Such Institute", "role": "Owner", "id": None},
+        ]
+    }
+    # Nothing in the config resolved: no ids block, but the file's institution (dropped
+    # by the converter because the config lists institutions) is offered instead.
+    sidecar["config"]["institutions"] = [{"name": "No Such Institute", "role": "Owner"}]
+    (block,) = conversion._config_suggestions(sidecar)
+    assert block["title"] == "Institution in the basestation files"
+    assert "Seattle, WA 98195-5351" in block["note"]
+    assert _texts(block) == [
+        "institutions:\n"
+        "- name: University of Washington (School of Oceanography)\n"
+        "  role: null   # set the role\n"
+        "  id: https://edmo.seadatanet.org/report/1434"
+    ]
+    # Without config institutions the converter keeps the file's: nothing to offer.
+    sidecar["config"]["institutions"] = []
+    assert conversion._config_suggestions(sidecar) == []
+
+
+def test_missing_globals_include_what_validate_warns_about():
+    """OG1 highly-desirable globals the file lacks join the ACDD ones, labelled by tier."""
+    (block,) = conversion._config_suggestions(
+        None,
+        acdd_missing={"summary": "highly recommended", "doi": "recommended"},
+        og1_missing=["doi", "internal_mission_identifier", "program"],
+    )
+    rights, escape = (b["text"] for b in block["boxes"])
+    assert "  doi: null   # OG1 highly desirable; ACDD recommended" in rights
+    # program has no section (registry-supplied), so it joins global_attributes.
+    assert "  program: null   # OG1 highly desirable" in escape
+    assert "  internal_mission_identifier: null   # OG1 highly desirable" in escape
+    assert "  summary: null   # ACDD highly recommended" in escape
+
+
+def test_draft_snippets_fill_only_what_the_files_carry(sg005_og1_copy):
+    """Pure logic: dives and file-derived platform fields filled; required ones null."""
+    from_file = vocabularies.platform_from_file(
+        {"platform_id": "SG005", "base_station_version": "2.8"}
+    )
+    blocks = conversion._draft_snippets(from_file, [3, 4], "sg005_x_delayed_draft")
+    text = "\n".join(block["text"] for block in blocks)
+    assert "dives: [3, 4]" in text
+    assert "PLATFORM_SERIAL_NUMBER: sg005" in text
+    assert "LANDSTATION_VERSION: basestation v2.8" in text
+    assert "PLATFORM_MODEL: null" in text  # required, not in the files
+    assert "sg005_x_delayed\n" in text and "id: null" in text  # derived id as a comment
+    assert conversion._draft_snippets(None, [1], "x") == []
+    # An OG1 (non-draft) page gets none, also when some other global is called draft:
+    # the page knows a draft by the draft global's value.
+    path = sg005_og1_copy
+    assert "Suggested mission.yaml lines" not in conversion.render_conversion(path)
+
+
+def test_config_suggestions_on_the_page(tmp_path):
+    """A process_mission run whose dives and platform disagree with the files shows both."""
+    path = _convert._convert_mission(
+        DATA,
+        tmp_path,
+        dives=(4, 9),
+        platform={"LANDSTATION_VERSION": "basestation v2.9"},
+        report=True,
+    )
+    html = (tmp_path / f"{path.stem}_conversion.html").read_text(encoding="utf-8")
+    assert "mission.yaml against the data" in html
+    assert "2 dives converted, 4 to 5." in html
+    assert ">dives: [4, 9]</textarea>" in html and ">dives: [4, 5]</textarea>" in html
+    assert "LANDSTATION_VERSION: basestation v2.8</textarea>" in html
+    assert 'data-copy="config-2-2"' in html
+    assert "Platform not filled" in html  # the call set no PLATFORM_MODEL
+    with netCDF4.Dataset(path, "a") as nc:
+        nc.setncattr("draft", "v2 of the cruise report")
+    html = conversion.render_conversion(path)
+    assert '<span class="masthead-type">Conversion</span>' in html
+
+
+# --- Calibration comments -----------------------------------------------------------------
+
+
+def test_calibration_comment_rows_pair_the_comment_with_the_sensor(sg005_og1):
+    """demo_sg005: each comment beside its SENSOR_ variable; the uncommented one is amber."""
+    import xarray as xr
+
+    with xr.open_dataset(sg005_og1, engine="netcdf4") as ds:
+        rows = {r["name"]: r for r in conversion._calibration_comment_rows(ds)}
+    ctd = rows["SENSOR_CTD_24520-1"]
+    assert (ctd["source_variable"], ctd["original"]) == (
+        "sg_cal_calibcomm",
+        "SBE 24520-1 calibration 04FEB08",
+    )
+    assert (ctd["serial"], ctd["calibration"], ctd["rules"]) == (
+        "24520-1",
+        "2008-02-04",
+        "SBE-token / ddMonyy",
+    )
+    assert not ctd["bad"]
+    oxygen = rows["SENSOR_OXYGEN_005"]
+    assert oxygen["source_variable"] == "sg_cal_calibcomm_oxygen" and not oxygen["bad"]
+    fluorometer = rows["SENSOR_FLUOROMETER_UNK"]
+    assert (fluorometer["source_variable"], fluorometer["original"]) == ("—", "—")
+    assert fluorometer["note"] == "no calibration comment for this sensor"
+    assert fluorometer["bad"]
+    html = conversion.render_conversion(sg005_og1)
+    assert "Calibration comments: basestation" in html
+    assert "SBE 24520-1 calibration 04FEB08" in html
+
+
+def test_calibration_columns_drop_empty_channel_and_note(sg005_og1):
+    """sg005 has no channel dates (dropped) and one note (kept); widths still sum to ~100."""
+    import xarray as xr
+
+    with xr.open_dataset(sg005_og1, engine="netcdf4") as ds:
+        rows = conversion._calibration_comment_rows(ds)
+    columns = conversion._calibration_comment_columns(rows)
+    assert [c["header"] for c in columns] == [
+        "Basestation variable",
+        "Original",
+        "OG1 Sensor",
+        "Serial",
+        "Calibration",
+        "Rules (serial / date)",
+        "Note",
+    ]
+    assert abs(sum(c["width"] for c in columns) - 100) <= 2
+    no_notes = [r for r in rows if not r["note"]]
+    headers = [c["header"] for c in conversion._calibration_comment_columns(no_notes)]
+    assert "Note" not in headers and "Channel dates" not in headers
+
+
+def test_calibration_rows_override_clears_amber_and_empty_record(sg005_og1_copy):
+    """A lone-token serial is amber until sensors: corrects it; an empty record has no rows."""
+    import json
+
+    import xarray as xr
+
+    with xr.open_dataset(sg005_og1_copy, engine="netcdf4") as ds:
+        ds = ds.load()
+    records = json.loads(ds.attrs["conversion_sensor_calibration"])
+    records["SENSOR_OXYGEN_005"]["serial_rule"] = "bare-token"
+    ds.attrs["conversion_sensor_calibration"] = json.dumps(records)
+    rows = {r["name"]: r for r in conversion._calibration_comment_rows(ds)}
+    assert rows["SENSOR_OXYGEN_005"]["bad"]
+    records["SENSOR_OXYGEN_005"]["overridden"] = ["sensor_serial_number"]
+    ds.attrs["conversion_sensor_calibration"] = json.dumps(records)
+    rows = {r["name"]: r for r in conversion._calibration_comment_rows(ds)}
+    assert not rows["SENSOR_OXYGEN_005"]["bad"]
+    ds.attrs["conversion_sensor_calibration"] = "{}"
+    assert conversion._calibration_comment_rows(ds) == []
+
+
+def test_letter_serial_with_zeros_is_not_a_placeholder():
+    """F0000 is an identifier; 0000 and 00-00-0000 are the old placeholders."""
+    assert not conversion._is_placeholder("F0000")
+    assert conversion._is_placeholder("0000") and conversion._is_placeholder(
+        "00-00-0000"
+    )
+
+
+def test_calibration_comment_rows_absent_for_older_files(sg005_og1_copy):
+    """A file without conversion_sensor_calibration (0.2.0 and earlier) has no rows."""
+    import xarray as xr
+
+    with xr.open_dataset(sg005_og1_copy, engine="netcdf4") as ds:
+        ds = ds.load()
+    del ds.attrs["conversion_sensor_calibration"]
+    assert conversion._calibration_comment_rows(ds) is None

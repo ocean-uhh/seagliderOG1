@@ -1,6 +1,7 @@
-"""Variables passed through under their basestation names get canonical unit spellings.
+"""Units of the variables kept under their basestation names: conversions, relabels and the
+configured attributes, checked against the raw dive files.
 
-On the bundled samples: sg005 (basestation 2.8) dive 1 and sg271 (3.0.6) dives 1-3.
+Data: the sg271 sample (raw files read directly) and the sg005 demo.
 """
 
 import json
@@ -13,7 +14,7 @@ import xarray as xr
 
 from seagliderOG1 import _convert, vocabularies
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).parent.resolve().parents[1]
 SG005 = ROOT / "data" / "demo_sg005"
 SG271 = ROOT / "seagliderOG1" / "data" / "sg271"
 
@@ -27,6 +28,9 @@ def _raw(name: str) -> np.ndarray:
     first = sorted(SG005.glob("p*.nc"))[0]
     with xr.open_dataset(first, decode_times=False) as ds:
         return ds[name].values.astype(float)
+
+
+# --- Conversions and relabels against the raw files ---------------------------------------
 
 
 def test_cm_per_s_is_converted_and_recorded(sg005_og1):
@@ -79,6 +83,9 @@ def test_no_known_alias_spelling_survives(sg271_file):
             if getattr(v, "units", None) in aliases
         }
     assert left <= {"surface_curr_east", "surface_curr_north"}
+
+
+# --- Configured attributes ----------------------------------------------------------------
 
 
 def test_profile_variables_carry_their_configured_attributes(sg271_file):

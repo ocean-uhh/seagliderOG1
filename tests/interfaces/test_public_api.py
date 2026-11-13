@@ -6,16 +6,12 @@ import importlib
 import inspect
 import pathlib
 import re
-import sys
 
 import pytest
 
-script_dir = pathlib.Path(__file__).parent.absolute()
+script_dir = pathlib.Path(__file__).parent.parent.absolute()
 parent_dir = script_dir.parents[0]
-sys.path.append(str(parent_dir))
-
 PKG = parent_dir / "seagliderOG1"
-
 PUBLIC_MODULES = [
     "readers",
     "mission",
@@ -24,7 +20,6 @@ PUBLIC_MODULES = [
     "plotters",
     "contributors",
 ]
-
 CONTRACT = [
     "MetadataError",
     "MissionError",

@@ -1,16 +1,23 @@
-"""TEOS-10 variables the converter adds when the basestation does not write them."""
+"""Variables the converter computes: TEOS-10 salinity and density, and depth from pressure.
+
+Data: the sg271 sample (against the basestation's own sigma0) and the sg005 demo.
+"""
 
 import json
 import pathlib
 
+import gsw
 import numpy as np
 import pytest
 import xarray as xr
 
-from seagliderOG1 import _convert, _pipeline
+from seagliderOG1 import _convert, _pipeline, tools
 
 SG271 = (
-    pathlib.Path(__file__).resolve().parent.parent / "seagliderOG1" / "data" / "sg271"
+    pathlib.Path(__file__).parent.resolve().parent.parent
+    / "seagliderOG1"
+    / "data"
+    / "sg271"
 )
 
 
@@ -18,6 +25,9 @@ SG271 = (
 def sg271_og1(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
     """Return an OG1 file converted from sg271 dives 1-3 (basestation 3.0.6)."""
     return _convert._convert_mission(SG271, tmp_path_factory.mktemp("sg271_og1"))
+
+
+# --- TEOS-10 ------------------------------------------------------------------------------
 
 
 def test_potdens0_matches_the_basestation_sigma0(sg271_og1):
@@ -116,3 +126,23 @@ def test_inputs_in_other_units_are_refused(sg271_og1, caplog, name, units):
         ds = _pipeline.add_teos10_variables(ds)
     assert "POTDENS0" not in ds.variables
     assert any(f"{name} ('{units}'" in r.message for r in caplog.records)
+
+
+# --- Depth --------------------------------------------------------------------------------
+
+
+def test_calc_z():
+    pressure_values = np.arange(10, 10000, 10)
+    # Create a dummy xarray dataset with correct coordinates
+    dataset = xr.Dataset(
+        {
+            "PRES": ("N_MEASUREMENTS", pressure_values),
+        },
+        coords={
+            "LATITUDE": ("N_MEASUREMENTS", 30 + 0 * pressure_values),
+        },
+    )
+    depth = gsw.z_from_p(dataset["PRES"], dataset["LATITUDE"]).values
+    depth_z = tools.add_depth(dataset)["DEPTH_Z"].values
+
+    assert np.array_equal(depth, depth_z)
