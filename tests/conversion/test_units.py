@@ -1,33 +1,41 @@
-"""Real-data tests for the basestation units-label corrections.
+"""Units of the OG1 variables: the units view, label corrections, conversions, and the
+refusal of units that cannot be resolved.
 
-The density family is written ``g/m^3`` by the basestation while holding kg m-3-
-magnitude values; 0.1.0 trusted the label and wrote the values 1000x too small.
-These tests convert the two bundled samples (sg271 basestation 3.0.6, sg005
-basestation 2.8) and assert the corrected magnitudes, the recorded provenance,
-that out-of-range values are left as-is (not silently changed), and the refusal
-of an uncorrected mislabel.
+Data: the sg271 sample and the sg005 demo.
 """
 
 import logging
 import pathlib
-import sys
 import warnings
 
 import numpy as np
 import pytest
 
-script_dir = pathlib.Path(__file__).parent.absolute()
+from seagliderOG1 import UnitsError, _convert, readers, vocabularies
+
+script_dir = pathlib.Path(__file__).parent.parent.absolute()
 parent_dir = script_dir.parents[0]
-sys.path.append(str(parent_dir))
-
-from seagliderOG1 import (  # noqa: E402  # import after sys.path bootstrap
-    UnitsError,
-    _convert,
-    readers,
-    vocabularies,
-)
-
 SG005 = str(parent_dir / "data" / "demo_sg005")
+# Every (source spelling, OG1 target units) the bundled samples carry, pinned to the exact
+# (canonical, factor) the units view must resolve it to. The conversion path (vocabularies.UNITS)
+# resolves through the vendored family tables (reports/_vendored/units_tables.py); pinning the
+# factors here means a re-vendor that shifts a base factor fails this test loudly, rather than
+# silently moving a converted output value. A new sample spelling not listed fails until its
+# expected (canonical, factor) is added with a verified factor.
+EXPECTED_SAMPLE_UNITS = {
+    ("1e-3", "1e-3"): ("1e-3", 1.0),
+    ("Hz", "Hz"): ("Hz", 1.0),
+    ("S/m", "mS cm-1"): ("mS cm-1", 10.0),
+    ("cm/s", "m s-1"): ("m s-1", 0.01),
+    ("dbar", "dbar"): ("dbar", 1.0),
+    ("degrees_Celsius", "degree_Celsius"): ("degree_Celsius", 1.0),
+    ("g", "g"): ("g", 1.0),
+    ("g/kg", "g kg-1"): ("g kg-1", 1.0),
+    ("m/s", "m s-1"): ("m s-1", 1.0),
+    ("meters", "m"): ("m", 1.0),
+    ("micrograms/liter", "mg m-3"): ("mg m-3", 1.0),
+    ("s", "seconds"): ("seconds", 1.0),
+}
 
 
 def _convert_dive1(mission_dir: str):
@@ -90,26 +98,7 @@ def _source_target_pairs():
     return sorted(pairs)
 
 
-# Every (source spelling, OG1 target units) the bundled samples carry, pinned to the exact
-# (canonical, factor) the units view must resolve it to. The conversion path (vocabularies.UNITS)
-# resolves through the vendored family tables (reports/_vendored/units_tables.py); pinning the
-# factors here means a re-vendor that shifts a base factor fails this test loudly, rather than
-# silently moving a converted output value. A new sample spelling not listed fails until its
-# expected (canonical, factor) is added with a verified factor.
-EXPECTED_SAMPLE_UNITS = {
-    ("1e-3", "1e-3"): ("1e-3", 1.0),
-    ("Hz", "Hz"): ("Hz", 1.0),
-    ("S/m", "mS cm-1"): ("mS cm-1", 10.0),
-    ("cm/s", "m s-1"): ("m s-1", 0.01),
-    ("dbar", "dbar"): ("dbar", 1.0),
-    ("degrees_Celsius", "degree_Celsius"): ("degree_Celsius", 1.0),
-    ("g", "g"): ("g", 1.0),
-    ("g/kg", "g kg-1"): ("g kg-1", 1.0),
-    ("m/s", "m s-1"): ("m s-1", 1.0),
-    ("meters", "m"): ("m", 1.0),
-    ("micrograms/liter", "mg m-3"): ("mg m-3", 1.0),
-    ("s", "seconds"): ("seconds", 1.0),
-}
+# --- The units view -----------------------------------------------------------------------
 
 
 def test_units_view_resolves_every_sample_spelling_to_the_pinned_factor():
@@ -131,6 +120,9 @@ def test_units_view_resolves_every_sample_spelling_to_the_pinned_factor():
             f"{key} resolved to {got}, expected {EXPECTED_SAMPLE_UNITS[key]} "
             "(a re-vendor may have shifted a family factor)."
         )
+
+
+# --- Label corrections on real files ------------------------------------------------------
 
 
 def test_sg271_density_relabelled_to_kg_m3(sg271):
@@ -157,6 +149,40 @@ def test_sg271_gsw_sigma0_not_mapped_to_potdens0(sg271):
     assert 20 <= _median(sg271, "gsw_sigma0") <= 35
 
 
+def test_sg005_sigma_t_relabelled(sg005):
+    """sg005 (basestation 2.8) SIGMA_T is corrected from g/m^3 to the anomaly."""
+    assert 20 <= _median(sg005, "SIGMA_T") <= 35
+    assert sg005["SIGMA_T"].attrs["units"] == "kg m-3"
+    assert sg005["SIGMA_T"].attrs["original_units"] == "g/m^3"
+
+
+def test_sg005_sigma_theta_out_of_range_left_as_is(sg005):
+    """sg005 stores sigma_theta as full density (~1027); the label is fixed but the value is not
+    changed (no auto offset) - it is left as-is to be flagged on the page, not silently altered."""
+    assert 1020 <= _median(sg005, "SIGTHETA") <= 1035
+    assert sg005["SIGTHETA"].attrs["units"] == "kg m-3"
+    assert sg005["SIGTHETA"].attrs["original_units"] == "g/m^3"
+
+
+def test_passthrough_density_relabelled(sg271):
+    """The unmapped, passed-through `density` gets the same label fix; its value is unchanged."""
+    assert sg271["density"].attrs["units"] == "kg m-3"
+    assert sg271["density"].attrs["original_units"] == "g/m^3"
+    assert 1020 <= _median(sg271, "density") <= 1035
+
+
+def test_no_density_family_left_mislabelled(sg271, sg005):
+    """No variable ships labelled g/m^3 after conversion, mapped or passed through."""
+    for ds in (sg271, sg005):
+        mislabelled = [
+            name
+            for name in ds.data_vars
+            if str(ds[name].attrs.get("units", "")).replace(" ", "")
+            in ("g/m^3", "gm-3")
+        ]
+        assert mislabelled == []
+
+
 def test_delta_time_s_keeps_seconds(sg271):
     """DELTA_TIME_S is a numeric duration; it keeps `seconds`, not stripped as a time coord.
 
@@ -167,6 +193,9 @@ def test_delta_time_s_keeps_seconds(sg271):
     assert np.issubdtype(sg271["DELTA_TIME_S"].dtype, np.floating)
     assert sg271["TIME"].attrs["units"] == "seconds since 1970-01-01T00:00:00Z"
     assert "units" not in sg271["TIME_GPS"].attrs
+
+
+# --- Mission unit corrections -------------------------------------------------------------
 
 
 def test_mission_unit_correction_applies(sg271):
@@ -209,38 +238,7 @@ def test_mission_from_null_on_passthrough_variable_adopts_label(sg271):
     assert over["eng_rec"].attrs["original_units"] is not None
 
 
-def test_passthrough_density_relabelled(sg271):
-    """The unmapped, passed-through `density` gets the same label fix; its value is unchanged."""
-    assert sg271["density"].attrs["units"] == "kg m-3"
-    assert sg271["density"].attrs["original_units"] == "g/m^3"
-    assert 1020 <= _median(sg271, "density") <= 1035
-
-
-def test_no_density_family_left_mislabelled(sg271, sg005):
-    """No variable ships labelled g/m^3 after conversion, mapped or passed through."""
-    for ds in (sg271, sg005):
-        mislabelled = [
-            name
-            for name in ds.data_vars
-            if str(ds[name].attrs.get("units", "")).replace(" ", "")
-            in ("g/m^3", "gm-3")
-        ]
-        assert mislabelled == []
-
-
-def test_sg005_sigma_t_relabelled(sg005):
-    """sg005 (basestation 2.8) SIGMA_T is corrected from g/m^3 to the anomaly."""
-    assert 20 <= _median(sg005, "SIGMA_T") <= 35
-    assert sg005["SIGMA_T"].attrs["units"] == "kg m-3"
-    assert sg005["SIGMA_T"].attrs["original_units"] == "g/m^3"
-
-
-def test_sg005_sigma_theta_out_of_range_left_as_is(sg005):
-    """sg005 stores sigma_theta as full density (~1027); the label is fixed but the value is not
-    changed (no auto offset) - it is left as-is to be flagged on the page, not silently altered."""
-    assert 1020 <= _median(sg005, "SIGTHETA") <= 1035
-    assert sg005["SIGTHETA"].attrs["units"] == "kg m-3"
-    assert sg005["SIGTHETA"].attrs["original_units"] == "g/m^3"
+# --- Refusals and warnings ----------------------------------------------------------------
 
 
 def test_uncorrected_mislabel_is_refused(monkeypatch):

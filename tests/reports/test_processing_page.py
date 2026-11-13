@@ -11,7 +11,7 @@ import xarray as xr
 from seagliderOG1 import _convert, writers
 from seagliderOG1.reports import _index, _record, processing
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).parent.resolve().parents[1]
 SG271 = ROOT / "seagliderOG1" / "data" / "sg271"
 
 

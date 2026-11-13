@@ -1,27 +1,60 @@
-"""The config-first public API: ``mission.load``/``check``, ``process`` /
-``process_missions``, ``convert(mission=)``, ``write(record=)`` / ``report`` /
-``reports.record``, and ``enrich(mission=)``."""
+"""The Python API: mission.load/check, process, process_missions, process_mission, convert,
+write, report and enrich.
+
+Data: the sg005 demo and its mission.yaml.
+"""
 
 import pathlib
-import sys
 
+import numpy as np
 import pytest
 import xarray as xr
 
-script_dir = pathlib.Path(__file__).parent.absolute()
+import seagliderOG1 as sg
+from seagliderOG1 import (
+    _convert,
+    mission,
+    writers,
+)
+from seagliderOG1.exceptions import MissionError
+from seagliderOG1.reports import _record
+
+script_dir = pathlib.Path(__file__).parent.parent.absolute()
 parent_dir = script_dir.parents[0]
-sys.path.append(str(parent_dir))
-
-import seagliderOG1 as sg  # noqa: E402
-from seagliderOG1 import mission, writers  # noqa: E402
-from seagliderOG1.exceptions import MissionError  # noqa: E402
-from seagliderOG1.reports import _record  # noqa: E402
-
 DATA_DIR = parent_dir / "data" / "demo_sg005"
 DEMO_YAML = DATA_DIR / "mission.yaml"
+_SG005 = parent_dir / "data/demo_sg005"
+_SG005_CONTRIBUTORS = [
+    {"name": "Charlie Eriksen", "role": "PI", "email": "eriksen@uw.edu"},
+    {"name": "Peter Rhines", "role": "PI"},
+]
+_SG005_INSTITUTIONS = [{"name": "University of Washington", "role": "Operator"}]
 
 
-# --- mission.load / mission.check --------------------------------------------
+def _root(tmp_path: pathlib.Path) -> pathlib.Path:
+    """Build a two-mission SN/DATE root under tmp_path and a mission.yaml for it."""
+    import yaml
+
+    names = ["p0050001_20080606.nc", "p0050002_20080606.nc"]
+    root = tmp_path / "root"
+    for date in ("20080606", "20080607"):
+        dest = root / "sg005" / date
+        dest.mkdir(parents=True)
+        for name in names:
+            (dest / name).write_bytes((DATA_DIR / name).read_bytes())
+    cfg = {
+        "config_version": 3,
+        "raw_dir": str(root),
+        "output_dir": str(tmp_path / "out"),
+        "contributors": [{"name": "Jane Doe", "role": "PI"}],
+        "institutions": [{"name": "Your Institution", "role": "Operator"}],
+    }
+    yaml_path = tmp_path / "root_mission.yaml"
+    yaml_path.write_text(yaml.safe_dump(cfg))
+    return yaml_path
+
+
+# --- mission.load and mission.check -------------------------------------------------------
 
 
 def test_mission_load_resolves_paths_and_keeps_sections_unmerged():
@@ -46,6 +79,13 @@ def test_mission_load_round_trips():
     assert again["raw_dir"] == cfg["raw_dir"]
 
 
+def test_mission_check_returns_issue_list():
+    """check() returns a list of issues without raising (the valid demo has no ERRORs)."""
+    issues = mission.check(DEMO_YAML)
+    assert isinstance(issues, list)
+    assert not [i for i in issues if i.level == "ERROR"]
+
+
 def test_mission_load_rejects_old_config_version(tmp_path: pathlib.Path):
     """A config_version other than 3 raises MissionError naming the sections."""
     bad = dict(mission.load(DEMO_YAML))
@@ -62,14 +102,7 @@ def test_mission_load_refuses_relative_path_in_a_mapping():
         mission.load(cfg)
 
 
-def test_mission_check_returns_issue_list():
-    """check() returns a list of issues without raising (the valid demo has no ERRORs)."""
-    issues = mission.check(DEMO_YAML)
-    assert isinstance(issues, list)
-    assert not [i for i in issues if i.level == "ERROR"]
-
-
-# --- process / process_missions ----------------------------------------------
+# --- process and process_missions ---------------------------------------------------------
 
 
 def test_process_writes_from_the_config(tmp_path: pathlib.Path):
@@ -110,27 +143,12 @@ def test_process_raw_dir_override_beats_the_config(tmp_path: pathlib.Path):
     assert path.exists()
 
 
-def _root(tmp_path: pathlib.Path) -> pathlib.Path:
-    """Build a two-mission SN/DATE root under tmp_path and a mission.yaml for it."""
-    import yaml
-
-    names = ["p0050001_20080606.nc", "p0050002_20080606.nc"]
-    root = tmp_path / "root"
-    for date in ("20080606", "20080607"):
-        dest = root / "sg005" / date
-        dest.mkdir(parents=True)
-        for name in names:
-            (dest / name).write_bytes((DATA_DIR / name).read_bytes())
-    cfg = {
-        "config_version": 3,
-        "raw_dir": str(root),
-        "output_dir": str(tmp_path / "out"),
-        "contributors": [{"name": "Jane Doe", "role": "PI"}],
-        "institutions": [{"name": "Your Institution", "role": "Operator"}],
-    }
-    yaml_path = tmp_path / "root_mission.yaml"
-    yaml_path.write_text(yaml.safe_dump(cfg))
-    return yaml_path
+def test_process_missions_converts_one_selected_mission(tmp_path: pathlib.Path):
+    """process_missions(root, select=...) converts the selected mission(s)."""
+    yaml_path = _root(tmp_path)
+    paths = sg.process_missions(yaml_path, select="sg005/20080606", overwrite=True)
+    assert len(paths) == 1
+    assert paths[0].exists()
 
 
 def test_process_refuses_a_root(tmp_path: pathlib.Path):
@@ -140,14 +158,6 @@ def test_process_refuses_a_root(tmp_path: pathlib.Path):
         sg.process(yaml_path, overwrite=True)
 
 
-def test_process_missions_converts_one_selected_mission(tmp_path: pathlib.Path):
-    """process_missions(root, select=...) converts the selected mission(s)."""
-    yaml_path = _root(tmp_path)
-    paths = sg.process_missions(yaml_path, select="sg005/20080606", overwrite=True)
-    assert len(paths) == 1
-    assert paths[0].exists()
-
-
 def test_process_missions_requires_a_selection(tmp_path: pathlib.Path):
     """A root with no select is a ValueError (one range cannot span missions)."""
     yaml_path = _root(tmp_path)
@@ -155,7 +165,99 @@ def test_process_missions_requires_a_selection(tmp_path: pathlib.Path):
         sg.process_missions(yaml_path, overwrite=True)
 
 
-# --- convert(mission=) --------------------------------------------------------
+# --- process_mission ----------------------------------------------------------------------
+
+
+def test_process_mission_writes_then_refuses_then_overwrites(
+    tmp_path: pathlib.Path,
+) -> None:
+    """process_mission writes <id>.nc, refuses an existing file, replaces it on overwrite."""
+    out = tmp_path / "new" / "dir"  # created on demand
+    kwargs = {
+        "dives": (1, 1),
+        "contributors": _SG005_CONTRIBUTORS,
+        "institutions": _SG005_INSTITUTIONS,
+        "platform": {"PLATFORM_MAKER": "University of Washington"},
+    }
+    path = _convert._convert_mission(_SG005, out, **kwargs)
+    assert path.parent == out
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        assert path.name == f"{ds.attrs['id']}.nc"
+        assert "Charlie Eriksen" in ds.attrs["contributor_name"]
+        assert str(ds["PLATFORM_MAKER"].values) == "University of Washington"
+
+    with pytest.raises(FileExistsError) as exc:
+        _convert._convert_mission(_SG005, out, **kwargs)
+    assert exc.value.filename == str(path)
+
+    assert _convert._convert_mission(_SG005, out, overwrite=True, **kwargs) == path
+
+
+def test_process_mission_dives_and_keep_variables(tmp_path: pathlib.Path) -> None:
+    """dives limits the dives read; keep_variables subsets and records what it dropped."""
+    with pytest.warns(UserWarning, match="keep_variables dropped"):
+        path = _convert._convert_mission(
+            _SG005, tmp_path, dives=(2, 2), keep_variables=["TEMP", "dive_number"]
+        )
+    with xr.open_dataset(path, engine="netcdf4", decode_timedelta=False) as ds:
+        assert set(np.unique(ds["dive_number"].values)) == {2}
+        assert "TEMP" in ds.data_vars
+        assert "PSAL" not in ds.data_vars
+        assert "PSAL" in ds.attrs["conversion_dropped_variables"]
+
+
+def test_process_mission_report_writes_the_page(tmp_path: pathlib.Path) -> None:
+    """report=True writes <id>_conversion.html beside the file; an existing page is refused."""
+    path = _convert._convert_mission(_SG005, tmp_path, dives=(1, 1), report=True)
+    page = tmp_path / f"{path.stem}_conversion.html"
+    assert page.is_file()
+    assert path.stem in page.read_text(encoding="utf-8")
+
+    path.unlink()  # only the page is left: still refused, and nothing is written
+    with pytest.raises(FileExistsError) as exc:
+        _convert._convert_mission(_SG005, tmp_path, dives=(1, 1), report=True)
+    assert exc.value.filename == str(page)
+    assert not path.exists()
+
+
+def test_process_mission_report_dir_checks_the_page_before_writing(
+    tmp_path: pathlib.Path,
+) -> None:
+    """report_dir puts the page in ROOT/<id>/; an existing page refuses before any write."""
+    out = tmp_path / "data"
+    site = tmp_path / "site"
+    path = _convert._convert_mission(
+        _SG005, out, dives=(1, 1), report=True, report_dir=site
+    )
+    page = site / path.stem / f"{path.stem}_conversion.html"
+    assert page.is_file()
+    assert not list(out.glob("*.html"))
+    path.unlink()
+    with pytest.raises(FileExistsError) as excinfo:
+        _convert._convert_mission(
+            _SG005, out, dives=(1, 1), report=True, report_dir=site
+        )
+    assert excinfo.value.filename == str(page)
+    assert not path.exists()  # refused before the .nc was written
+
+
+def test_process_mission_refuses_a_root_and_an_empty_dir(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A root of SN/DATE missions or a directory without basestation files is a ValueError."""
+    mission = tmp_path / "root" / "005" / "20080606"
+    mission.mkdir(parents=True)
+    for nc in _SG005.glob("p*.nc"):
+        (mission / nc.name).write_bytes(nc.read_bytes())
+    with pytest.raises(ValueError, match="root of SN/DATE missions"):
+        _convert._convert_mission(tmp_path / "root", tmp_path / "out")
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    with pytest.raises(ValueError, match="no basestation files"):
+        _convert._convert_mission(empty, tmp_path / "out")
+
+
+# --- convert ------------------------------------------------------------------------------
 
 
 def test_convert_reads_metadata_from_the_mission(tmp_path: pathlib.Path):
@@ -187,7 +289,17 @@ def test_convert_explicit_realtime_overrides_a_delayed_mission(tmp_path: pathlib
     assert sg.convert(datasets, cfg).attrs["id"].endswith("delayed")
 
 
-# --- write(record=) / report / reports.record --------------------------------
+def test_convert_options_are_keyword_only():
+    """``mission`` may be positional, but the metadata options after it must be keyword."""
+    try:
+        _convert.convert([], {}, {})  # a third positional is not allowed
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("expected TypeError for a positional option")
+
+
+# --- write, report and enrich -------------------------------------------------------------
 
 
 def test_write_record_and_reports_record(sg005_og1: pathlib.Path):
@@ -210,9 +322,6 @@ def test_report_writes_beside_and_refuses_existing(
     assert sg.report(sg005_og1_copy, overwrite=True).exists()
     elsewhere = sg.report(sg005_og1_copy, out=tmp_path / "page.html", overwrite=True)
     assert elsewhere == tmp_path / "page.html"
-
-
-# --- enrich(mission=) ---------------------------------------------------------
 
 
 def test_enrich_from_mission_sets_globals_and_ignores_platform(

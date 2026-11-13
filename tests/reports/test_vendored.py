@@ -13,7 +13,7 @@ import pytest
 
 from seagliderOG1.reports._vendored import check
 
-_REPO_ROOT = Path(__file__).resolve().parent.parent
+_REPO_ROOT = Path(__file__).parent.resolve().parent.parent
 
 
 def test_vendored_copy_matches_its_manifest(capsys):
