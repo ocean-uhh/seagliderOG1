@@ -123,6 +123,41 @@ def _write_generated_tables() -> None:
         )
     )
 
+    # The verification page: the two tables the written file is tested against, so the
+    # page shows exactly what the tests check. ``#`` lines in the files are comments.
+    def _table(name: str) -> list[dict]:
+        with (answers / name).open(encoding="utf-8", newline="") as fh:
+            return list(csv.DictReader(line for line in fh if not line.startswith("#")))
+
+    (_GENERATED / "raw_vs_output.inc").write_text(
+        _list_table(
+            [
+                ("check", "Check"),
+                ("mission", "Mission"),
+                ("og1", "OG1 variable"),
+                ("basestation", "Basestation variable"),
+                ("relation", "Relation"),
+                ("factor", "Factor"),
+                ("tolerance", "Tolerance"),
+                ("status", "Status"),
+            ],
+            _table("raw_vs_output.csv"),
+        )
+    )
+    (_GENERATED / "og1_names.inc").write_text(
+        _list_table(
+            [
+                ("mission", "Mission"),
+                ("basestation", "Basestation variable"),
+                ("og1", "OG1 name"),
+                ("units", "Units"),
+                ("sensor", "Sensor record"),
+                ("status", "Status"),
+            ],
+            _table("og1_names.csv"),
+        )
+    )
+
     _write_vocabulary_tables(vocabularies)
 
 

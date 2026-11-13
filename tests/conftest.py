@@ -1,4 +1,4 @@
-"""Shared fixtures: one sg005 conversion per test session.
+"""Shared fixtures: one conversion of each bundled mission per test session.
 
 A conversion of the real demo files is the slow step of most tests. Tests that only
 read an OG1 file use ``sg005_og1`` directly; tests that edit one take
@@ -6,30 +6,44 @@ read an OG1 file use ``sg005_og1`` directly; tests that edit one take
 conversion itself (refusals, overwrite, draft, report placement) still convert.
 """
 
+import csv
 import os
 import pathlib
 import shutil
 
 import pytest
+import xarray as xr
 
-from seagliderOG1 import _convert, writers
+from seagliderOG1 import _convert, readers, writers
 
 SG005 = pathlib.Path(__file__).resolve().parent.parent / "data" / "demo_sg005"
+SG271 = readers.SAMPLE_DIR
+
+
+def read_table(path: pathlib.Path) -> list[dict]:
+    """Return a CSV table from tests/data, its ``#`` comment lines left out."""
+    with pathlib.Path(path).open(encoding="utf-8", newline="") as f:
+        return list(csv.DictReader(line for line in f if not line.startswith("#")))
+
+
+DEV_PACK = pathlib.Path(__file__).resolve().parent / "data" / "dev_pack"
 
 
 @pytest.fixture(scope="session")
 def dev_data() -> pathlib.Path:
-    """Return the dev pack folder named by ``SEAGLIDEROG1_DEV_DATA``; skip when unset.
+    """Return the dev pack: single-dive basestation files from several gliders.
 
-    The dev pack is a collection of single-dive basestation files from several gliders and
-    basestation versions, kept outside the repository (see CONTRIBUTING).
+    The bundled pack is ``tests/data/dev_pack``: 23 files, each the first dive of a mission,
+    from 12 gliders. ``SEAGLIDEROG1_DEV_DATA`` names another folder to run the
+    same tests on a larger private collection; a name that is not a folder is an error,
+    not a skip.
     """
     folder = os.environ.get("SEAGLIDEROG1_DEV_DATA")
     if not folder:
-        pytest.skip("SEAGLIDEROG1_DEV_DATA is unset; dev-pack tests skipped")
+        return DEV_PACK
     path = pathlib.Path(folder)
     if not path.is_dir():
-        pytest.skip(f"SEAGLIDEROG1_DEV_DATA={folder} is not a folder")
+        raise NotADirectoryError(f"SEAGLIDEROG1_DEV_DATA={folder} is not a folder")
     return path
 
 
@@ -51,3 +65,24 @@ def sg005_og1_copy(sg005_og1: pathlib.Path, tmp_path: pathlib.Path) -> pathlib.P
         writers.conversion_path(target, ".json"),
     )
     return target
+
+
+@pytest.fixture(scope="session")
+def converted_missions(tmp_path_factory: pytest.TempPathFactory) -> dict:
+    """Convert the sg271 sample (3 dives) and the sg005 demo (5 dives) once, without a
+    mission file; return name -> (written file, the raw dive files opened without decoding
+    times). The written file is not held open: a test opens it itself with a context
+    manager, because holding it open across the session while a test reopens the same file
+    (``test_reference``, ``no_missing_on_read``) segfaults netCDF/HDF5. Do not edit."""
+    out = {}
+    for name, raw in {"sg271": SG271, "sg005": SG005}.items():
+        path = _convert._convert_mission(raw, tmp_path_factory.mktemp(name))
+        raws = [
+            xr.open_dataset(p, engine="netcdf4", decode_times=False)
+            for p in sorted(raw.glob("p*.nc"))
+        ]
+        out[name] = (path, raws)
+    yield out
+    for _path, raws in out.values():
+        for r in raws:
+            r.close()

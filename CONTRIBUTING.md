@@ -101,19 +101,22 @@ python -c "from importlib.metadata import version; print(version('seagliderOG1')
 ```bash
 pytest            # all tests
 pytest -v         # verbose
-pytest tests/test_cli.py
+pytest tests/interfaces/test_cli.py
 ```
 
-Tests mirror the package: `test_<module>.py` for each `<module>.py`. Cover success and failure
-paths. Tests convert the real basestation files in `data/demo_sg005`; synthetic data is for pure
+Tests are grouped by subject, one file per subject: `tests/conversion`, `tests/output`,
+`tests/interfaces`, `tests/reports`. Cover success and failure paths. Tests convert the real basestation files in `data/demo_sg005`; synthetic data is for pure
 logic only. CI enforces a coverage floor (`--cov-fail-under` in `.github/workflows/tests.yml`).
 
-Some tests read a **dev pack**: a collection of single-dive basestation files from several
-gliders and basestation versions, kept outside the repository. Ask the maintainers for it, then
-point `SEAGLIDEROG1_DEV_DATA` at the folder; without it those tests are skipped and CI stays
-green. `scripts/collect_calibcomm.py FOLDER` prints the calibration comments of a folder of
+Some tests read the **dev pack**, `tests/data/dev_pack`: the first dive of each of 23 missions,
+from 12 gliders (the files' own licence allows redistribution). Point
+`SEAGLIDEROG1_DEV_DATA` at another folder to run the same tests on a larger collection of your
+own. `scripts/collect_calibcomm.py FOLDER` prints the calibration comments of a folder of
 dive files as rows for `tests/data/calibcomm_answers.csv`, the table the calibration-comment
 parser is tested against.
+
+What the written file is checked against (the raw files, the name table, the stored reference,
+the OG1 checker) is described on the docs page "How the conversion is checked".
 
 ## Lint and format
 

@@ -2,7 +2,7 @@
 mission.yaml.
 
 Data: tests/data/calibcomm_answers.csv (the parser's answer table), the sg271 sample, the
-sg005 demo; one test needs the dev pack.
+sg005 demo; one test reads every file of the dev pack (tests/data/dev_pack).
 """
 
 import csv
@@ -206,6 +206,8 @@ def test_dev_pack_records_match_the_table(dev_data):
     from seagliderOG1 import _pipeline
 
     expected = {(r["file"], r["variable"]): r for r in ROWS}
+    present = {path.name for path in dev_data.glob("p*.nc")}
+    unchecked = {key for key in expected if key[0] in present}
     checked = 0
     for path in sorted(dev_data.glob("p*.nc")):
         with xr.open_dataset(path, engine="netcdf4") as ds:
@@ -223,7 +225,24 @@ def test_dev_pack_records_match_the_table(dev_data):
                 path.name
             )
             checked += 1
+            unchecked.discard((path.name, record["source_variable"]))
     assert checked, f"no dev-pack file in {dev_data} matched the answer table"
+    # Five 2003-2005 files carry an oxygen comment but list no oxygen sensor, so the converter
+    # builds no sensor record from it (it warns); their comments are still parsed in
+    # test_answer_table. Any other table row must have been met in a file.
+    no_oxygen_sensor = {
+        (name, "sg_cal_calibcomm_oxygen")
+        for name in (
+            "p0040001_20031002.nc",
+            "p0080001_20031002.nc",
+            "p0140001_20040924.nc",
+            "p0150001_20040924.nc",
+            "p0160001_20050406.nc",
+        )
+    }
+    assert unchecked <= no_oxygen_sensor, (
+        f"table rows with no sensor record: {sorted(unchecked - no_oxygen_sensor)}"
+    )
 
 
 # --- Calibration comments: dates ----------------------------------------------------------

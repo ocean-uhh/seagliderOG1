@@ -27,6 +27,7 @@ https://github.com/ocean-uhh/seagliderOG1/issues/new.
    conversion
    phase
    calibration_comments
+   verification
 
 .. toctree::
    :maxdepth: 2

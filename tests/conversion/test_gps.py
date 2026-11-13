@@ -1,8 +1,11 @@
 """GPS fixes on the time axis: one data point per fix, fix values from the raw log, and
 repeated or shifted fixes.
 
-Data: the sg005 demo; the repeated and shifted fixes need the dev pack
-(SEAGLIDEROG1_DEV_DATA) and skip without it.
+Data: the sg005 demo; the repeated and shifted fixes use p0040001 from the dev pack
+(tests/data/dev_pack), whose last fix is logged twice at the same second. The refusal
+tests take the GPS step's real inputs from a conversion of sg005 dive 1 and make one edit
+each: the fix latitude removed, the fix latitude set to missing, or the first raw fix record
+dropped.
 """
 
 import pathlib
@@ -131,3 +134,58 @@ def test_shifted_gps_fix_is_still_surfacing(dev_data, tmp_path):
     shifted = fix & (ds["TIME"].values != ds["TIME_GPS"].values)
     assert shifted.any()
     assert (ds["PHASE"].values[shifted] == _phase.SURFACING).all()
+
+
+# --- Refusals and the fallback when the fixes did not merge -------------------------------
+
+
+@pytest.fixture(scope="module")
+def gps_step_inputs():
+    """Return what ``add_gps_info_to_dataset`` was given for sg005 dive 1: the merged dive
+    and its raw ``gps_info`` records."""
+    captured = {}
+    original = _convert.add_gps_info_to_dataset
+
+    def recording(ds, gps_ds):
+        captured.setdefault("inputs", (ds.copy(), gps_ds.copy()))
+        return original(ds, gps_ds)
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(_convert, "add_gps_info_to_dataset", recording)
+        _convert.convert(
+            readers.read_mission(str(parent_dir / "data/demo_sg005"), 1, 1)
+        )
+    return captured["inputs"]
+
+
+def test_fixes_missing_from_the_merged_dive_are_refused(gps_step_inputs):
+    """With log_gps_lat removed from the merged dive there is no data point for a fix: raise."""
+    ds, gps_ds = gps_step_inputs
+    with pytest.raises(ValueError, match="did not fold onto the TIME axis"):
+        _convert.add_gps_info_to_dataset(ds.drop_vars("log_gps_lat"), gps_ds)
+
+
+def test_no_complete_fix_is_refused(gps_step_inputs):
+    """A fix with no latitude is not placed; with every fix latitude set to missing, raise."""
+    ds, gps_ds = gps_step_inputs
+    blank = ds.assign(log_gps_lat=ds["log_gps_lat"] * np.nan)
+    with pytest.raises(ValueError, match="no fix has both finite"):
+        _convert.add_gps_info_to_dataset(blank, gps_ds)
+
+
+def test_fix_count_mismatch_warns_and_uses_the_merged_time(gps_step_inputs, caplog):
+    """With the first raw fix record dropped, the merged dive holds one more fix than the raw
+    records: TIME_GPS is the merged TIME at each fix and a warning gives both counts."""
+    ds, gps_ds = gps_step_inputs
+    (gps_dim,) = gps_ds["log_gps_lat"].dims
+    one_short = gps_ds.isel({gps_dim: slice(1, None)})
+    n_fixes = int(np.isfinite(ds["log_gps_lat"].values).sum())
+    with caplog.at_level("WARNING"):
+        out = _convert.add_gps_info_to_dataset(ds.copy(), one_short)
+    assert (
+        f"GPS fixes on the time axis ({n_fixes}) differ from gps_info records "
+        f"({n_fixes - 1})"
+    ) in caplog.text
+    fix = ~np.isnat(out["TIME_GPS"].values)
+    assert fix.sum() == n_fixes
+    assert (out["TIME_GPS"].values[fix] == out["TIME"].values[fix]).all()

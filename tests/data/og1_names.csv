@@ -1,0 +1,116 @@
+# Basestation variables written under an OG1 name, per mission, as Eleanor reviewed them (2026-11-13).
+# A copy numbered _2, _3 is checked without its number: which copy gets which does not matter.
+# sensor: the SENSOR_* record the variable points to (empty: none), as the converter writes it today (added 2026-11-13, not yet reviewed).
+# A row with no og1 name says the variable is not written under an OG1 name; its units and sensor are not checked.
+# status: ok | known: <branch> — <what changes> | pending: <decision>. Known rows are strict expected failures.
+mission,basestation,og1,units,sensor,status
+sg005,eng_wlbb2f_blueRef,BBP470_REF,counts,SENSOR_FLUOROMETER_UNK,ok
+sg005,eng_wlbb2f_redRef,BBP700_REF,counts,SENSOR_FLUOROMETER_UNK,ok
+sg005,eng_wlbb2f_VFtemp,BBP_VFTEMP,degree_Celsius,SENSOR_FLUOROMETER_UNK,ok
+sg005,buoyancy,BUOYANCY,g,,pending: flight-model names (Eleanor's slides)
+sg005,conductivity,CNDC,mS cm-1,SENSOR_CTD_24520-1,ok
+sg005,conductivity_qc,CNDC_QC,,SENSOR_CTD_24520-1,ok
+sg005,conductivity_raw,CNDC_RAW,mS cm-1,SENSOR_CTD_24520-1,ok
+sg005,conductivity_raw_qc,CNDC_RAW_QC,,SENSOR_CTD_24520-1,ok
+sg005,eng_condFreq,COND_FREQ,Hz,SENSOR_CTD_24520-1,ok
+sg005,log_C_VBD,C_VBD,,,pending: flight-model names (Eleanor's slides)
+sg005,depth_avg_curr_east,DAVG_CURR_EAST,m s-1,,pending: flight-model names (Eleanor's slides)
+sg005,depth_avg_curr_qc,DAVG_CURR_QC,,,"known: fix/data-correctness — one QC for the currents and displacements, write once under its own name"
+sg005,depth_avg_curr_north,DAVG_CURR_NORTH,m s-1,,pending: flight-model names (Eleanor's slides)
+sg005,ctd_depth,DEPTH,m,SENSOR_CTD_24520-1,ok
+sg005,eng_depth,DEPTH_2,cm,,ok
+sg005,depth,DEPTH_3,m,,ok
+sg005,east_displacement,EAST_DISPLACEMENT,m,,pending: flight-model names (Eleanor's slides)
+sg005,eng_wlbb2f_fluorCount,FLUOCHLA,counts,SENSOR_FLUOROMETER_UNK,ok
+sg005,horz_speed,GLIDER_HORZ_VELO_MODEL,m s-1,,pending: flight-model names (Eleanor's slides)
+sg005,vert_speed,GLIDER_VERT_VELO_MODEL,m s-1,,pending: flight-model names (Eleanor's slides)
+sg005,glide_angle,GLIDE_ANGLE,degree,,pending: flight-model names (Eleanor's slides)
+sg005,speed,GLIDE_SPEED,m s-1,,pending: flight-model names (Eleanor's slides)
+sg005,speed_qc,GLIDE_SPEED_QC,,,pending: flight-model names (Eleanor's slides)
+sg005,sg_cal_hd_a,HD_A,,,pending: flight-model names (Eleanor's slides)
+sg005,sg_cal_hd_b,HD_B,,,pending: flight-model names (Eleanor's slides)
+sg005,sg_cal_hd_c,HD_C,,,pending: flight-model names (Eleanor's slides)
+sg005,eng_head,HEADING,degree,,ok
+sg005,latitude,LATITUDE,degrees_north,,ok
+sg005,longitude,LONGITUDE,degrees_east,,ok
+sg005,sg_cal_mass,MASS,kg,,ok
+sg005,north_displacement,NORTH_DISPLACEMENT,m,,pending: flight-model names (Eleanor's slides)
+sg005,eng_sbe43_O2Freq,O2_FREQ,Hz,SENSOR_OXYGEN_005,ok
+sg005,eng_pitchAng,PITCH,degree,,ok
+sg005,eng_pitchCtl,PITCH_CTL,degree,,"known: fix/data-correctness — commanded pitch, units of PITCH (degree), not counts"
+sg005,pressure,PRES,dbar,,ok
+sg005,salinity,PSAL,1e-3,,ok
+sg005,salinity_qc,PSAL_QC,,,ok
+sg005,salinity_raw,PSAL_RAW,1e-3,,ok
+sg005,salinity_raw_qc,PSAL_RAW_QC,,,ok
+sg005,eng_rollAng,ROLL,degree,,ok
+sg005,eng_rollCtl,ROLL_CTL,degree,,"known: fix/data-correctness — commanded roll, units of ROLL (degree), not counts"
+sg005,sigma_t,SIGMA_T,kg m-3,,ok
+sg005,sigma_theta,SIGTHETA,kg m-3,,ok
+sg005,sound_velocity,SOUND_VELOCITY,m s-1,,ok
+sg005,temperature,TEMP,degree_Celsius,SENSOR_CTD_24520-1,ok
+sg005,eng_tempFreq,TEMP_FREQ,Hz,SENSOR_CTD_24520-1,ok
+sg005,temperature_qc,TEMP_QC,,SENSOR_CTD_24520-1,ok
+sg005,temperature_raw,TEMP_RAW,degree_Celsius,SENSOR_CTD_24520-1,ok
+sg005,temperature_raw_qc,TEMP_RAW_QC,,SENSOR_CTD_24520-1,ok
+sg005,theta,THETA,degree_Celsius,,ok
+sg005,eng_vbdCC,VBD_CC,cm3,,ok
+sg005,log_VBD_CNV,VBD_CC_PER_CNTS,,,pending: flight-model names (Eleanor's slides)
+sg005,sg_cal_vbd_cnts_per_cc,VBD_CNTS_PER_CC,,,pending: flight-model names (Eleanor's slides)
+sg005,sg_cal_vbd_min_cnts,VBD_MIN_CNTS,,,pending: flight-model names (Eleanor's slides)
+sg005,sg_cal_volmax,VOLMAX,m^3,,pending: flight-model names (Eleanor's slides)
+sg271,buoyancy,BUOYANCY,g,,pending: flight-model names (Eleanor's slides)
+sg271,tridentebb700chla470fdom365_fdom365,CDOM,1e-9,SENSOR_FLUOROMETER_237790,ok
+sg271,tridentebb700chla470fdom365_chla470,CHLA,mg m-3,SENSOR_FLUOROMETER_237790,ok
+sg271,conductivity,CNDC,mS cm-1,SENSOR_CTD_238007,ok
+sg271,conductivity_qc,CNDC_QC,,SENSOR_CTD_238007,ok
+sg271,conductivity_raw,CNDC_RAW,mS cm-1,SENSOR_CTD_238007,ok
+sg271,conductivity_raw_qc,CNDC_RAW_QC,,SENSOR_CTD_238007,ok
+sg271,log_C_VBD,C_VBD,,,pending: flight-model names (Eleanor's slides)
+sg271,depth_avg_curr_east,DAVG_CURR_EAST,m s-1,,pending: flight-model names (Eleanor's slides)
+sg271,depth_avg_curr_qc,DAVG_CURR_QC,,,"known: fix/data-correctness — one QC for the currents and displacements, write once under its own name"
+sg271,depth_avg_curr_north,DAVG_CURR_NORTH,m s-1,,pending: flight-model names (Eleanor's slides)
+sg271,delta_time_s,DELTA_TIME_S,seconds,,pending: may be dropped (Eleanor 2026-11-13)
+sg271,density_insitu,DENSITY,kg m-3,SENSOR_CTD_238007,ok
+sg271,ctd_depth,DEPTH,m,SENSOR_CTD_238007,ok
+sg271,depth,DEPTH_2,m,,ok
+sg271,eng_depth,DEPTH_3,cm,,ok
+sg271,east_displacement,EAST_DISPLACEMENT,m,,pending: flight-model names (Eleanor's slides)
+sg271,horz_speed,GLIDER_HORZ_VELO_MODEL,m s-1,,pending: flight-model names (Eleanor's slides)
+sg271,vert_speed,GLIDER_VERT_VELO_MODEL,m s-1,,pending: flight-model names (Eleanor's slides)
+sg271,glide_angle,GLIDE_ANGLE,degree,,pending: flight-model names (Eleanor's slides)
+sg271,speed,GLIDE_SPEED,m s-1,,pending: flight-model names (Eleanor's slides)
+sg271,speed_qc,GLIDE_SPEED_QC,,,pending: flight-model names (Eleanor's slides)
+sg271,sg_cal_hd_a,HD_A,,,pending: flight-model names (Eleanor's slides)
+sg271,sg_cal_hd_b,HD_B,,,pending: flight-model names (Eleanor's slides)
+sg271,sg_cal_hd_c,HD_C,,,pending: flight-model names (Eleanor's slides)
+sg271,eng_head,HEADING,degree,,ok
+sg271,latitude,LATITUDE,degrees_north,,ok
+sg271,longitude,LONGITUDE,degrees_east,,ok
+sg271,sg_cal_mass,MASS,kg,,ok
+sg271,north_displacement,NORTH_DISPLACEMENT,m,,pending: flight-model names (Eleanor's slides)
+sg271,codaTODO_O2_sat,OXYSAT,percent,SENSOR_OXYGEN_237790,ok
+sg271,eng_pitchAng,PITCH,degree,,ok
+sg271,ctd_pressure,PRES,dbar,SENSOR_CTD_238007,ok
+sg271,legato_pressure,,dbar,,known: fix/data-correctness — identical to ctd_pressure; keep one (Eleanor 2026-11-13)
+sg271,pressure,PRES_3,dbar,,ok
+sg271,ctd_pressure_qc,PRES_QC,,SENSOR_CTD_238007,ok
+sg271,salinity,PSAL,1e-3,SENSOR_CTD_238007,ok
+sg271,salinity_qc,PSAL_QC,,SENSOR_CTD_238007,ok
+sg271,salinity_raw,PSAL_RAW,1e-3,SENSOR_CTD_238007,ok
+sg271,salinity_raw_qc,PSAL_RAW_QC,,SENSOR_CTD_238007,ok
+sg271,eng_rollAng,ROLL,degree,,ok
+sg271,sigma_t,SIGMA_T,kg m-3,SENSOR_CTD_238007,ok
+sg271,sigma_theta,SIGTHETA,kg m-3,SENSOR_CTD_238007,ok
+sg271,sound_velocity,SOUND_VELOCITY,m s-1,SENSOR_CTD_238007,ok
+sg271,temperature,TEMP,degree_Celsius,SENSOR_CTD_238007,ok
+sg271,legato_temp,TEMP_2,degree_Celsius,SENSOR_CTD_238007,ok
+sg271,codaTODO_temp,TEMP_3,degree_Celsius,SENSOR_OXYGEN_237790,ok
+sg271,temperature_qc,TEMP_QC,,SENSOR_CTD_238007,ok
+sg271,temperature_raw,TEMP_RAW,degree_Celsius,SENSOR_CTD_238007,ok
+sg271,temperature_raw_qc,TEMP_RAW_QC,,SENSOR_CTD_238007,ok
+sg271,theta,THETA,degree_Celsius,SENSOR_CTD_238007,ok
+sg271,sg_cal_vbdbias,VBD_BIAS,cm3,,pending: flight-model names (Eleanor's slides)
+sg271,eng_vbdCC,VBD_CC,cm3,,ok
+sg271,log_VBD_CNV,VBD_CC_PER_CNTS,,,pending: flight-model names (Eleanor's slides)
+sg271,sg_cal_volmax,VOLMAX,m^3,,pending: flight-model names (Eleanor's slides)
