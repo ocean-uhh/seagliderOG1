@@ -1,0 +1,585 @@
+# Findings of `compliance-checker --test og:1.0` (cc-plugin-og) on the sg271 sample converted with
+# `seagliderOG1 init --example` + `process`, accepted for now (Eleanor, 2026-11-11). CI fails on any finding not
+# listed here. The list shrinks as fixes land: the two-output-files branch (0.4.0) removes the
+# lower-case and vocabulary findings. Regenerate: python scripts/check_og1.py FILE.nc THIS_FILE --update
+Variable names should be capitalized. | Variable CTD_qc should be capitalized: CTD_QC
+Variable names should be capitalized. | Variable GPS1_qc should be capitalized: GPS1_QC
+Variable names should be capitalized. | Variable GPS2_qc should be capitalized: GPS2_QC
+Variable names should be capitalized. | Variable GPSE_qc should be capitalized: GPSE_QC
+Variable names should be capitalized. | Variable GPS_east_displacement_m should be capitalized: GPS_EAST_DISPLACEMENT_M
+Variable names should be capitalized. | Variable GPS_north_displacement_m should be capitalized: GPS_NORTH_DISPLACEMENT_M
+Variable names should be capitalized. | Variable absolute_salinity should be capitalized: ABSOLUTE_SALINITY
+Variable names should be capitalized. | Variable avg_latitude should be capitalized: AVG_LATITUDE
+Variable names should be capitalized. | Variable avg_longitude should be capitalized: AVG_LONGITUDE
+Variable names should be capitalized. | Variable codaTODO should be capitalized: CODATODO
+Variable names should be capitalized. | Variable codaTODO_compensated_O2 should be capitalized: CODATODO_COMPENSATED_O2
+Variable names should be capitalized. | Variable codaTODO_ontime_a should be capitalized: CODATODO_ONTIME_A
+Variable names should be capitalized. | Variable codaTODO_ontime_b should be capitalized: CODATODO_ONTIME_B
+Variable names should be capitalized. | Variable codaTODO_phase should be capitalized: CODATODO_PHASE
+Variable names should be capitalized. | Variable codaTODO_samples_a should be capitalized: CODATODO_SAMPLES_A
+Variable names should be capitalized. | Variable codaTODO_samples_b should be capitalized: CODATODO_SAMPLES_B
+Variable names should be capitalized. | Variable codaTODO_starttime_a should be capitalized: CODATODO_STARTTIME_A
+Variable names should be capitalized. | Variable codaTODO_starttime_b should be capitalized: CODATODO_STARTTIME_B
+Variable names should be capitalized. | Variable codaTODO_stoptime_a should be capitalized: CODATODO_STOPTIME_A
+Variable names should be capitalized. | Variable codaTODO_stoptime_b should be capitalized: CODATODO_STOPTIME_B
+Variable names should be capitalized. | Variable codaTODO_timeouts_a should be capitalized: CODATODO_TIMEOUTS_A
+Variable names should be capitalized. | Variable codaTODO_timeouts_b should be capitalized: CODATODO_TIMEOUTS_B
+Variable names should be capitalized. | Variable codaTODO_uncompensated_O2 should be capitalized: CODATODO_UNCOMPENSATED_O2
+Variable names should be capitalized. | Variable conservative_temperature should be capitalized: CONSERVATIVE_TEMPERATURE
+Variable names should be capitalized. | Variable density should be capitalized: DENSITY
+Variable names should be capitalized. | Variable depth_avg_curr_east_gsm should be capitalized: DEPTH_AVG_CURR_EAST_GSM
+Variable names should be capitalized. | Variable depth_avg_curr_error should be capitalized: DEPTH_AVG_CURR_ERROR
+Variable names should be capitalized. | Variable depth_avg_curr_north_gsm should be capitalized: DEPTH_AVG_CURR_NORTH_GSM
+Variable names should be capitalized. | Variable depth_depth should be capitalized: DEPTH_DEPTH
+Variable names should be capitalized. | Variable depth_ontime_a should be capitalized: DEPTH_ONTIME_A
+Variable names should be capitalized. | Variable depth_ontime_b should be capitalized: DEPTH_ONTIME_B
+Variable names should be capitalized. | Variable depth_samples_a should be capitalized: DEPTH_SAMPLES_A
+Variable names should be capitalized. | Variable depth_samples_b should be capitalized: DEPTH_SAMPLES_B
+Variable names should be capitalized. | Variable depth_starttime_a should be capitalized: DEPTH_STARTTIME_A
+Variable names should be capitalized. | Variable depth_starttime_b should be capitalized: DEPTH_STARTTIME_B
+Variable names should be capitalized. | Variable depth_stoptime_a should be capitalized: DEPTH_STOPTIME_A
+Variable names should be capitalized. | Variable depth_stoptime_b should be capitalized: DEPTH_STOPTIME_B
+Variable names should be capitalized. | Variable depth_timeouts_a should be capitalized: DEPTH_TIMEOUTS_A
+Variable names should be capitalized. | Variable depth_timeouts_b should be capitalized: DEPTH_TIMEOUTS_B
+Variable names should be capitalized. | Variable dissolved_oxygen_sat should be capitalized: DISSOLVED_OXYGEN_SAT
+Variable names should be capitalized. | Variable dive_number should be capitalized: DIVE_NUMBER
+Variable names should be capitalized. | Variable east_displacement_gsm should be capitalized: EAST_DISPLACEMENT_GSM
+Variable names should be capitalized. | Variable eng_GC_state should be capitalized: ENG_GC_STATE
+Variable names should be capitalized. | Variable eng_elaps_t should be capitalized: ENG_ELAPS_T
+Variable names should be capitalized. | Variable eng_elaps_t_0000 should be capitalized: ENG_ELAPS_T_0000
+Variable names should be capitalized. | Variable eng_mag_x should be capitalized: ENG_MAG_X
+Variable names should be capitalized. | Variable eng_mag_y should be capitalized: ENG_MAG_Y
+Variable names should be capitalized. | Variable eng_mag_z should be capitalized: ENG_MAG_Z
+Variable names should be capitalized. | Variable eng_rec should be capitalized: ENG_REC
+Variable names should be capitalized. | Variable flight_avg_speed_east should be capitalized: FLIGHT_AVG_SPEED_EAST
+Variable names should be capitalized. | Variable flight_avg_speed_east_gsm should be capitalized: FLIGHT_AVG_SPEED_EAST_GSM
+Variable names should be capitalized. | Variable flight_avg_speed_north should be capitalized: FLIGHT_AVG_SPEED_NORTH
+Variable names should be capitalized. | Variable flight_avg_speed_north_gsm should be capitalized: FLIGHT_AVG_SPEED_NORTH_GSM
+Variable names should be capitalized. | Variable gc_data_pts should be capitalized: GC_DATA_PTS
+Variable names should be capitalized. | Variable gc_depth should be capitalized: GC_DEPTH
+Variable names should be capitalized. | Variable gc_end_secs should be capitalized: GC_END_SECS
+Variable names should be capitalized. | Variable gc_flags should be capitalized: GC_FLAGS
+Variable names should be capitalized. | Variable gc_humid should be capitalized: GC_HUMID
+Variable names should be capitalized. | Variable gc_intP should be capitalized: GC_INTP
+Variable names should be capitalized. | Variable gc_ob_vertv should be capitalized: GC_OB_VERTV
+Variable names should be capitalized. | Variable gc_pitch_ad should be capitalized: GC_PITCH_AD
+Variable names should be capitalized. | Variable gc_pitch_ad_start should be capitalized: GC_PITCH_AD_START
+Variable names should be capitalized. | Variable gc_pitch_ctl should be capitalized: GC_PITCH_CTL
+Variable names should be capitalized. | Variable gc_pitch_end_time should be capitalized: GC_PITCH_END_TIME
+Variable names should be capitalized. | Variable gc_pitch_errors should be capitalized: GC_PITCH_ERRORS
+Variable names should be capitalized. | Variable gc_pitch_i should be capitalized: GC_PITCH_I
+Variable names should be capitalized. | Variable gc_pitch_secs should be capitalized: GC_PITCH_SECS
+Variable names should be capitalized. | Variable gc_pitch_st should be capitalized: GC_PITCH_ST
+Variable names should be capitalized. | Variable gc_pitch_start_time should be capitalized: GC_PITCH_START_TIME
+Variable names should be capitalized. | Variable gc_pitch_volts should be capitalized: GC_PITCH_VOLTS
+Variable names should be capitalized. | Variable gc_roll_ad should be capitalized: GC_ROLL_AD
+Variable names should be capitalized. | Variable gc_roll_ad_start should be capitalized: GC_ROLL_AD_START
+Variable names should be capitalized. | Variable gc_roll_ctl should be capitalized: GC_ROLL_CTL
+Variable names should be capitalized. | Variable gc_roll_end_time should be capitalized: GC_ROLL_END_TIME
+Variable names should be capitalized. | Variable gc_roll_errors should be capitalized: GC_ROLL_ERRORS
+Variable names should be capitalized. | Variable gc_roll_i should be capitalized: GC_ROLL_I
+Variable names should be capitalized. | Variable gc_roll_secs should be capitalized: GC_ROLL_SECS
+Variable names should be capitalized. | Variable gc_roll_st should be capitalized: GC_ROLL_ST
+Variable names should be capitalized. | Variable gc_roll_start_time should be capitalized: GC_ROLL_START_TIME
+Variable names should be capitalized. | Variable gc_roll_volts should be capitalized: GC_ROLL_VOLTS
+Variable names should be capitalized. | Variable gc_state_eop_code should be capitalized: GC_STATE_EOP_CODE
+Variable names should be capitalized. | Variable gc_state_state should be capitalized: GC_STATE_STATE
+Variable names should be capitalized. | Variable gc_vbd_ad should be capitalized: GC_VBD_AD
+Variable names should be capitalized. | Variable gc_vbd_ad_start should be capitalized: GC_VBD_AD_START
+Variable names should be capitalized. | Variable gc_vbd_ctl should be capitalized: GC_VBD_CTL
+Variable names should be capitalized. | Variable gc_vbd_end_time should be capitalized: GC_VBD_END_TIME
+Variable names should be capitalized. | Variable gc_vbd_errors should be capitalized: GC_VBD_ERRORS
+Variable names should be capitalized. | Variable gc_vbd_i should be capitalized: GC_VBD_I
+Variable names should be capitalized. | Variable gc_vbd_pot1_ad should be capitalized: GC_VBD_POT1_AD
+Variable names should be capitalized. | Variable gc_vbd_pot1_ad_start should be capitalized: GC_VBD_POT1_AD_START
+Variable names should be capitalized. | Variable gc_vbd_pot2_ad should be capitalized: GC_VBD_POT2_AD
+Variable names should be capitalized. | Variable gc_vbd_pot2_ad_start should be capitalized: GC_VBD_POT2_AD_START
+Variable names should be capitalized. | Variable gc_vbd_secs should be capitalized: GC_VBD_SECS
+Variable names should be capitalized. | Variable gc_vbd_st should be capitalized: GC_VBD_ST
+Variable names should be capitalized. | Variable gc_vbd_start_time should be capitalized: GC_VBD_START_TIME
+Variable names should be capitalized. | Variable gc_vbd_volts should be capitalized: GC_VBD_VOLTS
+Variable names should be capitalized. | Variable glide_angle_gsm should be capitalized: GLIDE_ANGLE_GSM
+Variable names should be capitalized. | Variable glider should be capitalized: GLIDER
+Variable names should be capitalized. | Variable gsw_sigma0 should be capitalized: GSW_SIGMA0
+Variable names should be capitalized. | Variable gsw_sigma3 should be capitalized: GSW_SIGMA3
+Variable names should be capitalized. | Variable gsw_sigma4 should be capitalized: GSW_SIGMA4
+Variable names should be capitalized. | Variable hdm_qc should be capitalized: HDM_QC
+Variable names should be capitalized. | Variable horz_speed_gsm should be capitalized: HORZ_SPEED_GSM
+Variable names should be capitalized. | Variable latitude_gsm should be capitalized: LATITUDE_GSM
+Variable names should be capitalized. | Variable latlong_qc should be capitalized: LATLONG_QC
+Variable names should be capitalized. | Variable legato should be capitalized: LEGATO
+Variable names should be capitalized. | Variable legato_conduc should be capitalized: LEGATO_CONDUC
+Variable names should be capitalized. | Variable legato_conducTemp should be capitalized: LEGATO_CONDUCTEMP
+Variable names should be capitalized. | Variable legato_errors_a should be capitalized: LEGATO_ERRORS_A
+Variable names should be capitalized. | Variable legato_errors_b should be capitalized: LEGATO_ERRORS_B
+Variable names should be capitalized. | Variable legato_ontime_a should be capitalized: LEGATO_ONTIME_A
+Variable names should be capitalized. | Variable legato_ontime_b should be capitalized: LEGATO_ONTIME_B
+Variable names should be capitalized. | Variable legato_samples_a should be capitalized: LEGATO_SAMPLES_A
+Variable names should be capitalized. | Variable legato_samples_b should be capitalized: LEGATO_SAMPLES_B
+Variable names should be capitalized. | Variable legato_starttime_a should be capitalized: LEGATO_STARTTIME_A
+Variable names should be capitalized. | Variable legato_starttime_b should be capitalized: LEGATO_STARTTIME_B
+Variable names should be capitalized. | Variable legato_stoptime_a should be capitalized: LEGATO_STOPTIME_A
+Variable names should be capitalized. | Variable legato_stoptime_b should be capitalized: LEGATO_STOPTIME_B
+Variable names should be capitalized. | Variable legato_timeouts_a should be capitalized: LEGATO_TIMEOUTS_A
+Variable names should be capitalized. | Variable legato_timeouts_b should be capitalized: LEGATO_TIMEOUTS_B
+Variable names should be capitalized. | Variable legato_timeouts_times_b should be capitalized: LEGATO_TIMEOUTS_TIMES_B
+Variable names should be capitalized. | Variable log_10V_AH should be capitalized: LOG_10V_AH
+Variable names should be capitalized. | Variable log_24V_AH should be capitalized: LOG_24V_AH
+Variable names should be capitalized. | Variable log_AH0_10V should be capitalized: LOG_AH0_10V
+Variable names should be capitalized. | Variable log_AH0_24V should be capitalized: LOG_AH0_24V
+Variable names should be capitalized. | Variable log_ALTIM_BOTTOM_TURN_MARGIN should be capitalized: LOG_ALTIM_BOTTOM_TURN_MARGIN
+Variable names should be capitalized. | Variable log_ALTIM_FREQUENCY should be capitalized: LOG_ALTIM_FREQUENCY
+Variable names should be capitalized. | Variable log_ALTIM_PING_DELTA should be capitalized: LOG_ALTIM_PING_DELTA
+Variable names should be capitalized. | Variable log_ALTIM_PING_DEPTH should be capitalized: LOG_ALTIM_PING_DEPTH
+Variable names should be capitalized. | Variable log_ALTIM_PING_FIT should be capitalized: LOG_ALTIM_PING_FIT
+Variable names should be capitalized. | Variable log_ALTIM_PULSE should be capitalized: LOG_ALTIM_PULSE
+Variable names should be capitalized. | Variable log_ALTIM_SENSITIVITY should be capitalized: LOG_ALTIM_SENSITIVITY
+Variable names should be capitalized. | Variable log_ALTIM_TOP_MIN_OBSTACLE should be capitalized: LOG_ALTIM_TOP_MIN_OBSTACLE
+Variable names should be capitalized. | Variable log_ALTIM_TOP_PING_RANGE should be capitalized: LOG_ALTIM_TOP_PING_RANGE
+Variable names should be capitalized. | Variable log_ALTIM_TOP_TURN_MARGIN should be capitalized: LOG_ALTIM_TOP_TURN_MARGIN
+Variable names should be capitalized. | Variable log_APOGEE_PITCH should be capitalized: LOG_APOGEE_PITCH
+Variable names should be capitalized. | Variable log_CALL_NDIVES should be capitalized: LOG_CALL_NDIVES
+Variable names should be capitalized. | Variable log_CALL_TRIES should be capitalized: LOG_CALL_TRIES
+Variable names should be capitalized. | Variable log_CALL_WAIT should be capitalized: LOG_CALL_WAIT
+Variable names should be capitalized. | Variable log_CAPMAXSIZE should be capitalized: LOG_CAPMAXSIZE
+Variable names should be capitalized. | Variable log_CAPUPLOAD should be capitalized: LOG_CAPUPLOAD
+Variable names should be capitalized. | Variable log_CAP_FILE_SIZE should be capitalized: LOG_CAP_FILE_SIZE
+Variable names should be capitalized. | Variable log_CF8_MAXERRORS should be capitalized: LOG_CF8_MAXERRORS
+Variable names should be capitalized. | Variable log_COMM_SEQ should be capitalized: LOG_COMM_SEQ
+Variable names should be capitalized. | Variable log_COMPASS2_DEVICE should be capitalized: LOG_COMPASS2_DEVICE
+Variable names should be capitalized. | Variable log_COMPASS_DEVICE should be capitalized: LOG_COMPASS_DEVICE
+Variable names should be capitalized. | Variable log_COMPASS_USE should be capitalized: LOG_COMPASS_USE
+Variable names should be capitalized. | Variable log_CURRENT should be capitalized: LOG_CURRENT
+Variable names should be capitalized. | Variable log_C_PITCH should be capitalized: LOG_C_PITCH
+Variable names should be capitalized. | Variable log_C_PITCH_AUTO_DELTA should be capitalized: LOG_C_PITCH_AUTO_DELTA
+Variable names should be capitalized. | Variable log_C_PITCH_AUTO_MAX should be capitalized: LOG_C_PITCH_AUTO_MAX
+Variable names should be capitalized. | Variable log_C_ROLL_CLIMB should be capitalized: LOG_C_ROLL_CLIMB
+Variable names should be capitalized. | Variable log_C_ROLL_DIVE should be capitalized: LOG_C_ROLL_DIVE
+Variable names should be capitalized. | Variable log_C_VBD_AUTO_DELTA should be capitalized: LOG_C_VBD_AUTO_DELTA
+Variable names should be capitalized. | Variable log_C_VBD_AUTO_MAX should be capitalized: LOG_C_VBD_AUTO_MAX
+Variable names should be capitalized. | Variable log_DATA_FILE_SIZE should be capitalized: LOG_DATA_FILE_SIZE
+Variable names should be capitalized. | Variable log_DBDW should be capitalized: LOG_DBDW
+Variable names should be capitalized. | Variable log_DEEPGLIDER should be capitalized: LOG_DEEPGLIDER
+Variable names should be capitalized. | Variable log_DEEPGLIDERMB should be capitalized: LOG_DEEPGLIDERMB
+Variable names should be capitalized. | Variable log_DEVICE1 should be capitalized: LOG_DEVICE1
+Variable names should be capitalized. | Variable log_DEVICE2 should be capitalized: LOG_DEVICE2
+Variable names should be capitalized. | Variable log_DEVICE3 should be capitalized: LOG_DEVICE3
+Variable names should be capitalized. | Variable log_DEVICE4 should be capitalized: LOG_DEVICE4
+Variable names should be capitalized. | Variable log_DEVICE5 should be capitalized: LOG_DEVICE5
+Variable names should be capitalized. | Variable log_DEVICE6 should be capitalized: LOG_DEVICE6
+Variable names should be capitalized. | Variable log_DEVICES should be capitalized: LOG_DEVICES
+Variable names should be capitalized. | Variable log_DEVICE_MAMPS should be capitalized: LOG_DEVICE_MAMPS
+Variable names should be capitalized. | Variable log_DEVICE_MAX_MAMPS should be capitalized: LOG_DEVICE_MAX_MAMPS
+Variable names should be capitalized. | Variable log_DEVICE_SECS should be capitalized: LOG_DEVICE_SECS
+Variable names should be capitalized. | Variable log_DIVE should be capitalized: LOG_DIVE
+Variable names should be capitalized. | Variable log_D_ABORT should be capitalized: LOG_D_ABORT
+Variable names should be capitalized. | Variable log_D_BATHY_OFFSET should be capitalized: LOG_D_BATHY_OFFSET
+Variable names should be capitalized. | Variable log_D_BOOST should be capitalized: LOG_D_BOOST
+Variable names should be capitalized. | Variable log_D_CALL should be capitalized: LOG_D_CALL
+Variable names should be capitalized. | Variable log_D_FINISH should be capitalized: LOG_D_FINISH
+Variable names should be capitalized. | Variable log_D_FLARE should be capitalized: LOG_D_FLARE
+Variable names should be capitalized. | Variable log_D_GRID should be capitalized: LOG_D_GRID
+Variable names should be capitalized. | Variable log_D_NO_BLEED should be capitalized: LOG_D_NO_BLEED
+Variable names should be capitalized. | Variable log_D_OFFGRID should be capitalized: LOG_D_OFFGRID
+Variable names should be capitalized. | Variable log_D_PITCH should be capitalized: LOG_D_PITCH
+Variable names should be capitalized. | Variable log_D_SAFE should be capitalized: LOG_D_SAFE
+Variable names should be capitalized. | Variable log_D_SURF should be capitalized: LOG_D_SURF
+Variable names should be capitalized. | Variable log_D_TGT should be capitalized: LOG_D_TGT
+Variable names should be capitalized. | Variable log_EOP_CODE should be capitalized: LOG_EOP_CODE
+Variable names should be capitalized. | Variable log_ERRORS should be capitalized: LOG_ERRORS
+Variable names should be capitalized. | Variable log_ESCAPE_HEADING should be capitalized: LOG_ESCAPE_HEADING
+Variable names should be capitalized. | Variable log_ESCAPE_HEADING_DELTA should be capitalized: LOG_ESCAPE_HEADING_DELTA
+Variable names should be capitalized. | Variable log_FERRY_MAX should be capitalized: LOG_FERRY_MAX
+Variable names should be capitalized. | Variable log_FG_AHR_10V should be capitalized: LOG_FG_AHR_10V
+Variable names should be capitalized. | Variable log_FG_AHR_10Vo should be capitalized: LOG_FG_AHR_10VO
+Variable names should be capitalized. | Variable log_FG_AHR_24V should be capitalized: LOG_FG_AHR_24V
+Variable names should be capitalized. | Variable log_FG_AHR_24Vo should be capitalized: LOG_FG_AHR_24VO
+Variable names should be capitalized. | Variable log_FILEMGR should be capitalized: LOG_FILEMGR
+Variable names should be capitalized. | Variable log_FINISH should be capitalized: LOG_FINISH
+Variable names should be capitalized. | Variable log_FIX_MISSING_TIMEOUT should be capitalized: LOG_FIX_MISSING_TIMEOUT
+Variable names should be capitalized. | Variable log_GLIDE_SLOPE should be capitalized: LOG_GLIDE_SLOPE
+Variable names should be capitalized. | Variable log_GPS should be capitalized: LOG_GPS
+Variable names should be capitalized. | Variable log_GPS1 should be capitalized: LOG_GPS1
+Variable names should be capitalized. | Variable log_GPS2 should be capitalized: LOG_GPS2
+Variable names should be capitalized. | Variable log_GPS_DEVICE should be capitalized: LOG_GPS_DEVICE
+Variable names should be capitalized. | Variable log_HD_A should be capitalized: LOG_HD_A
+Variable names should be capitalized. | Variable log_HD_B should be capitalized: LOG_HD_B
+Variable names should be capitalized. | Variable log_HD_C should be capitalized: LOG_HD_C
+Variable names should be capitalized. | Variable log_HEADING should be capitalized: LOG_HEADING
+Variable names should be capitalized. | Variable log_HEAD_ERRBAND should be capitalized: LOG_HEAD_ERRBAND
+Variable names should be capitalized. | Variable log_HUMID should be capitalized: LOG_HUMID
+Variable names should be capitalized. | Variable log_ICE_FREEZE_MARGIN should be capitalized: LOG_ICE_FREEZE_MARGIN
+Variable names should be capitalized. | Variable log_ID should be capitalized: LOG_ID
+Variable names should be capitalized. | Variable log_IMPLIED_C_PITCH should be capitalized: LOG_IMPLIED_C_PITCH
+Variable names should be capitalized. | Variable log_IMPLIED_C_VBD should be capitalized: LOG_IMPLIED_C_VBD
+Variable names should be capitalized. | Variable log_INTERNAL_PRESSURE should be capitalized: LOG_INTERNAL_PRESSURE
+Variable names should be capitalized. | Variable log_INT_PRESSURE_SLOPE should be capitalized: LOG_INT_PRESSURE_SLOPE
+Variable names should be capitalized. | Variable log_INT_PRESSURE_YINT should be capitalized: LOG_INT_PRESSURE_YINT
+Variable names should be capitalized. | Variable log_IRIDIUM_FIX should be capitalized: LOG_IRIDIUM_FIX
+Variable names should be capitalized. | Variable log_IRON should be capitalized: LOG_IRON
+Variable names should be capitalized. | Variable log_KALMAN_CONTROL should be capitalized: LOG_KALMAN_CONTROL
+Variable names should be capitalized. | Variable log_KALMAN_USE should be capitalized: LOG_KALMAN_USE
+Variable names should be capitalized. | Variable log_KALMAN_X should be capitalized: LOG_KALMAN_X
+Variable names should be capitalized. | Variable log_KALMAN_Y should be capitalized: LOG_KALMAN_Y
+Variable names should be capitalized. | Variable log_LOGGERDEVICE1 should be capitalized: LOG_LOGGERDEVICE1
+Variable names should be capitalized. | Variable log_LOGGERDEVICE2 should be capitalized: LOG_LOGGERDEVICE2
+Variable names should be capitalized. | Variable log_LOGGERDEVICE3 should be capitalized: LOG_LOGGERDEVICE3
+Variable names should be capitalized. | Variable log_LOGGERDEVICE4 should be capitalized: LOG_LOGGERDEVICE4
+Variable names should be capitalized. | Variable log_LOGGERS should be capitalized: LOG_LOGGERS
+Variable names should be capitalized. | Variable log_LOITER_DBDW should be capitalized: LOG_LOITER_DBDW
+Variable names should be capitalized. | Variable log_LOITER_D_BOTTOM should be capitalized: LOG_LOITER_D_BOTTOM
+Variable names should be capitalized. | Variable log_LOITER_D_TOP should be capitalized: LOG_LOITER_D_TOP
+Variable names should be capitalized. | Variable log_LOITER_N_DIVE should be capitalized: LOG_LOITER_N_DIVE
+Variable names should be capitalized. | Variable log_LOITER_W_DBAND should be capitalized: LOG_LOITER_W_DBAND
+Variable names should be capitalized. | Variable log_MAGCAL should be capitalized: LOG_MAGCAL
+Variable names should be capitalized. | Variable log_MASS should be capitalized: LOG_MASS
+Variable names should be capitalized. | Variable log_MAXI_10V should be capitalized: LOG_MAXI_10V
+Variable names should be capitalized. | Variable log_MAXI_24V should be capitalized: LOG_MAXI_24V
+Variable names should be capitalized. | Variable log_MAX_BUOY should be capitalized: LOG_MAX_BUOY
+Variable names should be capitalized. | Variable log_MEM0 should be capitalized: LOG_MEM0
+Variable names should be capitalized. | Variable log_MEM1 should be capitalized: LOG_MEM1
+Variable names should be capitalized. | Variable log_MEM2 should be capitalized: LOG_MEM2
+Variable names should be capitalized. | Variable log_MHEAD_RNG_PITCHd_Wd should be capitalized: LOG_MHEAD_RNG_PITCHD_WD
+Variable names should be capitalized. | Variable log_MINV_10V should be capitalized: LOG_MINV_10V
+Variable names should be capitalized. | Variable log_MINV_24V should be capitalized: LOG_MINV_24V
+Variable names should be capitalized. | Variable log_MISSION should be capitalized: LOG_MISSION
+Variable names should be capitalized. | Variable log_MOTHERBOARD should be capitalized: LOG_MOTHERBOARD
+Variable names should be capitalized. | Variable log_NAV2_DEVICE should be capitalized: LOG_NAV2_DEVICE
+Variable names should be capitalized. | Variable log_NAV3_DEVICE should be capitalized: LOG_NAV3_DEVICE
+Variable names should be capitalized. | Variable log_NAV4_DEVICE should be capitalized: LOG_NAV4_DEVICE
+Variable names should be capitalized. | Variable log_NAV_DEVICE should be capitalized: LOG_NAV_DEVICE
+Variable names should be capitalized. | Variable log_NAV_MODE should be capitalized: LOG_NAV_MODE
+Variable names should be capitalized. | Variable log_NETBOX should be capitalized: LOG_NETBOX
+Variable names should be capitalized. | Variable log_NETWORK_DEVICE should be capitalized: LOG_NETWORK_DEVICE
+Variable names should be capitalized. | Variable log_NOCOMM_ACTION should be capitalized: LOG_NOCOMM_ACTION
+Variable names should be capitalized. | Variable log_N_DIVES should be capitalized: LOG_N_DIVES
+Variable names should be capitalized. | Variable log_N_FILEKB should be capitalized: LOG_N_FILEKB
+Variable names should be capitalized. | Variable log_N_GPS should be capitalized: LOG_N_GPS
+Variable names should be capitalized. | Variable log_N_NOCOMM should be capitalized: LOG_N_NOCOMM
+Variable names should be capitalized. | Variable log_N_NOSURFACE should be capitalized: LOG_N_NOSURFACE
+Variable names should be capitalized. | Variable log_OPTIONS should be capitalized: LOG_OPTIONS
+Variable names should be capitalized. | Variable log_OSC should be capitalized: LOG_OSC
+Variable names should be capitalized. | Variable log_PHONE_DEVICE should be capitalized: LOG_PHONE_DEVICE
+Variable names should be capitalized. | Variable log_PHONE_SUPPLY should be capitalized: LOG_PHONE_SUPPLY
+Variable names should be capitalized. | Variable log_PITCH_ADJ_DBAND should be capitalized: LOG_PITCH_ADJ_DBAND
+Variable names should be capitalized. | Variable log_PITCH_ADJ_GAIN should be capitalized: LOG_PITCH_ADJ_GAIN
+Variable names should be capitalized. | Variable log_PITCH_CNV should be capitalized: LOG_PITCH_CNV
+Variable names should be capitalized. | Variable log_PITCH_DBAND should be capitalized: LOG_PITCH_DBAND
+Variable names should be capitalized. | Variable log_PITCH_GAIN should be capitalized: LOG_PITCH_GAIN
+Variable names should be capitalized. | Variable log_PITCH_GAIN_AUTO_DELTA should be capitalized: LOG_PITCH_GAIN_AUTO_DELTA
+Variable names should be capitalized. | Variable log_PITCH_GAIN_AUTO_MAX should be capitalized: LOG_PITCH_GAIN_AUTO_MAX
+Variable names should be capitalized. | Variable log_PITCH_MAX should be capitalized: LOG_PITCH_MAX
+Variable names should be capitalized. | Variable log_PITCH_MAXERRORS should be capitalized: LOG_PITCH_MAXERRORS
+Variable names should be capitalized. | Variable log_PITCH_MIN should be capitalized: LOG_PITCH_MIN
+Variable names should be capitalized. | Variable log_PITCH_TIMEOUT should be capitalized: LOG_PITCH_TIMEOUT
+Variable names should be capitalized. | Variable log_PITCH_VBD_SHIFT should be capitalized: LOG_PITCH_VBD_SHIFT
+Variable names should be capitalized. | Variable log_PITCH_W_DBAND should be capitalized: LOG_PITCH_W_DBAND
+Variable names should be capitalized. | Variable log_PITCH_W_GAIN should be capitalized: LOG_PITCH_W_GAIN
+Variable names should be capitalized. | Variable log_PRESSURE_DEVICE should be capitalized: LOG_PRESSURE_DEVICE
+Variable names should be capitalized. | Variable log_PRESSURE_SLOPE should be capitalized: LOG_PRESSURE_SLOPE
+Variable names should be capitalized. | Variable log_PRESSURE_YINT should be capitalized: LOG_PRESSURE_YINT
+Variable names should be capitalized. | Variable log_PROTOCOL should be capitalized: LOG_PROTOCOL
+Variable names should be capitalized. | Variable log_RAFOS_CORR_THRESH should be capitalized: LOG_RAFOS_CORR_THRESH
+Variable names should be capitalized. | Variable log_RAFOS_DEVICE should be capitalized: LOG_RAFOS_DEVICE
+Variable names should be capitalized. | Variable log_RAFOS_HIT_WINDOW should be capitalized: LOG_RAFOS_HIT_WINDOW
+Variable names should be capitalized. | Variable log_RAFOS_MMODEM should be capitalized: LOG_RAFOS_MMODEM
+Variable names should be capitalized. | Variable log_RAFOS_PEAK_OFFSET should be capitalized: LOG_RAFOS_PEAK_OFFSET
+Variable names should be capitalized. | Variable log_RECOV_CODE should be capitalized: LOG_RECOV_CODE
+Variable names should be capitalized. | Variable log_RELAUNCH should be capitalized: LOG_RELAUNCH
+Variable names should be capitalized. | Variable log_RHO should be capitalized: LOG_RHO
+Variable names should be capitalized. | Variable log_ROLL_ADJ_DBAND should be capitalized: LOG_ROLL_ADJ_DBAND
+Variable names should be capitalized. | Variable log_ROLL_ADJ_GAIN should be capitalized: LOG_ROLL_ADJ_GAIN
+Variable names should be capitalized. | Variable log_ROLL_CNV should be capitalized: LOG_ROLL_CNV
+Variable names should be capitalized. | Variable log_ROLL_DEG should be capitalized: LOG_ROLL_DEG
+Variable names should be capitalized. | Variable log_ROLL_MAX should be capitalized: LOG_ROLL_MAX
+Variable names should be capitalized. | Variable log_ROLL_MAXERRORS should be capitalized: LOG_ROLL_MAXERRORS
+Variable names should be capitalized. | Variable log_ROLL_MIN should be capitalized: LOG_ROLL_MIN
+Variable names should be capitalized. | Variable log_ROLL_TIMEOUT should be capitalized: LOG_ROLL_TIMEOUT
+Variable names should be capitalized. | Variable log_SC_FREEKB should be capitalized: LOG_SC_FREEKB
+Variable names should be capitalized. | Variable log_SC_NDIVE should be capitalized: LOG_SC_NDIVE
+Variable names should be capitalized. | Variable log_SC_PROFILE should be capitalized: LOG_SC_PROFILE
+Variable names should be capitalized. | Variable log_SC_RECORDABOVE should be capitalized: LOG_SC_RECORDABOVE
+Variable names should be capitalized. | Variable log_SC_XMITPROFILE should be capitalized: LOG_SC_XMITPROFILE
+Variable names should be capitalized. | Variable log_SDFILEDIR should be capitalized: LOG_SDFILEDIR
+Variable names should be capitalized. | Variable log_SDSIZE should be capitalized: LOG_SDSIZE
+Variable names should be capitalized. | Variable log_SEABIRD_C_G should be capitalized: LOG_SEABIRD_C_G
+Variable names should be capitalized. | Variable log_SEABIRD_C_H should be capitalized: LOG_SEABIRD_C_H
+Variable names should be capitalized. | Variable log_SEABIRD_C_I should be capitalized: LOG_SEABIRD_C_I
+Variable names should be capitalized. | Variable log_SEABIRD_C_J should be capitalized: LOG_SEABIRD_C_J
+Variable names should be capitalized. | Variable log_SEABIRD_T_G should be capitalized: LOG_SEABIRD_T_G
+Variable names should be capitalized. | Variable log_SEABIRD_T_H should be capitalized: LOG_SEABIRD_T_H
+Variable names should be capitalized. | Variable log_SEABIRD_T_I should be capitalized: LOG_SEABIRD_T_I
+Variable names should be capitalized. | Variable log_SEABIRD_T_J should be capitalized: LOG_SEABIRD_T_J
+Variable names should be capitalized. | Variable log_SENSORS should be capitalized: LOG_SENSORS
+Variable names should be capitalized. | Variable log_SENSOR_MAMPS should be capitalized: LOG_SENSOR_MAMPS
+Variable names should be capitalized. | Variable log_SENSOR_SECS should be capitalized: LOG_SENSOR_SECS
+Variable names should be capitalized. | Variable log_SIMULATE should be capitalized: LOG_SIMULATE
+Variable names should be capitalized. | Variable log_SIM_W should be capitalized: LOG_SIM_W
+Variable names should be capitalized. | Variable log_SM_CC should be capitalized: LOG_SM_CC
+Variable names should be capitalized. | Variable log_SM_CCo should be capitalized: LOG_SM_CCO
+Variable names should be capitalized. | Variable log_SM_GC should be capitalized: LOG_SM_GC
+Variable names should be capitalized. | Variable log_SPEED_FACTOR should be capitalized: LOG_SPEED_FACTOR
+Variable names should be capitalized. | Variable log_SPEED_LIMITS should be capitalized: LOG_SPEED_LIMITS
+Variable names should be capitalized. | Variable log_STOP_T should be capitalized: LOG_STOP_T
+Variable names should be capitalized. | Variable log_STROBE should be capitalized: LOG_STROBE
+Variable names should be capitalized. | Variable log_SUPER should be capitalized: LOG_SUPER
+Variable names should be capitalized. | Variable log_SURF should be capitalized: LOG_SURF
+Variable names should be capitalized. | Variable log_SURFACE_URGENCY should be capitalized: LOG_SURFACE_URGENCY
+Variable names should be capitalized. | Variable log_SURFACE_URGENCY_FORCE should be capitalized: LOG_SURFACE_URGENCY_FORCE
+Variable names should be capitalized. | Variable log_SURFACE_URGENCY_TRY should be capitalized: LOG_SURFACE_URGENCY_TRY
+Variable names should be capitalized. | Variable log_TCM_TEMP should be capitalized: LOG_TCM_TEMP
+Variable names should be capitalized. | Variable log_TEMP should be capitalized: LOG_TEMP
+Variable names should be capitalized. | Variable log_TGT_AUTO_DEFAULT should be capitalized: LOG_TGT_AUTO_DEFAULT
+Variable names should be capitalized. | Variable log_TGT_DEFAULT_LAT should be capitalized: LOG_TGT_DEFAULT_LAT
+Variable names should be capitalized. | Variable log_TGT_DEFAULT_LON should be capitalized: LOG_TGT_DEFAULT_LON
+Variable names should be capitalized. | Variable log_TGT_LATLONG should be capitalized: LOG_TGT_LATLONG
+Variable names should be capitalized. | Variable log_TGT_NAME should be capitalized: LOG_TGT_NAME
+Variable names should be capitalized. | Variable log_TGT_RADIUS should be capitalized: LOG_TGT_RADIUS
+Variable names should be capitalized. | Variable log_T_ABORT should be capitalized: LOG_T_ABORT
+Variable names should be capitalized. | Variable log_T_BOOST should be capitalized: LOG_T_BOOST
+Variable names should be capitalized. | Variable log_T_DIVE should be capitalized: LOG_T_DIVE
+Variable names should be capitalized. | Variable log_T_EPIRB should be capitalized: LOG_T_EPIRB
+Variable names should be capitalized. | Variable log_T_GPS should be capitalized: LOG_T_GPS
+Variable names should be capitalized. | Variable log_T_LOITER should be capitalized: LOG_T_LOITER
+Variable names should be capitalized. | Variable log_T_MISSION should be capitalized: LOG_T_MISSION
+Variable names should be capitalized. | Variable log_T_NO_W should be capitalized: LOG_T_NO_W
+Variable names should be capitalized. | Variable log_T_RSLEEP should be capitalized: LOG_T_RSLEEP
+Variable names should be capitalized. | Variable log_T_TURN should be capitalized: LOG_T_TURN
+Variable names should be capitalized. | Variable log_T_TURN_SAMPINT should be capitalized: LOG_T_TURN_SAMPINT
+Variable names should be capitalized. | Variable log_UNCOM_BLEED should be capitalized: LOG_UNCOM_BLEED
+Variable names should be capitalized. | Variable log_UPLOAD_DIVES_MAX should be capitalized: LOG_UPLOAD_DIVES_MAX
+Variable names should be capitalized. | Variable log_USE_BATHY should be capitalized: LOG_USE_BATHY
+Variable names should be capitalized. | Variable log_USE_ICE should be capitalized: LOG_USE_ICE
+Variable names should be capitalized. | Variable log_VBD_DBAND should be capitalized: LOG_VBD_DBAND
+Variable names should be capitalized. | Variable log_VBD_LP_IGNORE should be capitalized: LOG_VBD_LP_IGNORE
+Variable names should be capitalized. | Variable log_VBD_MAX should be capitalized: LOG_VBD_MAX
+Variable names should be capitalized. | Variable log_VBD_MAXERRORS should be capitalized: LOG_VBD_MAXERRORS
+Variable names should be capitalized. | Variable log_VBD_MIN should be capitalized: LOG_VBD_MIN
+Variable names should be capitalized. | Variable log_VBD_TIMEOUT should be capitalized: LOG_VBD_TIMEOUT
+Variable names should be capitalized. | Variable log_W_ADJ_DBAND should be capitalized: LOG_W_ADJ_DBAND
+Variable names should be capitalized. | Variable log_XPDR_DEVICE should be capitalized: LOG_XPDR_DEVICE
+Variable names should be capitalized. | Variable log_XPDR_INHIBIT should be capitalized: LOG_XPDR_INHIBIT
+Variable names should be capitalized. | Variable log_XPDR_INT should be capitalized: LOG_XPDR_INT
+Variable names should be capitalized. | Variable log_XPDR_PINGS should be capitalized: LOG_XPDR_PINGS
+Variable names should be capitalized. | Variable log_XPDR_REP should be capitalized: LOG_XPDR_REP
+Variable names should be capitalized. | Variable log_XPDR_VALID should be capitalized: LOG_XPDR_VALID
+Variable names should be capitalized. | Variable log__CALLS should be capitalized: LOG__CALLS
+Variable names should be capitalized. | Variable log__SM_ANGLEo should be capitalized: LOG__SM_ANGLEO
+Variable names should be capitalized. | Variable log__SM_DEPTHo should be capitalized: LOG__SM_DEPTHO
+Variable names should be capitalized. | Variable log_dive should be capitalized: LOG_DIVE
+Variable names should be capitalized. | Variable log_glider should be capitalized: LOG_GLIDER
+Variable names should be capitalized. | Variable log_gps_driftheading should be capitalized: LOG_GPS_DRIFTHEADING
+Variable names should be capitalized. | Variable log_gps_driftspeed should be capitalized: LOG_GPS_DRIFTSPEED
+Variable names should be capitalized. | Variable log_gps_final_fix_time should be capitalized: LOG_GPS_FINAL_FIX_TIME
+Variable names should be capitalized. | Variable log_gps_first_fix_time should be capitalized: LOG_GPS_FIRST_FIX_TIME
+Variable names should be capitalized. | Variable log_gps_hdop should be capitalized: LOG_GPS_HDOP
+Variable names should be capitalized. | Variable log_gps_hpe should be capitalized: LOG_GPS_HPE
+Variable names should be capitalized. | Variable log_gps_lat should be capitalized: LOG_GPS_LAT
+Variable names should be capitalized. | Variable log_gps_lon should be capitalized: LOG_GPS_LON
+Variable names should be capitalized. | Variable log_gps_magvar should be capitalized: LOG_GPS_MAGVAR
+Variable names should be capitalized. | Variable log_gps_n_satellites should be capitalized: LOG_GPS_N_SATELLITES
+Variable names should be capitalized. | Variable log_gps_qc should be capitalized: LOG_GPS_QC
+Variable names should be capitalized. | Variable log_mission should be capitalized: LOG_MISSION
+Variable names should be capitalized. | Variable log_start should be capitalized: LOG_START
+Variable names should be capitalized. | Variable log_version should be capitalized: LOG_VERSION
+Variable names should be capitalized. | Variable longitude_gsm should be capitalized: LONGITUDE_GSM
+Variable names should be capitalized. | Variable magnetic_variation should be capitalized: MAGNETIC_VARIATION
+Variable names should be capitalized. | Variable magnetometer should be capitalized: MAGNETOMETER
+Variable names should be capitalized. | Variable north_displacement_gsm should be capitalized: NORTH_DISPLACEMENT_GSM
+Variable names should be capitalized. | Variable polar_heading should be capitalized: POLAR_HEADING
+Variable names should be capitalized. | Variable reviewed should be capitalized: REVIEWED
+Variable names should be capitalized. | Variable sg_cal_GPS_position_error should be capitalized: SG_CAL_GPS_POSITION_ERROR
+Variable names should be capitalized. | Variable sg_cal_QC_bound_action should be capitalized: SG_CAL_QC_BOUND_ACTION
+Variable names should be capitalized. | Variable sg_cal_QC_cond_max should be capitalized: SG_CAL_QC_COND_MAX
+Variable names should be capitalized. | Variable sg_cal_QC_cond_min should be capitalized: SG_CAL_QC_COND_MIN
+Variable names should be capitalized. | Variable sg_cal_QC_cond_spike_deep should be capitalized: SG_CAL_QC_COND_SPIKE_DEEP
+Variable names should be capitalized. | Variable sg_cal_QC_cond_spike_depth should be capitalized: SG_CAL_QC_COND_SPIKE_DEPTH
+Variable names should be capitalized. | Variable sg_cal_QC_cond_spike_shallow should be capitalized: SG_CAL_QC_COND_SPIKE_SHALLOW
+Variable names should be capitalized. | Variable sg_cal_QC_high_freq_noise should be capitalized: SG_CAL_QC_HIGH_FREQ_NOISE
+Variable names should be capitalized. | Variable sg_cal_QC_overall_ctd_percentage should be capitalized: SG_CAL_QC_OVERALL_CTD_PERCENTAGE
+Variable names should be capitalized. | Variable sg_cal_QC_overall_speed_percentage should be capitalized: SG_CAL_QC_OVERALL_SPEED_PERCENTAGE
+Variable names should be capitalized. | Variable sg_cal_QC_salin_max should be capitalized: SG_CAL_QC_SALIN_MAX
+Variable names should be capitalized. | Variable sg_cal_QC_salin_min should be capitalized: SG_CAL_QC_SALIN_MIN
+Variable names should be capitalized. | Variable sg_cal_QC_spike_action should be capitalized: SG_CAL_QC_SPIKE_ACTION
+Variable names should be capitalized. | Variable sg_cal_QC_temp_max should be capitalized: SG_CAL_QC_TEMP_MAX
+Variable names should be capitalized. | Variable sg_cal_QC_temp_min should be capitalized: SG_CAL_QC_TEMP_MIN
+Variable names should be capitalized. | Variable sg_cal_QC_temp_spike_deep should be capitalized: SG_CAL_QC_TEMP_SPIKE_DEEP
+Variable names should be capitalized. | Variable sg_cal_QC_temp_spike_depth should be capitalized: SG_CAL_QC_TEMP_SPIKE_DEPTH
+Variable names should be capitalized. | Variable sg_cal_QC_temp_spike_shallow should be capitalized: SG_CAL_QC_TEMP_SPIKE_SHALLOW
+Variable names should be capitalized. | Variable sg_cal_abs_compress should be capitalized: SG_CAL_ABS_COMPRESS
+Variable names should be capitalized. | Variable sg_cal_calibcomm should be capitalized: SG_CAL_CALIBCOMM
+Variable names should be capitalized. | Variable sg_cal_calibcomm_coda should be capitalized: SG_CAL_CALIBCOMM_CODA
+Variable names should be capitalized. | Variable sg_cal_calibcomm_tridentebb700chla470fdom365 should be capitalized: SG_CAL_CALIBCOMM_TRIDENTEBB700CHLA470FDOM365
+Variable names should be capitalized. | Variable sg_cal_cond_bias should be capitalized: SG_CAL_COND_BIAS
+Variable names should be capitalized. | Variable sg_cal_cpcor should be capitalized: SG_CAL_CPCOR
+Variable names should be capitalized. | Variable sg_cal_ctcor should be capitalized: SG_CAL_CTCOR
+Variable names should be capitalized. | Variable sg_cal_depth_bias should be capitalized: SG_CAL_DEPTH_BIAS
+Variable names should be capitalized. | Variable sg_cal_depth_slope_correction should be capitalized: SG_CAL_DEPTH_SLOPE_CORRECTION
+Variable names should be capitalized. | Variable sg_cal_glider_interstitial_length should be capitalized: SG_CAL_GLIDER_INTERSTITIAL_LENGTH
+Variable names should be capitalized. | Variable sg_cal_glider_interstitial_volume should be capitalized: SG_CAL_GLIDER_INTERSTITIAL_VOLUME
+Variable names should be capitalized. | Variable sg_cal_glider_length should be capitalized: SG_CAL_GLIDER_LENGTH
+Variable names should be capitalized. | Variable sg_cal_glider_r_en should be capitalized: SG_CAL_GLIDER_R_EN
+Variable names should be capitalized. | Variable sg_cal_glider_r_fair should be capitalized: SG_CAL_GLIDER_R_FAIR
+Variable names should be capitalized. | Variable sg_cal_glider_vol_wake should be capitalized: SG_CAL_GLIDER_VOL_WAKE
+Variable names should be capitalized. | Variable sg_cal_glider_wake_entry_thickness should be capitalized: SG_CAL_GLIDER_WAKE_ENTRY_THICKNESS
+Variable names should be capitalized. | Variable sg_cal_glider_xP should be capitalized: SG_CAL_GLIDER_XP
+Variable names should be capitalized. | Variable sg_cal_glider_xT should be capitalized: SG_CAL_GLIDER_XT
+Variable names should be capitalized. | Variable sg_cal_glider_zP should be capitalized: SG_CAL_GLIDER_ZP
+Variable names should be capitalized. | Variable sg_cal_glider_zT should be capitalized: SG_CAL_GLIDER_ZT
+Variable names should be capitalized. | Variable sg_cal_hd_s should be capitalized: SG_CAL_HD_S
+Variable names should be capitalized. | Variable sg_cal_id_str should be capitalized: SG_CAL_ID_STR
+Variable names should be capitalized. | Variable sg_cal_legato_alpha should be capitalized: SG_CAL_LEGATO_ALPHA
+Variable names should be capitalized. | Variable sg_cal_legato_cond_press_correction should be capitalized: SG_CAL_LEGATO_COND_PRESS_CORRECTION
+Variable names should be capitalized. | Variable sg_cal_legato_ctcoeff should be capitalized: SG_CAL_LEGATO_CTCOEFF
+Variable names should be capitalized. | Variable sg_cal_legato_sealevel should be capitalized: SG_CAL_LEGATO_SEALEVEL
+Variable names should be capitalized. | Variable sg_cal_legato_tau should be capitalized: SG_CAL_LEGATO_TAU
+Variable names should be capitalized. | Variable sg_cal_legato_time_lag should be capitalized: SG_CAL_LEGATO_TIME_LAG
+Variable names should be capitalized. | Variable sg_cal_legato_use_truck_pressure should be capitalized: SG_CAL_LEGATO_USE_TRUCK_PRESSURE
+Variable names should be capitalized. | Variable sg_cal_mass_comp should be capitalized: SG_CAL_MASS_COMP
+Variable names should be capitalized. | Variable sg_cal_max_stall_speed should be capitalized: SG_CAL_MAX_STALL_SPEED
+Variable names should be capitalized. | Variable sg_cal_min_stall_angle should be capitalized: SG_CAL_MIN_STALL_ANGLE
+Variable names should be capitalized. | Variable sg_cal_min_stall_speed should be capitalized: SG_CAL_MIN_STALL_SPEED
+Variable names should be capitalized. | Variable sg_cal_mission_title should be capitalized: SG_CAL_MISSION_TITLE
+Variable names should be capitalized. | Variable sg_cal_pitchbias should be capitalized: SG_CAL_PITCHBIAS
+Variable names should be capitalized. | Variable sg_cal_rho0 should be capitalized: SG_CAL_RHO0
+Variable names should be capitalized. | Variable sg_cal_rollbias should be capitalized: SG_CAL_ROLLBIAS
+Variable names should be capitalized. | Variable sg_cal_sbe_cond_freq_offset should be capitalized: SG_CAL_SBE_COND_FREQ_OFFSET
+Variable names should be capitalized. | Variable sg_cal_sbe_temp_freq_offset should be capitalized: SG_CAL_SBE_TEMP_FREQ_OFFSET
+Variable names should be capitalized. | Variable sg_cal_sbect_modes should be capitalized: SG_CAL_SBECT_MODES
+Variable names should be capitalized. | Variable sg_cal_sbect_tau_T should be capitalized: SG_CAL_SBECT_TAU_T
+Variable names should be capitalized. | Variable sg_cal_sbect_unpumped should be capitalized: SG_CAL_SBECT_UNPUMPED
+Variable names should be capitalized. | Variable sg_cal_sg_configuration should be capitalized: SG_CAL_SG_CONFIGURATION
+Variable names should be capitalized. | Variable sg_cal_sg_ct_geometry should be capitalized: SG_CAL_SG_CT_GEOMETRY
+Variable names should be capitalized. | Variable sg_cal_sg_ct_type should be capitalized: SG_CAL_SG_CT_TYPE
+Variable names should be capitalized. | Variable sg_cal_sg_sensor_geometry should be capitalized: SG_CAL_SG_SENSOR_GEOMETRY
+Variable names should be capitalized. | Variable sg_cal_sg_vehicle_geometry should be capitalized: SG_CAL_SG_VEHICLE_GEOMETRY
+Variable names should be capitalized. | Variable sg_cal_solve_flare_apogee_speed should be capitalized: SG_CAL_SOLVE_FLARE_APOGEE_SPEED
+Variable names should be capitalized. | Variable sg_cal_temp_bias should be capitalized: SG_CAL_TEMP_BIAS
+Variable names should be capitalized. | Variable sg_cal_temp_ref should be capitalized: SG_CAL_TEMP_REF
+Variable names should be capitalized. | Variable sg_cal_therm_expan should be capitalized: SG_CAL_THERM_EXPAN
+Variable names should be capitalized. | Variable sg_cal_use_adcppressure should be capitalized: SG_CAL_USE_ADCPPRESSURE
+Variable names should be capitalized. | Variable sg_cal_use_auxcompass should be capitalized: SG_CAL_USE_AUXCOMPASS
+Variable names should be capitalized. | Variable sg_cal_use_auxpressure should be capitalized: SG_CAL_USE_AUXPRESSURE
+Variable names should be capitalized. | Variable speed_gsm should be capitalized: SPEED_GSM
+Variable names should be capitalized. | Variable start_of_climb_time should be capitalized: START_OF_CLIMB_TIME
+Variable names should be capitalized. | Variable surface_curr_east should be capitalized: SURFACE_CURR_EAST
+Variable names should be capitalized. | Variable surface_curr_error should be capitalized: SURFACE_CURR_ERROR
+Variable names should be capitalized. | Variable surface_curr_north should be capitalized: SURFACE_CURR_NORTH
+Variable names should be capitalized. | Variable surface_curr_qc should be capitalized: SURFACE_CURR_QC
+Variable names should be capitalized. | Variable total_flight_time_s should be capitalized: TOTAL_FLIGHT_TIME_S
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365 should be capitalized: TRIDENTEBB700CHLA470FDOM365
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365_bb700 should be capitalized: TRIDENTEBB700CHLA470FDOM365_BB700
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365_ontime_a should be capitalized: TRIDENTEBB700CHLA470FDOM365_ONTIME_A
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365_ontime_b should be capitalized: TRIDENTEBB700CHLA470FDOM365_ONTIME_B
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365_samples_a should be capitalized: TRIDENTEBB700CHLA470FDOM365_SAMPLES_A
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365_samples_b should be capitalized: TRIDENTEBB700CHLA470FDOM365_SAMPLES_B
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365_starttime_a should be capitalized: TRIDENTEBB700CHLA470FDOM365_STARTTIME_A
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365_starttime_b should be capitalized: TRIDENTEBB700CHLA470FDOM365_STARTTIME_B
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365_stoptime_a should be capitalized: TRIDENTEBB700CHLA470FDOM365_STOPTIME_A
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365_stoptime_b should be capitalized: TRIDENTEBB700CHLA470FDOM365_STOPTIME_B
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365_timeouts_a should be capitalized: TRIDENTEBB700CHLA470FDOM365_TIMEOUTS_A
+Variable names should be capitalized. | Variable tridentebb700chla470fdom365_timeouts_b should be capitalized: TRIDENTEBB700CHLA470FDOM365_TIMEOUTS_B
+Variable names should be capitalized. | Variable vert_speed_gsm should be capitalized: VERT_SPEED_GSM
+Variables should have valid vocabulary URIs | variable BUOYANCY should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable DELTA_TIME_S should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable DEPTH_2 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable DEPTH_3 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable DEPTH_Z should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable EAST_DISPLACEMENT should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable GLIDER_HORZ_VELO_MODEL should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable GLIDER_VERT_VELO_MODEL should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable GLIDE_ANGLE should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable GLIDE_SPEED should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable NORTH_DISPLACEMENT should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable PRES_2 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable PRES_3 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable PROFILE_DIRECTION should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable SEGMENT_NUMBER should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable TEMP_2 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable TEMP_3 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable TIME_GPS should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable VBD_CC should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable absolute_salinity should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable codaTODO_compensated_O2 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable codaTODO_phase should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable codaTODO_uncompensated_O2 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable conservative_temperature should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable density should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable depth_depth should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable dissolved_oxygen_sat should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable dive_number should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable east_displacement_gsm should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable eng_GC_state should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable eng_elaps_t should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable eng_elaps_t_0000 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable eng_mag_x should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable eng_mag_y should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable eng_mag_z should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable eng_rec should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_data_pts should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_depth should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_end_secs should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_flags should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_humid should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_intP should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_ob_vertv should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_pitch_ad should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_pitch_ad_start should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_pitch_ctl should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_pitch_end_time should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_pitch_errors should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_pitch_i should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_pitch_secs should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_pitch_st should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_pitch_start_time should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_pitch_volts should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_roll_ad should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_roll_ad_start should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_roll_ctl should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_roll_end_time should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_roll_errors should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_roll_i should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_roll_secs should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_roll_st should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_roll_start_time should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_roll_volts should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_state_eop_code should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_state_state should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_ad should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_ad_start should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_ctl should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_end_time should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_errors should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_i should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_pot1_ad should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_pot1_ad_start should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_pot2_ad should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_pot2_ad_start should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_secs should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_st should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_start_time should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gc_vbd_volts should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable glide_angle_gsm should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gsw_sigma0 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gsw_sigma3 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable gsw_sigma4 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable horz_speed_gsm should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable latitude_gsm should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable legato_conduc should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable legato_conducTemp should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable log_gps_driftheading should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable log_gps_driftspeed should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable log_gps_final_fix_time should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable log_gps_first_fix_time should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable log_gps_hdop should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable log_gps_hpe should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable log_gps_lat should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable log_gps_lon should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable log_gps_magvar should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable log_gps_n_satellites should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable longitude_gsm should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable north_displacement_gsm should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable polar_heading should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable speed_gsm should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable tridentebb700chla470fdom365_bb700 should have attribute 'vocabulary', value is a URI from the OG1 collection
+Variables should have valid vocabulary URIs | variable vert_speed_gsm should have attribute 'vocabulary', value is a URI from the OG1 collection

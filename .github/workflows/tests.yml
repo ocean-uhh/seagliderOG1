@@ -3,10 +3,10 @@ name: Run tests
 on:
   push:
     branches: [ "main" ]
-    paths: ['**.py', 'pyproject.toml', '.github/workflows/**', 'seagliderOG1/**/*.yaml', 'seagliderOG1/**/*.yml']
+    paths: ['**.py', 'pyproject.toml', '.github/workflows/**', 'seagliderOG1/**/*.yaml', 'seagliderOG1/**/*.yml', 'tests/**', 'scripts/**']
   pull_request:
     branches: [ "main" ]
-    paths: ['**.py', 'pyproject.toml', '.github/workflows/**', 'seagliderOG1/**/*.yaml', 'seagliderOG1/**/*.yml']
+    paths: ['**.py', 'pyproject.toml', '.github/workflows/**', 'seagliderOG1/**/*.yaml', 'seagliderOG1/**/*.yml', 'tests/**', 'scripts/**']
 
 jobs:
   test:
@@ -61,3 +61,21 @@ jobs:
       - run: python -m pip install --upgrade pip setuptools wheel
       - run: python -m pip install -e ".[test]" --prefer-binary
       - run: pytest --cov=seagliderOG1 --cov-report=term-missing --cov-fail-under=87
+
+  og1-compliance:
+    # The OG1 checker (cc-plugin-og) on the converted sg271 sample. Fails on any finding not
+    # in tests/data/og1_known_findings.txt; the list shrinks as fixes land. The checker is not
+    # a package dependency: users do not need it to convert.
+    name: OG1 compliance (cc-plugin-og) / ubuntu / Py 3.12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with: { python-version: "3.12" }
+      - run: python -m pip install --upgrade pip setuptools wheel
+      - run: python -m pip install -e . cc-plugin-og --prefer-binary
+      - run: |
+          mkdir -p og1-check && cd og1-check
+          seagliderOG1 init --example sg271.yaml
+          seagliderOG1 process sg271.yaml
+      - run: python scripts/check_og1.py og1-check/sg271_*.nc tests/data/og1_known_findings.txt

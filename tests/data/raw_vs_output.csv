@@ -1,0 +1,44 @@
+# Raw basestation files against the written OG1 file, as Eleanor reviewed them (2026-11-13).
+# relation: equal = og1 equals factor x basestation at every point of the basestation axis (axis = its time variable);
+#           count = the same number of non-missing values over the mission;
+#           gps_fixes = one TIME_GPS per raw fix, less the boundary repeats recorded in conversion_dropped_gps_fixes;
+#           missing_at_fixes = og1 is missing (not 0) at every GPS fix;
+#           no_missing_on_read = no value reads back as missing when the file is opened.
+# status: ok | known: <branch> — <what changes>. Known rows are strict expected failures.
+check,mission,og1,basestation,relation,factor,axis,tolerance,status
+time axis,sg271,TIME,ctd_time,equal,1,ctd_time,1e-3,ok
+time axis,sg005,TIME,ctd_time,equal,1,ctd_time,1e-3,ok
+temperature,sg271,TEMP,temperature,equal,1,ctd_time,1e-4,ok
+temperature,sg005,TEMP,temperature,equal,1,ctd_time,1e-4,ok
+conductivity,sg271,CNDC,conductivity,equal,10,ctd_time,1e-4,ok
+conductivity,sg005,CNDC,conductivity,equal,10,ctd_time,1e-4,ok
+salinity,sg271,PSAL,salinity,equal,1,ctd_time,1e-4,ok
+salinity,sg005,PSAL,salinity,equal,1,ctd_time,1e-4,ok
+pressure (Legato),sg271,PRES,ctd_pressure,equal,1,ctd_time,1e-3,ok
+pressure (truck; no Legato),sg005,PRES,pressure,equal,1,time,1e-3,ok
+depth,sg271,DEPTH,ctd_depth,equal,1,ctd_time,1e-3,ok
+depth,sg005,DEPTH,ctd_depth,equal,1,ctd_time,1e-3,ok
+latitude,sg271,LATITUDE,latitude,equal,1,ctd_time,1e-7,ok
+latitude,sg005,LATITUDE,latitude,equal,1,ctd_time,1e-7,ok
+longitude,sg271,LONGITUDE,longitude,equal,1,ctd_time,1e-7,ok
+longitude,sg005,LONGITUDE,longitude,equal,1,ctd_time,1e-7,ok
+glide speed,sg271,GLIDE_SPEED,speed,equal,0.01,ctd_time,1e-6,ok
+glide speed,sg005,GLIDE_SPEED,speed,equal,0.01,ctd_time,1e-6,ok
+values kept,sg271,TEMP,temperature,count,,,0,ok
+values kept,sg005,TEMP,temperature,count,,,0,ok
+values kept,sg271,CNDC,conductivity,count,,,0,ok
+values kept,sg005,CNDC,conductivity,count,,,0,ok
+values kept,sg271,PSAL,salinity,count,,,0,ok
+values kept,sg005,PSAL,salinity,count,,,0,ok
+values kept,sg271,DEPTH,ctd_depth,count,,,0,known: fix/data-correctness — no invented DEPTH = 0 at GPS fixes
+values kept,sg005,DEPTH,ctd_depth,count,,,0,known: fix/data-correctness — no invented DEPTH = 0 at GPS fixes
+gps fixes,sg271,TIME_GPS,log_gps_time,gps_fixes,,,0,ok
+gps fixes,sg005,TIME_GPS,log_gps_time,gps_fixes,,,0,ok
+gps latitude,sg271,LATITUDE_GPS,log_gps_lat,equal,1,log_gps_time,1e-7,ok
+gps latitude,sg005,LATITUDE_GPS,log_gps_lat,equal,1,log_gps_time,1e-7,ok
+gps longitude,sg271,LONGITUDE_GPS,log_gps_lon,equal,1,log_gps_time,1e-7,ok
+gps longitude,sg005,LONGITUDE_GPS,log_gps_lon,equal,1,log_gps_time,1e-7,ok
+depth at fixes,sg271,DEPTH,,missing_at_fixes,,,0,known: fix/data-correctness — no invented DEPTH = 0 at GPS fixes
+depth at fixes,sg005,DEPTH,,missing_at_fixes,,,0,known: fix/data-correctness — no invented DEPTH = 0 at GPS fixes
+profile direction,sg271,PROFILE_DIRECTION,,no_missing_on_read,,,0,known: fix/data-correctness — 0 is a value; the fill must be outside -1/0/1
+profile direction,sg005,PROFILE_DIRECTION,,no_missing_on_read,,,0,known: fix/data-correctness — 0 is a value; the fill must be outside -1/0/1
