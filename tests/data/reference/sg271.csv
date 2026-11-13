@@ -456,7 +456,7 @@ log_gps_lat,float32,N_MEASUREMENTS,degrees_north,nan,9,-72.9812164,-72.9806519,-
 log_gps_lon,float32,N_MEASUREMENTS,degrees_east,nan,9,171.408463,171.419373,171.437439
 log_gps_magvar,float32,N_MEASUREMENTS,degree,nan,9,111.699997,111.699997,111.699997
 log_gps_n_satellites,float32,N_MEASUREMENTS,,nan,9,-1,6,11
-log_gps_qc,|S1,N_MEASUREMENTS,,,9309,,,
+log_gps_qc,|S1,N_MEASUREMENTS,,,9,,,
 log_mission,int16,,,32767,1,3,3,3
 log_start,<U67,,,,1,,,
 log_version,float32,,,nan,1,67.0100021,67.0100021,67.0100021

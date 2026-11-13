@@ -1,8 +1,8 @@
-"""The written OG1 file against the raw basestation files, line by line of two reviewed tables.
+"""The written OG1 file against the raw basestation files, line by line of two tables.
 
 ``tests/data/raw_vs_output.csv``: each line names a raw variable, its OG1 variable, how they
 relate and the tolerance. ``tests/data/og1_names.csv``: each line names a basestation variable,
-the OG1 name it is written under, and its units. A line whose status starts ``known:`` is a
+the OG1 name it is written under, its units and its sensor record. A line whose status starts ``known:`` is a
 strict expected failure: it fails today, and the test reports it if it starts passing, so the
 marker is removed when the fix lands.
 
@@ -21,6 +21,11 @@ import xarray as xr
 from conftest import read_table
 
 from seagliderOG1 import _convert
+
+#: Two times are the same instant when they differ by less than this (seconds). The file
+#: stores TIME through nanosecond datetimes, which moves a raw time by up to one rounding
+#: step of a float (2.4e-7 s at these dates).
+SAME_TIME = 1e-6
 
 DATA = pathlib.Path(__file__).resolve().parents[1] / "data"
 
@@ -64,18 +69,47 @@ def test_raw_vs_output(check: dict, converted_missions: dict) -> None:
             out_time = (
                 ds["TIME_GPS"].values if check["axis"] == "log_gps_time" else time
             )
-            worst, compared = 0.0, 0
+            out_values = ds[og1].values.astype(float)
+            # The only raw points allowed to be absent are the GPS fixes the file records
+            # as dropped (a fix logged again at a dive boundary).
+            allowed_absent = (
+                len(json.loads(ds.attrs.get("conversion_dropped_gps_fixes") or "[]"))
+                if check["axis"] == "log_gps_time"
+                else 0
+            )
+            worst, compared, absent, lost = 0.0, 0, 0, 0
             for raw in raws:
-                axis = raw[check["axis"]].values
+                axis = raw[check["axis"]].values.astype(float)
                 values = raw[src].values.astype(float)
-                here = (dive_of == _dive(raw)) & np.isin(out_time, axis)
-                index = np.searchsorted(axis, out_time[here])
-                diff = ds[og1].values[here].astype(float) - factor * values[index]
+                rows = np.flatnonzero((dive_of == _dive(raw)) & np.isfinite(out_time))
+                rows = rows[np.argsort(out_time[rows], kind="stable")]
+                times = out_time[rows]
+                if times.size == 0:
+                    absent += axis.size
+                    continue
+                # For each raw point, the output data point of this dive nearest in time.
+                right = np.clip(np.searchsorted(times, axis), 0, times.size - 1)
+                left = np.clip(right - 1, 0, times.size - 1)
+                nearest = np.where(
+                    np.abs(times[left] - axis) <= np.abs(times[right] - axis),
+                    left,
+                    right,
+                )
+                found = np.abs(times[nearest] - axis) <= SAME_TIME
+                absent += int((~found).sum())
+                diff = out_values[rows[nearest[found]]] - factor * values[found]
+                has_raw = np.isfinite(values[found])
+                lost += int((~np.isfinite(diff[has_raw])).sum())
                 diff = diff[np.isfinite(diff)]
                 compared += diff.size
                 if diff.size:
                     worst = max(worst, float(np.max(np.abs(diff))))
             assert compared > 0, "no data point of the raw axis found in the file"
+            assert absent == allowed_absent, (
+                f"{absent} raw points are not on the file's time axis "
+                f"({allowed_absent} recorded as dropped)"
+            )
+            assert lost == 0, f"{lost} raw values are missing in the file"
             assert worst <= tol, f"largest difference {worst:.3g} > {tol}"
 
         elif relation == "count":
@@ -114,7 +148,8 @@ def test_basestation_name_becomes_the_og1_name(
     row: dict, converted_missions: dict
 ) -> None:
     """One line of og1_names.csv: the basestation variable is written under that OG1 name and
-    units (or, with no OG1 name, not under an OG1 name at all)."""
+    units and points to that sensor record (or, with no OG1 name, is not under an OG1 name
+    at all)."""
     path, _raws = converted_missions[row["mission"]]
     with xr.open_dataset(path, engine="netcdf4", decode_times=False) as ds:
         written = [
@@ -130,6 +165,7 @@ def test_basestation_name_becomes_the_og1_name(
             f"written as {renamed}"
         )
         assert str(ds[renamed[0]].attrs.get("units", "")) == row["units"]
+        assert str(ds[renamed[0]].attrs.get("sensor", "")) == row["sensor"]
 
 
 @pytest.mark.parametrize("mission", ["sg271", "sg005"])

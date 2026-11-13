@@ -1,8 +1,8 @@
 """PHASE, profiles and segments: assigned from the basestation G&C state table, checked against
 that table and against the dive's own pressure.
 
-Data: the sg271 sample and the sg005 demo; tests marked as needing the dev pack skip
-without SEAGLIDEROG1_DEV_DATA. The transition tests are skipped on purpose: the OG1 table
+Data: the sg271 sample, the sg005 demo and single dives from the dev pack
+(tests/data/dev_pack). The transition tests are skipped on purpose: the OG1 table
 assigns no transition to a Seaglider (Eleanor, 2026-11-03).
 """
 

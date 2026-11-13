@@ -1,8 +1,9 @@
 """The seagliderOG1 command line: init, validate, process, inspect, report, list, enrich
 and draft.
 
-Data: the sg005 demo; some process tests replace the conversion with a stand-in to test
-the command's handling around it.
+Data: the sg005 demo, converted for real (one dive where the test is about the command's
+handling, not the data). Two tests make the conversion or the write raise, to test the
+failure path.
 """
 
 import json
@@ -54,21 +55,21 @@ def _write_config(path: pathlib.Path, **overrides: object) -> pathlib.Path:
     return path
 
 
-def _simple_fake_convert(_datasets: object, **kwargs: object) -> object:
-    """Stand in for to_og1: no real conversion, deterministic id from mode."""
-    import xarray as xr
-
-    suffix = "R" if kwargs.get("mode") == "realtime" else "delayed"
-    return xr.Dataset({"x": ("n", [1.0, 2.0])}, attrs={"id": f"sg005_{suffix}"})
+#: The sg005 output id for dives 1-1 in realtime mode (the mode when the config names none).
+SG005_DIVE1_ID = "sg005_20080606T180256_R"
 
 
 def _build_root(tmp_path: pathlib.Path) -> pathlib.Path:
-    """Build a two-mission SN/DATE root in tmp_path from the sample files."""
-    names = [f.name for f in DATA_DIR.iterdir() if f.name.endswith(".nc")]
-    for date in ("20080606", "20080607"):
+    """Build a two-mission SN/DATE root in tmp_path from the sg005 files.
+
+    The first folder holds dives 1-2 and the second dives 3-4, so the two missions start
+    at different times and get different ids.
+    """
+    names = sorted(f.name for f in DATA_DIR.iterdir() if f.name.endswith(".nc"))
+    for date, dives in (("20080606", names[:2]), ("20080607", names[2:4])):
         dest = tmp_path / "005" / date
         dest.mkdir(parents=True)
-        for name in names:
+        for name in dives:
             (dest / name).write_bytes((DATA_DIR / name).read_bytes())
     return tmp_path
 
@@ -627,28 +628,26 @@ def test_process_v_flag_controls_library_logging(
     assert "Start converting" in capsys.readouterr().err
 
 
-def test_process_writes_output(
-    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_process_writes_output(tmp_path: pathlib.Path) -> None:
     """Process converts the mission and writes <id>.nc under the output dir."""
-    from seagliderOG1 import _convert
+    import xarray as xr
 
-    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
-        tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
+        tmp_path / "mission.yaml",
+        raw_dir=str(DATA_DIR),
+        output_dir=str(out),
+        dives=[1, 1],
     )
     assert cli.main(["process", str(config)]) == 0
-    assert (out / "sg005_R.nc").is_file()  # no mode in the config: realtime
+    # No mode in the config: realtime, the R suffix.
+    with xr.open_dataset(out / f"{SG005_DIVE1_ID}.nc", engine="netcdf4") as ds:
+        assert ds.attrs["id"] == SG005_DIVE1_ID
+        assert ds.sizes["N_MEASUREMENTS"] > 0
 
 
-def test_process_dry_run_writes_nothing(
-    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_process_dry_run_writes_nothing(tmp_path: pathlib.Path) -> None:
     """-n prints the target path but writes no file."""
-    from seagliderOG1 import _convert
-
-    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
         tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
@@ -657,53 +656,46 @@ def test_process_dry_run_writes_nothing(
     assert not out.exists()
 
 
-def test_process_mode_realtime_sets_suffix(
-    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """--mode realtime names the output with the R data-mode suffix."""
-    from seagliderOG1 import _convert
-
-    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
+def test_process_mode_sets_suffix(tmp_path: pathlib.Path) -> None:
+    """--mode names the output with the data-mode suffix: ``R`` realtime, ``delayed``."""
     out = tmp_path / "out"
     config = _write_config(
-        tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
+        tmp_path / "mission.yaml",
+        raw_dir=str(DATA_DIR),
+        output_dir=str(out),
+        dives=[1, 1],
     )
     assert cli.main(["process", str(config), "--mode", "realtime"]) == 0
-    assert (out / "sg005_R.nc").is_file()
+    assert cli.main(["process", str(config), "--mode", "delayed"]) == 0
+    assert sorted(f.name for f in out.glob("*.nc")) == [
+        "sg005_20080606T180256_R.nc",
+        "sg005_20080606T180256_delayed.nc",
+    ]
 
 
 def test_process_existing_output_refused_then_force_and_skip(
-    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: pathlib.Path,
 ) -> None:
     """An existing output is refused by default, overwritten with --force, skipped with --skip-existing."""
-    from seagliderOG1 import _convert
-
-    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     out = tmp_path / "out"
     config = _write_config(
-        tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
+        tmp_path / "mission.yaml",
+        raw_dir=str(DATA_DIR),
+        output_dir=str(out),
+        dives=[1, 1],
     )
+    target = out / f"{SG005_DIVE1_ID}.nc"
     assert cli.main(["process", str(config)]) == 0
+    first = target.stat().st_mtime_ns
     assert cli.main(["process", str(config)]) == 1  # exists, refused
     assert cli.main(["process", str(config), "--skip-existing"]) == 0
+    assert target.stat().st_mtime_ns == first  # refused and skipped: not rewritten
     assert cli.main(["process", str(config), "--force"]) == 0
+    assert target.stat().st_mtime_ns > first  # --force: rewritten
 
 
-def test_process_root_all_converts_each(
-    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A root with --all converts every SN/DATE mission (distinct ids per mission)."""
-    from seagliderOG1 import _convert
-
-    counter = {"n": 0}
-
-    def counting_fake(_datasets: object, **_kwargs: object) -> object:
-        import xarray as xr
-
-        counter["n"] += 1
-        return xr.Dataset({"x": ("n", [1.0])}, attrs={"id": f"sg005_m{counter['n']}"})
-
-    monkeypatch.setattr(_convert, "convert", counting_fake)
+def test_process_root_all_converts_each(tmp_path: pathlib.Path) -> None:
+    """A root with --all converts every SN/DATE mission, each under its own id."""
     root = _build_root(tmp_path / "root")
     out = tmp_path / "out"
     config = _write_config(
@@ -713,13 +705,8 @@ def test_process_root_all_converts_each(
     assert len(list(out.glob("*.nc"))) == 2
 
 
-def test_process_root_requires_selection(
-    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_process_root_requires_selection(tmp_path: pathlib.Path) -> None:
     """A root without --all/--mission is an error."""
-    from seagliderOG1 import _convert
-
-    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     root = _build_root(tmp_path / "root")
     config = _write_config(
         tmp_path / "mission.yaml", raw_dir=str(root), output_dir=str(tmp_path / "out")
@@ -746,20 +733,20 @@ def test_process_failing_mission_exits_one(
     assert cli.main(["process", str(config)]) == 1
 
 
-def test_process_dry_run_ignores_existing_output(
-    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_process_dry_run_ignores_existing_output(tmp_path: pathlib.Path) -> None:
     """-n previews and exits 0 even when the output exists (no act-phase check)."""
-    from seagliderOG1 import _convert
-
-    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     out = tmp_path / "out"
-    out.mkdir()
-    (out / "sg005_delayed.nc").write_text("existing")
     config = _write_config(
-        tmp_path / "mission.yaml", raw_dir=str(DATA_DIR), output_dir=str(out)
+        tmp_path / "mission.yaml",
+        raw_dir=str(DATA_DIR),
+        output_dir=str(out),
+        dives=[1, 1],
     )
+    assert cli.main(["process", str(config)]) == 0
+    target = out / f"{SG005_DIVE1_ID}.nc"
+    written = target.stat().st_mtime_ns
     assert cli.main(["process", str(config), "-n"]) == 0
+    assert target.stat().st_mtime_ns == written
 
 
 def test_process_report_writes_page_and_refuses_existing(
@@ -811,22 +798,25 @@ def test_process_report_presence_line_names_the_basestation_page(
 
 
 def test_process_save_failure_counts_as_failed(
-    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """A write failure (it raises) is a mission failure (exit 1), not silent success."""
-    from seagliderOG1 import _convert, writers
+    from seagliderOG1 import writers
 
     def _raise(*_a: object, **_k: object) -> object:
         raise OSError("disk full")
 
-    monkeypatch.setattr(_convert, "convert", _simple_fake_convert)
     monkeypatch.setattr(writers, "write", _raise)
     config = _write_config(
         tmp_path / "mission.yaml",
         raw_dir=str(DATA_DIR),
         output_dir=str(tmp_path / "out"),
+        dives=[1, 1],
     )
     assert cli.main(["process", str(config)]) == 1
+    assert "disk full" in capsys.readouterr().err
 
 
 def test_process_missing_config_is_exit_one(tmp_path: pathlib.Path) -> None:

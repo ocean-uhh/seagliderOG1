@@ -1,12 +1,17 @@
 """Reading basestation dive files: finding missions, the file names, and the per-dive
 coordinate checks before the merge.
 
-Data: the sg005 demo dives; the per-dive checks use small hand-built datasets.
+Data: the sg005 demo dives; the per-dive checks use small hand-built datasets. The repair
+tests copy two sg005 dives and label one text variable of the first as a time, the defect
+the repair exists for (no bundled file has it).
 """
 
 import pathlib
+import shutil
 
+import netCDF4
 import numpy as np
+import pytest
 import xarray as xr
 
 from seagliderOG1 import _pipeline, readers
@@ -218,6 +223,79 @@ def test_read_mission_repair_is_opt_in(monkeypatch):
     assert calls == []
     readers.read_mission(source, 1, 1, repair=True)
     assert len(calls) == 1
+
+
+# --- Repairing files with a text variable labelled as a time ------------------------------
+
+
+def _mislabelled_folder(tmp_path: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path]:
+    """Copy sg005 dives 1 and 2; give dive 1's text variable ``wlbb2f`` time units.
+
+    Returns the folder and the path of the edited dive-1 file. Dive 2 is left as it is.
+    """
+    folder = tmp_path / "raw"
+    folder.mkdir()
+    names = sorted(f.name for f in (parent_dir / "data/demo_sg005").glob("p*.nc"))[:2]
+    for name in names:
+        shutil.copy2(parent_dir / "data/demo_sg005" / name, folder / name)
+    with netCDF4.Dataset(folder / names[0], "a") as nc:
+        nc["wlbb2f"].setncattr("units", "seconds since 1970-1-1 00:00:00")
+    return folder, folder / names[0]
+
+
+def test_text_variable_labelled_as_time_stops_the_read(tmp_path):
+    """Without the repair, a file with a text variable labelled as a time cannot be opened."""
+    _folder, bad = _mislabelled_folder(tmp_path)
+    with pytest.raises(ValueError, match="unable to decode time units"):
+        xr.open_dataset(bad, engine="netcdf4", decode_timedelta=False)
+
+
+def test_repair_fixes_only_the_file_that_needs_it(tmp_path):
+    """repair_files removes the time label from the text variable, keeps the original as a
+    backup, logs what it did, and leaves the good file untouched. The repaired file reads
+    back with the same values and attributes; it is rewritten, so it is not the same on disk
+    (the rewrite adds fill-value attributes, for one)."""
+    folder, bad = _mislabelled_folder(tmp_path)
+    good = next(f for f in folder.glob("p*.nc") if f != bad)
+    bad_before, good_before = bad.read_bytes(), good.read_bytes()
+    with xr.open_dataset(bad, engine="netcdf4", decode_times=False) as ds:
+        before = ds.load()
+
+    readers.repair_files(str(folder))
+
+    fixes = folder / "metadata_fixes"
+    assert (fixes / f"{bad.stem}_original.nc").read_bytes() == bad_before
+    assert not (fixes / f"{good.stem}_original.nc").exists()
+    assert good.read_bytes() == good_before
+    log = (fixes / "repair_log.txt").read_text()
+    assert bad.name in log and "['wlbb2f']" in log and good.name not in log
+
+    with xr.open_dataset(bad, engine="netcdf4", decode_times=False) as ds:
+        after = ds.load()
+    assert "units" not in after["wlbb2f"].attrs
+    np.testing.assert_array_equal(after["wlbb2f"].values, before["wlbb2f"].values)
+    # As read back: every other variable, its attributes and the global attributes agree.
+    xr.testing.assert_identical(after.drop_vars("wlbb2f"), before.drop_vars("wlbb2f"))
+    # No leftover temporary file beside the dives.
+    assert sorted(f.name for f in folder.glob("*.nc")) == sorted([bad.name, good.name])
+
+
+def test_repair_leaves_good_files_alone(tmp_path):
+    """A folder of readable files: nothing is rewritten, backed up or logged."""
+    folder = tmp_path / "raw"
+    folder.mkdir()
+    src = sorted((parent_dir / "data/demo_sg005").glob("p*.nc"))[0]
+    shutil.copy2(src, folder / src.name)
+    readers.repair_files(str(folder))
+    assert (folder / src.name).read_bytes() == src.read_bytes()
+    assert list((folder / "metadata_fixes").glob("*")) == []
+
+
+def test_read_mission_with_repair_reads_the_mislabelled_file(tmp_path):
+    """read_mission(repair=True) repairs first, so both dives are read."""
+    folder, _bad = _mislabelled_folder(tmp_path)
+    datasets = readers.read_mission(str(folder), 1, 2, repair=True)
+    assert [int(ds.attrs["dive_number"]) for ds in datasets] == [1, 2]
 
 
 # --- Per-dive coordinate and time checks --------------------------------------------------

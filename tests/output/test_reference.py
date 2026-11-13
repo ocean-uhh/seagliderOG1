@@ -1,7 +1,7 @@
 """The written file against a stored, readable reference of itself.
 
 ``tests/data/reference/<mission>.csv`` holds one line per variable of the written file: dtype,
-dimensions, units, fill value, number of values, and min / median / max for numbers. Any change
+dimensions, units, fill value, number of non-missing values, and min / median / max for numbers. Any change
 to the output shows up as a line-by-line diff of that file in a PR. When a change is intended,
 regenerate it and commit the diff with the change that caused it::
 
@@ -20,6 +20,8 @@ import numpy as np
 import pytest
 import xarray as xr
 from conftest import read_table
+
+from seagliderOG1 import _convert
 
 REFERENCE = pathlib.Path(__file__).resolve().parents[1] / "data" / "reference"
 FIELDS = [
@@ -70,7 +72,9 @@ def _summary(path: pathlib.Path) -> list[dict]:
                         f"{x:.9g}" for x in (v.min(), np.median(v), v.max())
                     )
             else:
-                row["count"] = str(values.size)
+                # Text and times: the converter's own rule for a missing value (blank text
+                # is missing), so a text value going blank changes the count.
+                row["count"] = str(_convert.count_values(values))
             rows.append(row)
     return rows
 

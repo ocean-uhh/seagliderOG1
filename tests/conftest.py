@@ -26,19 +26,24 @@ def read_table(path: pathlib.Path) -> list[dict]:
         return list(csv.DictReader(line for line in f if not line.startswith("#")))
 
 
+DEV_PACK = pathlib.Path(__file__).resolve().parent / "data" / "dev_pack"
+
+
 @pytest.fixture(scope="session")
 def dev_data() -> pathlib.Path:
-    """Return the dev pack folder named by ``SEAGLIDEROG1_DEV_DATA``; skip when unset.
+    """Return the dev pack: single-dive basestation files from several gliders.
 
-    The dev pack is a collection of single-dive basestation files from several gliders and
-    basestation versions, kept outside the repository (see CONTRIBUTING).
+    The bundled pack is ``tests/data/dev_pack``: 23 files, each the first dive of a mission,
+    from 12 gliders. ``SEAGLIDEROG1_DEV_DATA`` names another folder to run the
+    same tests on a larger private collection; a name that is not a folder is an error,
+    not a skip.
     """
     folder = os.environ.get("SEAGLIDEROG1_DEV_DATA")
     if not folder:
-        pytest.skip("SEAGLIDEROG1_DEV_DATA is unset; dev-pack tests skipped")
+        return DEV_PACK
     path = pathlib.Path(folder)
     if not path.is_dir():
-        pytest.skip(f"SEAGLIDEROG1_DEV_DATA={folder} is not a folder")
+        raise NotADirectoryError(f"SEAGLIDEROG1_DEV_DATA={folder} is not a folder")
     return path
 
 
