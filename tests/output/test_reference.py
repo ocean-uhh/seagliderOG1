@@ -102,7 +102,7 @@ def test_written_file_matches_the_reference(
     mission: str, converted_missions: dict
 ) -> None:
     """Every variable, and every field of it, is as in the stored reference."""
-    path, _ds, _raws = converted_missions[mission]
+    path, _raws = converted_missions[mission]
     now = _summary(path)
     if os.environ.get("SEAGLIDEROG1_UPDATE_REFERENCE"):
         _write(mission, now)
