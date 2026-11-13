@@ -1,0 +1,32 @@
+name: OG1 compliance drift
+
+# Monthly, and never on a pull request: run the OG1 checker with the latest released
+# cc-plugin-og (unpinned) against the converted sg271 sample. The tests.yml og1-compliance job
+# pins a version so pull requests are stable; this job is the counterpart that notices when a new
+# cc-plugin-og release changes the findings. When it fails, read the NEW / GONE lines, then bump
+# the pin in tests.yml and regenerate tests/data/og1_known_findings.txt against the new version:
+#   python scripts/check_og1.py FILE.nc tests/data/og1_known_findings.txt --update
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    name: OG1 compliance drift (latest cc-plugin-og) / ubuntu / Py 3.12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with: { python-version: "3.12" }
+      - run: python -m pip install --upgrade pip setuptools wheel
+      - run: python -m pip install -e . cc-plugin-og --prefer-binary
+      - run: |
+          mkdir -p og1-check && cd og1-check
+          seagliderOG1 init --example sg271.yaml
+          seagliderOG1 process sg271.yaml
+      - run: python scripts/check_og1.py og1-check/sg271_*.nc tests/data/og1_known_findings.txt

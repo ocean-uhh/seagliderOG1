@@ -19,6 +19,7 @@ import pathlib
 import numpy as np
 import pytest
 import xarray as xr
+from conftest import read_table
 
 REFERENCE = pathlib.Path(__file__).resolve().parents[1] / "data" / "reference"
 FIELDS = [
@@ -74,11 +75,6 @@ def _summary(path: pathlib.Path) -> list[dict]:
     return rows
 
 
-def _read(mission: str) -> list[dict]:
-    with (REFERENCE / f"{mission}.csv").open(encoding="utf-8", newline="") as f:
-        return list(csv.DictReader(line for line in f if not line.startswith("#")))
-
-
 def _write(mission: str, rows: list[dict]) -> None:
     REFERENCE.mkdir(parents=True, exist_ok=True)
     with (REFERENCE / f"{mission}.csv").open("w", encoding="utf-8", newline="") as f:
@@ -111,16 +107,18 @@ def test_written_file_matches_the_reference(
     if os.environ.get("SEAGLIDEROG1_UPDATE_REFERENCE"):
         _write(mission, now)
         pytest.skip(f"reference for {mission} rewritten")
-    stored = {r["variable"]: r for r in _read(mission)}
+    stored = {r["variable"]: r for r in read_table(REFERENCE / f"{mission}.csv")}
     current = {r["variable"]: r for r in now}
     problems = [f"new variable {v}" for v in sorted(set(current) - set(stored))]
     problems += [f"variable gone: {v}" for v in sorted(set(stored) - set(current))]
     for v in sorted(set(stored) & set(current)):
         for field in FIELDS[1:]:
-            if not _close(stored[v][field], current[v][field]):
-                problems.append(
-                    f"{v}.{field}: {stored[v][field]!r} -> {current[v][field]!r}"
-                )
+            a, b = stored[v][field], current[v][field]
+            # count, dtype, dims, units and fill are exact; only the numeric summary
+            # stats carry a tolerance (a different numpy must not fail an unchanged file).
+            close = _close(a, b) if field in ("min", "median", "max") else a == b
+            if not close:
+                problems.append(f"{v}.{field}: {a!r} -> {b!r}")
     assert not problems, "\n".join(problems[:40]) + (
         f"\n... and {len(problems) - 40} more" if len(problems) > 40 else ""
     )
